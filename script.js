@@ -1,5 +1,6 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbxUO4dbJXFWvwTcI1TWN5si7gLBvdmUrnFd7-6wS4V6jVcUhqVCCyOhzMkuW-PIia74/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyI0RrvQi7QRo_D1ubYnGhPDTuPH4Hc9sovUAZUbOe24EpzIauLAWV_jdEd9eoXpUCW/exec";
 const API_KEY = "oficina2026seguro";
+
 
 let listaEquips = JSON.parse(localStorage.getItem('oficina_maquinas')) || [];
 let listaMembros = JSON.parse(localStorage.getItem('oficina_equipe')) || [];

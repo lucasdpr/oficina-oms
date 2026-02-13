@@ -68,69 +68,48 @@
       <!-- ABA: Membros -->
       <section id="aba-membros" class="tab-content">
         <div class="table-container">
-          <div class="table-header">
-            <h2>Equipe de Turno</h2>
-          </div>
+  <div class="table-header">
+    <h2>Relatório Diário</h2>
+  </div>
 
-          <table>
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Cargo</th>
-                <th>Status</th>
-                <th>Ação</th>
-              </tr>
-            </thead>
-            <tbody id="membro-table"></tbody>
-          </table>
-        </div>
-      </section>
+  <div style="display:grid; gap:12px; max-width:520px;">
+    <label>Data:</label>
+    <input type="date" id="dataRelatorio" />
 
-      <!-- ABA: Relatórios -->
-      <section id="aba-relatorios" class="tab-content">
-        <div class="table-container">
-          <div class="table-header">
-            <h2>Relatório Diário</h2>
-          </div>
+    <label>Equipe:</label>
+    <select id="equipeRelatorio">
+      <option>Equipe 01</option>
+      <option>Equipe 02</option>
+      <option>Equipe 03</option>
+      <option>Equipe 04</option>
+      <option>Equipe 05</option>
+      <option>Equipe 06</option>
+      <option>Equipe 07</option>
+      <option>Equipe 08</option>
+      <option>Equipe 09</option>
+      <option>Equipe 10</option>
+    </select>
 
-          <div style="display:grid; gap:12px; max-width:520px;">
-            <label>Data:</label>
-            <input type="date" id="dataRelatorio" />
+    <label>Presentes:</label>
+    <input type="number" id="presentes" min="0" />
 
-            <label>Equipe:</label>
-            <select id="equipeRelatorio">
-              <option>Equipe 01</option>
-              <option>Equipe 02</option>
-              <option>Equipe 03</option>
-              <option>Equipe 04</option>
-              <option>Equipe 05</option>
-              <option>Equipe 06</option>
-              <option>Equipe 07</option>
-              <option>Equipe 08</option>
-              <option>Equipe 09</option>
-              <option>Equipe 10</option>
-            </select>
+    <label>Faltas:</label>
+    <input type="number" id="faltas" min="0" />
 
-            <label>Presentes:</label>
-            <input type="number" id="presentes" min="0" />
+    <label>Atestados:</label>
+    <input type="number" id="atestados" min="0" />
 
-            <label>Faltas:</label>
-            <input type="number" id="faltas" min="0" />
+    <label>Férias:</label>
+    <input type="number" id="ferias" min="0" />
 
-            <label>Atestados:</label>
-            <input type="number" id="atestados" min="0" />
+    <label>Observação:</label>
+    <textarea id="observacaoRelatorio" rows="4"></textarea>
 
-            <label>Férias:</label>
-            <input type="number" id="ferias" min="0" />
-
-            <label>Observação:</label>
-            <textarea id="observacaoRelatorio" rows="4"></textarea>
-
-            <button class="btn-primary" onclick="salvarRelatorio()">
-              Salvar Relatório
-            </button>
-          </div>
-        </div>
+    <button class="btn-primary" onclick="salvarRelatorio()">
+      Salvar Relatório
+    </button>
+  </div>
+</div>
       </section>
     </main>
   </div>
