@@ -1,245 +1,190 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oficina MCC | Controle de Lingotamento</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oficina MCC | Controle de Lingotamento</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 </head>
+
 <body>
-    <div class="container">
-        <aside class="sidebar">
-            <div class="logo">
-                <i class="fas fa-tools"></i>
-                <span>Oficina MCC</span>
-            </div>
-            <nav>
-                <a href="#" onclick="abrirAba(event, 'aba-relatorios')">
-    <i class="fas fa-file-alt"></i> Relatórios
+  <div class="container">
+    <aside class="sidebar">
+      <div class="logo">
+        <i class="fas fa-tools"></i>
+        <span>Oficina MCC</span>
+      </div>
 
+      <nav>
+        <a href="#" class="active"><i class="fas fa-home"></i> Painel Principal</a>
+        <a href="#" id="menu-add-equip"><i class="fas fa-plus-circle"></i> Novo Equipamento</a>
+        <a href="#" id="menu-add-membro"><i class="fas fa-user-plus"></i> Novo Membro</a>
+      </nav>
+    </aside>
 
-                <a href="#" class="active"><i class="fas fa-home"></i> Painel Principal</a>
-                <a href="#" id="menu-add-equip"><i class="fas fa-plus-circle"></i> Novo Equipamento</a>
-                <a href="#" id="menu-add-membro"><i class="fas fa-user-plus"></i> Novo Membro</a>
-            </nav>
-        </aside>
+    <main class="main-content">
+      <header>
+        <h1>Sistema de Gerenciamento</h1>
+      </header>
 
-        <main class="main-content">
-            <header>
-       
-</button>
-                <h1>Sistema de Gerenciamento</h1>
-            </header>
+      <!-- Abas do topo -->
+      <div class="tab-container">
+        <button class="tab-btn active" onclick="abrirAba(event, 'aba-equip')">
+          <i class="fas fa-cogs"></i> Equipamentos
+        </button>
 
-            <div class="tab-container">
-                <button class="tab-btn active" onclick="abrirAba(event, 'aba-equip')">
-                    <i class="fas fa-cogs"></i> Equipamentos
-                </button>
-                <button class="tab-btn" onclick="abrirAba(event, 'aba-membros')">
-                    <i class="fas fa-users"></i> Membros da Equipe
-                </button>
-               
-    <i class="fas fa-file-alt"></i> Relatórios
-</button>
+        <button class="tab-btn" onclick="abrirAba(event, 'aba-membros')">
+          <i class="fas fa-users"></i> Membros da Equipe
+        </button>
 
-            </div>
-            <div class="tab-container">
-    <button class="tab-btn active" onclick="abrirAba(event, 'aba-equip')">
-        <i class="fas fa-cogs"></i> Equipamentos
-    </button>
-    <button class="tab-btn" onclick="abrirAba(event, 'aba-membros')">
-        <i class="fas fa-users"></i> Membros da Equipe
-    </button>
-    <button class="tab-btn" onclick="abrirAba(event, 'aba-relatorios')">
-        <i class="fas fa-file-alt"></i> Relatórios
-    </button>
-</div>
+        <button class="tab-btn" onclick="abrirAba(event, 'aba-relatorios')">
+          <i class="fas fa-file-alt"></i> Relatórios
+        </button>
+      </div>
 
+      <!-- ABA: Equipamentos -->
+      <section id="aba-equip" class="tab-content active">
+        <div class="table-container">
+          <div class="table-header">
+            <h2>Status de Máquinas e Moldes</h2>
+          </div>
 
-
-
-            <section id="aba-equip" class="tab-content active">
-                <div class="table-container">
-                    <div class="table-header">
-                        <section id="aba-relatorios" class="tab-content">
-
-    <div class="table-container">
-        <div class="table-header">
-            <h2>Relatório Diário</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Equipamento</th>
+                <th>Equipe</th>
+                <th>Status</th>
+                <th>Observação</th>
+                <th>Ação</th>
+              </tr>
+            </thead>
+            <tbody id="equip-table"></tbody>
+          </table>
         </div>
+      </section>
 
-        <div style="display: grid; gap: 15px; max-width: 500px;">
+      <!-- ABA: Membros -->
+      <section id="aba-membros" class="tab-content">
+        <div class="table-container">
+          <div class="table-header">
+            <h2>Equipe de Turno</h2>
+          </div>
 
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Cargo</th>
+                <th>Status</th>
+                <th>Ação</th>
+              </tr>
+            </thead>
+            <tbody id="membro-table"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ABA: Relatórios -->
+      <section id="aba-relatorios" class="tab-content">
+        <div class="table-container">
+          <div class="table-header">
+            <h2>Relatório Diário</h2>
+          </div>
+
+          <div style="display:grid; gap:12px; max-width:520px;">
             <label>Data:</label>
-            <input type="date" id="dataRelatorio">
+            <input type="date" id="dataRelatorio" />
 
             <label>Equipe:</label>
             <select id="equipeRelatorio">
-                <option>Equipe 01</option>
-                <option>Equipe 02</option>
-                <option>Equipe 03</option>
-                <option>Equipe 04</option>
-                <option>Equipe 05</option>
-                <option>Equipe 06</option>
-                <option>Equipe 07</option>
-                <option>Equipe 08</option>
-                <option>Equipe 09</option>
-                <option>Equipe 10</option>
+              <option>Equipe 01</option>
+              <option>Equipe 02</option>
+              <option>Equipe 03</option>
+              <option>Equipe 04</option>
+              <option>Equipe 05</option>
+              <option>Equipe 06</option>
+              <option>Equipe 07</option>
+              <option>Equipe 08</option>
+              <option>Equipe 09</option>
+              <option>Equipe 10</option>
             </select>
 
             <label>Presentes:</label>
-            <input type="number" id="presentes">
+            <input type="number" id="presentes" min="0" />
 
             <label>Faltas:</label>
-            <input type="number" id="faltas">
+            <input type="number" id="faltas" min="0" />
 
             <label>Atestados:</label>
-            <input type="number" id="atestados">
+            <input type="number" id="atestados" min="0" />
 
             <label>Férias:</label>
-            <input type="number" id="ferias">
+            <input type="number" id="ferias" min="0" />
 
             <label>Observação:</label>
-            <textarea id="observacaoRelatorio"></textarea>
+            <textarea id="observacaoRelatorio" rows="4"></textarea>
 
             <button class="btn-primary" onclick="salvarRelatorio()">
-                Salvar Relatório
+              Salvar Relatório
             </button>
-
+          </div>
         </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal Equipamento -->
+  <div id="modal-equip" class="modal">
+    <div class="modal-content">
+      <h3>Gerenciar Equipamento</h3>
+
+      <label>Máquina/Molde:</label>
+      <input type="text" id="equipNome" />
+
+      <label>Status:</label>
+      <select id="equipStatus">
+        <option value="operação">✅ Em Operação</option>
+        <option value="reparo">🛠️ Em Reparo</option>
+        <option value="reserva">📦 Reserva</option>
+      </select>
+
+      <label>Equipe Responsável:</label>
+      <select id="equipTeam">
+        <option value="Mecânica">Mecânica</option>
+        <option value="Elétrica">Elétrica</option>
+        <option value="Operação">Operação</option>
+      </select>
+
+      <label>Obs:</label>
+      <textarea id="equipObs" rows="3"></textarea>
+
+      <div class="modal-buttons">
+        <button onclick="fecharModal('modal-equip')">Cancelar</button>
+        <button onclick="salvarEquipamento()" class="btn-primary">Salvar</button>
+      </div>
     </div>
+  </div>
 
-</section>
-<section id="aba-relatorios" class="tab-content">
+  <!-- Modal Membro -->
+  <div id="modal-membro" class="modal">
+    <div class="modal-content">
+      <h3>Adicionar à Equipe</h3>
 
-    <div class="table-container">
-        <div class="table-header">
-            <h2>Relatório Diário</h2>
-        </div>
+      <label>Nome:</label>
+      <input type="text" id="membroNome" />
 
-        <div style="display: grid; gap: 15px; max-width: 500px;">
+      <label>Cargo:</label>
+      <input type="text" id="membroCargo" />
 
-            <label>Data:</label>
-            <input type="date" id="dataRelatorio">
-
-            <label>Equipe:</label>
-            <select id="equipeRelatorio">
-                <option>Equipe 01</option>
-                <option>Equipe 02</option>
-                <option>Equipe 03</option>
-                <option>Equipe 04</option>
-                <option>Equipe 05</option>
-                <option>Equipe 06</option>
-                <option>Equipe 07</option>
-                <option>Equipe 08</option>
-                <option>Equipe 09</option>
-                <option>Equipe 10</option>
-            </select>
-
-            <label>Presentes:</label>
-            <input type="number" id="presentes">
-
-            <label>Faltas:</label>
-            <input type="number" id="faltas">
-
-            <label>Atestados:</label>
-            <input type="number" id="atestados">
-
-            <label>Férias:</label>
-            <input type="number" id="ferias">
-
-            <label>Observação:</label>
-            <textarea id="observacaoRelatorio"></textarea>
-
-            <button class="btn-primary" onclick="salvarRelatorio()">
-                Salvar Relatório
-            </button>
-
-        </div>
+      <div class="modal-buttons">
+        <button onclick="fecharModal('modal-membro')">Cancelar</button>
+        <button onclick="salvarMembro()" class="btn-primary">Salvar</button>
+      </div>
     </div>
+  </div>
 
-</section>
-
-
-                        <h2>Status de Máquinas e Moldes</h2>
-                    </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Equipamento</th>
-                                <th>Equipe</th>
-                                <th>Status</th>
-                                <th>Observação</th>
-                                <th>Ação</th>
-                            </tr>
-                        </thead>
-                        <tbody id="equip-table"></tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section id="aba-membros" class="tab-content">
-                <div class="table-container">
-                    <div class="table-header">
-                        <h2>Equipe de Turno</h2>
-                    </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Nome</th>
-                                <th>Cargo</th>
-                                <th>Status</th>
-                                <th>Ação</th>
-                            </tr>
-                        </thead>
-                        <tbody id="membro-table"></tbody>
-                    </table>
-                </div>
-            </section>
-        </main>
-    </div>
-
-    <div id="modal-equip" class="modal">
-        <div class="modal-content">
-            <h3>Gerenciar Equipamento</h3>
-            <label>Máquina/Molde:</label>
-            <input type="text" id="equipNome">
-            <label>Status:</label>
-            <select id="equipStatus">
-                <option value="operação">✅ Em Operação</option>
-                <option value="reparo">🛠️ Em Reparo</option>
-                <option value="reserva">📦 Reserva</option>
-            </select>
-            <label>Equipe Responsável:</label>
-            <select id="equipTeam">
-                <option value="Mecânica">Mecânica</option>
-                <option value="Elétrica">Elétrica</option>
-                <option value="Operação">Operação</option>
-            </select>
-            <label>Obs:</label>
-            <textarea id="equipObs" rows="3"></textarea>
-            <div class="modal-buttons">
-                <button onclick="fecharModal('modal-equip')">Cancelar</button>
-                <button onclick="salvarEquipamento()" class="btn-primary">Salvar</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-membro" class="modal">
-        <div class="modal-content">
-            <h3>Adicionar à Equipe</h3>
-            <label>Nome:</label>
-            <input type="text" id="membroNome">
-            <label>Cargo:</label>
-            <input type="text" id="membroCargo">
-            <div class="modal-buttons">
-                <button onclick="fecharModal('modal-membro')">Cancelar</button>
-                <button onclick="salvarMembro()" class="btn-primary">Salvar</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
