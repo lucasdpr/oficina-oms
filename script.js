@@ -1,3 +1,6 @@
+const API_URL = "https://script.google.com/macros/s/AKfycbxUO4dbJXFWvwTcI1TWN5si7gLBvdmUrnFd7-6wS4V6jVcUhqVCCyOhzMkuW-PIia74/exec";
+const API_KEY = "oficina2026seguro";
+
 let listaEquips = JSON.parse(localStorage.getItem('oficina_maquinas')) || [];
 let listaMembros = JSON.parse(localStorage.getItem('oficina_equipe')) || [];
 function limparEquipForm(){
@@ -120,4 +123,38 @@ document.addEventListener('keydown', (e) => {
         document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
     }
 });
+async function salvarRelatorio() {
+  const payload = {
+    data: document.getElementById("dataRelatorio").value,
+    equipe: document.getElementById("equipeRelatorio").value,
+    presentes: Number(document.getElementById("presentes").value || 0),
+    faltas: Number(document.getElementById("faltas").value || 0),
+    atestados: Number(document.getElementById("atestados").value || 0),
+    ferias: Number(document.getElementById("ferias").value || 0),
+    observacao: document.getElementById("observacaoRelatorio").value || ""
+  };
+
+  if (!payload.data) {
+    alert("Escolha a data do relatório.");
+    return;
+  }
+
+  try {
+    const resp = await fetch(`${API_URL}?key=${encodeURIComponent(API_KEY)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const json = await resp.json();
+
+    if (json.ok) {
+      alert("Relatório salvo na planilha ✅");
+    } else {
+      alert("Erro ao salvar: " + JSON.stringify(json));
+    }
+  } catch (e) {
+    alert("Erro de conexão: " + e);
+  }
+}
 
