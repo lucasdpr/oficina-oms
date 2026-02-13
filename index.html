@@ -15,6 +15,10 @@
                 <span>Oficina MCC</span>
             </div>
             <nav>
+                <a href="#" onclick="abrirAba(event, 'aba-relatorios')">
+    <i class="fas fa-file-alt"></i> Relatórios
+</a>
+
                 <a href="#" class="active"><i class="fas fa-home"></i> Painel Principal</a>
                 <a href="#" id="menu-add-equip"><i class="fas fa-plus-circle"></i> Novo Equipamento</a>
                 <a href="#" id="menu-add-membro"><i class="fas fa-user-plus"></i> Novo Membro</a>
@@ -37,10 +41,74 @@
                     <i class="fas fa-users"></i> Membros da Equipe
                 </button>
             </div>
+            <div class="tab-container">
+    <button class="tab-btn active" onclick="abrirAba(event, 'aba-equip')">
+        <i class="fas fa-cogs"></i> Equipamentos
+    </button>
+    <button class="tab-btn" onclick="abrirAba(event, 'aba-membros')">
+        <i class="fas fa-users"></i> Membros da Equipe
+    </button>
+    <button class="tab-btn" onclick="abrirAba(event, 'aba-relatorios')">
+        <i class="fas fa-file-alt"></i> Relatórios
+    </button>
+</div>
+
+
+
 
             <section id="aba-equip" class="tab-content active">
                 <div class="table-container">
                     <div class="table-header">
+                        <section id="aba-relatorios" class="tab-content">
+
+    <div class="table-container">
+        <div class="table-header">
+            <h2>Relatório Diário</h2>
+        </div>
+
+        <div style="display: grid; gap: 15px; max-width: 500px;">
+
+            <label>Data:</label>
+            <input type="date" id="dataRelatorio">
+
+            <label>Equipe:</label>
+            <select id="equipeRelatorio">
+                <option>Equipe 01</option>
+                <option>Equipe 02</option>
+                <option>Equipe 03</option>
+                <option>Equipe 04</option>
+                <option>Equipe 05</option>
+                <option>Equipe 06</option>
+                <option>Equipe 07</option>
+                <option>Equipe 08</option>
+                <option>Equipe 09</option>
+                <option>Equipe 10</option>
+            </select>
+
+            <label>Presentes:</label>
+            <input type="number" id="presentes">
+
+            <label>Faltas:</label>
+            <input type="number" id="faltas">
+
+            <label>Atestados:</label>
+            <input type="number" id="atestados">
+
+            <label>Férias:</label>
+            <input type="number" id="ferias">
+
+            <label>Observação:</label>
+            <textarea id="observacaoRelatorio"></textarea>
+
+            <button class="btn-primary" onclick="salvarRelatorio()">
+                Salvar Relatório
+            </button>
+
+        </div>
+    </div>
+
+</section>
+
                         <h2>Status de Máquinas e Moldes</h2>
                     </div>
                     <table>
