@@ -10,6 +10,8 @@ function limparEquipForm(){
 function limparMembroForm(){
     document.getElementById('membroNome').value = "";
     document.getElementById('membroCargo').value = "";
+    // TESTE GIT FUNCIONANDO
+
 }
 
 // --- FUNÇÃO DE TROCAR ABAS ---
@@ -118,3 +120,4 @@ document.addEventListener('keydown', (e) => {
         document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
     }
 });
+
