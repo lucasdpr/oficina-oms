@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Oficina MCC | Controle de Lingotamento</title>
+  <title>Oficina MCC | Sistema</title>
   <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 
 <body>
@@ -17,9 +17,27 @@
       </div>
 
       <nav>
-        <a href="#" class="active"><i class="fas fa-home"></i> Painel Principal</a>
-        <a href="#" id="menu-add-equip"><i class="fas fa-plus-circle"></i> Novo Equipamento</a>
-        <a href="#" id="menu-add-membro"><i class="fas fa-user-plus"></i> Novo Membro</a>
+        <a href="#" class="nav-link active" onclick="abrirAba(event,'aba-equip')">
+          <i class="fas fa-cogs"></i> Equipamentos
+        </a>
+
+        <a href="#" class="nav-link" onclick="abrirAba(event,'aba-membros')">
+          <i class="fas fa-users"></i> Membros
+        </a>
+
+        <a href="#" class="nav-link" onclick="abrirAba(event,'aba-relatorios')">
+          <i class="fas fa-file-alt"></i> Relatórios
+        </a>
+
+        <hr class="nav-sep" />
+
+        <a href="#" id="menu-add-equip" class="nav-link">
+          <i class="fas fa-plus-circle"></i> Novo Equipamento
+        </a>
+
+        <a href="#" id="menu-add-membro" class="nav-link">
+          <i class="fas fa-user-plus"></i> Novo Membro
+        </a>
       </nav>
     </aside>
 
@@ -28,22 +46,7 @@
         <h1>Sistema de Gerenciamento</h1>
       </header>
 
-      <!-- Abas do topo -->
-      <div class="tab-container">
-        <button class="tab-btn active" onclick="abrirAba(event, 'aba-equip')">
-          <i class="fas fa-cogs"></i> Equipamentos
-        </button>
-
-        <button class="tab-btn" onclick="abrirAba(event, 'aba-membros')">
-          <i class="fas fa-users"></i> Membros da Equipe
-        </button>
-
-        <button class="tab-btn" onclick="abrirAba(event, 'aba-relatorios')">
-          <i class="fas fa-file-alt"></i> Relatórios
-        </button>
-      </div>
-
-      <!-- ABA: Equipamentos -->
+      <!-- ✅ ABA EQUIPAMENTOS -->
       <section id="aba-equip" class="tab-content active">
         <div class="table-container">
           <div class="table-header">
@@ -65,62 +68,90 @@
         </div>
       </section>
 
-      <!-- ABA: Membros -->
+      <!-- ✅ ABA MEMBROS -->
       <section id="aba-membros" class="tab-content">
         <div class="table-container">
-  <div class="table-header">
-    <h2>Relatório Diário</h2>
-  </div>
+          <div class="table-header">
+            <h2>Membros cadastrados</h2>
+          </div>
 
-  <div style="display:grid; gap:12px; max-width:520px;">
-    <label>Data:</label>
-    <input type="date" id="dataRelatorio" />
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Cargo</th>
+                <th>Status</th>
+                <th>Ação</th>
+              </tr>
+            </thead>
+            <tbody id="membro-table"></tbody>
+          </table>
+        </div>
+      </section>
 
-    <label>Equipe:</label>
-    <select id="equipeRelatorio">
-      <option>Equipe 01</option>
-      <option>Equipe 02</option>
-      <option>Equipe 03</option>
-      <option>Equipe 04</option>
-      <option>Equipe 05</option>
-      <option>Equipe 06</option>
-      <option>Equipe 07</option>
-      <option>Equipe 08</option>
-      <option>Equipe 09</option>
-      <option>Equipe 10</option>
-    </select>
+      <!-- ✅ ABA RELATÓRIOS -->
+      <section id="aba-relatorios" class="tab-content">
+        <div class="table-container">
+          <div class="table-header">
+            <h2>Relatório Diário (por pessoa)</h2>
+            <button class="btn-secondary" onclick="pedirPIN()">
+              <i class="fas fa-key"></i> PIN (Líder/Sup.)
+            </button>
+          </div>
 
-    <label>Presentes:</label>
-    <input type="number" id="presentes" min="0" />
+          <div class="form-grid">
+            <div>
+              <label>Data:</label>
+              <input type="date" id="dataRelatorio" />
+            </div>
 
-    <label>Faltas:</label>
-    <input type="number" id="faltas" min="0" />
+            <div>
+              <label>Sub Área (Equipe fixa):</label>
+              <select id="subAreaRelatorio"></select>
+            </div>
 
-    <label>Atestados:</label>
-    <input type="number" id="atestados" min="0" />
+            <div>
+              <label>Líder/Supervisor:</label>
+              <input type="text" id="liderRelatorio" placeholder="Seu nome" />
+            </div>
 
-    <label>Férias:</label>
-    <input type="number" id="ferias" min="0" />
+            <div class="full">
+              <button class="btn-primary" onclick="salvarRelatorioPessoas()">
+                Salvar Relatório
+              </button>
+            </div>
 
-    <label>Observação:</label>
-    <textarea id="observacaoRelatorio" rows="4"></textarea>
+            <div class="full hint">
+              <small>
+                Status: Presente / Falta / Atestado / Férias • Hora Extra: até 18:18 (máx 1h)
+              </small>
+            </div>
+          </div>
 
-    <button class="btn-primary" onclick="salvarRelatorio()">
-      Salvar Relatório
-    </button>
-  </div>
-</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Matrícula</th>
+                <th>Status</th>
+                <th>Hora Extra</th>
+                <th>Obs</th>
+              </tr>
+            </thead>
+            <tbody id="presenca-table"></tbody>
+          </table>
+        </div>
       </section>
     </main>
   </div>
 
-  <!-- Modal Equipamento -->
+  <!-- MODAL EQUIP -->
   <div id="modal-equip" class="modal">
     <div class="modal-content">
       <h3>Gerenciar Equipamento</h3>
 
       <label>Máquina/Molde:</label>
-      <input type="text" id="equipNome" />
+      <input type="text" id="equipNome">
 
       <label>Status:</label>
       <select id="equipStatus">
@@ -146,16 +177,16 @@
     </div>
   </div>
 
-  <!-- Modal Membro -->
+  <!-- MODAL MEMBRO -->
   <div id="modal-membro" class="modal">
     <div class="modal-content">
-      <h3>Adicionar à Equipe</h3>
+      <h3>Adicionar Membro</h3>
 
       <label>Nome:</label>
-      <input type="text" id="membroNome" />
+      <input type="text" id="membroNome">
 
       <label>Cargo:</label>
-      <input type="text" id="membroCargo" />
+      <input type="text" id="membroCargo">
 
       <div class="modal-buttons">
         <button onclick="fecharModal('modal-membro')">Cancelar</button>
