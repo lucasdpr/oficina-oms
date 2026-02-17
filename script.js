@@ -1,5 +1,5 @@
 // ===== CONFIG =====
-const API_URL = "https://script.google.com/macros/s/AKfycbyz3u0MXrrKsny4VcFwYRljVIi1lsQzmXJ_4uP1bcGMLfDi2Ji1mxd7jq7GyZ_N3Ctd/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzEifzYDREyeC1cr_Y9Ge8X1p0W5dosgv1IqA-EdgiTnmrqZYo8brMB1hAwePIzKxDt/exec";
 const API_KEY = "oficina2026seguro";
 
 // PIN simples (um para todos) - opcional
@@ -212,9 +212,9 @@ async function salvarRelatorioPessoas() {
     return;
   }
 
-  const data = document.getElementById("dataRelatorio").value;
-  const subArea = document.getElementById("subAreaRelatorio").value;
-  const lider = document.getElementById("liderRelatorio").value.trim();
+  const data = document.getElementById("dataRelatorio")?.value || "";
+  const subArea = document.getElementById("subAreaRelatorio")?.value || "";
+  const lider = (document.getElementById("liderRelatorio")?.value || "").trim();
 
   if (!data) return alert("Escolha a data.");
   if (!subArea) return alert("Escolha a Sub Área.");
@@ -223,38 +223,36 @@ async function salvarRelatorioPessoas() {
 
   const pessoas = linhas.map(tr => {
     const matricula = tr.dataset.matricula;
-    const status = tr.querySelector(".statusSelect").value;
-    const horaExtra = tr.querySelector(".heCheck").checked ? "Sim" : "Não";
-    const obs = tr.querySelector(".obsInput").value || "";
+    const status = tr.querySelector(".statusSelect")?.value || "Presente";
+    const horaExtra = tr.querySelector(".heCheck")?.checked ? "Sim" : "Não";
+    const obs = tr.querySelector(".obsInput")?.value || "";
 
-    const horarioNormal = "17:18";
-    const horarioHE = "18:18";
-    const saida = horaExtra === "Sim" ? horarioHE : horarioNormal;
-
+    const saida = horaExtra === "Sim" ? "18:18" : "17:18";
     return { matricula, status, horaExtra, saida, obs };
   });
 
   const payload = { data, subArea, lider, pessoas };
 
   try {
-    // Aqui não usamos no-cors, porque seu Apps Script deve responder JSON
-    const resp = await fetch(`${API_URL}?key=${encodeURIComponent(API_KEY)}`, {
+    const response = await fetch(`${API_URL}?key=${encodeURIComponent(API_KEY)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
+                                       
+    const result = await response.json();
+    console.log(result);
 
-    const json = await resp.json().catch(() => ({}));
-
-    if (resp.ok && (json.ok === true || json.ok === undefined)) {
-      alert("Relatório enviado ✅ Confere a planilha.");
+    if (result.ok) {
+      alert("Relatório salvo com sucesso!");
     } else {
-      alert("Erro ao enviar: " + JSON.stringify(json));
+      alert("Erro: " + JSON.stringify(result));
     }
   } catch (err) {
     alert("Falha de conexão: " + err.message);
   }
 }
+
 
 // ===== INIT =====
 document.addEventListener("DOMContentLoaded", () => {
