@@ -161,7 +161,7 @@ function calcularKpisGlobais() {
 }
 
 // ==========================================================================
-// RENDERIZAÇÃO EM LINHA HORIZONTAL COMPLETA (CORRIGIDA PARA AMBOS DISPOSITIVOS)
+// RENDERIZAÇÃO INDUSTRIAL COMPLETA (VISUAL DOS CARDS RESTAURADO)
 // ==========================================================================
 function renderPainelVeios() {
   const container = document.getElementById("container-fluxo-horizontal-scroll");
@@ -170,7 +170,6 @@ function renderPainelVeios() {
 
   titulo.innerHTML = `<i class="fas fa-eye"></i> Fluxo Sequencial: <strong>Veio ${VEIO_SELECIONADO_PAINEL}</strong>`;
   
-  // Tratamento robusto para buscar o veio mesmo se houver variação de espaços no HTML
   let ativosDoVeio = BANCO_ATIVOS.filter(a => a.local.includes(`Veio ${VEIO_SELECIONADO_PAINEL}`));
 
   if (ativosDoVeio.length === 0) {
@@ -178,29 +177,30 @@ function renderPainelVeios() {
     return;
   }
 
+  // AJUSTADO AQUI: Forçando a renderização com as classes certas do CSS para criar os blocos e barras visuais
   container.innerHTML = ativosDoVeio.map(a => {
     const pct = ((a.ton / a.meta) * 100).toFixed(0);
-    let corBarra = "var(--success)";
-    if (pct > 75) corBarra = "var(--panic)";
-    if (pct > 85) corBarra = "var(--danger)";
+    let corBarra = "#2ec4b6"; // Verde/Ciano padrão de sucesso
+    if (pct > 75) corBarra = "#ff9f1c"; // Amarelo/Laranja Alerta
+    if (pct > 85) corBarra = "#e71d36"; // Vermelho Crítico
 
     return `
-      <div class="industrial-fluxo-card">
-        <div class="ind-card-top">
+      <div class="industrial-fluxo-card" style="background: #1e222b; border-radius: 8px; padding: 15px; margin-bottom: 15px; border-left: 4px solid ${corBarra};">
+        <div class="ind-card-top" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
           <div>
-            <span class="ind-card-tag">${a.tipo}</span>
-            <div class="ind-card-id">${a.id} ${a.acionada ? '⚡' : ''}</div>
+            <span class="ind-card-tag" style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-size: 11px; color: #a0aec0; text-transform: uppercase;">${a.tipo}</span>
+            <div class="ind-card-id" style="font-size: 18px; font-weight: bold; color: #fff; margin-top: 4px;">${a.id} ${a.acionada ? '<i class="fas fa-bolt" style="color:#ff9f1c;"></i>' : ''}</div>
           </div>
-          <div class="ind-card-pos">${a.pos}</div>
+          <div class="ind-card-pos" style="font-size: 12px; color: #a0aec0; background: #1a202c; padding: 4px 8px; border-radius: 4px;">${a.pos}</div>
         </div>
         
         <div class="ind-card-gauge">
-          <div class="ind-gauge-bar">
-            <div class="ind-gauge-fill" style="width: ${Math.min(pct, 100)}%; background: ${corBarra};"></div>
+          <div class="ind-gauge-bar" style="background: #2d3748; height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 6px;">
+            <div class="ind-gauge-fill" style="width: ${Math.min(pct, 100)}%; background: ${corBarra}; height: 100%; transition: width 0.3s ease;"></div>
           </div>
-          <div class="ind-gauge-text">
+          <div class="ind-gauge-text" style="display: flex; justify-content: space-between; font-size: 12px; color: #e2e8f0;">
             <span>${pct}% de Desgaste</span>
-            <span>${Math.round(a.ton).toLocaleString()} t</span>
+            <span style="font-weight: 600;">${Math.round(a.ton).toLocaleString()} t / ${a.meta.toLocaleString()} t</span>
           </div>
         </div>
       </div>
@@ -429,6 +429,10 @@ function dispararEmergencia(tipo) {
   localStorage.setItem("oms_emergencia_v10", JSON.stringify(EM_EMERGENCIA));
   registrarOcorrenciaDigital("SISTEMA", "PÂNICO", `Botão de pânico pressionado: ${tipo}`);
   exibirBarraEmergencia();
+}
+
+function componentWillUnmount() {
+  // Mantendo a integridade estrutural do arquivo
 }
 
 function encerrarEmergencia() {
