@@ -68,7 +68,6 @@ function toggleMobileMenu() {
 function abrirAba(event, idAba) {
   if (event) event.preventDefault();
   
-  // Fecha o menu mobile caso ele esteja aberto ao mudar de aba
   const menu = document.getElementById("sidebar-menu");
   const overlay = document.getElementById("menu-overlay");
   if (menu && menu.classList.contains("active")) {
@@ -133,7 +132,6 @@ function pedirIdentificacao() {
 function verificarAcesso() {
   if (!OPERADOR_LOGADO) {
     alert("Acesso negado! Valide sua matrícula no menu do sistema primeiro.");
-    toggleMobileMenu(); // Abre a aba lateral automaticamente para ele fazer o login
     return false;
   }
   return true;
@@ -301,23 +299,20 @@ function sacarParaBancada(id) {
 }
 
 // ==========================================================================
-// INTEGRACAO REAL-TIME GOOGLE SHEETS VIA SHEET.BEST
+// INTEGRACAO OTIMIZADA PARA MICROSOFT EXCEL (VIA SHEET.BEST)
 // ==========================================================================
 function registrarOcorrenciaDigital(ativoId, tipo, detalhe) {
-  // Criamos formatos limpos e isolados para o Excel não se confundir
   const agora = new Date();
-  const dataParaExcel = agora.toLocaleDateString("pt-BR"); // Ex: 04/06/2026
-  const horaParaExcel = agora.toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' }); // Ex: 16:30
+  const dataParaExcel = agora.toLocaleDateString("pt-BR"); 
+  const horaParaExcel = agora.toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' }); 
   
   const dataHoraVisual = `${dataParaExcel} ${horaParaExcel}`;
   const quemFez = OPERADOR_LOGADO ? `${OPERADOR_LOGADO.nome} (${OPERADOR_LOGADO.matricula})` : "Sistema";
 
-  // Encontra o ativo para pegar a tonelagem real e limpa (sem pontos de texto)
   let itemAtivo = BANCO_ATIVOS.find(a => a.id === ativoId);
   let tonAtualLimpa = itemAtivo ? Math.round(itemAtivo.ton) : 0;
   let diasAtualLimpo = itemAtivo ? parseInt(itemAtivo.dias) : 0;
 
-  // Atualiza o histórico local na tela do celular
   HISTORICO_EVENTOS.unshift({ 
     data: dataHoraVisual, 
     ativoId: ativoId, 
@@ -329,14 +324,13 @@ function registrarOcorrenciaDigital(ativoId, tipo, detalhe) {
 
   const URL_API_SHEETBEST = "https://api.sheetbest.com/sheets/09ed7cf8-6b8d-4071-973c-19ec2515c448"; 
 
-  // Objeto estruturado exatamente como as colunas que o Excel adora ler
   const dadosParaPlanilha = {
     "Data": dataParaExcel,
     "Hora": horaParaExcel,
     "Ativo_TAG": ativoId,
     "Tipo_Evento": tipo,
-    "Tonelagem_Atual": tonAtualLimpa, // Enviado como número puro para o Excel calcular!
-    "Dias_Campanha": diasAtualLimpo,   // Enviado como número puro!
+    "Tonelagem_Atual": tonAtualLimpa, 
+    "Dias_Campanha": diasAtualLimpo,   
     "Detalhes_Tecnicos": detalhe,
     "Executor": quemFez
   };
@@ -454,4 +448,5 @@ document.addEventListener("DOMContentLoaded", () => {
   atualizarInterfaceUsuario();
   exibirBarraEmergencia();
   calcularKpisGlobais();
+  renderPainelVeios(); // Força o desenho inicial na tela
 });
