@@ -161,7 +161,7 @@ function calcularKpisGlobais() {
 }
 
 // ==========================================================================
-// RENDERIZAÇÃO EM LINHA HORIZONTAL COMPLETA (SEM QUEBRAS DE TEXTO)
+// RENDERIZAÇÃO EM LINHA HORIZONTAL COMPLETA (CORRIGIDA PARA AMBOS DISPOSITIVOS)
 // ==========================================================================
 function renderPainelVeios() {
   const container = document.getElementById("container-fluxo-horizontal-scroll");
@@ -169,10 +169,12 @@ function renderPainelVeios() {
   if (!container || !titulo) return;
 
   titulo.innerHTML = `<i class="fas fa-eye"></i> Fluxo Sequencial: <strong>Veio ${VEIO_SELECIONADO_PAINEL}</strong>`;
-  let ativosDoVeio = BANCO_ATIVOS.filter(a => a.local.endsWith(`Veio ${VEIO_SELECIONADO_PAINEL}`));
+  
+  // Tratamento robusto para buscar o veio mesmo se houver variação de espaços no HTML
+  let ativosDoVeio = BANCO_ATIVOS.filter(a => a.local.includes(`Veio ${VEIO_SELECIONADO_PAINEL}`));
 
   if (ativosDoVeio.length === 0) {
-    container.innerHTML = `<div class="vazio" style="color:var(--muted); padding: 20px;">Nenhum componente ativo listado.</div>`;
+    container.innerHTML = `<div class="vazio" style="color:var(--muted); padding: 20px; text-align: center; width: 100%;">Nenhum componente ativo listado para o Veio ${VEIO_SELECIONADO_PAINEL}.</div>`;
     return;
   }
 
@@ -448,5 +450,5 @@ document.addEventListener("DOMContentLoaded", () => {
   atualizarInterfaceUsuario();
   exibirBarraEmergencia();
   calcularKpisGlobais();
-  renderPainelVeios(); // Força o desenho inicial na tela
+  renderPainelVeios(); 
 });
