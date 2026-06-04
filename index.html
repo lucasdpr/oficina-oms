@@ -3,17 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Oficina MCC | Controle de Ativos</title>
+  <title>Oficina OMS | Gestão Integrada de Ativos</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 
 <body>
+  <div class="emergency-bar" id="barra-emergencia" style="display: none;">
+    <div class="emergency-content">
+      <i class="fas fa-exclamation-triangle fa-spin"></i>
+      <span><strong>ALERTA DE EMERGÊNCIA OPERACIONAL ATIVO:</strong> <span id="texto-emergencia"></span></span>
+      <button class="btn-xs-clear" onclick="encerrarEmergencia()">Encerrar Ocorrência</button>
+    </div>
+  </div>
+
   <div class="container">
     <aside class="sidebar">
       <div class="logo">
         <i class="fas fa-industry"></i>
-        <span>Oficina MCC</span>
+        <span>Oficina OMS</span>
       </div>
 
       <nav>
@@ -26,151 +34,167 @@
         </a>
 
         <a href="#" class="nav-link" onclick="abrirAba(event,'aba-intervencao')">
-          <i class="fas fa-tools"></i> Registrar Intervenção
+          <i class="fas fa-tools"></i> Ordens e Intervenções
         </a>
 
         <hr class="nav-sep" />
 
         <div class="user-status-box">
-          <small>Operador Conectado:</small>
-          <div id="nome-operador-logado" style="font-weight: bold; color: var(--accent-color);">Não identificado</div>
+          <small><i class="fas fa-user-shield"></i> Operador Autenticado:</small>
+          <div id="nome-operador-logado" style="font-weight: bold; color: var(--accent-color); margin: 4px 0;">Não identificado</div>
           <button class="btn-xs" onclick="pedirIdentificacao()"><i class="fas fa-user-check"></i> Validar Matrícula</button>
         </div>
       </nav>
     </aside>
 
     <main class="main-content">
-      <header>
-        <h1>Controle de Vida Útil e Campanhas - Lingotamento</h1>
+      <header class="main-header">
+        <div>
+          <h1>Controle de Vida Útil e Campanhas - Lingotamento</h1>
+          <p class="subtitle">Oficina de Manutenção de Segmentos (OMS)</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn-danger-panic" onclick="dispararEmergencia('Transbordo de Aço')"><i class="fas fa-fire"></i> Transbordo de Aço</button>
+          <button class="btn-danger-panic" onclick="dispararEmergencia('Placa Presa na Linha')"><i class="fas fa-border-all"></i> Placa Presa</button>
+        </div>
       </header>
 
       <section id="aba-painel" class="tab-content active">
-        <div class="mcc-container">
-          <div class="mcc-card">
-            <h3><i class="fas fa-server"></i> MCC #2</h3>
-            <div class="veios-grid">
-              <div class="veio-box"><h4>Veio C</h4><div id="veio-C-status" class="fluxo-ativos"></div></div>
-              <div class="veio-box"><h4>Veio D</h4><div id="veio-D-status" class="fluxo-ativos"></div></div>
-            </div>
-          </div>
-          <div class="mcc-card">
-            <h3><i class="fas fa-server"></i> MCC #3</h3>
-            <div class="veios-grid">
-              <div class="veio-box"><h4>Veio E</h4><div id="veio-E-status" class="fluxo-ativos"></div></div>
-              <div class="veio-box"><h4>Veio F</h4><div id="veio-F-status" class="fluxo-ativos"></div></div>
-            </div>
-          </div>
-          <div class="mcc-card full-width-mcc">
-            <h3><i class="fas fa-server"></i> MCC #4 (Bender & Horizontais 1 a 17)</h3>
-            <div class="veios-grid">
-              <div class="veio-box"><h4>Veio G</h4><div id="veio-G-status" class="fluxo-ativos"></div></div>
-              <div class="veio-box"><h4>Veio H</h4><div id="veio-H-status" class="fluxo-ativos"></div></div>
-            </div>
-          </div>
+  <div class="kpi-grid">
+    <div class="kpi-card" style="border-left: 4px solid var(--danger);">
+      <small>CRÍTICOS (>85% VIDA)</small>
+      <h2 id="kpi-criticos">0</h2>
+    </div>
+    <div class="kpi-card" style="border-left: 4px solid var(--accent-color);">
+      <small>EM MANUTENÇÃO / BANCADA</small>
+      <h2 id="kpi-bancada">0</h2>
+    </div>
+    <div class="kpi-card" style="border-left: 4px solid var(--success);">
+      <small>MOLDES DISPONÍVEIS</small>
+      <h2 id="kpi-moldes">0</h2>
+    </div>
+  </div>
+
+  <div class="veio-selector-tabs">
+    <span class="veio-tab-title"><i class="fas fa-project-diagram"></i> Selecione o Veio para Inspeção:</span>
+    <div class="veio-tab-buttons">
+      <button class="btn-veio-tab active" onclick="mudarVeioVisualizado('C')">Veio C (MCC2)</button>
+      <button class="btn-veio-tab" onclick="mudarVeioVisualizado('D')">Veio D (MCC2)</button>
+      <button class="btn-veio-tab" onclick="mudarVeioVisualizado('E')">Veio E (MCC3)</button>
+      <button class="btn-veio-tab" onclick="mudarVeioVisualizado('F')">Veio F (MCC3)</button>
+      <button class="btn-veio-tab" onclick="mudarVeioVisualizado('G')">Veio G (MCC4)</button>
+      <button class="btn-veio-tab" onclick="mudarVeioVisualizado('H')">Veio H (MCC4)</button>
+    </div>
+  </div>
+
+  <div class="mcc-single-view">
+    <div class="mcc-card">
+      <h3 id="titulo-veio-focado"><i class="fas fa-eye"></i> Monitoramento Ativo: Veio C</h3>
+      <div id="container-fluxo-focado" class="fluxo-ativos-vertical">
         </div>
-      </section>
+    </div>
+  </div>
+</section>
 
       <section id="aba-ativos" class="tab-content">
         <div class="table-container">
           <div class="table-header">
-            <h2>Gerenciamento de Linha (Dê 1 clique sobre Dias ou TON para alterar)</h2>
+            <h2>Gerenciamento de Linha (1 clique em Dias ou TON para editar)</h2>
             <div class="filter-container">
-              <label><i class="fas fa-filter"></i> Filtrar Componente:</label>
+              <label><i class="fas fa-filter"></i> Componente:</label>
               <select id="filtro-tipo-ativo" onchange="renderAtivos()">
                 <option value="TODOS">Todos os Componentes</option>
                 <option value="Molde">Moldes</option>
-                <option value="Oscilador">Osciladores</option>
-                <option value="Seguimento Zero / Bender">Seguimento Zero / Bender</option>
-                <option value="Seguimento Bow">Seguimento Bow (Curva)</option>
-                <option value="Horizontal / Desendireitador">Horizontais / Desendireitadores</option>
+                <option value="Mesa Osciladora">Mesas Osciladoras</option>
+                <option value="Seguimento Zero">Seguimento Zero</option>
+                <option value="Câmara de Exaustão">Câmara de Exaustão (Seg. 1 a 6)</option>
+                <option value="Cadeira Inferior">Cadeiras Inferiores (43 a 79)</option>
+                <option value="Cadeira Superior">Cadeiras Superiores (43 a 79)</option>
+                <option value="Bender / Horizontais (MCC4)">Bender / Horizontais (MCC4)</option>
+                <option value="ACIONADOS">Apenas Cadeiras Motorizadas (Acionadas)</option>
               </select>
             </div>
           </div>
 
-          <table>
-            <thead>
-              <tr>
-                <th>Nº Equipamento</th>
-                <th>Tipo/Componente</th>
-                <th>Posição Operacional</th>
-                <th>Dias de Campanha</th>
-                <th>Corridas / TON Atual</th>
-                <th>Limite / Meta TON</th>
-                <th>Vida Consumida</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="ativos-table-body">
-              </tbody>
-          </table>
+          <div class="responsive-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID Equipamento</th>
+                  <th>Componente</th>
+                  <th>Posição Operacional</th>
+                  <th>Dias Campanha</th>
+                  <th>TON Atual</th>
+                  <th>Meta TON</th>
+                  <th>Vida Útil</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="ativos-table-body">
+                </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
       <section id="aba-intervencao" class="tab-content">
         <div class="table-container">
           <div class="table-header">
-            <h2>Lançamento de Ocorrências e Ajustes de Parada</h2>
+            <h2>Fluxo de Ordem de Serviço & Checks de Não Conformidade</h2>
           </div>
 
           <div class="form-grid">
             <div>
-              <label>Selecione o Equipamento:</label>
+              <label>Equipamento Alvo:</label>
               <select id="form-ativo-alvo"></select>
             </div>
 
             <div>
               <label>Tipo de Evento:</label>
               <select id="form-tipo-evento" onchange="ajustarCamposIntervencao()">
-                <option value="Reparo Parcial">🛠️ Reparo Parcial (Abater Corridas/TON)</option>
-                <option value="Troca de Ativo">🔄 Troca de Ativo (Sacar da Máquina)</option>
-                <option value="Transbordo de Aço">🔥 Ocorrência Grave: Transbordo de Aço</option>
-                <option value="Avaliação de Rolos/Espetores">🔍 Avaliação de Rolos e Espetores</option>
+                <option value="Check de Nao Conformidade">📋 Check de Não Conformidade (Molde sem OS)</option>
+                <option value="Ordem de Servico">🔧 Executar Ordem de Serviço (OS Gerência)</option>
+                <option value="Reparo Parcial">🛠️ Melhoria em Bancada (Abater TON)</option>
               </select>
             </div>
 
-            <div id="campo-abatimento">
-              <label style="color: #38bdf8;">Reduzir quantas TON do acumulado? (Melhoria em Bancada):</label>
+            <div id="campo-os-numero" style="display:none;">
+              <label style="color: var(--accent-color);">Número da OS (SAP/Gerência):</label>
+              <input type="text" id="form-os-input" placeholder="Ex: OS-2026-9081">
+            </div>
+
+            <div id="campo-abatimento" style="display:none;">
+              <label style="color: #34d399;">Quantidade de TON a Reduzir:</label>
               <input type="number" id="form-ton-abatida" value="0">
             </div>
 
-            <div id="campo-posicao-veio" style="display:none;">
-              <label>Destino do Ativo Sacado:</label>
-              <select id="form-nova-posicao">
-                <option value="Bancada / Oficina">Bancada / Oficina (Manutenção/Reserva)</option>
-                <option value="MCC 2 - Veio C">Montar na MCC 2 - Veio C</option>
-                <option value="MCC 2 - Veio D">Montar na MCC 2 - Veio D</option>
-                <option value="MCC 3 - Veio E">Montar na MCC 3 - Veio E</option>
-                <option value="MCC 3 - Veio F">Montar na MCC 3 - Veio F</option>
-                <option value="MCC 4 - Veio G">Montar na MCC 4 - Veio G</option>
-                <option value="MCC 4 - Veio H">Montar na MCC 4 - Veio H</option>
-              </select>
+            <div class="full">
+              <label>Relato Técnico do Inspetor / Supervisor de Turno:</label>
+              <textarea id="form-obs-evento" rows="3" placeholder="Insira as medições de rolos, folgas de espetores ou falhas mecânicas detectadas..."></textarea>
             </div>
 
             <div class="full">
-              <label>Relato Técnico do Supervisor / Líder de Turno:</label>
-              <textarea id="form-obs-evento" rows="3" placeholder="Relate o estado dos rolos, substituição de espetores ou motivos do transbordo de aço..."></textarea>
-            </div>
-
-            <div class="full">
-              <button class="btn-primary" onclick="salvarIntervencao()"><i class="fas fa-check-circle"></i> Sincronizar Registro em Tempo Real</button>
+              <button class="btn-primary" onclick="salvarIntervencao()"><i class="fas fa-sync"></i> Enviar Registro para a Linha em Tempo Real</button>
             </div>
           </div>
 
-          <div style="margin-top: 24px;">
-            <h3>Livro de Registro Digital (Últimos Eventos Salvos)</h3>
-            <table style="margin-top: 10px;">
-              <thead>
-                <tr>
-                  <th>Data/Hora</th>
-                  <th>Equipamento</th>
-                  <th>Tipo Evento</th>
-                  <th>Descrição / Ajuste Aplicado</th>
-                  <th>Responsável (Matrícula)</th>
-                </tr>
-              </thead>
-              <tbody id="historico-eventos-body">
-                </tbody>
-            </table>
+          <div style="margin-top: 30px;">
+            <h3>Livro de Registro Digital (Livro de Ocorrências da OMS)</h3>
+            <div class="responsive-table" style="margin-top: 12px;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Data/Hora</th>
+                    <th>Ativo</th>
+                    <th>Tipo</th>
+                    <th>Descrição Técnico / Detalhes</th>
+                    <th>Responsável</th>
+                  </tr>
+                </thead>
+                <tbody id="historico-eventos-body">
+                  </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </section>

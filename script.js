@@ -1,39 +1,76 @@
-// ===== BANCO DE DADOS PERSISTENTE =====
-let BANCO_ATIVOS = JSON.parse(localStorage.getItem("mcc_ativos_v3")) || [
-  // MOLDES MCC 4
-  { id: "Molde 02", tipo: "Molde", local: "MCC 4 - Veio G", pos: "Molde", dias: 120, ton: 340000, meta: 1500000 },
-  { id: "Molde 03", tipo: "Molde", local: "Bancada / Oficina", pos: "Reserva", dias: 45, ton: 110000, meta: 1500000 },
-  { id: "Molde 04", tipo: "Molde", local: "MCC 4 - Veio H", pos: "Molde", dias: 210, ton: 980000, meta: 1500000 },
-  { id: "Molde 05", tipo: "Molde", local: "Bancada / Oficina", pos: "Reserva", dias: 0, ton: 0, meta: 1500000 },
-  { id: "Molde 06", tipo: "Molde", local: "Bancada / Oficina", pos: "Reserva", dias: 12, ton: 25000, meta: 1500000 },
+// ===== INICIALIZAÇÃO E MODELAGEM DO BANCO DE DADOS DA OMS =====
+let BANCO_ATIVOS = JSON.parse(localStorage.getItem("oms_ativos_v5"));
 
-  // MOLDES UNIVERSAIS (MCC 2 / MCC 3)
-  { id: "Molde UNI-01", tipo: "Molde", local: "MCC 2 - Veio C", pos: "Molde", dias: 80, ton: 290000, meta: 1200000 },
-  { id: "Molde UNI-02", tipo: "Molde", local: "MCC 2 - Veio D", pos: "Molde", dias: 95, ton: 410000, meta: 1200000 },
-  { id: "Molde UNI-03", tipo: "Molde", local: "MCC 3 - Veio E", pos: "Molde", dias: 15, ton: 65000, meta: 1200000 },
-  { id: "Molde UNI-04", tipo: "Molde", local: "MCC 3 - Veio F", pos: "Molde", dias: 140, ton: 890000, meta: 1200000 },
+if (!BANCO_ATIVOS) {
+  BANCO_ATIVOS = [];
+  const veiosMcc23 = [
+    { mcc: 2, veio: "C" }, { mcc: 2, veio: "D" },
+    { mcc: 3, veio: "E" }, { mcc: 3, veio: "F" }
+  ];
 
-  // OSCILADORES
-  { id: "OSC-MCC4-G", tipo: "Oscilador", local: "MCC 4 - Veio G", pos: "Oscilador", dias: 200, ton: 600000, meta: 2000000 },
-  { id: "OSC-MCC4-H", tipo: "Oscilador", local: "MCC 4 - Veio H", pos: "Oscilador", dias: 150, ton: 450000, meta: 2000000 },
+  // GERAÇÃO AUTOMÁTICA DAS MÁQUINAS 2 E 3 (Mapeamento Fiel do Áudio Técnico)
+  veiosMcc23.forEach(m => {
+    const vNome = `MCC ${m.mcc} - Veio ${m.veio}`;
+    
+    // 1. Molde e Mesa Osciladora (Conjunto único conforme áudio)
+    BANCO_ATIVOS.push({ id: `MLD-${m.mcc}${m.veio}`, tipo: "Molde", local: vNome, pos: "Molde", dias: 12, ton: 140000, meta: 1200000 });
+    BANCO_ATIVOS.push({ id: `OSC-${m.mcc}${m.veio}`, tipo: "Mesa Osciladora", local: vNome, pos: "Mesa Osciladora", dias: 45, ton: 320000, meta: 1800000 });
+    
+    // 2. Seguimento Zero
+    BANCO_ATIVOS.push({ id: `SEG-0-${m.mcc}${m.veio}`, tipo: "Seguimento Zero", local: vNome, pos: "Seg. Zero", dias: 90, ton: 610000, meta: 2200000 });
+    
+    // 3. Câmara de Exaustão (6 Segmentos do 1 ao 6)
+    for (let s = 1; s <= 6; s++) {
+      BANCO_ATIVOS.push({ id: `SEG-${s}-${m.mcc}${m.veio}`, tipo: "Câmara de Exaustão", local: vNome, pos: `Seg. Exaustão ${s}`, dias: 110, ton: 750000, meta: 2500000 });
+    }
 
-  // SEGUIMENTO ZERO (MCC 2 e 3) / BENDER (MCC 4)
-  { id: "SEG-0-MCC2C", tipo: "Seguimento Zero / Bender", local: "MCC 2 - Veio C", pos: "Seg. Zero", dias: 310, ton: 1100000, meta: 2500000 },
-  { id: "Bender-B-5", tipo: "Seguimento Zero / Bender", local: "MCC 4 - Veio G", pos: "Bender", dias: 118, ton: 181564, meta: 1100000 },
-  { id: "Bender-B-2", tipo: "Seguimento Zero / Bender", local: "MCC 4 - Veio H", pos: "Bender", dias: 79, ton: 251031, meta: 1100000 },
+    // 4. Trem de Cadeiras (43 a 79) - 36 Superiores e 36 Inferiores por Veio (Total 72)
+    const cadeirasAcionadas = [45, 48, 52, 55, 56, 59, 60, 63, 67, 71, 76, 77, 78, 79];
+    
+    for (let c = 43; c <= 79; c++) {
+      let eAcionada = cadeirasAcionadas.includes(c);
+      
+      // Inferiores (Podem ser acionadas/motorizadas)
+      BANCO_ATIVOS.push({
+        id: `CAD-INF-${c}-${m.mcc}${m.veio}`,
+        tipo: "Cadeira Inferior",
+        local: vNome,
+        pos: `Cadeira Inf ${c}`,
+        dias: 210,
+        ton: 890000,
+        meta: 3000000,
+        acionada: eAcionada
+      });
 
-  // SEGUIMENTOS BOW (CURVA)
-  { id: "SEG-BOW-C07", tipo: "Seguimento Bow", local: "MCC 4 - Veio G", pos: "Bow Pos. 2", dias: 187, ton: 998546, meta: 1900000 },
-  { id: "SEG-BOW-C01", tipo: "Seguimento Bow", local: "MCC 4 - Veio G", pos: "Bow Pos. 3", dias: 457, ton: 1772338, meta: 1900000 },
+      // Superiores (Nunca são acionadas conforme áudio)
+      BANCO_ATIVOS.push({
+        id: `CAD-SUP-${c}-${m.mcc}${m.veio}`,
+        tipo: "Cadeira Superior",
+        local: vNome,
+        pos: `Cadeira Sup ${c}`,
+        dias: 140,
+        ton: 420000,
+        meta: 3000000,
+        acionada: false
+      });
+    }
+  });
 
-  // MCC 4 HORIZONTAIS & DESENDIREITADOR (POSIÇÃO 7)
-  { id: "SEG-HOR-H07", tipo: "Horizontal / Desendireitador", local: "MCC 4 - Veio G", pos: "Horizontal 1", dias: 408, ton: 729972, meta: 3300000 },
-  { id: "DESEND-RI-02", tipo: "Horizontal / Desendireitador", local: "MCC 4 - Veio G", pos: "Desendireitador (Pos 7)", dias: 580, ton: 1104341, meta: 1700000 },
-  { id: "SEG-HOR-H08", tipo: "Horizontal / Desendireitador", local: "MCC 4 - Veio G", pos: "Horizontal 8", dias: 408, ton: 81339, meta: 3300000 },
-  { id: "SEG-HOR-H11", tipo: "Horizontal / Desendireitador", local: "MCC 4 - Veio G", pos: "Horizontal 9", dias: 606, ton: 821248, meta: 3300000 }
-];
+  // GERAÇÃO MAQUINA 4
+  const veiosMcc4 = ["G", "H"];
+  veiosMcc4.forEach(v => {
+    const vNome = `MCC 4 - Veio ${v}`;
+    BANCO_ATIVOS.push({ id: `MLD-4${v}`, tipo: "Molde", local: vNome, pos: "Molde", dias: 65, ton: 410000, meta: 1500000 });
+    BANCO_ATIVOS.push({ id: `OSC-4${v}`, tipo: "Mesa Osciladora", local: vNome, pos: "Mesa Osciladora", dias: 70, ton: 490000, meta: 1800000 });
+    BANCO_ATIVOS.push({ id: `BND-4${v}`, tipo: "Bender / Horizontais (MCC4)", local: vNome, pos: "Bender", dias: 118, ton: 520000, meta: 1100000 });
+    BANCO_ATIVOS.push({ id: `HOR-1-4${v}`, tipo: "Bender / Horizontais (MCC4)", local: vNome, pos: "Horizontal 1", dias: 340, ton: 910000, meta: 3300000 });
+  });
 
-let HISTORICO_EVENTOS = JSON.parse(localStorage.getItem("mcc_historico_v3")) || [];
+  localStorage.setItem("oms_ativos_v5", JSON.stringify(BANCO_ATIVOS));
+}
+
+let HISTORICO_EVENTOS = JSON.parse(localStorage.getItem("oms_historico_v5")) || [];
+let EM_EMERGENCIA = JSON.parse(localStorage.getItem("oms_emergencia_v5")) || null;
 
 const CADASTRO_MATRICULAS = {
   "40090430": "Filipe Silva Souza (Líder)",
@@ -42,26 +79,28 @@ const CADASTRO_MATRICULAS = {
   "40090851": "Samuel dos Santos Generoso (Líder)",
   "1011": "Supervisor de Área"
 };
-
-let OPERADOR_LOGADO = JSON.parse(localStorage.getItem("mcc_operador_atual")) || null;
+let OPERADOR_LOGADO = JSON.parse(localStorage.getItem("oms_operador_v5")) || null;
+let VEIO_SELECIONADO_PAINEL = "C";
 
 // ===== CONTROLE DE AUTENTICAÇÃO =====
 function pedirIdentificacao() {
-  const m = prompt("Digite sua matrícula operacional para liberar alterações:");
+  const m = prompt("Digite sua matrícula operacional da OMS:");
   if (!m) return;
   if (CADASTRO_MATRICULAS[m.trim()]) {
     OPERADOR_LOGADO = { matricula: m.trim(), nome: CADASTRO_MATRICULAS[m.trim()] };
-    localStorage.setItem("mcc_operador_atual", JSON.stringify(OPERADOR_LOGADO));
+    localStorage.setItem("oms_operador_v5", JSON.stringify(OPERADOR_LOGADO));
     atualizarInterfaceUsuario();
-    alert("Identificação Confirmada: " + OPERADOR_LOGADO.nome);
+    renderAtivos();
+    renderPainelVeios();
+    alert(`Acesso liberado! Bem-vindo, ${OPERADOR_LOGADO.nome}.`);
   } else {
-    alert("Matrícula inválida.");
+    alert("Matrícula não homologada na oficina.");
   }
 }
 
 function verificarAcesso() {
   if (!OPERADOR_LOGADO) {
-    alert("Acesso Negado! Identifique sua matrícula na barra lateral primeiro.");
+    alert("Acesso Negado! Valide sua matrícula operacional na barra lateral primeiro.");
     pedirIdentificacao();
     return false;
   }
@@ -70,90 +109,125 @@ function verificarAcesso() {
 
 function atualizarInterfaceUsuario() {
   const el = document.getElementById("nome-operador-logado");
-  if (el) {
-    el.innerText = OPERADOR_LOGADO ? OPERADOR_LOGADO.nome : "Não identificado";
-  }
+  if (el) el.innerText = OPERADOR_LOGADO ? OPERADOR_LOGADO.nome : "Não identificado";
 }
 
 // ===== CONTROLE DE ABAS =====
 function abrirAba(e, idAba) {
-  e.preventDefault();
+  if (e) e.preventDefault();
   document.querySelectorAll(".tab-content").forEach(b => b.classList.remove("active"));
   document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
-  e.currentTarget.classList.add("active");
-  document.getElementById(idAba).classList.add("active");
+  
+  if (e && e.currentTarget) e.currentTarget.classList.add("active");
+  const aba = document.getElementById(idAba);
+  if (aba) aba.classList.add("active");
 
   if (idAba === "aba-painel") renderPainelVeios();
   if (idAba === "aba-ativos") renderAtivos();
   if (idAba === "aba-intervencao") inicializarAbaIntervencao();
 }
 
-// ===== ABA 1: PAINEL SEQUENCIAL DO FLUXO DO AÇO =====
-function renderPainelVeios() {
-  const veios = ["C", "D", "E", "F", "G", "H"];
-  
-  veios.forEach(v => {
-    const container = document.getElementById(`veio-${v}-status`);
-    if (!container) return;
-
-    let emOperacao = BANCO_ATIVOS.filter(a => a.local.endsWith(`Veio ${v}`));
-
-    if (emOperacao.length === 0) {
-      container.innerHTML = `<div class="vazio" style="color:#555; font-style:italic; padding:10px;">Veio sem ativos configurados</div>`;
-      return;
+function mudarVeioVisualizado(veioNome) {
+  VEIO_SELECIONADO_PAINEL = veioNome;
+  document.querySelectorAll(".btn-veio-tab").forEach(btn => {
+    if (btn.innerText.includes(`Veio ${veioNome}`)) {
+      btn.classList.add("active");
+    } else {
+      btn.classList.remove("active");
     }
-
-    emOperacao.sort((a, b) => {
-      const ordem = ["Molde", "Oscilador", "Seg. Zero", "Bender", "Bow Pos. 2", "Bow Pos. 3", "Horizontal 1", "Desendireitador (Pos 7)", "Horizontal 8", "Horizontal 9"];
-      return ordem.indexOf(a.pos) - ordem.indexOf(b.pos);
-    });
-
-    container.innerHTML = emOperacao.map(a => {
-      const pct = ((a.ton / a.meta) * 100).toFixed(0);
-      let cor = "var(--success)";
-      if (pct > 75) cor = "var(--danger)";
-      
-      return `
-        <div class="card-fluxo-item">
-          <div class="linha-topo-fluxo">
-            <span class="badge-posicao">${a.pos}</span>
-            <strong>${a.id}</strong>
-          </div>
-          <div class="barra-vida-container">
-            <div class="barra-vida-preenchida" style="width: ${Math.min(pct, 100)}%; background: ${cor};"></div>
-          </div>
-          <small>${Math.round(a.ton).toLocaleString()} TON (${pct}%)</small>
-        </div>
-      `;
-    }).join("");
   });
+  renderPainelVeios();
 }
 
-// ===== ABA 2: PLANILHA ESTILO EXCEL =====
-function renderAtivos() {
-  const filtro = document.getElementById("filtro-tipo-ativo").value;
-  const tbody = document.getElementById("ativos-table-body");
-  if (!tbody) return;
+// ===== ABA 1: MONITORAMENTO VERTICAL POR VEIO =====
+function renderPainelVeios() {
+  let criticos = 0, bancada = 0, moldesDisponiveis = 0;
 
-  let filtrados = filtro === "TODOS" ? BANCO_ATIVOS : BANCO_ATIVOS.filter(a => a.tipo === filtro);
+  BANCO_ATIVOS.forEach(a => {
+    const pct = (a.ton / a.meta) * 100;
+    if (pct > 85 && a.local !== "Bancada / Oficina") criticos++;
+    if (a.local === "Bancada / Oficina") bancada++;
+    if (a.tipo === "Molde" && a.local === "Bancada / Oficina" && pct < 50) moldesDisponiveis++;
+  });
+
+  if (document.getElementById("kpi-criticos")) document.getElementById("kpi-criticos").innerText = criticos;
+  if (document.getElementById("kpi-bancada")) document.getElementById("kpi-bancada").innerText = bancada;
+  if (document.getElementById("kpi-moldes")) document.getElementById("kpi-moldes").innerText = moldesDisponiveis;
+
+  const container = document.getElementById("container-fluxo-focado");
+  const titulo = document.getElementById("titulo-veio-focado");
+  if (!container || !titulo) return;
+
+  titulo.innerHTML = `<i class="fas fa-eye"></i> Linha de Fluxo Vertical: <strong>Veio ${VEIO_SELECIONADO_PAINEL}</strong>`;
+
+  let ativosDoVeio = BANCO_ATIVOS.filter(a => a.local.endsWith(`Veio ${VEIO_SELECIONADO_PAINEL}`));
+
+  if (ativosDoVeio.length === 0) {
+    container.innerHTML = `<div class="vazio">Componentes deste veio encontram-se na Bancada / Oficina.</div>`;
+    return;
+  }
+
+  ativosDoVeio.sort((a, b) => {
+    const ordem = ["Molde", "Mesa Osciladora", "Seguimento Zero", "Câmara de Exaustão", "Cadeira Inferior", "Cadeira Superior", "Bender / Horizontais (MCC4)"];
+    return ordem.indexOf(a.tipo) - ordem.indexOf(b.tipo);
+  });
+
+  container.innerHTML = ativosDoVeio.map(a => {
+    const pct = ((a.ton / a.meta) * 100).toFixed(0);
+    let corBarra = "var(--success)";
+    if (pct > 75) corBarra = "var(--panic)";
+    if (pct > 85) corBarra = "var(--danger)";
+
+    return `
+      <div class="card-fluxo-item-linha">
+        <div class="info-principal-card">
+          <span class="tag-tipo-componente">${a.tipo}</span>
+          <strong class="id-componente">${a.id} ${a.acionada ? '⚡' : ''}</strong>
+          <span class="posicao-texto">${a.pos}</span>
+        </div>
+        <div class="medidor-vida-container">
+          <div class="barra-vida-progresso">
+            <div class="barra-preenchida" style="width: ${Math.min(pct, 100)}%; background: ${corBarra};"></div>
+          </div>
+          <small class="valores-ton-card"><strong>${Math.round(a.ton).toLocaleString()}</strong> / ${a.meta.toLocaleString()} TON (${pct}%)</small>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+// ===== ABA 2: PLANILHA OPERACIONAL =====
+function renderAtivos() {
+  const tbody = document.getElementById("ativos-table-body");
+  const filtroEl = document.getElementById("filtro-tipo-ativo");
+  if (!tbody || !filtroEl) return;
+
+  const filtro = filtroEl.value;
+  let filtrados = BANCO_ATIVOS;
+
+  if (filtro === "ACIONADOS") {
+    filtrados = BANCO_ATIVOS.filter(a => a.acionada === true);
+  } else if (filtro !== "TODOS") {
+    filtrados = BANCO_ATIVOS.filter(a => a.tipo === filtro);
+  }
 
   tbody.innerHTML = filtrados.map(a => {
     const pct = ((a.ton / a.meta) * 100).toFixed(1);
     let classe = "operação";
-    if (pct > 75) classe = "reparo";
-    if (pct >= 100) classe = "reserva";
+    if (pct > 85) classe = "reparo";
+    if (a.local === "Bancada / Oficina") classe = "reserva";
 
     return `
       <tr>
-        <td><strong>${a.id}</strong></td>
+        <td><strong>${a.id} ${a.acionada ? '⚡' : ''}</strong></td>
         <td><span class="tag-subarea">${a.tipo}</span></td>
-        <td><code>${a.local} (${a.pos})</code></td>
+        <td><code>${a.local}</code></td>
         <td class="editavel" onclick="fazerCelulaEditavel(this, '${a.id}', 'dias')">${a.dias}</td>
         <td class="editavel" onclick="fazerCelulaEditavel(this, '${a.id}', 'ton')"><strong>${Math.round(a.ton)}</strong></td>
         <td>${a.meta.toLocaleString()}</td>
         <td><span class="status-pill ${classe}">${pct}%</span></td>
         <td>
-          <button class="btn-xs-primary" onclick="sacarParaOficina('${a.id}')"><i class="fas fa-wrench"></i> Sacar p/ Oficina</button>
+          <button class="btn-xs-primary" onclick="sacarParaBancada('${a.id}')"><i class="fas fa-hammer"></i> Sacar Oficina</button>
         </td>
       </tr>
     `;
@@ -168,58 +242,103 @@ function fazerCelulaEditavel(celula, id, campo) {
   const input = document.createElement("input");
   input.type = "number";
   input.value = original.replace(/\./g, "");
-  input.style.width = "90px";
-  input.style.color = "#000";
-  
+  input.style.width = "85px";
+  input.style.color = "#fff";
+  input.style.background = "#000";
   celula.innerHTML = "";
   celula.appendChild(input);
   input.focus();
 
-  const fecharEGuardar = () => {
+  const salvarEdicao = () => {
     const val = parseFloat(input.value) || 0;
     let item = BANCO_ATIVOS.find(a => a.id === id);
     if (item) {
+      const antigoValor = item[campo];
       item[campo] = val;
-      localStorage.setItem("mcc_ativos_v3", JSON.stringify(BANCO_ATIVOS));
-      
-      HISTORICO_EVENTOS.unshift({
-        data: new Date().toLocaleString(),
-        ativoId: id,
-        evento: "Edição Direta",
-        detalhe: `Campo ${campo.toUpperCase()} modificado manualmente de ${original} para ${val}`,
-        executor: OPERADOR_LOGADO.nome
-      });
-      localStorage.setItem("mcc_historico_v3", JSON.stringify(HISTORICO_EVENTOS));
+      localStorage.setItem("oms_ativos_v5", JSON.stringify(BANCO_ATIVOS));
+      registrarOcorrenciaDigital(id, "Modificação Manual", `Alterado ${campo.toUpperCase()} de ${antigoValor} para ${val}`);
     }
     renderAtivos();
   };
 
-  input.addEventListener("blur", fecharEGuardar);
-  input.addEventListener("keydown", (e) => { if (e.key === "Enter") fecharEGuardar(); });
+  input.addEventListener("blur", salvarEdicao);
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") salvarEdicao(); });
 }
 
-function sacarParaOficina(id) {
+function sacarParaBancada(id) {
   if (!verificarAcesso()) return;
   let item = BANCO_ATIVOS.find(a => a.id === id);
   if (item) {
+    const localAntigo = item.local;
     item.local = "Bancada / Oficina";
-    item.pos = "Reserva";
-    localStorage.setItem("mcc_ativos_v3", JSON.stringify(BANCO_ATIVOS));
+    localStorage.setItem("oms_ativos_v5", JSON.stringify(BANCO_ATIVOS));
+    registrarOcorrenciaDigital(id, "Retirada de Linha", `Ativo sacado do ${localAntigo} e enviado para a bancada da OMS.`);
     renderAtivos();
+    renderPainelVeios();
   }
 }
 
-// ===== ABA 3: INTERVENÇÕES =====
+// ===== ABA 3: HISTÓRICO INTEGRADO COM SHEET.BEST (EXCEL) =====
+function registrarOcorrenciaDigital(ativoId, tipo, detalhe) {
+  const dataHoraAtual = new Date().toLocaleString("pt-BR");
+  const quemFez = OPERADOR_LOGADO ? `${OPERADOR_LOGADO.nome} (${OPERADOR_LOGADO.matricula})` : "Sistema";
+
+  HISTORICO_EVENTOS.unshift({
+    data: dataHoraAtual,
+    ativoId: ativoId,
+    evento: tipo,
+    detalhe: detalhe,
+    executor: quemFez
+  });
+  localStorage.setItem("oms_historico_v5", JSON.stringify(HISTORICO_EVENTOS));
+
+  // LINK DE CONEXÃO DO UTILIZADOR CONFIGURADO
+  const URL_API_SHEETBEST = "https://api.sheetbest.com/sheets/09ed7cf8-6b8d-4071-973c-19ec2515c448"; 
+
+  if (URL_API_SHEETBEST) {
+    fetch(URL_API_SHEETBEST, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        data: dataHoraAtual,
+        ativo: ativoId,
+        evento: tipo,
+        detalhe: detalhe,
+        executor: quemFez
+      })
+    })
+    .then(res => res.json())
+    .then(data => console.log("Planilha sincronizada!", data))
+    .catch(err => console.error("Erro na sincronização:", err));
+  }
+  renderHistorico();
+}
+
+function renderHistorico() {
+  const tbody = document.getElementById("historico-eventos-body");
+  if (!tbody) return;
+  tbody.innerHTML = HISTORICO_EVENTOS.slice(0, 15).map(h => `
+    <tr>
+      <td><small>${h.data}</small></td>
+      <td><code>${h.ativoId || h.ativo}</code></td>
+      <td><span class="tag-subarea" style="background:rgba(248,81,73,0.1); color:var(--danger);">${h.evento}</span></td>
+      <td><small>${h.detalhe}</small></td>
+      <td><strong>${h.executor}</strong></td>
+    </tr>
+  `).join("");
+}
+
 function ajustarCamposIntervencao() {
   const tipo = document.getElementById("form-tipo-evento").value;
+  document.getElementById("campo-os-numero").style.display = tipo === "Ordem de Servico" ? "block" : "none";
   document.getElementById("campo-abatimento").style.display = tipo === "Reparo Parcial" ? "block" : "none";
-  document.getElementById("campo-posicao-veio").style.display = tipo === "Troca de Ativo" ? "block" : "none";
 }
 
 function inicializarAbaIntervencao() {
   const select = document.getElementById("form-ativo-alvo");
   if (select) {
-    select.innerHTML = BANCO_ATIVOS.map(a => `<option value="${a.id}">${a.id} [${a.tipo}] - Local: ${a.local}</option>`).join("");
+    const ordenados = [...BANCO_ATIVOS].sort((a,b) => a.id.localeCompare(b.id));
+    select.innerHTML = ordenados.map(a => `<option value="${a.id}">${a.id} [${a.tipo}] - ${a.local}</option>`).join("");
   }
   ajustarCamposIntervencao();
   renderHistorico();
@@ -235,63 +354,51 @@ function salvarIntervencao() {
   let item = BANCO_ATIVOS.find(a => a.id === id);
   if (!item) return;
 
-  let detalhe = "";
+  let txtDetalhe = "";
 
   if (tipo === "Reparo Parcial") {
-    const abatimento = parseFloat(document.getElementById("form-ton-abatida").value) || 0;
-    item.ton = Math.max(0, item.ton - abatimento);
-    detalhe = `Abatimento realizado de ${abatimento.toLocaleString()} TON na bancada de manutenção.`;
-  } 
-  else if (tipo === "Troca de Ativo") {
-    const destino = document.getElementById("form-nova-posicao").value;
-    detalhe = `Troca de posição: De [${item.local}] para [${destino}]`;
-    item.local = destino;
-    
-    if (destino === "Bancada / Oficina") {
-      item.pos = "Reserva";
-    } else {
-      if (item.tipo === "Molde") item.pos = "Molde";
-      if (item.tipo === "Oscilador") item.pos = "Oscilador";
-      if (item.tipo === "Seguimento Zero / Bender") {
-        item.pos = destino.includes("MCC 4") ? "Bender" : "Seg. Zero";
-      }
-    }
+    const abt = parseFloat(document.getElementById("form-ton-abatida").value) || 0;
+    item.ton = Math.max(0, item.ton - abt);
+    txtDetalhe = `Abatimento de ${abt.toLocaleString()} TON na bancada.`;
+  } else if (tipo === "Ordem de Servico") {
+    const osNum = document.getElementById("form-os-input").value.trim() || "Não Informada";
+    txtDetalhe = `Executada OS nº ${osNum}.`;
   } else {
-    detalhe = `Evento operacional registrado enquanto ativo estava em ${item.local}`;
+    txtDetalhe = `Check de Não Conformidade Concluído.`;
   }
 
-  HISTORICO_EVENTOS.unshift({
-    data: new Date().toLocaleString(),
-    ativoId: id,
-    evento: tipo,
-    detalhe: `${detalhe}. Relato: ${obs}`,
-    executor: `${OPERADOR_LOGADO.nome} (${OPERADOR_LOGADO.matricula})`
-  });
-
-  localStorage.setItem("mcc_ativos_v3", JSON.stringify(BANCO_ATIVOS));
-  localStorage.setItem("mcc_historico_v3", JSON.stringify(HISTORICO_EVENTOS));
-
-  alert("Histórico atualizado e sincronizado com Sucesso!");
+  registrarOcorrenciaDigital(id, tipo, `${txtDetalhe} Relato: ${obs}`);
+  localStorage.setItem("oms_ativos_v5", JSON.stringify(BANCO_ATIVOS));
+  
+  alert("Histórico atualizado!");
   document.getElementById("form-obs-evento").value = "";
   inicializarAbaIntervencao();
 }
 
-function renderHistorico() {
-  const tbody = document.getElementById("historico-eventos-body");
-  if (!tbody) return;
-  tbody.innerHTML = HISTORICO_EVENTOS.slice(0, 10).map(h => `
-    <tr>
-      <td><small>${h.data}</small></td>
-      <td><code>${h.ativoId}</code></td>
-      <td><span class="tag-subarea" style="background:rgba(239,68,68,0.1); color:var(--danger);">${h.evento}</span></td>
-      <td><small>${h.detalhe}</small></td>
-      <td><strong>${h.executor || "Sistema"}</strong></td>
-    </tr>
-  `).join("");
+function dispararEmergencia(tipo) {
+  if (!verificarAcesso()) return;
+  EM_EMERGENCIA = `${tipo} - Acionamento das equipes de plantão em curso.`;
+  localStorage.setItem("oms_emergencia_v5", JSON.stringify(EM_EMERGENCIA));
+  exibirBarraEmergencia();
 }
 
-// ===== INICIALIZAÇÃO SEGURA =====
+function encerrarEmergencia() {
+  EM_EMERGENCIA = null;
+  localStorage.removeItem("oms_emergencia_v5");
+  if (document.getElementById("barra-emergencia")) document.getElementById("barra-emergencia").style.display = "none";
+}
+
+function exibirBarraEmergencia() {
+  const barra = document.getElementById("barra-emergencia");
+  const txt = document.getElementById("texto-emergencia");
+  if (barra && txt && EM_EMERGENCIA) {
+    txt.innerText = EM_EMERGENCIA;
+    barra.style.display = "block";
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   atualizarInterfaceUsuario();
-  renderPainelVeios();
+  exibirBarraEmergencia();
+  abrirAba(null, 'aba-painel');
 });
