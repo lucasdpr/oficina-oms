@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Oficina MCC | Sistema</title>
+  <title>Oficina MCC | Controle de Ativos</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -12,187 +12,169 @@
   <div class="container">
     <aside class="sidebar">
       <div class="logo">
-        <i class="fas fa-tools"></i>
+        <i class="fas fa-industry"></i>
         <span>Oficina MCC</span>
       </div>
 
       <nav>
-        <a href="#" class="nav-link active" onclick="abrirAba(event,'aba-equip')">
-          <i class="fas fa-cogs"></i> Equipamentos
+        <a href="#" class="nav-link active" onclick="abrirAba(event,'aba-painel')">
+          <i class="fas fa-stream"></i> Sequência dos Veios
         </a>
 
-        <a href="#" class="nav-link" onclick="abrirAba(event,'aba-membros')">
-          <i class="fas fa-users"></i> Membros
+        <a href="#" class="nav-link" onclick="abrirAba(event,'aba-ativos')">
+          <i class="fas fa-table"></i> Planilha de Ativos
         </a>
 
-        <a href="#" class="nav-link" onclick="abrirAba(event,'aba-relatorios')">
-          <i class="fas fa-file-alt"></i> Relatórios
+        <a href="#" class="nav-link" onclick="abrirAba(event,'aba-intervencao')">
+          <i class="fas fa-tools"></i> Registrar Intervenção
         </a>
 
         <hr class="nav-sep" />
 
-        <a href="#" id="menu-add-equip" class="nav-link">
-          <i class="fas fa-plus-circle"></i> Novo Equipamento
-        </a>
-
-        <a href="#" id="menu-add-membro" class="nav-link">
-          <i class="fas fa-user-plus"></i> Novo Membro
-        </a>
+        <div class="user-status-box">
+          <small>Operador Conectado:</small>
+          <div id="nome-operador-logado" style="font-weight: bold; color: var(--accent-color);">Não identificado</div>
+          <button class="btn-xs" onclick="pedirIdentificacao()"><i class="fas fa-user-check"></i> Validar Matrícula</button>
+        </div>
       </nav>
     </aside>
 
     <main class="main-content">
       <header>
-        <h1>Sistema de Gerenciamento</h1>
+        <h1>Controle de Vida Útil e Campanhas - Lingotamento</h1>
       </header>
 
-      <!-- ✅ ABA EQUIPAMENTOS -->
-      <section id="aba-equip" class="tab-content active">
+      <section id="aba-painel" class="tab-content active">
+        <div class="mcc-container">
+          <div class="mcc-card">
+            <h3><i class="fas fa-server"></i> MCC #2</h3>
+            <div class="veios-grid">
+              <div class="veio-box"><h4>Veio C</h4><div id="veio-C-status" class="fluxo-ativos"></div></div>
+              <div class="veio-box"><h4>Veio D</h4><div id="veio-D-status" class="fluxo-ativos"></div></div>
+            </div>
+          </div>
+          <div class="mcc-card">
+            <h3><i class="fas fa-server"></i> MCC #3</h3>
+            <div class="veios-grid">
+              <div class="veio-box"><h4>Veio E</h4><div id="veio-E-status" class="fluxo-ativos"></div></div>
+              <div class="veio-box"><h4>Veio F</h4><div id="veio-F-status" class="fluxo-ativos"></div></div>
+            </div>
+          </div>
+          <div class="mcc-card full-width-mcc">
+            <h3><i class="fas fa-server"></i> MCC #4 (Bender & Horizontais 1 a 17)</h3>
+            <div class="veios-grid">
+              <div class="veio-box"><h4>Veio G</h4><div id="veio-G-status" class="fluxo-ativos"></div></div>
+              <div class="veio-box"><h4>Veio H</h4><div id="veio-H-status" class="fluxo-ativos"></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="aba-ativos" class="tab-content">
         <div class="table-container">
           <div class="table-header">
-            <h2>Status de Máquinas e Moldes</h2>
+            <h2>Gerenciamento de Linha (Dê 1 clique sobre Dias ou TON para alterar)</h2>
+            <div class="filter-container">
+              <label><i class="fas fa-filter"></i> Filtrar Componente:</label>
+              <select id="filtro-tipo-ativo" onchange="renderAtivos()">
+                <option value="TODOS">Todos os Componentes</option>
+                <option value="Molde">Moldes</option>
+                <option value="Oscilador">Osciladores</option>
+                <option value="Seguimento Zero / Bender">Seguimento Zero / Bender</option>
+                <option value="Seguimento Bow">Seguimento Bow (Curva)</option>
+                <option value="Horizontal / Desendireitador">Horizontais / Desendireitadores</option>
+              </select>
+            </div>
           </div>
 
           <table>
             <thead>
               <tr>
-                <th>Equipamento</th>
-                <th>Equipe</th>
-                <th>Status</th>
-                <th>Observação</th>
-                <th>Ação</th>
+                <th>Nº Equipamento</th>
+                <th>Tipo/Componente</th>
+                <th>Posição Operacional</th>
+                <th>Dias de Campanha</th>
+                <th>Corridas / TON Atual</th>
+                <th>Limite / Meta TON</th>
+                <th>Vida Consumida</th>
+                <th>Ações</th>
               </tr>
             </thead>
-            <tbody id="equip-table"></tbody>
+            <tbody id="ativos-table-body">
+              </tbody>
           </table>
         </div>
       </section>
 
-      <!-- ✅ ABA MEMBROS -->
-      <section id="aba-membros" class="tab-content">
+      <section id="aba-intervencao" class="tab-content">
         <div class="table-container">
           <div class="table-header">
-            <h2>Membros cadastrados</h2>
-          </div>
-
-          <table>
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Cargo</th>
-                <th>Status</th>
-                <th>Ação</th>
-              </tr>
-            </thead>
-            <tbody id="membro-table"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- ✅ ABA RELATÓRIOS -->
-      <section id="aba-relatorios" class="tab-content">
-        <div class="table-container">
-          <div class="table-header">
-            <h2>Relatório Diário (por pessoa)</h2>
-            <button class="btn-secondary" onclick="pedirPIN()">
-              <i class="fas fa-key"></i> PIN (Líder/Sup.)
-            </button>
+            <h2>Lançamento de Ocorrências e Ajustes de Parada</h2>
           </div>
 
           <div class="form-grid">
             <div>
-              <label>Data:</label>
-              <input type="date" id="dataRelatorio" />
+              <label>Selecione o Equipamento:</label>
+              <select id="form-ativo-alvo"></select>
             </div>
 
             <div>
-              <label>Sub Área (Equipe fixa):</label>
-              <select id="subAreaRelatorio"></select>
+              <label>Tipo de Evento:</label>
+              <select id="form-tipo-evento" onchange="ajustarCamposIntervencao()">
+                <option value="Reparo Parcial">🛠️ Reparo Parcial (Abater Corridas/TON)</option>
+                <option value="Troca de Ativo">🔄 Troca de Ativo (Sacar da Máquina)</option>
+                <option value="Transbordo de Aço">🔥 Ocorrência Grave: Transbordo de Aço</option>
+                <option value="Avaliação de Rolos/Espetores">🔍 Avaliação de Rolos e Espetores</option>
+              </select>
             </div>
 
-            <div>
-              <label>Líder/Supervisor:</label>
-              <input type="text" id="liderRelatorio" placeholder="Seu nome" />
+            <div id="campo-abatimento">
+              <label style="color: #38bdf8;">Reduzir quantas TON do acumulado? (Melhoria em Bancada):</label>
+              <input type="number" id="form-ton-abatida" value="0">
+            </div>
+
+            <div id="campo-posicao-veio" style="display:none;">
+              <label>Destino do Ativo Sacado:</label>
+              <select id="form-nova-posicao">
+                <option value="Bancada / Oficina">Bancada / Oficina (Manutenção/Reserva)</option>
+                <option value="MCC 2 - Veio C">Montar na MCC 2 - Veio C</option>
+                <option value="MCC 2 - Veio D">Montar na MCC 2 - Veio D</option>
+                <option value="MCC 3 - Veio E">Montar na MCC 3 - Veio E</option>
+                <option value="MCC 3 - Veio F">Montar na MCC 3 - Veio F</option>
+                <option value="MCC 4 - Veio G">Montar na MCC 4 - Veio G</option>
+                <option value="MCC 4 - Veio H">Montar na MCC 4 - Veio H</option>
+              </select>
             </div>
 
             <div class="full">
-              <button class="btn-primary" onclick="salvarRelatorioPessoas()">
-                Salvar Relatório
-              </button>
+              <label>Relato Técnico do Supervisor / Líder de Turno:</label>
+              <textarea id="form-obs-evento" rows="3" placeholder="Relate o estado dos rolos, substituição de espetores ou motivos do transbordo de aço..."></textarea>
             </div>
 
-            <div class="full hint">
-              <small>
-                Status: Presente / Falta / Atestado / Férias • Hora Extra: até 18:18 (máx 1h)
-              </small>
+            <div class="full">
+              <button class="btn-primary" onclick="salvarIntervencao()"><i class="fas fa-check-circle"></i> Sincronizar Registro em Tempo Real</button>
             </div>
           </div>
 
-          <table>
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Matrícula</th>
-                <th>Status</th>
-                <th>Hora Extra</th>
-                <th>Obs</th>
-              </tr>
-            </thead>
-            <tbody id="presenca-table"></tbody>
-          </table>
+          <div style="margin-top: 24px;">
+            <h3>Livro de Registro Digital (Últimos Eventos Salvos)</h3>
+            <table style="margin-top: 10px;">
+              <thead>
+                <tr>
+                  <th>Data/Hora</th>
+                  <th>Equipamento</th>
+                  <th>Tipo Evento</th>
+                  <th>Descrição / Ajuste Aplicado</th>
+                  <th>Responsável (Matrícula)</th>
+                </tr>
+              </thead>
+              <tbody id="historico-eventos-body">
+                </tbody>
+            </table>
+          </div>
         </div>
       </section>
     </main>
-  </div>
-
-  <!-- MODAL EQUIP -->
-  <div id="modal-equip" class="modal">
-    <div class="modal-content">
-      <h3>Gerenciar Equipamento</h3>
-
-      <label>Máquina/Molde:</label>
-      <input type="text" id="equipNome">
-
-      <label>Status:</label>
-      <select id="equipStatus">
-        <option value="operação">✅ Em Operação</option>
-        <option value="reparo">🛠️ Em Reparo</option>
-        <option value="reserva">📦 Reserva</option>
-      </select>
-
-      <label>Equipe Responsável:</label>
-      <select id="equipTeam">
-        <option value="Mecânica">Mecânica</option>
-        <option value="Elétrica">Elétrica</option>
-        <option value="Operação">Operação</option>
-      </select>
-
-      <label>Obs:</label>
-      <textarea id="equipObs" rows="3"></textarea>
-
-      <div class="modal-buttons">
-        <button onclick="fecharModal('modal-equip')">Cancelar</button>
-        <button onclick="salvarEquipamento()" class="btn-primary">Salvar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL MEMBRO -->
-  <div id="modal-membro" class="modal">
-    <div class="modal-content">
-      <h3>Adicionar Membro</h3>
-
-      <label>Nome:</label>
-      <input type="text" id="membroNome">
-
-      <label>Cargo:</label>
-      <input type="text" id="membroCargo">
-
-      <div class="modal-buttons">
-        <button onclick="fecharModal('modal-membro')">Cancelar</button>
-        <button onclick="salvarMembro()" class="btn-primary">Salvar</button>
-      </div>
-    </div>
   </div>
 
   <script src="script.js"></script>
