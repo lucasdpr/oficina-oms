@@ -53,7 +53,7 @@ const CADASTRO_MATRICULAS = {
 };
 
 // ==========================================================================
-// CONTROLE DO DRAWER (MENU LATERAL MOBILE INTERATIVO)
+// CONTROLE DO DRAWER E NAVEGAÇÃO MOBILE
 // ==========================================================================
 function toggleMobileMenu() {
   const menu = document.getElementById("sidebar-menu");
@@ -64,10 +64,10 @@ function toggleMobileMenu() {
   }
 }
 
-// CONTROLE DE NAVEGAÇÃO ENTRE JANELAS
 function abrirAba(event, idAba) {
   if (event) event.preventDefault();
   
+  // Fecha o menu lateral caso esteja no celular
   const menu = document.getElementById("sidebar-menu");
   const overlay = document.getElementById("menu-overlay");
   if (menu && menu.classList.contains("active")) {
@@ -85,17 +85,12 @@ function abrirAba(event, idAba) {
   const abaAlvo = document.getElementById(idAba);
   if (abaAlvo) {
     abaAlvo.classList.add("active");
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   if (idAba === "aba-painel") calcularKpisGlobais();
   if (idAba === "aba-fluxo") renderPainelVeios();
   if (idAba === "aba-ativos") renderAtivos();
   if (idAba === "aba-intervencao") inicializarAbaIntervencao();
-}
-
-function voltarParaHome() {
-  abrirAba(null, 'aba-painel');
 }
 
 function mudarVeioVisualizado(veioNome) {
@@ -111,7 +106,7 @@ function mudarVeioVisualizado(veioNome) {
 }
 
 // ==========================================================================
-// AUTENTICAÇÃO OPERACIONAL
+// AUTENTICAÇÃO E KPIs
 // ==========================================================================
 function pedirIdentificacao() {
   const m = prompt("Digite sua matrícula operacional da OMS:");
@@ -142,9 +137,6 @@ function atualizarInterfaceUsuario() {
   if (el) el.innerText = OPERADOR_LOGADO ? OPERADOR_LOGADO.nome : "Não identificado";
 }
 
-// ==========================================================================
-// CÁLCULO DE KPIs
-// ==========================================================================
 function calcularKpisGlobais() {
   let criticos = 0, bancada = 0, moldesDisponiveis = 0;
   
@@ -161,46 +153,45 @@ function calcularKpisGlobais() {
 }
 
 // ==========================================================================
-// RENDERIZAÇÃO INDUSTRIAL COMPLETA (VISUAL DOS CARDS RESTAURADO)
+// RENDERIZAÇÃO FLUXO SEQUENCIAL (VISUAL DINÂMICO DOS CARDS)
 // ==========================================================================
 function renderPainelVeios() {
   const container = document.getElementById("container-fluxo-horizontal-scroll");
   const titulo = document.getElementById("titulo-veio-focado");
   if (!container || !titulo) return;
 
-  titulo.innerHTML = `<i class="fas fa-eye"></i> Fluxo Sequencial: <strong>Veio ${VEIO_SELECIONADO_PAINEL}</strong>`;
+  titulo.innerHTML = `<i class="fas fa-stream"></i> Linha de Fluxo: <strong>Veio ${VEIO_SELECIONADO_PAINEL}</strong>`;
   
   let ativosDoVeio = BANCO_ATIVOS.filter(a => a.local.includes(`Veio ${VEIO_SELECIONADO_PAINEL}`));
 
   if (ativosDoVeio.length === 0) {
-    container.innerHTML = `<div class="vazio" style="color:var(--muted); padding: 20px; text-align: center; width: 100%;">Nenhum componente ativo listado para o Veio ${VEIO_SELECIONADO_PAINEL}.</div>`;
+    container.innerHTML = `<div class="vazio" style="color:var(--text-muted); padding: 20px; text-align: center; width: 100%;">Nenhum componente ativo listado para o Veio ${VEIO_SELECIONADO_PAINEL}.</div>`;
     return;
   }
 
-  // AJUSTADO AQUI: Forçando a renderização com as classes certas do CSS para criar os blocos e barras visuais
   container.innerHTML = ativosDoVeio.map(a => {
     const pct = ((a.ton / a.meta) * 100).toFixed(0);
-    let corBarra = "#2ec4b6"; // Verde/Ciano padrão de sucesso
-    if (pct > 75) corBarra = "#ff9f1c"; // Amarelo/Laranja Alerta
-    if (pct > 85) corBarra = "#e71d36"; // Vermelho Crítico
+    let corBarra = "var(--success)"; 
+    if (pct > 75) corBarra = "var(--warning)"; 
+    if (pct > 85) corBarra = "var(--danger)"; 
 
     return `
-      <div class="industrial-fluxo-card" style="background: #1e222b; border-radius: 8px; padding: 15px; margin-bottom: 15px; border-left: 4px solid ${corBarra};">
-        <div class="ind-card-top" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+      <div class="industrial-fluxo-card" style="border-left: 4px solid ${corBarra};">
+        <div class="ind-card-top">
           <div>
-            <span class="ind-card-tag" style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-size: 11px; color: #a0aec0; text-transform: uppercase;">${a.tipo}</span>
-            <div class="ind-card-id" style="font-size: 18px; font-weight: bold; color: #fff; margin-top: 4px;">${a.id} ${a.acionada ? '<i class="fas fa-bolt" style="color:#ff9f1c;"></i>' : ''}</div>
+            <span class="ind-card-tag">${a.tipo}</span>
+            <div class="ind-card-id">${a.id} ${a.acionada ? '<i class="fas fa-bolt" style="color:var(--warning); font-size:14px;"></i>' : ''}</div>
           </div>
-          <div class="ind-card-pos" style="font-size: 12px; color: #a0aec0; background: #1a202c; padding: 4px 8px; border-radius: 4px;">${a.pos}</div>
+          <div class="ind-card-pos">${a.pos}</div>
         </div>
         
         <div class="ind-card-gauge">
-          <div class="ind-gauge-bar" style="background: #2d3748; height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 6px;">
-            <div class="ind-gauge-fill" style="width: ${Math.min(pct, 100)}%; background: ${corBarra}; height: 100%; transition: width 0.3s ease;"></div>
+          <div class="ind-gauge-bar">
+            <div class="ind-gauge-fill" style="width: ${Math.min(pct, 100)}%; background: ${corBarra};"></div>
           </div>
-          <div class="ind-gauge-text" style="display: flex; justify-content: space-between; font-size: 12px; color: #e2e8f0;">
+          <div class="ind-gauge-text">
             <span>${pct}% de Desgaste</span>
-            <span style="font-weight: 600;">${Math.round(a.ton).toLocaleString()} t / ${a.meta.toLocaleString()} t</span>
+            <span><strong>${Math.round(a.ton).toLocaleString()} t</strong> / ${a.meta.toLocaleString()} t</span>
           </div>
         </div>
       </div>
@@ -209,7 +200,7 @@ function renderPainelVeios() {
 }
 
 // ==========================================================================
-// BANCO DE DADOS E TABELAS
+// OPERAÇÃO DA TABELA DE ATIVOS
 // ==========================================================================
 function renderAtivos() {
   const tbody = document.getElementById("ativos-table-body");
@@ -261,7 +252,7 @@ function fazerCelulaEditavel(celula, id, campo) {
   input.style.width = "85px";
   input.style.color = "#fff";
   input.style.background = "#000";
-  input.style.border = "1px solid var(--accent-color)";
+  input.style.border = "1px solid var(--text-accent)";
   
   celula.innerHTML = "";
   celula.appendChild(input);
@@ -291,7 +282,6 @@ function sacarParaBancada(id) {
       alert("Este componente já se encontra na oficina.");
       return;
     }
-    const localAntigo = item.local;
     item.local = "Bancada / Oficina";
     localStorage.setItem("oms_ativos_v10", JSON.stringify(BANCO_ATIVOS));
     registrarOcorrenciaDigital(id, "Retirada de Linha", `Ativo transferido para manutenção na bancada.`);
@@ -301,7 +291,7 @@ function sacarParaBancada(id) {
 }
 
 // ==========================================================================
-// INTEGRACAO OTIMIZADA PARA MICROSOFT EXCEL (VIA SHEET.BEST)
+// INTEGRACAO EXCEL VIA SHEET.BEST
 // ==========================================================================
 function registrarOcorrenciaDigital(ativoId, tipo, detalhe) {
   const agora = new Date();
@@ -315,13 +305,7 @@ function registrarOcorrenciaDigital(ativoId, tipo, detalhe) {
   let tonAtualLimpa = itemAtivo ? Math.round(itemAtivo.ton) : 0;
   let diasAtualLimpo = itemAtivo ? parseInt(itemAtivo.dias) : 0;
 
-  HISTORICO_EVENTOS.unshift({ 
-    data: dataHoraVisual, 
-    ativoId: ativoId, 
-    evento: tipo, 
-    detalhe: detalhe, 
-    executor: quemFez 
-  });
+  HISTORICO_EVENTOS.unshift({ data: dataHoraVisual, ativoId: ativoId, evento: tipo, detalhe: detalhe, executor: quemFez });
   localStorage.setItem("oms_historico_v10", JSON.stringify(HISTORICO_EVENTOS));
 
   const URL_API_SHEETBEST = "https://api.sheetbest.com/sheets/09ed7cf8-6b8d-4071-973c-19ec2515c448"; 
@@ -343,8 +327,8 @@ function registrarOcorrenciaDigital(ativoId, tipo, detalhe) {
     body: JSON.stringify(dadosParaPlanilha)
   })
   .then(res => res.json())
-  .then(data => console.log("Sincronizado no Excel com sucesso!"))
-  .catch(err => console.error("Erro na integração com o Sheets:", err));
+  .then(() => console.log("Sincronizado com sucesso!"))
+  .catch(err => console.error("Erro no Sheets:", err));
 
   renderHistorico();
 }
@@ -369,7 +353,6 @@ function renderHistorico() {
   `).join("");
 }
 
-// FORMULÁRIO
 function ajustarCamposIntervencao() {
   const tipo = document.getElementById("form-tipo-evento").value;
   document.getElementById("campo-os-numero").style.display = tipo === "Ordem de Servico" ? "block" : "none";
@@ -429,10 +412,6 @@ function dispararEmergencia(tipo) {
   localStorage.setItem("oms_emergencia_v10", JSON.stringify(EM_EMERGENCIA));
   registrarOcorrenciaDigital("SISTEMA", "PÂNICO", `Botão de pânico pressionado: ${tipo}`);
   exibirBarraEmergencia();
-}
-
-function componentWillUnmount() {
-  // Mantendo a integridade estrutural do arquivo
 }
 
 function encerrarEmergencia() {
