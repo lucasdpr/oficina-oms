@@ -1,7 +1,7 @@
 // ==========================================================================
 // BANCO DE DADOS CORE E ESTRUTURA DE ATIVOS (OMS INDUSTRIAL)
 // ==========================================================================
-let BANCO_ATIVOS = JSON.parse(localStorage.getItem("oms_ativos_v8"));
+let BANCO_ATIVOS = JSON.parse(localStorage.getItem("oms_ativos_v9"));
 
 if (!BANCO_ATIVOS) {
   BANCO_ATIVOS = [];
@@ -21,7 +21,6 @@ if (!BANCO_ATIVOS) {
       BANCO_ATIVOS.push({ id: `SEG-${s}-${m.mcc}${m.veio}`, tipo: "Câmara de Exaustão", local: vNome, pos: `Seg. Exaustão ${s}`, dias: 112, ton: 820000, meta: 2500000 });
     }
 
-    // Marcação exata de quais cadeiras inferiores são acionadas por motor (⚡)
     const cadeirasAcionadas = [45, 48, 52, 55, 56, 59, 60, 63, 67, 71, 76, 77, 78, 79];
     for (let c = 43; c <= 79; c++) {
       let eAcionada = cadeirasAcionadas.includes(c);
@@ -30,7 +29,6 @@ if (!BANCO_ATIVOS) {
     }
   });
 
-  // GERAÇÃO AUTOMÁTICA DA MÁQUINA DE CONCAST 4
   const veiosMcc4 = ["G", "H"];
   veiosMcc4.forEach(v => {
     const vNome = `MCC 4 - Veio ${v}`;
@@ -39,16 +37,14 @@ if (!BANCO_ATIVOS) {
     BANCO_ATIVOS.push({ id: `BND-4${v}`, tipo: "Seguimento Zero", local: vNome, pos: "Bender", dias: 92, ton: 710000, meta: 2200000 });
   });
 
-  localStorage.setItem("oms_ativos_v8", JSON.stringify(BANCO_ATIVOS));
+  localStorage.setItem("oms_ativos_v9", JSON.stringify(BANCO_ATIVOS));
 }
 
-// Inicializações de memória do navegador
-let HISTORICO_EVENTOS = JSON.parse(localStorage.getItem("oms_historico_v8")) || [];
-let EM_EMERGENCIA = JSON.parse(localStorage.getItem("oms_emergencia_v8")) || null;
-let OPERADOR_LOGADO = JSON.parse(localStorage.getItem("oms_operador_v8")) || null;
+let HISTORICO_EVENTOS = JSON.parse(localStorage.getItem("oms_historico_v9")) || [];
+let EM_EMERGENCIA = JSON.parse(localStorage.getItem("oms_emergencia_v9")) || null;
+let OPERADOR_LOGADO = JSON.parse(localStorage.getItem("oms_operador_v9")) || null;
 let VEIO_SELECIONADO_PAINEL = "C";
 
-// Cadastro interno para validação das matrículas operacionais dos Líderes
 const CADASTRO_MATRICULAS = {
   "40090430": "Filipe Silva Souza (Líder)",
   "40075827": "Denilson Jose de Oliveira (Líder)",
@@ -58,33 +54,37 @@ const CADASTRO_MATRICULAS = {
 };
 
 // ==========================================================================
-// MECANISMO DE CONTROLE DE ABAS (TABS)
+// CONTROLE DE NAVEGAÇÃO ENTRE TELAS E ABAS
 // ==========================================================================
 function abrirAba(event, idAba) {
   if (event) event.preventDefault();
   
-  // Oculta todas as abas e remove classes ativas
+  // Oculta todas as seções
   document.querySelectorAll(".tab-content").forEach(content => content.classList.remove("active"));
   document.querySelectorAll(".nav-link").forEach(link => link.classList.remove("active"));
   
-  // Vincula classe ativa no menu
-  if (event && event.currentTarget) {
-    event.currentTarget.classList.add("active");
-  } else {
-    document.querySelectorAll(".nav-link").forEach(link => {
-      if (link.getAttribute("onclick").includes(idAba)) link.classList.add("active");
-    });
-  }
+  // Atualiza destaque nos menus laterais (Desktop)
+  const idNavEquivalente = idAba.replace("aba-", "nav-");
+  const navItem = document.getElementById(idNavEquivalente);
+  if (navItem) navItem.classList.add("active");
   
-  // Ativa o bloco visível correspondente
+  // Ativa a tela solicitada
   const abaAlvo = document.getElementById(idAba);
-  if (abaAlvo) abaAlvo.classList.add("active");
+  if (abaAlvo) {
+    abaAlvo.classList.add("active");
+    // Força o smartphone a rolar para o topo da nova tela, evitando bugs de viewport
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
-  // Gatilhos de renderização sob demanda
+  // Renderizações dinâmicas sob demanda
   if (idAba === "aba-painel") calcularKpisGlobais();
   if (idAba === "aba-fluxo") renderPainelVeios();
   if (idAba === "aba-ativos") renderAtivos();
   if (idAba === "aba-intervencao") inicializarAbaIntervencao();
+}
+
+function voltarParaHome() {
+  abrirAba(null, 'aba-painel');
 }
 
 function mudarVeioVisualizado(veioNome) {
@@ -100,7 +100,7 @@ function mudarVeioVisualizado(veioNome) {
 }
 
 // ==========================================================================
-// SEGURANÇA E AUTENTICAÇÃO OPERACIONAL
+// AUTENTICAÇÃO OPERACIONAL DO LÍDER
 // ==========================================================================
 function pedirIdentificacao() {
   const m = prompt("Digite sua matrícula operacional da OMS:");
@@ -109,18 +109,18 @@ function pedirIdentificacao() {
   const matriculaLimpa = m.trim();
   if (CADASTRO_MATRICULAS[matriculaLimpa]) {
     OPERADOR_LOGADO = { matricula: matriculaLimpa, nome: CADASTRO_MATRICULAS[matriculaLimpa] };
-    localStorage.setItem("oms_operador_v8", JSON.stringify(OPERADOR_LOGADO));
+    localStorage.setItem("oms_operador_v9", JSON.stringify(OPERADOR_LOGADO));
     atualizarInterfaceUsuario();
     calcularKpisGlobais();
-    alert(`Acesso autorizado! Operador: ${OPERADOR_LOGADO.nome}.`);
+    alert(`Acesso liberado! Líder ativo: ${OPERADOR_LOGADO.nome}.`);
   } else {
-    alert("Erro: Matrícula não encontrada na base operacional.");
+    alert("Matrícula não cadastrada na base da aciaria.");
   }
 }
 
 function verificarAcesso() {
   if (!OPERADOR_LOGADO) {
-    alert("Operação Bloqueada! É obrigatório validar sua matrícula operacional primeiro.");
+    alert("Operação bloqueada! Digite sua matrícula operacional primeiro.");
     pedirIdentificacao();
     return false;
   }
@@ -133,7 +133,7 @@ function atualizarInterfaceUsuario() {
 }
 
 // ==========================================================================
-// LÓGICA DA ABA 1: KPI CARD METRICS
+// CÁLCULO DE KPIs
 // ==========================================================================
 function calcularKpisGlobais() {
   let criticos = 0, bancada = 0, moldesDisponiveis = 0;
@@ -151,14 +151,14 @@ function calcularKpisGlobais() {
 }
 
 // ==========================================================================
-// LÓGICA DA ABA 2: MAPA DE FLUXO VERTICAL DE VEIOS
+// MAPA VISUAL DE FLUXO DOS VEIOS
 // ==========================================================================
 function renderPainelVeios() {
   const container = document.getElementById("container-fluxo-focado");
   const titulo = document.getElementById("titulo-veio-focado");
   if (!container || !titulo) return;
 
-  titulo.innerHTML = `<i class="fas fa-project-diagram"></i> Mapa de Linha: <strong>Veio ${VEIO_SELECIONADO_PAINEL}</strong>`;
+  titulo.innerHTML = `<i class="fas fa-eye"></i> Linha de Fluxo: <strong>Veio ${VEIO_SELECIONADO_PAINEL}</strong>`;
   let ativosDoVeio = BANCO_ATIVOS.filter(a => a.local.endsWith(`Veio ${VEIO_SELECIONADO_PAINEL}`));
 
   if (ativosDoVeio.length === 0) {
@@ -191,7 +191,7 @@ function renderPainelVeios() {
 }
 
 // ==========================================================================
-// LÓGICA DA ABA 3: GERENCIADOR DE COMPONENTES E EDIÇÃO DIRETA
+// BANCO DE DADOS DE ATIVOS
 // ==========================================================================
 function renderAtivos() {
   const tbody = document.getElementById("ativos-table-body");
@@ -201,7 +201,6 @@ function renderAtivos() {
   const filterVal = filtroEl.value;
   let filtrados = BANCO_ATIVOS;
 
-  // Filtros condicionais completos das subáreas
   if (filterVal === "ACIONADOS") {
     filtrados = BANCO_ATIVOS.filter(a => a.acionada === true);
   } else if (filterVal === "Bancada / Oficina") {
@@ -245,7 +244,6 @@ function fazerCelulaEditavel(celula, id, campo) {
   input.style.color = "#fff";
   input.style.background = "#000";
   input.style.border = "1px solid var(--accent-color)";
-  input.style.padding = "4px";
   
   celula.innerHTML = "";
   celula.appendChild(input);
@@ -257,7 +255,7 @@ function fazerCelulaEditavel(celula, id, campo) {
     if (item) {
       const antigoValor = item[campo];
       item[campo] = val;
-      localStorage.setItem("oms_ativos_v8", JSON.stringify(BANCO_ATIVOS));
+      localStorage.setItem("oms_ativos_v9", JSON.stringify(BANCO_ATIVOS));
       registrarOcorrenciaDigital(id, "Ajuste Manual", `Modificado ${campo.toUpperCase()} de ${antigoValor} para ${val}`);
     }
     renderAtivos();
@@ -272,49 +270,38 @@ function sacarParaBancada(id) {
   let item = BANCO_ATIVOS.find(a => a.id === id);
   if (item) {
     if (item.local === "Bancada / Oficina") {
-      alert("Este item já se encontra na bancada da OMS.");
+      alert("Este item já se encontra na oficina.");
       return;
     }
     const localAntigo = item.local;
     item.local = "Bancada / Oficina";
-    localStorage.setItem("oms_ativos_v8", JSON.stringify(BANCO_ATIVOS));
-    
-    // Dispara registro automático no Sheets ao sacar
-    registrarOcorrenciaDigital(id, "Retirada de Linha", `Ativo sacado do ${localAntigo} para manutenção na oficina.`);
-    alert(`Sucesso! Componente ${id} sacado e enviado para a Bancada.`);
+    localStorage.setItem("oms_ativos_v9", JSON.stringify(BANCO_ATIVOS));
+    registrarOcorrenciaDigital(id, "Retirada de Linha", `Ativo sacado do ${localAntigo} para manutenção na bancada.`);
+    alert(`Sucesso! Componente ${id} enviado para a Bancada da Oficina.`);
     renderAtivos();
   }
 }
 
 // ==========================================================================
-// INTEGRACAO DIRETA GOOGLE SHEETS VIA SHEET.BEST
+// INTEGRACAO REAL-TIME GOOGLE SHEETS VIA SHEET.BEST
 // ==========================================================================
 function registrarOcorrenciaDigital(ativoId, tipo, detalhe) {
   const dataHoraAtual = new Date().toLocaleString("pt-BR");
-  const quemFez = OPERADOR_LOGADO ? `${OPERADOR_LOGADO.nome} (${OPERADOR_LOGADO.matricula})` : "Sistema Automatizado";
+  const quemFez = OPERADOR_LOGADO ? `${OPERADOR_LOGADO.nome} (${OPERADOR_LOGADO.matricula})` : "Sistema";
 
-  // Alimenta banco local temporário para visualização rápida na tela
   HISTORICO_EVENTOS.unshift({ data: dataHoraAtual, ativoId: ativoId, evento: tipo, detalhe: detalhe, executor: quemFez });
-  localStorage.setItem("oms_historico_v8", JSON.stringify(HISTORICO_EVENTOS));
+  localStorage.setItem("oms_historico_v9", JSON.stringify(HISTORICO_EVENTOS));
 
-  // Endpoint oficial do seu Sheet.best vinculado à planilha
   const URL_API_SHEETBEST = "https://api.sheetbest.com/sheets/09ed7cf8-6b8d-4071-973c-19ec2515c448"; 
 
-  // Envio via POST obedecendo colunas minúsculas exatas: data, ativo, evento, detalhe, executor
   fetch(URL_API_SHEETBEST, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-      data: dataHoraAtual, 
-      ativo: ativoId, 
-      evento: tipo, 
-      detalhe: detalhe, 
-      executor: quemFez 
-    })
+    body: JSON.stringify({ data: dataHoraAtual, ativo: ativoId, evento: tipo, detalhe: detalhe, executor: quemFez })
   })
   .then(res => res.json())
-  .then(data => console.log("Sincronização com o Excel concluída com sucesso!"))
-  .catch(err => console.error("Falha crítica no tráfego da API Sheet.best:", err));
+  .then(data => console.log("Google Sheets sincronizado!"))
+  .catch(err => console.error("Falha ao enviar dados para a API do Sheets:", err));
 
   renderHistorico();
 }
@@ -324,11 +311,11 @@ function renderHistorico() {
   if (!tbody) return;
   
   if (HISTORICO_EVENTOS.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="vazio">Nenhuma ocorrência registrada nas últimas horas.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="vazio">Nenhum relato técnico recente.</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = HISTORICO_EVENTOS.slice(0, 15).map(h => `
+  tbody.innerHTML = HISTORICO_EVENTOS.slice(0, 10).map(h => `
     <tr>
       <td><small>${h.data}</small></td>
       <td><code>${h.ativoId || h.ativo}</code></td>
@@ -340,7 +327,7 @@ function renderHistorico() {
 }
 
 // ==========================================================================
-// LÓGICA DA ABA 4: RELATO TÉCNICO FORMULÁRIO E REGRAS DE NEGÓCIO
+// FORMULÁRIO DE LANÇAMENTO
 // ==========================================================================
 function ajustarCamposIntervencao() {
   const tipo = document.getElementById("form-tipo-evento").value;
@@ -370,52 +357,46 @@ function salvarIntervencao() {
 
   let txtDetalhe = "";
 
-  // Execução de regras automáticas baseadas nas subáreas e tipos de intervenção
   if (tipo === "Reparo Parcial") {
     const abt = parseFloat(document.getElementById("form-ton-abatida").value) || 0;
     item.ton = Math.max(0, item.ton - abt);
-    txtDetalhe = `Efetuado reparo corretivo na bancada com abatimento de ${abt.toLocaleString()} TON.`;
+    txtDetalhe = `Efetuado reparo e abatimento de ${abt.toLocaleString()} TON.`;
   } else if (tipo === "Ordem de Servico") {
     const osNum = document.getElementById("form-os-input").value.trim() || "Não Informada";
-    txtDetalhe = `Executada intervenção via Ordem de Serviço SAP nº ${osNum}.`;
+    txtDetalhe = `Executada manutenção via O.S. SAP nº ${osNum}.`;
   } else if (tipo === "Troca de Componente") {
-    // REGRA DE NEGÓCIO CRUCIAL: Se substituiu, zera o ciclo de desgaste
     const tAntiga = item.ton;
     item.ton = 0; 
     item.dias = 0;
-    txtDetalhe = `Substituição completa efetuada na oficina. Ciclo de vida zerado (TON Antiga era: ${tAntiga.toLocaleString()}).`;
+    txtDetalhe = `Substituição total realizada. Ciclo zerado (TON anterior: ${tAntiga.toLocaleString()}).`;
   } else {
-    txtDetalhe = `Realizada inspeção de rotina dimensional e de trincas na bancada.`;
+    txtDetalhe = `Realizada inspeção de rotina na bancada.`;
   }
 
-  // Registra no Sheets e atualiza memória
-  registrarOcorrenciaDigital(id, tipo, `${txtDetalhe} Obs do Líder: ${obs}`);
-  localStorage.setItem("oms_ativos_v8", JSON.stringify(BANCO_ATIVOS));
+  registrarOcorrenciaDigital(id, tipo, `${txtDetalhe} Obs: ${obs}`);
+  localStorage.setItem("oms_ativos_v9", JSON.stringify(BANCO_ATIVOS));
   
-  alert("Relato técnico gravado e sincronizado com sucesso!");
+  alert("Relato técnico enviado com sucesso para a planilha!");
   document.getElementById("form-obs-evento").value = "";
-  if(document.getElementById("form-ton-abatida")) document.getElementById("form-ton-abatida").value = "";
-  if(document.getElementById("form-os-input")) document.getElementById("form-os-input").value = "";
   inicializarAbaIntervencao();
 }
 
 // ==========================================================================
-// FUNÇÕES DE SEGURANÇA E PÂNICO COMPLETA
+// SEGURANÇA E ALERTA OPERACIONAL DE PÂNICO
 // ==========================================================================
 function dispararEmergencia(tipo) {
   if (!verificarAcesso()) return;
   const dataHora = new Date().toLocaleString("pt-BR");
-  EM_EMERGENCIA = `⚠️ PARADA DE EMERGÊNCIA DISPARADA POR ${OPERADOR_LOGADO.nome} EM ${dataHora} - MOTIVO: ${tipo}`;
-  localStorage.setItem("oms_emergencia_v8", JSON.stringify(EM_EMERGENCIA));
+  EM_EMERGENCIA = `⚠️ EMERGÊNCIA DISPARADA POR ${OPERADOR_LOGADO.nome} (${dataHora}): ${tipo}`;
+  localStorage.setItem("oms_emergencia_v9", JSON.stringify(EM_EMERGENCIA));
   
-  // Envia alerta imediatamente como uma linha de ocorrência crítica no Sheets
   registrarOcorrenciaDigital("SISTEMA", "BOTÃO DE PÂNICO", `Alerta de emergência acionado em fábrica. Motivo: ${tipo}`);
   exibirBarraEmergencia();
 }
 
 function encerrarEmergencia() {
   EM_EMERGENCIA = null;
-  localStorage.removeItem("oms_emergencia_v8");
+  localStorage.removeItem("oms_emergencia_v9");
   if (document.getElementById("barra-emergencia")) document.getElementById("barra-emergencia").style.display = "none";
 }
 
@@ -428,7 +409,6 @@ function exibirBarraEmergencia() {
   }
 }
 
-// Inicializador Mestre ao carregar a página
 document.addEventListener("DOMContentLoaded", () => {
   atualizarInterfaceUsuario();
   exibirBarraEmergencia();
