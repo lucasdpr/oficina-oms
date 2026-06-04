@@ -304,22 +304,51 @@ function sacarParaBancada(id) {
 // INTEGRACAO REAL-TIME GOOGLE SHEETS VIA SHEET.BEST
 // ==========================================================================
 function registrarOcorrenciaDigital(ativoId, tipo, detalhe) {
-  const dataHoraAtual = new Date().toLocaleString("pt-BR");
+  // Criamos formatos limpos e isolados para o Excel não se confundir
+  const agora = new Date();
+  const dataParaExcel = agora.toLocaleDateString("pt-BR"); // Ex: 04/06/2026
+  const horaParaExcel = agora.toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' }); // Ex: 16:30
+  
+  const dataHoraVisual = `${dataParaExcel} ${horaParaExcel}`;
   const quemFez = OPERADOR_LOGADO ? `${OPERADOR_LOGADO.nome} (${OPERADOR_LOGADO.matricula})` : "Sistema";
 
-  HISTORICO_EVENTOS.unshift({ data: dataHoraAtual, ativoId: ativoId, evento: tipo, detalhe: detalhe, executor: quemFez });
+  // Encontra o ativo para pegar a tonelagem real e limpa (sem pontos de texto)
+  let itemAtivo = BANCO_ATIVOS.find(a => a.id === ativoId);
+  let tonAtualLimpa = itemAtivo ? Math.round(itemAtivo.ton) : 0;
+  let diasAtualLimpo = itemAtivo ? parseInt(itemAtivo.dias) : 0;
+
+  // Atualiza o histórico local na tela do celular
+  HISTORICO_EVENTOS.unshift({ 
+    data: dataHoraVisual, 
+    ativoId: ativoId, 
+    evento: tipo, 
+    detalhe: detalhe, 
+    executor: quemFez 
+  });
   localStorage.setItem("oms_historico_v10", JSON.stringify(HISTORICO_EVENTOS));
 
   const URL_API_SHEETBEST = "https://api.sheetbest.com/sheets/09ed7cf8-6b8d-4071-973c-19ec2515c448"; 
 
+  // Objeto estruturado exatamente como as colunas que o Excel adora ler
+  const dadosParaPlanilha = {
+    "Data": dataParaExcel,
+    "Hora": horaParaExcel,
+    "Ativo_TAG": ativoId,
+    "Tipo_Evento": tipo,
+    "Tonelagem_Atual": tonAtualLimpa, // Enviado como número puro para o Excel calcular!
+    "Dias_Campanha": diasAtualLimpo,   // Enviado como número puro!
+    "Detalhes_Tecnicos": detalhe,
+    "Executor": quemFez
+  };
+
   fetch(URL_API_SHEETBEST, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ data: dataHoraAtual, ativo: ativoId, evento: tipo, detalhe: detalhe, executor: quemFez })
+    body: JSON.stringify(dadosParaPlanilha)
   })
   .then(res => res.json())
-  .then(data => console.log("Planilha integrada!"))
-  .catch(err => console.error("Erro na integração:", err));
+  .then(data => console.log("Sincronizado no Excel com sucesso!"))
+  .catch(err => console.error("Erro na integração com o Sheets:", err));
 
   renderHistorico();
 }
@@ -336,10 +365,10 @@ function renderHistorico() {
   tbody.innerHTML = HISTORICO_EVENTOS.slice(0, 10).map(h => `
     <tr>
       <td><small>${h.data}</small></td>
-      <td><code>${h.ativoId || h.ativo}</code></td>
-      <td><span class="ind-card-tag">${h.evento}</span></td>
-      <td><small>${h.detalhe}</small></td>
-      <td><strong>${h.executor}</strong></td>
+      <td><code>${h.ativoId || h.ativo || h.Ativo_TAG}</code></td>
+      <td><span class="ind-card-tag">${h.evento || h.Tipo_Evento}</span></td>
+      <td><small>${h.detalhe || h.Detalhes_Tecnicos}</small></td>
+      <td><strong>${h.executor || h.Executor}</strong></td>
     </tr>
   `).join("");
 }
