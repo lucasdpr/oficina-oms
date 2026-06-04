@@ -1,203 +1,220 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Oficina OMS | Gestão Integrada de Ativos</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OMS - Painel de Controle de Ativos</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Ícones profissionais -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-
 <body>
-  <div class="emergency-bar" id="barra-emergencia" style="display: none;">
+
+  <!-- BARRA DE EMERGÊNCIA (Fica no topo se ativada) -->
+  <div id="barra-emergencia" class="emergency-bar" style="display: none;">
     <div class="emergency-content">
-      <i class="fas fa-exclamation-triangle fa-spin"></i>
-      <span><strong>ALERTA DE EMERGÊNCIA OPERACIONAL ATIVO:</strong> <span id="texto-emergencia"></span></span>
-      <button class="btn-xs-clear" onclick="encerrarEmergencia()">Encerrar Ocorrência</button>
+      <span id="texto-emergencia">⚡ ALERTA OPERACIONAL MÁXIMO ACIONADO ⚡</span>
+      <button class="btn-xs-clear" onclick="encerrarEmergencia()">Encerrar Alerta</button>
     </div>
   </div>
 
   <div class="container">
+    
+    <!-- SIDEBAR / TOPO COMPACTO -->
     <aside class="sidebar">
       <div class="logo">
-        <i class="fas fa-industry"></i>
-        <span>Oficina OMS</span>
+        <i class="fas fa-industry"></i> <span>Oficina OMS</span>
+      </div>
+      
+      <!-- Caixa de Matrícula: Agora super visível e fácil de acessar -->
+      <div class="user-status-box">
+        <small><i class="fas fa-user-shield"></i> Operador Logado:</small>
+        <span id="nome-operador-logado">Não identificado</span>
+        <button class="btn-xs" onclick="pedirIdentificacao()"><i class="fas fa-key"></i> Validar Matrícula</button>
       </div>
 
+      <hr class="nav-sep">
+
+      <!-- Menu de Navegação por Abas -->
       <nav>
-        <a href="#" class="nav-link active" onclick="abrirAba(event,'aba-painel')">
-          <i class="fas fa-stream"></i> Sequência dos Veios
+        <a href="#" class="nav-link active" onclick="abrirAba(event, 'aba-painel')">
+          <i class="fas fa-chart-line"></i> Painel Geral
         </a>
-
-        <a href="#" class="nav-link" onclick="abrirAba(event,'aba-ativos')">
-          <i class="fas fa-table"></i> Planilha de Ativos
+        <a href="#" class="nav-link" onclick="abrirAba(event, 'aba-fluxo')">
+          <i class="fas fa-stream"></i> Fluxo dos Veios
         </a>
-
-        <a href="#" class="nav-link" onclick="abrirAba(event,'aba-intervencao')">
-          <i class="fas fa-tools"></i> Ordens e Intervenções
+        <a href="#" class="nav-link" onclick="abrirAba(event, 'aba-ativos')">
+          <i class="fas fa-tools"></i> Gerenciar Ativos
         </a>
-
-        <hr class="nav-sep" />
-
-        <div class="user-status-box">
-          <small><i class="fas fa-user-shield"></i> Operador Autenticado:</small>
-          <div id="nome-operador-logado" style="font-weight: bold; color: var(--accent-color); margin: 4px 0;">Não identificado</div>
-          <button class="btn-xs" onclick="pedirIdentificacao()"><i class="fas fa-user-check"></i> Validar Matrícula</button>
-        </div>
+        <a href="#" class="nav-link" onclick="abrirAba(event, 'aba-intervencao')">
+          <i class="fas fa-file-medical"></i> Registrar Ocorrência
+        </a>
       </nav>
     </aside>
 
+    <!-- CONTEÚDO PRINCIPAL -->
     <main class="main-content">
+      
+      <!-- CABEÇALHO FIXO -->
       <header class="main-header">
         <div>
-          <h1>Controle de Vida Útil e Campanhas - Lingotamento</h1>
-          <p class="subtitle">Oficina de Manutenção de Segmentos (OMS)</p>
+          <h1>Controle de Campanha e Ativos</h1>
+          <p style="color: var(--muted); font-size: 0.9rem;">Mesa Osciladora, Moldes e Segmentos - MCC 2, 3 e 4</p>
         </div>
-        <div class="header-actions">
-          <button class="btn-danger-panic" onclick="dispararEmergencia('Transbordo de Aço')"><i class="fas fa-fire"></i> Transbordo de Aço</button>
-          <button class="btn-danger-panic" onclick="dispararEmergencia('Placa Presa na Linha')"><i class="fas fa-border-all"></i> Placa Presa</button>
-        </div>
+        <button class="btn-danger-panic" onclick="dispararEmergencia('Parada de Emergência da Linha / Quebra de Componente')">
+          <i class="fas fa-exclamation-triangle"></i> PÂNICO DA ÁREA
+        </button>
       </header>
 
+      <!-- ================= ABA 1: PAINEL GERAL (KPIs e Resumo Rápido) ================= -->
       <section id="aba-painel" class="tab-content active">
-  <div class="kpi-grid">
-    <div class="kpi-card" style="border-left: 4px solid var(--danger);">
-      <small>CRÍTICOS (>85% VIDA)</small>
-      <h2 id="kpi-criticos">0</h2>
-    </div>
-    <div class="kpi-card" style="border-left: 4px solid var(--accent-color);">
-      <small>EM MANUTENÇÃO / BANCADA</small>
-      <h2 id="kpi-bancada">0</h2>
-    </div>
-    <div class="kpi-card" style="border-left: 4px solid var(--success);">
-      <small>MOLDES DISPONÍVEIS</small>
-      <h2 id="kpi-moldes">0</h2>
-    </div>
-  </div>
-
-  <div class="veio-selector-tabs">
-    <span class="veio-tab-title"><i class="fas fa-project-diagram"></i> Selecione o Veio para Inspeção:</span>
-    <div class="veio-tab-buttons">
-      <button class="btn-veio-tab active" onclick="mudarVeioVisualizado('C')">Veio C (MCC2)</button>
-      <button class="btn-veio-tab" onclick="mudarVeioVisualizado('D')">Veio D (MCC2)</button>
-      <button class="btn-veio-tab" onclick="mudarVeioVisualizado('E')">Veio E (MCC3)</button>
-      <button class="btn-veio-tab" onclick="mudarVeioVisualizado('F')">Veio F (MCC3)</button>
-      <button class="btn-veio-tab" onclick="mudarVeioVisualizado('G')">Veio G (MCC4)</button>
-      <button class="btn-veio-tab" onclick="mudarVeioVisualizado('H')">Veio H (MCC4)</button>
-    </div>
-  </div>
-
-  <div class="mcc-single-view">
-    <div class="mcc-card">
-      <h3 id="titulo-veio-focado"><i class="fas fa-eye"></i> Monitoramento Ativo: Veio C</h3>
-      <div id="container-fluxo-focado" class="fluxo-ativos-vertical">
+        <!-- Grid de KPIs Globais -->
+        <div class="kpi-grid">
+          <div class="kpi-card critico">
+            <small>Ativos Críticos (>85%)</small>
+            <h2 id="kpi-criticos">0</h2>
+          </div>
+          <div class="kpi-card">
+            <small>Na Bancada da OMS</small>
+            <h2 id="kpi-bancada">0</h2>
+          </div>
+          <div class="kpi-card">
+            <small>Moldes Disponíveis</small>
+            <h2 id="kpi-moldes">0</h2>
+          </div>
         </div>
-    </div>
-  </div>
-</section>
 
+        <div class="welcome-box">
+          <h3><i class="fas fa-info-circle"></i> Instruções Operacionais</h3>
+          <p>Selecione a aba <strong>"Fluxo dos Veios"</strong> para inspecionar visualmente as linhas MCC 2, 3 e 4. Utilize a aba <strong>"Gerenciar Ativos"</strong> para lançar atualizações rápidas de tonelagem ou sacar itens para manutenção. Para registrar intervenções pesadas e sincronizar com o Sheets, use a aba <strong>"Registrar Ocorrência"</strong>.</p>
+        </div>
+      </section>
+
+      <!-- ================= ABA 2: FLUXO VERTICAL DOS VEIOS ================= -->
+      <section id="aba-fluxo" class="tab-content">
+        <div class="veio-selector-tabs">
+          <span><i class="fas fa-search"></i> Selecione o Veio para Inspeção Visual:</span>
+          <div class="veio-tab-buttons">
+            <button class="btn-veio-tab active" onclick="mudarVeioVisualizado('C')">Veio C (MCC 2)</button>
+            <button class="btn-veio-tab" onclick="mudarVeioVisualizado('D')">Veio D (MCC 2)</button>
+            <button class="btn-veio-tab" onclick="mudarVeioVisualizado('E')">Veio E (MCC 3)</button>
+            <button class="btn-veio-tab" onclick="mudarVeioVisualizado('F')">Veio F (MCC 3)</button>
+            <button class="btn-veio-tab" onclick="mudarVeioVisualizado('G')">Veio G (MCC 4)</button>
+            <button class="btn-veio-tab" onclick="mudarVeioVisualizado('H')">Veio H (MCC 4)</button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <h3 id="titulo-veio-focado" style="margin-bottom: 15px; color: #fff;"></h3>
+          <div id="container-fluxo-focado">
+            <!-- Inserido dinamicamente pelo JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= ABA 3: GERENCIAR ATIVOS (Filtros e Edição Rápida) ================= -->
       <section id="aba-ativos" class="tab-content">
         <div class="table-container">
-          <div class="table-header">
-            <h2>Gerenciamento de Linha (1 clique em Dias ou TON para editar)</h2>
-            <div class="filter-container">
-              <label><i class="fas fa-filter"></i> Componente:</label>
-              <select id="filtro-tipo-ativo" onchange="renderAtivos()">
-                <option value="TODOS">Todos os Componentes</option>
-                <option value="Molde">Moldes</option>
-                <option value="Mesa Osciladora">Mesas Osciladoras</option>
-                <option value="Seguimento Zero">Seguimento Zero</option>
-                <option value="Câmara de Exaustão">Câmara de Exaustão (Seg. 1 a 6)</option>
-                <option value="Cadeira Inferior">Cadeiras Inferiores (43 a 79)</option>
-                <option value="Cadeira Superior">Cadeiras Superiores (43 a 79)</option>
-                <option value="Bender / Horizontais (MCC4)">Bender / Horizontais (MCC4)</option>
-                <option value="ACIONADOS">Apenas Cadeiras Motorizadas (Acionadas)</option>
-              </select>
-            </div>
+          <div class="table-header-actions">
+            <h3 style="color: #fff;"><i class="fas fa-boxes"></i> Banco de Ativos Cadastrados</h3>
+            <select id="filtro-tipo-ativo" onchange="renderAtivos()">
+              <option value="TODOS">Todos os Componentes</option>
+              <option value="Molde">Moldes</option>
+              <option value="Mesa Osciladora">Mesas Osciladoras</option>
+              <option value="Seguimento Zero">Seguimentos Zero</option>
+              <option value="Câmara de Exaustão">Câmaras de Exaustão</option>
+              <option value="Cadeira Inferior">Cadeiras Inferiores</option>
+              <option value="Cadeira Superior">Cadeiras Superiores</option>
+              <option value="ACIONADOS">Apenas Cadeiras Motorizadas (⚡)</option>
+              <option value="Bancada / Oficina">Apenas na Bancada</option>
+            </select>
           </div>
-
           <div class="responsive-table">
             <table>
               <thead>
                 <tr>
-                  <th>ID Equipamento</th>
-                  <th>Componente</th>
-                  <th>Posição Operacional</th>
-                  <th>Dias Campanha</th>
-                  <th>TON Atual</th>
+                  <th>TAG / ID</th>
+                  <th>Tipo</th>
+                  <th>Localização Atual</th>
+                  <th>Dias</th>
+                  <th>TON Atual (Clique p/ editar)</th>
                   <th>Meta TON</th>
                   <th>Vida Útil</th>
                   <th>Ações</th>
                 </tr>
               </thead>
               <tbody id="ativos-table-body">
-                </tbody>
+                <!-- Inserido dinamicamente pelo JS -->
+              </tbody>
             </table>
           </div>
         </div>
       </section>
 
+      <!-- ================= ABA 4: REGISTRAR OCORRÊNCIA (Formulário e Sheets) ================= -->
       <section id="aba-intervencao" class="tab-content">
-        <div class="table-container">
-          <div class="table-header">
-            <h2>Fluxo de Ordem de Serviço & Checks de Não Conformidade</h2>
-          </div>
-
+        <div class="table-container" style="margin-bottom: 25px;">
+          <h3 style="color: #fff; margin-bottom: 15px;"><i class="fas fa-edit"></i> Registrar Nova Intervenção na Oficina</h3>
+          
           <div class="form-grid">
-            <div>
-              <label>Equipamento Alvo:</label>
+            <div class="form-group">
+              <label for="form-ativo-alvo">Selecione o Componente Alvo:</label>
               <select id="form-ativo-alvo"></select>
             </div>
-
-            <div>
-              <label>Tipo de Evento:</label>
+            
+            <div class="form-group">
+              <label for="form-tipo-evento">Tipo de Evento:</label>
               <select id="form-tipo-evento" onchange="ajustarCamposIntervencao()">
-                <option value="Check de Nao Conformidade">📋 Check de Não Conformidade (Molde sem OS)</option>
-                <option value="Ordem de Servico">🔧 Executar Ordem de Serviço (OS Gerência)</option>
-                <option value="Reparo Parcial">🛠️ Melhoria em Bancada (Abater TON)</option>
+                <option value="Troca de Componente">Troca Completa de Componente</option>
+                <option value="Reparo Parcial">Reparo Parcial / Abatimento de TON</option>
+                <option value="Ordem de Servico">Execução de O.S. Preventiva</option>
+                <option value="Inspecao de Rotina">Inspeção / Check de Não Conformidade</option>
               </select>
             </div>
 
-            <div id="campo-os-numero" style="display:none;">
-              <label style="color: var(--accent-color);">Número da OS (SAP/Gerência):</label>
-              <input type="text" id="form-os-input" placeholder="Ex: OS-2026-9081">
+            <div class="form-group" id="campo-os-numero" style="display:none;">
+              <label for="form-os-input">Número da O.S. (SAP):</label>
+              <input type="text" id="form-os-input" placeholder="Ex: 40129384">
             </div>
 
-            <div id="campo-abatimento" style="display:none;">
-              <label style="color: #34d399;">Quantidade de TON a Reduzir:</label>
-              <input type="number" id="form-ton-abatida" value="0">
-            </div>
-
-            <div class="full">
-              <label>Relato Técnico do Inspetor / Supervisor de Turno:</label>
-              <textarea id="form-obs-evento" rows="3" placeholder="Insira as medições de rolos, folgas de espetores ou falhas mecânicas detectadas..."></textarea>
-            </div>
-
-            <div class="full">
-              <button class="btn-primary" onclick="salvarIntervencao()"><i class="fas fa-sync"></i> Enviar Registro para a Linha em Tempo Real</button>
+            <div class="form-group" id="campo-abatimento" style="display:none;">
+              <label for="form-ton-abatida">Tonelagem a ser Abatida:</label>
+              <input type="number" id="form-ton-abatida" placeholder="Ex: 50000">
             </div>
           </div>
 
-          <div style="margin-top: 30px;">
-            <h3>Livro de Registro Digital (Livro de Ocorrências da OMS)</h3>
-            <div class="responsive-table" style="margin-top: 12px;">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Data/Hora</th>
-                    <th>Ativo</th>
-                    <th>Tipo</th>
-                    <th>Descrição Técnico / Detalhes</th>
-                    <th>Responsável</th>
-                  </tr>
-                </thead>
-                <tbody id="historico-eventos-body">
-                  </tbody>
-              </table>
-            </div>
+          <div class="form-group" style="margin-top: 15px; margin-bottom: 20px;">
+            <label for="form-obs-evento">Relato Técnico / Observações da Bancada:</label>
+            <textarea id="form-obs-evento" rows="3" placeholder="Descreva os detalhes encontrados no componente..."></textarea>
+          </div>
+
+          <button class="btn-primary" onclick="salvarIntervencao()">
+            <i class="fas fa-cloud-upload-alt"></i> Gravar Intervenção e Sincronizar Sheets
+          </button>
+        </div>
+
+        <!-- Livro Digital de Ocorrências (Sincronizado) -->
+        <div class="table-container">
+          <h3 style="color: #fff; margin-bottom: 15px;"><i class="fas fa-history"></i> Histórico Recente de Ocorrências (Google Sheets)</h3>
+          <div class="responsive-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Data/Hora</th>
+                  <th>Ativo</th>
+                  <th>Evento</th>
+                  <th>Detalhes do Relato</th>
+                  <th>Executor</th>
+                </tr>
+              </thead>
+              <tbody id="historico-eventos-body">
+                <!-- Inserido dinamicamente pelo JS -->
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
+
     </main>
   </div>
 
