@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OMS</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <div id="tela-login-home" class="login-home-container">
+    <div class="login-bg-imagem"></div>
+    <div class="login-bg-overlay"></div>
+    <div class="login-card-central">
+      <div class="login-logo-factory">
+        <svg viewBox="0 0 24 24"><path d="M4,18V11.42L8.27,4H14V11H18V14H20V18H4M2,22V20H22V22H2M12,13H10V15H12V13M16,13H14V15H16V13M12,16H10V18H12V16M16,16H14V18H16V16Z" /></svg>
+      </div>
+      <div class="login-card-header">
+        <h1>SISTEMA OMS</h1>
+        <p>Aciaria - Lingotamento Contínuo </p>
+      </div>
+      <div class="login-industrial-form">
+        <div class="login-form-group">
+          <label>Operador / Líder</label>
+          <div class="login-input-wrapper">
+            <input type="text" id="login-nome" placeholder="Nome do Líder de Turno">
+            <i class="fas fa-user login-input-icon"></i>
+          </div>
+        </div>
+        <div class="login-form-group">
+          <label>Matrícula</label>
+          <div class="login-input-wrapper">
+            <input type="password" id="login-matricula" placeholder="Matrícula Operacional">
+            <i class="fas fa-key login-input-icon"></i>
+          </div>
+        </div>
+        <button type="button" class="login-btn-submit" onclick="processarAutenticacaoHome()">Autenticar Terminal OMS</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="container-sistema-oms" class="app-container" style="display: none;">
+    <div id="barra-emergencia" class="emergency-bar" style="display: none; position: fixed; top: 0; left: 0; width: 100%;">
+      <div class="emergency-content"><span id="texto-emergencia"></span><button class="btn-close-emergency" onclick="encerrarEmergencia()">Reset</button></div>
+    </div>
+
+    <aside id="sidebar-menu" class="sidebar">
+      <div class="sidebar-header"><h2><i class="fas fa-industry"></i> Painel OMS</h2></div>
+      <div class="operator-box">
+        <div class="operator-info"><i class="fas fa-user-shield"></i><div><small>Líder Logado</small><p id="nome-operador-logado">...</p></div></div>
+        <button class="btn-auth" style="background:#374151;" onclick="fazerLogout()">Sair</button>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" id="nav-painel" class="nav-link active" onclick="abrirAba(event, 'aba-painel')"><i class="fas fa-chart-pie"></i> Painel Geral OMS</a>
+        <a href="#" id="nav-fluxo" class="nav-link" onclick="abrirAba(event, 'aba-fluxo')"><i class="fas fa-stream"></i> Painel de controle dos Veios</a>
+        <a href="#" id="nav-ativos" class="nav-link" onclick="abrirAba(event, 'aba-ativos')"><i class="fas fa-tools"></i> Matriz de Componentes</a>
+        <a href="#" id="nav-mcc2" class="nav-link" onclick="abrirAba(event, 'aba-mcc2')"><i class="fas fa-chart-bar"></i> Gráficos MCC 2 (C/D)</a>
+        <a href="#" id="nav-mcc3" class="nav-link" onclick="abrirAba(event, 'aba-mcc3')"><i class="fas fa-chart-bar"></i> Gráficos MCC 3 (E/F)</a>
+        <a href="#" id="nav-mcc4" class="nav-link" onclick="abrirAba(event, 'aba-mcc4')"><i class="fas fa-chart-line"></i> Gráficos MCC 4 (A/B)</a>
+      </nav>
+      <button class="btn-panic" onclick="dispararEmergencia()">DISPARAR PÂNICO</button>
+    </aside>
+
+    <main class="main-content">
+      <section id="seletor-veios-container" class="veios-selector-section hidden">
+        <h3><i class="fas fa-compress-alt"></i> Filtragem Avançada de Veios (OMS)</h3>
+        <div class="veios-grid-buttons">
+          <button class="btn-veio-tab active" onclick="mudarVeioVisualizado('C')">MCC 2 - Veio C</button>
+          <button class="btn-veio-tab" onclick="mudarVeioVisualizado('D')">MCC 2 - Veio D</button>
+          <button class="btn-veio-tab" onclick="mudarVeioVisualizado('E')">MCC 3 - Veio E</button>
+          <button class="btn-veio-tab" onclick="mudarVeioVisualizado('F')">MCC 3 - Veio F</button>
+          <button class="btn-veio-tab" onclick="mudarVeioVisualizado('A')">MCC 4 - Veio A</button>
+          <button class="btn-veio-tab" onclick="mudarVeioVisualizado('B')">MCC 4 - Veio B</button>
+        </div>
+      </section>
+
+      <section id="aba-painel" class="tab-content active">
+        <div class="welcome-box"><h1>Plataforma OMS - Gestão Avançada de Aciaria</h1><p>Visão computacional e desgaste preditivo de componentes do lingotamento.</p></div>
+        <div class="kpi-container">
+          <div class="kpi-card danger"><div class="kpi-icon"><i class="fas fa-radiation"></i></div><div class="kpi-data"><h4 id="kpi-criticos">0</h4><p>Ativos Críticos (>85%)</p></div></div>
+          <div class="kpi-card warning"><div class="kpi-icon"><i class="fas fa-warehouse"></i></div><div class="kpi-data"><h4 id="kpi-bancada">0</h4><p>Na Oficina / Bancada</p></div></div>
+          <div class="kpi-card success"><div class="kpi-icon"><i class="fas fa-check-double"></i></div><div class="kpi-data"><h4 id="kpi-moldes">0</h4><p>Moldes Prontos</p></div></div>
+        </div>
+      </section>
+
+      <section id="aba-fluxo" class="tab-content">
+        <div class="panel-card">
+          <div class="panel-card-header"><h1 id="titulo-veio-focado">Sequenciamento Síncrono</h1></div>
+          <div id="container-fluxo-horizontal-scroll" class="graficos-container"></div>
+        </div>
+      </section>
+
+      <section id="aba-ativos" class="tab-content">
+        <div class="panel-card">
+          <div class="panel-card-header"><h1><i class="fas fa-cubes"></i> Matriz Operacional Geral</h1>
+            <select id="filtro-tipo-ativo" onchange="renderAtivos()">
+              <option value="TODOS">Todos Componentes</option>
+              <option value="Molde">Moldes</option>
+              <option value="Cadeira Superior">Cadeiras Superiores</option>
+              <option value="Cadeira Inferior">Cadeiras Inferiores</option>
+              <option value="Bender">Bender (MCC 4)</option>
+              <option value="Bow">Bow (MCC 4)</option>
+              <option value="Straightener">Straightener (MCC 4)</option>
+              <option value="Horizontal">Segmentos Horizontais</option>
+              <option value="Bancada / Oficina">Oficina / Bancada</option>
+            </select>
+          </div>
+          <div class="table-responsive">
+            <table class="industrial-table">
+              <thead><tr><th>TAG Identificador</th><th>Tipo</th><th>Localização</th><th>Dias</th><th>Toneladas</th><th>Limite</th><th>Desgaste</th><th>Ações</th></tr></thead>
+              <tbody id="ativos-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="aba-mcc2" class="tab-content"><div class="panel-card"><h1>MCC 2</h1><div id="graficos-mcc2" class="graficos-container"></div></div></section>
+      <section id="aba-mcc3" class="tab-content"><div class="panel-card"><h1>MCC 3</h1><div id="graficos-mcc3" class="graficos-container"></div></div></section>
+      <section id="aba-mcc4" class="tab-content"><div class="panel-card"><h1>MCC 4 (Layout de Engenharia Estendido)</h1><div id="graficos-mcc4" class="graficos-container"></div></div></section>
+
+      <section class="panel-card" style="margin-top: 30px;">
+        <h2><i class="fas fa-history"></i> Histórico de Eventos e Relatório Técnico</h2>
+        <p class="text-muted" style="font-size: 13px; margin-bottom: 15px;">Registro em tempo real das edições de dados, trocas de turnos e saques mecânicos.</p>
+        <div class="table-responsive">
+          <table class="industrial-table">
+            <thead>
+              <tr>
+                <th>Horário</th>
+                <th>TAG Identificador</th>
+                <th>Descrição do Evento / Ação Executada</th>
+                <th>Líder de Turno Responsável</th>
+              </tr>
+            </thead>
+            <tbody id="historico-table-body">
+              </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
