@@ -65,7 +65,7 @@ body { background-color: var(--bg-main); color: var(--text-main); overflow-x: hi
 .btn-xs-primary { background: transparent; border: none; font-size: 12px; font-weight: 600; transition: all 0.2s; }
 .btn-xs-primary:hover { background: var(--text-accent) !important; color: #fff !important; }
 
-/* LAYOUT PRINCIPAL (GARANTE O LADO A LADO NO PC) */
+/* LAYOUT PRINCIPAL */
 .mobile-header { display: none; }
 .hidden-desktop { display: none; }
 
@@ -100,10 +100,14 @@ body { background-color: var(--bg-main); color: var(--text-main); overflow-x: hi
 .btn-veio-tab { background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: var(--text-muted); padding: 12px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s; }
 .btn-veio-tab:hover { background: rgba(255,255,255,0.15); color: #fff; }
 .btn-veio-tab.active { background: var(--text-accent); color: #000; border-color: var(--text-accent); box-shadow: 0 0 15px rgba(56, 189, 248, 0.5); }
-.mcc-veio-filters { display: flex; gap: 10px; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 8px; border: 1px solid var(--border-color); }
+
+/* NOVOS FILTROS CRUZADOS (VEIO E STATUS) */
+.mcc-filters-wrapper { display: flex; gap: 15px; flex-wrap: wrap; width: 100%; justify-content: flex-end; }
+.mcc-filter-group { display: flex; gap: 10px; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 8px; border: 1px solid var(--border-color); flex-wrap: wrap; }
 .btn-filter-mcc { background: transparent; border: none; color: var(--text-muted); padding: 6px 16px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.2s; }
 .btn-filter-mcc:hover { color: #fff; background: rgba(255,255,255,0.05); }
 .btn-filter-mcc.active { background: #334155; color: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); }
+
 .tab-content { display: none; animation: fadeIn 0.4s ease-out; }
 .tab-content.active { display: block; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -177,22 +181,17 @@ body { background-color: var(--bg-main); color: var(--text-main); overflow-x: hi
    MEDIA QUERIES (MOBILE RESPONSIVE)
 ========================================= */
 @media (max-width: 992px) {
-  /* Habilita Header Mobile e oculta elementos Desktop */
   .mobile-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; position: fixed; top: 0; left: 0; width: 100%; z-index: 4000; border-bottom: 1px solid var(--border-color); box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
   .hidden-desktop { display: block; }
-  
   .btn-mobile-menu { background: transparent; border: none; color: #fff; font-size: 24px; cursor: pointer; }
   .btn-close-sidebar { background: transparent; border: none; color: var(--text-muted); font-size: 22px; cursor: pointer; }
 
-  /* Ajuste do Container Principal para caber o Menu Fixo */
   .app-container { flex-direction: column; }
-  .main-content { padding: 90px 15px 20px 15px; } /* Espaço pro Header */
+  .main-content { padding: 90px 15px 20px 15px; }
 
-  /* Sidebar flutuante que entra pela esquerda */
   .sidebar { position: fixed; left: -320px; top: 0; height: 100vh; width: 280px; z-index: 5000; transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 5px 0 25px rgba(0,0,0,0.7); }
   .sidebar.open { left: 0; }
 
-  /* Empilhamento de Grids e Flexboxes */
   .kpi-container { grid-template-columns: 1fr; }
   .veios-grid-buttons { grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .btn-veio-tab { padding: 10px 5px; font-size: 11px; }
@@ -203,14 +202,14 @@ body { background-color: var(--bg-main); color: var(--text-main); overflow-x: hi
   .panel-card-header.flex-between { flex-direction: column; align-items: flex-start; gap: 12px; }
   .w-mobile-100 { width: 100% !important; }
   .mt-mobile-10 { margin-top: 10px; }
-  .mcc-veio-filters { flex-wrap: wrap; justify-content: center; }
+  
+  .mcc-filters-wrapper { justify-content: center; }
+  .mcc-filter-group { flex: 1; justify-content: center; }
   .btn-filter-mcc { flex: 1; text-align: center; }
 
-  /* Login Card menor no mobile */
   .login-card-central { padding: 30px 20px; }
   .login-card-header h1 { font-size: 20px; }
 
-  /* Modais ajustados */
   .modal-content { padding: 20px; }
   .mobile-stack-info { flex-direction: column; align-items: flex-start !important; gap: 10px; }
   .mobile-stack-info .text-right { text-align: left; }

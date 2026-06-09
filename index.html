@@ -3,30 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OMS - Dashboard Premium v27</title>
+  <title>OMS - Dashboard Premium v28</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
-  <!-- MODAL: RELATÓRIO DE RETIRADA (Saque da máquina) -->
+  <!-- MODAL: RELATÓRIO DE RETIRADA -->
   <div id="modal-relatorio" class="modal-overlay hidden">
     <div class="modal-content glass-panel premium-shadow">
       <h2 style="color: var(--warning); margin-bottom: 5px;"><i class="fas fa-clipboard-check"></i> Relatório de Manutenção</h2>
       <p class="text-muted" style="font-size: 13px; margin-bottom: 20px;">Preenchimento obrigatório para envio à Oficina.</p>
-      
       <p>Componente a ser sacado: <strong id="modal-tag" class="font-code text-accent" style="font-size: 16px;"></strong></p>
       
       <div class="input-group mt-15">
          <label>Motivo da Retirada da Máquina</label>
          <select id="modal-motivo" class="premium-select w-100"></select>
       </div>
-      
       <div class="input-group mt-15">
          <label>Condição de Chegada na Oficina (Laudo Visual)</label>
          <textarea id="modal-condicao" rows="4" placeholder="Descreva os detalhes estruturais, vazamentos ou avarias observadas..." style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid var(--border-color); color: #fff; border-radius: 6px; resize: none; font-family: inherit;"></textarea>
       </div>
-      
       <div class="modal-actions flex-between mt-15" style="margin-top: 25px;">
          <button class="btn-outline-danger" onclick="fecharModalRelatorio()">Cancelar Operação</button>
          <button class="btn-premium btn-warning" onclick="confirmarRelatorio()"><i class="fas fa-paper-plane"></i> Confirmar Retirada</button>
@@ -34,12 +31,11 @@
     </div>
   </div>
 
-  <!-- MODAL: CONCLUIR REPARO (Geral vs Parcial) -->
+  <!-- MODAL: CONCLUIR REPARO -->
   <div id="modal-concluir-reparo" class="modal-overlay hidden">
     <div class="modal-content glass-panel premium-shadow">
       <h2 style="color: var(--success); margin-bottom: 5px;"><i class="fas fa-tools"></i> Conclusão de Reparo</h2>
       <p class="text-muted" style="font-size: 13px; margin-bottom: 20px;">Defina como a peça retornará ao estoque de Reserva.</p>
-      
       <p>TAG em Manutenção: <strong id="modal-reparo-tag" class="font-code text-accent" style="font-size: 16px;"></strong></p>
       
       <div class="input-group mt-15">
@@ -63,7 +59,6 @@
            </div>
          </div>
       </div>
-      
       <div class="modal-actions flex-between mt-15" style="margin-top: 25px;">
          <button class="btn-outline-danger" onclick="fecharModalConcluirReparo()">Cancelar</button>
          <button class="btn-premium btn-success" onclick="confirmarConclusaoReparo()"><i class="fas fa-check-double"></i> Finalizar</button>
@@ -71,14 +66,13 @@
     </div>
   </div>
 
-  <!-- MODAL: PRONTUÁRIO INDIVIDUAL (Histórico da TAG) -->
+  <!-- MODAL: PRONTUÁRIO INDIVIDUAL -->
   <div id="modal-historico-ativo" class="modal-overlay hidden">
     <div class="modal-content glass-panel premium-shadow" style="max-width: 700px; padding: 20px;">
       <div class="flex-between" style="border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
         <h2 style="color: #fff; font-size: 18px;"><i class="fas fa-book-medical text-accent"></i> Prontuário do Equipamento</h2>
         <button class="btn-close-emergency" onclick="fecharModalHistorico()"><i class="fas fa-times"></i></button>
       </div>
-      
       <div class="flex-between mobile-stack-info" style="background: rgba(15, 23, 42, 0.5); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color);">
         <div>
           <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Identificação TAG</span>
@@ -89,18 +83,14 @@
            <div id="hist-tag-local" class="font-code" style="font-size: 13px; color: #fff;"></div>
         </div>
       </div>
-
       <div class="input-group mobile-stack-info gap-10" style="margin-bottom: 20px; display: flex; align-items: stretch;">
         <input type="text" id="input-nota-manual" placeholder="Ex: Troca de válvula, lubrificação extra..." style="flex: 1; padding: 10px; background: #0f172a; border: 1px solid var(--text-accent); color: #fff; border-radius: 6px;">
         <button class="btn-premium" onclick="salvarRegistroManual()"><i class="fas fa-plus"></i> Registrar</button>
       </div>
-
       <div class="scrollable-history table-responsive" style="max-height: 300px;">
         <table class="industrial-table premium-table">
           <thead><tr><th>Data/Hora</th><th>Evento / Descrição</th><th>Usuário</th></tr></thead>
-          <tbody id="tabela-historico-individual">
-             <!-- Renderizado via JS -->
-          </tbody>
+          <tbody id="tabela-historico-individual"></tbody>
         </table>
       </div>
     </div>
@@ -144,7 +134,7 @@
       <div class="emergency-content"><span id="texto-emergencia"></span><button class="btn-close-emergency" onclick="encerrarEmergencia()">Resetar Sistema</button></div>
     </div>
 
-    <!-- MOBILE HEADER (Apenas em telas pequenas) -->
+    <!-- MOBILE HEADER -->
     <div class="mobile-header glass-panel">
       <div class="mobile-logo flex-align-center gap-10">
         <div class="login-logo-factory" style="width: 35px; height: 35px; margin: 0; box-shadow: none;">
@@ -202,7 +192,7 @@
           <p>Visão computacional e desgaste preditivo de componentes do lingotamento.</p>
         </div>
         <div class="kpi-container">
-          <div class="kpi-card danger glass-panel"><div class="kpi-icon glow-danger"><i class="fas fa-radiation"></i></div><div class="kpi-data"><h4 id="kpi-criticos">0</h4><p>Críticos (>85%)</p></div></div>
+          <div class="kpi-card danger glass-panel"><div class="kpi-icon glow-danger"><i class="fas fa-radiation"></i></div><div class="kpi-data"><h4 id="kpi-criticos">0</h4><p>Críticos (>= 80%)</p></div></div>
           <div class="kpi-card warning glass-panel"><div class="kpi-icon glow-warning"><i class="fas fa-wrench"></i></div><div class="kpi-data"><h4 id="kpi-reparo">0</h4><p>Em Reparo</p></div></div>
           <div class="kpi-card success glass-panel"><div class="kpi-icon glow-success"><i class="fas fa-boxes"></i></div><div class="kpi-data"><h4 id="kpi-reserva">0</h4><p>Reserva Pronta</p></div></div>
         </div>
@@ -217,10 +207,10 @@
 
       <section id="aba-ativos" class="tab-content">
         <div class="panel-card glass-panel">
-          <div class="panel-card-header flex-between">
+          <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
             <h1><i class="fas fa-cubes"></i> Matriz Operacional Geral</h1>
-            <div class="custom-select-wrapper w-mobile-100 mt-mobile-10">
-              <select id="filtro-tipo-ativo" onchange="renderAtivos()" class="premium-select">
+            <div class="custom-select-wrapper w-mobile-100">
+              <select id="filtro-tipo-ativo" onchange="renderAtivos()" class="premium-select w-100">
                 <option value="TODOS">Visão Geral (Todos)</option>
                 <option value="Molde">Apenas Moldes</option>
                 <option value="Cadeira Superior">Cadeiras Superiores</option>
@@ -243,14 +233,23 @@
         </div>
       </section>
 
+      <!-- ABAS MCC 2, 3, 4 COM FILTROS DE STATUS -->
       <section id="aba-mcc2" class="tab-content">
         <div class="panel-card glass-panel">
-          <div class="panel-card-header flex-between">
+          <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
             <h1>Análise MCC 2</h1>
-            <div class="mcc-veio-filters w-mobile-100">
-              <button class="btn-filter-mcc active" onclick="filtrarGraficosMCC(2, 'TODOS', this)">Todos Veios</button>
-              <button class="btn-filter-mcc" onclick="filtrarGraficosMCC(2, 'C', this)">Veio C</button>
-              <button class="btn-filter-mcc" onclick="filtrarGraficosMCC(2, 'D', this)">Veio D</button>
+            <div class="mcc-filters-wrapper">
+              <div class="mcc-filter-group" id="filtros-veio-mcc2">
+                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="aplicarFiltrosMCC(2, this)">Todos Veios</button>
+                <button class="btn-filter-mcc" data-valor="C" onclick="aplicarFiltrosMCC(2, this)">Veio C</button>
+                <button class="btn-filter-mcc" data-valor="D" onclick="aplicarFiltrosMCC(2, this)">Veio D</button>
+              </div>
+              <div class="mcc-filter-group" id="filtros-status-mcc2">
+                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="aplicarFiltrosMCC(2, this)"><i class="fas fa-filter"></i> Tudo</button>
+                <button class="btn-filter-mcc" style="color:var(--success);" data-valor="VERDE" onclick="aplicarFiltrosMCC(2, this)">🟢 0-49%</button>
+                <button class="btn-filter-mcc" style="color:var(--warning);" data-valor="AMARELO" onclick="aplicarFiltrosMCC(2, this)">🟡 50-79%</button>
+                <button class="btn-filter-mcc" style="color:var(--danger);" data-valor="VERMELHO" onclick="aplicarFiltrosMCC(2, this)">🔴 +80%</button>
+              </div>
             </div>
           </div>
           <div id="graficos-mcc2" class="graficos-container"></div>
@@ -259,12 +258,20 @@
 
       <section id="aba-mcc3" class="tab-content">
         <div class="panel-card glass-panel">
-          <div class="panel-card-header flex-between">
+          <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
             <h1>Análise MCC 3</h1>
-            <div class="mcc-veio-filters w-mobile-100">
-              <button class="btn-filter-mcc active" onclick="filtrarGraficosMCC(3, 'TODOS', this)">Todos Veios</button>
-              <button class="btn-filter-mcc" onclick="filtrarGraficosMCC(3, 'E', this)">Veio E</button>
-              <button class="btn-filter-mcc" onclick="filtrarGraficosMCC(3, 'F', this)">Veio F</button>
+            <div class="mcc-filters-wrapper">
+              <div class="mcc-filter-group" id="filtros-veio-mcc3">
+                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="aplicarFiltrosMCC(3, this)">Todos Veios</button>
+                <button class="btn-filter-mcc" data-valor="E" onclick="aplicarFiltrosMCC(3, this)">Veio E</button>
+                <button class="btn-filter-mcc" data-valor="F" onclick="aplicarFiltrosMCC(3, this)">Veio F</button>
+              </div>
+              <div class="mcc-filter-group" id="filtros-status-mcc3">
+                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="aplicarFiltrosMCC(3, this)"><i class="fas fa-filter"></i> Tudo</button>
+                <button class="btn-filter-mcc" style="color:var(--success);" data-valor="VERDE" onclick="aplicarFiltrosMCC(3, this)">🟢 0-49%</button>
+                <button class="btn-filter-mcc" style="color:var(--warning);" data-valor="AMARELO" onclick="aplicarFiltrosMCC(3, this)">🟡 50-79%</button>
+                <button class="btn-filter-mcc" style="color:var(--danger);" data-valor="VERMELHO" onclick="aplicarFiltrosMCC(3, this)">🔴 +80%</button>
+              </div>
             </div>
           </div>
           <div id="graficos-mcc3" class="graficos-container"></div>
@@ -273,12 +280,20 @@
 
       <section id="aba-mcc4" class="tab-content">
         <div class="panel-card glass-panel">
-          <div class="panel-card-header flex-between">
-            <h1>Análise MCC 4 (Alta Performance)</h1>
-            <div class="mcc-veio-filters w-mobile-100">
-              <button class="btn-filter-mcc active" onclick="filtrarGraficosMCC(4, 'TODOS', this)">Todos Veios</button>
-              <button class="btn-filter-mcc" onclick="filtrarGraficosMCC(4, 'H', this)">Veio H</button>
-              <button class="btn-filter-mcc" onclick="filtrarGraficosMCC(4, 'G', this)">Veio G</button>
+          <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
+            <h1>Análise MCC 4 (Alta Perf.)</h1>
+            <div class="mcc-filters-wrapper">
+              <div class="mcc-filter-group" id="filtros-veio-mcc4">
+                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="aplicarFiltrosMCC(4, this)">Todos Veios</button>
+                <button class="btn-filter-mcc" data-valor="H" onclick="aplicarFiltrosMCC(4, this)">Veio H</button>
+                <button class="btn-filter-mcc" data-valor="G" onclick="aplicarFiltrosMCC(4, this)">Veio G</button>
+              </div>
+              <div class="mcc-filter-group" id="filtros-status-mcc4">
+                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="aplicarFiltrosMCC(4, this)"><i class="fas fa-filter"></i> Tudo</button>
+                <button class="btn-filter-mcc" style="color:var(--success);" data-valor="VERDE" onclick="aplicarFiltrosMCC(4, this)">🟢 0-49%</button>
+                <button class="btn-filter-mcc" style="color:var(--warning);" data-valor="AMARELO" onclick="aplicarFiltrosMCC(4, this)">🟡 50-79%</button>
+                <button class="btn-filter-mcc" style="color:var(--danger);" data-valor="VERMELHO" onclick="aplicarFiltrosMCC(4, this)">🔴 +80%</button>
+              </div>
             </div>
           </div>
           <div id="graficos-mcc4" class="graficos-container"></div>
@@ -302,12 +317,12 @@
 
       <section id="aba-reservas" class="tab-content">
         <div class="panel-card glass-panel" style="margin-bottom: 25px; border-top: 4px solid var(--success);">
-          <div class="panel-card-header flex-between">
+          <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
             <div>
               <h2 style="color: var(--success);"><i class="fas fa-boxes"></i> Estoque Disponível (Reserva)</h2>
               <p class="text-muted" style="font-size: 13px; margin-top: 5px;">Peças prontas para alocação via Swap Automático.</p>
             </div>
-            <button class="btn-premium w-mobile-100 mt-mobile-10" onclick="toggleFormAdicionar()"><i class="fas fa-plus"></i> Cadastrar Peça</button>
+            <button class="btn-premium w-mobile-100" onclick="toggleFormAdicionar()"><i class="fas fa-plus"></i> Cadastrar Peça</button>
           </div>
 
           <div id="form-novo-equipamento" class="cadastrar-box hidden">
