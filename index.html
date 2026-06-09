@@ -3,22 +3,120 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OMS</title>
+  <title>OMS - Dashboard Premium v27</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
+  <!-- MODAL: RELATÓRIO DE RETIRADA (Saque da máquina) -->
+  <div id="modal-relatorio" class="modal-overlay hidden">
+    <div class="modal-content glass-panel premium-shadow">
+      <h2 style="color: var(--warning); margin-bottom: 5px;"><i class="fas fa-clipboard-check"></i> Relatório de Manutenção</h2>
+      <p class="text-muted" style="font-size: 13px; margin-bottom: 20px;">Preenchimento obrigatório para envio à Oficina.</p>
+      
+      <p>Componente a ser sacado: <strong id="modal-tag" class="font-code text-accent" style="font-size: 16px;"></strong></p>
+      
+      <div class="input-group mt-15">
+         <label>Motivo da Retirada da Máquina</label>
+         <select id="modal-motivo" class="premium-select w-100"></select>
+      </div>
+      
+      <div class="input-group mt-15">
+         <label>Condição de Chegada na Oficina (Laudo Visual)</label>
+         <textarea id="modal-condicao" rows="4" placeholder="Descreva os detalhes estruturais, vazamentos ou avarias observadas..." style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid var(--border-color); color: #fff; border-radius: 6px; resize: none; font-family: inherit;"></textarea>
+      </div>
+      
+      <div class="modal-actions flex-between mt-15" style="margin-top: 25px;">
+         <button class="btn-outline-danger" onclick="fecharModalRelatorio()">Cancelar Operação</button>
+         <button class="btn-premium btn-warning" onclick="confirmarRelatorio()"><i class="fas fa-paper-plane"></i> Confirmar Retirada</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONCLUIR REPARO (Geral vs Parcial) -->
+  <div id="modal-concluir-reparo" class="modal-overlay hidden">
+    <div class="modal-content glass-panel premium-shadow">
+      <h2 style="color: var(--success); margin-bottom: 5px;"><i class="fas fa-tools"></i> Conclusão de Reparo</h2>
+      <p class="text-muted" style="font-size: 13px; margin-bottom: 20px;">Defina como a peça retornará ao estoque de Reserva.</p>
+      
+      <p>TAG em Manutenção: <strong id="modal-reparo-tag" class="font-code text-accent" style="font-size: 16px;"></strong></p>
+      
+      <div class="input-group mt-15">
+         <label>Tipo de Reparo Realizado</label>
+         <select id="modal-tipo-reparo" class="premium-select w-100" onchange="toggleCamposReparoParcial()">
+           <option value="GERAL">Reparo Geral (Zerar Toneladas e Dias)</option>
+           <option value="PARCIAL">Reparo Parcial (Manter histórico parcial de uso)</option>
+         </select>
+      </div>
+      
+      <div id="campos-reparo-parcial" class="hidden" style="margin-top: 15px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; border: 1px dashed var(--warning);">
+         <p class="text-warning" style="font-size: 12px; margin-bottom: 10px;"><i class="fas fa-info-circle"></i> Ajuste os valores com os quais o equipamento voltará para a máquina:</p>
+         <div class="form-grid-2-mobile" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+           <div class="input-group">
+             <label>Tonelagem Atualizada (t)</label>
+             <input type="number" id="modal-reparo-ton" class="w-100">
+           </div>
+           <div class="input-group">
+             <label>Dias de Uso Atualizados</label>
+             <input type="number" id="modal-reparo-dias" class="w-100">
+           </div>
+         </div>
+      </div>
+      
+      <div class="modal-actions flex-between mt-15" style="margin-top: 25px;">
+         <button class="btn-outline-danger" onclick="fecharModalConcluirReparo()">Cancelar</button>
+         <button class="btn-premium btn-success" onclick="confirmarConclusaoReparo()"><i class="fas fa-check-double"></i> Finalizar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PRONTUÁRIO INDIVIDUAL (Histórico da TAG) -->
+  <div id="modal-historico-ativo" class="modal-overlay hidden">
+    <div class="modal-content glass-panel premium-shadow" style="max-width: 700px; padding: 20px;">
+      <div class="flex-between" style="border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+        <h2 style="color: #fff; font-size: 18px;"><i class="fas fa-book-medical text-accent"></i> Prontuário do Equipamento</h2>
+        <button class="btn-close-emergency" onclick="fecharModalHistorico()"><i class="fas fa-times"></i></button>
+      </div>
+      
+      <div class="flex-between mobile-stack-info" style="background: rgba(15, 23, 42, 0.5); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color);">
+        <div>
+          <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Identificação TAG</span>
+          <div id="hist-tag-nome" class="font-code text-accent" style="font-size: 18px; font-weight: bold;"></div>
+        </div>
+        <div class="text-right">
+           <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Localização Atual</span>
+           <div id="hist-tag-local" class="font-code" style="font-size: 13px; color: #fff;"></div>
+        </div>
+      </div>
+
+      <div class="input-group mobile-stack-info gap-10" style="margin-bottom: 20px; display: flex; align-items: stretch;">
+        <input type="text" id="input-nota-manual" placeholder="Ex: Troca de válvula, lubrificação extra..." style="flex: 1; padding: 10px; background: #0f172a; border: 1px solid var(--text-accent); color: #fff; border-radius: 6px;">
+        <button class="btn-premium" onclick="salvarRegistroManual()"><i class="fas fa-plus"></i> Registrar</button>
+      </div>
+
+      <div class="scrollable-history table-responsive" style="max-height: 300px;">
+        <table class="industrial-table premium-table">
+          <thead><tr><th>Data/Hora</th><th>Evento / Descrição</th><th>Usuário</th></tr></thead>
+          <tbody id="tabela-historico-individual">
+             <!-- Renderizado via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TELA DE LOGIN -->
   <div id="tela-login-home" class="login-home-container">
     <div class="login-bg-imagem"></div>
     <div class="login-bg-overlay"></div>
-    <div class="login-card-central">
-      <div class="login-logo-factory">
+    <div class="login-card-central glass-panel">
+      <div class="login-logo-factory glow-effect">
         <svg viewBox="0 0 24 24"><path d="M4,18V11.42L8.27,4H14V11H18V14H20V18H4M2,22V20H22V22H2M12,13H10V15H12V13M16,13H14V15H16V13M12,16H10V18H12V16M16,16H14V18H16V16Z" /></svg>
       </div>
       <div class="login-card-header">
         <h1>SISTEMA OMS</h1>
-        <p>Aciaria - Lingotamento Contínuo </p>
+        <p>Aciaria - Lingotamento Contínuo</p>
       </div>
       <div class="login-industrial-form">
         <div class="login-form-group">
@@ -35,112 +133,238 @@
             <i class="fas fa-key login-input-icon"></i>
           </div>
         </div>
-        <button type="button" class="login-btn-submit" onclick="processarAutenticacaoHome()">Autenticar Terminal OMS</button>
+        <button type="button" class="btn-premium login-btn-submit" onclick="processarAutenticacaoHome()">Autenticar Terminal</button>
       </div>
     </div>
   </div>
 
+  <!-- APLICAÇÃO PRINCIPAL -->
   <div id="container-sistema-oms" class="app-container" style="display: none;">
-    <div id="barra-emergencia" class="emergency-bar" style="display: none; position: fixed; top: 0; left: 0; width: 100%;">
-      <div class="emergency-content"><span id="texto-emergencia"></span><button class="btn-close-emergency" onclick="encerrarEmergencia()">Reset</button></div>
+    <div id="barra-emergencia" class="emergency-bar" style="display: none;">
+      <div class="emergency-content"><span id="texto-emergencia"></span><button class="btn-close-emergency" onclick="encerrarEmergencia()">Resetar Sistema</button></div>
     </div>
 
-    <aside id="sidebar-menu" class="sidebar">
-      <div class="sidebar-header"><h2><i class="fas fa-industry"></i> Painel OMS</h2></div>
+    <!-- MOBILE HEADER (Apenas em telas pequenas) -->
+    <div class="mobile-header glass-panel">
+      <div class="mobile-logo flex-align-center gap-10">
+        <div class="login-logo-factory" style="width: 35px; height: 35px; margin: 0; box-shadow: none;">
+          <svg viewBox="0 0 24 24" style="width: 20px; height: 20px;"><path d="M4,18V11.42L8.27,4H14V11H18V14H20V18H4M2,22V20H22V22H2M12,13H10V15H12V13M16,13H14V15H16V13M12,16H10V18H12V16M16,16H14V18H16V16Z" /></svg>
+        </div>
+        <strong style="color: white; font-size: 16px;">OMS Mobile</strong>
+      </div>
+      <button class="btn-mobile-menu" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+    </div>
+
+    <!-- SIDEBAR MENU -->
+    <aside id="sidebar-menu" class="sidebar glass-panel">
+      <div class="sidebar-header flex-between">
+        <h2><i class="fas fa-industry text-accent"></i> Painel OMS</h2>
+        <button class="btn-close-sidebar hidden-desktop" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
+      </div>
       <div class="operator-box">
         <div class="operator-info"><i class="fas fa-user-shield"></i><div><small>Líder Logado</small><p id="nome-operador-logado">...</p></div></div>
-        <button class="btn-auth" style="background:#374151;" onclick="fazerLogout()">Sair</button>
+        <button class="btn-auth" onclick="fazerLogout()">Encerrar Turno</button>
       </div>
       <nav class="sidebar-nav">
         <a href="#" id="nav-painel" class="nav-link active" onclick="abrirAba(event, 'aba-painel')"><i class="fas fa-chart-pie"></i> Painel Geral OMS</a>
-        <a href="#" id="nav-fluxo" class="nav-link" onclick="abrirAba(event, 'aba-fluxo')"><i class="fas fa-stream"></i> Painel de controle dos Veios</a>
+        <a href="#" id="nav-fluxo" class="nav-link" onclick="abrirAba(event, 'aba-fluxo')"><i class="fas fa-stream"></i> Sequenciamento Veios</a>
         <a href="#" id="nav-ativos" class="nav-link" onclick="abrirAba(event, 'aba-ativos')"><i class="fas fa-tools"></i> Matriz de Componentes</a>
-        <a href="#" id="nav-mcc2" class="nav-link" onclick="abrirAba(event, 'aba-mcc2')"><i class="fas fa-chart-bar"></i> Gráficos MCC 2 (C/D)</a>
-        <a href="#" id="nav-mcc3" class="nav-link" onclick="abrirAba(event, 'aba-mcc3')"><i class="fas fa-chart-bar"></i> Gráficos MCC 3 (E/F)</a>
-        <a href="#" id="nav-mcc4" class="nav-link" onclick="abrirAba(event, 'aba-mcc4')"><i class="fas fa-chart-line"></i> Gráficos MCC 4 (A/B)</a>
+        
+        <div class="nav-divider">Oficina & Log</div>
+        <a href="#" id="nav-reparos" class="nav-link highlight-warning" onclick="abrirAba(event, 'aba-reparos')"><i class="fas fa-wrench"></i> Peças em Reparo</a>
+        <a href="#" id="nav-reservas" class="nav-link highlight-success" onclick="abrirAba(event, 'aba-reservas')"><i class="fas fa-boxes"></i> Estoque Reserva</a>
+        <a href="#" id="nav-historico" class="nav-link" onclick="abrirAba(event, 'aba-historico')"><i class="fas fa-history"></i> Auditoria (Histórico)</a>
+        
+        <div class="nav-divider">Análise Gráfica</div>
+        <a href="#" id="nav-mcc2" class="nav-link" onclick="abrirAba(event, 'aba-mcc2')"><i class="fas fa-chart-bar"></i> Gráficos MCC 2</a>
+        <a href="#" id="nav-mcc3" class="nav-link" onclick="abrirAba(event, 'aba-mcc3')"><i class="fas fa-chart-bar"></i> Gráficos MCC 3</a>
+        <a href="#" id="nav-mcc4" class="nav-link" onclick="abrirAba(event, 'aba-mcc4')"><i class="fas fa-chart-line"></i> Gráficos MCC 4</a>
       </nav>
-      <button class="btn-panic" onclick="dispararEmergencia()">DISPARAR PÂNICO</button>
+      <button class="btn-panic glow-danger mt-15" onclick="dispararEmergencia()"><i class="fas fa-exclamation-triangle"></i> PÂNICO</button>
     </aside>
 
     <main class="main-content">
-      <section id="seletor-veios-container" class="veios-selector-section hidden">
-        <h3><i class="fas fa-compress-alt"></i> Filtragem Avançada de Veios (OMS)</h3>
+      <section id="seletor-veios-container" class="veios-selector-section glass-panel hidden">
+        <h3><i class="fas fa-compress-alt"></i> Filtragem Rápida de Veio</h3>
         <div class="veios-grid-buttons">
-          <button class="btn-veio-tab active" onclick="mudarVeioVisualizado('C')">MCC 2 - Veio C</button>
-          <button class="btn-veio-tab" onclick="mudarVeioVisualizado('D')">MCC 2 - Veio D</button>
-          <button class="btn-veio-tab" onclick="mudarVeioVisualizado('E')">MCC 3 - Veio E</button>
-          <button class="btn-veio-tab" onclick="mudarVeioVisualizado('F')">MCC 3 - Veio F</button>
-          <button class="btn-veio-tab" onclick="mudarVeioVisualizado('A')">MCC 4 - Veio A</button>
-          <button class="btn-veio-tab" onclick="mudarVeioVisualizado('B')">MCC 4 - Veio B</button>
+          <button class="btn-veio-tab active" onclick="mudarVeioVisualizado('C')">Veio C (MCC 2)</button>
+          <button class="btn-veio-tab" onclick="mudarVeioVisualizado('D')">Veio D (MCC 2)</button>
+          <button class="btn-veio-tab" onclick="mudarVeioVisualizado('E')">Veio E (MCC 3)</button>
+          <button class="btn-veio-tab" onclick="mudarVeioVisualizado('F')">Veio F (MCC 3)</button>
+          <button class="btn-veio-tab" onclick="mudarVeioVisualizado('H')">Veio H (MCC 4)</button>
+          <button class="btn-veio-tab" onclick="mudarVeioVisualizado('G')">Veio G (MCC 4)</button>
         </div>
       </section>
 
       <section id="aba-painel" class="tab-content active">
-        <div class="welcome-box"><h1>Plataforma OMS - Gestão Avançada de Aciaria</h1><p>Visão computacional e desgaste preditivo de componentes do lingotamento.</p></div>
+        <div class="welcome-box gradient-bg">
+          <h1>Plataforma OMS - Gestão Avançada de Aciaria</h1>
+          <p>Visão computacional e desgaste preditivo de componentes do lingotamento.</p>
+        </div>
         <div class="kpi-container">
-          <div class="kpi-card danger"><div class="kpi-icon"><i class="fas fa-radiation"></i></div><div class="kpi-data"><h4 id="kpi-criticos">0</h4><p>Ativos Críticos (>85%)</p></div></div>
-          <div class="kpi-card warning"><div class="kpi-icon"><i class="fas fa-warehouse"></i></div><div class="kpi-data"><h4 id="kpi-bancada">0</h4><p>Na Oficina / Bancada</p></div></div>
-          <div class="kpi-card success"><div class="kpi-icon"><i class="fas fa-check-double"></i></div><div class="kpi-data"><h4 id="kpi-moldes">0</h4><p>Moldes Prontos</p></div></div>
+          <div class="kpi-card danger glass-panel"><div class="kpi-icon glow-danger"><i class="fas fa-radiation"></i></div><div class="kpi-data"><h4 id="kpi-criticos">0</h4><p>Críticos (>85%)</p></div></div>
+          <div class="kpi-card warning glass-panel"><div class="kpi-icon glow-warning"><i class="fas fa-wrench"></i></div><div class="kpi-data"><h4 id="kpi-reparo">0</h4><p>Em Reparo</p></div></div>
+          <div class="kpi-card success glass-panel"><div class="kpi-icon glow-success"><i class="fas fa-boxes"></i></div><div class="kpi-data"><h4 id="kpi-reserva">0</h4><p>Reserva Pronta</p></div></div>
         </div>
       </section>
 
       <section id="aba-fluxo" class="tab-content">
-        <div class="panel-card">
+        <div class="panel-card glass-panel">
           <div class="panel-card-header"><h1 id="titulo-veio-focado">Sequenciamento Síncrono</h1></div>
           <div id="container-fluxo-horizontal-scroll" class="graficos-container"></div>
         </div>
       </section>
 
       <section id="aba-ativos" class="tab-content">
-        <div class="panel-card">
-          <div class="panel-card-header"><h1><i class="fas fa-cubes"></i> Matriz Operacional Geral</h1>
-            <select id="filtro-tipo-ativo" onchange="renderAtivos()">
-              <option value="TODOS">Todos Componentes</option>
-              <option value="Molde">Moldes</option>
-              <option value="Cadeira Superior">Cadeiras Superiores</option>
-              <option value="Cadeira Inferior">Cadeiras Inferiores</option>
-              <option value="Bender">Bender (MCC 4)</option>
-              <option value="Bow">Bow (MCC 4)</option>
-              <option value="Straightener">Straightener (MCC 4)</option>
-              <option value="Horizontal">Segmentos Horizontais</option>
-              <option value="Bancada / Oficina">Oficina / Bancada</option>
-            </select>
+        <div class="panel-card glass-panel">
+          <div class="panel-card-header flex-between">
+            <h1><i class="fas fa-cubes"></i> Matriz Operacional Geral</h1>
+            <div class="custom-select-wrapper w-mobile-100 mt-mobile-10">
+              <select id="filtro-tipo-ativo" onchange="renderAtivos()" class="premium-select">
+                <option value="TODOS">Visão Geral (Todos)</option>
+                <option value="Molde">Apenas Moldes</option>
+                <option value="Cadeira Superior">Cadeiras Superiores</option>
+                <option value="Cadeira Inferior">Cadeiras Inferiores</option>
+                <option value="Bender">Bender</option>
+                <option value="Bow">Bow</option>
+                <option value="Straightener">Straightener</option>
+                <option value="Horizontal">Segmentos Horizontais</option>
+                <option value="Oficina / Reparo">Status: Em Reparo</option>
+                <option value="Oficina / Reserva">Status: Em Estoque</option>
+              </select>
+            </div>
           </div>
           <div class="table-responsive">
-            <table class="industrial-table">
-              <thead><tr><th>TAG Identificador</th><th>Tipo</th><th>Localização</th><th>Dias</th><th>Toneladas</th><th>Limite</th><th>Desgaste</th><th>Ações</th></tr></thead>
+            <table class="industrial-table premium-table">
+              <thead><tr><th>TAG ID</th><th>Tipo</th><th>Localização</th><th>Dias</th><th>Ton</th><th>Limite</th><th>Saúde / Desgaste</th><th>Ações & Consultas</th></tr></thead>
               <tbody id="ativos-table-body"></tbody>
             </table>
           </div>
         </div>
       </section>
 
-      <section id="aba-mcc2" class="tab-content"><div class="panel-card"><h1>MCC 2</h1><div id="graficos-mcc2" class="graficos-container"></div></div></section>
-      <section id="aba-mcc3" class="tab-content"><div class="panel-card"><h1>MCC 3</h1><div id="graficos-mcc3" class="graficos-container"></div></div></section>
-      <section id="aba-mcc4" class="tab-content"><div class="panel-card"><h1>MCC 4 (Layout de Engenharia Estendido)</h1><div id="graficos-mcc4" class="graficos-container"></div></div></section>
+      <section id="aba-mcc2" class="tab-content">
+        <div class="panel-card glass-panel">
+          <div class="panel-card-header flex-between">
+            <h1>Análise MCC 2</h1>
+            <div class="mcc-veio-filters w-mobile-100">
+              <button class="btn-filter-mcc active" onclick="filtrarGraficosMCC(2, 'TODOS', this)">Todos Veios</button>
+              <button class="btn-filter-mcc" onclick="filtrarGraficosMCC(2, 'C', this)">Veio C</button>
+              <button class="btn-filter-mcc" onclick="filtrarGraficosMCC(2, 'D', this)">Veio D</button>
+            </div>
+          </div>
+          <div id="graficos-mcc2" class="graficos-container"></div>
+        </div>
+      </section>
 
-      <section class="panel-card" style="margin-top: 30px;">
-        <h2><i class="fas fa-history"></i> Histórico de Eventos e Relatório Técnico</h2>
-        <p class="text-muted" style="font-size: 13px; margin-bottom: 15px;">Registro em tempo real das edições de dados, trocas de turnos e saques mecânicos.</p>
-        <div class="table-responsive">
-          <table class="industrial-table">
-            <thead>
-              <tr>
-                <th>Horário</th>
-                <th>TAG Identificador</th>
-                <th>Descrição do Evento / Ação Executada</th>
-                <th>Líder de Turno Responsável</th>
-              </tr>
-            </thead>
-            <tbody id="historico-table-body">
-              </tbody>
-          </table>
+      <section id="aba-mcc3" class="tab-content">
+        <div class="panel-card glass-panel">
+          <div class="panel-card-header flex-between">
+            <h1>Análise MCC 3</h1>
+            <div class="mcc-veio-filters w-mobile-100">
+              <button class="btn-filter-mcc active" onclick="filtrarGraficosMCC(3, 'TODOS', this)">Todos Veios</button>
+              <button class="btn-filter-mcc" onclick="filtrarGraficosMCC(3, 'E', this)">Veio E</button>
+              <button class="btn-filter-mcc" onclick="filtrarGraficosMCC(3, 'F', this)">Veio F</button>
+            </div>
+          </div>
+          <div id="graficos-mcc3" class="graficos-container"></div>
+        </div>
+      </section>
+
+      <section id="aba-mcc4" class="tab-content">
+        <div class="panel-card glass-panel">
+          <div class="panel-card-header flex-between">
+            <h1>Análise MCC 4 (Alta Performance)</h1>
+            <div class="mcc-veio-filters w-mobile-100">
+              <button class="btn-filter-mcc active" onclick="filtrarGraficosMCC(4, 'TODOS', this)">Todos Veios</button>
+              <button class="btn-filter-mcc" onclick="filtrarGraficosMCC(4, 'H', this)">Veio H</button>
+              <button class="btn-filter-mcc" onclick="filtrarGraficosMCC(4, 'G', this)">Veio G</button>
+            </div>
+          </div>
+          <div id="graficos-mcc4" class="graficos-container"></div>
+        </div>
+      </section>
+
+      <section id="aba-reparos" class="tab-content">
+        <div class="panel-card glass-panel" style="border-top: 4px solid var(--warning);">
+          <div class="panel-card-header">
+            <h2 style="color: var(--warning);"><i class="fas fa-tools"></i> Setor de Manutenção (Reparo)</h2>
+            <p class="text-muted" style="font-size: 13px;">Equipamentos que precisam de intervenção mecânica.</p>
+          </div>
+          <div class="table-responsive" style="margin-top: 15px;">
+            <table class="industrial-table premium-table">
+              <thead><tr><th>TAG Identificador</th><th>Tipo</th><th>Desgaste Apresentado</th><th>Ações / Histórico</th></tr></thead>
+              <tbody id="reparos-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="aba-reservas" class="tab-content">
+        <div class="panel-card glass-panel" style="margin-bottom: 25px; border-top: 4px solid var(--success);">
+          <div class="panel-card-header flex-between">
+            <div>
+              <h2 style="color: var(--success);"><i class="fas fa-boxes"></i> Estoque Disponível (Reserva)</h2>
+              <p class="text-muted" style="font-size: 13px; margin-top: 5px;">Peças prontas para alocação via Swap Automático.</p>
+            </div>
+            <button class="btn-premium w-mobile-100 mt-mobile-10" onclick="toggleFormAdicionar()"><i class="fas fa-plus"></i> Cadastrar Peça</button>
+          </div>
+
+          <div id="form-novo-equipamento" class="cadastrar-box hidden">
+            <h3><i class="fas fa-box-open"></i> Cadastrar Nova Peça no Estoque</h3>
+            <div class="form-grid-4">
+              <div class="input-group">
+                <label>TAG (Identificador)</label>
+                <input type="text" id="add-tag" placeholder="Ex: MLD-NOVO-01">
+              </div>
+              <div class="input-group">
+                <label>Tipo de Equipamento</label>
+                <select id="add-tipo">
+                  <option value="Molde">Molde</option>
+                  <option value="Cadeira Superior">Cadeira Superior</option>
+                  <option value="Cadeira Inferior">Cadeira Inferior</option>
+                  <option value="Bender">Bender</option>
+                  <option value="Bow">Bow</option>
+                  <option value="Straightener">Straightener</option>
+                  <option value="Horizontal">Segmento Horizontal</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label>Meta Limite (Ton)</label>
+                <input type="number" id="add-meta" placeholder="Ex: 1500000">
+              </div>
+              <div class="input-group" style="display: flex; align-items: flex-end;">
+                <button class="btn-premium btn-success w-100" onclick="salvarNovoEquipamento()">Salvar no Estoque</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-responsive" style="margin-top: 15px;">
+            <table class="industrial-table premium-table">
+              <thead><tr><th>TAG Identificador</th><th>Tipo</th><th>Status</th><th>Ações / Alocação</th></tr></thead>
+              <tbody id="estoque-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="aba-historico" class="tab-content">
+        <div class="panel-card glass-panel">
+          <h2><i class="fas fa-history"></i> Log de Auditoria Global</h2>
+          <p class="text-muted" style="font-size: 13px; margin-bottom: 15px;">Rastreabilidade completa de todas as operações e laudos.</p>
+          <div class="table-responsive">
+            <table class="industrial-table premium-table history-table">
+              <thead>
+                <tr><th>Horário</th><th>TAG / Módulo</th><th>Descrição da Ação e Laudo</th><th>Responsável</th></tr>
+              </thead>
+              <tbody id="historico-table-body"></tbody>
+            </table>
+          </div>
         </div>
       </section>
 
     </main>
   </div>
-
   <script src="script.js"></script>
 </body>
 </html>
