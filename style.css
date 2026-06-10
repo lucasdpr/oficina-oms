@@ -124,6 +124,10 @@ h1, h2, h3, h4 { color: var(--text-heading); }
 .highlight-rolos { color: var(--text-accent); }
 .highlight-rolos.active { border-left-color: var(--text-accent); background: linear-gradient(90deg, rgba(56, 189, 248, 0.15) 0%, transparent 100%); color: var(--text-accent); }
 
+/* COR DO NOVO ALMOXARIFADO */
+.highlight-almoxarifado { color: #a855f7; }
+.highlight-almoxarifado.active { border-left-color: #a855f7; background: linear-gradient(90deg, rgba(168, 85, 247, 0.15) 0%, transparent 100%); color: #a855f7; }
+
 .btn-panic { width: 100%; background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid var(--danger); padding: 12px; border-radius: 6px; font-weight: 700; cursor: pointer; transition: all 0.3s; }
 .btn-panic:hover { background: var(--danger); color: white; box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
 
@@ -254,4 +258,144 @@ h1, h2, h3, h4 { color: var(--text-heading); }
   .veios-grid-buttons { grid-template-columns: repeat(2, 1fr); }
   .mcc-grafico-card { padding: 15px; }
   .mcc-tag-id { font-size: 15px; }
+}
+/* =========================================
+   ESTILOS DO FOLHÃO MCC4 E IMPRESSÃO
+========================================= */
+
+/* Abas de Navegação internas do Modal MCC4 */
+.folhao-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 15px;
+  color: var(--text-muted);
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+.folhao-tab:hover {
+  color: var(--text-heading);
+  background: rgba(255,255,255,0.05);
+}
+.folhao-tab.active {
+  color: var(--text-accent);
+  border-bottom-color: var(--text-accent);
+  background: rgba(56, 189, 248, 0.05);
+}
+
+/* Grid de Checklists do PDF */
+.checklist-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.check-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-td);
+  padding: 12px 15px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+.check-item p {
+  font-size: 13px;
+  color: var(--text-main);
+  max-width: 75%;
+}
+.check-options {
+  display: flex;
+  gap: 10px;
+}
+.check-options label {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+.check-options input[type="radio"] {
+  accent-color: var(--text-accent);
+  width: 16px;
+  height: 16px;
+}
+
+/* Configurações de Impressão */
+.print-only {
+  display: none;
+}
+
+@media print {
+  /* Esconde TUDO na hora da impressão */
+  .no-print, #container-sistema-oms, #tela-login-home {
+    display: none !important;
+  }
+  
+  /* Exibe APENAS a div preparada para impressão */
+  .print-only {
+    display: block;
+    width: 100%;
+    color: #000 !important;
+    background: #fff !important;
+  }
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+  }
+  
+  /* Layout do Laudo de Impressão */
+  .print-header {
+    text-align: center;
+    border-bottom: 2px solid #000;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+  }
+  .print-header h2 {
+    font-size: 20px;
+    margin: 0;
+    color: #000 !important;
+  }
+  
+  .print-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #000;
+    padding: 10px;
+  }
+  .print-grid div {
+    font-size: 14px;
+  }
+  
+  .print-section-title {
+    background: #eee;
+    padding: 5px;
+    font-weight: bold;
+    border: 1px solid #000;
+    margin-top: 15px;
+  }
+  
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 15px;
+  }
+  .print-table th, .print-table td {
+    border: 1px solid #000;
+    padding: 6px;
+    font-size: 12px;
+  }
+  
+  .print-signatures {
+    margin-top: 50px;
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+  }
 }

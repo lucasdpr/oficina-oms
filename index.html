@@ -3,14 +3,116 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OMS - Dashboard Premium v31</title>
+  <title>OMS - Dashboard Premium v32</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
-  <!-- MODAL: RELATÓRIO DE RETIRADA -->
-  <div id="modal-relatorio" class="modal-overlay hidden">
+  <div id="print-section" class="print-only">
+      <div class="print-header">
+          <h2>SISTEMA OMS - FOLHA DE LIBERAÇÃO DE MOLDE (MCC4)</h2>
+          <p>Laudo Oficial de Manutenção e Peritagem</p>
+      </div>
+      <div id="print-content"></div>
+      <div class="print-signatures">
+          <div>
+              <p>___________________________________</p>
+              <p>Líder Responsável / Operador</p>
+          </div>
+          <div>
+              <p>___________________________________</p>
+              <p>Inspetor de Qualidade</p>
+          </div>
+      </div>
+  </div>
+
+  <div id="modal-folhao-mcc4" class="modal-overlay hidden no-print">
+    <div class="modal-content glass-panel premium-shadow" style="max-width: 900px; padding: 0;">
+      
+      <div class="modal-header-fixed" style="padding: 20px; border-bottom: 1px solid var(--border-color); background: var(--bg-th); border-radius: 16px 16px 0 0;">
+          <div class="flex-between">
+              <h2 style="color: var(--text-accent);"><i class="fas fa-clipboard-list"></i> Liberação Oficial - Molde MCC4</h2>
+              <button class="btn-close-emergency" onclick="fecharFolhaoMCC4()"><i class="fas fa-times"></i></button>
+          </div>
+          <div style="display: flex; gap: 15px; margin-top: 15px;">
+              <span class="ind-card-tag bg-tag" style="font-size: 14px;">TAG: <strong id="mcc4-tag-name"></strong></span>
+              <span class="text-muted" style="font-size: 14px;">Preenchimento obrigatório para envio à Reserva.</span>
+          </div>
+      </div>
+
+      <div class="folhao-tabs" style="display: flex; background: var(--bg-input); border-bottom: 1px solid var(--border-color); overflow-x: auto;">
+          <button class="folhao-tab active" onclick="trocarAbaFolhao(event, 'folhao-aba-dados')">1. Dados Básicos</button>
+          <button class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-recebimento')">2. Recebimento</button>
+          <button class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-revisao')">3. Revisão</button>
+          <button class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-hidraulica')">4. Hidráulica</button>
+          <button class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-final')">5. Check Final</button>
+      </div>
+
+      <div class="folhao-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
+          
+          <div id="folhao-aba-dados" class="folhao-content active">
+              <div class="form-grid-2-mobile" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                  <div class="input-group">
+                      <label>Data Início da Manutenção</label>
+                      <input type="date" id="mcc4-data-inicio">
+                  </div>
+                  <div class="input-group">
+                      <label>Data Fim da Manutenção</label>
+                      <input type="date" id="mcc4-data-fim">
+                  </div>
+                  <div class="input-group">
+                      <label>Nº do Molde</label>
+                      <input type="text" id="mcc4-num-molde" placeholder="Ex: 06">
+                  </div>
+                  <div class="input-group">
+                      <label>Motivo do Reparo</label>
+                      <input type="text" id="mcc4-motivo" placeholder="Ex: Delta 't' (Vazamento)">
+                  </div>
+                  <div class="input-group">
+                      <label>Tipo de Execução</label>
+                      <select id="mcc4-tipo-execucao" class="premium-select">
+                          <option value="PARCIAL">PARCIAL (Apenas corretiva/ajuste)</option>
+                          <option value="GERAL">GERAL (Zerar toneladas - Reforma Completa)</option>
+                      </select>
+                  </div>
+                  <div class="input-group">
+                      <label>Desempenho Observado</label>
+                      <input type="text" id="mcc4-desempenho" placeholder="Ex: Face com ranhuras...">
+                  </div>
+              </div>
+          </div>
+
+          <div id="folhao-aba-recebimento" class="folhao-content hidden">
+              <h3 style="margin-bottom: 15px; color: var(--text-heading);">Inspeção de Recebimento Mecânica/Elétrica</h3>
+              <div id="container-check-recebimento" class="checklist-container"></div>
+          </div>
+
+          <div id="folhao-aba-revisao" class="folhao-content hidden">
+              <h3 style="margin-bottom: 15px; color: var(--text-heading);">Revisão dos Componentes do Molde</h3>
+              <div id="container-check-revisao" class="checklist-container"></div>
+          </div>
+
+          <div id="folhao-aba-hidraulica" class="folhao-content hidden">
+              <h3 style="margin-bottom: 15px; color: var(--text-heading);">Check List Hidráulico</h3>
+              <div id="container-check-hidraulica" class="checklist-container"></div>
+          </div>
+
+          <div id="folhao-aba-final" class="folhao-content hidden">
+              <h3 style="margin-bottom: 15px; color: var(--text-heading);">Inspeção Final de Liberação</h3>
+              <div id="container-check-final" class="checklist-container"></div>
+          </div>
+
+      </div>
+
+      <div class="modal-actions flex-between" style="padding: 20px; background: var(--bg-th); border-top: 1px solid var(--border-color); border-radius: 0 0 16px 16px;">
+          <button class="btn-outline-danger" onclick="fecharFolhaoMCC4()">Cancelar</button>
+          <button class="btn-premium btn-success" onclick="salvarEImprimirFolhaoMCC4()"><i class="fas fa-check-double"></i> Salvar Laudo e Mover p/ Reserva</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-relatorio" class="modal-overlay hidden no-print">
     <div class="modal-content glass-panel premium-shadow">
       <h2 style="color: var(--warning); margin-bottom: 5px;"><i class="fas fa-clipboard-check"></i> Relatório de Manutenção</h2>
       <p class="text-muted" style="font-size: 13px; margin-bottom: 20px;">Preenchimento obrigatório para envio à Oficina.</p>
@@ -31,10 +133,9 @@
     </div>
   </div>
 
-  <!-- MODAL: CONCLUIR REPARO -->
-  <div id="modal-concluir-reparo" class="modal-overlay hidden">
+  <div id="modal-concluir-reparo" class="modal-overlay hidden no-print">
     <div class="modal-content glass-panel premium-shadow">
-      <h2 style="color: var(--success); margin-bottom: 5px;"><i class="fas fa-tools"></i> Conclusão de Reparo</h2>
+      <h2 style="color: var(--success); margin-bottom: 5px;"><i class="fas fa-tools"></i> Conclusão de Reparo Simples</h2>
       <p class="text-muted" style="font-size: 13px; margin-bottom: 20px;">Defina como a peça retornará ao estoque de Reserva.</p>
       <p style="color: var(--text-main);">TAG em Manutenção: <strong id="modal-reparo-tag" class="font-code text-accent" style="font-size: 16px;"></strong></p>
       
@@ -66,8 +167,7 @@
     </div>
   </div>
 
-  <!-- MODAL: HISTÓRICO DE ATIVO -->
-  <div id="modal-historico-ativo" class="modal-overlay hidden">
+  <div id="modal-historico-ativo" class="modal-overlay hidden no-print">
     <div class="modal-content glass-panel premium-shadow" style="max-width: 700px; padding: 20px;">
       <div class="flex-between" style="border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
         <h2 style="color: var(--text-heading); font-size: 18px;"><i class="fas fa-book-medical text-accent"></i> Prontuário do Equipamento</h2>
@@ -96,8 +196,7 @@
     </div>
   </div>
 
-  <!-- TELA DE LOGIN -->
-  <div id="tela-login-home" class="login-home-container">
+  <div id="tela-login-home" class="login-home-container no-print">
     <div class="login-bg-imagem"></div>
     <div class="login-bg-overlay"></div>
     <div class="login-card-central glass-panel">
@@ -128,13 +227,11 @@
     </div>
   </div>
 
-  <!-- CONTAINER DO SISTEMA -->
-  <div id="container-sistema-oms" class="app-container" style="display: none;">
+  <div id="container-sistema-oms" class="app-container no-print" style="display: none;">
     <div id="barra-emergencia" class="emergency-bar" style="display: none;">
       <div class="emergency-content"><span id="texto-emergencia"></span><button class="btn-close-emergency" onclick="encerrarEmergencia()">Resetar Sistema</button></div>
     </div>
 
-    <!-- CABEÇALHO MOBILE -->
     <div class="mobile-header glass-panel">
       <div class="mobile-logo flex-align-center gap-10">
         <div class="login-logo-factory" style="width: 35px; height: 35px; margin: 0; box-shadow: none;">
@@ -145,7 +242,6 @@
       <button class="btn-mobile-menu" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
     </div>
 
-    <!-- SIDEBAR -->
     <aside id="sidebar-menu" class="sidebar glass-panel">
       <div class="sidebar-header flex-between">
         <h2 style="color: var(--text-heading);"><i class="fas fa-industry text-accent"></i> Painel OMS</h2>
@@ -170,6 +266,7 @@
         <a href="#" id="nav-reparos" class="nav-link highlight-warning" onclick="abrirAba(event, 'aba-reparos')"><i class="fas fa-wrench"></i> Peças em Reparo</a>
         <a href="#" id="nav-reservas" class="nav-link highlight-success" onclick="abrirAba(event, 'aba-reservas')"><i class="fas fa-boxes"></i> Estoque Reserva</a>
         <a href="#" id="nav-rolos" class="nav-link highlight-rolos" onclick="abrirAba(event, 'aba-rolos')"><i class="fas fa-scroll"></i> Estoque de Rolos</a>
+        <a href="#" id="nav-almoxarifado" class="nav-link highlight-almoxarifado" onclick="abrirAba(event, 'aba-almoxarifado')"><i class="fas fa-pallet"></i> Almoxarifado Central</a>
         <a href="#" id="nav-historico" class="nav-link" onclick="abrirAba(event, 'aba-historico')"><i class="fas fa-history"></i> Auditoria (Histórico)</a>
         
         <div class="nav-divider">Análise Gráfica</div>
@@ -180,9 +277,7 @@
       <button class="btn-panic glow-danger mt-15" onclick="dispararEmergencia()"><i class="fas fa-exclamation-triangle"></i> PÂNICO</button>
     </aside>
 
-    <!-- CONTEÚDO PRINCIPAL -->
     <main class="main-content">
-      <!-- SELETOR DE VEIOS GERAL -->
       <section id="seletor-veios-container" class="veios-selector-section glass-panel hidden">
         <h3><i class="fas fa-compress-alt"></i> Filtragem Rápida de Veio</h3>
         <div class="veios-grid-buttons">
@@ -195,7 +290,6 @@
         </div>
       </section>
 
-      <!-- ABA: PAINEL GERAL -->
       <section id="aba-painel" class="tab-content active">
         <div class="welcome-box gradient-bg flex-between" style="flex-wrap: wrap; gap: 15px;">
           <div>
@@ -214,7 +308,6 @@
         </div>
       </section>
 
-      <!-- ABA: SEQUENCIAMENTO VEIOS -->
       <section id="aba-fluxo" class="tab-content">
         <div class="panel-card glass-panel">
           <div class="panel-card-header"><h1 id="titulo-veio-focado">Sequenciamento Síncrono</h1></div>
@@ -222,7 +315,6 @@
         </div>
       </section>
 
-      <!-- ABA: MATRIZ DE COMPONENTES -->
       <section id="aba-ativos" class="tab-content">
         <div class="panel-card glass-panel">
           <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
@@ -251,7 +343,6 @@
         </div>
       </section>
 
-      <!-- ABA: MCC 2 -->
       <section id="aba-mcc2" class="tab-content">
         <div class="panel-card glass-panel">
           <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
@@ -274,7 +365,6 @@
         </div>
       </section>
 
-      <!-- ABA: MCC 3 -->
       <section id="aba-mcc3" class="tab-content">
         <div class="panel-card glass-panel">
           <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
@@ -297,7 +387,6 @@
         </div>
       </section>
 
-      <!-- ABA: MCC 4 -->
       <section id="aba-mcc4" class="tab-content">
         <div class="panel-card glass-panel">
           <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
@@ -320,7 +409,6 @@
         </div>
       </section>
 
-      <!-- ABA: PEÇAS EM REPARO -->
       <section id="aba-reparos" class="tab-content">
         <div class="panel-card glass-panel" style="border-top: 4px solid var(--warning);">
           <div class="panel-card-header">
@@ -336,7 +424,6 @@
         </div>
       </section>
 
-      <!-- ABA: ESTOQUE DE RESERVAS -->
       <section id="aba-reservas" class="tab-content">
         <div class="panel-card glass-panel" style="margin-bottom: 25px; border-top: 4px solid var(--success);">
           <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
@@ -392,7 +479,6 @@
         </div>
       </section>
 
-      <!-- ABA: ESTOQUE DE ROLOS (ALMOXARIFADO) -->
       <section id="aba-rolos" class="tab-content">
         <div class="panel-card glass-panel" style="border-top: 4px solid var(--text-accent);">
           <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
@@ -401,7 +487,6 @@
               <p class="text-muted" style="font-size: 13px; margin-top: 5px;">Controle de quantitativo de rolos agrupado por Equipamento.</p>
             </div>
           </div>
-
           <div class="table-responsive" style="margin-top: 20px;">
             <table class="industrial-table premium-table">
               <thead>
@@ -413,15 +498,72 @@
                   <th>Ações de Inventário</th>
                 </tr>
               </thead>
-              <tbody id="rolos-table-body">
-                <!-- Preenchido via JS agrupado por equipamento -->
-              </tbody>
+              <tbody id="rolos-table-body"></tbody>
             </table>
           </div>
         </div>
       </section>
 
-      <!-- ABA: AUDITORIA (HISTÓRICO) -->
+      <section id="aba-almoxarifado" class="tab-content">
+        <div class="panel-card glass-panel" style="border-top: 4px solid #a855f7;">
+          <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
+            <div>
+              <h2 style="color: #a855f7;"><i class="fas fa-pallet"></i> Almoxarifado Central (Peças e Consumíveis)</h2>
+              <p class="text-muted" style="font-size: 13px; margin-top: 5px;">Gestão de estoque geral integrado por código de material único.</p>
+            </div>
+            <div class="flex-align-center gap-10 w-mobile-100" style="flex-wrap: wrap;">
+              <div class="login-input-wrapper" style="position: relative; width: 260px; max-width: 100%;">
+                <input type="text" id="busca-material" placeholder="Buscar código ou descrição..." onkeyup="renderMateriais()" style="height: 40px; font-size: 13px; border-radius: 6px;">
+                <i class="fas fa-search login-input-icon" style="top: 11px; font-size: 14px; color: #a855f7;"></i>
+              </div>
+              <button class="btn-premium" style="border-color: #a855f7; color: #a855f7; background: rgba(168, 85, 247, 0.15); height: 40px;" onclick="toggleFormMaterial()">
+                  <i class="fas fa-plus"></i> Cadastrar Entrada
+              </button>
+            </div>
+          </div>
+
+          <div id="form-novo-material" class="cadastrar-box hidden" style="border-color: #a855f7; margin-top: 20px;">
+            <div class="flex-between">
+                <h3 style="color: #a855f7;"><i class="fas fa-box-open"></i> Lançamento de Entrada de Material</h3>
+                <button class="btn-xs-primary" style="color: var(--text-muted); cursor: pointer;" onclick="toggleFormMaterial()"><i class="fas fa-times"></i> Fechar</button>
+            </div>
+            <p class="text-muted" style="font-size: 12px; margin-bottom: 15px;"><strong>Nota do Sistema:</strong> Se o código (SKU) digitado já existir, a quantidade será somada automaticamente ao saldo do item, sem criar duplicidade.</p>
+            <div class="form-grid-4">
+              <div class="input-group">
+                <label>Código do Material (SKU)</label>
+                <input type="text" id="mat-codigo" placeholder="Ex: 1660669" class="font-code" style="text-transform: uppercase;">
+              </div>
+              <div class="input-group" style="grid-column: span 2;">
+                <label>Descrição / Texto Breve</label>
+                <input type="text" id="mat-descricao" placeholder="Ex: PARAFUSO CAB. SEXT. M12...">
+              </div>
+              <div class="input-group">
+                <label>Quantidade Entrando</label>
+                <input type="number" id="mat-qtd" placeholder="Ex: 50" min="1">
+              </div>
+              <div class="input-group" style="grid-column: span 4; display: flex; justify-content: flex-end; margin-top: 10px;">
+                <button class="btn-premium" style="background: #a855f7; color: white; border: none; padding: 12px 25px;" onclick="salvarEntradaMaterial()"><i class="fas fa-save"></i> Processar Entrada no Estoque</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-responsive" style="margin-top: 20px;">
+            <table class="industrial-table premium-table">
+              <thead>
+                <tr>
+                  <th>Cód. Material</th>
+                  <th>Descrição / Texto do Material</th>
+                  <th>Saldo Atual em Estoque</th>
+                  <th>Status do Nível</th>
+                  <th>Ações de Ajuste</th>
+                </tr>
+              </thead>
+              <tbody id="materiais-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <section id="aba-historico" class="tab-content">
         <div class="panel-card glass-panel">
           <h2><i class="fas fa-history"></i> Log de Auditoria Global</h2>
