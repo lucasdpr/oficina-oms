@@ -96,3 +96,8 @@ if (BANCO_ROLOS) {
         localStorage.setItem("oms_rolos_v32_local", JSON.stringify(BANCO_ROLOS));
     }
 }
+
+// Funções de acesso para alterar variáveis blindadas
+export function setOperador(novoOperador) { OPERADOR_LOGADO = novoOperador; }
+export function setEmergencia(status) { EM_EMERGENCIA = status; }
+export function setVeioSelecionado(veio) { VEIO_SELECIONADO_PAINEL = veio; }

@@ -84,3 +84,34 @@ export const CHECKLIST_FINAL = [
     "Base de vedação do molde está limpa e lixada?",
     "Os conectores dos DBO estão todos tamponados e protegidos?"
 ];
+// ==========================================
+// NOVOS CHECKLISTS INTELIGENTES POR EQUIPAMENTO
+// ==========================================
+export const BIBLIOTECA_CHECKLISTS = {
+    "Molde": [
+        "Os engates rápidos do sistema hidráulico e de nitrogênio estão completos?",
+        "Os flexíveis das faces estreitas e spray estão amassados ou danificados?",
+        "Existe alguma tubulação hidráulica amassada ou danificada?",
+        "Teste de água com pressão de 10 KGF/cm² por 30 minutos realizado?",
+        "Conectores de termopares em perfeitas condições?"
+    ],
+    "Bender": [
+        "LUBRIFICAÇÃO: Sistema de lubrificação isento de vazamentos.",
+        "REFRIGERAÇÃO: Resfriadores completos e alinhados.",
+        "CILINDROS: Isento de vazamento hidráulico.",
+        "ESTRUTURA: Rolos Lubrificados e girando normalmente."
+    ],
+    "Bow": [
+        "LUBRIFICAÇÃO: Sistema isento de vazamentos.",
+        "REFRIGERAÇÃO: Bicos obstruídos e flexíveis isentos de vazamentos.",
+        "PORCA HIDRÁULICA: Isenta de vazamento e conexões apertadas."
+    ],
+    "Straightener": [
+        "HIDRÁULICA: Ausência de vazamentos nos cilindros.",
+        "MECÂNICA: Alinhamento dos rolos tracionadores confirmado."
+    ],
+    "Horizontal": [
+        "ESTRUTURA: Condição da estrutura do segmento está OK.",
+        "ROLETES: Girando livremente sem travamentos."
+    ]
+};

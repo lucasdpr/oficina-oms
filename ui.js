@@ -166,6 +166,7 @@ export function renderReservas() {
                             </select>
                             <button class="btn-premium btn-success" onclick="iniciarSwapAlocacao('${a.id}')"><i class="fas fa-exchange-alt"></i> Swap</button>
                             <button class="btn-premium" style="background:transparent; border-color:var(--text-accent); color:var(--text-accent); padding: 8px 12px;" onclick="abrirHistoricoIndividual('${a.id}')" title="Ver Prontuário"><i class="fas fa-book-open"></i></button>
+                            <button class="btn-outline-danger" style="padding: 8px 12px;" onclick="excluirEquipamento('${a.id}')" title="Excluir Peça"><i class="fas fa-trash"></i></button>
                         </div>
                     </td>
                 </tr>`;
@@ -257,4 +258,50 @@ export function renderMateriais() {
             </tr>
         `;
     }).join("");
+}
+export function toggleSidebar() {
+    const menu = document.getElementById('sidebar-menu');
+    if(menu) menu.classList.toggle('open');
+}
+export function aplicarFiltrosMCC(mccNumero, btnElement) {
+    const grupo = btnElement.parentElement;
+    grupo.querySelectorAll('.btn-filter-mcc').forEach(b => b.classList.remove('active'));
+    btnElement.classList.add('active');
+    renderizarGraficosMCC(mccNumero);
+}
+
+export function renderizarGraficosMCC(mccNumero) {
+    const container = document.getElementById(`graficos-mcc${mccNumero}`);
+    if (!container) return;
+
+    const divFiltroVeio = document.getElementById(`filtros-veio-mcc${mccNumero}`);
+    const veioAtivo = divFiltroVeio ? divFiltroVeio.querySelector('.active').getAttribute('data-valor') : 'TODOS';
+
+    const divFiltroStatus = document.getElementById(`filtros-status-mcc${mccNumero}`);
+    const statusAtivo = divFiltroStatus ? divFiltroStatus.querySelector('.active').getAttribute('data-valor') : 'TODOS';
+
+    let filtrados = BANCO_ATIVOS.filter(a => a.local.includes(`MCC ${mccNumero}`));
+
+    if (veioAtivo !== 'TODOS') {
+        filtrados = filtrados.filter(a => a.local.includes(`Veio ${veioAtivo}`));
+    }
+
+    if (statusAtivo !== 'TODOS') {
+        filtrados = filtrados.filter(a => {
+            const pct = (a.ton / a.meta) * 100;
+            if (statusAtivo === 'VERMELHO') return pct >= 80;
+            if (statusAtivo === 'AMARELO') return pct >= 50 && pct < 80;
+            if (statusAtivo === 'VERDE') return pct < 50;
+            return true;
+        });
+    }
+
+    filtrados.sort((a, b) => a.ordem - b.ordem);
+
+    if (filtrados.length === 0) {
+        container.innerHTML = `<div class="vazio">Nenhum equipamento encontrado com a combinação de filtros.</div>`;
+        return;
+    }
+
+    container.innerHTML = filtrados.map(gerarCardGraficoHTML).join("");
 }

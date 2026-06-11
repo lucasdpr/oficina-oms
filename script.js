@@ -1,3 +1,7 @@
+// =========================================================================
+// TOPO CORRIGIDO DO script.js
+// =========================================================================
+
 import { 
     MOTIVOS_RETIRO, 
     CHECKLIST_RECEBIMENTO, 
@@ -7,6 +11,7 @@ import {
 } from './dados.js';
 
 import { carregarTema, toggleTheme } from './tema.js';
+import { abrirFolhaoMCC4 } from './folhao.js';
 
 import { 
     BANCO_ATIVOS, 
@@ -16,15 +21,28 @@ import {
     EM_EMERGENCIA, 
     OPERADOR_LOGADO,
     VEIO_SELECIONADO_PAINEL,
-    CADASTRO_MATRICULAS 
+    CADASTRO_MATRICULAS,
+    setOperador,           
+    setEmergencia,         
+    setVeioSelecionado
 } from './banco.js';
+
+// IMPORT DO UI.JS CORRIGIDO E COMPLETO COM TODAS AS 9 FUNÇÕES!
+import { 
+    renderPainelVeios, 
+    renderAtivos, 
+    renderReparos, 
+    renderReservas, 
+    renderRolos, 
+    renderMateriais,
+    toggleSidebar,
+    aplicarFiltrosMCC,      // <-- ESSENCIAL PARA OS GRÁFICOS
+    renderizarGraficosMCC   // <-- ESSENCIAL PARA OS GRÁFICOS
+} from './ui.js';
 
 let MODO_MODAL_RELATORIO = {};
 let ID_REPARO_ATUAL = null;
-let ID_HISTORICO_ATUAL = null;
-let ID_FOLHAO_ATUAL = null;
-let DADOS_FOLGA_ARESTA = {};
-
+let ID_HISTORICO_ATUAL = null; 
 // ==========================================
 // AUTENTICAÇÃO E NAVEGAÇÃO
 // ==========================================
@@ -32,12 +50,11 @@ function processarAutenticacaoHome() {
     const nomeInput = document.getElementById("login-nome").value.trim();
     const matriculaInput = document.getElementById("login-matricula").value.trim();
 
-    if (!nomeInput || !matriculaInput) {
-        return alert("Preencha todos os campos.");
-    }
+    if (!nomeInput || !matriculaInput) return alert("Preencha todos os campos.");
 
     if (CADASTRO_MATRICULAS[matriculaInput]) {
-        OPERADOR_LOGADO = { matricula: matriculaInput, nome: `${nomeInput} [${CADASTRO_MATRICULAS[matriculaInput]}]` };
+        // Usando a chave de acesso em vez do sinal de igual!
+        setOperador({ matricula: matriculaInput, nome: `${nomeInput} [${CADASTRO_MATRICULAS[matriculaInput]}]` });
         localStorage.setItem("oms_operador_v32_local", JSON.stringify(OPERADOR_LOGADO));
         
         document.getElementById("tela-login-home").style.display = "none";
@@ -60,7 +77,7 @@ function processarAutenticacaoHome() {
 function fazerLogout() {
     if (confirm("Encerrar o turno?")) {
         registrarHistorico("SISTEMA", "Turno encerrado.");
-        OPERADOR_LOGADO = null;
+        setOperador(null); // <-- Chave de acesso!
         localStorage.removeItem("oms_operador_v32_local");
         document.getElementById("container-sistema-oms").style.display = "none";
         document.getElementById("tela-login-home").style.display = "flex";
@@ -109,7 +126,7 @@ function abrirAba(event, idAba) {
 }
 
 function mudarVeioVisualizado(veioNome) {
-    VEIO_SELECIONADO_PAINEL = veioNome;
+    setVeioSelecionado(veioNome); // <-- Chave de acesso!
     document.querySelectorAll(".btn-veio-tab").forEach(btn => {
         if (btn.getAttribute("onclick").includes(`'${veioNome}'`)) {
             btn.classList.add("active");
@@ -221,52 +238,6 @@ function fazerCelulaEditavel(celula, id, campo) {
 }
 
 // ==========================================
-// FILTROS MCC
-// ==========================================
-function aplicarFiltrosMCC(mccNumero, btnElement) {
-    const grupo = btnElement.parentElement;
-    grupo.querySelectorAll('.btn-filter-mcc').forEach(b => b.classList.remove('active'));
-    btnElement.classList.add('active');
-    renderizarGraficosMCC(mccNumero);
-}
-
-function renderizarGraficosMCC(mccNumero) {
-    const container = document.getElementById(`graficos-mcc${mccNumero}`);
-    if (!container) return;
-
-    const divFiltroVeio = document.getElementById(`filtros-veio-mcc${mccNumero}`);
-    const veioAtivo = divFiltroVeio ? divFiltroVeio.querySelector('.active').getAttribute('data-valor') : 'TODOS';
-
-    const divFiltroStatus = document.getElementById(`filtros-status-mcc${mccNumero}`);
-    const statusAtivo = divFiltroStatus ? divFiltroStatus.querySelector('.active').getAttribute('data-valor') : 'TODOS';
-
-    let filtrados = BANCO_ATIVOS.filter(a => a.local.includes(`MCC ${mccNumero}`));
-
-    if (veioAtivo !== 'TODOS') {
-        filtrados = filtrados.filter(a => a.local.includes(`Veio ${veioAtivo}`));
-    }
-
-    if (statusAtivo !== 'TODOS') {
-        filtrados = filtrados.filter(a => {
-            const pct = (a.ton / a.meta) * 100;
-            if (statusAtivo === 'VERMELHO') return pct >= 80;
-            if (statusAtivo === 'AMARELO') return pct >= 50 && pct < 80;
-            if (statusAtivo === 'VERDE') return pct < 50;
-            return true;
-        });
-    }
-
-    filtrados.sort((a, b) => a.ordem - b.ordem);
-
-    if (filtrados.length === 0) {
-        container.innerHTML = `<div class="vazio">Nenhum equipamento encontrado com a combinação de filtros.</div>`;
-        return;
-    }
-
-    container.innerHTML = filtrados.map(gerarCardGraficoHTML).join("");
-}
-
-// ==========================================
 // PRONTUÁRIO INDIVIDUAL (MODAL)
 // ==========================================
 function abrirHistoricoIndividual(id) {
@@ -279,7 +250,7 @@ function abrirHistoricoIndividual(id) {
     
     renderizarTabelaHistoricoIndividual(id);
     document.getElementById("modal-historico-ativo").classList.remove("hidden");
-}
+}   
 
 function fecharModalHistorico() {
     document.getElementById("modal-historico-ativo").classList.add("hidden");
@@ -442,8 +413,9 @@ function abrirModalConcluirReparo(id) {
     let item = BANCO_ATIVOS.find(a => a.id === id);
     if (!item) return;
 
-    if (item.tipo === "Molde" && item.mcc_compat.includes("4")) {
-        abrirFolhaoMCC4(id); // <- CHAMA O NOVO SISTEMA!
+    // Agora qualquer equipamento da família 4 vai abrir o Folhão inteligente!
+    if (item.mcc_compat.includes("4")) {
+        abrirFolhaoMCC4(id); 
     } else {
         ID_REPARO_ATUAL = id;
         document.getElementById("modal-reparo-tag").innerText = item.id;
@@ -501,295 +473,6 @@ function confirmarConclusaoReparo() {
     renderReservas();
     renderAtivos();
     calcularKpisGlobais();
-}
-
-// ==========================================
-// SISTEMA AVANÇADO DO FOLHÃO DE MANUTENÇÃO MCC4
-// ==========================================
-
-// FUNÇÕES DA MEMÓRIA DE FOLGA DE ARESTAS
-function carregarMedidaAresta() {
-    let largura = document.getElementById("folga-largura").value;
-    
-    // Se não existir dados salvos para essa largura, cria um objeto vazio.
-    let dados = DADOS_FOLGA_ARESTA[largura] || {
-        ec: "", em: "", ei: "", ech: "", 
-        dc: "", dm: "", di: "", dch: ""
-    };
-
-    document.getElementById("fa-esq-cima").value = dados.ec;
-    document.getElementById("fa-esq-meio").value = dados.em;
-    document.getElementById("fa-esq-inf").value = dados.ei;
-    document.getElementById("fa-esq-chav").value = dados.ech;
-
-    document.getElementById("fa-dir-cima").value = dados.dc;
-    document.getElementById("fa-dir-meio").value = dados.dm;
-    document.getElementById("fa-dir-inf").value = dados.di;
-    document.getElementById("fa-dir-chav").value = dados.dch;
-}
-
-function salvarMedidaAresta() {
-    let largura = document.getElementById("folga-largura").value;
-    
-    DADOS_FOLGA_ARESTA[largura] = {
-        ec: document.getElementById("fa-esq-cima").value,
-        em: document.getElementById("fa-esq-meio").value,
-        ei: document.getElementById("fa-esq-inf").value,
-        ech: document.getElementById("fa-esq-chav").value,
-        dc: document.getElementById("fa-dir-cima").value,
-        dm: document.getElementById("fa-dir-meio").value,
-        di: document.getElementById("fa-dir-inf").value,
-        dch: document.getElementById("fa-dir-chav").value
-    };
-}
-
-function injetarAbasFaltantes() {
-    // Para não pedir para o utilizador alterar o HTML, o JavaScript constrói as abas em falta!
-    if(!document.getElementById('tab-peritagem-mcc4')) {
-        let tabsContainer = document.querySelector('.folhao-tabs');
-        let bodyContainer = document.querySelector('.folhao-body');
-        
-        if(tabsContainer && bodyContainer) {
-            tabsContainer.innerHTML += `
-                <button id="tab-peritagem-mcc4" class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-peritagem')">6. Folgas de Aresta</button>
-                <button id="tab-eletrica-mcc4" class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-eletrica')">7. Elétrica e Termopares</button>
-                <button id="tab-materiais-mcc4" class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-materiais')">8. Materiais</button>
-            `;
-            
-            // CONSTRÓI OS CAMPOS DA ELÉTRICA - TERMOPARES PLACA FIXA E MOVEL (1 a 12 + Positivos)
-            let inputsTermoFixa = "";
-            let inputsTermoMovel = "";
-            for(let i=1; i<=12; i++) {
-                inputsTermoFixa += `<div class="input-group"><label>T.Par ${i} (10-20 Ω)</label><input type="text" id="t-fix-${i}"></div>`;
-                inputsTermoMovel += `<div class="input-group"><label>T.Par ${i} (10-20 Ω)</label><input type="text" id="t-mov-${i}"></div>`;
-            }
-            inputsTermoFixa += `
-                <div class="input-group"><label style="color:var(--text-accent)">Positivo 1</label><input type="text" id="t-fix-p1"></div>
-                <div class="input-group"><label style="color:var(--text-accent)">Positivo 2</label><input type="text" id="t-fix-p2"></div>`;
-            inputsTermoMovel += `
-                <div class="input-group"><label style="color:var(--text-accent)">Positivo 1</label><input type="text" id="t-mov-p1"></div>
-                <div class="input-group"><label style="color:var(--text-accent)">Positivo 2</label><input type="text" id="t-mov-p2"></div>`;
-
-            // CONSTRÓI OS CAMPOS DA ELÉTRICA - TERMOPARES ESTREITAS (1 a 3 + Positivos)
-            let inputsTermoEsq = "";
-            let inputsTermoDir = "";
-            for(let i=1; i<=3; i++) {
-                inputsTermoEsq += `<div class="input-group"><label>T.Par ${i} (5-15 Ω)</label><input type="text" id="t-esq-${i}"></div>`;
-                inputsTermoDir += `<div class="input-group"><label>T.Par ${i} (5-15 Ω)</label><input type="text" id="t-dir-${i}"></div>`;
-            }
-            inputsTermoEsq += `
-                <div class="input-group"><label style="color:var(--text-accent)">Positivo 1</label><input type="text" id="t-esq-p1"></div>
-                <div class="input-group"><label style="color:var(--text-accent)">Positivo 2</label><input type="text" id="t-esq-p2"></div>`;
-            inputsTermoDir += `
-                <div class="input-group"><label style="color:var(--text-accent)">Positivo 1</label><input type="text" id="t-dir-p1"></div>
-                <div class="input-group"><label style="color:var(--text-accent)">Positivo 2</label><input type="text" id="t-dir-p2"></div>`;
-
-            // Injeta o conteúdo dinâmico
-            bodyContainer.innerHTML += `
-                <div id="folhao-aba-peritagem" class="folhao-content hidden">
-                    <h3 style="margin-bottom: 15px; color: var(--text-heading);">Folga de Aresta - Medição Multi-Largura</h3>
-                    <p class="text-warning" style="font-size: 12px; margin-bottom: 15px;"><i class="fas fa-info-circle"></i> Selecione a largura, digite os valores e mude para a próxima. O sistema salva automaticamente!</p>
-                    
-                    <div class="input-group" style="max-width: 300px; margin-bottom: 20px;">
-                        <label>LARGURA DA FACE DE REFERÊNCIA</label>
-                        <select id="folga-largura" class="premium-select" onchange="carregarMedidaAresta()">
-                            <option value="830">LARGURA 830</option>
-                            <option value="870">LARGURA 870</option>
-                            <option value="950">LARGURA 950</option>
-                            <option value="1030">LARGURA 1030</option>
-                            <option value="1100">LARGURA 1100</option>
-                            <option value="1180">LARGURA 1180</option>
-                            <option value="1230">LARGURA 1230</option>
-                            <option value="1300">LARGURA 1300</option>
-                            <option value="1380">LARGURA 1380</option>
-                            <option value="1460">LARGURA 1460</option>
-                            <option value="1500">LARGURA 1500</option>
-                            <option value="1530">LARGURA 1530</option>
-                            <option value="1550">LARGURA 1550</option>
-                            <option value="1580">LARGURA 1580</option>
-                            <option value="1620">LARGURA 1620</option>
-                        </select>
-                    </div>
-
-                    <div class="form-grid-2-mobile" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        <div style="background: var(--bg-th); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
-                            <h4 style="margin-bottom: 15px; color: var(--text-heading); text-align: center;">PLACA ESQUERDA</h4>
-                            <div class="input-group" style="margin-bottom: 10px;"><label>Medida Cima (O/M)</label><input type="text" id="fa-esq-cima" onkeyup="salvarMedidaAresta()"></div>
-                            <div class="input-group" style="margin-bottom: 10px;"><label>Medida Meio (V)</label><input type="text" id="fa-esq-meio" onkeyup="salvarMedidaAresta()"></div>
-                            <div class="input-group" style="margin-bottom: 10px;"><label>Medida Inferior (E/L)</label><input type="text" id="fa-esq-inf" onkeyup="salvarMedidaAresta()"></div>
-                            <hr style="border: 1px solid var(--border-color); margin: 15px 0;">
-                            <div class="input-group"><label style="color:var(--warning)">Folga da Chaveta Esq.</label><input type="text" id="fa-esq-chav" onkeyup="salvarMedidaAresta()"></div>
-                        </div>
-                        
-                        <div style="background: var(--bg-th); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
-                            <h4 style="margin-bottom: 15px; color: var(--text-heading); text-align: center;">PLACA DIREITA</h4>
-                            <div class="input-group" style="margin-bottom: 10px;"><label>Medida Cima (O/M)</label><input type="text" id="fa-dir-cima" onkeyup="salvarMedidaAresta()"></div>
-                            <div class="input-group" style="margin-bottom: 10px;"><label>Medida Meio (V)</label><input type="text" id="fa-dir-meio" onkeyup="salvarMedidaAresta()"></div>
-                            <div class="input-group" style="margin-bottom: 10px;"><label>Medida Inferior (E/L)</label><input type="text" id="fa-dir-inf" onkeyup="salvarMedidaAresta()"></div>
-                            <hr style="border: 1px solid var(--border-color); margin: 15px 0;">
-                            <div class="input-group"><label style="color:var(--warning)">Folga da Chaveta Dir.</label><input type="text" id="fa-dir-chav" onkeyup="salvarMedidaAresta()"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="folhao-aba-eletrica" class="folhao-content hidden">
-                    <h3 style="margin-bottom: 15px; color: var(--text-heading); border-bottom: 1px solid var(--text-accent); padding-bottom: 5px;">Isolamento dos Sensores de Nível do Molde (>10 MΩ)</h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 30px;">
-                        <div class="input-group"><label>Pinos 5 e 6</label><input type="text" id="iso-5-6"></div>
-                        <div class="input-group"><label>Pinos 5 e 8</label><input type="text" id="iso-5-8"></div>
-                        <div class="input-group"><label>Pinos 5 e 10</label><input type="text" id="iso-5-10"></div>
-                        <div class="input-group"><label>Pinos 5 e 15</label><input type="text" id="iso-5-15"></div>
-                        <div class="input-group"><label>Pinos 6 e 8</label><input type="text" id="iso-6-8"></div>
-                        <div class="input-group"><label>Pinos 6 e 10</label><input type="text" id="iso-6-10"></div>
-                        <div class="input-group"><label>Pinos 6 e 15</label><input type="text" id="iso-6-15"></div>
-                        <div class="input-group"><label>Pinos 8 e 10</label><input type="text" id="iso-8-10"></div>
-                        <div class="input-group"><label>Pinos 8 e 15</label><input type="text" id="iso-8-15"></div>
-                        <div class="input-group"><label>Pinos 10 e 15</label><input type="text" id="iso-10-15"></div>
-                    </div>
-
-                    <h3 style="margin-bottom: 15px; color: var(--text-heading); border-bottom: 1px solid var(--text-accent); padding-bottom: 5px;">Teste de Resistência: Placas LARGAS</h3>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
-                        <div style="background: var(--bg-th); padding: 10px; border-radius: 8px;">
-                            <h4 style="text-align: center; margin-bottom: 10px;">PLACA FIXA</h4>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">${inputsTermoFixa}</div>
-                        </div>
-                        <div style="background: var(--bg-th); padding: 10px; border-radius: 8px;">
-                            <h4 style="text-align: center; margin-bottom: 10px;">PLACA MÓVEL</h4>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">${inputsTermoMovel}</div>
-                        </div>
-                    </div>
-
-                    <h3 style="margin-bottom: 15px; color: var(--text-heading); border-bottom: 1px solid var(--text-accent); padding-bottom: 5px;">Teste de Resistência: Placas ESTREITAS</h3>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <div style="background: var(--bg-th); padding: 10px; border-radius: 8px;">
-                            <h4 style="text-align: center; margin-bottom: 10px;">ESTREITA ESQUERDA</h4>
-                            <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">${inputsTermoEsq}</div>
-                        </div>
-                        <div style="background: var(--bg-th); padding: 10px; border-radius: 8px;">
-                            <h4 style="text-align: center; margin-bottom: 10px;">ESTREITA DIREITA</h4>
-                            <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">${inputsTermoDir}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="folhao-aba-materiais" class="folhao-content hidden">
-                    <h3 style="margin-bottom: 15px; color: var(--text-heading);">Relatório de Materiais Utilizados</h3>
-                    <textarea id="materiais-utilizados-texto" class="premium-textarea" rows="10" placeholder="Liste as quantidades e materiais utilizados. Ex:\n4 Parafusos sextavados M24x140\n8 Arruelas Pressão\nMassa de calafetar\n..."></textarea>
-                </div>
-            `;
-        }
-    }
-}
-
-function abrirFolhaoMCC4(id) {
-    injetarAbasFaltantes();
-    
-    ID_FOLHAO_ATUAL = id;
-    DADOS_FOLGA_ARESTA = {}; // Reinicia a memória de arestas para um novo laudo!
-    
-    document.getElementById("mcc4-tag-name").innerText = id;
-    document.getElementById("mcc4-data-inicio").valueAsDate = new Date();
-    document.getElementById("mcc4-data-fim").valueAsDate = new Date();
-
-    renderizarChecklist(CHECKLIST_RECEBIMENTO, "container-check-recebimento", "rec");
-    renderizarChecklist(CHECKLIST_REVISAO, "container-check-revisao", "rev");
-    renderizarChecklist(CHECKLIST_HIDRAULICA, "container-check-hidraulica", "hid");
-    renderizarChecklist(CHECKLIST_FINAL, "container-check-final", "fin");
-
-    document.querySelectorAll('.folhao-tab')[0].click();
-    carregarMedidaAresta(); // Carrega a primeira largura padrão da Dropdown
-    document.getElementById("modal-folhao-mcc4").classList.remove("hidden");
-}
-
-function fecharFolhaoMCC4() {
-    document.getElementById("modal-folhao-mcc4").classList.add("hidden");
-    ID_FOLHAO_ATUAL = null;
-}
-
-function trocarAbaFolhao(event, idAba) {
-    document.querySelectorAll('.folhao-content').forEach(c => c.classList.add('hidden'));
-    document.querySelectorAll('.folhao-tab').forEach(t => t.classList.remove('active'));
-    document.getElementById(idAba).classList.remove('hidden');
-    event.currentTarget.classList.add('active');
-}
-
-function renderizarChecklist(arrayPerguntas, containerId, prefix) {
-    const container = document.getElementById(containerId);
-    let html = "";
-    arrayPerguntas.forEach((pergunta, index) => {
-        let name = `${prefix}-q${index}`;
-        html += `
-        <div class="check-item">
-            <p>${index + 1}. ${pergunta}</p>
-            <div class="check-options">
-                <label><input type="radio" name="${name}" value="SIM" checked> SIM</label>
-                <label><input type="radio" name="${name}" value="NÃO"> NÃO</label>
-            </div>
-        </div>`;
-    });
-    container.innerHTML = html;
-}
-
-// Helper para ler as opções de rádio do checklist na hora do PDF
-function gerarLinhasChecklistPDF(arrayPerguntas, prefix) {
-    let html = "";
-    arrayPerguntas.forEach((pergunta, index) => {
-        let name = `${prefix}-q${index}`;
-        let radios = document.getElementsByName(name);
-        let valorSelecionado = "N/A";
-        
-        for(let i=0; i<radios.length; i++){
-            if(radios[i].checked) {
-                valorSelecionado = radios[i].value;
-                break;
-            }
-        }
-        
-        html += `
-            <tr>
-                <td style="text-align:center;">${index + 1}</td>
-                <td>${pergunta}</td>
-                <td style="text-align:center; font-weight:bold;">${valorSelecionado}</td>
-            </tr>`;
-    });
-    return html;
-}
-
-function salvarEImprimirFolhaoMCC4() {
-    if (!verificarAcesso() || !ID_FOLHAO_ATUAL) return;
-    
-    let item = BANCO_ATIVOS.find(a => a.id === ID_FOLHAO_ATUAL);
-    if (!item) return;
-
-    let tipoExecucao = document.getElementById("mcc4-tipo-execucao").value;
-    let motivo = document.getElementById("mcc4-motivo").value || "Manutenção Padrão";
-    
-    if(tipoExecucao === "GERAL") {
-        item.ton = 0;
-        item.dias = 0;
-    }
-    
-    item.local = "Oficina / Reserva";
-    
-    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-    
-    let linkImprimir = `<button class='btn-xs-primary' style='margin-left:10px; cursor:pointer; color:var(--text-accent)' onclick='imprimirLaudoSalvo("${ID_FOLHAO_ATUAL}", "${motivo}")'><i class='fas fa-print'></i> Imprimir Folhão</button>`;
-    
-    registrarHistorico(item.id, `Folhão MCC4 assinado. Execução: ${tipoExecucao}. Motivo: ${motivo}. ${linkImprimir}`);
-    
-    fecharFolhaoMCC4();
-    renderReparos();
-    renderReservas();
-    renderAtivos();
-    calcularKpisGlobais();
-    
-    imprimirLaudoSalvo(ID_FOLHAO_ATUAL, motivo);
-}
-
-// Helper rápido para pegar valores sem quebrar se o elemento não existir
-function getV(id) {
-    let el = document.getElementById(id);
-    return el && el.value ? el.value : ' - ';
 }
 
 function imprimirLaudoSalvo(tag, motivo) {
@@ -1003,6 +686,34 @@ function salvarNovoEquipamento() {
         mcc_compat: mcc_compat
     });
 
+    function excluirEquipamento(id) {
+    if (!verificarAcesso()) return;
+
+    let item = BANCO_ATIVOS.find(a => a.id === id);
+    if (!item) return;
+
+    // Bloqueio de segurança: impede apagar peça que está instalada na máquina
+    if (item.local.includes("Veio")) {
+        return alert("Bloqueado: Não é possível excluir uma peça que está rodando no Veio. Faça o saque dela para a Oficina primeiro.");
+    }
+
+    if (confirm(`ATENÇÃO!\nTem certeza que deseja EXCLUIR DEFINITIVAMENTE o equipamento [${id}] do sistema?`)) {
+        // Encontra onde ele está na lista e corta ele fora
+        const index = BANCO_ATIVOS.findIndex(a => a.id === id);
+        BANCO_ATIVOS.splice(index, 1);
+        
+        // Salva a lista nova e registra a ação
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+        registrarHistorico("SISTEMA", `Equipamento [${id}] excluído do cadastro.`);
+        
+        // Atualiza as tabelas
+        renderAtivos();
+        renderReservas();
+        renderReparos();
+        calcularKpisGlobais();
+    }
+}
+
     localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
     registrarHistorico(tag, `Peça nova (${tipo} MCC ${mcc_compat}) cadastrada.`);
 
@@ -1052,6 +763,41 @@ function ajustarSaldoMaterial(codigo, fator) {
     }
 }
 
+function toggleFormMaterial() {
+    document.getElementById("form-novo-material").classList.toggle("hidden");
+}
+
+function salvarEntradaMaterial() {
+    if (!verificarAcesso()) return;
+    
+    const codigo = document.getElementById("mat-codigo").value.trim().toUpperCase();
+    const descricao = document.getElementById("mat-descricao").value.trim().toUpperCase();
+    const qtd = parseInt(document.getElementById("mat-qtd").value);
+
+    if (!codigo || !descricao || isNaN(qtd) || qtd <= 0) {
+        return alert("Preencha todos os campos corretamente com uma quantidade válida.");
+    }
+
+    let materialExistente = BANCO_MATERIAIS.find(m => m.codigo === codigo);
+
+    if (materialExistente) {
+        materialExistente.qtd += qtd;
+        registrarHistorico("ALMOXARIFADO", `Adicionadas ${qtd} UN ao material existente [${codigo}].`);
+    } else {
+        BANCO_MATERIAIS.push({ codigo: codigo, descricao: descricao, qtd: qtd });
+        registrarHistorico("ALMOXARIFADO", `Novo material [${codigo}] cadastrado com ${qtd} UN.`);
+    }
+
+    localStorage.setItem("oms_materiais_v32_local", JSON.stringify(BANCO_MATERIAIS));
+    
+    document.getElementById("mat-codigo").value = "";
+    document.getElementById("mat-descricao").value = "";
+    document.getElementById("mat-qtd").value = "";
+    
+    toggleFormMaterial();
+    renderMateriais();
+}
+
 function removerMaterial(codigo) {
     if (!verificarAcesso()) return;
     
@@ -1073,14 +819,14 @@ function removerMaterial(codigo) {
 // SEGURANÇA (PÂNICO) E INICIALIZAÇÃO
 // ==========================================
 function dispararEmergencia() {
-    EM_EMERGENCIA = `⚠️ ALERTA PANICO - INTERVENÇÃO FORÇADA`;
+    setEmergencia(`⚠️ ALERTA PANICO - INTERVENÇÃO FORÇADA`); // <-- Chave de acesso!
     localStorage.setItem("oms_emergencia_v32_local", JSON.stringify(EM_EMERGENCIA));
     registrarHistorico("ALERTA", "Botão de Pânico acionado.");
     exibirBarraEmergencia();
 }
 
 function encerrarEmergencia() {
-    EM_EMERGENCIA = null;
+    setEmergencia(null); // <-- Chave de acesso!
     localStorage.removeItem("oms_emergencia_v32_local");
     document.getElementById("barra-emergencia").style.display = "none";
     registrarHistorico("ALERTA", "Alarme resetado.");
@@ -1111,9 +857,86 @@ document.addEventListener("DOMContentLoaded", () => {
         renderMateriais(); 
     }
 });
+
+// Função auxiliar para ordenar as peças corretamente no fluxo visual
+function getOrdemPadrao(tipo) {
+    const ordens = {
+        "Molde": 10,
+        "Mesa Osciladora": 20,
+        "Seguimento Zero": 30,
+        "Bender": 40,
+        "Bow": 300,
+        "Straightener": 400,
+        "Horizontal": 500,
+        "Cadeira Superior": 100,
+        "Cadeira Inferior": 200
+    };
+    return ordens[tipo] || 999;
+}
+
+function excluirEquipamento(id) {
+    if (!verificarAcesso()) return;
+
+    let item = BANCO_ATIVOS.find(a => a.id === id);
+    if (!item) return;
+
+    if (item.local.includes("Veio")) {
+        return alert("Bloqueado: Não é possível excluir uma peça que está rodando no Veio. Faça o saque dela para a Oficina primeiro.");
+    }
+
+    if (confirm(`ATENÇÃO!\nTem certeza que deseja EXCLUIR DEFINITIVAMENTE o equipamento [${id}] do sistema?`)) {
+        const index = BANCO_ATIVOS.findIndex(a => a.id === id);
+        if (index > -1) {
+            BANCO_ATIVOS.splice(index, 1);
+            localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+            registrarHistorico("SISTEMA", `Equipamento [${id}] excluído do cadastro.`);
+            
+            renderAtivos();
+            renderReservas();
+            renderReparos();
+            calcularKpisGlobais();
+        }
+    }
+}
+// ==========================================
+// LIBERAÇÃO DE FUNÇÕES PARA O HTML (PERMISSÕES)
+// ==========================================
+// 1. Navegação e UI
 window.toggleTheme = toggleTheme;
 window.processarAutenticacaoHome = processarAutenticacaoHome;
 window.fazerLogout = fazerLogout;
 window.abrirAba = abrirAba;
 window.mudarVeioVisualizado = mudarVeioVisualizado;
 window.toggleSidebar = toggleSidebar;
+window.aplicarFiltrosMCC = aplicarFiltrosMCC;
+
+// 2. Ações de Edição, Saque e Reparo
+window.fazerCelulaEditavel = fazerCelulaEditavel;
+window.abrirHistoricoIndividual = abrirHistoricoIndividual;
+window.fecharModalHistorico = fecharModalHistorico;
+window.salvarRegistroManual = salvarRegistroManual;
+window.iniciarSaque = iniciarSaque;
+window.fecharModalRelatorio = fecharModalRelatorio;
+window.confirmarRelatorio = confirmarRelatorio;
+window.iniciarSwapAlocacao = iniciarSwapAlocacao;
+window.abrirModalConcluirReparo = abrirModalConcluirReparo;
+window.fecharModalConcluirReparo = fecharModalConcluirReparo;
+window.toggleCamposReparoParcial = toggleCamposReparoParcial;
+window.confirmarConclusaoReparo = confirmarConclusaoReparo;
+
+// 3. Estoque e Almoxarifado
+window.toggleFormAdicionar = toggleFormAdicionar;
+window.salvarNovoEquipamento = salvarNovoEquipamento;
+window.excluirEquipamento = excluirEquipamento;
+window.alterarSaldoRolo = alterarSaldoRolo;
+window.ajustarSaldoMaterial = ajustarSaldoMaterial;
+window.removerMaterial = removerMaterial;
+
+// 4. Segurança e Integrações
+window.dispararEmergencia = dispararEmergencia;
+window.encerrarEmergencia = encerrarEmergencia;
+window.verificarAcesso = verificarAcesso;
+window.registrarHistorico = registrarHistorico;
+window.calcularKpisGlobais = calcularKpisGlobais;
+window.toggleFormMaterial = toggleFormMaterial;
+window.salvarEntradaMaterial = salvarEntradaMaterial;

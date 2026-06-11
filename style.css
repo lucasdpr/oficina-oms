@@ -399,3 +399,27 @@ h1, h2, h3, h4 { color: var(--text-heading); }
     text-align: center;
   }
 }
+/* =========================================
+   CORREÇÃO DAS ABAS DO FOLHÃO (SCROLL HORIZONTAL)
+========================================= */
+.folhao-tabs {
+    display: flex !important;
+    flex-wrap: nowrap !important; /* Força tudo a ficar em uma linha só */
+    overflow-x: auto !important; /* Cria a rolagem horizontal se não couber */
+    gap: 10px;
+    padding-bottom: 10px; /* Espaço para a barra de rolagem não cortar o botão */
+}
+
+.folhao-tab {
+    flex: 0 0 auto !important; /* Impede os botões de ficarem esmagados */
+    white-space: nowrap !important; /* Impede o texto de quebrar em duas linhas */
+}
+
+/* Deixa a barrinha de rolagem fina e elegante no PC */
+.folhao-tabs::-webkit-scrollbar {
+    height: 6px;
+}
+.folhao-tabs::-webkit-scrollbar-thumb {
+    background: var(--text-accent, #38bdf8);
+    border-radius: 4px;
+}
