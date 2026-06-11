@@ -87,31 +87,116 @@ export const CHECKLIST_FINAL = [
 // ==========================================
 // NOVOS CHECKLISTS INTELIGENTES POR EQUIPAMENTO
 // ==========================================
+// ==========================================
+// BIBLIOTECA INTELIGENTE DE CHECKLISTS POR EQUIPAMENTO
+// ==========================================
+// ==========================================
+// BIBLIOTECA INTELIGENTE DE CHECKLISTS E CATEGORIAS
+// ==========================================
 export const BIBLIOTECA_CHECKLISTS = {
-    "Molde": [
-        "Os engates rápidos do sistema hidráulico e de nitrogênio estão completos?",
-        "Os flexíveis das faces estreitas e spray estão amassados ou danificados?",
-        "Existe alguma tubulação hidráulica amassada ou danificada?",
-        "Teste de água com pressão de 10 KGF/cm² por 30 minutos realizado?",
-        "Conectores de termopares em perfeitas condições?"
-    ],
-    "Bender": [
-        "LUBRIFICAÇÃO: Sistema de lubrificação isento de vazamentos.",
-        "REFRIGERAÇÃO: Resfriadores completos e alinhados.",
-        "CILINDROS: Isento de vazamento hidráulico.",
-        "ESTRUTURA: Rolos Lubrificados e girando normalmente."
-    ],
-    "Bow": [
-        "LUBRIFICAÇÃO: Sistema isento de vazamentos.",
-        "REFRIGERAÇÃO: Bicos obstruídos e flexíveis isentos de vazamentos.",
-        "PORCA HIDRÁULICA: Isenta de vazamento e conexões apertadas."
-    ],
-    "Straightener": [
-        "HIDRÁULICA: Ausência de vazamentos nos cilindros.",
-        "MECÂNICA: Alinhamento dos rolos tracionadores confirmado."
-    ],
-    "Horizontal": [
-        "ESTRUTURA: Condição da estrutura do segmento está OK.",
-        "ROLETES: Girando livremente sem travamentos."
-    ]
+    // ---- EQUIPAMENTOS DA FAMÍLIA 4 ----
+    "Bender": {
+        "1. INSPEÇÃO DE CHEGADA": [
+            "LUBRIFICAÇÃO: Sistema isento de vazamentos.",
+            "LUBRIFICAÇÃO: Tubulação amassada.",
+            "LUBRIFICAÇÃO: Distribuidores funcionando corretamente.",
+            "LUBRIFICAÇÃO: Flexíveis perfeitos, sem avarias.",
+            "LUBRIFICAÇÃO: Tubulações Inox/Cobre danificadas.",
+            "REFRIGERAÇÃO: Resfriadores completos e alinhados.",
+            "REFRIGERAÇÃO: Bicos completos e desobstruídos.",
+            "REFRIGERAÇÃO: Flexíveis isentos de vazamentos.",
+            "REFRIGERAÇÃO: Tubulações isentas de empenos ou furos.",
+            "ESTRUTURA: Rolos lubrificados, girando normalmente.",
+            "ESTRUTURA: Proteções isentas de avarias.",
+            "ESTRUTURA: Estrutura com break-out.",
+            "ESTRUTURA: Rolamentos quebrados ou Rolos travados.",
+            "ESTRUTURA: Parafusos dos mancais todos apertados.",
+            "ESTRUTURA: Conexões apertadas."
+        ],
+        "2. CHECKLIST DE MANUTENÇÃO (EXECUÇÃO)": [
+            "Limpeza e lavagem de Break Out.",
+            "Soltar uniões das cangalhas, retirar chavetas e remover cangalhas.",
+            "Posicionar segmento na horizontal e aferir GAP de chegada.",
+            "Içar e separar a base superior da base inferior.",
+            "Desconectar tubulação de graxa, parafusos e retirar conjuntos de rolos.",
+            "Preparar base superior e inferior para jateamento/pintura.",
+            "Preparação e Testes de refrigeração nas cangalhas.",
+            "Montar válvulas de graxa nas bases e testar lubrificação.",
+            "Instalar conjuntos de rolos na base, apertando os parafusos M16 (com graxa).",
+            "Aferir Pass Line com régua na base inferior e superior.",
+            "Conectar e testar tubos de lubrificação, montar proteções dos rolos.",
+            "Transportar base superior, montar calços e fechar o segmento.",
+            "Conferir o GAP de Saída e registrar.",
+            "Montar cangalhas, resfriadores e mangueiras de lubrificação.",
+            "Efetuar teste final de resfriadores e lubrificação."
+        ]
+    },
+    // ---- EQUIPAMENTOS DA FAMÍLIA 2 E 3 ----
+    "Molde": {
+        "1. INSPEÇÃO DE RECEBIMENTO": [
+            "Os engates rápidos para abertura da face móvel estão completos e em perfeitas condições?",
+            "Os engates rápidos para o sistema de lubrificação estão completos e em perfeitas condições?",
+            "Os flexíveis das guias laterais estão amassados e/ou danificados?",
+            "As tubulações hidráulicas e de lubrificação estão em perfeitas condições?",
+            "Os protetores sanfonados dos fusos e tubos telescópicos das placas laterais estão danificados?",
+            "As cangalhas de spray estão 'OK' sem avarias?",
+            "Há avarias nas mangueiras e tubulação de lubrificação dos foot rolls e guias laterais?",
+            "As réguas de guia das placas laterais estão em perfeitas condições?",
+            "Ao executar o teste de movimentação das laterais houve ruídos?",
+            "Ao realizar o teste hidrostático nas placas foi identificados vazamentos?",
+            "Ao realizar o teste de spray, ocorreu obstrução de bicos?"
+        ],
+        "2. INSPEÇÃO ELÉTRICA (RECEBIMENTO)": [
+            "Os conectores do detector de break-out das faces larga estão tampados e em perfeitas condições?",
+            "Os cabos elétricos dos termopares do detector de break-out das faces estreitas estão em perfeitas condições?"
+        ],
+        "3. REVISÃO DO MOLDE": [
+            "Retirar os parafusos de fixação dos foot rolls e guias laterais; fazer acabamento e recondicionar roscas.",
+            "Ajustar chavetas das guias dos rolos laterais e bases dos foot-rolls.",
+            "Desmontar réguas guias das laterais, lixar, desempenar e recompor c/ solda se necessário.",
+            "Calibrar com 0.40mm a folga da arruela dos parafusos de fixação da face larga móvel.",
+            "Desobstruir dreno na tampa das hastes do cilindro do clamp.",
+            "Ajustar as 04 porcas castelo da haste do cilindro de clamp da face larga móvel.",
+            "Limpar e ajustar os parafusos de alinhamento das bases (guias laterais).",
+            "Limpar faces de apoio das placas largas e estreitas e montar o'ring.",
+            "Fazer inspeção visual em todo o sistema hidráulico e relatar anomalias.",
+            "Verificar e reparar pinos travas dos eixos KARDANS, lubrificar, ajustar estrias e pintá-los.",
+            "Desmontar proteção sanfonada dos fusos, inspecionar e lubrificar os mesmos (substituir se danificada).",
+            "Limpar e ajustar calços para alinhamento dos foot roll.",
+            "Ajustar e lubrificar o parafuso excêntrico de alinhamento do molde na máquina.",
+            "Fixar e ajustar placa suporte do parafuso de fixação do molde na máquina, com 1mm.",
+            "Inspecionar folgas nas caixas de engrenagem das placas laterais.",
+            "Lubrificar total, verificando o perfeito funcionamento das válvulas distribuidoras de graxa.",
+            "Fazer inspeção nas roscas para fixação das placas laterais (back up).",
+            "Verificar torque de aperto dos parafusos tipo feno dos eixos cardans - 25 Nm."
+        ],
+        "4. INSPEÇÃO FINAL": [
+            "Esquadramento das faces estreitas está na tolerância de 0.1mm?",
+            "Alinhamento do molde em relação ao gabarito do stand está correto?",
+            "A folga nas arruelas dos parafusos de fixação da placa móvel estão entre 0.3mm a 0.5mm?",
+            "A folga máxima entre as placas laterais e largas é de 0.25mm?",
+            "Os encaixes dos eixos cardans nos motores foram feitos sem interferência?",
+            "As marcações dos centros das placas largas estão legíveis?",
+            "Tubos telescópios sem vazamentos? (Teste de casamento com 7kgf/cm2).",
+            "Os protetores sanfonados estão em bom estado de conservação?",
+            "Os engates rápidos estão apertados e protegidos?",
+            "Os eixos cardan estão limpos, lubrificados e protegidos?",
+            "Os leques dos sprays estão corretamente alinhados e sem obstrução?",
+            "Não houve vazamento durante o teste hidrostático com 10 bar durante 30min?",
+            "Foot Rolls e roletes das guias laterais estão lubrificados e girando normalmente?",
+            "As tampas de proteção dos parafusos do foot roll estão montadas?",
+            "Os parafusos M36 alinhados (c/ contra porca) na elevação de 1640mm ~3mm a partir do pé do molde?",
+            "Cavidade interna do molde e rolos limpos?",
+            "Cilindros hidráulicos do sistema do clamp foi feito sangria?"
+        ],
+        "5. CHECK LIST HIDRÁULICO E ELÉTRICO": [
+            "CHECK DOS CILINDROS DO CLAMP",
+            "VERIFICAR VAZAMENTO DE GRAXA NAS CONEXÕES",
+            "VERIFICAR VAZAMENTO DE ÓLEO NAS CONEXÕES",
+            "INSPECIONAR ELEMENTO FILTRANTE (LINHA DE PRESSÃO) E TROCAR SE NECESSÁRIO",
+            "LUBRIFICAÇÃO (Verificar mangueiras e dosador)",
+            "EFETUAR LIMPEZA E EMBALAR ENGATES HIDRÁULICOS",
+            "OS CONECTORES DO DBO E VUHZ ESTÃO LIMPOS, TAMPONADOS E PROTEGIDOS?"
+        ]
+    }
 };
