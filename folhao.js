@@ -1,4 +1,4 @@
-// folhao.js - VISUAL LIMPO E BLINDADO PARA RECONHECER O STRAIGHTENER R1
+// folhao.js - VISUAL LIMPO E BLINDADO (MOLDE, BENDER, STR R1)
 
 import { BANCO_ATIVOS, OPERADOR_LOGADO } from './banco.js';
 import { BIBLIOTECA_CHECKLISTS } from './dados.js'; 
@@ -11,11 +11,19 @@ export function getV(id) { let el = document.getElementById(id); return el && el
 
 export function fecharFolhaoMCC4() { document.getElementById("modal-folhao-mcc4").classList.add("hidden"); ID_FOLHAO_ATUAL = null; }
 
+// CORREÇÃO: ABAS BLINDADAS CONTRA TELA PRETA (IGUAL AO HORIZONTAL)
 export function trocarAbaFolhao(event, idAba) {
-    document.querySelectorAll('.folhao-content').forEach(c => c.classList.add('hidden'));
+    document.querySelectorAll('.folhao-content').forEach(c => {
+        c.classList.add('hidden');
+        c.style.display = ''; 
+    });
     document.querySelectorAll('.folhao-tab').forEach(t => t.classList.remove('active'));
+    
     let abaDestino = document.getElementById(idAba);
-    if(abaDestino) abaDestino.classList.remove('hidden');
+    if(abaDestino) {
+        abaDestino.classList.remove('hidden');
+        abaDestino.style.display = ''; 
+    }
     if(event) event.currentTarget.classList.add('active');
 }
 
@@ -136,7 +144,6 @@ export function abrirFolhaoMCC4(id) {
 
     let tipoPeca = item.tipo.toUpperCase();
     
-    // BLINDAGEM: Se a palavra Straightener estiver no nome, força o R1!
     if (tipoPeca.includes("STRAIGHTENER")) {
         tipoPeca = "STRAIGHTENER R1";
     }
@@ -195,7 +202,6 @@ function prepararAbasDinamicamente(tipoUpper) {
         tabsContainer.innerHTML += `<button class="folhao-tab tab-dinamica" onclick="trocarAbaFolhao(event, 'molde-iden')">3. Identificação/Ajustes</button><button class="folhao-tab tab-dinamica" onclick="trocarAbaFolhao(event, 'molde-rolos')">4. Rolos/Aresta</button><button class="folhao-tab tab-dinamica" onclick="trocarAbaFolhao(event, 'molde-eletrica')">5. Elétrica</button><button class="folhao-tab tab-dinamica" onclick="trocarAbaFolhao(event, 'molde-peritagem')">6. Peritagem/Mecânica</button><button class="folhao-tab tab-dinamica" onclick="trocarAbaFolhao(event, 'aba-materiais-geral')">7. Materiais</button>`;
         bodyContainer.innerHTML += gerarTelasMoldeHTML();
     }
-    // BLINDAGEM: Qualquer Straightener gera abas do R1
     else if (tipoUpper.includes("STRAIGHTENER")) {
         tabsContainer.innerHTML += `
             <button class="folhao-tab tab-dinamica" onclick="trocarAbaFolhao(event, 'str-chegada')">3. Chegada</button>
@@ -407,7 +413,6 @@ export function imprimirLaudoSalvo(tag, motivo) {
     let item = BANCO_ATIVOS.find(a => a.id === tag);
     let tipoUpper = item ? item.tipo.toUpperCase() : "";
     
-    // BLINDAGEM DO PDF: Força a usar o Straightener R1!
     if (tipoUpper.includes("STRAIGHTENER")) {
         tipoUpper = "STRAIGHTENER R1";
     }
@@ -526,9 +531,6 @@ function imprimirPDFStraightenerR1(tag, motivo, tipoStr) {
     printDiv.innerHTML = html; setTimeout(() => { window.print(); }, 500); 
 }
 
-// ==========================================
-// IMPRESSÃO - MOLDE E BENDER (MANTIDOS)
-// ==========================================
 function imprimirPDFMolde(tag, motivo, tipoStr) {
     const printDiv = document.getElementById("print-content");
     let listaInteligente = BIBLIOTECA_CHECKLISTS[tipoStr] || {};
@@ -645,7 +647,7 @@ function imprimirPDFGenerico(tag, motivo, tipoStr) {
 }
 
 // ==========================================
-// EXPORTS
+// EXPORTS GLOBAIS (A CORREÇÃO DO BUG TÁ AQUI!)
 // ==========================================
 window.trocarAbaFolhao = trocarAbaFolhao;
 window.fecharFolhaoMCC4 = fecharFolhaoMCC4;
@@ -653,3 +655,4 @@ window.salvarLaudoInteligente = salvarLaudoInteligente;
 window.imprimirLaudoSalvo = imprimirLaudoSalvo;
 window.carregarMedidaAresta = carregarMedidaAresta;
 window.salvarMedidaAresta = salvarMedidaAresta;
+window.abrirFolhaoMCC4 = abrirFolhaoMCC4; // <- ESSA É A CHAVE MÁGICA

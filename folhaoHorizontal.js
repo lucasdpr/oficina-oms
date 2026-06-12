@@ -1,4 +1,9 @@
-// DADOS DO DOCUMENTO: INSPEÇÃO DE CHEGADA[cite: 2]
+import { BANCO_ATIVOS } from './banco.js';
+import { renderAtivos, renderReparos, renderReservas } from './ui.js';
+
+let ID_FOLHAO_HORIZ_ATUAL = null;
+
+// DADOS DO DOCUMENTO: INSPEÇÃO DE CHEGADA
 const itensChegadaHorizontal = [
     { grupo: "LUBRIFICAÇÃO", desc: "Sistema de lubrificação isento de vazamentos." },
     { grupo: "", desc: "Tubulação amassada." },
@@ -25,11 +30,9 @@ const itensChegadaHorizontal = [
     { grupo: "", desc: "Conexões apertadas." }
 ];
 
-// DADOS DO DOCUMENTO: PASS LINE HORIZONTAL (REFERÊNCIAS)[cite: 2]
 const refPassLineInfHorizontal = ["60,00", "60,00", "60,00", "60,00", "60,00", "60,00", "60,00"]; 
 const refPassLineSupHorizontal = ["35,00", "35,00", "35,00", "35,00", "35,00", "35,00", "35,00"]; 
 
-// DADOS DO DOCUMENTO: CHECKLIST DE MANUTENÇÃO COMPLETO (108 ITENS)[cite: 2]
 const manutencaoHorizontal = [
     { item: "1", desc: "Lavagem e/ou Limpeza Mecânica" },
     { item: "2.1", desc: "Teste Hidrostático" },
@@ -141,49 +144,73 @@ const manutencaoHorizontal = [
     { item: "10.5", desc: "Teste de lubrificação geral" }
 ];
 
-// FUNÇÕES DE CONTROLE DE TELA
-function abrirFolhaoHorizontal() {
-    const tituloPdf = document.getElementById('titulo-pdf');
+window.abrirFolhaoHorizontal = function(id) {
+    ID_FOLHAO_HORIZ_ATUAL = id;
+    
+    let tituloPdf = document.getElementById('titulo-pdf');
     if(tituloPdf) tituloPdf.innerText = "SISTEMA OMS - FOLHA DE LIBERAÇÃO - SEGMENTO HORIZONTAL (MCC 4)";
+
+    let tagNameEl = document.getElementById('horizontal-tag-name');
+    if(tagNameEl) tagNameEl.innerText = id;
+
+    // Zera os inputs
+    document.getElementById('horiz-data-inicio').valueAsDate = new Date();
+    document.getElementById('horiz-data-fim').valueAsDate = new Date();
+    document.getElementById('horiz-motivo').value = '';
 
     document.getElementById('modal-folhao-horizontal').classList.remove('hidden');
     renderizarInspecaoChegadaHorizontal();
     renderizarPassLinesHorizontal();
     renderizarChecklistManutencaoHorizontal();
     renderizarTabelaMateriaisIniciaisHorizontal();
-}
+    
+    window.trocarAbaHorizontal({ currentTarget: document.querySelector('#modal-folhao-horizontal .folhao-tab') }, 'horiz-aba-dados');
+};
 
-function fecharFolhaoHorizontal() {
+window.fecharFolhaoHorizontal = function() {
     document.getElementById('modal-folhao-horizontal').classList.add('hidden');
-}
+    ID_FOLHAO_HORIZ_ATUAL = null;
+};
 
-function trocarAbaHorizontal(evt, abaId) {
-    const abas = document.querySelectorAll('#modal-folhao-horizontal .folhao-content');
-    abas.forEach(aba => aba.classList.add('hidden'));
+// ==============================================================
+// CORREÇÃO DO BUG DA TELA PRETA (O "HIDDEN" REIMPLANTADO)
+// ==============================================================
+window.trocarAbaHorizontal = function(evt, abaId) {
+    // 1. Esconde as abas e destrava o CSS inline que ficou preso no HTML
+    document.querySelectorAll('#modal-folhao-horizontal .folhao-content').forEach(aba => {
+        aba.classList.add('hidden');
+        aba.classList.remove('active');
+        aba.style.display = ''; // <-- ESSA É A CHAVE QUE DESTRAVA A TELA!
+    });
     
-    const botoes = document.querySelectorAll('#modal-folhao-horizontal .folhao-tab');
-    botoes.forEach(btn => btn.classList.remove('active'));
+    // 2. Tira o brilho azul de todos os botões
+    document.querySelectorAll('#modal-folhao-horizontal .folhao-tab').forEach(btn => {
+        btn.classList.remove('active');
+    });
     
-    document.getElementById(abaId).classList.remove('hidden');
-    evt.currentTarget.classList.add('active');
-}
+    // 3. Mostra a aba destino e garante que ela não tem travas
+    let abaDestino = document.getElementById(abaId);
+    if(abaDestino) {
+        abaDestino.classList.remove('hidden');
+        abaDestino.classList.add('active');
+        abaDestino.style.display = ''; // <-- AQUI TAMBÉM
+    }
+    
+    if(evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+};
 
-// FUNÇÕES DE RENDERIZAÇÃO DINÂMICA
 function renderizarInspecaoChegadaHorizontal() {
     const tbody = document.getElementById('tabela-horiz-inspecao-chegada');
-    tbody.innerHTML = '';
     let htmlContent = '';
     itensChegadaHorizontal.forEach((item, index) => {
         const numItem = String(index + 1).padStart(2, '0');
         const grupoHtml = item.grupo ? `<strong style="color: var(--text-accent); font-size:11px;">${item.grupo}</strong><br>` : '';
-        htmlContent += `
-            <tr>
-                <td class="font-code text-muted">${numItem}</td>
-                <td>${grupoHtml}${item.desc}</td>
-                <td><input type="radio" name="insp_chg_hz_${index}" value="SIM"></td>
-                <td><input type="radio" name="insp_chg_hz_${index}" value="NAO"></td>
-            </tr>
-        `;
+        htmlContent += `<tr>
+            <td class="font-code text-muted">${numItem}</td>
+            <td>${grupoHtml}${item.desc}</td>
+            <td style="text-align:center;"><input type="radio" name="insp_chg_hz_${index}" value="SIM" checked></td>
+            <td style="text-align:center;"><input type="radio" name="insp_chg_hz_${index}" value="NÃO"></td>
+        </tr>`;
     });
     tbody.innerHTML = htmlContent;
 }
@@ -193,15 +220,13 @@ function renderizarPassLinesHorizontal() {
         const tbody = document.getElementById(idTbody);
         let htmlContent = '';
         refs.forEach((ref, index) => {
-            htmlContent += `
-                <tr>
-                    <td class="font-code text-accent">${index + 1}°</td>
-                    <td class="font-code text-muted">${ref}</td>
-                    <td><input type="number" class="w-100" step="0.01"></td>
-                    <td><input type="number" class="w-100" step="0.01"></td>
-                    <td><input type="number" class="w-100" step="0.01"></td>
-                </tr>
-            `;
+            htmlContent += `<tr>
+                <td style="text-align:center; font-weight:bold;">${index + 1}º</td>
+                <td style="text-align:center; font-weight:bold;">${ref}</td>
+                <td><input type="number" id="${idTbody}-a-${index}" class="w-100" step="0.01"></td>
+                <td><input type="number" id="${idTbody}-b-${index}" class="w-100" step="0.01"></td>
+                <td><input type="number" id="${idTbody}-c-${index}" class="w-100" step="0.01"></td>
+            </tr>`;
         });
         tbody.innerHTML = htmlContent;
     };
@@ -215,118 +240,158 @@ function renderizarChecklistManutencaoHorizontal() {
     const tbody = document.getElementById('horiz-tabela-manutencao');
     let htmlContent = '';
     manutencaoHorizontal.forEach((tarefa, index) => {
-        htmlContent += `
-            <tr>
-                <td class="font-code text-warning">${tarefa.item}</td>
-                <td style="font-size: 13px;">${tarefa.desc}</td>
-                <td><input type="checkbox" id="check_hz_${index}"></td>
-                <td><input type="text" class="w-100" id="mat_hz_${index}" placeholder="Matrícula"></td>
-                <td><input type="date" class="w-100" id="data_hz_${index}"></td>
-            </tr>
-        `;
+        htmlContent += `<tr>
+            <td style="text-align:center; font-weight:bold;" class="text-warning">${tarefa.item}</td>
+            <td style="font-size: 11px;">${tarefa.desc}</td>
+            <td style="text-align:center;"><input type="checkbox" id="check_hz_${index}"></td>
+            <td><input type="text" class="w-100" id="mat_hz_${index}" placeholder="Matrícula"></td>
+            <td><input type="date" class="w-100" id="data_hz_${index}"></td>
+        </tr>`;
     });
     tbody.innerHTML = htmlContent;
 }
 
-function addLinhaMaterialHorizontal() {
+window.addLinhaMaterialHorizontal = function() {
     const tbody = document.getElementById('horiz-tabela-materiais');
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-        <td><input type="text" class="w-100" placeholder="Descrição ou Código SKU"></td>
-        <td><input type="number" style="width: 80px;" placeholder="Qtd"></td>
-    `;
+    tr.innerHTML = `<td><input type="text" class="w-100" placeholder="SKU / Material"></td>
+                    <td><input type="number" style="width: 80px;" placeholder="Qtd"></td>`;
     tbody.appendChild(tr);
-}
+};
 
 function renderizarTabelaMateriaisIniciaisHorizontal() {
-    const tbody = document.getElementById('horiz-tabela-materiais');
-    tbody.innerHTML = '';
-    for(let i = 0; i < 3; i++) { addLinhaMaterialHorizontal(); }
+    document.getElementById('horiz-tabela-materiais').innerHTML = '';
+    for(let i = 0; i < 3; i++) { window.addLinhaMaterialHorizontal(); }
 }
 
-// ==========================================
-// FUNÇÃO PARA GERAR O PDF PADRÃO[cite: 2]
-// ==========================================
-function salvarEImprimirFolhaoHorizontal() {
-    const tituloPdf = document.getElementById('titulo-pdf');
-    if(tituloPdf) tituloPdf.innerText = "SISTEMA OMS - FOLHA DE LIBERAÇÃO - SEGMENTO HORIZONTAL (MCC 4)";
+// ESTILOS PARA O PDF PREMIUM
+const cssBase = `
+<style>
+    .pdf-base { font-family: Arial, sans-serif; font-size: 10px; color: #000; }
+    .pdf-base table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+    .pdf-base th, .pdf-base td { border: 1px solid #000; padding: 4px; }
+    .pdf-base th { background: #f0f0f0; text-align: center; font-weight: bold; }
+    .pdf-base .titulo-secao { background: #002b5e; color: #fff; font-weight: bold; padding: 6px; text-align: left; margin: 10px 0; border: 1px solid #000; font-size: 11px;}
+    @media print { .quebra-pagina { break-before: page; page-break-before: always; margin-top: 15px;} }
+</style>`;
 
-    const dtInicio = document.getElementById('horiz-data-inicio').value || '___/___/___';
-    const dtFim = document.getElementById('horiz-data-fim').value || '___/___/___';
-    const numSeg = document.getElementById('horiz-num-segmento').value || 'N/A';
-    const veio = document.getElementById('horiz-veio').value || 'N/A';
-    const motivo = document.getElementById('horiz-motivo').value || 'N/A';
-    const tipo = document.getElementById('horiz-tipo-execucao').value || 'N/A';
+const getCabecalhoUnico = (titulo, tag, inicio, fim) => `
+<div style="display: flex; border: 2px solid #000; border-bottom: 5px solid #002b5e; margin-bottom: 15px; align-items: center; background: #fff;">
+    <div style="width: 20%; text-align: center; border-right: 2px solid #000; padding: 10px;"><span style="font-family: Arial, sans-serif; font-weight: 900; font-size: 34px; color: #002b5e; letter-spacing: -2px;">CSN</span></div>
+    <div style="width: 60%; text-align: center; padding: 10px;"><h2 style="margin: 0; font-size: 16px; color: #000; text-decoration: underline;">${titulo}</h2><p style="margin: 5px 0 0 0; font-size: 10px; color: #333; text-transform: uppercase; font-weight: bold;">Laudo Oficial de Manutenção e Peritagem</p></div>
+    <div style="width: 20%; font-size: 10px; border-left: 2px solid #000; padding: 10px; line-height: 1.5; font-weight: bold;"><div style="color: #002b5e;">TAG: <span style="color:#000;">${tag}</span></div><div>INÍCIO: <span style="color:#000; font-weight:normal;">${inicio}</span></div><div>FIM: <span style="color:#000; font-weight:normal;">${fim}</span></div></div>
+</div>`;
 
-    let htmlImp = `
-        <div style="border: 2px solid #000; padding: 15px; margin-bottom: 20px; text-align: center;">
-            <h1 style="margin: 0; font-size: 18px;">CSN - ACIARIA MCC4</h1>
-            <h2 style="margin: 5px 0; font-size: 16px;">CHECK LIST GERAL SEGMENTO HORIZONTAL</h2>
-        </div>
-        
-        <table border="1" width="100%" cellspacing="0" cellpadding="8" style="border-collapse: collapse; font-size: 12px; margin-bottom: 20px;">
+window.salvarEImprimirFolhaoHorizontal = function() {
+    if (!window.verificarAcesso() || !ID_FOLHAO_HORIZ_ATUAL) return;
+
+    let tag = ID_FOLHAO_HORIZ_ATUAL;
+    let item = BANCO_ATIVOS.find(a => a.id === tag);
+    if (!item) return;
+
+    item.ton = 0;
+    item.dias = 0;
+    item.local = "Oficina / Reserva";
+    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+
+    let motivo = document.getElementById('horiz-motivo') ? document.getElementById('horiz-motivo').value : 'Manutenção';
+    
+    let btnPDF = `<button onclick="window.abrirFolhaoHorizontal('${tag}')" class="btn-outline-danger" style="padding: 2px 8px; font-size: 10px; margin-left: 10px; cursor: pointer;"><i class="fas fa-file-pdf"></i> Visualizar Folhão</button>`;
+    
+    if (window.registrarHistorico) {
+        window.registrarHistorico(tag, `Laudo Oficial (Horizontal MCC4) concluído. Motivo: ${motivo}. <br><div style="margin-top: 5px;">${btnPDF}</div>`);
+    }
+
+    renderReparos(); 
+    renderReservas(); 
+    renderAtivos(); 
+    if (window.calcularKpisGlobais) window.calcularKpisGlobais();
+
+    const dtInicio = document.getElementById('horiz-data-inicio') ? document.getElementById('horiz-data-inicio').value : '';
+    const dtFim = document.getElementById('horiz-data-fim') ? document.getElementById('horiz-data-fim').value : '';
+    const numSeg = document.getElementById('horiz-num-segmento') ? document.getElementById('horiz-num-segmento').value : '';
+    const veio = document.getElementById('horiz-veio') ? document.getElementById('horiz-veio').value : '';
+    const tipoExec = document.getElementById('horiz-tipo-execucao') ? document.getElementById('horiz-tipo-execucao').value : '';
+
+    let htmlImp = `${cssBase}<div class="pdf-base">
+        ${getCabecalhoUnico("CHECK LIST GERAL SEGMENTO HORIZONTAL MCC#4", tag, dtInicio, dtFim)}
+        <table style="margin-top:5px; background: #f9f9f9;">
             <tr>
-                <td colspan="2"><strong>DATA DE INÍCIO:</strong> ${dtInicio}</td>
-                <td colspan="2"><strong>DATA DE FIM:</strong> ${dtFim}</td>
-            </tr>
-            <tr>
-                <td><strong>Nº SEGMENTO:</strong> ${numSeg}</td>
                 <td><strong>VEIO:</strong> ${veio}</td>
-                <td><strong>MOTIVO:</strong> ${motivo}</td>
-                <td><strong>TIPO EXECUÇÃO:</strong> ${tipo}</td>
+                <td><strong>SEGMENTO:</strong> ${numSeg}</td>
+                <td><strong>MOTIVO DA OS:</strong> ${motivo}</td>
+                <td><strong>TIPO:</strong> ${tipoExec}</td>
             </tr>
         </table>
-    `;
 
-    htmlImp += `<h3 style="font-size: 14px; text-transform: uppercase;">1. Inspeção de Chegada</h3>`;
-    htmlImp += `<table border="1" width="100%" cellspacing="0" cellpadding="5" style="border-collapse: collapse; font-size: 11px; margin-bottom: 20px;">`;
-    htmlImp += `<tr><th width="5%">Item</th><th width="75%">Descrição</th><th width="20%">Status</th></tr>`;
+        <div class="titulo-secao">1. INSPEÇÃO DE CHEGADA OFICIAL</div>
+        <table>
+            <tr><th style="width:5%;">Nº</th><th>Descrição da Inspeção</th><th style="width:15%;">Status</th></tr>`;
     
-    itensChegadaHorizontal.forEach((item, index) => {
-        const radios = document.getElementsByName(`insp_chg_hz_${index}`);
-        let resposta = '-';
-        radios.forEach(r => { if(r.checked) resposta = r.value; });
-
-        let grupo = item.grupo ? `<b>${item.grupo}</b> - ` : '';
-        htmlImp += `<tr>
-            <td align="center">${index+1}</td>
-            <td>${grupo}${item.desc}</td>
-            <td align="center"><b>${resposta}</b></td>
-        </tr>`;
+    itensChegadaHorizontal.forEach((it, index) => {
+        let resposta = 'NÃO';
+        let radios = document.getElementsByName(`insp_chg_hz_${index}`);
+        for(let r of radios) { if(r.checked) resposta = r.value; }
+        htmlImp += `<tr><td style="text-align:center; font-weight:bold;">${index+1}</td><td>${it.grupo ? `<b>${it.grupo}</b> - ` : ''}${it.desc}</td><td style="text-align:center; font-weight:bold;">${resposta}</td></tr>`;
     });
-    htmlImp += `</table>`;
+    htmlImp += `</table><div class="quebra-pagina"></div>`;
 
-    htmlImp += `<h3 style="font-size: 14px; text-transform: uppercase;">2. Resumo de Execução</h3>`;
-    htmlImp += `<table border="1" width="100%" cellspacing="0" cellpadding="5" style="border-collapse: collapse; font-size: 11px; margin-bottom: 20px;">`;
-    htmlImp += `<tr><th width="5%">Item</th><th width="50%">Atividade</th><th width="10%">Feito</th><th width="15%">Matrícula</th><th width="20%">Data</th></tr>`;
-    
+    htmlImp += `<div class="titulo-secao">2. AFERIÇÃO PASS LINE (CHEGADA)</div>
+        <div style="display:flex; gap:10px; width:100%;">
+            <div style="width:50%;"><table><tr><th colspan="5">BASE INFERIOR (CHEGADA)</th></tr><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr>`;
+    refPassLineInfHorizontal.forEach((ref, index) => {
+        let a = document.getElementById(`horiz-passline-inf-chegada-a-${index}`)?.value || '';
+        let b = document.getElementById(`horiz-passline-inf-chegada-b-${index}`)?.value || '';
+        let c = document.getElementById(`horiz-passline-inf-chegada-c-${index}`)?.value || '';
+        htmlImp += `<tr><td style="text-align:center;">${index+1}º</td><td style="text-align:center; font-weight:bold;">${ref}</td><td style="text-align:center;">${a}</td><td style="text-align:center;">${b}</td><td style="text-align:center;">${c}</td></tr>`;
+    });
+    htmlImp += `</table></div>
+            <div style="width:50%;"><table><tr><th colspan="5">BASE SUPERIOR (CHEGADA)</th></tr><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr>`;
+    refPassLineSupHorizontal.forEach((ref, index) => {
+        let a = document.getElementById(`horiz-passline-sup-chegada-a-${index}`)?.value || '';
+        let b = document.getElementById(`horiz-passline-sup-chegada-b-${index}`)?.value || '';
+        let c = document.getElementById(`horiz-passline-sup-chegada-c-${index}`)?.value || '';
+        htmlImp += `<tr><td style="text-align:center;">${index+1}º</td><td style="text-align:center; font-weight:bold;">${ref}</td><td style="text-align:center;">${a}</td><td style="text-align:center;">${b}</td><td style="text-align:center;">${c}</td></tr>`;
+    });
+    htmlImp += `</table></div></div><div class="quebra-pagina"></div>`;
+
+    htmlImp += `<div class="titulo-secao">3. CHECKLIST DE EXECUÇÃO</div>
+        <table><tr><th style="width:5%;">Item</th><th>Descrição da Atividade</th><th style="width:5%;">Feito</th><th style="width:15%;">Matrícula</th><th style="width:15%;">Data</th></tr>`;
     manutencaoHorizontal.forEach((tarefa, index) => {
-        const checked = document.getElementById(`check_hz_${index}`).checked ? 'SIM' : 'NÃO';
-        const mat = document.getElementById(`mat_hz_${index}`).value || '____';
-        const data = document.getElementById(`data_hz_${index}`).value || '__/__/____';
-
-        htmlImp += `<tr>
-            <td align="center">${tarefa.item}</td>
-            <td>${tarefa.desc}</td>
-            <td align="center">${checked}</td>
-            <td align="center">${mat}</td>
-            <td align="center">${data}</td>
-        </tr>`;
+        const checked = document.getElementById(`check_hz_${index}`) && document.getElementById(`check_hz_${index}`).checked ? 'X' : '';
+        const mat = document.getElementById(`mat_hz_${index}`) ? document.getElementById(`mat_hz_${index}`).value : '';
+        const data = document.getElementById(`data_hz_${index}`) ? document.getElementById(`data_hz_${index}`).value : '';
+        htmlImp += `<tr><td style="text-align:center;">${tarefa.item}</td><td style="font-size:10px;">${tarefa.desc}</td><td style="text-align:center; font-weight:bold;">${checked}</td><td style="text-align:center;">${mat}</td><td style="text-align:center;">${data}</td></tr>`;
     });
-    htmlImp += `</table>`;
+    htmlImp += `</table><div class="quebra-pagina"></div>`;
+
+    htmlImp += `<div class="titulo-secao">4. AFERIÇÃO PASS LINE (SAÍDA FINAL)</div>
+        <div style="display:flex; gap:10px; width:100%;">
+            <div style="width:50%;"><table><tr><th colspan="5">BASE INFERIOR (SAÍDA)</th></tr><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr>`;
+    refPassLineInfHorizontal.forEach((ref, index) => {
+        let a = document.getElementById(`horiz-passline-inf-saida-a-${index}`)?.value || '';
+        let b = document.getElementById(`horiz-passline-inf-saida-b-${index}`)?.value || '';
+        let c = document.getElementById(`horiz-passline-inf-saida-c-${index}`)?.value || '';
+        htmlImp += `<tr><td style="text-align:center;">${index+1}º</td><td style="text-align:center; font-weight:bold;">${ref}</td><td style="text-align:center;">${a}</td><td style="text-align:center;">${b}</td><td style="text-align:center;">${c}</td></tr>`;
+    });
+    htmlImp += `</table></div>
+            <div style="width:50%;"><table><tr><th colspan="5">BASE SUPERIOR (SAÍDA)</th></tr><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr>`;
+    refPassLineSupHorizontal.forEach((ref, index) => {
+        let a = document.getElementById(`horiz-passline-sup-saida-a-${index}`)?.value || '';
+        let b = document.getElementById(`horiz-passline-sup-saida-b-${index}`)?.value || '';
+        let c = document.getElementById(`horiz-passline-sup-saida-c-${index}`)?.value || '';
+        htmlImp += `<tr><td style="text-align:center;">${index+1}º</td><td style="text-align:center; font-weight:bold;">${ref}</td><td style="text-align:center;">${a}</td><td style="text-align:center;">${b}</td><td style="text-align:center;">${c}</td></tr>`;
+    });
+    htmlImp += `</table></div></div>`;
+
+    htmlImp += `
+        <div style="margin-top: 50px; display: flex; justify-content: space-around; text-align: center; font-size: 12px; font-weight: bold; padding-bottom:30px;">
+            <div><p>___________________________________</p><p>Líder Responsável / Operador</p></div>
+            <div><p>___________________________________</p><p>Inspetor de Qualidade</p></div>
+        </div>
+    </div>`;
 
     document.getElementById('print-content').innerHTML = htmlImp;
-    
-    fecharFolhaoHorizontal();
-
-    setTimeout(() => {
-        window.print();
-    }, 500);
-}
-
-// EXPORTANDO PARA O ESCOPO GLOBAL
-window.abrirFolhaoHorizontal = abrirFolhaoHorizontal;
-window.fecharFolhaoHorizontal = fecharFolhaoHorizontal;
-window.trocarAbaHorizontal = trocarAbaHorizontal;
-window.addLinhaMaterialHorizontal = addLinhaMaterialHorizontal;
-window.salvarEImprimirFolhaoHorizontal = salvarEImprimirFolhaoHorizontal;
+    window.fecharFolhaoHorizontal();
+    setTimeout(() => window.print(), 500);
+};

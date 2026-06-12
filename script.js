@@ -432,16 +432,26 @@ function executarSwapFinal(idReserva, idAntiga, novoLocal, laudo) {
 }
 
 // ==========================================
-// INTERCEPTAÇÃO: REPARO SIMPLES VS FOLHÃO MCC4
+// INTERCEPTAÇÃO: REPARO SIMPLES VS FOLHÕES
 // ==========================================
 function abrirModalConcluirReparo(id) {
     let item = BANCO_ATIVOS.find(a => a.id === id);
     if (!item) return;
 
-    // Agora qualquer equipamento da família 4 vai abrir o Folhão inteligente!
-    if (item.mcc_compat.includes("4")) {
-        abrirFolhaoMCC4(id); 
-    } else {
+    let tipoUpper = item.tipo.toUpperCase();
+    
+    // Roteamento seguro que NÃO quebra os folhões antigos!
+    if (tipoUpper.includes("HORIZONTAL")) {
+        if (window.abrirFolhaoHorizontal) window.abrirFolhaoHorizontal(id);
+    } 
+    else if (tipoUpper.includes("STRAIGHTENER R2")) {
+        if (window.abrirFolhaoR2) window.abrirFolhaoR2(id);
+    } 
+    else if (item.mcc_compat.includes("4")) {
+        // Envia para o folhao.js original que está funcionando perfeito
+        if (window.abrirFolhaoMCC4) window.abrirFolhaoMCC4(id); 
+    } 
+    else {
         ID_REPARO_ATUAL = id;
         document.getElementById("modal-reparo-tag").innerText = item.id;
         document.getElementById("modal-tipo-reparo").value = "GERAL";
@@ -1033,5 +1043,58 @@ window.confirmarConclusaoReparo = function() {
         let tituloMolde = document.getElementById('mcc4-tag-name');
         if (tituloMolde) tituloMolde.innerText = "TAG: " + tagEmReparo;
         if (typeof abrirFolhaoMCC4 === "function") abrirFolhaoMCC4();
+    }
+};
+// Substitua ou adicione a função confirmarConclusaoReparo no seu script.js
+window.confirmarConclusaoReparo = function() {
+    if (!verificarAcesso() || !ID_REPARO_ATUAL) return;
+    let item = BANCO_ATIVOS.find(a => a.id === ID_REPARO_ATUAL);
+    if (!item) return;
+
+    // FECHA O MODAL PEQUENO DA TABELA LOGO DE INÍCIO!
+    const modalPequeno = document.getElementById('modal-concluir-reparo');
+    if(modalPequeno) modalPequeno.classList.add('hidden');
+
+    const tipo = document.getElementById("modal-tipo-reparo").value;
+    let msgHistorico = "";
+
+    if (tipo === "GERAL") {
+        item.ton = 0;
+        item.dias = 0;
+        msgHistorico = "Reparo GERAL finalizado.";
+    } else {
+        item.ton = parseFloat(document.getElementById("modal-reparo-ton").value) || 0;
+        item.dias = parseFloat(document.getElementById("modal-reparo-dias").value) || 0;
+        msgHistorico = "Reparo PARCIAL finalizado.";
+    }
+
+    item.local = "Oficina / Reserva";
+    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    if(typeof registrarHistorico === "function") registrarHistorico(item.id, msgHistorico);
+    
+    if(typeof renderReparos === "function") renderReparos();
+    if(typeof renderReservas === "function") renderReservas();
+    if(typeof renderAtivos === "function") renderAtivos();
+
+    // ROTEADOR PARA O FOLHÃO GIGANTE
+    let tagEmReparo = item.id.toUpperCase();
+
+    // Remove qualquer outro modal escuro da frente
+    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden'));
+
+    if (tagEmReparo.includes("HOR") || tagEmReparo.includes("SEG")) {
+        const spanTag = document.getElementById('horizontal-tag-name');
+        if(spanTag) spanTag.innerText = "TAG: " + tagEmReparo;
+        if(typeof window.abrirFolhaoHorizontal === "function") window.abrirFolhaoHorizontal();
+
+    } else if (tagEmReparo.includes("R2") || tagEmReparo.includes("STR")) {
+        const spanTagR2 = document.getElementById('r2-tag-name');
+        if(spanTagR2) spanTagR2.innerText = "TAG: " + tagEmReparo;
+        if(typeof window.abrirFolhaoR2 === "function") window.abrirFolhaoR2();
+
+    } else {
+        const spanTagMcc = document.getElementById('mcc4-tag-name');
+        if(spanTagMcc) spanTagMcc.innerText = "TAG: " + tagEmReparo;
+        if(typeof window.abrirFolhaoMCC4 === "function") window.abrirFolhaoMCC4();
     }
 };

@@ -29,7 +29,6 @@
 
   <div id="modal-folhao-mcc4" class="modal-overlay hidden no-print">
     <div class="modal-content glass-panel premium-shadow" style="max-width: 900px; padding: 0;">
-      
       <div class="modal-header-fixed" style="padding: 20px; border-bottom: 1px solid var(--border-color); background: var(--bg-th); border-radius: 16px 16px 0 0;">
           <div class="flex-between">
               <h2 style="color: var(--text-accent);"><i class="fas fa-clipboard-list"></i> Liberação Oficial - Molde MCC4</h2>
@@ -40,7 +39,6 @@
               <span class="text-muted" style="font-size: 14px;">Preenchimento obrigatório para envio à Reserva.</span>
           </div>
       </div>
-
       <div class="folhao-tabs" style="display: flex; background: var(--bg-input); border-bottom: 1px solid var(--border-color); overflow-x: auto;">
           <button class="folhao-tab active" onclick="trocarAbaFolhao(event, 'folhao-aba-dados')">1. Dados Básicos</button>
           <button class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-recebimento')">2. Recebimento</button>
@@ -48,7 +46,6 @@
           <button class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-hidraulica')">4. Hidráulica</button>
           <button class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-final')">5. Check Final</button>
       </div>
-
       <div class="folhao-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
           <div id="folhao-aba-dados" class="folhao-content active">
               <div class="form-grid-2-mobile" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -98,10 +95,9 @@
               <div id="container-check-final" class="checklist-container"></div>
           </div>
       </div>
-
       <div class="modal-actions flex-between" style="padding: 20px; background: var(--bg-th); border-top: 1px solid var(--border-color); border-radius: 0 0 16px 16px;">
           <button class="btn-outline-danger" onclick="fecharFolhaoMCC4()">Cancelar</button>
-          <button class="btn-premium btn-success" onclick="salvarEImprimirFolhaoMCC4()"><i class="fas fa-check-double"></i> Salvar Laudo e Mover p/ Reserva</button>
+          <button class="btn-premium btn-success" onclick="salvarLaudoInteligente()"><i class="fas fa-check-double"></i> Salvar Laudo e Mover p/ Reserva</button>
       </div>
     </div>
   </div>
@@ -111,7 +107,6 @@
       <h2 style="color: var(--warning); margin-bottom: 5px;"><i class="fas fa-clipboard-check"></i> Relatório de Manutenção</h2>
       <p class="text-muted" style="font-size: 13px; margin-bottom: 20px;">Preenchimento obrigatório para envio à Oficina.</p>
       <p style="color: var(--text-main);">Componente a ser sacado: <strong id="modal-tag" class="font-code text-accent" style="font-size: 16px;"></strong></p>
-      
       <div class="input-group mt-15">
          <label>Motivo da Retirada da Máquina</label>
          <select id="modal-motivo" class="premium-select w-100"></select>
@@ -132,7 +127,6 @@
       <h2 style="color: var(--success); margin-bottom: 5px;"><i class="fas fa-tools"></i> Conclusão de Reparo Simples</h2>
       <p class="text-muted" style="font-size: 13px; margin-bottom: 20px;">Defina como a peça retornará ao estoque de Reserva.</p>
       <p style="color: var(--text-main);">TAG em Manutenção: <strong id="modal-reparo-tag" class="font-code text-accent" style="font-size: 16px;"></strong></p>
-      
       <div class="input-group mt-15">
          <label>Tipo de Reparo Realizado</label>
          <select id="modal-tipo-reparo" class="premium-select w-100" onchange="toggleCamposReparoParcial()">
@@ -140,7 +134,6 @@
            <option value="PARCIAL">Reparo Parcial (Manter histórico parcial de uso)</option>
          </select>
       </div>
-      
       <div id="campos-reparo-parcial" class="hidden" style="margin-top: 15px; background: var(--bg-th); padding: 15px; border-radius: 8px; border: 1px dashed var(--warning);">
          <p class="text-warning" style="font-size: 12px; margin-bottom: 10px;"><i class="fas fa-info-circle"></i> Ajuste os valores com os quais o equipamento voltará para a máquina:</p>
          <div class="form-grid-2-mobile" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -156,7 +149,7 @@
       </div>
       <div class="modal-actions flex-between mt-15" style="margin-top: 25px;">
          <button class="btn-outline-danger" onclick="fecharModalConcluirReparo()">Cancelar</button>
-         <button class="btn-premium btn-success" onclick="confirmarConclusaoReparo()"><i class="fas fa-check-double"></i> Finalizar Reparo</button>
+         <button class="btn-premium btn-success" onclick="confirmarConclusaoReparo()"><i class="fas fa-check-double"></i> Finalizar</button>
       </div>
     </div>
   </div>
@@ -294,19 +287,18 @@
             <i class="fas fa-sun" id="theme-icon"></i> <span id="theme-text">Modo Claro</span>
           </button>
         </div>
-
         <div class="kpi-container" style="margin-top: 20px;">
           <div class="kpi-card danger glass-panel"><div class="kpi-icon glow-danger"><i class="fas fa-radiation"></i></div><div class="kpi-data"><h4 id="kpi-criticos">0</h4><p>Críticos (>= 80%)</p></div></div>
           <div class="kpi-card warning glass-panel"><div class="kpi-icon glow-warning"><i class="fas fa-wrench"></i></div><div class="kpi-data"><h4 id="kpi-reparo">0</h4><p>Em Reparo</p></div></div>
           <div class="kpi-card success glass-panel"><div class="kpi-icon glow-success"><i class="fas fa-boxes"></i></div><div class="kpi-data"><h4 id="kpi-reserva">0</h4><p>Reserva Pronta</p></div></div>
         </div>
       </section>
-
+      
       <section id="aba-fluxo" class="tab-content">
-        <div class="panel-card glass-panel">
-          <div class="panel-card-header"><h1 id="titulo-veio-focado">Sequenciamento Síncrono</h1></div>
-          <div id="container-fluxo-horizontal-scroll" class="graficos-container"></div>
-        </div>
+          <div class="panel-card glass-panel">
+            <div class="panel-card-header"><h1 id="titulo-veio-focado">Sequenciamento Síncrono</h1></div>
+            <div id="container-fluxo-horizontal-scroll" class="graficos-container"></div>
+          </div>
       </section>
 
       <section id="aba-ativos" class="tab-content">
@@ -418,7 +410,7 @@
         </div>
       </section>
 
-     <section id="aba-reservas" class="tab-content">
+      <section id="aba-reservas" class="tab-content">
         <div class="panel-card glass-panel" style="margin-bottom: 25px; border-top: 4px solid var(--success);">
           <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
             <div>
@@ -521,7 +513,7 @@
                 <h3 style="color: #a855f7;"><i class="fas fa-box-open"></i> Lançamento de Entrada de Material</h3>
                 <button class="btn-xs-primary" style="color: var(--text-muted); cursor: pointer;" onclick="toggleFormMaterial()"><i class="fas fa-times"></i> Fechar</button>
             </div>
-            <p class="text-muted" style="font-size: 12px; margin-bottom: 15px;"><strong>Nota do Sistema:</strong> Se o código (SKU) digitado já existir, a quantidade será somada automaticamente ao saldo do item, sem criar duplicidade.</p>
+            <p class="text-muted" style="font-size: 12px; margin-bottom: 15px;"><strong>Nota do Sistema:</strong> Se o código (SKU) digitado já existir, a quantidade será somada automaticamente ao saldo do item.</p>
             <div class="form-grid-4">
               <div class="input-group">
                 <label>Código do Material (SKU)</label>
@@ -574,7 +566,9 @@
       </section>
 
     </main>
-  </div> <div id="modal-folhao-r2" class="modal-overlay hidden no-print">
+  </div> 
+
+  <div id="modal-folhao-r2" class="modal-overlay hidden no-print">
     <div class="modal-content glass-panel" style="max-width: 1100px; max-height: 90vh; overflow-y: auto;">
       
       <div class="flex-between" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
@@ -589,7 +583,7 @@
         </div>
       </div>
 
-      <div class="folhao-tabs" style="border-bottom: 1px solid var(--border-color); margin-bottom: 20px;">
+      <div class="folhao-tabs" style="border-bottom: 1px solid var(--border-color); margin-bottom: 20px; display: flex; overflow-x: auto;">
         <button class="folhao-tab active" onclick="trocarAbaR2(event, 'r2-aba-chegada')">1. Chegada</button>
         <button class="folhao-tab" onclick="trocarAbaR2(event, 'r2-aba-execucao')">2. Execução</button>
         <button class="folhao-tab" onclick="trocarAbaR2(event, 'r2-aba-saida')">3. Saída</button>
@@ -597,6 +591,7 @@
       </div>
 
       <div class="folhao-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
+        
         <div id="r2-aba-chegada" class="folhao-content active">
           <h3 style="margin-bottom: 10px; color: var(--text-heading);">Inspeção Geral de Chegada</h3>
           <div class="table-responsive">
@@ -609,9 +604,11 @@
                   <th style="width: 60px;">NÃO</th>
                 </tr>
               </thead>
-              <tbody id="tabela-r2-inspecao-chegada"></tbody>
+              <tbody id="tabela-r2-inspecao-chegada">
+                </tbody>
             </table>
           </div>
+
           <h3 style="margin: 25px 0 10px 0; color: var(--text-heading);">Aferição Pass Line (Chegada)</h3>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
             <div>
@@ -648,7 +645,8 @@
                   <th>Data</th>
                 </tr>
               </thead>
-              <tbody id="r2-tabela-manutencao"></tbody>
+              <tbody id="r2-tabela-manutencao">
+                </tbody>
             </table>
           </div>
         </div>
@@ -690,10 +688,12 @@
                   <th style="width: 100px;">Quantidade</th>
                 </tr>
               </thead>
-              <tbody id="r2-tabela-materiais"></tbody>
+              <tbody id="r2-tabela-materiais">
+                </tbody>
             </table>
           </div>
         </div>
+
       </div>
 
       <div class="flex-between" style="margin-top: 30px; border-top: 1px solid var(--border-color); padding-top: 15px;">
@@ -702,7 +702,9 @@
       </div>
       
     </div>
-  </div> <div id="modal-folhao-horizontal" class="modal-overlay hidden no-print">
+  </div> 
+
+  <div id="modal-folhao-horizontal" class="modal-overlay hidden no-print">
     <div class="modal-content glass-panel" style="max-width: 1100px; max-height: 90vh; overflow-y: auto;">
       
       <div class="flex-between" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
@@ -727,7 +729,7 @@
 
       <div class="folhao-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
         
-        <div id="horiz-aba-dados" class="folhao-content active">
+        <div id="horiz-aba-dados" class="folhao-content active" style="display: block;">
           <div class="form-grid-2-mobile" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
               <div class="input-group">
                   <label>Data Início / Fim</label>
@@ -760,7 +762,7 @@
           </div>
         </div>
 
-        <div id="horiz-aba-chegada" class="folhao-content hidden">
+        <div id="horiz-aba-chegada" class="folhao-content hidden" style="display: none;">
           <h3 style="margin-bottom: 10px; color: var(--text-heading);">Inspeção Geral de Chegada</h3>
           <div class="table-responsive">
             <table class="premium-table">
@@ -795,7 +797,7 @@
           </div>
         </div>
 
-        <div id="horiz-aba-execucao" class="folhao-content hidden">
+        <div id="horiz-aba-execucao" class="folhao-content hidden" style="display: none;">
           <h3 style="margin-bottom: 10px; color: var(--text-heading);">Checklist de Manutenção</h3>
           <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
             <table class="premium-table">
@@ -813,7 +815,7 @@
           </div>
         </div>
 
-        <div id="horiz-aba-saida" class="folhao-content hidden">
+        <div id="horiz-aba-saida" class="folhao-content hidden" style="display: none;">
           <h3 style="margin-bottom: 10px; color: var(--text-heading);">Aferição Pass Line (Saída Final)</h3>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
             <div>
@@ -833,7 +835,7 @@
           </div>
         </div>
 
-        <div id="horiz-aba-materiais" class="folhao-content hidden">
+        <div id="horiz-aba-materiais" class="folhao-content hidden" style="display: none;">
           <div class="flex-between" style="margin-bottom: 10px;">
             <h3 style="color: var(--text-heading);">Materiais Aplicados no Reparo</h3>
             <button class="btn-xs-primary" onclick="addLinhaMaterialHorizontal()"><i class="fas fa-plus"></i> Adicionar Linha</button>
@@ -853,12 +855,14 @@
 
       <div class="flex-between" style="margin-top: 30px; border-top: 1px solid var(--border-color); padding-top: 15px;">
         <button class="btn-outline-danger" onclick="fecharFolhaoHorizontal()">Cancelar</button>
-        <button class="btn-premium btn-success" onclick="salvarEImprimirFolhaoHorizontal()"><i class="fas fa-print"></i> Salvar e Gerar PDF Padrão</button>
+        <button class="btn-premium btn-success" onclick="salvarEImprimirFolhaoHorizontal()"><i class="fas fa-print"></i> Salvar Laudo e Mover p/ Reserva</button>
       </div>
       
     </div>
   </div> 
+
   <script type="module" src="script.js"></script>
+  <script type="module" src="folhao.js"></script>
   <script type="module" src="folhaoR2.js"></script>
   <script type="module" src="folhaoHorizontal.js"></script>
 </body>
