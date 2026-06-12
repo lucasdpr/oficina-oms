@@ -655,4 +655,4 @@ window.salvarLaudoInteligente = salvarLaudoInteligente;
 window.imprimirLaudoSalvo = imprimirLaudoSalvo;
 window.carregarMedidaAresta = carregarMedidaAresta;
 window.salvarMedidaAresta = salvarMedidaAresta;
-window.abrirFolhaoMCC4 = abrirFolhaoMCC4; // <- ESSA É A CHAVE MÁGICA
+window.abrirFolhaoMCC4 = abrirFolhaoMCC4; 

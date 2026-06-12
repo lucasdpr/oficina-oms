@@ -440,15 +440,17 @@ function abrirModalConcluirReparo(id) {
 
     let tipoUpper = item.tipo.toUpperCase();
     
-    // Roteamento seguro que NÃO quebra os folhões antigos!
     if (tipoUpper.includes("HORIZONTAL")) {
         if (window.abrirFolhaoHorizontal) window.abrirFolhaoHorizontal(id);
     } 
     else if (tipoUpper.includes("STRAIGHTENER R2")) {
         if (window.abrirFolhaoR2) window.abrirFolhaoR2(id);
     } 
+    else if (tipoUpper.includes("BOW")) {
+        // AQUI! O ROTEADOR AGORA ACHA O BOW!
+        if (window.abrirFolhaoBow) window.abrirFolhaoBow(id);
+    }
     else if (item.mcc_compat.includes("4")) {
-        // Envia para o folhao.js original que está funcionando perfeito
         if (window.abrirFolhaoMCC4) window.abrirFolhaoMCC4(id); 
     } 
     else {
@@ -1097,4 +1099,131 @@ window.confirmarConclusaoReparo = function() {
         if(spanTagMcc) spanTagMcc.innerText = "TAG: " + tagEmReparo;
         if(typeof window.abrirFolhaoMCC4 === "function") window.abrirFolhaoMCC4();
     }
+};
+// ==========================================
+// MOTOR DE POSIÇÕES E SWAP INTELIGENTE
+// ==========================================
+let PECA_NOVA_SWAP = null;
+let PECA_ANTIGA_SWAP = null;
+
+window.abrirModalAlocacao = function(tagNova) {
+    let item = BANCO_ATIVOS.find(a => a.id === tagNova);
+    if(!item) return;
+
+    PECA_NOVA_SWAP = item;
+    PECA_ANTIGA_SWAP = null;
+
+    document.getElementById('alocacao-tag-nova').innerText = `${item.id} (${item.tipo})`;
+    document.getElementById('alocacao-tipo-oculto').value = item.tipo;
+    
+    let aviso = document.getElementById('alocacao-aviso-substituicao');
+    if(aviso) aviso.style.display = 'none';
+
+    // 1. CARREGA VEIOS
+    let selectVeio = document.getElementById('alocacao-veio');
+    selectVeio.innerHTML = '<option value="">Selecione o Veio...</option>';
+    if(item.mcc_compat.includes("2") || item.mcc_compat.includes("3")) {
+        selectVeio.innerHTML += `<option value="Veio C">Veio C (MCC 2)</option><option value="Veio D">Veio D (MCC 2)</option><option value="Veio E">Veio E (MCC 3)</option><option value="Veio F">Veio F (MCC 3)</option>`;
+    }
+    if(item.mcc_compat.includes("4")) {
+        selectVeio.innerHTML += `<option value="Veio G">Veio G (MCC 4)</option><option value="Veio H">Veio H (MCC 4)</option>`;
+    }
+
+    // 2. CRIA O CAMPO DE POSIÇÃO DO ZERO (À PROVA DE BUGS)
+    let tipoUpper = item.tipo.toUpperCase();
+    let containerPos = document.getElementById('container-posicao-alocacao');
+    
+    if(tipoUpper.includes("CADEIRA")) {
+        containerPos.innerHTML = `
+            <label>Posição de Montagem</label>
+            <input type="text" id="alocacao-posicao-dinamico" class="premium-select w-100" placeholder="Ex: 70" onkeyup="verificarPecaExistente()">
+        `;
+    } else {
+        let options = '<option value="">Selecione...</option>';
+        if(tipoUpper.includes("BOW")) {
+            for(let i=1; i<=5; i++) options += `<option value="Posição ${i}">Posição ${i}</option>`;
+        } else if(tipoUpper.includes("HORIZONTAL")) {
+            for(let i=8; i<=17; i++) options += `<option value="Posição ${i}">Posição ${i}</option>`;
+        } else if(tipoUpper.includes("SEGMENTO") || tipoUpper.includes("SEGUIMENTO") || tipoUpper.includes("ZERO")) {
+            for(let i=1; i<=6; i++) options += `<option value="Posição ${i}">Posição ${i}</option>`;
+        } else {
+            options = `<option value="Única" selected>Posição Única</option>`;
+        }
+        
+        containerPos.innerHTML = `
+            <label>Posição de Montagem</label>
+            <select id="alocacao-posicao-dinamico" class="premium-select w-100" onchange="verificarPecaExistente()">
+                ${options}
+            </select>
+        `;
+    }
+
+    let modal = document.getElementById('modal-alocacao-maquina');
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    
+    verificarPecaExistente();
+};
+
+window.fecharModalAlocacao = function() {
+    let modal = document.getElementById('modal-alocacao-maquina');
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+};
+
+window.verificarPecaExistente = function() {
+    let veio = document.getElementById('alocacao-veio').value;
+    let tipo = document.getElementById('alocacao-tipo-oculto').value;
+    let inputDinamico = document.getElementById('alocacao-posicao-dinamico');
+    let posicao = inputDinamico ? inputDinamico.value.trim() : "";
+    let isManual = tipo.toUpperCase().includes("CADEIRA");
+
+    let aviso = document.getElementById('alocacao-aviso-substituicao');
+
+    if(!veio || !posicao || posicao === "") {
+        aviso.style.display = 'none';
+        return; 
+    }
+
+    let posSistema = isManual ? `Nº ${posicao}` : posicao;
+    PECA_ANTIGA_SWAP = BANCO_ATIVOS.find(a => a.local === veio && a.posicao === posSistema && a.tipo === tipo && a.id !== PECA_NOVA_SWAP.id);
+
+    if(PECA_ANTIGA_SWAP) {
+        aviso.style.display = 'block';
+        document.getElementById('alocacao-tag-antiga').innerText = `${PECA_ANTIGA_SWAP.id} (Uso: ${Math.round(PECA_ANTIGA_SWAP.ton)} tons)`;
+    } else {
+        aviso.style.display = 'none';
+    }
+};
+
+window.confirmarAlocacaoSwap = function() {
+    let veio = document.getElementById('alocacao-veio').value;
+    let tipo = PECA_NOVA_SWAP.tipo.toUpperCase();
+    let inputDinamico = document.getElementById('alocacao-posicao-dinamico');
+    let posicao = inputDinamico ? inputDinamico.value.trim() : "";
+    let isManual = tipo.includes("CADEIRA");
+
+    if(!veio || !posicao || posicao === "") { 
+        alert("Por favor, selecione o Veio e a Posição corretamente."); 
+        return; 
+    }
+
+    if (PECA_ANTIGA_SWAP) {
+        PECA_ANTIGA_SWAP.local = "Oficina / Reparo";
+        PECA_ANTIGA_SWAP.posicao = ""; 
+        if(window.registrarHistorico) window.registrarHistorico(PECA_ANTIGA_SWAP.id, `Retirada automática (SWAP) do ${veio}, ${isManual ? 'Nº' : ''} ${posicao}. Substituída por: ${PECA_NOVA_SWAP.id}. Movida para Reparo.`);
+    }
+
+    PECA_NOVA_SWAP.local = veio;
+    PECA_NOVA_SWAP.posicao = isManual ? `Nº ${posicao}` : posicao;
+    
+    if(window.registrarHistorico) window.registrarHistorico(PECA_NOVA_SWAP.id, `Instalada no ${veio}, ${PECA_NOVA_SWAP.posicao}.`);
+
+    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    
+    window.fecharModalAlocacao();
+    if(window.renderAtivos) window.renderAtivos();
+    if(window.renderReservas) window.renderReservas();
+    if(window.renderReparos) window.renderReparos();
+    if(window.calcularKpisGlobais) window.calcularKpisGlobais();
 };
