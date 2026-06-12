@@ -78,8 +78,15 @@ h1, h2, h3, h4 { color: var(--text-heading); }
 .modal-content { width: 100%; max-width: 550px; padding: 30px; border-radius: 16px; border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto; }
 @keyframes fadeInModal { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
-/* PREMIUM GLASSMORPHISM */
-.glass-panel { background: var(--bg-card); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--border-color); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1); transition: background 0.4s ease, border-color 0.4s ease; }
+/* PREMIUM GLASSMORPHISM - ATUALIZADO */
+.glass-panel { 
+  background: var(--bg-card); 
+  backdrop-filter: blur(16px); 
+  -webkit-backdrop-filter: blur(16px); 
+  border: 1px solid rgba(255, 255, 255, 0.08); 
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1); 
+  transition: background 0.4s ease, border-color 0.4s ease; 
+}
 .premium-shadow { transition: all 0.3s ease; }
 .premium-shadow:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.2), 0 0 15px var(--border-glow); }
 
@@ -162,6 +169,17 @@ h1, h2, h3, h4 { color: var(--text-heading); }
 .glow-warning { color: var(--warning); box-shadow: inset 0 0 20px rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.3); }
 .glow-success { color: var(--success); box-shadow: inset 0 0 20px rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.3); }
 .kpi-data h4 { font-size: 36px; font-weight: 800; line-height: 1; margin-bottom: 5px; color: var(--text-heading); }
+
+/* RESPIRO VISUAL DOS KPIs - ATUALIZADO */
+.kpi-data p {
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
 .panel-card { border-radius: 12px; padding: 25px; margin-bottom: 25px; }
 .panel-card-header h1, .panel-card-header h2 { font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 10px; color: var(--text-heading); }
 
@@ -177,7 +195,7 @@ h1, h2, h3, h4 { color: var(--text-heading); }
 .ind-gauge-fill { height: 100%; border-radius: 6px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
 .grafico-legenda { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); }
 
-/* TABLES & FORMS */
+/* TABLES & FORMS - ATUALIZADO */
 .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
 .premium-select, .select-sm { background: var(--bg-input); color: var(--text-heading); border: 1px solid var(--border-color); padding: 10px; border-radius: 6px; outline: none; cursor: pointer; font-weight: 600; }
 .premium-select:focus { border-color: var(--text-accent); }
@@ -185,7 +203,21 @@ h1, h2, h3, h4 { color: var(--text-heading); }
 .premium-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 15px; white-space: nowrap; }
 .premium-table th { background: var(--bg-th); padding: 16px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); border-bottom: 2px solid var(--border-color); text-align: left; }
 .premium-table td { padding: 16px; font-size: 14px; border-bottom: 1px solid var(--border-color); background: var(--bg-td); transition: background 0.2s; color: var(--text-main); }
-.premium-table tr:hover td { background: rgba(56, 189, 248, 0.05); }
+
+/* MICRO-INTERAÇÕES DA TABELA */
+.premium-table tbody tr {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.premium-table tbody tr:hover td { 
+  background: rgba(56, 189, 248, 0.08); 
+  color: var(--text-heading);
+}
+.premium-table tbody tr:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
 .edit-input { width: 80px; background: transparent; color: var(--text-accent); border: 1px dashed var(--text-accent); padding: 4px; font-family: monospace; font-size: 14px; }
 .premium-textarea { width: 100%; padding: 10px; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-heading); border-radius: 6px; resize: none; font-family: inherit; }
 
@@ -254,11 +286,39 @@ h1, h2, h3, h4 { color: var(--text-heading); }
   .action-buttons-mobile { flex-wrap: wrap; }
 }
 
+/* =========================================
+   CORREÇÃO DO FOLHÃO (MOBILE) - PERITAGEM E GRIDS
+========================================= */
+@media (max-width: 992px) {
+  /* 1. Força os blocos que estão lado a lado (1fr 1fr) a empilharem (1fr) no celular */
+  .folhao-content div[style*="grid-template-columns: 1fr 1fr"] {
+      grid-template-columns: 1fr !important;
+      gap: 25px !important; /* Dá um respiro maior entre a tabela de cima e a de baixo */
+  }
+
+  /* 2. Permite que as tabelas grandes rolem para o lado (scroll) sem espremer a tela */
+  .folhao-content .premium-table {
+      display: block !important;
+      width: 100% !important;
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch; /* Rolagem lisa no iPhone/Android */
+      border-radius: 8px; /* Mantém o visual bonito nas bordas */
+  }
+
+  /* 3. Garante que os inputs e colunas não fiquem minúsculos */
+  .folhao-content .premium-table th,
+  .folhao-content .premium-table td {
+      white-space: nowrap; /* Impede o texto do cabeçalho de quebrar e ficar feio */
+      min-width: 90px; /* Tamanho mínimo de segurança para conseguir digitar */
+  }
+}
+
 @media (max-width: 480px) {
   .veios-grid-buttons { grid-template-columns: repeat(2, 1fr); }
   .mcc-grafico-card { padding: 15px; }
   .mcc-tag-id { font-size: 15px; }
 }
+
 /* =========================================
    ESTILOS DO FOLHÃO MCC4 E IMPRESSÃO
 ========================================= */
@@ -324,7 +384,128 @@ h1, h2, h3, h4 { color: var(--text-heading); }
   height: 16px;
 }
 
-/* Configurações de Impressão */
+/* =========================================
+   ESTILOS PARA INPUTS (MOLDE E BENDER)
+========================================= */
+
+/* Estiliza todos os text inputs, selects e textareas do folhão */
+.folhao-content input:not([type="checkbox"]):not([type="radio"]),
+.folhao-content select,
+.folhao-content textarea {
+    background-color: var(--bg-input);
+    color: var(--text-heading);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 12px;
+    box-sizing: border-box;
+    transition: all 0.2s ease-in-out;
+    width: 100%; /* Garante que preencham a célula da tabela */
+}
+
+/* Efeito Hover */
+.folhao-content input:not([type="checkbox"]):not([type="radio"]):hover,
+.folhao-content select:hover,
+.folhao-content textarea:hover {
+    border-color: var(--text-muted);
+}
+
+/* Efeito Focus (clique) */
+.folhao-content input:not([type="checkbox"]):not([type="radio"]):focus,
+.folhao-content select:focus,
+.folhao-content textarea:focus {
+    outline: none;
+    border-color: var(--text-accent);
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+    background-color: rgba(0, 0, 0, 0.15); /* Leve escurecida para destacar */
+}
+
+/* Centralização para os campos w-100 */
+.folhao-content .w-100 {
+    width: 100%;
+    text-align: center;
+}
+
+/* Ajuste específico para inputs pequenos de medidas */
+.folhao-content input[style*="width: 30px"],
+.folhao-content input[style*="width:30px"],
+.folhao-content input[style*="width: 40px"] {
+    padding: 4px;
+    text-align: center;
+    width: 100%; /* Força flexibilidade no Flexbox */
+    max-width: 50px;
+}
+
+/* Select customizado (remove a seta feia do Windows) */
+.folhao-content select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23cbd5e1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px top 50%;
+    background-size: 8px auto;
+    padding-right: 20px;
+}
+
+/* Checkboxes Customizados Premium (usados na aba Execução do Bender) */
+.folhao-content input[type="checkbox"] {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--bg-input);
+    cursor: pointer;
+    position: relative;
+    display: inline-block;
+    vertical-align: middle;
+    transition: all 0.2s;
+}
+
+.folhao-content input[type="checkbox"]:checked {
+    background-color: var(--text-accent);
+    border-color: var(--text-accent);
+}
+
+.folhao-content input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 1px;
+    width: 4px;
+    height: 9px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* =========================================
+   CORREÇÃO DAS ABAS DO FOLHÃO (SCROLL HORIZONTAL)
+========================================= */
+.folhao-tabs {
+    display: flex !important;
+    flex-wrap: nowrap !important; /* Força tudo a ficar em uma linha só */
+    overflow-x: auto !important; /* Cria a rolagem horizontal se não couber */
+    gap: 10px;
+    padding-bottom: 10px; /* Espaço para a barra de rolagem não cortar o botão */
+}
+
+.folhao-tab {
+    flex: 0 0 auto !important; /* Impede os botões de ficarem esmagados */
+    white-space: nowrap !important; /* Impede o texto de quebrar em duas linhas */
+}
+
+/* Deixa a barrinha de rolagem fina e elegante no PC */
+.folhao-tabs::-webkit-scrollbar {
+    height: 6px;
+}
+.folhao-tabs::-webkit-scrollbar-thumb {
+    background: var(--text-accent, #38bdf8);
+    border-radius: 4px;
+}
+
+/* =========================================
+   IMPRESSÃO
+========================================= */
 .print-only {
   display: none;
 }
@@ -399,27 +580,36 @@ h1, h2, h3, h4 { color: var(--text-heading); }
     text-align: center;
   }
 }
+
 /* =========================================
-   CORREÇÃO DAS ABAS DO FOLHÃO (SCROLL HORIZONTAL)
+   FORÇA BRUTA - INPUTS ESCUROS
 ========================================= */
-.folhao-tabs {
-    display: flex !important;
-    flex-wrap: nowrap !important; /* Força tudo a ficar em uma linha só */
-    overflow-x: auto !important; /* Cria a rolagem horizontal se não couber */
-    gap: 10px;
-    padding-bottom: 10px; /* Espaço para a barra de rolagem não cortar o botão */
+.premium-table input,
+.premium-table select,
+.folhao-content input,
+.folhao-content select {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border: 1px solid #334155 !important;
+    border-radius: 4px !important;
+    padding: 6px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
 }
 
-.folhao-tab {
-    flex: 0 0 auto !important; /* Impede os botões de ficarem esmagados */
-    white-space: nowrap !important; /* Impede o texto de quebrar em duas linhas */
+.premium-table input:focus,
+.folhao-content input:focus {
+    border-color: #38bdf8 !important;
+    outline: none !important;
+    box-shadow: 0 0 5px rgba(56, 189, 248, 0.5) !important;
+    background-color: #0f172a !important;
 }
 
-/* Deixa a barrinha de rolagem fina e elegante no PC */
-.folhao-tabs::-webkit-scrollbar {
-    height: 6px;
-}
-.folhao-tabs::-webkit-scrollbar-thumb {
-    background: var(--text-accent, #38bdf8);
-    border-radius: 4px;
+/* Força a tabela a rolar no celular em vez de esmagar */
+@media (max-width: 992px) {
+    .premium-table {
+        display: block !important;
+        width: 100% !important;
+        overflow-x: auto !important;
+    }
 }

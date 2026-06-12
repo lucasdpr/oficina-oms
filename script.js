@@ -201,6 +201,31 @@ function calcularKpisGlobais() {
 }
 
 // ==========================================
+// INTEGRAÇÃO COM O FOLHÃO MCC4 (NOVO!)
+// ==========================================
+function registrarConclusaoFolhaoMCC4(id, motivo) {
+    let item = BANCO_ATIVOS.find(a => a.id === id);
+    if (!item) return;
+
+    // Como passou pelo Folhão Oficial, zera a tonelagem e move para Reserva
+    item.ton = 0;
+    item.dias = 0;
+    item.local = "Oficina / Reserva";
+    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+
+    // Cria um botão injetado no texto do histórico para reabrir o PDF
+    let btnPDF = `<button onclick="imprimirLaudoSalvo('${id}', '${motivo}')" class="btn-outline-danger" style="padding: 2px 8px; font-size: 10px; margin-left: 10px; cursor: pointer;"><i class="fas fa-file-pdf"></i> Visualizar Folhão</button>`;
+    
+    // Registra a ação no prontuário da peça e no histórico geral
+    registrarHistorico(id, `Laudo Oficial (Folhão MCC4) concluído. Motivo: ${motivo}. <br><div style="margin-top: 5px;">${btnPDF}</div>`);
+    
+    renderReparos();
+    renderReservas();
+    renderAtivos();
+    calcularKpisGlobais();
+}
+
+// ==========================================
 // RENDERIZAÇÃO DE DADOS VEIOS E ATIVOS
 // ==========================================
 function fazerCelulaEditavel(celula, id, campo) {
@@ -444,7 +469,7 @@ function toggleCamposReparoParcial() {
     }
 }
 
-function confirmarConclusaoReparo() {
+window.confirmarConclusaoReparo = function() {
     if (!verificarAcesso() || !ID_REPARO_ATUAL) return;
     let item = BANCO_ATIVOS.find(a => a.id === ID_REPARO_ATUAL);
     if (!item) return;
@@ -468,11 +493,36 @@ function confirmarConclusaoReparo() {
     localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
     registrarHistorico(item.id, msgHistorico);
     
+    // Fecha o modal de conclusão
     fecharModalConcluirReparo();
     renderReparos();
     renderReservas();
     renderAtivos();
     calcularKpisGlobais();
+
+    // ==========================================
+    // ABRE O LAUDO GIGANTE CORRETO AUTOMATICAMENTE
+    // ==========================================
+    let tagEmReparo = item.id.toUpperCase();
+
+    // Esconde os modais anteriores
+    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden'));
+
+    if (tagEmReparo.includes("HOR") || tagEmReparo.includes("SEG")) {
+        // Se for o Horizontal, atualiza o nome e abre o Folhão Horizontal
+        document.getElementById('horizontal-tag-name').innerText = "TAG: " + tagEmReparo;
+        if (typeof abrirFolhaoHorizontal === "function") abrirFolhaoHorizontal();
+        
+    } else if (tagEmReparo.includes("R2") || tagEmReparo.includes("STR")) {
+        // Se for o R2, atualiza o nome e abre o Folhão do R2
+        document.getElementById('r2-tag-name').innerText = "TAG: " + tagEmReparo;
+        if (typeof abrirFolhaoR2 === "function") abrirFolhaoR2();
+        
+    } else if (tagEmReparo.includes("MOLDE") || tagEmReparo.includes("MLD")) {
+        // Se for o Molde, atualiza o nome e abre o Folhão do Molde
+        document.getElementById('mcc4-tag-name').innerText = "TAG: " + tagEmReparo;
+        if (typeof abrirFolhaoMCC4 === "function") abrirFolhaoMCC4();
+    }
 }
 
 function imprimirLaudoSalvo(tag, motivo) {
@@ -686,34 +736,6 @@ function salvarNovoEquipamento() {
         mcc_compat: mcc_compat
     });
 
-    function excluirEquipamento(id) {
-    if (!verificarAcesso()) return;
-
-    let item = BANCO_ATIVOS.find(a => a.id === id);
-    if (!item) return;
-
-    // Bloqueio de segurança: impede apagar peça que está instalada na máquina
-    if (item.local.includes("Veio")) {
-        return alert("Bloqueado: Não é possível excluir uma peça que está rodando no Veio. Faça o saque dela para a Oficina primeiro.");
-    }
-
-    if (confirm(`ATENÇÃO!\nTem certeza que deseja EXCLUIR DEFINITIVAMENTE o equipamento [${id}] do sistema?`)) {
-        // Encontra onde ele está na lista e corta ele fora
-        const index = BANCO_ATIVOS.findIndex(a => a.id === id);
-        BANCO_ATIVOS.splice(index, 1);
-        
-        // Salva a lista nova e registra a ação
-        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-        registrarHistorico("SISTEMA", `Equipamento [${id}] excluído do cadastro.`);
-        
-        // Atualiza as tabelas
-        renderAtivos();
-        renderReservas();
-        renderReparos();
-        calcularKpisGlobais();
-    }
-}
-
     localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
     registrarHistorico(tag, `Peça nova (${tipo} MCC ${mcc_compat}) cadastrada.`);
 
@@ -880,17 +902,22 @@ function excluirEquipamento(id) {
     let item = BANCO_ATIVOS.find(a => a.id === id);
     if (!item) return;
 
+    // Bloqueio de segurança: impede apagar peça que está instalada na máquina
     if (item.local.includes("Veio")) {
         return alert("Bloqueado: Não é possível excluir uma peça que está rodando no Veio. Faça o saque dela para a Oficina primeiro.");
     }
 
     if (confirm(`ATENÇÃO!\nTem certeza que deseja EXCLUIR DEFINITIVAMENTE o equipamento [${id}] do sistema?`)) {
+        // Encontra onde ele está na lista e corta ele fora
         const index = BANCO_ATIVOS.findIndex(a => a.id === id);
         if (index > -1) {
             BANCO_ATIVOS.splice(index, 1);
+            
+            // Salva a lista nova e registra a ação
             localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
             registrarHistorico("SISTEMA", `Equipamento [${id}] excluído do cadastro.`);
             
+            // Atualiza as tabelas
             renderAtivos();
             renderReservas();
             renderReparos();
@@ -898,6 +925,7 @@ function excluirEquipamento(id) {
         }
     }
 }
+
 // ==========================================
 // LIBERAÇÃO DE FUNÇÕES PARA O HTML (PERMISSÕES)
 // ==========================================
@@ -940,3 +968,70 @@ window.registrarHistorico = registrarHistorico;
 window.calcularKpisGlobais = calcularKpisGlobais;
 window.toggleFormMaterial = toggleFormMaterial;
 window.salvarEntradaMaterial = salvarEntradaMaterial;
+
+// 5. Integração Folhão (NOVO)
+window.registrarConclusaoFolhaoMCC4 = registrarConclusaoFolhaoMCC4;
+// ==============================================================
+// FUNÇÃO PARA CONCLUIR O REPARO E ABRIR O PDF AUTOMATICAMENTE
+// ==============================================================
+window.confirmarConclusaoReparo = function() {
+    // 1. Verifica qual a peça que está a ser reparada
+    if (!ID_REPARO_ATUAL) return;
+    let item = BANCO_ATIVOS.find(a => a.id === ID_REPARO_ATUAL);
+    if (!item) return;
+
+    // 2. Fecha a janela pequena de conclusão imediatamente
+    const modalPequeno = document.getElementById('modal-concluir-reparo');
+    if (modalPequeno) modalPequeno.classList.add('hidden');
+
+    // 3. Atualiza os dias e as toneladas
+    const tipo = document.getElementById("modal-tipo-reparo").value;
+    let msgHistorico = "";
+
+    if (tipo === "GERAL") {
+        item.ton = 0;
+        item.dias = 0;
+        msgHistorico = "Reparo GERAL finalizado.";
+    } else {
+        item.ton = parseFloat(document.getElementById("modal-reparo-ton").value) || 0;
+        item.dias = parseFloat(document.getElementById("modal-reparo-dias").value) || 0;
+        msgHistorico = "Reparo PARCIAL finalizado.";
+    }
+
+    item.local = "Oficina / Reserva";
+    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    if (typeof registrarHistorico === "function") registrarHistorico(item.id, msgHistorico);
+    
+    // 4. Atualiza as tabelas de fundo
+    if (typeof renderReparos === "function") renderReparos();
+    if (typeof renderReservas === "function") renderReservas();
+    if (typeof renderAtivos === "function") renderAtivos();
+
+    // ==========================================
+    // 5. ABRE O LAUDO GIGANTE CORRETO 
+    // ==========================================
+    let tagEmReparo = item.id.toUpperCase();
+
+    // Esconde qualquer outra janela para não encravar o ecrã
+    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden'));
+
+    // Verifica a TAG e abre a janela certa
+    if (tagEmReparo.includes("HOR") || tagEmReparo.includes("SEG")) {
+        // Abre o Horizontal
+        let tituloHoriz = document.getElementById('horizontal-tag-name');
+        if (tituloHoriz) tituloHoriz.innerText = "TAG: " + tagEmReparo;
+        if (typeof abrirFolhaoHorizontal === "function") abrirFolhaoHorizontal();
+        
+    } else if (tagEmReparo.includes("R2") || tagEmReparo.includes("STR")) {
+        // Abre o R2
+        let tituloR2 = document.getElementById('r2-tag-name');
+        if (tituloR2) tituloR2.innerText = "TAG: " + tagEmReparo;
+        if (typeof abrirFolhaoR2 === "function") abrirFolhaoR2();
+        
+    } else {
+        // Abre o Molde MCC4 Padrão
+        let tituloMolde = document.getElementById('mcc4-tag-name');
+        if (tituloMolde) tituloMolde.innerText = "TAG: " + tagEmReparo;
+        if (typeof abrirFolhaoMCC4 === "function") abrirFolhaoMCC4();
+    }
+};
