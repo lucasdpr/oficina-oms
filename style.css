@@ -156,11 +156,45 @@ h1, h2, h3, h4 { color: var(--text-heading); }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* CARDS & KPIs */
-.welcome-box { padding: 30px; border-radius: 12px; margin-bottom: 25px; border: 1px solid var(--border-color); background: var(--welcome-bg); transition: background 0.4s ease; }
-.welcome-box h1 { font-size: 26px; margin-bottom: 5px; background: -webkit-linear-gradient(0deg, var(--text-heading), var(--text-accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.2; }
-.kpi-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 15px; }
-.kpi-card { padding: 25px; border-radius: 12px; display: flex; align-items: center; gap: 20px; transition: transform 0.3s; border-left: 4px solid transparent; }
-.kpi-card:hover { transform: translateY(-5px); }
+.welcome-box { 
+    padding: 30px; 
+    border-radius: 12px; 
+    margin-bottom: 25px; 
+    border: 1px solid var(--border-color); 
+    background: var(--welcome-bg); 
+    transition: background 0.4s ease; 
+}
+
+.welcome-box h1 { 
+    font-size: 26px; 
+    margin-bottom: 5px; 
+    background: -webkit-linear-gradient(0deg, var(--text-heading), var(--text-accent)); 
+    -webkit-background-clip: text; 
+    background-clip: text; /* Adicionado para compatibilidade e corrigir o aviso */
+    -webkit-text-fill-color: transparent; 
+    line-height: 1.2; 
+}
+
+.kpi-container { 
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 20px; 
+    margin-top: 15px; 
+}
+
+.kpi-card { 
+    padding: 25px; 
+    border-radius: 12px; 
+    display: flex; 
+    align-items: center; 
+    gap: 20px; 
+    transition: transform 0.3s; 
+    border-left: 4px solid transparent; 
+}
+
+.kpi-card:hover { 
+    transform: translateY(-5px); 
+}
 .kpi-card.danger { border-left-color: var(--danger); }
 .kpi-card.warning { border-left-color: var(--warning); }
 .kpi-card.success { border-left-color: var(--success); }
