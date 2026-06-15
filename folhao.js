@@ -378,7 +378,17 @@ function gerarTelasBenderHTML() {
 // IMPRESSÃO E SALVAMENTO
 // ==========================================
 export function salvarLaudoInteligente() {
-    if (!window.verificarAcesso() || !ID_FOLHAO_ATUAL) return;
+    // 1. CHECAGEM PARA O EQUIPAMENTO R2
+    // Se a variável do R2 existir e tiver um valor, significa que é o R2 que está na tela
+    if (typeof ID_FOLHAO_R2_ATUAL !== 'undefined' && ID_FOLHAO_R2_ATUAL !== null) {
+        if (typeof window.salvarEImprimirFolhaoR2 === 'function') {
+            window.salvarEImprimirFolhaoR2();
+            return; // O 'return' faz a função parar aqui e não rodar o código do MCC4 abaixo
+        }
+    }
+
+    // 2. LÓGICA ORIGINAL PARA O EQUIPAMENTO MCC4
+    if (!window.verificarAcesso() || typeof ID_FOLHAO_ATUAL === 'undefined' || !ID_FOLHAO_ATUAL) return;
     
     let tag = ID_FOLHAO_ATUAL;
     let item = BANCO_ATIVOS.find(a => a.id === tag);
@@ -397,13 +407,13 @@ export function salvarLaudoInteligente() {
             window.registrarHistorico(tag, `Laudo Oficial concluído. Motivo: ${motivo}. <br><div style="margin-top: 5px;">${btnPDF}</div>`);
         }
         
-        fecharFolhaoMCC4(); 
-        renderReparos(); 
-        renderReservas(); 
-        renderAtivos(); 
+        if (typeof fecharFolhaoMCC4 === 'function') fecharFolhaoMCC4(); 
+        if (typeof renderReparos === 'function') renderReparos(); 
+        if (typeof renderReservas === 'function') renderReservas(); 
+        if (typeof renderAtivos === 'function') renderAtivos(); 
         if (window.calcularKpisGlobais) window.calcularKpisGlobais();
         
-        imprimirLaudoSalvo(tag, motivo);
+        if (typeof imprimirLaudoSalvo === 'function') imprimirLaudoSalvo(tag, motivo);
     } else {
         alert("Erro crítico: O equipamento não foi localizado.");
     }

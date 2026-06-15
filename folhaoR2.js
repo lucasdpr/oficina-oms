@@ -174,11 +174,31 @@ const getCabecalhoUnico = (titulo, tag, inicio, fim) => `
 </div>`;
 
 window.salvarEImprimirFolhaoR2 = function() {
-    if (!window.verificarAcesso() || !ID_FOLHAO_R2_ATUAL) return;
+    console.log("Iniciando geração de PDF para R2...");
+
+    // 1. Verifica se a função de acesso existe e retorna true
+    if (window.verificarAcesso && !window.verificarAcesso()) {
+        alert("Erro: Acesso negado.");
+        return;
+    }
+
+    // 2. Verifica se existe um ID de folhão carregado
+    if (!ID_FOLHAO_R2_ATUAL) {
+        alert("Erro: Nenhuma TAG R2 carregada no momento.");
+        return;
+    }
 
     let tag = ID_FOLHAO_R2_ATUAL;
     let item = BANCO_ATIVOS.find(a => a.id === tag);
-    if (!item) return;
+    
+    // 3. Verifica se o item existe no banco de dados
+    if (!item) {
+        alert(`Erro: A TAG ${tag} não foi encontrada no BANCO_ATIVOS.`);
+        console.error("Tags disponíveis no banco:", BANCO_ATIVOS.map(a => a.id));
+        return;
+    }
+
+    console.log("Item encontrado! Gerando laudo...");
 
     item.ton = 0;
     item.dias = 0;
@@ -191,9 +211,10 @@ window.salvarEImprimirFolhaoR2 = function() {
         window.registrarHistorico(tag, `Laudo Oficial (Straightener R2) concluído. <br><div style="margin-top: 5px;">${btnPDF}</div>`);
     }
 
-    renderReparos(); 
-    renderReservas(); 
-    renderAtivos(); 
+    // Renderiza as telas novamente
+    if(typeof renderReparos === 'function') renderReparos(); 
+    if(typeof renderReservas === 'function') renderReservas(); 
+    if(typeof renderAtivos === 'function') renderAtivos(); 
     if (window.calcularKpisGlobais) window.calcularKpisGlobais();
 
     let hoje = new Date().toLocaleDateString('pt-BR');
@@ -214,8 +235,10 @@ window.salvarEImprimirFolhaoR2 = function() {
 
     htmlImp += `<div class="titulo-secao">2. CHECKLIST DE EXECUÇÃO</div>
         <table><tr><th style="width:5%;">Item</th><th>Descrição da Atividade</th><th style="width:5%;">Feito</th><th style="width:15%;">Matrícula</th><th style="width:15%;">Data</th></tr>`;
+    
     manutencaoR2.forEach((tarefa, index) => {
-        const checked = document.getElementById(`chk-r2-${index}`) && document.getElementById(`chk-r2-${index}`).checked ? 'X' : '';
+        const checkEl = document.getElementById(`chk-r2-${index}`);
+        const checked = (checkEl && checkEl.checked) ? 'X' : '';
         const mat = document.getElementById(`mat-r2-${index}`) ? document.getElementById(`mat-r2-${index}`).value : '';
         const data = document.getElementById(`dat-r2-${index}`) ? document.getElementById(`dat-r2-${index}`).value : '';
         htmlImp += `<tr><td style="text-align:center;">${tarefa.item}</td><td style="font-size:10px;">${tarefa.desc}</td><td style="text-align:center; font-weight:bold;">${checked}</td><td style="text-align:center;">${mat}</td><td style="text-align:center;">${data}</td></tr>`;
@@ -229,7 +252,13 @@ window.salvarEImprimirFolhaoR2 = function() {
         </div>
     </div>`;
 
-    document.getElementById('print-content').innerHTML = htmlImp;
+    let printContent = document.getElementById('print-content');
+    if (!printContent) {
+        alert("Erro: A div com id 'print-content' não foi encontrada no seu HTML!");
+        return;
+    }
+
+    printContent.innerHTML = htmlImp;
     window.fecharFolhaoR2();
     setTimeout(() => window.print(), 500);
 };

@@ -697,8 +697,8 @@
       </div>
 
       <div class="flex-between" style="margin-top: 30px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-        <button class="btn-outline-danger" onclick="fecharFolhaoR2()">Cancelar</button>
-        <button class="btn-premium btn-success" onclick="alert('Salvar R2: Lógica PDF em construção!')"><i class="fas fa-check-double"></i> Salvar Laudo e Mover p/ Reserva</button>
+        <button class="btn-outline-danger" onclick="window.fecharFolhaoR2()">Cancelar</button>
+       <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoR2()"><i class="fas fa-check-double"></i> Salvar Laudo e Mover p/ Reserva</button>
       </div>
       
     </div>
@@ -998,48 +998,116 @@
         <button class="btn-premium btn-success" onclick="salvarEImprimirFolhaoBow()"><i class="fas fa-print"></i> Salvar Laudo e Mover p/ Reserva</button>
       </div>
       
+      <div id="modal-folhao-molde23" class="modal-overlay hidden no-print">
+  <div class="modal-content glass-panel premium-shadow" style="max-width: 1000px; padding: 0;">
+    
+    <div class="modal-header-fixed" style="padding: 20px; border-bottom: 1px solid var(--border-color); background: var(--bg-th); border-radius: 16px 16px 0 0;">
+        <div class="flex-between">
+            <h2 style="color: var(--text-accent);"><i class="fas fa-clipboard-check"></i> Liberação Oficial - MOLDE (2 e 3)</h2>
+            <button class="btn-close-emergency" onclick="window.fecharFolhaoMolde23()"><i class="fas fa-times"></i></button>
+        </div>
+        <div style="display: flex; gap: 15px; margin-top: 15px;">
+            <span class="ind-card-tag bg-tag" style="font-size: 14px;">TAG: <strong id="molde23-tag-name"></strong></span>
+            <span class="text-muted" style="font-size: 14px;">Preenchimento obrigatório para envio à Reserva.</span>
+        </div>
     </div>
-  </div>
-  <div id="modal-alocacao-maquina" class="modal-overlay hidden no-print">
-    <div class="modal-content glass-panel premium-shadow" style="max-width: 550px; padding: 20px;">
-      
-      <div class="flex-between" style="border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px;">
-        <h2 style="color: var(--success); font-size: 20px;"><i class="fas fa-exchange-alt"></i> Instalar na Máquina</h2>
-        <button class="btn-xs-primary" onclick="fecharModalAlocacao()" style="font-size: 20px; color: var(--text-muted);">&times;</button>
-      </div>
-      
-      <div style="background: var(--bg-th); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed var(--success);">
-         <p style="margin: 0; font-size: 12px; text-transform: uppercase;">Peça Selecionada da Reserva:</p>
-         <strong id="alocacao-tag-nova" class="font-code text-success" style="font-size: 18px;"></strong>
-         <input type="hidden" id="alocacao-tipo-oculto">
-      </div>
 
-      <div class="form-grid-2-mobile" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-         <div class="input-group">
-            <label>Veio de Destino</label>
-            <select id="alocacao-veio" class="premium-select w-100" onchange="verificarPecaExistente()">
-               <option value="">Selecione o Veio...</option>
-            </select>
-         </div>
-         <div class="input-group" id="container-posicao-alocacao"></div>
-      </div>
-
-      <div id="alocacao-aviso-substituicao" style="display:none; margin-top: 20px; padding: 15px; border-left: 4px solid var(--danger); background: rgba(239, 68, 68, 0.1); border-radius: 4px;">
-         <p style="margin: 0; font-size: 13px; color: var(--danger);">
-             <i class="fas fa-exclamation-triangle"></i> <strong>Atenção (SWAP):</strong> A peça abaixo será retirada e enviada à Oficina:
-             <br><strong id="alocacao-tag-antiga" class="font-code" style="font-size: 16px; display: block; margin-top: 5px;"></strong>
-         </p>
-      </div>
-
-      <div class="modal-actions flex-between" style="margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-         <button class="btn-outline-danger" onclick="fecharModalAlocacao()">Cancelar</button>
-         <button class="btn-premium btn-success" onclick="confirmarAlocacaoSwap()"><i class="fas fa-check-double"></i> Confirmar Instalação</button>
-      </div>
+    <div class="folhao-tabs" style="display: flex; background: var(--bg-input); border-bottom: 1px solid var(--border-color); overflow-x: auto;">
+        <button class="folhao-tab active" onclick="window.trocarAbaMolde23(event, 'm23-aba-dados')">1. Dados Básicos</button>
+        <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'm23-aba-recebimento')">2. Recebimento</button>
+        <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'm23-aba-revisao')">3. Revisão</button>
+        <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'm23-aba-hidraulica')">4. Hidráulica</button>
+        <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'm23-aba-final')">5. Check Final</button>
     </div>
+
+    <div class="folhao-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
+      
+      <div id="m23-aba-dados" class="folhao-content active">
+          <div class="form-grid-2-mobile" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+              <div class="input-group">
+                  <label>Data Início da Manutenção</label>
+                  <input type="date" id="molde23-data-inicio" class="w-100">
+              </div>
+              <div class="input-group">
+                  <label>Data Fim da Manutenção</label>
+                  <input type="date" id="molde23-data-fim" class="w-100">
+              </div>
+              <div class="input-group">
+                  <label>Nº do Molde</label>
+                  <input type="text" id="molde23-num" placeholder="Ex: 02" class="w-100">
+              </div>
+              <div class="input-group">
+                  <label>Líder Responsável</label>
+                  <input type="text" id="molde23-lider" placeholder="Nome ou Matrícula" class="w-100">
+              </div>
+              <div class="input-group">
+                  <label>Tipo de Execução</label>
+                  <select id="molde23-tipo-execucao" class="premium-select w-100">
+                      <option value="PARCIAL">PARCIAL</option>
+                      <option value="GERAL">GERAL (Zerar toneladas)</option>
+                  </select>
+              </div>
+              <div class="input-group">
+                  <label>Desempenho Observado</label>
+                  <input type="text" id="molde23-desempenho" placeholder="Ex: Face com ranhuras..." class="w-100">
+              </div>
+          </div>
+      </div>
+
+      <div id="m23-aba-recebimento" class="folhao-content hidden">
+          <h3 style="margin-bottom: 10px; color: var(--text-heading);">Inspeção de Recebimento (Mecânica/Elétrica)</h3>
+          <div class="table-responsive">
+              <table class="premium-table">
+                  <thead><tr><th style="width: 50px;">Item</th><th>Descrição</th><th style="width: 60px;">SIM</th><th style="width: 60px;">NÃO</th></tr></thead>
+                  <tbody id="tabela-m23-recebimento"></tbody>
+              </table>
+          </div>
+      </div>
+
+      <div id="m23-aba-revisao" class="folhao-content hidden">
+          <h3 style="margin-bottom: 10px; color: var(--text-heading);">Revisão dos Componentes do Molde</h3>
+          <div class="table-responsive">
+              <table class="premium-table">
+                  <thead><tr><th style="width: 50px;">Item</th><th>Descrição</th><th style="width: 60px;">SIM</th><th style="width: 60px;">NÃO</th></tr></thead>
+                  <tbody id="tabela-m23-revisao"></tbody>
+              </table>
+          </div>
+      </div>
+
+      <div id="m23-aba-hidraulica" class="folhao-content hidden">
+          <h3 style="margin-bottom: 10px; color: var(--text-heading);">Check List Hidráulico</h3>
+          <div class="table-responsive">
+              <table class="premium-table">
+                  <thead><tr><th style="width: 50px;">Item</th><th>Descrição</th><th>Matrícula</th></tr></thead>
+                  <tbody id="tabela-m23-hidraulica"></tbody>
+              </table>
+          </div>
+      </div>
+
+      <div id="m23-aba-final" class="folhao-content hidden">
+          <h3 style="margin-bottom: 10px; color: var(--text-heading);">Inspeção Final e Sensores</h3>
+          <div class="table-responsive">
+              <table class="premium-table">
+                  <thead><tr><th style="width: 50px;">Item</th><th>Descrição</th><th style="width: 60px;">SIM</th><th style="width: 60px;">NÃO</th></tr></thead>
+                  <tbody id="tabela-m23-final"></tbody>
+              </table>
+          </div>
+      </div>
+
+    </div>
+
+    <div class="modal-actions flex-between" style="padding: 20px; background: var(--bg-th); border-top: 1px solid var(--border-color); border-radius: 0 0 16px 16px;">
+      <button class="btn-outline-danger" onclick="window.fecharFolhaoMolde23()">Cancelar</button>
+      <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoMolde23()"><i class="fas fa-check-double"></i> Salvar Laudo e Mover p/ Reserva</button>
+    </div>
+    
   </div>
-  <script type="module" src="script.js"></script>
+</div>
+
+<script type="module" src="script.js"></script>
   <script type="module" src="folhao.js"></script>
   <script type="module" src="folhaoR2.js"></script>
   <script type="module" src="folhaoHorizontal.js"></script>
-  <script type="module" src="folhaoBow.js"></script> </body>
+  <script type="module" src="folhaoBow.js"></script> 
+  <script type="module" src="folhaoMolde23.js"></script> </body>
 </html>
