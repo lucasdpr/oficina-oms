@@ -333,18 +333,125 @@ function abrirAba(event, idAba) {
 }
 window.abrirAba = abrirAba;
 
-function mudarVeioVisualizado(veioNome) {
-    VEIO_SELECIONADO_PAINEL = veioNome;
-    document.querySelectorAll(".btn-veio-tab").forEach(btn => {
-        if (btn.getAttribute("onclick").includes(`'${veioNome}'`)) {
-            btn.classList.add("active");
-        } else {
-            btn.classList.remove("active");
-        }
-    });
-    renderPainelVeios();
-    renderAtivos();
-}
+// ===================================================
+// GERENCIADOR DE CHASSIS - SEQUENCIAMENTO DE VEIOS
+// ===================================================
+window.mudarVeioVisualizado = function(veio) {
+    console.log("Montando chassi para o Veio:", veio);
+    
+    // Atualiza os botões visuais no topo
+    document.querySelectorAll('.btn-veio-tab').forEach(b => b.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    
+    // Atualiza o título
+    const titulo = document.getElementById("titulo-veio-focado");
+    if (titulo) titulo.innerHTML = `Sequenciamento Estrutural: <span style="color: var(--text-accent);">Veio ${veio}</span>`;
+
+    const container = document.getElementById("container-fluxo-horizontal-scroll");
+    if (!container) return;
+    container.innerHTML = ""; // Limpa a tela
+
+    // Busca as peças que estão fisicamente Instaladas neste veio
+    const pecasInstaladas = typeof BANCO_ATIVOS !== 'undefined' ? BANCO_ATIVOS.filter(p => p.veio === veio && p.status === "Instalado") : [];
+
+    // ----------------------------------------------------
+    // ARQUITETURA MCC 4 (VEIOS G E H) - 19 SLOTS FIXOS
+    // ----------------------------------------------------
+    if (veio === "G" || veio === "H") {
+        const esqueletoMCC4 = [
+            { idSlot: "MOLDE", nome: "Molde Alta Perf.", familia: "MOLDE" },
+            { idSlot: "BENDER", nome: "Dobrador (Bender)", familia: "BENDER" },
+            { idSlot: "BOW-1", nome: "Curvo Bow #01", familia: "BOW" },
+            { idSlot: "BOW-2", nome: "Curvo Bow #02", familia: "BOW" },
+            { idSlot: "BOW-3", nome: "Curvo Bow #03", familia: "BOW" },
+            { idSlot: "BOW-4", nome: "Curvo Bow #04", familia: "BOW" },
+            { idSlot: "BOW-5", nome: "Curvo Bow #05", familia: "BOW" },
+            { idSlot: "STR-1", nome: "Endireitador R1", familia: "STRAIGHTENER R1" },
+            { idSlot: "STR-2", nome: "Endireitador R2", familia: "STRAIGHTENER R2" },
+            { idSlot: "HOR-8", nome: "Segmento Horizontal #08", familia: "HORIZONTAL" },
+            { idSlot: "HOR-9", nome: "Segmento Horizontal #09", familia: "HORIZONTAL" },
+            { idSlot: "HOR-10", nome: "Segmento Horizontal #10", familia: "HORIZONTAL" },
+            { idSlot: "HOR-11", nome: "Segmento Horizontal #11", familia: "HORIZONTAL" },
+            { idSlot: "HOR-12", nome: "Segmento Horizontal #12", familia: "HORIZONTAL" },
+            { idSlot: "HOR-13", nome: "Segmento Horizontal #13", familia: "HORIZONTAL" },
+            { idSlot: "HOR-14", nome: "Segmento Horizontal #14", familia: "HORIZONTAL" },
+            { idSlot: "HOR-15", nome: "Segmento Horizontal #15", familia: "HORIZONTAL" },
+            { idSlot: "HOR-16", nome: "Segmento Horizontal #16", familia: "HORIZONTAL" },
+            { idSlot: "HOR-17", nome: "Segmento Horizontal #17", familia: "HORIZONTAL" }
+        ];
+
+        let htmlSlots = "";
+
+        esqueletoMCC4.forEach(slot => {
+            // Lógica inteligente para tentar achar qual peça do banco encaixa nessa gaveta exata
+            let pecaEncontrada = pecasInstaladas.find(p => {
+                let tipoUpper = p.tipo.toUpperCase();
+                let idUpper = p.id.toUpperCase();
+                
+                if (slot.familia === "MOLDE" && tipoUpper.includes("MOLDE")) return true;
+                if (slot.familia === "BENDER" && tipoUpper.includes("BENDER")) return true;
+                
+                // Para Bow, Str e Horizontais, checa se a TAG da peça tem o número do slot para não misturar
+                if (tipoUpper.includes("BOW") && slot.idSlot.includes("BOW") && idUpper.includes(slot.idSlot.replace("BOW-", ""))) return true;
+                if (tipoUpper.includes("STRAIGHTENER") && slot.idSlot.includes("STR") && idUpper.includes(slot.idSlot.replace("STR-", "R"))) return true; 
+                if (tipoUpper.includes("HORIZONTAL") && slot.idSlot.includes("HOR") && idUpper.includes(`-${slot.idSlot.replace("HOR-", "")}-`)) return true;
+                
+                return false;
+            });
+
+            if (pecaEncontrada) {
+                // DESENHA A GAVETA COM A PEÇA DENTRO
+                let pct = pecaEncontrada.limite > 0 ? (pecaEncontrada.ton / pecaEncontrada.limite) * 100 : 0;
+                let corClass = pct >= 80 ? "danger" : pct >= 50 ? "warning" : "success";
+
+                htmlSlots += `
+                <div class="ind-card glass-panel" style="border-top: 3px solid var(--${corClass}); min-width: 300px;">
+                    <div class="flex-between">
+                        <h4>${pecaEncontrada.id} <span class="ind-card-tag bg-tag" style="font-size: 10px;">${pecaEncontrada.tipo}</span></h4>
+                        <span style="color: var(--${corClass}); font-weight: bold;">${pct.toFixed(1)}%</span>
+                    </div>
+                    <p class="text-muted" style="font-size: 13px;"><i class="fas fa-layer-group"></i> ${slot.nome}</p>
+                    
+                    <div class="progress-container mt-10">
+                        <div class="progress-bar bg-${corClass}" style="width: ${Math.min(pct, 100)}%;"></div>
+                    </div>
+                    
+                    <div class="flex-between mt-10" style="font-size: 12px;">
+                        <span>Ton: <strong>${Number(pecaEncontrada.ton).toLocaleString('pt-BR')}</strong></span>
+                        <span>Lim: ${Number(pecaEncontrada.limite).toLocaleString('pt-BR')}</span>
+                    </div>
+                    
+                    <div class="flex-between gap-10 mt-15">
+                        <button class="btn-outline-primary w-100" style="padding: 5px;" onclick="window.abrirHistoricoIndividual('${pecaEncontrada.id}')"><i class="fas fa-book"></i> Prontuário</button>
+                        <button class="btn-outline-danger w-100" style="padding: 5px;" onclick="console.log('Sacar peça da Gaveta:', '${slot.idSlot}')"><i class="fas fa-exchange-alt"></i> Sacar / Trocar</button>
+                    </div>
+                </div>`;
+            } else {
+                // DESENHA A GAVETA VAZIA PISCANDO (SLOT LIVRE)
+                htmlSlots += `
+                <div class="ind-card glass-panel" style="border: 2px dashed #e74c3c; background: rgba(231, 76, 60, 0.05); min-width: 300px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 24px; color: #e74c3c; margin-bottom: 10px;"></i>
+                    <h4 style="color: #e74c3c; margin: 0;">${slot.nome}</h4>
+                    <p style="color: #e74c3c; font-size: 12px; margin-top: 5px;">GAVETA VAZIA / SEM PEÇA FÍSICA</p>
+                    <button class="btn-premium btn-success mt-15 w-100" onclick="console.log('Alocar nova peça na Gaveta:', '${slot.idSlot}')"><i class="fas fa-plus"></i> Alocar do Estoque</button>
+                </div>`;
+            }
+        });
+
+        container.innerHTML = htmlSlots;
+    } 
+    // ----------------------------------------------------
+    // ARQUITETURA MCC 2 e 3 (VEIOS C, D, E, F)
+    // ----------------------------------------------------
+    else {
+        container.innerHTML = `
+        <div style="padding: 30px; text-align: center; color: var(--text-muted); width: 100%;">
+            <i class="fas fa-tools" style="font-size: 40px; margin-bottom: 15px; opacity: 0.5;"></i>
+            <h3>Estrutura da Máquina 2/3 em Construção</h3>
+            <p>O chassi fixo para os veios C, D, E e F será implementado assim que a estrutura for mapeada.</p>
+        </div>`;
+    }
+};
 
 // ==========================================
 // HISTÓRICO E AUDITORIA
@@ -1815,3 +1922,76 @@ if (typeof fazerCelulaEditavel === 'function') window.fazerCelulaEditavel = faze
 
 // Dica: Se existir uma função para salvar essa edição depois de digitar, já libere ela também:
 if (typeof salvarEdicaoCelula === 'function') window.salvarEdicaoCelula = salvarEdicaoCelula;
+// ===================================================
+// MOTOR DE CADASTRO E POSIÇÕES FIXAS
+// ===================================================
+
+window.atualizarPosicoesCadastro = function() {
+    const tipo = document.getElementById("add-tipo").value;
+    const selectPos = document.getElementById("add-posicao");
+    selectPos.innerHTML = ""; // Limpa as opções
+
+    if (tipo.includes("Bow")) {
+        for(let i=1; i<=5; i++) selectPos.innerHTML += `<option value="BOW-${i}">Posição ${i}</option>`;
+    } 
+    else if (tipo.includes("Horizontal")) {
+        for(let i=8; i<=17; i++) selectPos.innerHTML += `<option value="HOR-${i}">Posição ${i}</option>`;
+    } 
+    else if (tipo.includes("Straightener R1")) {
+        selectPos.innerHTML = `<option value="STR-1">Posição Única (R1)</option>`;
+    } 
+    else if (tipo.includes("Straightener R2")) {
+        selectPos.innerHTML = `<option value="STR-2">Posição Única (R2)</option>`;
+    } 
+    else if (tipo.includes("Molde")) {
+        selectPos.innerHTML = `<option value="MOLDE">Gaveta 0 (Topo)</option>`;
+    } 
+    else if (tipo.includes("Bender")) {
+        selectPos.innerHTML = `<option value="BENDER">Gaveta 1 (Bender)</option>`;
+    } 
+    else {
+        selectPos.innerHTML = `<option value="GERAL">Uso Geral / Sem Posição Fixa</option>`;
+    }
+};
+
+window.processarCadastroPeca = function() {
+    const tag = document.getElementById("add-tag").value.trim() || `NOVA-PECA-${Math.floor(Math.random()*1000)}`;
+    const tipoValor = document.getElementById("add-tipo").value || "";
+    const tipoSplit = tipoValor.split("|");
+    const familia = tipoSplit[0] || ""; // Garante que nunca seja undefined
+    
+    const limite = parseFloat(document.getElementById("add-meta").value) || 1000000;
+    const veio = document.getElementById("add-veio").value || "";
+    const posicao = document.getElementById("add-posicao").value || "";
+    const instalarDireto = document.getElementById("add-instalar-direto").checked;
+
+    // Define status e também o LOCAL (o que estava dando o erro undefined)
+    const statusFinal = instalarDireto ? "Instalado" : "Oficina / Reserva";
+    const localFinal = instalarDireto ? `MCC - Veio ${veio}` : "Estoque Reserva";
+
+    const novaPeca = {
+        id: tag,
+        tipo: familia,
+        veio: veio,
+        local: localFinal, // <--- A salvação da lavoura pro renderAtivos
+        posicaoFixa: posicao,
+        status: statusFinal,
+        ton: 0,
+        dias: 0,
+        limite: limite
+    };
+
+    if (typeof BANCO_ATIVOS !== 'undefined') {
+        BANCO_ATIVOS.push(novaPeca);
+        alert(`Sucesso! Peça ${tag} salva na gaveta e alocada como: ${statusFinal}`);
+        
+        // Atualiza as telas de forma segura (se uma der erro, não trava a outra)
+        try { if(typeof renderReservas === 'function') renderReservas(); } catch(e){ console.warn(e); }
+        try { if(typeof renderAtivos === 'function') renderAtivos(); } catch(e){ console.warn(e); }
+        
+        // Se instalou direto, recarrega o chassi para mostrar a peça nova na gaveta!
+        if (instalarDireto && typeof mudarVeioVisualizado === 'function') {
+            mudarVeioVisualizado(veio);
+        }
+    }
+};

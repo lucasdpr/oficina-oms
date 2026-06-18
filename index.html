@@ -248,195 +248,67 @@
             <button class="btn-premium w-mobile-100" onclick="toggleFormAdicionar()"><i class="fas fa-plus"></i> Cadastrar Peça Nova</button>
           </div>
 
-          <div id="form-novo-equipamento" class="cadastrar-box hidden">
-            <h3><i class="fas fa-box-open"></i> Especificar e Cadastrar Peça de Estoque</h3>
-            <div class="form-grid-4">
-              <div class="input-group">
-                <label>TAG (Identificador)</label>
-                <input type="text" id="add-tag" placeholder="Ex: MLD-NOVO-01">
-              </div>
-              <div class="input-group">
-                <label>Família e Tipo</label>
-                <select id="add-tipo" style="font-size: 13px;">
-                  <optgroup label="Família MCC 2 e 3">
-                    <option value="Molde|2/3">Molde Convencional (MCC 2/3)</option>
-                    <option value="Mesa Osciladora|2/3">Mesa Osciladora</option>
-                    <option value="Seguimento Zero|2/3">Seguimento Zero</option>
-                    <option value="Cadeira Superior|2/3">Cadeira Superior</option>
-                    <option value="Cadeira Inferior|2/3">Cadeira Inferior</option>
-                  </optgroup>
-                  <optgroup label="Família MCC 4 (Alta Perf.)">
-                    <option value="Molde|4">Molde Alta Performance (MCC 4)</option>
+         <div id="form-novo-equipamento" class="cadastrar-box hidden">
+    <h3><i class="fas fa-box-open"></i> Especificar e Cadastrar Peça</h3>
+    <div class="form-grid-4" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px;">
+        
+        <div class="input-group">
+            <label>Família e Tipo</label>
+            <select id="add-tipo" style="font-size: 13px;" onchange="window.atualizarPosicoesCadastro()">
+                <option value="">Selecione primeiro...</option>
+                <optgroup label="Família MCC 4 (Alta Perf.)">
+                    <option value="Molde|4">Molde Alta Performance</option>
                     <option value="Bender|4">Bender</option>
-                    <option value="Bow|4">Bow</option>
+                    <option value="Bow|4">Curvo Bow</option>
                     <option value="Straightener R1|4">Straightener R1</option>
                     <option value="Straightener R2|4">Straightener R2</option>
                     <option value="Horizontal|4">Segmento Horizontal</option>
-                  </optgroup>
-                </select>
-              </div>
-              <div class="input-group">
-                <label>Meta Limite (Ton)</label>
-                <input type="number" id="add-meta" placeholder="Ex: 1500000">
-              </div>
-              <div class="input-group" style="display: flex; align-items: flex-end;">
-                <button class="btn-premium btn-success w-100" onclick="salvarNovoEquipamento()">Salvar no Estoque</button>
-              </div>
-            </div>
-          </div> 
-          
-          <div class="table-responsive" style="margin-top: 15px;">
-            <table class="industrial-table premium-table">
-              <thead><tr><th>TAG Identificador</th><th>Família e Tipo</th><th>Status</th><th>Ações / Alocação Automática</th></tr></thead>
-              <tbody id="estoque-table-body"></tbody>
-            </table>
-          </div>
+                </optgroup>
+                <optgroup label="Família MCC 2 e 3">
+                    <option value="Molde|2/3">Molde Convencional</option>
+                    <option value="Mesa Osciladora|2/3">Mesa Osciladora</option>
+                    <option value="Seguimento Zero|2/3">Seguimento Zero</option>
+                </optgroup>
+            </select>
         </div>
-      </section>
 
-      <section id="aba-rolos" class="tab-content">
-        <div class="panel-card glass-panel" style="border-top: 4px solid var(--text-accent);">
-          <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
-            <div>
-              <h2 style="color: var(--text-accent);"><i class="fas fa-scroll"></i> Almoxarifado Central: Estoque de Rolos</h2>
-              <p class="text-muted" style="font-size: 13px; margin-top: 5px;">Controle de quantitativo de rolos agrupado por Equipamento.</p>
-            </div>
-          </div>
-          <div class="table-responsive" style="margin-top: 20px;">
-            <table class="industrial-table premium-table">
-              <thead>
-                <tr>
-                  <th>Modelo / Tipo de Rolo</th>
-                  <th>Conjunto Mecânico Relacionado</th>
-                  <th>Família de Máquina</th>
-                  <th>Saldo Atual Física</th>
-                  <th>Ações de Inventário</th>
-                </tr>
-              </thead>
-              <tbody id="rolos-table-body"></tbody>
-            </table>
-          </div>
+        <div class="input-group">
+            <label>Posição / Slot Exato</label>
+            <select id="add-posicao" style="font-size: 13px; background: #0f172a;">
+                <option value="">Aguardando Tipo...</option>
+            </select>
         </div>
-      </section>
 
-      <section id="aba-almoxarifado" class="tab-content">
-        <div class="panel-card glass-panel" style="border-top: 4px solid #a855f7;">
-          <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
-            <div>
-              <h2 style="color: #a855f7;"><i class="fas fa-pallet"></i> Almoxarifado Central (Peças e Consumíveis)</h2>
-              <p class="text-muted" style="font-size: 13px; margin-top: 5px;">Gestão de estoque geral integrado por código de material único.</p>
-            </div>
-            <div class="flex-align-center gap-10 w-mobile-100" style="flex-wrap: wrap;">
-              <div class="login-input-wrapper" style="position: relative; width: 260px; max-width: 100%;">
-                <input type="text" id="busca-material" placeholder="Buscar código ou descrição..." onkeyup="renderMateriais()" style="height: 40px; font-size: 13px; border-radius: 6px;">
-                <i class="fas fa-search login-input-icon" style="top: 11px; font-size: 14px; color: #a855f7;"></i>
-              </div>
-              <button class="btn-premium" style="border-color: #a855f7; color: #a855f7; background: rgba(168, 85, 247, 0.15); height: 40px;" onclick="toggleFormMaterial()">
-                  <i class="fas fa-plus"></i> Cadastrar Entrada
-              </button>
-            </div>
-          </div>
-
-          <div id="form-novo-material" class="cadastrar-box hidden" style="border-color: #a855f7; margin-top: 20px;">
-            <div class="flex-between">
-                <h3 style="color: #a855f7;"><i class="fas fa-box-open"></i> Lançamento de Entrada de Material</h3>
-                <button class="btn-xs-primary" style="color: var(--text-muted); cursor: pointer;" onclick="toggleFormMaterial()"><i class="fas fa-times"></i> Fechar</button>
-            </div>
-            <p class="text-muted" style="font-size: 12px; margin-bottom: 15px;"><strong>Nota do Sistema:</strong> Se o código (SKU) digitado já existir, a quantidade será somada automaticamente ao saldo do item.</p>
-            <div class="form-grid-4">
-              <div class="input-group">
-                <label>Código do Material (SKU)</label>
-                <input type="text" id="mat-codigo" placeholder="Ex: 1660669" class="font-code" style="text-transform: uppercase;">
-              </div>
-              <div class="input-group" style="grid-column: span 2;">
-                <label>Descrição / Texto Breve</label>
-                <input type="text" id="mat-descricao" placeholder="Ex: PARAFUSO CAB. SEXT. M12...">
-              </div>
-              <div class="input-group">
-                <label>Quantidade Entrando</label>
-                <input type="number" id="mat-qtd" placeholder="Ex: 50" min="1">
-              </div>
-              <div class="input-group" style="grid-column: span 4; display: flex; justify-content: flex-end; margin-top: 10px;">
-                <button class="btn-premium" style="background: #a855f7; color: white; border: none; padding: 12px 25px;" onclick="salvarEntradaMaterial()"><i class="fas fa-save"></i> Processar Entrada no Estoque</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="table-responsive" style="margin-top: 20px;">
-            <table class="industrial-table premium-table">
-              <thead>
-                <tr>
-                  <th>Cód. Material</th>
-                  <th>Descrição / Texto do Material</th>
-                  <th>Saldo Atual em Estoque</th>
-                  <th>Status do Nível</th>
-                  <th>Ações de Ajuste</th>
-                </tr>
-              </thead>
-              <tbody id="materiais-table-body"></tbody>
-            </table>
-          </div>
+        <div class="input-group">
+            <label>Veio de Aplicação</label>
+            <select id="add-veio" style="font-size: 13px;">
+                <option value="H">Veio H</option>
+                <option value="G">Veio G</option>
+                <option value="C">Veio C</option>
+                <option value="D">Veio D</option>
+                <option value="E">Veio E</option>
+                <option value="F">Veio F</option>
+            </select>
         </div>
-      </section>
 
-      <section id="aba-historico" class="tab-content">
-        <div class="panel-card glass-panel">
-          <h2><i class="fas fa-history"></i> Log de Auditoria Global</h2>
-          <p class="text-muted" style="font-size: 13px; margin-bottom: 15px;">Rastreabilidade completa de todas as operações e laudos.</p>
-          <div class="table-responsive">
-            <table class="industrial-table premium-table history-table">
-              <thead>
-                <tr><th>Horário</th><th>TAG / Módulo</th><th>Descrição da Ação e Laudo</th><th>Responsável</th></tr>
-              </thead>
-              <tbody id="historico-table-body"></tbody>
-            </table>
-          </div>
+        <div class="input-group">
+            <label>TAG (Identificador)</label>
+            <input type="text" id="add-tag" placeholder="Ex: BOW-3-NOVO">
         </div>
-      </section>
 
-    </main>
-  </div>
+        <div class="input-group" style="grid-column: span 2;">
+            <label>Meta Limite (Ton)</label>
+            <input type="number" id="add-meta" placeholder="Ex: 1500000">
+        </div>
 
-  <div id="print-section" class="print-only">
-      <div class="print-header">
-          <h2 id="titulo-pdf">SISTEMA OMS - FOLHA DE LIBERAÇÃO DE EQUIPAMENTO</h2>
-          <p>Laudo Oficial de Manutenção e Peritagem</p>
-      </div>
-      <div id="print-content"></div>
-      <div class="print-signatures">
-          <div>
-              <p>___________________________________</p>
-              <p>Líder Responsável / Operador</p>
-          </div>
-          <div>
-              <p>___________________________________</p>
-              <p>Inspetor de Qualidade</p>
-          </div>
-      </div>
-  </div>
-  
-  <div id="modal-concluir-reparo" class="modal-overlay hidden no-print" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center;">
-      <div class="modal-content glass-panel premium-shadow" style="background: #1a233a; color: #fff; padding: 25px; border-radius: 16px; width: 100%; max-width: 500px; border: 1px solid rgba(255,255,255,0.1);">
-          <h3 style="color: #2ecc71; margin-top: 0;"><i class="fas fa-wrench"></i> Conclusão de Reparo Simples</h3>
-          <p>Defina como a peça retornará ao estoque de Reserva.</p>
-          <p style="font-weight: bold;">TAG em Manutenção: <span id="modal-reparo-tag" style="color: #e74c3c;">-</span></p>
-          <div style="margin-bottom: 20px;">
-              <label style="display: block; margin-bottom: 8px;">TIPO DE REPARO REALIZADO</label>
-              <select id="modal-reparo-tipo" style="width: 100%; padding: 10px; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;">
-                  <option value="GERAL">Reparo Geral (Zerar Toneladas e Dias)</option>
-                  <option value="PARCIAL">Reparo Parcial (Manter Histórico)</option>
-              </select>
-          </div>
-          <div class="modal-actions flex-between" style="display: flex; justify-content: space-between; margin-top: 25px;">
-              <button type="button" class="btn-outline-danger" style="padding: 10px 20px; background: transparent; border: 1px solid #e74c3c; color: #e74c3c; border-radius: 8px; cursor: pointer;" onclick="document.getElementById('modal-concluir-reparo').style.display='none'; document.getElementById('modal-concluir-reparo').classList.add('hidden');">
-                  Cancelar
-              </button>
-              <button type="button" class="btn-premium btn-success" style="padding: 10px 20px; background: #2ecc71; border: none; color: #fff; border-radius: 8px; cursor: pointer; font-weight: bold;" onclick="if(typeof window.confirmarConclusaoReparo === 'function') { window.confirmarConclusaoReparo(); }">
-                  <i class="fas fa-check"></i> Finalizar
-              </button>
-          </div>
-      </div>
-  </div>
+        <div class="input-group" style="grid-column: span 2; display: flex; align-items: flex-end; gap: 10px;">
+            <label style="display: flex; align-items: center; gap: 5px; font-size: 12px; cursor: pointer; background: rgba(46, 204, 113, 0.1); padding: 10px; border-radius: 8px; border: 1px solid var(--success);">
+                <input type="checkbox" id="add-instalar-direto"> Instalar direto na Máquina agora
+            </label>
+            <button class="btn-premium btn-success w-100" onclick="window.processarCadastroPeca()"><i class="fas fa-save"></i> Salvar</button>
+        </div>
+    </div>
+</div>
 
   <div id="gaveta-de-folhoes"></div>
 
@@ -453,10 +325,17 @@
   <div id="modal-folhao-segmento-zero" class="modal-overlay hidden no-print">
     <div class="modal-content glass-panel premium-shadow" style="max-width: 1000px; padding: 0;">
         
+       <div id="modal-folhao-segmento-zero" class="modal-overlay hidden no-print">
+    <div class="modal-content glass-panel premium-shadow" style="max-width: 1000px; padding: 0;">
+        
         <div class="modal-header-fixed" style="padding: 20px; border-bottom: 1px solid var(--border-color); background: var(--bg-th); border-radius: 16px 16px 0 0;">
             <div class="flex-between">
                 <h2 style="color: var(--text-accent);"><i class="fas fa-clipboard-check"></i> Liberação Oficial - SEGMENTO ZERO (MCC 2/3)</h2>
-                <button class="btn-close-emergency" onclick="const m = document.getElementById('modal-folhao-segmento-zero'); if(m) { m.style.display='none'; m.classList.add('hidden'); }"><i class="fas fa-times"></i></button>
+                
+               <button class="btn-close-emergency" onclick="document.getElementById('modal-folhao-segmento-zero').style.display='none'; document.getElementById('modal-folhao-segmento-zero').classList.add('hidden');">
+    <i class="fas fa-times"></i>
+</button>
+                
             </div>
             <div style="display: flex; gap: 15px; margin-top: 15px;">
                 <span class="ind-card-tag bg-tag" style="font-size: 14px;">TAG: <strong id="segzero-tag-ativo">---</strong></span>
