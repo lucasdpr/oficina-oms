@@ -835,79 +835,9 @@ function executarSwapFinal(idReserva, idAntiga, novoLocal, laudo) {
 // ==========================================
 // ROTEADOR PRINCIPAL: ABRE A JANELA CORRETA PARA CADA PEÇA!
 // ==========================================
-window.abrirModalConcluirReparo = function(id, tentativas = 0) {
-    console.log("Detectado clique para concluir reparo na TAG:", id);
 
-    // 1. Verificação de segurança: O DOM já injetou os modais?
-    let precisaAguardar = false;
-    if (id.includes("SEG-0") && !document.getElementById("modal-folhao-segmento-zero")) precisaAguardar = true;
-    else if (id.includes("MLD") && !document.getElementById("modal-folhao-mcc4") && !document.getElementById("modal-folhao-molde23")) precisaAguardar = true;
-    else if (!id.includes("SEG-0") && !id.includes("MLD") && !document.getElementById("modal-concluir-reparo")) precisaAguardar = true;
 
-    if (precisaAguardar) {
-        if (tentativas < 15) {
-            console.warn(`[Roteador] Elementos do modal ausentes. Aguardando injeção dinâmica... (Tentativa ${tentativas + 1}/15)`);
-            setTimeout(() => window.abrirModalConcluirReparo(id, tentativas + 1), 300);
-            return;
-        } else {
-            console.error("[Roteador] Falha ao localizar modais após múltiplas tentativas. Tente recarregar a página.");
-            if (typeof window.carregarFolhoesExternos === 'function') window.carregarFolhoesExternos();
-            alert("O sistema ainda está carregando os componentes visuais. Por favor, aguarde alguns instantes e clique novamente.");
-            return;
-        }
-    }
-
-    // Esconde preventivamente outras telas para não empilhar o visual escuro
-    document.querySelectorAll('.modal-overlay, .modal').forEach(m => m.classList.add('hidden'));
-
-    let item = BANCO_ATIVOS.find(a => a.id === id);
-    if (!item && !id.includes("SEG-0")) return; // SEG-0 pode ser avulso
-
-    let tipoUpper = item ? item.tipo.toUpperCase() : "";
-
-    // 2. DESVIO VIP: SEGMENTO ZERO
-    if (id.includes("SEG-0")) {
-        if (typeof window.abrirFolhaoSegmentoZero === 'function') {
-            window.abrirFolhaoSegmentoZero(id);
-        } else {
-            const modal = document.getElementById("modal-folhao-segmento-zero");
-            if (modal) {
-                modal.classList.remove("hidden");
-                const tagAtivo = document.getElementById("segzero-tag-ativo");
-                if (tagAtivo) tagAtivo.innerText = id;
-            }
-        }
-        return;
-    }
-
-    // 3. DESVIO VIP: MOLDE
-    if (tipoUpper === "MOLDE" || id.includes("MLD")) {
-        if (typeof window.abrirFolhaoMolde23 === 'function') {
-            window.abrirFolhaoMolde23(id);
-        } else if (typeof window.abrirFolhaoMolde === 'function') {
-            window.abrirFolhaoMolde(id);
-        } else {
-            abrirJanelaReparoSimples(item);
-        }
-        return;
-    }
-    
-    // 4. ROTEAMENTO ESPECÍFICO (HORIZONTAL, STRAIGHTENER, BOW)
-    if (tipoUpper.includes("HORIZONTAL") || tipoUpper.includes("SEGMENTO HORIZONTAL")) {
-        if (window.abrirFolhaoHorizontal) { window.abrirFolhaoHorizontal(id); return; }
-    } 
-    else if (tipoUpper.includes("STRAIGHTENER") || tipoUpper.includes("R2")) {
-        if (window.abrirFolhaoR2) { window.abrirFolhaoR2(id); return; }
-    } 
-    else if (tipoUpper.includes("BOW")) {
-        if (window.abrirFolhaoBow) { window.abrirFolhaoBow(id); return; }
-    }
-
-    // 5. CAMINHO PADRÃO: PEÇAS COMUNS
-    abrirJanelaReparoSimples(item);
-};
-
-function abrirJanelaReparoSimples(item) {
+window.abrirJanelaReparoSimples = function(item) {
     const modalSimples = document.getElementById("modal-concluir-reparo");
     if (!modalSimples) return;
 
@@ -925,9 +855,11 @@ function abrirJanelaReparoSimples(item) {
     const repDias = document.getElementById("modal-reparo-dias");
     if (repDias) repDias.value = item.dias;
     
-    if (typeof toggleCamposReparoParcial === 'function') toggleCamposReparoParcial();
+    if (typeof window.toggleCamposReparoParcial === 'function') window.toggleCamposReparoParcial();
+    else if (typeof toggleCamposReparoParcial === 'function') toggleCamposReparoParcial();
+
     modalSimples.classList.remove("hidden");
-}
+};
 
 function fecharModalConcluirReparo() {
     document.getElementById("modal-concluir-reparo").classList.add("hidden");
@@ -1647,7 +1579,49 @@ document.addEventListener("DOMContentLoaded", () => {
         if(typeof renderReparos === 'function') renderReparos(); 
         if(typeof renderReservas === 'function') renderReservas();
     }
+
+    // ADICIONE ESSE BLOCO AQUI ABAIXO NA MARRA:
+    // Ele vai ler o folhoes.html e injetar na gaveta para o Molde voltar a funcionar
+    fetch('folhoes.html')
+        .then(response => response.text())
+        .then(html => {
+            const gaveta = document.getElementById('gaveta-de-folhoes');
+            if (gaveta) {
+                gaveta.innerHTML = html;
+                console.log("Todos os folhões antigos foram reinjetados com sucesso!");
+            }
+        })
+        .catch(err => console.error("Erro ao resgatar os folhões:", err));
 });
+
+// ==========================================
+// CONTROLE DE ABAS DO SEGMENTO ZERO (FIXO NO DOM)
+// ==========================================
+window.trocarAbaSegZero = function(event, idAba) {
+    const container = document.getElementById("modal-folhao-segmento-zero");
+    if (!container) return;
+    
+    // Oculta todos os conteúdos das abas internas
+    container.querySelectorAll('.folhao-content').forEach(content => {
+        content.style.display = 'none';
+        content.classList.add('hidden');
+        content.classList.remove('active');
+    });
+    
+    // Remove classe ativa de todos os botões de abas
+    container.querySelectorAll('.folhao-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Ativa a aba selecionada
+    const abaAlvo = document.getElementById(idAba);
+    if (abaAlvo) {
+        abaAlvo.style.display = 'block';
+        abaAlvo.classList.remove('hidden');
+        abaAlvo.classList.add('active');
+    }
+    event.currentTarget.classList.add('active');
+};
 
 
 // ==========================================
@@ -1733,34 +1707,111 @@ if (typeof fecharModalConcluirReparo === 'function') {
 // ==========================================
 window.FOLHOES_INJETADOS = false;
 
-window.carregarFolhoesExternos = async function() {
-    try {
-        const resposta = await fetch('folhoes.html');
-        
-        if (!resposta.ok) {
-            throw new Error(`Cabo desconectado: Não achei o arquivo folhoes.html (Status: ${resposta.status})`);
-        }
-        
-        const html = await resposta.text();
-        
-        let gaveta = document.getElementById('gaveta-de-folhoes');
-        if (!gaveta) {
-            gaveta = document.createElement('div');
-            gaveta.id = 'gaveta-de-folhoes';
-            document.body.appendChild(gaveta);
-            console.warn("[Injeção] Div 'gaveta-de-folhoes' criada dinamicamente.");
-        }
+// ==========================================
+// ROTEADOR DIRETO - VOLTANDO A FUNCIONAR TUDO
+// ==========================================
+window.abrirModalConcluirReparo = function(id) {
+    console.log("Roteador lendo TAG:", id);
+    let item = typeof BANCO_ATIVOS !== 'undefined' ? BANCO_ATIVOS.find(a => a.id === id) : null;
+    let tipoUpper = item && item.tipo ? item.tipo.toUpperCase() : "";
 
-        gaveta.innerHTML = html;
-        window.FOLHOES_INJETADOS = true;
-        console.log("Todos os folhões foram carregados e injetados no DOM com sucesso!");
+    // Oculta modais padrão e Segmento Zero para evitar sobreposição
+    ['modal-concluir-reparo', 'modal-folhao-segmento-zero'].forEach(idModal => {
+        const m = document.getElementById(idModal);
+        if(m) { m.style.display = 'none'; m.classList.add('hidden'); }
+    });
+
+    // 1. ROTA SEGMENTO ZERO
+    if (id.includes("SEG-0")) {
+        const modalSegZero = document.getElementById("modal-folhao-segmento-zero");
+        if (modalSegZero) {
+            modalSegZero.style.setProperty('display', 'flex', 'important');
+            modalSegZero.classList.remove("hidden");
+            const tagAtivo = document.getElementById("segzero-tag-ativo");
+            if (tagAtivo) tagAtivo.innerText = id;
+        }
+        return;
+    }
+
+    // 2. ROTA MOLDE 2/3
+    if (id.includes("MLD") || tipoUpper.includes("MOLDE")) {
+        if (typeof window.abrirFolhaoMolde23 === 'function') {
+            window.abrirFolhaoMolde23(id);
+            return;
+        }
+    }
+
+    // 3. ROTA PADRÃO (BENDER E OUTROS REPAROS COMUNS)
+    const modalSimples = document.getElementById("modal-concluir-reparo");
+    if (modalSimples) {
+        window.ID_REPARO_ATUAL = id;
+        modalSimples.style.setProperty('display', 'flex', 'important');
+        modalSimples.classList.remove("hidden");
         
-    } catch (erro) {
-        console.error("Erro na injeção:", erro);
+        const tagElement = document.getElementById("modal-reparo-tag");
+        if (tagElement) tagElement.innerText = id;
     }
 };
 
-// Faz o carregamento automático assim que a tela abre
-document.addEventListener("DOMContentLoaded", () => {
-    carregarFolhoesExternos();
-});
+// Amarra as funções essenciais de fechamento e conclusão direto no escopo global do window
+window.confirmarConclusaoReparo = function() {
+    // Chama a função local confirmarConclusaoReparo caso exista, evite sobrescrever
+    if (typeof confirmarConclusaoReparo === 'function') {
+        confirmarConclusaoReparo();
+    } else {
+        console.log("Executando salvamento padrão para a TAG:", window.ID_REPARO_ATUAL);
+        const modalSimples = document.getElementById("modal-concluir-reparo");
+        if (modalSimples) { modalSimples.style.display = 'none'; modalSimples.classList.add('hidden'); }
+    }
+};
+
+// ===================================================
+// DESTRANCANDO O HISTÓRICO PARA O HTML
+// ===================================================
+if (typeof abrirHistoricoIndividual === 'function') {
+    window.abrirHistoricoIndividual = abrirHistoricoIndividual;
+}
+
+if (typeof fecharModalHistorico === 'function') {
+    window.fecharModalHistorico = fecharModalHistorico;
+} else {
+    // Caso a função de fechar não exista com esse nome, cria uma forçada na marra
+    window.fecharModalHistorico = function() {
+        const modalHist = document.getElementById("modal-historico-individual");
+        if (modalHist) { 
+            modalHist.style.display = 'none'; 
+            modalHist.classList.add('hidden'); 
+        }
+    };
+}
+// ===================================================
+// CHAVE MESTRA: DESTRANCANDO TODA A NAVEGAÇÃO DO HTML
+// ===================================================
+
+// 1. Navegação, Layout e Login
+if (typeof abrirAba === 'function') window.abrirAba = abrirAba;
+if (typeof toggleSidebar === 'function') window.toggleSidebar = toggleSidebar;
+if (typeof toggleTheme === 'function') window.toggleTheme = toggleTheme;
+if (typeof fazerLogout === 'function') window.fazerLogout = fazerLogout;
+if (typeof processarAutenticacaoHome === 'function') window.processarAutenticacaoHome = processarAutenticacaoHome;
+
+// 2. Filtros e Veios (O SEU ERRO DO PRINT)
+if (typeof mudarVeioVisualizado === 'function') window.mudarVeioVisualizado = mudarVeioVisualizado;
+if (typeof aplicarFiltrosMCC === 'function') window.aplicarFiltrosMCC = aplicarFiltrosMCC;
+if (typeof renderAtivos === 'function') window.renderAtivos = renderAtivos;
+
+// 3. Estoque e Almoxarifado
+if (typeof toggleFormAdicionar === 'function') window.toggleFormAdicionar = toggleFormAdicionar;
+if (typeof salvarNovoEquipamento === 'function') window.salvarNovoEquipamento = salvarNovoEquipamento;
+if (typeof renderMateriais === 'function') window.renderMateriais = renderMateriais;
+if (typeof toggleFormMaterial === 'function') window.toggleFormMaterial = toggleFormMaterial;
+if (typeof salvarEntradaMaterial === 'function') window.salvarEntradaMaterial = salvarEntradaMaterial;
+
+// 4. Botões de Emergência
+if (typeof dispararEmergencia === 'function') window.dispararEmergencia = dispararEmergencia;
+if (typeof encerrarEmergencia === 'function') window.encerrarEmergencia = encerrarEmergencia;
+// Liberando a edição de tabelas
+if (typeof fazerCelulaEditavel === 'function') window.fazerCelulaEditavel = fazerCelulaEditavel;
+
+// Dica: Se existir uma função para salvar essa edição depois de digitar, já libere ela também:
+if (typeof salvarEdicaoCelula === 'function') window.salvarEdicaoCelula = salvarEdicaoCelula;

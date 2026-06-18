@@ -414,6 +414,29 @@
           </div>
       </div>
   </div>
+  
+  <div id="modal-concluir-reparo" class="modal-overlay hidden no-print" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center;">
+      <div class="modal-content glass-panel premium-shadow" style="background: #1a233a; color: #fff; padding: 25px; border-radius: 16px; width: 100%; max-width: 500px; border: 1px solid rgba(255,255,255,0.1);">
+          <h3 style="color: #2ecc71; margin-top: 0;"><i class="fas fa-wrench"></i> Conclusão de Reparo Simples</h3>
+          <p>Defina como a peça retornará ao estoque de Reserva.</p>
+          <p style="font-weight: bold;">TAG em Manutenção: <span id="modal-reparo-tag" style="color: #e74c3c;">-</span></p>
+          <div style="margin-bottom: 20px;">
+              <label style="display: block; margin-bottom: 8px;">TIPO DE REPARO REALIZADO</label>
+              <select id="modal-reparo-tipo" style="width: 100%; padding: 10px; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;">
+                  <option value="GERAL">Reparo Geral (Zerar Toneladas e Dias)</option>
+                  <option value="PARCIAL">Reparo Parcial (Manter Histórico)</option>
+              </select>
+          </div>
+          <div class="modal-actions flex-between" style="display: flex; justify-content: space-between; margin-top: 25px;">
+              <button type="button" class="btn-outline-danger" style="padding: 10px 20px; background: transparent; border: 1px solid #e74c3c; color: #e74c3c; border-radius: 8px; cursor: pointer;" onclick="document.getElementById('modal-concluir-reparo').style.display='none'; document.getElementById('modal-concluir-reparo').classList.add('hidden');">
+                  Cancelar
+              </button>
+              <button type="button" class="btn-premium btn-success" style="padding: 10px 20px; background: #2ecc71; border: none; color: #fff; border-radius: 8px; cursor: pointer; font-weight: bold;" onclick="if(typeof window.confirmarConclusaoReparo === 'function') { window.confirmarConclusaoReparo(); }">
+                  <i class="fas fa-check"></i> Finalizar
+              </button>
+          </div>
+      </div>
+  </div>
 
   <div id="gaveta-de-folhoes"></div>
 
@@ -426,6 +449,86 @@
   <script type="module" src="folhaoDesempenadeira.js"></script> 
   <script type="module" src="folhaoSegmentoZero.js"></script>
   <script type="module" src="folhaoMolde23.js"></script> 
+
+  <div id="modal-folhao-segmento-zero" class="modal-overlay hidden no-print">
+    <div class="modal-content glass-panel premium-shadow" style="max-width: 1000px; padding: 0;">
+        
+        <div class="modal-header-fixed" style="padding: 20px; border-bottom: 1px solid var(--border-color); background: var(--bg-th); border-radius: 16px 16px 0 0;">
+            <div class="flex-between">
+                <h2 style="color: var(--text-accent);"><i class="fas fa-clipboard-check"></i> Liberação Oficial - SEGMENTO ZERO (MCC 2/3)</h2>
+                <button class="btn-close-emergency" onclick="const m = document.getElementById('modal-folhao-segmento-zero'); if(m) { m.style.display='none'; m.classList.add('hidden'); }"><i class="fas fa-times"></i></button>
+            </div>
+            <div style="display: flex; gap: 15px; margin-top: 15px;">
+                <span class="ind-card-tag bg-tag" style="font-size: 14px;">TAG: <strong id="segzero-tag-ativo">---</strong></span>
+                <span class="text-muted" style="font-size: 14px;">Preenchimento obrigatório para envio à Reserva.</span>
+            </div>
+        </div>
+
+        <div class="folhao-tabs" style="display: flex; background: var(--bg-input); border-bottom: 1px solid var(--border-color); overflow-x: auto;">
+            <button type="button" class="folhao-tab active" id="btn-sz-aba1" onclick="window.trocarAbaSegZero(event, 'segzero-aba-dados')">1. Dados Básicos</button>
+            <button type="button" class="folhao-tab" id="btn-sz-aba2" onclick="window.trocarAbaSegZero(event, 'segzero-aba-recebimento')">2. Inspeção Chegada</button>
+            <button type="button" class="folhao-tab" id="btn-sz-aba3" onclick="window.trocarAbaSegZero(event, 'segzero-aba-gap')">3. Aferição de GAP</button>
+        </div>
+
+        <div class="folhao-body" style="padding: 20px; max-height: 55vh; overflow-y: auto;">
+            
+            <div id="segzero-aba-dados" class="folhao-content active" style="display: block;">
+                <div class="form-grid-2-mobile" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="input-group">
+                        <label>Data Início da Manutenção</label>
+                        <input type="date" id="segzero-data-inicio" class="w-100">
+                    </div>
+                    <div class="input-group">
+                        <label>Data Fim da Manutenção</label>
+                        <input type="date" id="segzero-data-fim" class="w-100">
+                    </div>
+                    <div class="input-group">
+                        <label>Nº do Segmento</label>
+                        <input type="text" id="segzero-num" placeholder="Ex: 01" class="w-100">
+                    </div>
+                </div>
+            </div>
+
+            <div id="segzero-aba-recebimento" class="folhao-content hidden" style="display: none;">
+                <h3 style="margin-bottom: 15px; color: var(--text-heading);">Checklist de Chegada</h3>
+                <div class="table-responsive">
+                    <table class="premium-table">
+                        <thead>
+                            <tr><th style="width: 50px;">Item</th><th>Descrição da Inspeção</th><th style="width: 60px; text-align:center;">SIM</th><th style="width: 60px; text-align:center;">NÃO</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>01</td><td>Distribuidores de graxa com vazamentos</td><td style="text-align:center;"><input type="radio" name="sz1"></td><td style="text-align:center;"><input type="radio" name="sz1"></td></tr>
+                            <tr><td>02</td><td>Tubulações de graxa amassadas ou danificadas</td><td style="text-align:center;"><input type="radio" name="sz2"></td><td style="text-align:center;"><input type="radio" name="sz2"></td></tr>
+                            <tr><td>03</td><td>Resfriadores com vazamento</td><td style="text-align:center;"><input type="radio" name="sz3"></td><td style="text-align:center;"><input type="radio" name="sz3"></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="segzero-aba-gap" class="folhao-content hidden" style="display: none;">
+                <h3 style="margin-bottom: 15px; color: var(--text-heading);">Aferição de Gap (Referência: 261,5 mm)</h3>
+                <div class="table-responsive">
+                    <table class="premium-table">
+                        <thead>
+                            <tr><th>Conj. Rolo</th><th>Referência</th><th>Posição 1</th><th>Posição 2</th><th>Posição 3</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>1º Conj. Rolo</td><td>261,5 (-0,1)</td><td><input type="number" step="0.01" style="width:90px;" placeholder="0.00"></td><td><input type="number" step="0.01" style="width:90px;" placeholder="0.00"></td><td><input type="number" step="0.01" style="width:90px;" placeholder="0.00"></td></tr>
+                            <tr><td>2º Conj. Rolo</td><td>261,5 (-0,1)</td><td><input type="number" step="0.01" style="width:90px;" placeholder="0.00"></td><td><input type="number" step="0.01" style="width:90px;" placeholder="0.00"></td><td><input type="number" step="0.01" style="width:90px;" placeholder="0.00"></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="modal-actions flex-between" style="padding: 20px; background: var(--bg-th); border-top: 1px solid var(--border-color); border-radius: 0 0 16px 16px;">
+            <button type="button" class="btn-outline-danger" onclick="const m = document.getElementById('modal-folhao-segmento-zero'); if(m) { m.style.display='none'; m.classList.add('hidden'); }">Cancelar</button>
+            <button type="button" class="btn-premium btn-success" onclick="alert('Laudo do Segmento Zero Salvo!')"><i class="fas fa-check-double"></i> Salvar Laudo e Mover p/ Reserva</button>
+        </div>
+
+    </div>
+  </div>
 
 </body>
 </html>

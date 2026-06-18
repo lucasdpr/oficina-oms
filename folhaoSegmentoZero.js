@@ -87,3 +87,26 @@ window.salvarFolhaoSegmentoZero = function() {
     alert("Dados do Segmento Zero salvos com sucesso!");
     window.fecharFolhaoSegmentoZero();
 };
+window.trocarAbaSegZero = function(event, idAba) {
+    const container = document.getElementById("modal-folhao-segmento-zero");
+    if (!container) return;
+    
+    // Oculta todos os conteúdos das abas internas
+    container.querySelectorAll('.folhao-content').forEach(content => {
+        content.classList.add('hidden');
+        content.classList.remove('active');
+    });
+    
+    // Remove classe ativa de todos os botões de abas
+    container.querySelectorAll('.folhao-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Ativa a aba selecionada
+    const abaAlvo = document.getElementById(idAba);
+    if (abaAlvo) {
+        abaAlvo.classList.remove('hidden');
+        abaAlvo.classList.add('active');
+    }
+    event.currentTarget.classList.add('active');
+};

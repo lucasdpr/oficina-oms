@@ -940,6 +940,9 @@
         <button class="btn-premium btn-success" onclick="salvarEImprimirFolhaoBow()"><i class="fas fa-print"></i> Salvar Laudo e Mover p/ Reserva</button>
       </div>
       
+    </div>
+  </div> 
+
       <div id="modal-folhao-molde23" class="modal-overlay hidden no-print">
   <div class="modal-content glass-panel premium-shadow" style="max-width: 1000px; padding: 0;">
     
@@ -1078,5 +1081,129 @@
             <button type="button" class="btn-cancelar" onclick="fecharFolhaoSegmentoZero()">Cancelar</button>
             <button type="button" class="btn-confirmar" onclick="salvarFolhaoSegmentoZero()"><i class="fa-solid fa-check-double"></i> Salvar Laudo e Mover p/ Reserva</button>
         </div>
+    </div>
+</div>
+<div id="modal-folhao-segmento-zero" class="modal-overlay hidden no-print">
+    <div class="modal-content glass-panel premium-shadow" style="max-width: 1000px; padding: 0;">
+        
+        <div class="modal-header-fixed" style="padding: 20px; border-bottom: 1px solid var(--border-color); background: var(--bg-th); border-radius: 16px 16px 0 0;">
+            <div class="flex-between">
+                <h2 style="color: var(--text-accent);"><i class="fas fa-clipboard-check"></i> Liberação Oficial - SEGMENTO ZERO (MCC 2/3)</h2>
+                <button class="btn-close-emergency" onclick="document.getElementById('modal-folhao-segmento-zero').classList.add('hidden')"><i class="fas fa-times"></i></button>
+            </div>
+            <div style="display: flex; gap: 15px; margin-top: 15px;">
+                <span class="ind-card-tag bg-tag" style="font-size: 14px;">TAG: <strong id="segzero-tag-ativo">---</strong></span>
+                <span class="text-muted" style="font-size: 14px;">Preenchimento obrigatório para envio à Reserva.</span>
+            </div>
+        </div>
+
+        <div class="folhao-tabs" style="display: flex; background: var(--bg-input); border-bottom: 1px solid var(--border-color); overflow-x: auto;">
+            <button class="folhao-tab active" onclick="trocarAbaSegZero(event, 'segzero-aba-dados')">1. Dados Básicos</button>
+            <button class="folhao-tab" onclick="trocarAbaSegZero(event, 'segzero-aba-recebimento')">2. Inspeção Chegada</button>
+            <button class="folhao-tab" onclick="trocarAbaSegZero(event, 'segzero-aba-gap')">3. Aferição de GAP</button>
+            <button class="folhao-tab" onclick="trocarAbaSegZero(event, 'segzero-aba-saida')">4. Inspeção Saída</button>
+            <button class="folhao-tab" onclick="trocarAbaSegZero(event, 'segzero-aba-materiais')">5. Materiais Aplicados</button>
+        </div>
+
+        <div class="folhao-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
+            
+            <div id="segzero-aba-dados" class="folhao-content active">
+                <div class="form-grid-2-mobile" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="input-group">
+                        <label>Data Início da Manutenção</label>
+                        <input type="date" id="segzero-data-inicio" class="w-100">
+                    </div>
+                    <div class="input-group">
+                        <label>Data Fim da Manutenção</label>
+                        <input type="date" id="segzero-data-fim" class="w-100">
+                    </div>
+                    <div class="input-group">
+                        <label>Nº do Segmento</label>
+                        <input type="text" id="segzero-num" placeholder="Ex: 01" class="w-100">
+                    </div>
+                    <div class="input-group">
+                        <label>Veio (Saída)</label>
+                        <select id="segzero-veio" class="premium-select w-100">
+                            <option value="C">Veio C</option>
+                            <option value="D">Veio D</option>
+                            <option value="E">Veio E</option>
+                            <option value="F">Veio F</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div id="segzero-aba-recebimento" class="folhao-content hidden">
+                <h3 style="margin-bottom: 15px; color: var(--text-heading);">Inspeção de Chegada</h3>
+                <div class="table-responsive">
+                    <table class="premium-table">
+                        <thead>
+                            <tr><th style="width: 50px;">Item</th><th>Descrição da Inspeção</th><th style="width: 60px;">SIM</th><th style="width: 60px;">NÃO</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>01</td><td>Distribuidores de graxa com vazamentos</td><td><input type="radio" name="szc1"></td><td><input type="radio" name="szc1"></td></tr>
+                            <tr><td>02</td><td>Distribuidores de graxa com agarramentos</td><td><input type="radio" name="szc2"></td><td><input type="radio" name="szc2"></td></tr>
+                            <tr><td>03</td><td>Tubulações de graxa amassadas ou danificadas</td><td><input type="radio" name="szc3"></td><td><input type="radio" name="szc3"></td></tr>
+                            <tr><td>04</td><td>Flexíveis com vazamentos e/ou avarias</td><td><input type="radio" name="szc4"></td><td><input type="radio" name="szc4"></td></tr>
+                            <tr><td>05</td><td>Resfridores com vazamento</td><td><input type="radio" name="szc5"></td><td><input type="radio" name="szc5"></td></tr>
+                            <tr><td>06</td><td>Bicos de spray obstruídos</td><td><input type="radio" name="szc6"></td><td><input type="radio" name="szc6"></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="segzero-aba-gap" class="folhao-content hidden">
+                <h3 style="margin-bottom: 15px; color: var(--text-heading);">Aferição de Gap (Referência: 261,5 mm)</h3>
+                <div class="table-responsive">
+                    <table class="premium-table">
+                        <thead>
+                            <tr><th>Conj. Rolo</th><th>Referência</th><th>Posição 1</th><th>Posição 2</th><th>Posição 3</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>1º Conj. Rolo</td><td>261,5 (-0,1)</td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td></tr>
+                            <tr><td>2º Conj. Rolo</td><td>261,5 (-0,1)</td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td></tr>
+                            <tr><td>3º Conj. Rolo</td><td>261,5 (-0,1)</td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="segzero-aba-saida" class="folhao-content hidden">
+                <h3 style="margin-bottom: 15px; color: var(--text-heading);">Inspeção de Saída</h3>
+                <div class="table-responsive">
+                    <table class="premium-table">
+                        <thead>
+                            <tr><th style="width: 50px;">Item</th><th>Descrição dos Itens de Saída</th><th style="width: 60px;">SIM</th><th style="width: 60px;">NÃO</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>01</td><td>Distribuidores de graxa sem vazamentos, isentos de agarramento</td><td><input type="radio" name="szs1"></td><td><input type="radio" name="szs1"></td></tr>
+                            <tr><td>02</td><td>Mancais lubrificados</td><td><input type="radio" name="szs2"></td><td><input type="radio" name="szs2"></td></tr>
+                            <tr><td>03</td><td>Flexíveis isentos de vazamentos</td><td><input type="radio" name="szs3"></td><td><input type="radio" name="szs3"></td></tr>
+                            <tr><td>04</td><td>Gap em conformidade com o desenho</td><td><input type="radio" name="szs4"></td><td><input type="radio" name="szs4"></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="segzero-aba-materiais" class="folhao-content hidden">
+                <h3 style="margin-bottom: 15px; color: var(--text-heading);">Materiais Aplicados no Reparo</h3>
+                <div class="table-responsive">
+                    <table class="premium-table">
+                        <thead>
+                            <tr><th>Descrição do Material</th><th>Código SKU</th><th style="width: 100px;">Quantidade</th></tr>
+                        </thead>
+                        <tbody id="segzero-tabela-materiais-linhas">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="modal-actions flex-between" style="padding: 20px; background: var(--bg-th); border-top: 1px solid var(--border-color); border-radius: 0 0 16px 16px;">
+            <button class="btn-outline-danger" onclick="document.getElementById('modal-folhao-segmento-zero').classList.add('hidden')">Cancelar</button>
+            <button class="btn-premium btn-success" onclick="window.salvarFolhaoSegmentoZero()"><i class="fas fa-check-double"></i> Salvar Laudo e Mover p/ Reserva</button>
+        </div>
+
     </div>
 </div>
