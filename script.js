@@ -1,3 +1,4 @@
+
 // ==========================================================================
 // BANCO DE DADOS CORE - SISTEMA OMS (VERSÃO DEFINITIVA v36 - TODOS OS MOLDES NO FOLHÃO)
 // ==========================================================================
@@ -198,11 +199,8 @@ let OPERADOR_LOGADO = JSON.parse(localStorage.getItem("oms_operador_v32_local"))
 let VEIO_SELECIONADO_PAINEL = "C";
 
 const CADASTRO_MATRICULAS = {
-    "40090430": "Filipe (Líder)",
-    "40075827": "Denilson (Líder)",
-    "40080751": "Valmir (Líder)",
-    "40090851": "Samuel (Líder)",
-    "1011": "Supervisor"
+    
+    "1011": "Desenvoldedor do Sistema "
 };
 
 let MODO_MODAL_RELATORIO = {};
@@ -212,7 +210,7 @@ let ID_HISTORICO_ATUAL = null;
 // ==========================================
 // TEMA E UI GLOBAL
 // ==========================================
-function carregarTema() {
+window.carregarTema = function() {
     const temaSalvo = localStorage.getItem("oms_theme_local");
     const body = document.body;
     const icon = document.getElementById("theme-icon");
@@ -227,9 +225,9 @@ function carregarTema() {
         if (icon) icon.className = "fas fa-sun";
         if (text) text.innerText = "Modo Claro";
     }
-}
+};
 
-function toggleTheme() {
+window.toggleTheme = function() {
     const body = document.body;
     const icon = document.getElementById("theme-icon");
     const text = document.getElementById("theme-text");
@@ -245,16 +243,16 @@ function toggleTheme() {
         if (icon) icon.className = "fas fa-sun";
         if (text) text.innerText = "Modo Claro";
     }
-}
+};
 
-function toggleSidebar() {
+window.toggleSidebar = function() {
     document.getElementById('sidebar-menu').classList.toggle('open');
-}
+};
 
 // ==========================================
 // AUTENTICAÇÃO E NAVEGAÇÃO
 // ==========================================
-function processarAutenticacaoHome() {
+window.processarAutenticacaoHome = function() {
     const nomeInput = document.getElementById("login-nome").value.trim();
     const matriculaInput = document.getElementById("login-matricula").value.trim();
 
@@ -269,21 +267,21 @@ function processarAutenticacaoHome() {
         document.getElementById("tela-login-home").style.display = "none";
         document.getElementById("container-sistema-oms").style.display = "flex";
 
-        atualizarInterfaceUsuario();
-        registrarHistorico("AUTENTICAÇÃO", `Login executado com sucesso.`);
-        calcularKpisGlobais();
-        renderPainelVeios();
-        renderAtivos();
-        renderReparos();
-        renderReservas();
-        renderRolos();
-        renderMateriais(); 
+        if(typeof atualizarInterfaceUsuario === 'function') atualizarInterfaceUsuario();
+        if(typeof registrarHistorico === 'function') registrarHistorico("AUTENTICAÇÃO", `Login executado com sucesso.`);
+        if(typeof calcularKpisGlobais === 'function') calcularKpisGlobais();
+        if(typeof renderPainelVeios === 'function') renderPainelVeios();
+        if(typeof renderAtivos === 'function') renderAtivos();
+        if(typeof renderReparos === 'function') renderReparos();
+        if(typeof renderReservas === 'function') renderReservas();
+        if(typeof renderRolos === 'function') renderRolos();
+        if(typeof renderMateriais === 'function') renderMateriais(); 
     } else {
         alert("Falha: Matrícula não localizada.");
     }
-}
+};
 
-function fazerLogout() {
+window.fazerLogout = function() {
     if (confirm("Encerrar o turno?")) {
         registrarHistorico("SISTEMA", "Turno encerrado.");
         OPERADOR_LOGADO = null;
@@ -291,16 +289,16 @@ function fazerLogout() {
         document.getElementById("container-sistema-oms").style.display = "none";
         document.getElementById("tela-login-home").style.display = "flex";
     }
-}
+};
 
-function verificarAcesso() {
+window.verificarAcesso = function() {
     if (!OPERADOR_LOGADO) {
         document.getElementById("container-sistema-oms").style.display = "none";
         document.getElementById("tela-login-home").style.display = "flex";
         return false;
     }
     return true;
-}
+};
 
 function abrirAba(event, idAba) {
     if (event) event.preventDefault();
@@ -837,55 +835,98 @@ function executarSwapFinal(idReserva, idAntiga, novoLocal, laudo) {
 // ==========================================
 // ROTEADOR PRINCIPAL: ABRE A JANELA CORRETA PARA CADA PEÇA!
 // ==========================================
-window.abrirModalConcluirReparo = function(id) {
+window.abrirModalConcluirReparo = function(id, tentativas = 0) {
+    console.log("Detectado clique para concluir reparo na TAG:", id);
+
+    // 1. Verificação de segurança: O DOM já injetou os modais?
+    let precisaAguardar = false;
+    if (id.includes("SEG-0") && !document.getElementById("modal-folhao-segmento-zero")) precisaAguardar = true;
+    else if (id.includes("MLD") && !document.getElementById("modal-folhao-mcc4") && !document.getElementById("modal-folhao-molde23")) precisaAguardar = true;
+    else if (!id.includes("SEG-0") && !id.includes("MLD") && !document.getElementById("modal-concluir-reparo")) precisaAguardar = true;
+
+    if (precisaAguardar) {
+        if (tentativas < 15) {
+            console.warn(`[Roteador] Elementos do modal ausentes. Aguardando injeção dinâmica... (Tentativa ${tentativas + 1}/15)`);
+            setTimeout(() => window.abrirModalConcluirReparo(id, tentativas + 1), 300);
+            return;
+        } else {
+            console.error("[Roteador] Falha ao localizar modais após múltiplas tentativas. Tente recarregar a página.");
+            if (typeof window.carregarFolhoesExternos === 'function') window.carregarFolhoesExternos();
+            alert("O sistema ainda está carregando os componentes visuais. Por favor, aguarde alguns instantes e clique novamente.");
+            return;
+        }
+    }
+
     // Esconde preventivamente outras telas para não empilhar o visual escuro
-    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden'));
+    document.querySelectorAll('.modal-overlay, .modal').forEach(m => m.classList.add('hidden'));
 
     let item = BANCO_ATIVOS.find(a => a.id === id);
-    if (!item) return;
+    if (!item && !id.includes("SEG-0")) return; // SEG-0 pode ser avulso
 
-    let tipoUpper = item.tipo.toUpperCase();
-    
-    // A GRANDE MODIFICAÇÃO ESTÁ AQUI: TODO TIPO "MOLDE" É ROTEADO PARA O FOLHÃO GIGANTE!
-    if (tipoUpper === "MOLDE") {
-        abrirFolhaoMolde(id); 
-    } 
-    else if (tipoUpper.includes("HORIZONTAL") || tipoUpper.includes("SEGMENTO HORIZONTAL")) {
-        if (window.abrirFolhaoHorizontal) {
-            window.abrirFolhaoHorizontal(id);
+    let tipoUpper = item ? item.tipo.toUpperCase() : "";
+
+    // 2. DESVIO VIP: SEGMENTO ZERO
+    if (id.includes("SEG-0")) {
+        if (typeof window.abrirFolhaoSegmentoZero === 'function') {
+            window.abrirFolhaoSegmentoZero(id);
+        } else {
+            const modal = document.getElementById("modal-folhao-segmento-zero");
+            if (modal) {
+                modal.classList.remove("hidden");
+                const tagAtivo = document.getElementById("segzero-tag-ativo");
+                if (tagAtivo) tagAtivo.innerText = id;
+            }
+        }
+        return;
+    }
+
+    // 3. DESVIO VIP: MOLDE
+    if (tipoUpper === "MOLDE" || id.includes("MLD")) {
+        if (typeof window.abrirFolhaoMolde23 === 'function') {
+            window.abrirFolhaoMolde23(id);
+        } else if (typeof window.abrirFolhaoMolde === 'function') {
+            window.abrirFolhaoMolde(id);
         } else {
             abrirJanelaReparoSimples(item);
         }
+        return;
+    }
+    
+    // 4. ROTEAMENTO ESPECÍFICO (HORIZONTAL, STRAIGHTENER, BOW)
+    if (tipoUpper.includes("HORIZONTAL") || tipoUpper.includes("SEGMENTO HORIZONTAL")) {
+        if (window.abrirFolhaoHorizontal) { window.abrirFolhaoHorizontal(id); return; }
     } 
     else if (tipoUpper.includes("STRAIGHTENER") || tipoUpper.includes("R2")) {
-        if (window.abrirFolhaoR2) {
-            window.abrirFolhaoR2(id);
-        } else {
-            abrirJanelaReparoSimples(item);
-        }
+        if (window.abrirFolhaoR2) { window.abrirFolhaoR2(id); return; }
     } 
     else if (tipoUpper.includes("BOW")) {
-        if (window.abrirFolhaoBow) {
-            window.abrirFolhaoBow(id);
-        } else {
-            abrirJanelaReparoSimples(item);
-        }
+        if (window.abrirFolhaoBow) { window.abrirFolhaoBow(id); return; }
     }
-    else {
-        // Demais peças do sistema que não são gigantes
-        abrirJanelaReparoSimples(item);
-    }
+
+    // 5. CAMINHO PADRÃO: PEÇAS COMUNS
+    abrirJanelaReparoSimples(item);
 };
 
 function abrirJanelaReparoSimples(item) {
+    const modalSimples = document.getElementById("modal-concluir-reparo");
+    if (!modalSimples) return;
+
     ID_REPARO_ATUAL = item.id;
-    document.getElementById("modal-reparo-tag").innerText = item.id;
-    document.getElementById("modal-tipo-reparo").value = "GERAL";
-    document.getElementById("modal-reparo-ton").value = Math.round(item.ton);
-    document.getElementById("modal-reparo-dias").value = item.dias;
     
-    toggleCamposReparoParcial();
-    document.getElementById("modal-concluir-reparo").classList.remove("hidden");
+    const tagElement = document.getElementById("modal-reparo-tag");
+    if (tagElement) tagElement.innerText = item.id;
+    
+    const tipoReparo = document.getElementById("modal-tipo-reparo");
+    if (tipoReparo) tipoReparo.value = "GERAL";
+    
+    const repTon = document.getElementById("modal-reparo-ton");
+    if (repTon) repTon.value = Math.round(item.ton);
+    
+    const repDias = document.getElementById("modal-reparo-dias");
+    if (repDias) repDias.value = item.dias;
+    
+    if (typeof toggleCamposReparoParcial === 'function') toggleCamposReparoParcial();
+    modalSimples.classList.remove("hidden");
 }
 
 function fecharModalConcluirReparo() {
@@ -1588,10 +1629,138 @@ function exibirBarraEmergencia() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    carregarTema(); exibirBarraEmergencia();
+    if(typeof carregarTema === 'function') carregarTema(); 
+    if(typeof exibirBarraEmergencia === 'function') exibirBarraEmergencia();
+    
     if (OPERADOR_LOGADO) {
-        document.getElementById("tela-login-home").style.display = "none"; document.getElementById("container-sistema-oms").style.display = "flex";
-        atualizarInterfaceUsuario(); calcularKpisGlobais(); renderPainelVeios(); renderAtivos(); renderReparos(); renderReservas(); renderRolos(); renderMateriais(); 
+        const telaLogin = document.getElementById("tela-login-home");
+        const telaSistema = document.getElementById("container-sistema-oms");
+        
+        // Só esconde e mostra se as telas realmente existirem no HTML
+        if (telaLogin) telaLogin.style.display = "none";
+        if (telaSistema) telaSistema.style.display = "flex";
+        
+        if(typeof atualizarInterfaceUsuario === 'function') atualizarInterfaceUsuario(); 
+        if(typeof calcularKpisGlobais === 'function') calcularKpisGlobais(); 
+        if(typeof renderPainelVeios === 'function') renderPainelVeios(); 
+        if(typeof renderAtivos === 'function') renderAtivos(); 
+        if(typeof renderReparos === 'function') renderReparos(); 
+        if(typeof renderReservas === 'function') renderReservas();
     }
 });
-window.dispararEmergencia = dispararEmergencia;
+
+
+// ==========================================
+// BLINDAGEM DE ESCOPO GLOBAL - LAUDOS E PDFs
+// ==========================================
+if (typeof salvarLaudoInteligente === 'function') {
+    window.salvarLaudoInteligente = salvarLaudoInteligente;
+}
+if (typeof gerarPDF === 'function') {
+    window.gerarPDF = gerarPDF;
+}
+if (typeof imprimirLaudo === 'function') {
+    window.imprimirLaudo = imprimirLaudo;
+}
+if (typeof fecharFolhaoMolde === 'function') {
+    window.fecharFolhaoMolde = fecharFolhaoMolde;
+}
+if (typeof abrirFolhaoMolde === 'function') {
+    window.abrirFolhaoMolde = abrirFolhaoMolde;
+}
+
+// ==========================================
+// LIBERAÇÃO DE TROCA DE EQUIPAMENTOS E SALVAR
+// ==========================================
+if (typeof iniciarSwapAlocacao === 'function') {
+    window.iniciarSwapAlocacao = iniciarSwapAlocacao;
+}
+if (typeof confirmarSwapAlocacao === 'function') {
+    window.confirmarSwapAlocacao = confirmarSwapAlocacao;
+}
+if (typeof salvarLaudo === 'function') {
+    window.salvarLaudo = salvarLaudo;
+}
+if (typeof verificarAcesso === 'function') {
+    window.verificarAcesso = verificarAcesso;
+}
+
+// ==========================================
+// LIBERAÇÃO DE CONFIRMAÇÃO DE MODAIS
+// ==========================================
+if (typeof confirmarRelatorio === 'function') {
+    window.confirmarRelatorio = confirmarRelatorio;
+}
+if (typeof abrirModalRelatorio === 'function') {
+    window.abrirModalRelatorio = abrirModalRelatorio;
+}
+if (typeof fecharModalRelatorio === 'function') {
+    window.fecharModalRelatorio = fecharModalRelatorio;
+}
+if (typeof iniciarSaque === 'function') {
+    window.iniciarSaque = iniciarSaque;
+}
+
+// ==========================================
+// LIBERAÇÃO DE CADASTRO DE PEÇAS E ESTOQUE
+// ==========================================
+if (typeof toggleFormAdicionar === 'function') {
+    window.toggleFormAdicionar = toggleFormAdicionar;
+}
+if (typeof salvarNovoEquipamento === 'function') {
+    window.salvarNovoEquipamento = salvarNovoEquipamento;
+}
+if (typeof toggleFormMaterial === 'function') {
+    window.toggleFormMaterial = toggleFormMaterial;
+}
+if (typeof salvarEntradaMaterial === 'function') {
+    window.salvarEntradaMaterial = salvarEntradaMaterial;
+}
+if (typeof alterarSaldoRolo === 'function') {
+    window.alterarSaldoRolo = alterarSaldoRolo;
+}
+if (typeof ajustarSaldoMaterial === 'function') {
+    window.ajustarSaldoMaterial = ajustarSaldoMaterial;
+}
+if (typeof removerMaterial === 'function') {
+    window.removerMaterial = removerMaterial;
+}
+if (typeof fecharModalConcluirReparo === 'function') {
+    window.fecharModalConcluirReparo = fecharModalConcluirReparo;
+}
+// ==========================================
+// INJEÇÃO DINÂMICA DE MODAIS (FOLHÕES)
+// ==========================================
+window.FOLHOES_INJETADOS = false;
+
+window.carregarFolhoesExternos = async function() {
+    try {
+        const resposta = await fetch('folhoes.html');
+        
+        if (!resposta.ok) {
+            throw new Error(`Cabo desconectado: Não achei o arquivo folhoes.html (Status: ${resposta.status})`);
+        }
+        
+        const html = await resposta.text();
+        
+        let gaveta = document.getElementById('gaveta-de-folhoes');
+        if (!gaveta) {
+            gaveta = document.createElement('div');
+            gaveta.id = 'gaveta-de-folhoes';
+            document.body.appendChild(gaveta);
+            console.warn("[Injeção] Div 'gaveta-de-folhoes' criada dinamicamente.");
+        }
+
+        gaveta.innerHTML = html;
+        window.FOLHOES_INJETADOS = true;
+        console.log("Todos os folhões foram carregados e injetados no DOM com sucesso!");
+        
+    } catch (erro) {
+        console.error("Erro na injeção:", erro);
+    }
+};
+
+// Faz o carregamento automático assim que a tela abre
+document.addEventListener("DOMContentLoaded", () => {
+    carregarFolhoesExternos();
+});
