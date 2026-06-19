@@ -1774,18 +1774,61 @@ window.atualizarInterfaceUsuario = atualizarInterfaceUsuario;
 // Folhões MCC4
 window.trocarAbaFolhao = trocarAbaFolhao;
 window.fecharFolhaoMCC4 = fecharFolhaoMCC4;
-window.salvarLaudoInteligente = salvarLaudoInteligente;
+// window.salvarLaudoInteligente = salvarLaudoInteligente; <-- APAGUE OU COMENTE ESTA LINHA
 window.imprimirLaudoSalvo = imprimirLaudoSalvo;
 window.carregarMedidaAresta = carregarMedidaAresta;
 window.salvarMedidaAresta = salvarMedidaAresta;
-window.abrirFolhaoMCC4 = abrirFolhaoMCC4;
+// window.abrirFolhaoMCC4 = abrirFolhaoMCC4; <-- APAGUE OU COMENTE ESSA AQUI TAMBÉM
 
-// Outras funções auxiliares
-window.getOrdemPadrao = getOrdemPadrao;
-window.exibirBarraEmergencia = exibirBarraEmergencia;
-window.carregarTema = carregarTema;
-window.trocarAbaSegZero = trocarAbaSegZero;
-window.injetarAbasFaltantes = injetarAbasFaltantes;
-window.gerarLinhasChecklistPDF = gerarLinhasChecklistPDF;
+// ==========================================
+// GARANTE QUE AS FUNÇÕES DO FOLHÃO ESTEJAM DISPONÍVEIS
+// ==========================================
+
+// Se as funções não existirem, define fallbacks
+if (typeof window.salvarLaudoInteligente === 'undefined') {
+    window.salvarLaudoInteligente = function() {
+        console.log("salvarLaudoInteligente chamado - verifique se o folhao.js foi carregado");
+        alert("Função salvarLaudoInteligente não carregada corretamente. Recarregue a página.");
+    };
+}
+
+if (typeof window.trocarAbaFolhao === 'undefined') {
+    window.trocarAbaFolhao = function(event, idAba) {
+        document.querySelectorAll('.folhao-content').forEach(c => c.classList.add('hidden'));
+        document.querySelectorAll('.folhao-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(idAba).classList.remove('hidden');
+        if (event && event.currentTarget) event.currentTarget.classList.add('active');
+    };
+}
+
+if (typeof window.fecharFolhaoMCC4 === 'undefined') {
+    window.fecharFolhaoMCC4 = function() {
+        document.getElementById("modal-folhao-mcc4").classList.add("hidden");
+    };
+}
+
+if (typeof window.abrirFolhaoMCC4 === 'undefined') {
+    window.abrirFolhaoMCC4 = function(id) {
+        alert("Função abrirFolhaoMCC4 não carregada. Verifique o folhao.js");
+    };
+}
+
+if (typeof window.carregarMedidaAresta === 'undefined') {
+    window.carregarMedidaAresta = function() {
+        console.log("carregarMedidaAresta - fallback");
+    };
+}
+
+if (typeof window.salvarMedidaAresta === 'undefined') {
+    window.salvarMedidaAresta = function() {
+        console.log("salvarMedidaAresta - fallback");
+    };
+}
+
+if (typeof window.imprimirLaudoSalvo === 'undefined') {
+    window.imprimirLaudoSalvo = function(tag, motivo) {
+        alert(`Imprimir Laudo: ${tag} - ${motivo}`);
+    };
+}
 
 console.log("✅ Script.js carregado - todas as funções expostas globalmente");
