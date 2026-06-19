@@ -160,75 +160,121 @@ export function renderReparos() {
 }
 
 // ==============================================================
-// 4. RENDERIZAÇÃO DE RESERVAS (COM SWAP INTELIGENTE)
+// 4. RENDERIZAÇÃO DE RESERVAS COM SWAP INTELIGENTE
 // ==============================================================
 export function renderReservas() {
-    const tbody = document.getElementById('estoque-table-body');
-    if (!tbody) return;
-    
-    const reservas = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reserva");
-    
+    const resBody = document.getElementById("estoque-table-body");
+    if (!resBody) return;
+
+    const reservas = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reserva" || a.status === "Oficina / Reserva");
+
     if (reservas.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Estoque vazio. Nenhuma peça reserva disponível.</td></tr>`;
+        resBody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Estoque vazio. Nenhuma peça reserva disponível.</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = reservas.map(ativo => {
-        const tUpper = ativo.tipo ? ativo.tipo.toUpperCase() : "";
-        const mcc = ativo.mcc_compat || "2/3";
-
-        // Monta a caixinha de Veios
-        let optionsVeio = '<option value="">Selecione o Veio...</option>';
-        if (mcc.includes("2") || mcc.includes("3")) {
-            optionsVeio += `<option value="MCC 2 - Veio C">Veio C (MCC 2)</option>
-                           <option value="MCC 2 - Veio D">Veio D (MCC 2)</option>
-                           <option value="MCC 3 - Veio E">Veio E (MCC 3)</option>
-                           <option value="MCC 3 - Veio F">Veio F (MCC 3)</option>`;
+    resBody.innerHTML = reservas.map(a => {
+        const isZerado = (a.ton || 0) === 0 ? `<i class="fas fa-check"></i> Zerado` : `<i class="fas fa-adjust"></i> Parcial (${a.ton}t)`;
+        const mcc = a.mcc_compat || "2/3";
+        const tipoUpper = (a.tipo || "").toUpperCase();
+        
+        // ==========================================
+        // CONSTRÓI AS OPÇÕES DE VEIOS
+        // ==========================================
+        let optionsVeios = `<option value="">Selecione...</option>`;
+        
+        if (mcc === "2/3") {
+            optionsVeios += `
+                <option value="C">Veio C (MCC 2)</option>
+                <option value="D">Veio D (MCC 2)</option>
+                <option value="E">Veio E (MCC 3)</option>
+                <option value="F">Veio F (MCC 3)</option>
+            `;
+        } else if (mcc === "4") {
+            optionsVeios += `
+                <option value="H">Veio H (MCC 4)</option>
+                <option value="G">Veio G (MCC 4)</option>
+            `;
         }
-        if (mcc.includes("4")) {
-            optionsVeio += `<option value="MCC 4 - Veio G">Veio G (MCC 4)</option>
-                           <option value="MCC 4 - Veio H">Veio H (MCC 4)</option>`;
-        }
 
-        // Monta a caixinha de Posição
-        let inputPosicao = '';
-        if (tUpper.includes("CADEIRA")) {
-            inputPosicao = `<input type="text" id="pos-${ativo.id}" class="premium-select" placeholder="Nº (Ex:70)" style="width: 85px; padding: 5px;">`;
-        } 
-        else if (tUpper.includes("BOW")) {
-            let opts = '<option value="">Pos...</option>';
-            for(let i=1; i<=5; i++) opts += `<option value="Posição ${i}">Pos ${i}</option>`;
-            inputPosicao = `<select id="pos-${ativo.id}" class="premium-select" style="width: 85px; padding: 5px;">${opts}</select>`;
-        } 
-        else if (tUpper.includes("HORIZONTAL")) {
-            let opts = '<option value="">Pos...</option>';
-            for(let i=8; i<=17; i++) opts += `<option value="Posição ${i}">Pos ${i}</option>`;
-            inputPosicao = `<select id="pos-${ativo.id}" class="premium-select" style="width: 85px; padding: 5px;">${opts}</select>`;
-        } 
-        else if (tUpper.includes("SEGMENTO") || tUpper.includes("SEGUIMENTO") || tUpper.includes("ZERO")) {
-            let opts = '<option value="">Pos...</option>';
-            for(let i=1; i<=6; i++) opts += `<option value="Posição ${i}">Pos ${i}</option>`;
-            inputPosicao = `<select id="pos-${ativo.id}" class="premium-select" style="width: 85px; padding: 5px;">${opts}</select>`;
-        } 
-        else {
-            inputPosicao = `<input type="hidden" id="pos-${ativo.id}" value="Única"><span class="text-muted" style="font-size:12px;">Única</span>`;
+        // ==========================================
+        // CONSTRÓI O SELECT DE POSIÇÃO
+        // ==========================================
+        let posicaoHTML = "";
+        
+        if (tipoUpper.includes("BOW")) {
+            posicaoHTML = `
+                <select id="pos-${a.id}" class="premium-select select-sm" style="width: 70px; padding: 4px; font-size: 0.75rem;">
+                    <option value="">Pos</option>
+                    <option value="1">#1</option>
+                    <option value="2">#2</option>
+                    <option value="3">#3</option>
+                    <option value="4">#4</option>
+                    <option value="5">#5</option>
+                </select>
+            `;
+        } else if (tipoUpper.includes("HORIZONTAL")) {
+            posicaoHTML = `
+                <select id="pos-${a.id}" class="premium-select select-sm" style="width: 70px; padding: 4px; font-size: 0.75rem;">
+                    <option value="">Pos</option>
+                    <option value="8">#8</option>
+                    <option value="9">#9</option>
+                    <option value="10">#10</option>
+                    <option value="11">#11</option>
+                    <option value="12">#12</option>
+                    <option value="13">#13</option>
+                    <option value="14">#14</option>
+                    <option value="15">#15</option>
+                    <option value="16">#16</option>
+                    <option value="17">#17</option>
+                </select>
+            `;
+        } else if (tipoUpper.includes("STRAIGHTENER R1") || tipoUpper.includes("R1")) {
+            posicaoHTML = `<input type="hidden" id="pos-${a.id}" value="STR-1"><span class="text-muted" style="font-size:0.7rem;">R1</span>`;
+        } else if (tipoUpper.includes("STRAIGHTENER R2") || tipoUpper.includes("R2")) {
+            posicaoHTML = `<input type="hidden" id="pos-${a.id}" value="STR-2"><span class="text-muted" style="font-size:0.7rem;">R2</span>`;
+        } else if (tipoUpper.includes("MOLDE")) {
+            posicaoHTML = `<input type="hidden" id="pos-${a.id}" value="MOLDE"><span class="text-muted" style="font-size:0.7rem;">Única</span>`;
+        } else if (tipoUpper.includes("BENDER")) {
+            posicaoHTML = `<input type="hidden" id="pos-${a.id}" value="BENDER"><span class="text-muted" style="font-size:0.7rem;">Única</span>`;
+        } else if (tipoUpper.includes("CADEIRA")) {
+            posicaoHTML = `
+                <input type="text" id="pos-${a.id}" placeholder="Nº" style="width: 50px; padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-heading); font-size: 0.75rem; text-align: center;">
+            `;
+        } else if (tipoUpper.includes("SEGMENTO") || tipoUpper.includes("SEG-")) {
+            posicaoHTML = `
+                <select id="pos-${a.id}" class="premium-select select-sm" style="width: 60px; padding: 4px; font-size: 0.75rem;">
+                    <option value="">Seg</option>
+                    <option value="1">#1</option>
+                    <option value="2">#2</option>
+                    <option value="3">#3</option>
+                    <option value="4">#4</option>
+                    <option value="5">#5</option>
+                    <option value="6">#6</option>
+                </select>
+            `;
+        } else {
+            posicaoHTML = `<input type="hidden" id="pos-${a.id}" value="GERAL"><span class="text-muted" style="font-size:0.7rem;">Geral</span>`;
         }
 
         return `
             <tr>
-                <td class="font-code" style="font-weight: bold;">${ativo.id}</td>
-                <td><span class="ind-card-tag bg-tag">${ativo.tipo} <span style="opacity:0.7; font-size:10px;">(MCC ${mcc})</span></span></td>
-                <td><span class="status-badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; padding: 4px 10px; border-radius: 4px;"><i class="fas fa-check"></i> Pronto</span></td>
+                <td class="font-code" style="font-weight: 600; font-size: 0.85rem;">${a.id}</td>
+                <td><span class="bg-tag">${a.tipo}</span></td>
+                <td><span class="status-pill reserva">${isZerado}</span></td>
                 <td>
-                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                        <select id="veio-${ativo.id}" class="premium-select" style="width: 140px; padding: 5px;">
-                            ${optionsVeio}
-                        </select>
-                        ${inputPosicao}
-                        <button class="btn-premium btn-success" style="padding: 5px 12px; display:flex; align-items:center; gap:5px;" onclick="window.efetuarSwapDireto('${ativo.id}')">
-                            <i class="fas fa-exchange-alt"></i> Swap
-                        </button>
-                    </div>
+                    <select id="swap-veio-${a.id}" class="premium-select select-sm" style="width: 130px; padding: 4px; font-size: 0.75rem;">
+                        ${optionsVeios}
+                    </select>
+                </td>
+                <td>${posicaoHTML}</td>
+                <td>
+                    <button class="btn-premium btn-success" onclick="window.efetuarSwapDireto('${a.id}')" style="padding: 4px 12px; font-size: 0.75rem;">
+                        <i class="fas fa-exchange-alt"></i> Swap
+                    </button>
+                    <button class="btn-xs-primary" onclick="window.abrirHistoricoIndividual('${a.id}')" title="Ver Prontuário" style="padding: 4px 8px;">
+                        <i class="fas fa-book-open"></i>
+                    </button>
                 </td>
             </tr>
         `;
@@ -236,80 +282,199 @@ export function renderReservas() {
 }
 
 // ==============================================================
-// 5. SWAP DIRETO (INTELIGENTE)
+// 5. SWAP DIRETO (INTELIGENTE E BLINDADO)
 // ==============================================================
-window.efetuarSwapDireto = function(tagNova) {
-    try {
-        const itemNovo = BANCO_ATIVOS.find(a => a.id === tagNova);
-        if (!itemNovo) {
-            alert("Erro: Peça não encontrada.");
-            return;
-        }
+function efetuarSwapDireto(tagNova) {
+    if (typeof BANCO_ATIVOS === 'undefined') {
+        alert("Erro: Banco de dados não carregado.");
+        return;
+    }
 
-        const veioEl = document.getElementById(`veio-${tagNova}`);
-        const veio = veioEl ? veioEl.value : "";
+    console.log("🔍 Iniciando SWAP para peça:", tagNova);
+
+    // 1. Busca os dados informados na tela
+    const indexNovo = BANCO_ATIVOS.findIndex(a => a.id === tagNova);
+    if (indexNovo === -1) {
+        alert("Erro: Peça não encontrada no estoque.");
+        return;
+    }
+    
+    const itemNovo = BANCO_ATIVOS[indexNovo];
+    console.log("📦 Peça nova:", itemNovo.id, "Tipo:", itemNovo.tipo);
+    
+    // 2. Captura o VEIO de destino
+    const veioEl = document.getElementById(`swap-veio-${tagNova}`);
+    const veioDestino = veioEl ? veioEl.value : "";
+    
+    if (!veioDestino) {
+        alert("Por favor, selecione o Veio de destino.");
+        return;
+    }
+    console.log("🎯 Veio destino:", veioDestino);
+
+    // 3. Captura a POSIÇÃO de destino
+    const posEl = document.getElementById(`pos-${tagNova}`);
+    let posicaoDigitada = posEl ? posEl.value.trim() : "";
+    
+    if (!posicaoDigitada) {
+        alert("Por favor, selecione a Posição de destino.");
+        return;
+    }
+    console.log("📍 Posição digitada:", posicaoDigitada);
+
+    // 4. Converte a posição para o formato do chassi (SLOT)
+    const tipoUpper = (itemNovo.tipo || "").toUpperCase();
+    let slotChassi = "";
+
+    if (tipoUpper.includes("BOW")) {
+        slotChassi = `BOW-${posicaoDigitada}`;
+    } else if (tipoUpper.includes("HORIZONTAL")) {
+        slotChassi = `HOR-${posicaoDigitada}`;
+    } else if (tipoUpper.includes("STRAIGHTENER R1") || tipoUpper.includes("R1")) {
+        slotChassi = "STR-1";
+    } else if (tipoUpper.includes("STRAIGHTENER R2") || tipoUpper.includes("R2")) {
+        slotChassi = "STR-2";
+    } else if (tipoUpper.includes("MOLDE")) {
+        slotChassi = "MOLDE";
+    } else if (tipoUpper.includes("BENDER")) {
+        slotChassi = "BENDER";
+    } else if (tipoUpper.includes("CADEIRA SUPERIOR")) {
+        slotChassi = `CAD-SUP-${posicaoDigitada}`;
+    } else if (tipoUpper.includes("CADEIRA INFERIOR")) {
+        slotChassi = `CAD-INF-${posicaoDigitada}`;
+    } else if (tipoUpper.includes("SEGMENTO ZERO") || tipoUpper.includes("SEGUIMENTO ZERO")) {
+        slotChassi = "SEG-ZERO";
+    } else if (tipoUpper.includes("MESA OSCILADORA")) {
+        slotChassi = "OSCILADORA";
+    } else if (tipoUpper.includes("SEGMENTO") || tipoUpper.includes("SEG-")) {
+        slotChassi = `SEG-${posicaoDigitada}`;
+    } else {
+        slotChassi = posicaoDigitada;
+    }
+    console.log("🏷️ Slot Chassi:", slotChassi);
+
+    // 5. Confirmar a Ação
+    if (!confirm(`Confirmar instalação da peça [${itemNovo.id}] na gaveta [${slotChassi}] do Veio ${veioDestino}?`)) {
+        return;
+    }
+
+    // ==========================================
+    // 6. O CAÇADOR - Varre a máquina e expulsa a peça velha
+    // 🔴 USANDO LOOP FOR - MUTAÇÃO DIRETA
+    // ==========================================
+    
+    let pecaExpulsa = false;
+    let pecaExpulsaId = "";
+    let pecaExpulsaIndex = -1;
+
+    console.log("🔎 Procurando peça antiga na gaveta", slotChassi, "do Veio", veioDestino);
+
+    // Configuração da máquina
+    let config = null;
+    if (typeof window.getConfiguracaoPorVeio === 'function') {
+        config = window.getConfiguracaoPorVeio(veioDestino);
+    } else if (typeof getConfiguracaoPorVeio === 'function') {
+        config = getConfiguracaoPorVeio(veioDestino);
+    }
+    console.log("⚙️ Config:", config ? "Encontrada" : "Não encontrada");
+
+    for (let i = 0; i < BANCO_ATIVOS.length; i++) {
+        const p = BANCO_ATIVOS[i];
         
-        const posEl = document.getElementById(`pos-${tagNova}`);
-        let posicao = posEl ? posEl.value.trim() : "";
+        // Verifica se a peça está no veio correto
+        const taNoVeio = (p.veio === veioDestino && p.status === "Instalado") || 
+                       (p.local && p.local.includes(`Veio ${veioDestino}`) && !p.local.includes("Oficina"));
         
-        if (!veio) {
-            alert("Por favor, selecione o Veio de destino.");
-            return;
+        // Pula se não estiver no veio ou se for a própria peça nova
+        if (!taNoVeio || p.id === tagNova) continue;
+        
+        console.log(`  🔍 Verificando peça ${p.id} (${p.tipo}) - posicaoFixa: ${p.posicaoFixa || "N/A"}`);
+        
+        let ehVelha = false;
+        
+        // CASO 1: Peça com posicaoFixa
+        if (p.posicaoFixa && p.posicaoFixa === slotChassi) {
+            ehVelha = true;
+            console.log(`  ✅ Encontrou! Peça ${p.id} ocupa a gaveta ${slotChassi} via posicaoFixa`);
         }
-        if (!posicao) {
-            alert("Por favor, informe a Posição de destino.");
-            return;
-        }
-
-        const tUpper = itemNovo.tipo ? itemNovo.tipo.toUpperCase() : "";
-        if (tUpper.includes("CADEIRA") && posicao && !posicao.includes("Nº")) {
-            posicao = `Nº ${posicao}`;
-        }
-
-        const pecaAntiga = BANCO_ATIVOS.find(a => 
-            a.local === veio && 
-            (a.posicao === posicao || a.pos === posicao) && 
-            a.id !== itemNovo.id
-        );
-
-        let msg = `Instalar ${itemNovo.tipo} (${itemNovo.id}) no ${veio} na ${posicao}?\n\n`;
-        if (pecaAntiga) {
-            msg += `⚠️ ATENÇÃO (SWAP): A peça atual (${pecaAntiga.id}) será RETIRADA da máquina e enviada para a Oficina!`;
-        }
-
-        if (!confirm(msg)) return;
-
-        if (pecaAntiga) {
-            pecaAntiga.local = "Oficina / Reparo";
-            pecaAntiga.posicao = "";
-            pecaAntiga.pos = "";
-            if (window.registrarHistorico) {
-                window.registrarHistorico(pecaAntiga.id, `Retirada automática (SWAP) do ${veio} (${posicao}). Movida para Reparo.`);
+        
+        // CASO 2: Peça legada (sem posicaoFixa)
+        if (!ehVelha && !p.posicaoFixa && config && config.mapearSlotLegado) {
+            const slotMapeado = config.mapearSlotLegado(p);
+            if (slotMapeado === slotChassi) {
+                ehVelha = true;
+                console.log(`  ✅ Encontrou! Peça ${p.id} ocupa a gaveta ${slotChassi} via mapeamento legado`);
             }
         }
 
-        itemNovo.local = veio;
-        itemNovo.posicao = posicao;
-        itemNovo.pos = posicao;
-        if (window.registrarHistorico) {
-            window.registrarHistorico(itemNovo.id, `Instalada no ${veio} (${posicao}).`);
+        if (ehVelha) {
+            // 🔴 MUTAÇÃO DIRETA - Voadora na peça velha!
+            console.log(`💥 EXPULSANDO peça velha: ${p.id}`);
+            
+            BANCO_ATIVOS[i].status = "Oficina / Reparo";
+            BANCO_ATIVOS[i].local = "Oficina / Reparo";
+            BANCO_ATIVOS[i].veio = "";
+            BANCO_ATIVOS[i].posicaoFixa = "";
+            BANCO_ATIVOS[i].pos = "";
+            
+            pecaExpulsa = true;
+            pecaExpulsaId = p.id;
+            pecaExpulsaIndex = i;
+            
+            if (window.registrarHistorico) {
+                window.registrarHistorico(p.id, `Sacado automaticamente da gaveta ${slotChassi} (Veio ${veioDestino}) via SWAP.`);
+            }
+            
+            alert(`⚠️ ATENÇÃO (SWAP):\nA peça velha [${pecaExpulsaId}] foi expulsa da máquina e enviada para REPARO.`);
+            break;
         }
-
-        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-        
-        renderAtivos();
-        renderReservas();
-        renderReparos();
-        renderPainelVeios();
-        if (window.calcularKpisGlobais) window.calcularKpisGlobais();
-        
-        alert("✅ Swap realizado com sucesso!");
-        
-    } catch (error) {
-        console.error("Erro no Swap:", error);
-        alert("Erro ao realizar Swap: " + error.message);
     }
-};
+
+    if (!pecaExpulsa) {
+        console.log("ℹ️ Nenhuma peça encontrada na gaveta", slotChassi, "- instalação direta.");
+    }
+
+    // ==========================================
+    // 7. INSTALA A NOVA PEÇA - MUTAÇÃO DIRETA
+    // ==========================================
+    
+    console.log(`📥 Instalando peça ${itemNovo.id} na gaveta ${slotChassi} do Veio ${veioDestino}`);
+    
+    const mcc = itemNovo.mcc_compat || "4";
+    BANCO_ATIVOS[indexNovo].local = `MCC ${mcc} - Veio ${veioDestino}`;
+    BANCO_ATIVOS[indexNovo].veio = veioDestino;
+    BANCO_ATIVOS[indexNovo].posicaoFixa = slotChassi;
+    BANCO_ATIVOS[indexNovo].pos = slotChassi;
+    BANCO_ATIVOS[indexNovo].status = "Instalado";
+
+    if (window.registrarHistorico) {
+        window.registrarHistorico(itemNovo.id, `Instalada no Veio ${veioDestino} (${slotChassi}) via Estoque.`);
+    }
+
+    // ==========================================
+    // 8. SALVAR E RENDERIZAR
+    // ==========================================
+    
+    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    console.log("💾 Dados salvos no LocalStorage");
+    
+    // 🔴 ATUALIZA INTERFACE SEM try/catch GENÉRICO
+    if (typeof renderAtivos === 'function') renderAtivos();
+    if (typeof renderReservas === 'function') renderReservas();
+    if (typeof renderReparos === 'function') renderReparos();
+    if (typeof renderPainelVeios === 'function') renderPainelVeios();
+    if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
+    
+    // Atualiza o chassi
+    if (typeof window.mudarVeioVisualizado === 'function') {
+        window.mudarVeioVisualizado(veioDestino);
+    } else if (typeof atualizarChassi === 'function') {
+        atualizarChassi(veioDestino, "container-fluxo-horizontal-scroll", BANCO_ATIVOS);
+    }
+    
+    console.log("✅ SWAP concluído com sucesso!");
+    alert(`✅ Sucesso! A peça [${itemNovo.id}] assumiu a gaveta ${slotChassi} do Veio ${veioDestino}.`);
+}
 
 // ==============================================================
 // 6. RENDERIZAÇÃO DE ROLOS
@@ -462,7 +627,10 @@ window.renderRolos = renderRolos;
 window.renderMateriais = renderMateriais;
 window.aplicarFiltrosMCC = aplicarFiltrosMCC;
 window.renderizarGraficosMCC = renderizarGraficosMCC;
-window.efetuarSwapDireto = window.efetuarSwapDireto;
+window.efetuarSwapDireto = efetuarSwapDireto;
+
+// Alias para compatibilidade com código antigo
+window.iniciarSwapAlocacao = efetuarSwapDireto;
 
 // Exporta para módulos
 export default {
@@ -474,5 +642,6 @@ export default {
     renderRolos,
     renderMateriais,
     aplicarFiltrosMCC,
-    renderizarGraficosMCC
+    renderizarGraficosMCC,
+    efetuarSwapDireto
 };

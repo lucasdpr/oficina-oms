@@ -257,7 +257,7 @@
         </div>
       </section>
 
-      <!-- ABA RESERVAS -->
+                  <!-- ABA RESERVAS -->
       <section id="aba-reservas" class="tab-content">
         <div class="panel-card glass-panel" style="margin-bottom: 25px; border-top: 4px solid var(--success);">
           <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
@@ -317,24 +317,33 @@
                 <label>Meta Limite (Ton)</label>
                 <input type="number" id="add-meta" placeholder="Ex: 1500000">
               </div>
-              <div class="input-group" style="grid-column: span 2; display: flex; align-items: flex-end; gap: 10px;">
+              <div class="input-group" style="grid-column: span 2; display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap;">
                 <label style="display: flex; align-items: center; gap: 5px; font-size: 12px; cursor: pointer; background: rgba(46, 204, 113, 0.1); padding: 10px; border-radius: 8px; border: 1px solid var(--success);">
                   <input type="checkbox" id="add-instalar-direto"> Instalar direto na Máquina agora
                 </label>
-                <button class="btn-premium btn-success w-100" onclick="processarCadastroPeca()"><i class="fas fa-save"></i> Salvar</button>
+                <button class="btn-premium btn-success" onclick="processarCadastroPeca()" style="flex: 1;"><i class="fas fa-save"></i> Salvar</button>
               </div>
             </div>
           </div>
           
           <div class="table-responsive" style="margin-top: 15px;">
             <table class="industrial-table premium-table">
-              <thead><tr><th>TAG Identificador</th><th>Família e Tipo</th><th>Status</th><th>Ações / Alocação Automática</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>TAG Identificador</th>
+                  <th>Família e Tipo</th>
+                  <th>Status</th>
+                  <th>Veio</th>
+                  <th>Posição</th>
+                  <th>Ações / Alocação Automática</th>
+                </tr>
+              </thead>
               <tbody id="estoque-table-body"></tbody>
             </table>
           </div>
         </div>
       </section>
-
+      
       <!-- ABA ROLOS -->
       <section id="aba-rolos" class="tab-content">
         <div class="panel-card glass-panel" style="border-top: 4px solid var(--text-accent);">
