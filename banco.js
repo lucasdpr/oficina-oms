@@ -17,6 +17,22 @@ export const CADASTRO_MATRICULAS = {
 };
 
 // ==========================================================================
+// FUNÇÃO AUXILIAR EXPORTADA PARA ORDEM PADRÃO
+// ==========================================================================
+export function getOrdemPadrao(tipo) {
+    if (tipo === "Molde") return 10;
+    if (tipo === "Mesa Osciladora") return 20;
+    if (tipo === "Seguimento Zero") return 30;
+    if (tipo === "Bender") return 40;
+    if (tipo === "Cadeira Superior") return 100;
+    if (tipo === "Cadeira Inferior") return 200;
+    if (tipo === "Bow") return 300;
+    if (tipo === "Straightener") return 400;
+    if (tipo === "Horizontal") return 500;
+    return 999;
+}
+
+// ==========================================================================
 // INICIALIZAÇÃO AUTOMÁTICA DOS BANCOS DE DADOS
 // ==========================================================================
 if (!BANCO_ATIVOS || BANCO_ATIVOS.length < 150) {
@@ -101,3 +117,21 @@ if (BANCO_ROLOS) {
 export function setOperador(novoOperador) { OPERADOR_LOGADO = novoOperador; }
 export function setEmergencia(status) { EM_EMERGENCIA = status; }
 export function setVeioSelecionado(veio) { VEIO_SELECIONADO_PAINEL = veio; }
+
+// ==========================================================================
+// EXPORTAÇÃO PADRÃO - IMPORTANTE!
+// ==========================================================================
+export default {
+    BANCO_ATIVOS,
+    HISTORICO_ACOES,
+    BANCO_ROLOS,
+    BANCO_MATERIAIS,
+    EM_EMERGENCIA,
+    OPERADOR_LOGADO,
+    VEIO_SELECIONADO_PAINEL,
+    CADASTRO_MATRICULAS,
+    getOrdemPadrao,
+    setOperador,
+    setEmergencia,
+    setVeioSelecionado
+};

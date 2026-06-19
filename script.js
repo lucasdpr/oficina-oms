@@ -8,15 +8,34 @@ import {
 } from './dados.js';
 
 // ==========================================================================
-// BANCO DE DADOS CORE - SISTEMA OMS (VERSÃO DEFINITIVA v36 - TODOS OS MOLDES NO FOLHÃO)
+// BANCO DE DADOS CORE - SISTEMA OMS
 // ==========================================================================
 let BANCO_ATIVOS = JSON.parse(localStorage.getItem("oms_ativos_v32_local"));
 let HISTORICO_ACOES = JSON.parse(localStorage.getItem("oms_historico_v32_local")) || [];
 let BANCO_ROLOS = JSON.parse(localStorage.getItem("oms_rolos_v32_local"));
 let BANCO_MATERIAIS = JSON.parse(localStorage.getItem("oms_materiais_v32_local"));
 let ID_FOLHAO_ATUAL = null;
-let DADOS_FOLGA_ARESTA = {}; 
+let DADOS_FOLGA_ARESTA = {};
 
+let EM_EMERGENCIA = JSON.parse(localStorage.getItem("oms_emergencia_v32_local")) || null;
+let OPERADOR_LOGADO = JSON.parse(localStorage.getItem("oms_operador_v32_local")) || null;
+let VEIO_SELECIONADO_PAINEL = "C";
+
+const CADASTRO_MATRICULAS = {
+    "40090430": "Filipe (Líder)",
+    "40075827": "Denilson (Líder)",
+    "40080751": "Valmir (Líder)",
+    "40090851": "Samuel (Líder)",
+    "1011": "Supervisor"
+};
+
+let MODO_MODAL_RELATORIO = {};
+let ID_REPARO_ATUAL = null;
+let ID_HISTORICO_ATUAL = null;
+
+// ==========================================
+// FUNÇÃO AUXILIAR - ORDEM PADRÃO
+// ==========================================
 function getOrdemPadrao(tipo) {
     if (tipo === "Molde") return 10;
     if (tipo === "Mesa Osciladora") return 20;
@@ -111,23 +130,10 @@ if (BANCO_ROLOS) {
     }
 }
 
-let EM_EMERGENCIA = JSON.parse(localStorage.getItem("oms_emergencia_v32_local")) || null;
-let OPERADOR_LOGADO = JSON.parse(localStorage.getItem("oms_operador_v32_local")) || null;
-let VEIO_SELECIONADO_PAINEL = "C";
-
-const CADASTRO_MATRICULAS = {
-    
-    "1011": "Desenvoldedor do Sistema "
-};
-
-let MODO_MODAL_RELATORIO = {};
-let ID_REPARO_ATUAL = null;
-let ID_HISTORICO_ATUAL = null;
-
 // ==========================================
 // TEMA E UI GLOBAL
 // ==========================================
-window.carregarTema = function() {
+function carregarTema() {
     const temaSalvo = localStorage.getItem("oms_theme_local");
     const body = document.body;
     const icon = document.getElementById("theme-icon");
@@ -142,9 +148,9 @@ window.carregarTema = function() {
         if (icon) icon.className = "fas fa-sun";
         if (text) text.innerText = "Modo Claro";
     }
-};
+}
 
-window.toggleTheme = function() {
+function toggleTheme() {
     const body = document.body;
     const icon = document.getElementById("theme-icon");
     const text = document.getElementById("theme-text");
@@ -160,16 +166,16 @@ window.toggleTheme = function() {
         if (icon) icon.className = "fas fa-sun";
         if (text) text.innerText = "Modo Claro";
     }
-};
+}
 
-window.toggleSidebar = function() {
+function toggleSidebar() {
     document.getElementById('sidebar-menu').classList.toggle('open');
-};
+}
 
 // ==========================================
 // AUTENTICAÇÃO E NAVEGAÇÃO
 // ==========================================
-window.processarAutenticacaoHome = function() {
+function processarAutenticacaoHome() {
     const nomeInput = document.getElementById("login-nome").value.trim();
     const matriculaInput = document.getElementById("login-matricula").value.trim();
 
@@ -184,21 +190,21 @@ window.processarAutenticacaoHome = function() {
         document.getElementById("tela-login-home").style.display = "none";
         document.getElementById("container-sistema-oms").style.display = "flex";
 
-        if(typeof atualizarInterfaceUsuario === 'function') atualizarInterfaceUsuario();
-        if(typeof registrarHistorico === 'function') registrarHistorico("AUTENTICAÇÃO", `Login executado com sucesso.`);
-        if(typeof calcularKpisGlobais === 'function') calcularKpisGlobais();
-        if(typeof renderPainelVeios === 'function') renderPainelVeios();
-        if(typeof renderAtivos === 'function') renderAtivos();
-        if(typeof renderReparos === 'function') renderReparos();
-        if(typeof renderReservas === 'function') renderReservas();
-        if(typeof renderRolos === 'function') renderRolos();
-        if(typeof renderMateriais === 'function') renderMateriais(); 
+        if (typeof atualizarInterfaceUsuario === 'function') atualizarInterfaceUsuario();
+        if (typeof registrarHistorico === 'function') registrarHistorico("AUTENTICAÇÃO", `Login executado com sucesso.`);
+        if (typeof calcularKpisGlobais === 'function') calcularKpisGlobais();
+        if (typeof renderPainelVeios === 'function') renderPainelVeios();
+        if (typeof renderAtivos === 'function') renderAtivos();
+        if (typeof renderReparos === 'function') renderReparos();
+        if (typeof renderReservas === 'function') renderReservas();
+        if (typeof renderRolos === 'function') renderRolos();
+        if (typeof renderMateriais === 'function') renderMateriais(); 
     } else {
         alert("Falha: Matrícula não localizada.");
     }
-};
+}
 
-window.fazerLogout = function() {
+function fazerLogout() {
     if (confirm("Encerrar o turno?")) {
         registrarHistorico("SISTEMA", "Turno encerrado.");
         OPERADOR_LOGADO = null;
@@ -206,16 +212,16 @@ window.fazerLogout = function() {
         document.getElementById("container-sistema-oms").style.display = "none";
         document.getElementById("tela-login-home").style.display = "flex";
     }
-};
+}
 
-window.verificarAcesso = function() {
+function verificarAcesso() {
     if (!OPERADOR_LOGADO) {
         document.getElementById("container-sistema-oms").style.display = "none";
         document.getElementById("tela-login-home").style.display = "flex";
         return false;
     }
     return true;
-};
+}
 
 function abrirAba(event, idAba) {
     if (event) event.preventDefault();
@@ -248,138 +254,6 @@ function abrirAba(event, idAba) {
         document.getElementById('sidebar-menu').classList.remove('open');
     }
 }
-window.abrirAba = abrirAba;
-
-// ===================================================
-// GERENCIADOR DE CHASSIS - SEQUENCIAMENTO DE VEIOS
-// ===================================================
-// ===================================================
-// GERENCIADOR DE CHASSIS - SEQUENCIAMENTO DE VEIOS
-// ===================================================
-window.mudarVeioVisualizado = function(veio) {
-    // Atualiza os botões visuais no topo
-    document.querySelectorAll('.btn-veio-tab').forEach(b => b.classList.remove('active'));
-    if(event && event.currentTarget) event.currentTarget.classList.add('active');
-    
-    // Atualiza o título
-    const titulo = document.getElementById("titulo-veio-focado");
-    if (titulo) titulo.innerHTML = `Sequenciamento Estrutural: <span style="color: var(--text-accent);">Veio ${veio}</span>`;
-
-    const container = document.getElementById("container-fluxo-horizontal-scroll");
-    if (!container) return;
-    container.innerHTML = ""; // Limpa a tela
-
-    // Busca as peças instaladas no veio (Lê peças novas e as antigas de fábrica)
-    const pecasInstaladas = typeof BANCO_ATIVOS !== 'undefined' ? BANCO_ATIVOS.filter(p => 
-        (p.veio === veio && p.status === "Instalado") || 
-        (p.local && p.local.includes(`Veio ${veio}`) && !p.local.includes("Oficina"))
-    ) : [];
-
-    if (veio === "G" || veio === "H") {
-        const esqueletoMCC4 = [
-            { idSlot: "MOLDE", nome: "Molde Alta Perf.", familia: "MOLDE" },
-            { idSlot: "BENDER", nome: "Dobrador (Bender)", familia: "BENDER" },
-            { idSlot: "BOW-1", nome: "Curvo Bow #01", familia: "BOW" },
-            { idSlot: "BOW-2", nome: "Curvo Bow #02", familia: "BOW" },
-            { idSlot: "BOW-3", nome: "Curvo Bow #03", familia: "BOW" },
-            { idSlot: "BOW-4", nome: "Curvo Bow #04", familia: "BOW" },
-            { idSlot: "BOW-5", nome: "Curvo Bow #05", familia: "BOW" },
-            { idSlot: "STR-1", nome: "Endireitador R1", familia: "STRAIGHTENER R1" },
-            { idSlot: "STR-2", nome: "Endireitador R2", familia: "STRAIGHTENER R2" },
-            { idSlot: "HOR-8", nome: "Segmento Horizontal #08", familia: "HORIZONTAL" },
-            { idSlot: "HOR-9", nome: "Segmento Horizontal #09", familia: "HORIZONTAL" },
-            { idSlot: "HOR-10", nome: "Segmento Horizontal #10", familia: "HORIZONTAL" },
-            { idSlot: "HOR-11", nome: "Segmento Horizontal #11", familia: "HORIZONTAL" },
-            { idSlot: "HOR-12", nome: "Segmento Horizontal #12", familia: "HORIZONTAL" },
-            { idSlot: "HOR-13", nome: "Segmento Horizontal #13", familia: "HORIZONTAL" },
-            { idSlot: "HOR-14", nome: "Segmento Horizontal #14", familia: "HORIZONTAL" },
-            { idSlot: "HOR-15", nome: "Segmento Horizontal #15", familia: "HORIZONTAL" },
-            { idSlot: "HOR-16", nome: "Segmento Horizontal #16", familia: "HORIZONTAL" },
-            { idSlot: "HOR-17", nome: "Segmento Horizontal #17", familia: "HORIZONTAL" }
-        ];
-
-        let htmlSlots = "";
-
-        esqueletoMCC4.forEach(slot => {
-            let pecaEncontrada = pecasInstaladas.find(p => {
-                // 1. Se a peça já tem a gaveta carimbada (Sistema Novo)
-                if (p.posicaoFixa && p.posicaoFixa === slot.idSlot) return true;
-                
-                // 2. Adaptação para ler as peças do Banco Padrão Antigo
-                if (!p.posicaoFixa) {
-                    let tipoUpper = p.tipo ? p.tipo.toUpperCase() : "";
-                    let idUpper = p.id ? p.id.toUpperCase() : "";
-                    
-                    if (slot.familia === "MOLDE" && tipoUpper.includes("MOLDE")) return true;
-                    if (slot.familia === "BENDER" && tipoUpper.includes("BENDER")) return true;
-                    
-                    // Encaixa os Bows (1 a 5)
-                    if (tipoUpper.includes("BOW") && slot.idSlot.includes("BOW")) {
-                        let numSlot = slot.idSlot.replace("BOW-", "");
-                        if (idUpper.includes(`BOW-${numSlot}`)) return true;
-                    }
-                    // Encaixa os Straighteners (STR-1 encaixa na gaveta R1)
-                    if (tipoUpper.includes("STRAIGHTENER") && slot.idSlot.includes("STR")) {
-                        let numSlot = slot.idSlot.replace("STR-", "");
-                        if (idUpper.includes(`STR-${numSlot}`)) return true;
-                    }
-                    // Encaixa os Horizontais (Gaveta 8 recebe a peça HOR-1, Gaveta 9 recebe HOR-2...)
-                    if (tipoUpper.includes("HORIZONTAL") && slot.idSlot.includes("HOR")) {
-                        let numSlot = parseInt(slot.idSlot.replace("HOR-", ""));
-                        let numIdCorrespondente = numSlot - 7; 
-                        if (idUpper.includes(`HOR-${numIdCorrespondente}-`)) return true;
-                    }
-                }
-                return false;
-            });
-
-            if (pecaEncontrada) {
-                let pct = pecaEncontrada.meta > 0 ? (pecaEncontrada.ton / pecaEncontrada.meta) * 100 : 0;
-                let corClass = pct >= 80 ? "danger" : pct >= 50 ? "warning" : "success";
-
-                htmlSlots += `
-                <div class="ind-card glass-panel" style="border-top: 3px solid var(--${corClass}); min-width: 300px;">
-                    <div class="flex-between">
-                        <h4>${pecaEncontrada.id} <span class="ind-card-tag bg-tag" style="font-size: 10px;">${pecaEncontrada.tipo}</span></h4>
-                        <span style="color: var(--${corClass}); font-weight: bold;">${pct.toFixed(1)}%</span>
-                    </div>
-                    <p class="text-muted" style="font-size: 13px;"><i class="fas fa-layer-group"></i> ${slot.nome}</p>
-                    
-                    <div class="progress-container mt-10">
-                        <div class="progress-bar bg-${corClass}" style="width: ${Math.min(pct, 100)}%;"></div>
-                    </div>
-                    
-                    <div class="flex-between mt-10" style="font-size: 12px;">
-                        <span>Ton: <strong>${Number(pecaEncontrada.ton).toLocaleString('pt-BR')}</strong></span>
-                        <span>Lim: ${Number(pecaEncontrada.meta || 0).toLocaleString('pt-BR')}</span>
-                    </div>
-                    
-                    <div class="flex-between gap-10 mt-15">
-                        <button class="btn-outline-primary w-100" style="padding: 5px;" onclick="window.abrirHistoricoIndividual('${pecaEncontrada.id}')"><i class="fas fa-book"></i> Prontuário</button>
-                        <button class="btn-outline-danger w-100" style="padding: 5px;" onclick="iniciarSaque('${pecaEncontrada.id}')"><i class="fas fa-exchange-alt"></i> Sacar / Trocar</button>
-                    </div>
-                </div>`;
-            } else {
-                htmlSlots += `
-                <div class="ind-card glass-panel" style="border: 2px dashed #e74c3c; background: rgba(231, 76, 60, 0.05); min-width: 300px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 24px; color: #e74c3c; margin-bottom: 10px;"></i>
-                    <h4 style="color: #e74c3c; margin: 0;">${slot.nome}</h4>
-                    <p style="color: #e74c3c; font-size: 12px; margin-top: 5px;">GAVETA VAZIA / SEM PEÇA FÍSICA</p>
-                    <button class="btn-premium btn-success mt-15 w-100" onclick="abrirAba(event, 'aba-reservas')"><i class="fas fa-plus"></i> Alocar do Estoque</button>
-                </div>`;
-            }
-        });
-
-        container.innerHTML = htmlSlots;
-    } else {
-        container.innerHTML = `
-        <div style="padding: 30px; text-align: center; color: var(--text-muted); width: 100%;">
-            <i class="fas fa-tools" style="font-size: 40px; margin-bottom: 15px; opacity: 0.5;"></i>
-            <h3>Estrutura da Máquina 2/3 em Construção</h3>
-            <p>O chassi fixo para os veios C, D, E e F será implementado assim que a estrutura for mapeada.</p>
-        </div>`;
-    }
-};
 
 // ==========================================
 // HISTÓRICO E AUDITORIA
@@ -426,7 +300,7 @@ function calcularKpisGlobais() {
     let criticos = 0, reparo = 0, reserva = 0;
 
     BANCO_ATIVOS.forEach(a => {
-        const pct = (a.ton / a.meta) * 100;
+        const pct = a.meta > 0 ? (a.ton / a.meta) * 100 : 0;
         if (pct >= 80 && !a.local.includes("Oficina")) {
             criticos++;
         }
@@ -453,8 +327,8 @@ function renderPainelVeios() {
 
     titulo.innerHTML = `Sequenciamento Dinâmico: <span style="color:var(--text-accent)">Veio ${VEIO_SELECIONADO_PAINEL}</span>`;
 
-    let ativos = BANCO_ATIVOS.filter(a => a.local.includes(`Veio ${VEIO_SELECIONADO_PAINEL}`));
-    ativos.sort((a, b) => a.ordem - b.ordem);
+    let ativos = BANCO_ATIVOS.filter(a => a.local && a.local.includes(`Veio ${VEIO_SELECIONADO_PAINEL}`));
+    ativos.sort((a, b) => (a.ordem || 999) - (b.ordem || 999));
 
     if (ativos.length === 0) {
         container.innerHTML = `<div class="vazio">Nenhum componente instalado no Veio ${VEIO_SELECIONADO_PAINEL}.</div>`;
@@ -465,7 +339,8 @@ function renderPainelVeios() {
 }
 
 function gerarCardGraficoHTML(a) {
-    const pct = ((a.ton / a.meta) * 100).toFixed(1);
+    const pct = a.meta > 0 ? ((a.ton / a.meta) * 100) : 0;
+    const pctFixed = pct.toFixed(1);
     let cor = pct >= 80 ? "var(--danger)" : (pct >= 50 ? "var(--warning)" : "var(--success)");
 
     return `
@@ -475,15 +350,15 @@ function gerarCardGraficoHTML(a) {
                     <span class="mcc-tag-id">${a.id}</span>
                     <span class="ind-card-tag bg-tag">${a.tipo}</span>
                 </div>
-                <div class="mcc-grafico-porcentagem" style="color:${cor};">${pct}%</div>
+                <div class="mcc-grafico-porcentagem" style="color:${cor};">${pctFixed}%</div>
             </div>
-            <div class="mcc-grafico-pos text-muted">${a.pos}</div>
+            <div class="mcc-grafico-pos text-muted">${a.pos || a.posicao || "Única"}</div>
             <div class="ind-gauge-bar premium-bar">
                 <div class="ind-gauge-fill" style="width:${Math.min(pct, 100)}%; background:${cor};"></div>
             </div>
             <div class="grafico-legenda" style="margin-bottom: 10px;">
-                <span>Ton: <strong>${Math.round(a.ton).toLocaleString()}</strong></span>
-                <span>Lim: ${a.meta.toLocaleString()}</span>
+                <span>Ton: <strong>${Math.round(a.ton || 0).toLocaleString()}</strong></span>
+                <span>Lim: ${(a.meta || 0).toLocaleString()}</span>
             </div>
             <button class="btn-xs-primary w-100" style="border: 1px dashed var(--text-accent); color: var(--text-accent); background: rgba(56,189,248,0.05); padding: 8px; border-radius: 4px; cursor: pointer;" onclick="abrirHistoricoIndividual('${a.id}')">
                 <i class="fas fa-book-open"></i> Ver Prontuário
@@ -499,7 +374,6 @@ function renderAtivos() {
     const filtroEl = document.getElementById("filtro-tipo-ativo");
     if (!tbody || !filtroEl) return;
 
-    // BLINDAGEM: (a.local || "") impede que o sistema quebre se uma peça nascer sem local
     let f = BANCO_ATIVOS.filter(a => (a.local || "").includes(`Veio ${VEIO_SELECIONADO_PAINEL}`) || filtroEl.value.includes("Oficina"));
     
     if (filtroEl.value === "Oficina / Reparo") {
@@ -510,11 +384,11 @@ function renderAtivos() {
         f = f.filter(a => a.tipo === filtroEl.value);
     }
 
-    f.sort((a, b) => a.ordem - b.ordem);
+    f.sort((a, b) => (a.ordem || 999) - (b.ordem || 999));
 
     tbody.innerHTML = f.map(a => {
-        // Se a meta for zero ou der erro, assume 0% para não quebrar a tela
-        const pct = a.meta > 0 ? ((a.ton / a.meta) * 100).toFixed(1) : 0;
+        const pct = a.meta > 0 ? ((a.ton / a.meta) * 100) : 0;
+        const pctFixed = pct.toFixed(1);
         let classe = pct >= 80 ? "reparo" : "operação";
         
         if (a.local === "Oficina / Reserva") {
@@ -532,111 +406,16 @@ function renderAtivos() {
         return `
             <tr>
                 <td class="editavel font-code" onclick="fazerCelulaEditavel(this, '${a.id}', 'id')">${a.id}</td>
-                <td><span class="ind-card-tag bg-tag">${a.tipo} <span style="opacity:0.7; font-size:10px;">(MCC ${a.mcc_compat})</span></span></td>
+                <td><span class="ind-card-tag bg-tag">${a.tipo} <span style="opacity:0.7; font-size:10px;">(MCC ${a.mcc_compat || ''})</span></span></td>
                 <td class="font-code text-muted">${a.local || "Não Alocado"}</td>
-                <td class="editavel font-code" onclick="fazerCelulaEditavel(this, '${a.id}', 'dias')">${a.dias}</td>
-                <td class="editavel font-code" onclick="fazerCelulaEditavel(this, '${a.id}', 'ton')">${Math.round(a.ton).toLocaleString()}</td>
+                <td class="editavel font-code" onclick="fazerCelulaEditavel(this, '${a.id}', 'dias')">${a.dias || 0}</td>
+                <td class="editavel font-code" onclick="fazerCelulaEditavel(this, '${a.id}', 'ton')">${Math.round(a.ton || 0).toLocaleString()}</td>
                 <td class="font-code text-muted">${(a.meta || 0).toLocaleString()}</td>
-                <td><span class="status-pill ${classe}">${pct}%</span></td>
+                <td><span class="status-pill ${classe}">${pctFixed}%</span></td>
                 <td><div class="flex-align-center gap-10 action-buttons-mobile">${btnAcao} ${btnHist}</div></td>
             </tr>`;
     }).join("");
 }
-
-// ==========================================
-// MOTOR DE CADASTRO E SWAP (CAÇADOR BLINDADO)
-// ==========================================
-window.processarCadastroPeca = function() {
-    const tag = document.getElementById("add-tag").value.trim() || `NOVA-PECA-${Math.floor(Math.random()*1000)}`;
-    const tipoValor = document.getElementById("add-tipo").value || "";
-    const tipoSplit = tipoValor.split("|");
-    const familia = tipoSplit[0] || ""; 
-    const mccCompat = tipoSplit[1] || "4"; 
-    
-    const limite = parseFloat(document.getElementById("add-meta").value) || 1000000;
-    const veio = document.getElementById("add-veio").value || "";
-    const posicao = document.getElementById("add-posicao").value || "";
-    const instalarDireto = document.getElementById("add-instalar-direto").checked;
-
-    let statusFinal = instalarDireto ? "Instalado" : "Oficina / Reserva";
-    let localFinal = instalarDireto ? `MCC 4 - Veio ${veio}` : "Oficina / Reserva";
-
-    if (typeof BANCO_ATIVOS !== 'undefined') {
-        
-        if (instalarDireto && veio && posicao) {
-            // 1. Separa APENAS as peças que estão fisicamente rodando no Veio da máquina
-            let pecasNoVeio = BANCO_ATIVOS.filter(p => 
-                (p.veio === veio && p.status === "Instalado") || 
-                (p.local && p.local.includes(`Veio ${veio}`) && !p.local.includes("Oficina"))
-            );
-
-            // 2. Caça exatamente quem está na gaveta que você quer usar
-            let pecaAntiga = pecasNoVeio.find(p => {
-                if (p.posicaoFixa === posicao) return true; // Se for peça nova, bate na hora
-                
-                // Se for a peça velha de fábrica que veio no Banco de Dados
-                if (!p.posicaoFixa) {
-                    let tipoUpper = p.tipo ? p.tipo.toUpperCase() : "";
-                    if (posicao === "MOLDE" && tipoUpper.includes("MOLDE")) return true;
-                    if (posicao === "BENDER" && tipoUpper.includes("BENDER")) return true;
-                    if (posicao === "STR-1" && p.id.includes("STR-1")) return true;
-                    if (posicao === "STR-2" && p.id.includes("STR-2")) return true;
-                    if (posicao.includes("BOW") && p.id.includes(posicao.replace("BOW-",""))) return true;
-                    if (posicao.includes("HOR")) {
-                        let n = parseInt(posicao.replace("HOR-","")) - 7;
-                        if (p.id.includes(`HOR-${n}-`)) return true;
-                    }
-                }
-                return false;
-            });
-            
-            // 3. SE ACHOU A VELHA, DÁ UMA VOADORA E MANDA PRO REPARO
-            if (pecaAntiga) {
-                pecaAntiga.status = "Oficina / Reparo"; 
-                pecaAntiga.local = "Oficina / Reparo";
-                pecaAntiga.veio = ""; 
-                pecaAntiga.posicaoFixa = ""; 
-                alert(`🔄 SWAP EXECUTADO:\nA peça velha [${pecaAntiga.id}] foi expulsa da gaveta e enviada para Reparo.`);
-            }
-        }
-
-        // 4. CRIA A NOVA E ASSUME A GAVETA
-        const novaPeca = {
-            id: tag,
-            tipo: familia,
-            veio: instalarDireto ? veio : "", 
-            local: localFinal, 
-            posicaoFixa: instalarDireto ? posicao : "", 
-            status: statusFinal,
-            ton: 0,
-            dias: 0,
-            meta: limite, 
-            mcc_compat: mccCompat,
-            ordem: typeof getOrdemPadrao === 'function' ? getOrdemPadrao(familia) : 999
-        };
-
-        BANCO_ATIVOS.push(novaPeca); 
-        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS)); // SALVA NO NAVEGADOR
-        
-        if (statusFinal === "Instalado") {
-            alert(`✅ PEÇA INSTALADA!\nA nova peça [${tag}] assumiu a gaveta ${posicao}.`);
-        } else {
-            alert(`✅ PEÇA CRIADA!\nPeça [${tag}] guardada no Estoque Reserva.`);
-        }
-        
-        document.getElementById("add-tag").value = "";
-        document.getElementById("add-meta").value = "";
-
-        try { if(typeof renderReservas === 'function') renderReservas(); } catch(e){}
-        try { if(typeof renderAtivos === 'function') renderAtivos(); } catch(e){}
-        try { if(typeof renderReparos === 'function') renderReparos(); } catch(e){}
-        
-        // RECARREGA A TELA DE CHASSI NA HORA
-        if (instalarDireto && typeof window.mudarVeioVisualizado === 'function') {
-            window.mudarVeioVisualizado(veio);
-        }
-    }
-};
 
 // ==========================================
 // FILTROS MCC
@@ -658,15 +437,15 @@ function renderizarGraficosMCC(mccNumero) {
     const divFiltroStatus = document.getElementById(`filtros-status-mcc${mccNumero}`);
     const statusAtivo = divFiltroStatus ? divFiltroStatus.querySelector('.active').getAttribute('data-valor') : 'TODOS';
 
-    let filtrados = BANCO_ATIVOS.filter(a => a.local.includes(`MCC ${mccNumero}`));
+    let filtrados = BANCO_ATIVOS.filter(a => a.local && a.local.includes(`MCC ${mccNumero}`));
 
     if (veioAtivo !== 'TODOS') {
-        filtrados = filtrados.filter(a => a.local.includes(`Veio ${veioAtivo}`));
+        filtrados = filtrados.filter(a => a.local && a.local.includes(`Veio ${veioAtivo}`));
     }
 
     if (statusAtivo !== 'TODOS') {
         filtrados = filtrados.filter(a => {
-            const pct = (a.ton / a.meta) * 100;
+            const pct = a.meta > 0 ? (a.ton / a.meta) * 100 : 0;
             if (statusAtivo === 'VERMELHO') return pct >= 80;
             if (statusAtivo === 'AMARELO') return pct >= 50 && pct < 80;
             if (statusAtivo === 'VERDE') return pct < 50;
@@ -674,7 +453,7 @@ function renderizarGraficosMCC(mccNumero) {
         });
     }
 
-    filtrados.sort((a, b) => a.ordem - b.ordem);
+    filtrados.sort((a, b) => (a.ordem || 999) - (b.ordem || 999));
 
     if (filtrados.length === 0) {
         container.innerHTML = `<div class="vazio">Nenhum equipamento encontrado com a combinação de filtros.</div>`;
@@ -682,6 +461,118 @@ function renderizarGraficosMCC(mccNumero) {
     }
 
     container.innerHTML = filtrados.map(gerarCardGraficoHTML).join("");
+}
+
+// ==========================================
+// GERENCIADOR DE CHASSIS - SEQUENCIAMENTO DE VEIOS
+// ==========================================
+function mudarVeioVisualizado(veio) {
+    document.querySelectorAll('.btn-veio-tab').forEach(b => b.classList.remove('active'));
+    if (event && event.currentTarget) event.currentTarget.classList.add('active');
+    
+    const titulo = document.getElementById("titulo-veio-focado");
+    if (titulo) titulo.innerHTML = `Sequenciamento Estrutural: <span style="color: var(--text-accent);">Veio ${veio}</span>`;
+
+    const container = document.getElementById("container-fluxo-horizontal-scroll");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const pecasInstaladas = BANCO_ATIVOS.filter(p => 
+        (p.veio === veio && p.status === "Instalado") || 
+        (p.local && p.local.includes(`Veio ${veio}`) && !p.local.includes("Oficina"))
+    );
+
+    if (veio === "G" || veio === "H") {
+        const esqueletoMCC4 = [
+            { idSlot: "MOLDE", nome: "Molde Alta Perf.", familia: "MOLDE" },
+            { idSlot: "BENDER", nome: "Dobrador (Bender)", familia: "BENDER" },
+            { idSlot: "BOW-1", nome: "Curvo Bow #01", familia: "BOW" },
+            { idSlot: "BOW-2", nome: "Curvo Bow #02", familia: "BOW" },
+            { idSlot: "BOW-3", nome: "Curvo Bow #03", familia: "BOW" },
+            { idSlot: "BOW-4", nome: "Curvo Bow #04", familia: "BOW" },
+            { idSlot: "BOW-5", nome: "Curvo Bow #05", familia: "BOW" },
+            { idSlot: "STR-1", nome: "Endireitador R1", familia: "STRAIGHTENER R1" },
+            { idSlot: "STR-2", nome: "Endireitador R2", familia: "STRAIGHTENER R2" },
+            { idSlot: "HOR-8", nome: "Segmento Horizontal #08", familia: "HORIZONTAL" },
+            { idSlot: "HOR-9", nome: "Segmento Horizontal #09", familia: "HORIZONTAL" },
+            { idSlot: "HOR-10", nome: "Segmento Horizontal #10", familia: "HORIZONTAL" },
+            { idSlot: "HOR-11", nome: "Segmento Horizontal #11", familia: "HORIZONTAL" },
+            { idSlot: "HOR-12", nome: "Segmento Horizontal #12", familia: "HORIZONTAL" },
+            { idSlot: "HOR-13", nome: "Segmento Horizontal #13", familia: "HORIZONTAL" },
+            { idSlot: "HOR-14", nome: "Segmento Horizontal #14", familia: "HORIZONTAL" },
+            { idSlot: "HOR-15", nome: "Segmento Horizontal #15", familia: "HORIZONTAL" },
+            { idSlot: "HOR-16", nome: "Segmento Horizontal #16", familia: "HORIZONTAL" },
+            { idSlot: "HOR-17", nome: "Segmento Horizontal #17", familia: "HORIZONTAL" }
+        ];
+
+        let htmlSlots = "";
+        esqueletoMCC4.forEach(slot => {
+            let pecaEncontrada = pecasInstaladas.find(p => {
+                if (p.posicaoFixa && p.posicaoFixa === slot.idSlot) return true;
+                if (!p.posicaoFixa) {
+                    let tipoUpper = p.tipo ? p.tipo.toUpperCase() : "";
+                    let idUpper = p.id ? p.id.toUpperCase() : "";
+                    if (slot.familia === "MOLDE" && tipoUpper.includes("MOLDE")) return true;
+                    if (slot.familia === "BENDER" && tipoUpper.includes("BENDER")) return true;
+                    if (tipoUpper.includes("BOW") && slot.idSlot.includes("BOW")) {
+                        let numSlot = slot.idSlot.replace("BOW-", "");
+                        if (idUpper.includes(`BOW-${numSlot}`)) return true;
+                    }
+                    if (tipoUpper.includes("STRAIGHTENER") && slot.idSlot.includes("STR")) {
+                        let numSlot = slot.idSlot.replace("STR-", "");
+                        if (idUpper.includes(`STR-${numSlot}`)) return true;
+                    }
+                    if (tipoUpper.includes("HORIZONTAL") && slot.idSlot.includes("HOR")) {
+                        let numSlot = parseInt(slot.idSlot.replace("HOR-", ""));
+                        let numIdCorrespondente = numSlot - 7; 
+                        if (idUpper.includes(`HOR-${numIdCorrespondente}-`)) return true;
+                    }
+                }
+                return false;
+            });
+
+            if (pecaEncontrada) {
+                let pct = pecaEncontrada.meta > 0 ? (pecaEncontrada.ton / pecaEncontrada.meta) * 100 : 0;
+                let corClass = pct >= 80 ? "danger" : pct >= 50 ? "warning" : "success";
+
+                htmlSlots += `
+                <div class="ind-card glass-panel" style="border-top: 3px solid var(--${corClass}); min-width: 300px;">
+                    <div class="flex-between">
+                        <h4>${pecaEncontrada.id} <span class="ind-card-tag bg-tag" style="font-size: 10px;">${pecaEncontrada.tipo}</span></h4>
+                        <span style="color: var(--${corClass}); font-weight: bold;">${pct.toFixed(1)}%</span>
+                    </div>
+                    <p class="text-muted" style="font-size: 13px;"><i class="fas fa-layer-group"></i> ${slot.nome}</p>
+                    <div class="progress-container mt-10">
+                        <div class="progress-bar bg-${corClass}" style="width: ${Math.min(pct, 100)}%;"></div>
+                    </div>
+                    <div class="flex-between mt-10" style="font-size: 12px;">
+                        <span>Ton: <strong>${Number(pecaEncontrada.ton).toLocaleString('pt-BR')}</strong></span>
+                        <span>Lim: ${Number(pecaEncontrada.meta || 0).toLocaleString('pt-BR')}</span>
+                    </div>
+                    <div class="flex-between gap-10 mt-15">
+                        <button class="btn-outline-primary w-100" style="padding: 5px;" onclick="abrirHistoricoIndividual('${pecaEncontrada.id}')"><i class="fas fa-book"></i> Prontuário</button>
+                        <button class="btn-outline-danger w-100" style="padding: 5px;" onclick="iniciarSaque('${pecaEncontrada.id}')"><i class="fas fa-exchange-alt"></i> Sacar / Trocar</button>
+                    </div>
+                </div>`;
+            } else {
+                htmlSlots += `
+                <div class="ind-card glass-panel" style="border: 2px dashed #e74c3c; background: rgba(231, 76, 60, 0.05); min-width: 300px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 24px; color: #e74c3c; margin-bottom: 10px;"></i>
+                    <h4 style="color: #e74c3c; margin: 0;">${slot.nome}</h4>
+                    <p style="color: #e74c3c; font-size: 12px; margin-top: 5px;">GAVETA VAZIA / SEM PEÇA FÍSICA</p>
+                    <button class="btn-premium btn-success mt-15 w-100" onclick="abrirAba(event, 'aba-reservas')"><i class="fas fa-plus"></i> Alocar do Estoque</button>
+                </div>`;
+            }
+        });
+        container.innerHTML = htmlSlots;
+    } else {
+        container.innerHTML = `
+        <div style="padding: 30px; text-align: center; color: var(--text-muted); width: 100%;">
+            <i class="fas fa-tools" style="font-size: 40px; margin-bottom: 15px; opacity: 0.5;"></i>
+            <h3>Estrutura da Máquina 2/3 em Construção</h3>
+            <p>O chassi fixo para os veios C, D, E e F será implementado assim que a estrutura for mapeada.</p>
+        </div>`;
+    }
 }
 
 // ==========================================
@@ -809,14 +700,15 @@ function renderReparos() {
         repBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Nenhum equipamento aguardando reparo.</td></tr>`;
     } else {
         repBody.innerHTML = reparos.map(a => {
-            const pct = ((a.ton / a.meta) * 100).toFixed(1);
+            const pct = a.meta > 0 ? ((a.ton / a.meta) * 100) : 0;
+            const pctFixed = pct.toFixed(1);
             return `
                 <tr>
                     <td class="font-code">${a.id}</td>
-                    <td><span class="ind-card-tag bg-tag">${a.tipo} <span style="opacity:0.7; font-size:10px;">(MCC ${a.mcc_compat})</span></span></td>
+                    <td><span class="ind-card-tag bg-tag">${a.tipo} <span style="opacity:0.7; font-size:10px;">(MCC ${a.mcc_compat || ''})</span></span></td>
                     <td>
                         <div class="flex-align-center gap-10">
-                            <span class="font-code bold w-40" style="color: var(--text-heading);">${pct}%</span>
+                            <span class="font-code bold w-40" style="color: var(--text-heading);">${pctFixed}%</span>
                             <div class="ind-gauge-bar premium-bar w-100px">
                                 <div class="ind-gauge-fill bg-danger" style="width: ${Math.min(pct, 100)}%;"></div>
                             </div>
@@ -935,33 +827,32 @@ function executarSwapFinal(idReserva, idAntiga, novoLocal, laudo) {
 }
 
 // ==========================================
-// ROTEADOR PRINCIPAL: ABRE A JANELA CORRETA PARA CADA PEÇA!
+// MODAL CONCLUIR REPARO
 // ==========================================
-
-
-window.abrirJanelaReparoSimples = function(item) {
+function abrirModalConcluirReparo(id) {
     const modalSimples = document.getElementById("modal-concluir-reparo");
     if (!modalSimples) return;
 
-    ID_REPARO_ATUAL = item.id;
+    ID_REPARO_ATUAL = id;
     
     const tagElement = document.getElementById("modal-reparo-tag");
-    if (tagElement) tagElement.innerText = item.id;
+    if (tagElement) tagElement.innerText = id;
     
     const tipoReparo = document.getElementById("modal-tipo-reparo");
     if (tipoReparo) tipoReparo.value = "GERAL";
     
-    const repTon = document.getElementById("modal-reparo-ton");
-    if (repTon) repTon.value = Math.round(item.ton);
+    let item = BANCO_ATIVOS.find(a => a.id === id);
+    if (item) {
+        const repTon = document.getElementById("modal-reparo-ton");
+        if (repTon) repTon.value = Math.round(item.ton || 0);
+        
+        const repDias = document.getElementById("modal-reparo-dias");
+        if (repDias) repDias.value = item.dias || 0;
+    }
     
-    const repDias = document.getElementById("modal-reparo-dias");
-    if (repDias) repDias.value = item.dias;
-    
-    if (typeof window.toggleCamposReparoParcial === 'function') window.toggleCamposReparoParcial();
-    else if (typeof toggleCamposReparoParcial === 'function') toggleCamposReparoParcial();
-
+    toggleCamposReparoParcial();
     modalSimples.classList.remove("hidden");
-};
+}
 
 function fecharModalConcluirReparo() {
     document.getElementById("modal-concluir-reparo").classList.add("hidden");
@@ -1011,10 +902,135 @@ function confirmarConclusaoReparo() {
 }
 
 // ==========================================
-// SISTEMA AVANÇADO DO FOLHÃO DE MOLDES (TODAS AS FAMÍLIAS)
+// SISTEMA AVANÇADO DO FOLHÃO DE MOLDES
 // ==========================================
+function injetarAbasFaltantes() {
+    if (!document.getElementById('tab-peritagem-mcc4')) {
+        let tabsContainer = document.querySelector('.folhao-tabs');
+        let bodyContainer = document.querySelector('.folhao-body');
+        
+        if (tabsContainer && bodyContainer) {
+            tabsContainer.innerHTML += `
+                <button id="tab-peritagem-mcc4" class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-peritagem')">6. Folgas de Aresta</button>
+                <button id="tab-eletrica-mcc4" class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-eletrica')">7. Elétrica e Termopares</button>
+                <button id="tab-materiais-mcc4" class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-materiais')">8. Materiais</button>
+            `;
+            
+            let inputsTermoFixa = "";
+            let inputsTermoMovel = "";
+            for (let i = 1; i <= 12; i++) {
+                inputsTermoFixa += `<div class="input-group"><label>T.Par ${i} (10-20 Ω)</label><input type="text" id="t-fix-${i}"></div>`;
+                inputsTermoMovel += `<div class="input-group"><label>T.Par ${i} (10-20 Ω)</label><input type="text" id="t-mov-${i}"></div>`;
+            }
+            inputsTermoFixa += `
+                <div class="input-group"><label style="color:var(--text-accent)">Positivo 1</label><input type="text" id="t-fix-p1"></div>
+                <div class="input-group"><label style="color:var(--text-accent)">Positivo 2</label><input type="text" id="t-fix-p2"></div>`;
+            inputsTermoMovel += `
+                <div class="input-group"><label style="color:var(--text-accent)">Positivo 1</label><input type="text" id="t-mov-p1"></div>
+                <div class="input-group"><label style="color:var(--text-accent)">Positivo 2</label><input type="text" id="t-mov-p2"></div>`;
 
-// FUNÇÕES DA MEMÓRIA DE FOLGA DE ARESTAS
+            let inputsTermoEsq = "";
+            let inputsTermoDir = "";
+            for (let i = 1; i <= 3; i++) {
+                inputsTermoEsq += `<div class="input-group"><label>T.Par ${i} (5-15 Ω)</label><input type="text" id="t-esq-${i}"></div>`;
+                inputsTermoDir += `<div class="input-group"><label>T.Par ${i} (5-15 Ω)</label><input type="text" id="t-dir-${i}"></div>`;
+            }
+            inputsTermoEsq += `
+                <div class="input-group"><label style="color:var(--text-accent)">Positivo 1</label><input type="text" id="t-esq-p1"></div>
+                <div class="input-group"><label style="color:var(--text-accent)">Positivo 2</label><input type="text" id="t-esq-p2"></div>`;
+            inputsTermoDir += `
+                <div class="input-group"><label style="color:var(--text-accent)">Positivo 1</label><input type="text" id="t-dir-p1"></div>
+                <div class="input-group"><label style="color:var(--text-accent)">Positivo 2</label><input type="text" id="t-dir-p2"></div>`;
+
+            bodyContainer.innerHTML += `
+                <div id="folhao-aba-peritagem" class="folhao-content hidden">
+                    <h3 style="margin-bottom: 15px; color: var(--text-heading);">Folga de Aresta - Medição Multi-Largura</h3>
+                    <p class="text-warning" style="font-size: 12px; margin-bottom: 15px;"><i class="fas fa-info-circle"></i> Selecione a largura, digite os valores e mude para a próxima. O sistema salva automaticamente!</p>
+                    <div class="input-group" style="max-width: 300px; margin-bottom: 20px;">
+                        <label>LARGURA DA FACE DE REFERÊNCIA</label>
+                        <select id="folga-largura" class="premium-select" onchange="carregarMedidaAresta()">
+                            <option value="830">LARGURA 830</option>
+                            <option value="870">LARGURA 870</option>
+                            <option value="950">LARGURA 950</option>
+                            <option value="1030">LARGURA 1030</option>
+                            <option value="1100">LARGURA 1100</option>
+                            <option value="1180">LARGURA 1180</option>
+                            <option value="1230">LARGURA 1230</option>
+                            <option value="1300">LARGURA 1300</option>
+                            <option value="1380">LARGURA 1380</option>
+                            <option value="1460">LARGURA 1460</option>
+                            <option value="1500">LARGURA 1500</option>
+                            <option value="1530">LARGURA 1530</option>
+                            <option value="1550">LARGURA 1550</option>
+                            <option value="1580">LARGURA 1580</option>
+                            <option value="1620">LARGURA 1620</option>
+                        </select>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div style="background: var(--bg-th); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <h4 style="margin-bottom: 15px; color: var(--text-heading); text-align: center;">PLACA ESQUERDA</h4>
+                            <div class="input-group" style="margin-bottom: 10px;"><label>Medida Cima (O/M)</label><input type="text" id="fa-esq-cima" onkeyup="salvarMedidaAresta()"></div>
+                            <div class="input-group" style="margin-bottom: 10px;"><label>Medida Meio (V)</label><input type="text" id="fa-esq-meio" onkeyup="salvarMedidaAresta()"></div>
+                            <div class="input-group" style="margin-bottom: 10px;"><label>Medida Inferior (E/L)</label><input type="text" id="fa-esq-inf" onkeyup="salvarMedidaAresta()"></div>
+                            <hr style="border: 1px solid var(--border-color); margin: 15px 0;">
+                            <div class="input-group"><label style="color:var(--warning)">Folga da Chaveta Esq.</label><input type="text" id="fa-esq-chav" onkeyup="salvarMedidaAresta()"></div>
+                        </div>
+                        <div style="background: var(--bg-th); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <h4 style="margin-bottom: 15px; color: var(--text-heading); text-align: center;">PLACA DIREITA</h4>
+                            <div class="input-group" style="margin-bottom: 10px;"><label>Medida Cima (O/M)</label><input type="text" id="fa-dir-cima" onkeyup="salvarMedidaAresta()"></div>
+                            <div class="input-group" style="margin-bottom: 10px;"><label>Medida Meio (V)</label><input type="text" id="fa-dir-meio" onkeyup="salvarMedidaAresta()"></div>
+                            <div class="input-group" style="margin-bottom: 10px;"><label>Medida Inferior (E/L)</label><input type="text" id="fa-dir-inf" onkeyup="salvarMedidaAresta()"></div>
+                            <hr style="border: 1px solid var(--border-color); margin: 15px 0;">
+                            <div class="input-group"><label style="color:var(--warning)">Folga da Chaveta Dir.</label><input type="text" id="fa-dir-chav" onkeyup="salvarMedidaAresta()"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="folhao-aba-eletrica" class="folhao-content hidden">
+                    <h3 style="margin-bottom: 15px; color: var(--text-heading); border-bottom: 1px solid var(--text-accent); padding-bottom: 5px;">Isolamento dos Sensores de Nível do Molde (&gt;10 MΩ)</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 30px;">
+                        <div class="input-group"><label>Pinos 5 e 6</label><input type="text" id="iso-5-6"></div>
+                        <div class="input-group"><label>Pinos 5 e 8</label><input type="text" id="iso-5-8"></div>
+                        <div class="input-group"><label>Pinos 5 e 10</label><input type="text" id="iso-5-10"></div>
+                        <div class="input-group"><label>Pinos 5 e 15</label><input type="text" id="iso-5-15"></div>
+                        <div class="input-group"><label>Pinos 6 e 8</label><input type="text" id="iso-6-8"></div>
+                        <div class="input-group"><label>Pinos 6 e 10</label><input type="text" id="iso-6-10"></div>
+                        <div class="input-group"><label>Pinos 6 e 15</label><input type="text" id="iso-6-15"></div>
+                        <div class="input-group"><label>Pinos 8 e 10</label><input type="text" id="iso-8-10"></div>
+                        <div class="input-group"><label>Pinos 8 e 15</label><input type="text" id="iso-8-15"></div>
+                        <div class="input-group"><label>Pinos 10 e 15</label><input type="text" id="iso-10-15"></div>
+                    </div>
+                    <h3 style="margin-bottom: 15px; color: var(--text-heading); border-bottom: 1px solid var(--text-accent); padding-bottom: 5px;">Teste de Resistência: Placas LARGAS</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                        <div style="background: var(--bg-th); padding: 10px; border-radius: 8px;">
+                            <h4 style="text-align: center; margin-bottom: 10px;">PLACA FIXA</h4>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">${inputsTermoFixa}</div>
+                        </div>
+                        <div style="background: var(--bg-th); padding: 10px; border-radius: 8px;">
+                            <h4 style="text-align: center; margin-bottom: 10px;">PLACA MÓVEL</h4>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">${inputsTermoMovel}</div>
+                        </div>
+                    </div>
+                    <h3 style="margin-bottom: 15px; color: var(--text-heading); border-bottom: 1px solid var(--text-accent); padding-bottom: 5px;">Teste de Resistência: Placas ESTREITAS</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div style="background: var(--bg-th); padding: 10px; border-radius: 8px;">
+                            <h4 style="text-align: center; margin-bottom: 10px;">ESTREITA ESQUERDA</h4>
+                            <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">${inputsTermoEsq}</div>
+                        </div>
+                        <div style="background: var(--bg-th); padding: 10px; border-radius: 8px;">
+                            <h4 style="text-align: center; margin-bottom: 10px;">ESTREITA DIREITA</h4>
+                            <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">${inputsTermoDir}</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="folhao-aba-materiais" class="folhao-content hidden">
+                    <h3 style="margin-bottom: 15px; color: var(--text-heading);">Relatório de Materiais Utilizados</h3>
+                    <textarea id="materiais-utilizados-texto" class="premium-textarea" rows="10" placeholder="Liste as quantidades e materiais utilizados. Ex:\n4 Parafusos sextavados M24x140\n8 Arruelas Pressão\nMassa de calafetar\n..."></textarea>
+                </div>
+            `;
+        }
+    }
+}
+
 function carregarMedidaAresta() {
     let largura = document.getElementById("folga-largura").value;
     
@@ -1049,145 +1065,6 @@ function salvarMedidaAresta() {
     };
 }
 
-function injetarAbasFaltantes() {
-    // Injeta de forma dinâmica para não exigir que mexa no arquivo HTML inteiro
-    if(!document.getElementById('tab-peritagem-mcc4')) {
-        let tabsContainer = document.querySelector('.folhao-tabs');
-        let bodyContainer = document.querySelector('.folhao-body');
-        
-        if(tabsContainer && bodyContainer) {
-            tabsContainer.innerHTML += `
-                <button id="tab-peritagem-mcc4" class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-peritagem')">6. Folgas de Aresta</button>
-                <button id="tab-eletrica-mcc4" class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-eletrica')">7. Elétrica e Termopares</button>
-                <button id="tab-materiais-mcc4" class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-materiais')">8. Materiais</button>
-            `;
-            
-            // CONSTRÓI OS CAMPOS DA ELÉTRICA - TERMOPARES PLACA FIXA E MOVEL (1 a 12 + Positivos)
-            let inputsTermoFixa = "";
-            let inputsTermoMovel = "";
-            for(let i=1; i<=12; i++) {
-                inputsTermoFixa += `<div class="input-group"><label>T.Par ${i} (10-20 Ω)</label><input type="text" id="t-fix-${i}"></div>`;
-                inputsTermoMovel += `<div class="input-group"><label>T.Par ${i} (10-20 Ω)</label><input type="text" id="t-mov-${i}"></div>`;
-            }
-            inputsTermoFixa += `
-                <div class="input-group"><label style="color:var(--text-accent)">Positivo 1</label><input type="text" id="t-fix-p1"></div>
-                <div class="input-group"><label style="color:var(--text-accent)">Positivo 2</label><input type="text" id="t-fix-p2"></div>`;
-            inputsTermoMovel += `
-                <div class="input-group"><label style="color:var(--text-accent)">Positivo 1</label><input type="text" id="t-mov-p1"></div>
-                <div class="input-group"><label style="color:var(--text-accent)">Positivo 2</label><input type="text" id="t-mov-p2"></div>`;
-
-            // CONSTRÓI OS CAMPOS DA ELÉTRICA - TERMOPARES ESTREITAS (1 a 3 + Positivos)
-            let inputsTermoEsq = "";
-            let inputsTermoDir = "";
-            for(let i=1; i<=3; i++) {
-                inputsTermoEsq += `<div class="input-group"><label>T.Par ${i} (5-15 Ω)</label><input type="text" id="t-esq-${i}"></div>`;
-                inputsTermoDir += `<div class="input-group"><label>T.Par ${i} (5-15 Ω)</label><input type="text" id="t-dir-${i}"></div>`;
-            }
-            inputsTermoEsq += `
-                <div class="input-group"><label style="color:var(--text-accent)">Positivo 1</label><input type="text" id="t-esq-p1"></div>
-                <div class="input-group"><label style="color:var(--text-accent)">Positivo 2</label><input type="text" id="t-esq-p2"></div>`;
-            inputsTermoDir += `
-                <div class="input-group"><label style="color:var(--text-accent)">Positivo 1</label><input type="text" id="t-dir-p1"></div>
-                <div class="input-group"><label style="color:var(--text-accent)">Positivo 2</label><input type="text" id="t-dir-p2"></div>`;
-
-            // Injeta o conteúdo dinâmico do formulário
-            bodyContainer.innerHTML += `
-                <div id="folhao-aba-peritagem" class="folhao-content hidden">
-                    <h3 style="margin-bottom: 15px; color: var(--text-heading);">Folga de Aresta - Medição Multi-Largura</h3>
-                    <p class="text-warning" style="font-size: 12px; margin-bottom: 15px;"><i class="fas fa-info-circle"></i> Selecione a largura, digite os valores e mude para a próxima. O sistema salva automaticamente!</p>
-                    
-                    <div class="input-group" style="max-width: 300px; margin-bottom: 20px;">
-                        <label>LARGURA DA FACE DE REFERÊNCIA</label>
-                        <select id="folga-largura" class="premium-select" onchange="carregarMedidaAresta()">
-                            <option value="830">LARGURA 830</option>
-                            <option value="870">LARGURA 870</option>
-                            <option value="950">LARGURA 950</option>
-                            <option value="1030">LARGURA 1030</option>
-                            <option value="1100">LARGURA 1100</option>
-                            <option value="1180">LARGURA 1180</option>
-                            <option value="1230">LARGURA 1230</option>
-                            <option value="1300">LARGURA 1300</option>
-                            <option value="1380">LARGURA 1380</option>
-                            <option value="1460">LARGURA 1460</option>
-                            <option value="1500">LARGURA 1500</option>
-                            <option value="1530">LARGURA 1530</option>
-                            <option value="1550">LARGURA 1550</option>
-                            <option value="1580">LARGURA 1580</option>
-                            <option value="1620">LARGURA 1620</option>
-                        </select>
-                    </div>
-
-                    <div class="form-grid-2-mobile" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        <div style="background: var(--bg-th); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
-                            <h4 style="margin-bottom: 15px; color: var(--text-heading); text-align: center;">PLACA ESQUERDA</h4>
-                            <div class="input-group" style="margin-bottom: 10px;"><label>Medida Cima (O/M)</label><input type="text" id="fa-esq-cima" onkeyup="salvarMedidaAresta()"></div>
-                            <div class="input-group" style="margin-bottom: 10px;"><label>Medida Meio (V)</label><input type="text" id="fa-esq-meio" onkeyup="salvarMedidaAresta()"></div>
-                            <div class="input-group" style="margin-bottom: 10px;"><label>Medida Inferior (E/L)</label><input type="text" id="fa-esq-inf" onkeyup="salvarMedidaAresta()"></div>
-                            <hr style="border: 1px solid var(--border-color); margin: 15px 0;">
-                            <div class="input-group"><label style="color:var(--warning)">Folga da Chaveta Esq.</label><input type="text" id="fa-esq-chav" onkeyup="salvarMedidaAresta()"></div>
-                        </div>
-                        
-                        <div style="background: var(--bg-th); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
-                            <h4 style="margin-bottom: 15px; color: var(--text-heading); text-align: center;">PLACA DIREITA</h4>
-                            <div class="input-group" style="margin-bottom: 10px;"><label>Medida Cima (O/M)</label><input type="text" id="fa-dir-cima" onkeyup="salvarMedidaAresta()"></div>
-                            <div class="input-group" style="margin-bottom: 10px;"><label>Medida Meio (V)</label><input type="text" id="fa-dir-meio" onkeyup="salvarMedidaAresta()"></div>
-                            <div class="input-group" style="margin-bottom: 10px;"><label>Medida Inferior (E/L)</label><input type="text" id="fa-dir-inf" onkeyup="salvarMedidaAresta()"></div>
-                            <hr style="border: 1px solid var(--border-color); margin: 15px 0;">
-                            <div class="input-group"><label style="color:var(--warning)">Folga da Chaveta Dir.</label><input type="text" id="fa-dir-chav" onkeyup="salvarMedidaAresta()"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="folhao-aba-eletrica" class="folhao-content hidden">
-                    <h3 style="margin-bottom: 15px; color: var(--text-heading); border-bottom: 1px solid var(--text-accent); padding-bottom: 5px;">Isolamento dos Sensores de Nível do Molde (>10 MΩ)</h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 30px;">
-                        <div class="input-group"><label>Pinos 5 e 6</label><input type="text" id="iso-5-6"></div>
-                        <div class="input-group"><label>Pinos 5 e 8</label><input type="text" id="iso-5-8"></div>
-                        <div class="input-group"><label>Pinos 5 e 10</label><input type="text" id="iso-5-10"></div>
-                        <div class="input-group"><label>Pinos 5 e 15</label><input type="text" id="iso-5-15"></div>
-                        <div class="input-group"><label>Pinos 6 e 8</label><input type="text" id="iso-6-8"></div>
-                        <div class="input-group"><label>Pinos 6 e 10</label><input type="text" id="iso-6-10"></div>
-                        <div class="input-group"><label>Pinos 6 e 15</label><input type="text" id="iso-6-15"></div>
-                        <div class="input-group"><label>Pinos 8 e 10</label><input type="text" id="iso-8-10"></div>
-                        <div class="input-group"><label>Pinos 8 e 15</label><input type="text" id="iso-8-15"></div>
-                        <div class="input-group"><label>Pinos 10 e 15</label><input type="text" id="iso-10-15"></div>
-                    </div>
-
-                    <h3 style="margin-bottom: 15px; color: var(--text-heading); border-bottom: 1px solid var(--text-accent); padding-bottom: 5px;">Teste de Resistência: Placas LARGAS</h3>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
-                        <div style="background: var(--bg-th); padding: 10px; border-radius: 8px;">
-                            <h4 style="text-align: center; margin-bottom: 10px;">PLACA FIXA</h4>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">${inputsTermoFixa}</div>
-                        </div>
-                        <div style="background: var(--bg-th); padding: 10px; border-radius: 8px;">
-                            <h4 style="text-align: center; margin-bottom: 10px;">PLACA MÓVEL</h4>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">${inputsTermoMovel}</div>
-                        </div>
-                    </div>
-
-                    <h3 style="margin-bottom: 15px; color: var(--text-heading); border-bottom: 1px solid var(--text-accent); padding-bottom: 5px;">Teste de Resistência: Placas ESTREITAS</h3>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <div style="background: var(--bg-th); padding: 10px; border-radius: 8px;">
-                            <h4 style="text-align: center; margin-bottom: 10px;">ESTREITA ESQUERDA</h4>
-                            <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">${inputsTermoEsq}</div>
-                        </div>
-                        <div style="background: var(--bg-th); padding: 10px; border-radius: 8px;">
-                            <h4 style="text-align: center; margin-bottom: 10px;">ESTREITA DIREITA</h4>
-                            <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">${inputsTermoDir}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="folhao-aba-materiais" class="folhao-content hidden">
-                    <h3 style="margin-bottom: 15px; color: var(--text-heading);">Relatório de Materiais Utilizados</h3>
-                    <textarea id="materiais-utilizados-texto" class="premium-textarea" rows="10" placeholder="Liste as quantidades e materiais utilizados. Ex:\n4 Parafusos sextavados M24x140\n8 Arruelas Pressão\nMassa de calafetar\n..."></textarea>
-                </div>
-            `;
-        }
-    }
-}
-
-// Essa função agora atende a TODOS os moldes!
 function abrirFolhaoMolde(id) {
     injetarAbasFaltantes();
     
@@ -1195,11 +1072,10 @@ function abrirFolhaoMolde(id) {
     if (!item) return;
 
     ID_FOLHAO_ATUAL = id;
-    DADOS_FOLGA_ARESTA = {}; // Reinicia a memória de arestas
+    DADOS_FOLGA_ARESTA = {};
     
-    // Atualiza o título do modal dinamicamente de acordo com a família do Molde
     const tituloPrincipal = document.querySelector("#modal-folhao-mcc4 h2");
-    if(tituloPrincipal) {
+    if (tituloPrincipal) {
         tituloPrincipal.innerHTML = `<i class="fas fa-clipboard-list"></i> Liberação Oficial - MOLDE (${item.mcc_compat})`;
     }
 
@@ -1213,7 +1089,7 @@ function abrirFolhaoMolde(id) {
     renderizarChecklist(CHECKLIST_FINAL, "container-check-final", "fin");
 
     document.querySelectorAll('.folhao-tab')[0].click();
-    carregarMedidaAresta(); // Carrega a primeira largura padrão
+    carregarMedidaAresta();
     document.getElementById("modal-folhao-mcc4").classList.remove("hidden");
 }
 
@@ -1222,7 +1098,6 @@ function fecharFolhaoMolde() {
     ID_FOLHAO_ATUAL = null;
 }
 
-// Mudei apenas a chamada no botão do HTML virtual, mantendo os mesmos nomes para não quebrar seu HTML base.
 function fecharFolhaoMCC4() {
     fecharFolhaoMolde();
 }
@@ -1251,7 +1126,6 @@ function renderizarChecklist(arrayPerguntas, containerId, prefix) {
     container.innerHTML = html;
 }
 
-// Extrai as opções marcadas do checklist para o PDF
 function gerarLinhasChecklistPDF(arrayPerguntas, prefix) {
     let html = "";
     arrayPerguntas.forEach((pergunta, index) => {
@@ -1259,8 +1133,8 @@ function gerarLinhasChecklistPDF(arrayPerguntas, prefix) {
         let radios = document.getElementsByName(name);
         let valorSelecionado = "N/A";
         
-        for(let i=0; i<radios.length; i++){
-            if(radios[i].checked) {
+        for (let i = 0; i < radios.length; i++) {
+            if (radios[i].checked) {
                 valorSelecionado = radios[i].value;
                 break;
             }
@@ -1276,70 +1150,27 @@ function gerarLinhasChecklistPDF(arrayPerguntas, prefix) {
     return html;
 }
 
-// A FUNÇÃO SALVADORA
-window.salvarEImprimirFolhaoMCC4 = function() {
-    if (!verificarAcesso() || !ID_FOLHAO_ATUAL) return;
-    
-    let item = BANCO_ATIVOS.find(a => a.id === ID_FOLHAO_ATUAL);
-    if (!item) return;
-
-    let tipoExecucao = document.getElementById("mcc4-tipo-execucao").value;
-    let motivo = document.getElementById("mcc4-motivo").value || "Manutenção Padrão";
-    
-    if(tipoExecucao === "GERAL") {
-        item.ton = 0;
-        item.dias = 0;
-    }
-    
-    item.local = "Oficina / Reserva";
-    
-    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-    
-    // GUARDA A TAG ANTES DE LIMPAR A MEMÓRIA PARA NÃO DAR "null" NO PDF!
-    let tagParaImprimir = ID_FOLHAO_ATUAL;
-    
-    let linkImprimir = `<button class='btn-xs-primary' style='margin-left:10px; cursor:pointer; color:var(--text-accent)' onclick='imprimirLaudoSalvo("${tagParaImprimir}", "${motivo}")'><i class='fas fa-print'></i> Imprimir Folhão</button>`;
-    
-    registrarHistorico(item.id, `Folhão (${item.mcc_compat}) Assinado. Execução: ${tipoExecucao}. Motivo: ${motivo}. ${linkImprimir}`);
-    
-    // 1º FECHA O MODAL
-    fecharFolhaoMolde();
-    
-    // 2º RENDERIZA AS TABELAS
-    renderReparos();
-    renderReservas();
-    renderAtivos();
-    calcularKpisGlobais();
-    
-    // 3º CHAMA O PDF COM A TAG GUARDAADA!
-    imprimirLaudoSalvo(tagParaImprimir, motivo);
-}
-
-// Helper rápido para ler os inputs
 function getV(id) {
     let el = document.getElementById(id);
     return el && el.value ? el.value : ' - ';
 }
 
-// IMPRESSÃO MASTER DO PDF CSN
-window.imprimirLaudoSalvo = function(tag, motivo) {
+function imprimirLaudoSalvo(tag, motivo) {
     const printDiv = document.getElementById("print-content");
     let materiais = document.getElementById("materiais-utilizados-texto") ? document.getElementById("materiais-utilizados-texto").value : "";
     
     let itemData = BANCO_ATIVOS.find(a => a.id === tag);
     let familiaMolde = itemData ? itemData.mcc_compat : "2/3/4";
 
-    // Constrói HTML Multi-Largura para Folga de Aresta
     let htmlFolgas = "";
     let largurasPreenchidas = Object.keys(DADOS_FOLGA_ARESTA);
     
-    if(largurasPreenchidas.length === 0) {
+    if (largurasPreenchidas.length === 0) {
         htmlFolgas = "<tr><td colspan='3' style='text-align:center;'>Nenhuma medida de folga registrada.</td></tr>";
     } else {
         largurasPreenchidas.forEach(larg => {
             let d = DADOS_FOLGA_ARESTA[larg];
-            // Só imprime se pelo menos um campo tiver sido preenchido
-            if(d.ec || d.em || d.ei || d.ech || d.dc || d.dm || d.di || d.dch) {
+            if (d.ec || d.em || d.ei || d.ech || d.dc || d.dm || d.di || d.dch) {
                 htmlFolgas += `
                     <tr style="background:#ddd; font-weight:bold;">
                         <td colspan="3" style="text-align:center; padding: 4px;">LARGURA ${larg}</td>
@@ -1351,20 +1182,20 @@ window.imprimirLaudoSalvo = function(tag, motivo) {
                 `;
             }
         });
-        if(htmlFolgas === "") {
+        if (htmlFolgas === "") {
             htmlFolgas = "<tr><td colspan='3' style='text-align:center;'>Nenhuma medida preenchida.</td></tr>";
         }
     }
 
     let tableTermoLargas = "";
-    for(let i=1; i<=12; i++) {
+    for (let i = 1; i <= 12; i++) {
         tableTermoLargas += `<tr><td>Termopar ${i} (10-20 Ω)</td><td>${getV('t-fix-' + i)}</td><td>${getV('t-mov-' + i)}</td></tr>`;
     }
     tableTermoLargas += `<tr style="background:#eee"><td>Positivo 1</td><td>${getV('t-fix-p1')}</td><td>${getV('t-mov-p1')}</td></tr>`;
     tableTermoLargas += `<tr style="background:#eee"><td>Positivo 2</td><td>${getV('t-fix-p2')}</td><td>${getV('t-mov-p2')}</td></tr>`;
 
     let tableTermoEstreitas = "";
-    for(let i=1; i<=3; i++) {
+    for (let i = 1; i <= 3; i++) {
         tableTermoEstreitas += `<tr><td>Termopar ${i} (5-15 Ω)</td><td>${getV('t-esq-' + i)}</td><td>${getV('t-dir-' + i)}</td></tr>`;
     }
     tableTermoEstreitas += `<tr style="background:#eee"><td>Positivo 1</td><td>${getV('t-esq-p1')}</td><td>${getV('t-dir-p1')}</td></tr>`;
@@ -1498,38 +1329,118 @@ window.imprimirLaudoSalvo = function(tag, motivo) {
 }
 
 // ==========================================
-// CADASTRO DE NOVAS PEÇAS (ESTOQUE) E ROLOS
+// CADASTRO DE NOVAS PEÇAS E ROLOS
 // ==========================================
 function toggleFormAdicionar() {
     document.getElementById("form-novo-equipamento").classList.toggle("hidden");
 }
 
-function salvarNovoEquipamento() {
-    if (!verificarAcesso()) return;
+function atualizarPosicoesCadastro() {
+    const tipo = document.getElementById("add-tipo").value;
+    const selectPos = document.getElementById("add-posicao");
+    selectPos.innerHTML = "";
+
+    if (tipo.includes("Bow")) {
+        for (let i = 1; i <= 5; i++) selectPos.innerHTML += `<option value="BOW-${i}">Posição ${i}</option>`;
+    } 
+    else if (tipo.includes("Horizontal")) {
+        for (let i = 8; i <= 17; i++) selectPos.innerHTML += `<option value="HOR-${i}">Posição ${i}</option>`;
+    } 
+    else if (tipo.includes("Straightener R1")) {
+        selectPos.innerHTML = `<option value="STR-1">Posição Única (R1)</option>`;
+    } 
+    else if (tipo.includes("Straightener R2")) {
+        selectPos.innerHTML = `<option value="STR-2">Posição Única (R2)</option>`;
+    } 
+    else if (tipo.includes("Molde")) {
+        selectPos.innerHTML = `<option value="MOLDE">Gaveta 0 (Topo)</option>`;
+    } 
+    else if (tipo.includes("Bender")) {
+        selectPos.innerHTML = `<option value="BENDER">Gaveta 1 (Bender)</option>`;
+    } 
+    else {
+        selectPos.innerHTML = `<option value="GERAL">Uso Geral / Sem Posição Fixa</option>`;
+    }
+}
+
+function processarCadastroPeca() {
+    const tag = document.getElementById("add-tag").value.trim() || `NOVA-PECA-${Math.floor(Math.random()*1000)}`;
+    const tipoValor = document.getElementById("add-tipo").value || "";
+    const tipoSplit = tipoValor.split("|");
+    const familia = tipoSplit[0] || ""; 
+    const mccCompat = tipoSplit[1] || "4"; 
     
-    const tag = document.getElementById("add-tag").value.trim().toUpperCase();
-    const valorCompleto = document.getElementById("add-tipo").value;
-    const meta = parseFloat(document.getElementById("add-meta").value);
+    const limite = parseFloat(document.getElementById("add-meta").value) || 1000000;
+    const veio = document.getElementById("add-veio").value || "";
+    const posicao = document.getElementById("add-posicao").value || "";
+    const instalarDireto = document.getElementById("add-instalar-direto").checked;
 
-    if (!tag || !meta) { return alert("Preencha TAG e Meta."); }
-    if (BANCO_ATIVOS.find(a => a.id === tag)) { return alert("TAG já cadastrada."); }
+    let statusFinal = instalarDireto ? "Instalado" : "Oficina / Reserva";
+    let localFinal = instalarDireto ? `MCC 4 - Veio ${veio}` : "Oficina / Reserva";
 
-    const [tipo, mcc_compat] = valorCompleto.split("|");
-    
-    BANCO_ATIVOS.push({
-        id: tag, tipo: tipo, local: "Oficina / Reserva", pos: "Estoque", dias: 0, ton: 0, meta: meta, ordem: getOrdemPadrao(tipo), mcc_compat: mcc_compat
-    });
+    if (instalarDireto && veio && posicao) {
+        let pecaAntiga = BANCO_ATIVOS.find(p => {
+            let taNoVeio = (p.veio === veio && p.status === "Instalado") || 
+                           (p.local && p.local.includes(`Veio ${veio}`) && !p.local.includes("Oficina"));
+            if (!taNoVeio) return false;
+            if (p.posicaoFixa && p.posicaoFixa === posicao) return true;
+            if (p.pos && p.pos.includes(posicao.replace("BOW-", "").replace("HOR-", ""))) return true;
+            return false;
+        });
+        
+        if (pecaAntiga) {
+            pecaAntiga.status = "Oficina / Reparo";
+            pecaAntiga.local = "Oficina / Reparo";
+            pecaAntiga.veio = "";
+            pecaAntiga.posicaoFixa = "";
+            alert(`⚠️ SUBSTITUIÇÃO ATIVA:\nA peça velha [${pecaAntiga.id}] foi expulsa da gaveta ${posicao} e enviada para a aba de "Peças em Reparo".`);
+        }
+    }
 
+    const novaPeca = {
+        id: tag,
+        tipo: familia,
+        veio: instalarDireto ? veio : "",
+        local: localFinal,
+        posicaoFixa: instalarDireto ? posicao : "",
+        pos: instalarDireto ? posicao : "Estoque",
+        status: statusFinal,
+        ton: 0,
+        dias: 0,
+        meta: limite,
+        mcc_compat: mccCompat,
+        ordem: getOrdemPadrao(familia)
+    };
+
+    BANCO_ATIVOS.push(novaPeca);
     localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-    registrarHistorico(tag, `Peça nova (${tipo} MCC ${mcc_compat}) cadastrada.`);
+    
+    if (statusFinal === "Instalado") {
+        alert(`✅ Sucesso! A nova peça [${tag}] assumiu o controle da gaveta ${posicao} do Veio ${veio}.`);
+    } else {
+        alert(`✅ Sucesso! Peça [${tag}] criada e guardada no Estoque Reserva.`);
+    }
+    
+    document.getElementById("add-tag").value = "";
+    document.getElementById("add-meta").value = "";
+    document.getElementById("add-instalar-direto").checked = false;
 
-    document.getElementById("add-tag").value = ""; document.getElementById("add-meta").value = "";
-    toggleFormAdicionar(); renderReservas(); calcularKpisGlobais(); renderAtivos();
+    if (typeof renderReservas === 'function') renderReservas();
+    if (typeof renderAtivos === 'function') renderAtivos();
+    if (typeof renderReparos === 'function') renderReparos();
+    if (typeof renderPainelVeios === 'function') renderPainelVeios();
+    if (typeof calcularKpisGlobais === 'function') calcularKpisGlobais();
+    
+    if (instalarDireto && typeof mudarVeioVisualizado === 'function') {
+        mudarVeioVisualizado(veio);
+    }
 }
 
 function renderRolos() {
-    const tbody = document.getElementById("rolos-table-body"); if (!tbody) return;
-    let htmlFinal = ""; const equipamentosDiferentes = [...new Set(BANCO_ROLOS.map(r => r.conjunto))].sort();
+    const tbody = document.getElementById("rolos-table-body");
+    if (!tbody) return;
+    let htmlFinal = "";
+    const equipamentosDiferentes = [...new Set(BANCO_ROLOS.map(r => r.conjunto))].sort();
 
     equipamentosDiferentes.forEach(equipamento => {
         htmlFinal += `
@@ -1558,7 +1469,8 @@ function alterarSaldoRolo(id, fator) {
     let rolo = BANCO_ROLOS.find(r => r.id === id);
     if (rolo) {
         if (rolo.qtd + fator < 0) { return alert("O saldo em estoque não pode ser negativo."); }
-        rolo.qtd += fator; localStorage.setItem("oms_rolos_v32_local", JSON.stringify(BANCO_ROLOS));
+        rolo.qtd += fator;
+        localStorage.setItem("oms_rolos_v32_local", JSON.stringify(BANCO_ROLOS));
         registrarHistorico("ALMOXARIFADO", `Ajuste de estoque do rolo [${rolo.nome}]. Novo saldo: ${rolo.qtd} Pçs.`);
         renderRolos();
     }
@@ -1577,7 +1489,10 @@ function renderMateriais() {
         filtrados = BANCO_MATERIAIS.filter(m => m.codigo.toLowerCase().includes(busca) || m.descricao.toLowerCase().includes(busca));
     }
 
-    if (filtrados.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nenhum material encontrado.</td></tr>`; return; }
+    if (filtrados.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nenhum material encontrado.</td></tr>`;
+        return;
+    }
 
     tbody.innerHTML = filtrados.map(m => {
         let statusHtml = "";
@@ -1603,7 +1518,10 @@ function renderMateriais() {
     }).join("");
 }
 
-function toggleFormMaterial() { let form = document.getElementById("form-novo-material"); if (form) form.classList.toggle("hidden"); }
+function toggleFormMaterial() {
+    let form = document.getElementById("form-novo-material");
+    if (form) form.classList.toggle("hidden");
+}
 
 function salvarEntradaMaterial() {
     if (!verificarAcesso()) return;
@@ -1611,19 +1529,26 @@ function salvarEntradaMaterial() {
     const descricao = document.getElementById("mat-descricao").value.trim().toUpperCase();
     const qtd = parseInt(document.getElementById("mat-qtd").value) || 0;
 
-    if (!codigo || !descricao || qtd <= 0) { return alert("Por favor, preencha o código, a descrição correta e uma quantidade maior que zero."); }
+    if (!codigo || !descricao || qtd <= 0) {
+        return alert("Por favor, preencha o código, a descrição correta e uma quantidade maior que zero.");
+    }
 
     let materialExistente = BANCO_MATERIAIS.find(m => m.codigo === codigo);
     if (materialExistente) {
-        materialExistente.qtd += qtd; registrarHistorico("ALMOXARIFADO", `Adição no material [${codigo}]. +${qtd} UN. Saldo atual: ${materialExistente.qtd} UN.`);
+        materialExistente.qtd += qtd;
+        registrarHistorico("ALMOXARIFADO", `Adição no material [${codigo}]. +${qtd} UN. Saldo atual: ${materialExistente.qtd} UN.`);
         alert(`SUCESSO!\nO código ${codigo} já existe no sistema.\nSomamos a quantidade de ${qtd} UN ao saldo atual.`);
     } else {
-        BANCO_MATERIAIS.unshift({ codigo: codigo, descricao: descricao, qtd: qtd }); registrarHistorico("ALMOXARIFADO", `Material [${codigo}] cadastrado. Entrada: ${qtd} UN.`);
+        BANCO_MATERIAIS.unshift({ codigo: codigo, descricao: descricao, qtd: qtd });
+        registrarHistorico("ALMOXARIFADO", `Material [${codigo}] cadastrado. Entrada: ${qtd} UN.`);
         alert(`NOVO MATERIAL CADASTRADO!\nCódigo ${codigo} adicionado com saldo de ${qtd} UN.`);
     }
     localStorage.setItem("oms_materiais_v32_local", JSON.stringify(BANCO_MATERIAIS));
-    document.getElementById("mat-codigo").value = ""; document.getElementById("mat-descricao").value = ""; document.getElementById("mat-qtd").value = "";
-    toggleFormMaterial(); renderMateriais();
+    document.getElementById("mat-codigo").value = "";
+    document.getElementById("mat-descricao").value = "";
+    document.getElementById("mat-qtd").value = "";
+    toggleFormMaterial();
+    renderMateriais();
 }
 
 function ajustarSaldoMaterial(codigo, fator) {
@@ -1631,91 +1556,135 @@ function ajustarSaldoMaterial(codigo, fator) {
     let material = BANCO_MATERIAIS.find(m => m.codigo === codigo);
     if (material) {
         if (material.qtd + fator < 0) { return alert("O estoque não pode ficar negativo."); }
-        material.qtd += fator; localStorage.setItem("oms_materiais_v32_local", JSON.stringify(BANCO_MATERIAIS));
-        let acao = fator > 0 ? "Entrada" : "Saída"; registrarHistorico("ALMOXARIFADO", `Ajuste manual (${acao}) no material [${codigo}]. Novo saldo: ${material.qtd} UN.`); renderMateriais();
+        material.qtd += fator;
+        localStorage.setItem("oms_materiais_v32_local", JSON.stringify(BANCO_MATERIAIS));
+        let acao = fator > 0 ? "Entrada" : "Saída";
+        registrarHistorico("ALMOXARIFADO", `Ajuste manual (${acao}) no material [${codigo}]. Novo saldo: ${material.qtd} UN.`);
+        renderMateriais();
     }
 }
 
 function removerMaterial(codigo) {
     if (!verificarAcesso()) return;
     if (confirm(`Atenção!\nTem certeza que deseja apagar o registro do material [${codigo}] do sistema?`)) {
-        BANCO_MATERIAIS = BANCO_MATERIAIS.filter(m => m.codigo !== codigo); localStorage.setItem("oms_materiais_v32_local", JSON.stringify(BANCO_MATERIAIS));
-        registrarHistorico("ALMOXARIFADO", `O material [${codigo}] foi deletado do cadastro.`); renderMateriais();
+        BANCO_MATERIAIS = BANCO_MATERIAIS.filter(m => m.codigo !== codigo);
+        localStorage.setItem("oms_materiais_v32_local", JSON.stringify(BANCO_MATERIAIS));
+        registrarHistorico("ALMOXARIFADO", `O material [${codigo}] foi deletado do cadastro.`);
+        renderMateriais();
     }
 }
 
 // ==========================================
-// SEGURANÇA E INICIALIZAÇÃO
+// SEGURANÇA E EMERGÊNCIA
 // ==========================================
 function dispararEmergencia() {
     EM_EMERGENCIA = `⚠️ ALERTA PANICO - INTERVENÇÃO FORÇADA`;
     localStorage.setItem("oms_emergencia_v32_local", JSON.stringify(EM_EMERGENCIA));
-    registrarHistorico("ALERTA", "Botão de Pânico acionado."); exibirBarraEmergencia();
+    registrarHistorico("ALERTA", "Botão de Pânico acionado.");
+    exibirBarraEmergencia();
 }
 
 function encerrarEmergencia() {
-    EM_EMERGENCIA = null; localStorage.removeItem("oms_emergencia_v32_local");
-    document.getElementById("barra-emergencia").style.display = "none"; registrarHistorico("ALERTA", "Alarme resetado.");
+    EM_EMERGENCIA = null;
+    localStorage.removeItem("oms_emergencia_v32_local");
+    document.getElementById("barra-emergencia").style.display = "none";
+    registrarHistorico("ALERTA", "Alarme resetado.");
 }
 
 function exibirBarraEmergencia() {
-    if (EM_EMERGENCIA) { document.getElementById("texto-emergencia").innerText = EM_EMERGENCIA; document.getElementById("barra-emergencia").style.display = "block"; }
+    if (EM_EMERGENCIA) {
+        document.getElementById("texto-emergencia").innerText = EM_EMERGENCIA;
+        document.getElementById("barra-emergencia").style.display = "block";
+    }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    if(typeof carregarTema === 'function') carregarTema(); 
-    if(typeof exibirBarraEmergencia === 'function') exibirBarraEmergencia();
+// ==========================================
+// FUNÇÃO DE EDIÇÃO DE CÉLULAS DA TABELA
+// ==========================================
+function fazerCelulaEditavel(elemento, id, campo) {
+    if (elemento.querySelector('input')) return;
     
-    if (OPERADOR_LOGADO) {
-        const telaLogin = document.getElementById("tela-login-home");
-        const telaSistema = document.getElementById("container-sistema-oms");
-        
-        // Só esconde e mostra se as telas realmente existirem no HTML
-        if (telaLogin) telaLogin.style.display = "none";
-        if (telaSistema) telaSistema.style.display = "flex";
-        
-        if(typeof atualizarInterfaceUsuario === 'function') atualizarInterfaceUsuario(); 
-        if(typeof calcularKpisGlobais === 'function') calcularKpisGlobais(); 
-        if(typeof renderPainelVeios === 'function') renderPainelVeios(); 
-        if(typeof renderAtivos === 'function') renderAtivos(); 
-        if(typeof renderReparos === 'function') renderReparos(); 
-        if(typeof renderReservas === 'function') renderReservas();
-    }
-
-    // ADICIONE ESSE BLOCO AQUI ABAIXO NA MARRA:
-    // Ele vai ler o folhoes.html e injetar na gaveta para o Molde voltar a funcionar
-    fetch('folhoes.html')
-        .then(response => response.text())
-        .then(html => {
-            const gaveta = document.getElementById('gaveta-de-folhoes');
-            if (gaveta) {
-                gaveta.innerHTML = html;
-                console.log("Todos os folhões antigos foram reinjetados com sucesso!");
+    const valorAtual = elemento.innerText.trim();
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = valorAtual;
+    input.className = 'edit-input';
+    input.style.width = '100%';
+    input.style.background = 'var(--bg-input)';
+    input.style.color = 'var(--text-heading)';
+    input.style.border = '1px solid var(--text-accent)';
+    input.style.borderRadius = '4px';
+    input.style.padding = '4px';
+    
+    elemento.innerHTML = '';
+    elemento.appendChild(input);
+    input.focus();
+    input.select();
+    
+    const salvarEdicao = () => {
+        const novoValor = input.value.trim();
+        const item = BANCO_ATIVOS.find(a => a.id === id);
+        if (item && novoValor) {
+            if (campo === 'id') {
+                const existe = BANCO_ATIVOS.some(a => a.id === novoValor && a.id !== id);
+                if (existe) {
+                    alert('Este ID já existe no sistema!');
+                    elemento.innerText = valorAtual;
+                    return;
+                }
+                item.id = novoValor;
+            } else if (campo === 'dias') {
+                item.dias = parseFloat(novoValor) || 0;
+            } else if (campo === 'ton') {
+                item.ton = parseFloat(novoValor) || 0;
             }
-        })
-        .catch(err => console.error("Erro ao resgatar os folhões:", err));
-});
+            
+            localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+            registrarHistorico(id, `Campo "${campo}" alterado para: ${novoValor}`);
+            
+            if (campo === 'dias' || campo === 'ton') {
+                elemento.innerText = parseFloat(novoValor).toLocaleString() || '0';
+            } else {
+                elemento.innerText = novoValor;
+            }
+        } else {
+            elemento.innerText = valorAtual;
+        }
+    };
+    
+    const cancelarEdicao = () => {
+        elemento.innerText = valorAtual;
+    };
+    
+    input.addEventListener('blur', salvarEdicao);
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            input.blur();
+        }
+        if (e.key === 'Escape') {
+            cancelarEdicao();
+        }
+    });
+}
 
 // ==========================================
-// CONTROLE DE ABAS DO SEGMENTO ZERO (FIXO NO DOM)
+// CONTROLE DE ABAS DO SEGMENTO ZERO
 // ==========================================
-window.trocarAbaSegZero = function(event, idAba) {
+function trocarAbaSegZero(event, idAba) {
     const container = document.getElementById("modal-folhao-segmento-zero");
     if (!container) return;
     
-    // Oculta todos os conteúdos das abas internas
     container.querySelectorAll('.folhao-content').forEach(content => {
         content.style.display = 'none';
         content.classList.add('hidden');
         content.classList.remove('active');
     });
     
-    // Remove classe ativa de todos os botões de abas
     container.querySelectorAll('.folhao-tab').forEach(tab => {
         tab.classList.remove('active');
     });
     
-    // Ativa a aba selecionada
     const abaAlvo = document.getElementById(idAba);
     if (abaAlvo) {
         abaAlvo.style.display = 'block';
@@ -1723,307 +1692,100 @@ window.trocarAbaSegZero = function(event, idAba) {
         abaAlvo.classList.add('active');
     }
     event.currentTarget.classList.add('active');
-};
-
-
-// ==========================================
-// BLINDAGEM DE ESCOPO GLOBAL - LAUDOS E PDFs
-// ==========================================
-if (typeof salvarLaudoInteligente === 'function') {
-    window.salvarLaudoInteligente = salvarLaudoInteligente;
-}
-if (typeof gerarPDF === 'function') {
-    window.gerarPDF = gerarPDF;
-}
-if (typeof imprimirLaudo === 'function') {
-    window.imprimirLaudo = imprimirLaudo;
-}
-if (typeof fecharFolhaoMolde === 'function') {
-    window.fecharFolhaoMolde = fecharFolhaoMolde;
-}
-if (typeof abrirFolhaoMolde === 'function') {
-    window.abrirFolhaoMolde = abrirFolhaoMolde;
 }
 
 // ==========================================
-// LIBERAÇÃO DE TROCA DE EQUIPAMENTOS E SALVAR
+// INICIALIZAÇÃO
 // ==========================================
-if (typeof iniciarSwapAlocacao === 'function') {
-    window.iniciarSwapAlocacao = iniciarSwapAlocacao;
-}
-if (typeof confirmarSwapAlocacao === 'function') {
-    window.confirmarSwapAlocacao = confirmarSwapAlocacao;
-}
-if (typeof salvarLaudo === 'function') {
-    window.salvarLaudo = salvarLaudo;
-}
-if (typeof verificarAcesso === 'function') {
-    window.verificarAcesso = verificarAcesso;
-}
-
-// ==========================================
-// LIBERAÇÃO DE CONFIRMAÇÃO DE MODAIS
-// ==========================================
-if (typeof confirmarRelatorio === 'function') {
-    window.confirmarRelatorio = confirmarRelatorio;
-}
-if (typeof abrirModalRelatorio === 'function') {
-    window.abrirModalRelatorio = abrirModalRelatorio;
-}
-if (typeof fecharModalRelatorio === 'function') {
-    window.fecharModalRelatorio = fecharModalRelatorio;
-}
-if (typeof iniciarSaque === 'function') {
-    window.iniciarSaque = iniciarSaque;
-}
-
-// ==========================================
-// LIBERAÇÃO DE CADASTRO DE PEÇAS E ESTOQUE
-// ==========================================
-if (typeof toggleFormAdicionar === 'function') {
-    window.toggleFormAdicionar = toggleFormAdicionar;
-}
-if (typeof salvarNovoEquipamento === 'function') {
-    window.salvarNovoEquipamento = salvarNovoEquipamento;
-}
-if (typeof toggleFormMaterial === 'function') {
-    window.toggleFormMaterial = toggleFormMaterial;
-}
-if (typeof salvarEntradaMaterial === 'function') {
-    window.salvarEntradaMaterial = salvarEntradaMaterial;
-}
-if (typeof alterarSaldoRolo === 'function') {
-    window.alterarSaldoRolo = alterarSaldoRolo;
-}
-if (typeof ajustarSaldoMaterial === 'function') {
-    window.ajustarSaldoMaterial = ajustarSaldoMaterial;
-}
-if (typeof removerMaterial === 'function') {
-    window.removerMaterial = removerMaterial;
-}
-if (typeof fecharModalConcluirReparo === 'function') {
-    window.fecharModalConcluirReparo = fecharModalConcluirReparo;
-}
-// ==========================================
-// INJEÇÃO DINÂMICA DE MODAIS (FOLHÕES)
-// ==========================================
-window.FOLHOES_INJETADOS = false;
-
-// ==========================================
-// ROTEADOR DIRETO - VOLTANDO A FUNCIONAR TUDO
-// ==========================================
-window.abrirModalConcluirReparo = function(id) {
-    console.log("Roteador lendo TAG:", id);
-    let item = typeof BANCO_ATIVOS !== 'undefined' ? BANCO_ATIVOS.find(a => a.id === id) : null;
-    let tipoUpper = item && item.tipo ? item.tipo.toUpperCase() : "";
-
-    // Oculta modais padrão e Segmento Zero para evitar sobreposição
-    ['modal-concluir-reparo', 'modal-folhao-segmento-zero'].forEach(idModal => {
-        const m = document.getElementById(idModal);
-        if(m) { m.style.display = 'none'; m.classList.add('hidden'); }
-    });
-
-    // 1. ROTA SEGMENTO ZERO
-    if (id.includes("SEG-0")) {
-        const modalSegZero = document.getElementById("modal-folhao-segmento-zero");
-        if (modalSegZero) {
-            modalSegZero.style.setProperty('display', 'flex', 'important');
-            modalSegZero.classList.remove("hidden");
-            const tagAtivo = document.getElementById("segzero-tag-ativo");
-            if (tagAtivo) tagAtivo.innerText = id;
-        }
-        return;
-    }
-
-    // 2. ROTA MOLDE 2/3
-    if (id.includes("MLD") || tipoUpper.includes("MOLDE")) {
-        if (typeof window.abrirFolhaoMolde23 === 'function') {
-            window.abrirFolhaoMolde23(id);
-            return;
-        }
-    }
-
-    // 3. ROTA PADRÃO (BENDER E OUTROS REPAROS COMUNS)
-    const modalSimples = document.getElementById("modal-concluir-reparo");
-    if (modalSimples) {
-        window.ID_REPARO_ATUAL = id;
-        modalSimples.style.setProperty('display', 'flex', 'important');
-        modalSimples.classList.remove("hidden");
-        
-        const tagElement = document.getElementById("modal-reparo-tag");
-        if (tagElement) tagElement.innerText = id;
-    }
-};
-
-// Amarra as funções essenciais de fechamento e conclusão direto no escopo global do window
-window.confirmarConclusaoReparo = function() {
-    // Chama a função local confirmarConclusaoReparo caso exista, evite sobrescrever
-    if (typeof confirmarConclusaoReparo === 'function') {
-        confirmarConclusaoReparo();
-    } else {
-        console.log("Executando salvamento padrão para a TAG:", window.ID_REPARO_ATUAL);
-        const modalSimples = document.getElementById("modal-concluir-reparo");
-        if (modalSimples) { modalSimples.style.display = 'none'; modalSimples.classList.add('hidden'); }
-    }
-};
-
-// ===================================================
-// DESTRANCANDO O HISTÓRICO PARA O HTML
-// ===================================================
-if (typeof abrirHistoricoIndividual === 'function') {
-    window.abrirHistoricoIndividual = abrirHistoricoIndividual;
-}
-
-if (typeof fecharModalHistorico === 'function') {
-    window.fecharModalHistorico = fecharModalHistorico;
-} else {
-    // Caso a função de fechar não exista com esse nome, cria uma forçada na marra
-    window.fecharModalHistorico = function() {
-        const modalHist = document.getElementById("modal-historico-individual");
-        if (modalHist) { 
-            modalHist.style.display = 'none'; 
-            modalHist.classList.add('hidden'); 
-        }
-    };
-}
-// ===================================================
-// CHAVE MESTRA: DESTRANCANDO TODA A NAVEGAÇÃO DO HTML
-// ===================================================
-
-// 1. Navegação, Layout e Login
-if (typeof abrirAba === 'function') window.abrirAba = abrirAba;
-if (typeof toggleSidebar === 'function') window.toggleSidebar = toggleSidebar;
-if (typeof toggleTheme === 'function') window.toggleTheme = toggleTheme;
-if (typeof fazerLogout === 'function') window.fazerLogout = fazerLogout;
-if (typeof processarAutenticacaoHome === 'function') window.processarAutenticacaoHome = processarAutenticacaoHome;
-
-// 2. Filtros e Veios (O SEU ERRO DO PRINT)
-if (typeof mudarVeioVisualizado === 'function') window.mudarVeioVisualizado = mudarVeioVisualizado;
-if (typeof aplicarFiltrosMCC === 'function') window.aplicarFiltrosMCC = aplicarFiltrosMCC;
-if (typeof renderAtivos === 'function') window.renderAtivos = renderAtivos;
-
-// 3. Estoque e Almoxarifado
-if (typeof toggleFormAdicionar === 'function') window.toggleFormAdicionar = toggleFormAdicionar;
-if (typeof salvarNovoEquipamento === 'function') window.salvarNovoEquipamento = salvarNovoEquipamento;
-if (typeof renderMateriais === 'function') window.renderMateriais = renderMateriais;
-if (typeof toggleFormMaterial === 'function') window.toggleFormMaterial = toggleFormMaterial;
-if (typeof salvarEntradaMaterial === 'function') window.salvarEntradaMaterial = salvarEntradaMaterial;
-
-// 4. Botões de Emergência
-if (typeof dispararEmergencia === 'function') window.dispararEmergencia = dispararEmergencia;
-if (typeof encerrarEmergencia === 'function') window.encerrarEmergencia = encerrarEmergencia;
-// Liberando a edição de tabelas
-if (typeof fazerCelulaEditavel === 'function') window.fazerCelulaEditavel = fazerCelulaEditavel;
-
-// Dica: Se existir uma função para salvar essa edição depois de digitar, já libere ela também:
-if (typeof salvarEdicaoCelula === 'function') window.salvarEdicaoCelula = salvarEdicaoCelula;
-// ===================================================
-// MOTOR DE CADASTRO E POSIÇÕES FIXAS
-// ===================================================
-
-window.atualizarPosicoesCadastro = function() {
-    const tipo = document.getElementById("add-tipo").value;
-    const selectPos = document.getElementById("add-posicao");
-    selectPos.innerHTML = ""; // Limpa as opções
-
-    if (tipo.includes("Bow")) {
-        for(let i=1; i<=5; i++) selectPos.innerHTML += `<option value="BOW-${i}">Posição ${i}</option>`;
-    } 
-    else if (tipo.includes("Horizontal")) {
-        for(let i=8; i<=17; i++) selectPos.innerHTML += `<option value="HOR-${i}">Posição ${i}</option>`;
-    } 
-    else if (tipo.includes("Straightener R1")) {
-        selectPos.innerHTML = `<option value="STR-1">Posição Única (R1)</option>`;
-    } 
-    else if (tipo.includes("Straightener R2")) {
-        selectPos.innerHTML = `<option value="STR-2">Posição Única (R2)</option>`;
-    } 
-    else if (tipo.includes("Molde")) {
-        selectPos.innerHTML = `<option value="MOLDE">Gaveta 0 (Topo)</option>`;
-    } 
-    else if (tipo.includes("Bender")) {
-        selectPos.innerHTML = `<option value="BENDER">Gaveta 1 (Bender)</option>`;
-    } 
-    else {
-        selectPos.innerHTML = `<option value="GERAL">Uso Geral / Sem Posição Fixa</option>`;
-    }
-};
-
-window.processarCadastroPeca = function() {
-    // 1. CAPTURA OS DADOS DO FORMULÁRIO
-    const tag = document.getElementById("add-tag").value.trim() || `NOVA-PECA-${Math.floor(Math.random()*1000)}`;
-    const tipoValor = document.getElementById("add-tipo").value || "";
-    const tipoSplit = tipoValor.split("|");
-    const familia = tipoSplit[0] || ""; 
+document.addEventListener("DOMContentLoaded", () => {
+    if (typeof carregarTema === 'function') carregarTema();
+    if (typeof exibirBarraEmergencia === 'function') exibirBarraEmergencia();
     
-    const limite = parseFloat(document.getElementById("add-meta").value) || 1000000;
-    const veio = document.getElementById("add-veio").value || "";
-    const posicao = document.getElementById("add-posicao").value || "";
-    const instalarDireto = document.getElementById("add-instalar-direto").checked;
-
-    let statusFinal = instalarDireto ? "Instalado" : "Oficina / Reserva";
-    let localFinal = instalarDireto ? `MCC - Veio ${veio}` : "Estoque Reserva";
-
-    if (typeof BANCO_ATIVOS !== 'undefined') {
+    if (OPERADOR_LOGADO) {
+        const telaLogin = document.getElementById("tela-login-home");
+        const telaSistema = document.getElementById("container-sistema-oms");
         
-        // ===================================================
-        // SWAP: MANDANDO A PEÇA VELHA PRO REPARO
-        // ===================================================
-        if (instalarDireto && veio && posicao) {
-            let pecaAntiga = BANCO_ATIVOS.find(p => p.veio === veio && p.posicaoFixa === posicao && p.status === "Instalado");
-            
-            if (pecaAntiga) {
-                console.log(`[SWAP] Sacando a peça ${pecaAntiga.id} e mandando para REPARO.`);
-                
-                // Manda pro Reparo
-                pecaAntiga.status = "Oficina / Reparo"; 
-                pecaAntiga.local = "Oficina de Manutenção";
-                
-                // ARRANCANDO A PEÇA DA GAVETA (Isso resolve o bug de não trocar na tela)
-                pecaAntiga.veio = ""; 
-                pecaAntiga.posicaoFixa = ""; 
-                
-                alert(`⚠️ SUBSTITUIÇÃO ATIVA:\nA peça velha [${pecaAntiga.id}] foi retirada da gaveta ${posicao} e enviada para a aba de "Peças em Reparo".`);
-            }
-        }
-
-        // ===================================================
-        // CRIAÇÃO E INJEÇÃO DA PEÇA NOVA
-        // ===================================================
-        const novaPeca = {
-            id: tag,
-            tipo: familia,
-            veio: instalarDireto ? veio : "", // Só tem veio se for instalada
-            local: localFinal, 
-            posicaoFixa: instalarDireto ? posicao : "", // Só assume a gaveta se for instalada
-            status: statusFinal,
-            ton: 0,
-            dias: 0,
-            limite: limite
-        };
-
-        BANCO_ATIVOS.push(novaPeca); // Salva o equipamento novo no sistema
+        if (telaLogin) telaLogin.style.display = "none";
+        if (telaSistema) telaSistema.style.display = "flex";
         
-        if (statusFinal === "Instalado") {
-            alert(`✅ Sucesso! A nova peça [${tag}] assumiu o controle da gaveta ${posicao} do Veio ${veio}.`);
-        } else {
-            alert(`✅ Sucesso! Peça [${tag}] criada e guardada no Estoque Reserva.`);
-        }
-        
-        // Limpa os campos de digitação pro próximo cadastro
-        document.getElementById("add-tag").value = "";
-        document.getElementById("add-meta").value = "";
-
-        // ===================================================
-        // ATUALIZAÇÃO GERAL DAS TELAS
-        // ===================================================
-        try { if(typeof renderReservas === 'function') renderReservas(); } catch(e){}
-        try { if(typeof renderAtivos === 'function') renderAtivos(); } catch(e){}
-        try { if(typeof renderReparos === 'function') renderReparos(); } catch(e){} // Atualiza a tela de Reparos!
-        
-        // Atualiza o Chassi para mostrar a peça nova na hora
-        if (instalarDireto && typeof window.mudarVeioVisualizado === 'function') {
-            window.mudarVeioVisualizado(veio);
-        }
+        if (typeof atualizarInterfaceUsuario === 'function') atualizarInterfaceUsuario();
+        if (typeof calcularKpisGlobais === 'function') calcularKpisGlobais();
+        if (typeof renderPainelVeios === 'function') renderPainelVeios();
+        if (typeof renderAtivos === 'function') renderAtivos();
+        if (typeof renderReparos === 'function') renderReparos();
+        if (typeof renderReservas === 'function') renderReservas();
     }
-};
+});
+
+// ==========================================
+// EXPOSIÇÃO GLOBAL - TODAS AS FUNÇÕES
+// ==========================================
+
+// Autenticação e navegação
+window.processarAutenticacaoHome = processarAutenticacaoHome;
+window.fazerLogout = fazerLogout;
+window.abrirAba = abrirAba;
+window.toggleSidebar = toggleSidebar;
+window.toggleTheme = toggleTheme;
+window.verificarAcesso = verificarAcesso;
+
+// Emergência
+window.dispararEmergencia = dispararEmergencia;
+window.encerrarEmergencia = encerrarEmergencia;
+
+// Histórico
+window.registrarHistorico = registrarHistorico;
+window.renderHistorico = renderHistorico;
+window.abrirHistoricoIndividual = abrirHistoricoIndividual;
+window.fecharModalHistorico = fecharModalHistorico;
+window.salvarRegistroManual = salvarRegistroManual;
+
+// Saque e reparo
+window.iniciarSaque = iniciarSaque;
+window.confirmarRelatorio = confirmarRelatorio;
+window.fecharModalRelatorio = fecharModalRelatorio;
+window.abrirModalConcluirReparo = abrirModalConcluirReparo;
+window.fecharModalConcluirReparo = fecharModalConcluirReparo;
+window.confirmarConclusaoReparo = confirmarConclusaoReparo;
+window.toggleCamposReparoParcial = toggleCamposReparoParcial;
+
+// Cadastro e estoque
+window.toggleFormAdicionar = toggleFormAdicionar;
+window.processarCadastroPeca = processarCadastroPeca;
+window.atualizarPosicoesCadastro = atualizarPosicoesCadastro;
+window.toggleFormMaterial = toggleFormMaterial;
+window.salvarEntradaMaterial = salvarEntradaMaterial;
+window.ajustarSaldoMaterial = ajustarSaldoMaterial;
+window.removerMaterial = removerMaterial;
+window.alterarSaldoRolo = alterarSaldoRolo;
+
+// Edição de células
+window.fazerCelulaEditavel = fazerCelulaEditavel;
+
+// Veios e filtros
+window.mudarVeioVisualizado = mudarVeioVisualizado;
+window.aplicarFiltrosMCC = aplicarFiltrosMCC;
+window.renderizarGraficosMCC = renderizarGraficosMCC;
+
+// KPIs
+window.calcularKpisGlobais = calcularKpisGlobais;
+window.atualizarInterfaceUsuario = atualizarInterfaceUsuario;
+
+// Folhões MCC4
+window.trocarAbaFolhao = trocarAbaFolhao;
+window.fecharFolhaoMCC4 = fecharFolhaoMCC4;
+window.salvarLaudoInteligente = salvarLaudoInteligente;
+window.imprimirLaudoSalvo = imprimirLaudoSalvo;
+window.carregarMedidaAresta = carregarMedidaAresta;
+window.salvarMedidaAresta = salvarMedidaAresta;
+window.abrirFolhaoMCC4 = abrirFolhaoMCC4;
+
+// Outras funções auxiliares
+window.getOrdemPadrao = getOrdemPadrao;
+window.exibirBarraEmergencia = exibirBarraEmergencia;
+window.carregarTema = carregarTema;
+window.trocarAbaSegZero = trocarAbaSegZero;
+window.injetarAbasFaltantes = injetarAbasFaltantes;
+window.gerarLinhasChecklistPDF = gerarLinhasChecklistPDF;
+
+console.log("✅ Script.js carregado - todas as funções expostas globalmente");
