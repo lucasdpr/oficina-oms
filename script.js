@@ -1,3 +1,11 @@
+import { 
+    MOTIVOS_RETIRO, 
+    CHECKLIST_RECEBIMENTO, 
+    CHECKLIST_REVISAO, 
+    CHECKLIST_HIDRAULICA, 
+    CHECKLIST_FINAL, 
+    BIBLIOTECA_CHECKLISTS 
+} from './dados.js';
 
 // ==========================================================================
 // BANCO DE DADOS CORE - SISTEMA OMS (VERSÃO DEFINITIVA v36 - TODOS OS MOLDES NO FOLHÃO)
@@ -6,97 +14,6 @@ let BANCO_ATIVOS = JSON.parse(localStorage.getItem("oms_ativos_v32_local"));
 let HISTORICO_ACOES = JSON.parse(localStorage.getItem("oms_historico_v32_local")) || [];
 let BANCO_ROLOS = JSON.parse(localStorage.getItem("oms_rolos_v32_local"));
 let BANCO_MATERIAIS = JSON.parse(localStorage.getItem("oms_materiais_v32_local"));
-
-const MOTIVOS_RETIRO = {
-    "Molde": ["Desgaste de placa", "Ranhura de placa", "Falha no cilindro", "Fim de vida", "Trava da bender", "Alarme de B.O", "B.O", "Rolete travado", "Outros"],
-    "Segmento Horizontal": ["Blackout", "Fim de vida", "Vazamento de graxa", "Placa na linha", "Transpordo", "Vazão", "Rolo travado", "Outros"],
-    "Horizontal": ["Blackout", "Fim de vida", "Vazamento de graxa", "Placa na linha", "Transpordo", "Vazão", "Rolo travado", "Outros"],
-    "Bow": ["Blackout", "Fim de vida", "Vazamento de graxa", "Placa na linha", "Transpordo", "Vazão", "Rolo travado", "Outros"],
-    "Straightener": ["Blackout", "Fim de vida", "Vazamento de graxa", "Placa na linha", "Transpordo", "Vazão", "Rolo travado", "Outros"],
-    "Bender": ["Blackout", "Fim de vida", "Vazamento de graxa", "Placa na linha", "Transpordo", "Vazão", "Rolo travado", "Outros"],
-    "Seguimento Zero": ["Blackout", "Fim de vida", "Vazamento de graxa", "Placa na linha", "Transpordo", "Vazão", "Rolo travado", "Outros"],
-    "Cadeira Superior": ["Empeno", "Desgaste", "Rolo quebrado", "Vazamento de cilindro", "Vazamento de graxa", "Refrigeração", "Trinca", "Fim de vida", "Outros"],
-    "Cadeira Inferior": ["Empeno", "Desgaste", "Rolo quebrado", "Vazamento de cilindro", "Vazamento de graxa", "Refrigeração", "Trinca", "Fim de vida", "Outros"],
-    "Mesa Osciladora": ["Desgaste", "Falha mecânica", "Fim de vida", "Outros"],
-    "Outros": ["Fim de vida", "Quebra", "Manutenção Preventiva", "Outros"]
-};
-
-// ==========================================================================
-// ARRAYS DE CHECKLIST DO FOLHÃO DE MOLDES
-// ==========================================================================
-const CHECKLIST_RECEBIMENTO = [
-    "Os engates rápidos do sistema hidráulico e nitrogênio estão completos e em perfeitas condições?",
-    "Os flexíveis das faces estreitas e spray estão amassados e/ou danificados?",
-    "Verificar se existe alguma tubulação hidráulica amassada e/ou danificada?",
-    "Teste de água com pressão de 10 KGF/cm2 c/ tempo de 30 minutos conforme?",
-    "Sensor vuhz se encontra em perfeitas condições?",
-    "Verificar se todos os conectores de termopares estão em perfeitas condições e funcionando?",
-    "As cangalhas de spray estão em perfeitas condições, sem avarias?",
-    "Proteções sanfonadas encontram-se em perfeitas condições?",
-    "Tampas e réguas guias das placas estão em perfeitas condições?",
-    "Os foot-roll e roletes das guias laterais estão em perfeitas condições?",
-    "O sistema de lubrificação possui alguma avaria?",
-    "As placas de cobre possuem ferimentos e/ou arranhões profundos na face de trabalho?",
-    "As juntas de expansão das placas principais estão em perfeitas condições?",
-    "Parafusos de fixação do molde no stand estão completos e em perfeitas condições?",
-    "(ELÉTRICA) Conectores do detector de break-out das faces larga estão tampados e em perfeitas condições?",
-    "(ELÉTRICA) Cabos elétricos dos termopares do detector de break-out das faces estreitas estão em perfeitas condições?"
-];
-
-const CHECKLIST_REVISAO = [
-    "Inspeção das proteções sanfonadas dos cilindros das faces estreitas, substituindo as que estiverem danificadas.",
-    "Inspeção das proteções sanfonadas dos fusos dos castelos quadrados, substituindo as danificadas.",
-    "Inspeção, reparo (se necessário) e lubrificação dos conjuntos de porcas e contra porcas.",
-    "Inspeção, reparo (se necessário) e lubrificação dos conjuntos do castelo quadrado.",
-    "Inspeção das hastes dos cilindros das faces estreitas, verificando avarias e vazamentos de óleo.",
-    "Inspeção dos cilindros do clamp de abertura da face larga, substituindo os com vazamento.",
-    "Inspeção do filtro de óleo do sistema hidráulico, verificando se não está sujo.",
-    "Inspeção e lubrificação nos olhais e nas chavetas de fixação das placas laterais.",
-    "Inspeção, revisão e lubrificação dos eixos e mancais deslizantes (caixa louca).",
-    "Inspeção em todo sistema de lubrificação, corrigindo anomalias. Testar válvulas de graxa.",
-    "Inspeção das condições dos flexíveis de água, substituindo os danificados.",
-    "Inspeção, revisão e lubrificação dos parafusos de fixação do molde no stand.",
-    "Inspeção das tubulações hidráulicas (conferir aperto das conexões).",
-    "Alinhar os fusos dos castelos quadrados na medida padrão de 210mm.",
-    "Lubrificar e amaciar os fusos do ajuste mecânico.",
-    "Inspeção das juntas de expansão (trocar se necessário)."
-];
-
-const CHECKLIST_HIDRAULICA = [
-    "Check dos cilindros de ajuste de largura do molde.",
-    "Verificar vazamento de graxa nas conexões.",
-    "Verificar vazamento de óleo nas conexões.",
-    "Inspecionar o elemento filtrante da linha de pressão hidráulica e trocar se necessário.",
-    "Lubrificação geral de componentes.",
-    "Verificar vazamento em mangueiras e dosador, substituir se necessário.",
-    "Efetuar a limpeza dos engates hidráulicos.",
-    "Embalar engates hidráulicos."
-];
-
-const CHECKLIST_FINAL = [
-    "Indicadores de pressão de ajuste das molas da placa lado móvel estão completos e alinhados?",
-    "Tampa de proteção do molde NÃO está tocando sobre a tubulação de sangria das placas?",
-    "Placas de proteção estão calafetadas com fita, desempenadas, alinhadas e fixadas?",
-    "Posicionamento dos flexíveis superiores e inferiores estão conformes?",
-    "Teste de água com pressão de 10 KGF/cm2 c/ tempo de 30 minutos conforme?",
-    "Proteções sanfonadas estão fixadas?",
-    "Foot-roll e roletes das guias laterais estão lubrificados e girando normalmente?",
-    "Alinhamento dos bicos de spray das faces largas e estreitas?",
-    "Parafusos de fixação do molde na máquina estão completos e lubrificados?",
-    "Sensor Vuhz está montado corretamente e testado?",
-    "A precisão de movimento das faces estreitas estão conforme?",
-    "Funcionamento correto das válvulas distribuidoras de graxa, conexões marcadas?",
-    "Réguas do ajuste mecânico estão livres e lubrificadas corretamente?",
-    "Folga na aresta das faces das placas estreitas e largas (<= 0,35mm)?",
-    "Cavidade interna do molde limpa?",
-    "Centro do molde está identificado na placa norte e visível ao operador?",
-    "Conectores dos termopares das placas estão limpos e tampados?",
-    "Teste de profundidade está conforme?",
-    "Engates rápidos (hidráulico, N2, graxa) com vedações completas, apertados e limpos?",
-    "Base de vedação do molde está limpa e lixada?",
-    "Os conectores dos DBO estão todos tamponados e protegidos?"
-];
-
 let ID_FOLHAO_ATUAL = null;
 let DADOS_FOLGA_ARESTA = {}; 
 
@@ -336,12 +253,13 @@ window.abrirAba = abrirAba;
 // ===================================================
 // GERENCIADOR DE CHASSIS - SEQUENCIAMENTO DE VEIOS
 // ===================================================
+// ===================================================
+// GERENCIADOR DE CHASSIS - SEQUENCIAMENTO DE VEIOS
+// ===================================================
 window.mudarVeioVisualizado = function(veio) {
-    console.log("Montando chassi para o Veio:", veio);
-    
     // Atualiza os botões visuais no topo
     document.querySelectorAll('.btn-veio-tab').forEach(b => b.classList.remove('active'));
-    event.currentTarget.classList.add('active');
+    if(event && event.currentTarget) event.currentTarget.classList.add('active');
     
     // Atualiza o título
     const titulo = document.getElementById("titulo-veio-focado");
@@ -351,12 +269,12 @@ window.mudarVeioVisualizado = function(veio) {
     if (!container) return;
     container.innerHTML = ""; // Limpa a tela
 
-    // Busca as peças que estão fisicamente Instaladas neste veio
-    const pecasInstaladas = typeof BANCO_ATIVOS !== 'undefined' ? BANCO_ATIVOS.filter(p => p.veio === veio && p.status === "Instalado") : [];
+    // Busca as peças instaladas no veio (Lê peças novas e as antigas de fábrica)
+    const pecasInstaladas = typeof BANCO_ATIVOS !== 'undefined' ? BANCO_ATIVOS.filter(p => 
+        (p.veio === veio && p.status === "Instalado") || 
+        (p.local && p.local.includes(`Veio ${veio}`) && !p.local.includes("Oficina"))
+    ) : [];
 
-    // ----------------------------------------------------
-    // ARQUITETURA MCC 4 (VEIOS G E H) - 19 SLOTS FIXOS
-    // ----------------------------------------------------
     if (veio === "G" || veio === "H") {
         const esqueletoMCC4 = [
             { idSlot: "MOLDE", nome: "Molde Alta Perf.", familia: "MOLDE" },
@@ -383,25 +301,40 @@ window.mudarVeioVisualizado = function(veio) {
         let htmlSlots = "";
 
         esqueletoMCC4.forEach(slot => {
-            // Lógica inteligente para tentar achar qual peça do banco encaixa nessa gaveta exata
             let pecaEncontrada = pecasInstaladas.find(p => {
-                let tipoUpper = p.tipo.toUpperCase();
-                let idUpper = p.id.toUpperCase();
+                // 1. Se a peça já tem a gaveta carimbada (Sistema Novo)
+                if (p.posicaoFixa && p.posicaoFixa === slot.idSlot) return true;
                 
-                if (slot.familia === "MOLDE" && tipoUpper.includes("MOLDE")) return true;
-                if (slot.familia === "BENDER" && tipoUpper.includes("BENDER")) return true;
-                
-                // Para Bow, Str e Horizontais, checa se a TAG da peça tem o número do slot para não misturar
-                if (tipoUpper.includes("BOW") && slot.idSlot.includes("BOW") && idUpper.includes(slot.idSlot.replace("BOW-", ""))) return true;
-                if (tipoUpper.includes("STRAIGHTENER") && slot.idSlot.includes("STR") && idUpper.includes(slot.idSlot.replace("STR-", "R"))) return true; 
-                if (tipoUpper.includes("HORIZONTAL") && slot.idSlot.includes("HOR") && idUpper.includes(`-${slot.idSlot.replace("HOR-", "")}-`)) return true;
-                
+                // 2. Adaptação para ler as peças do Banco Padrão Antigo
+                if (!p.posicaoFixa) {
+                    let tipoUpper = p.tipo ? p.tipo.toUpperCase() : "";
+                    let idUpper = p.id ? p.id.toUpperCase() : "";
+                    
+                    if (slot.familia === "MOLDE" && tipoUpper.includes("MOLDE")) return true;
+                    if (slot.familia === "BENDER" && tipoUpper.includes("BENDER")) return true;
+                    
+                    // Encaixa os Bows (1 a 5)
+                    if (tipoUpper.includes("BOW") && slot.idSlot.includes("BOW")) {
+                        let numSlot = slot.idSlot.replace("BOW-", "");
+                        if (idUpper.includes(`BOW-${numSlot}`)) return true;
+                    }
+                    // Encaixa os Straighteners (STR-1 encaixa na gaveta R1)
+                    if (tipoUpper.includes("STRAIGHTENER") && slot.idSlot.includes("STR")) {
+                        let numSlot = slot.idSlot.replace("STR-", "");
+                        if (idUpper.includes(`STR-${numSlot}`)) return true;
+                    }
+                    // Encaixa os Horizontais (Gaveta 8 recebe a peça HOR-1, Gaveta 9 recebe HOR-2...)
+                    if (tipoUpper.includes("HORIZONTAL") && slot.idSlot.includes("HOR")) {
+                        let numSlot = parseInt(slot.idSlot.replace("HOR-", ""));
+                        let numIdCorrespondente = numSlot - 7; 
+                        if (idUpper.includes(`HOR-${numIdCorrespondente}-`)) return true;
+                    }
+                }
                 return false;
             });
 
             if (pecaEncontrada) {
-                // DESENHA A GAVETA COM A PEÇA DENTRO
-                let pct = pecaEncontrada.limite > 0 ? (pecaEncontrada.ton / pecaEncontrada.limite) * 100 : 0;
+                let pct = pecaEncontrada.meta > 0 ? (pecaEncontrada.ton / pecaEncontrada.meta) * 100 : 0;
                 let corClass = pct >= 80 ? "danger" : pct >= 50 ? "warning" : "success";
 
                 htmlSlots += `
@@ -418,32 +351,27 @@ window.mudarVeioVisualizado = function(veio) {
                     
                     <div class="flex-between mt-10" style="font-size: 12px;">
                         <span>Ton: <strong>${Number(pecaEncontrada.ton).toLocaleString('pt-BR')}</strong></span>
-                        <span>Lim: ${Number(pecaEncontrada.limite).toLocaleString('pt-BR')}</span>
+                        <span>Lim: ${Number(pecaEncontrada.meta || 0).toLocaleString('pt-BR')}</span>
                     </div>
                     
                     <div class="flex-between gap-10 mt-15">
                         <button class="btn-outline-primary w-100" style="padding: 5px;" onclick="window.abrirHistoricoIndividual('${pecaEncontrada.id}')"><i class="fas fa-book"></i> Prontuário</button>
-                        <button class="btn-outline-danger w-100" style="padding: 5px;" onclick="console.log('Sacar peça da Gaveta:', '${slot.idSlot}')"><i class="fas fa-exchange-alt"></i> Sacar / Trocar</button>
+                        <button class="btn-outline-danger w-100" style="padding: 5px;" onclick="iniciarSaque('${pecaEncontrada.id}')"><i class="fas fa-exchange-alt"></i> Sacar / Trocar</button>
                     </div>
                 </div>`;
             } else {
-                // DESENHA A GAVETA VAZIA PISCANDO (SLOT LIVRE)
                 htmlSlots += `
                 <div class="ind-card glass-panel" style="border: 2px dashed #e74c3c; background: rgba(231, 76, 60, 0.05); min-width: 300px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
                     <i class="fas fa-exclamation-triangle" style="font-size: 24px; color: #e74c3c; margin-bottom: 10px;"></i>
                     <h4 style="color: #e74c3c; margin: 0;">${slot.nome}</h4>
                     <p style="color: #e74c3c; font-size: 12px; margin-top: 5px;">GAVETA VAZIA / SEM PEÇA FÍSICA</p>
-                    <button class="btn-premium btn-success mt-15 w-100" onclick="console.log('Alocar nova peça na Gaveta:', '${slot.idSlot}')"><i class="fas fa-plus"></i> Alocar do Estoque</button>
+                    <button class="btn-premium btn-success mt-15 w-100" onclick="abrirAba(event, 'aba-reservas')"><i class="fas fa-plus"></i> Alocar do Estoque</button>
                 </div>`;
             }
         });
 
         container.innerHTML = htmlSlots;
-    } 
-    // ----------------------------------------------------
-    // ARQUITETURA MCC 2 e 3 (VEIOS C, D, E, F)
-    // ----------------------------------------------------
-    else {
+    } else {
         container.innerHTML = `
         <div style="padding: 30px; text-align: center; color: var(--text-muted); width: 100%;">
             <i class="fas fa-tools" style="font-size: 40px; margin-bottom: 15px; opacity: 0.5;"></i>
@@ -563,12 +491,16 @@ function gerarCardGraficoHTML(a) {
         </div>`;
 }
 
+// ==========================================
+// 1. RENDERIZADOR DE ATIVOS BLINDADO
+// ==========================================
 function renderAtivos() {
     const tbody = document.getElementById("ativos-table-body");
     const filtroEl = document.getElementById("filtro-tipo-ativo");
     if (!tbody || !filtroEl) return;
 
-    let f = BANCO_ATIVOS.filter(a => a.local.includes(`Veio ${VEIO_SELECIONADO_PAINEL}`) || filtroEl.value.includes("Oficina"));
+    // BLINDAGEM: (a.local || "") impede que o sistema quebre se uma peça nascer sem local
+    let f = BANCO_ATIVOS.filter(a => (a.local || "").includes(`Veio ${VEIO_SELECIONADO_PAINEL}`) || filtroEl.value.includes("Oficina"));
     
     if (filtroEl.value === "Oficina / Reparo") {
         f = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reparo");
@@ -581,15 +513,17 @@ function renderAtivos() {
     f.sort((a, b) => a.ordem - b.ordem);
 
     tbody.innerHTML = f.map(a => {
-        const pct = ((a.ton / a.meta) * 100).toFixed(1);
+        // Se a meta for zero ou der erro, assume 0% para não quebrar a tela
+        const pct = a.meta > 0 ? ((a.ton / a.meta) * 100).toFixed(1) : 0;
         let classe = pct >= 80 ? "reparo" : "operação";
+        
         if (a.local === "Oficina / Reserva") {
             classe = "reserva";
         } else if (a.local === "Oficina / Reparo") {
             classe = "reparo";
         }
 
-        let btnAcao = a.local.includes("Veio")
+        let btnAcao = (a.local || "").includes("Veio")
             ? `<button class="btn-outline-danger" onclick="iniciarSaque('${a.id}')">Sacar</button>`
             : `<span class="text-muted" style="margin-right:10px;"><i class="fas fa-warehouse"></i></span>`;
 
@@ -599,49 +533,110 @@ function renderAtivos() {
             <tr>
                 <td class="editavel font-code" onclick="fazerCelulaEditavel(this, '${a.id}', 'id')">${a.id}</td>
                 <td><span class="ind-card-tag bg-tag">${a.tipo} <span style="opacity:0.7; font-size:10px;">(MCC ${a.mcc_compat})</span></span></td>
-                <td class="font-code text-muted">${a.local}</td>
+                <td class="font-code text-muted">${a.local || "Não Alocado"}</td>
                 <td class="editavel font-code" onclick="fazerCelulaEditavel(this, '${a.id}', 'dias')">${a.dias}</td>
                 <td class="editavel font-code" onclick="fazerCelulaEditavel(this, '${a.id}', 'ton')">${Math.round(a.ton).toLocaleString()}</td>
-                <td class="font-code text-muted">${a.meta.toLocaleString()}</td>
+                <td class="font-code text-muted">${(a.meta || 0).toLocaleString()}</td>
                 <td><span class="status-pill ${classe}">${pct}%</span></td>
                 <td><div class="flex-align-center gap-10 action-buttons-mobile">${btnAcao} ${btnHist}</div></td>
             </tr>`;
     }).join("");
 }
 
-function fazerCelulaEditavel(celula, id, campo) {
-    if (!verificarAcesso() || celula.querySelector("input")) {
-        return;
-    }
+// ==========================================
+// MOTOR DE CADASTRO E SWAP (CAÇADOR BLINDADO)
+// ==========================================
+window.processarCadastroPeca = function() {
+    const tag = document.getElementById("add-tag").value.trim() || `NOVA-PECA-${Math.floor(Math.random()*1000)}`;
+    const tipoValor = document.getElementById("add-tipo").value || "";
+    const tipoSplit = tipoValor.split("|");
+    const familia = tipoSplit[0] || ""; 
+    const mccCompat = tipoSplit[1] || "4"; 
     
-    const original = celula.innerText.trim();
-    const input = document.createElement("input");
-    input.type = campo === 'id' ? "text" : "number";
-    input.value = original.replace(/\./g, "");
-    input.className = "edit-input";
-    
-    celula.innerHTML = "";
-    celula.appendChild(input);
-    input.focus();
+    const limite = parseFloat(document.getElementById("add-meta").value) || 1000000;
+    const veio = document.getElementById("add-veio").value || "";
+    const posicao = document.getElementById("add-posicao").value || "";
+    const instalarDireto = document.getElementById("add-instalar-direto").checked;
 
-    input.addEventListener("blur", () => {
-        let val = campo === 'id' ? input.value.trim().toUpperCase() : parseFloat(input.value) || 0;
-        let item = BANCO_ATIVOS.find(a => a.id === id);
+    let statusFinal = instalarDireto ? "Instalado" : "Oficina / Reserva";
+    let localFinal = instalarDireto ? `MCC 4 - Veio ${veio}` : "Oficina / Reserva";
+
+    if (typeof BANCO_ATIVOS !== 'undefined') {
         
-        if (item && val !== "") {
-            let ant = item[campo];
-            item[campo] = val;
-            localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-            registrarHistorico(id, `Editou ${campo} de ${ant} p/ ${val}`);
+        if (instalarDireto && veio && posicao) {
+            // 1. Separa APENAS as peças que estão fisicamente rodando no Veio da máquina
+            let pecasNoVeio = BANCO_ATIVOS.filter(p => 
+                (p.veio === veio && p.status === "Instalado") || 
+                (p.local && p.local.includes(`Veio ${veio}`) && !p.local.includes("Oficina"))
+            );
+
+            // 2. Caça exatamente quem está na gaveta que você quer usar
+            let pecaAntiga = pecasNoVeio.find(p => {
+                if (p.posicaoFixa === posicao) return true; // Se for peça nova, bate na hora
+                
+                // Se for a peça velha de fábrica que veio no Banco de Dados
+                if (!p.posicaoFixa) {
+                    let tipoUpper = p.tipo ? p.tipo.toUpperCase() : "";
+                    if (posicao === "MOLDE" && tipoUpper.includes("MOLDE")) return true;
+                    if (posicao === "BENDER" && tipoUpper.includes("BENDER")) return true;
+                    if (posicao === "STR-1" && p.id.includes("STR-1")) return true;
+                    if (posicao === "STR-2" && p.id.includes("STR-2")) return true;
+                    if (posicao.includes("BOW") && p.id.includes(posicao.replace("BOW-",""))) return true;
+                    if (posicao.includes("HOR")) {
+                        let n = parseInt(posicao.replace("HOR-","")) - 7;
+                        if (p.id.includes(`HOR-${n}-`)) return true;
+                    }
+                }
+                return false;
+            });
+            
+            // 3. SE ACHOU A VELHA, DÁ UMA VOADORA E MANDA PRO REPARO
+            if (pecaAntiga) {
+                pecaAntiga.status = "Oficina / Reparo"; 
+                pecaAntiga.local = "Oficina / Reparo";
+                pecaAntiga.veio = ""; 
+                pecaAntiga.posicaoFixa = ""; 
+                alert(`🔄 SWAP EXECUTADO:\nA peça velha [${pecaAntiga.id}] foi expulsa da gaveta e enviada para Reparo.`);
+            }
+        }
+
+        // 4. CRIA A NOVA E ASSUME A GAVETA
+        const novaPeca = {
+            id: tag,
+            tipo: familia,
+            veio: instalarDireto ? veio : "", 
+            local: localFinal, 
+            posicaoFixa: instalarDireto ? posicao : "", 
+            status: statusFinal,
+            ton: 0,
+            dias: 0,
+            meta: limite, 
+            mcc_compat: mccCompat,
+            ordem: typeof getOrdemPadrao === 'function' ? getOrdemPadrao(familia) : 999
+        };
+
+        BANCO_ATIVOS.push(novaPeca); 
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS)); // SALVA NO NAVEGADOR
+        
+        if (statusFinal === "Instalado") {
+            alert(`✅ PEÇA INSTALADA!\nA nova peça [${tag}] assumiu a gaveta ${posicao}.`);
+        } else {
+            alert(`✅ PEÇA CRIADA!\nPeça [${tag}] guardada no Estoque Reserva.`);
         }
         
-        renderAtivos();
-        renderPainelVeios();
-        calcularKpisGlobais();
-        renderReparos();
-        renderReservas();
-    });
-}
+        document.getElementById("add-tag").value = "";
+        document.getElementById("add-meta").value = "";
+
+        try { if(typeof renderReservas === 'function') renderReservas(); } catch(e){}
+        try { if(typeof renderAtivos === 'function') renderAtivos(); } catch(e){}
+        try { if(typeof renderReparos === 'function') renderReparos(); } catch(e){}
+        
+        // RECARREGA A TELA DE CHASSI NA HORA
+        if (instalarDireto && typeof window.mudarVeioVisualizado === 'function') {
+            window.mudarVeioVisualizado(veio);
+        }
+    }
+};
 
 // ==========================================
 // FILTROS MCC
@@ -1955,43 +1950,80 @@ window.atualizarPosicoesCadastro = function() {
 };
 
 window.processarCadastroPeca = function() {
+    // 1. CAPTURA OS DADOS DO FORMULÁRIO
     const tag = document.getElementById("add-tag").value.trim() || `NOVA-PECA-${Math.floor(Math.random()*1000)}`;
     const tipoValor = document.getElementById("add-tipo").value || "";
     const tipoSplit = tipoValor.split("|");
-    const familia = tipoSplit[0] || ""; // Garante que nunca seja undefined
+    const familia = tipoSplit[0] || ""; 
     
     const limite = parseFloat(document.getElementById("add-meta").value) || 1000000;
     const veio = document.getElementById("add-veio").value || "";
     const posicao = document.getElementById("add-posicao").value || "";
     const instalarDireto = document.getElementById("add-instalar-direto").checked;
 
-    // Define status e também o LOCAL (o que estava dando o erro undefined)
-    const statusFinal = instalarDireto ? "Instalado" : "Oficina / Reserva";
-    const localFinal = instalarDireto ? `MCC - Veio ${veio}` : "Estoque Reserva";
-
-    const novaPeca = {
-        id: tag,
-        tipo: familia,
-        veio: veio,
-        local: localFinal, // <--- A salvação da lavoura pro renderAtivos
-        posicaoFixa: posicao,
-        status: statusFinal,
-        ton: 0,
-        dias: 0,
-        limite: limite
-    };
+    let statusFinal = instalarDireto ? "Instalado" : "Oficina / Reserva";
+    let localFinal = instalarDireto ? `MCC - Veio ${veio}` : "Estoque Reserva";
 
     if (typeof BANCO_ATIVOS !== 'undefined') {
-        BANCO_ATIVOS.push(novaPeca);
-        alert(`Sucesso! Peça ${tag} salva na gaveta e alocada como: ${statusFinal}`);
         
-        // Atualiza as telas de forma segura (se uma der erro, não trava a outra)
-        try { if(typeof renderReservas === 'function') renderReservas(); } catch(e){ console.warn(e); }
-        try { if(typeof renderAtivos === 'function') renderAtivos(); } catch(e){ console.warn(e); }
+        // ===================================================
+        // SWAP: MANDANDO A PEÇA VELHA PRO REPARO
+        // ===================================================
+        if (instalarDireto && veio && posicao) {
+            let pecaAntiga = BANCO_ATIVOS.find(p => p.veio === veio && p.posicaoFixa === posicao && p.status === "Instalado");
+            
+            if (pecaAntiga) {
+                console.log(`[SWAP] Sacando a peça ${pecaAntiga.id} e mandando para REPARO.`);
+                
+                // Manda pro Reparo
+                pecaAntiga.status = "Oficina / Reparo"; 
+                pecaAntiga.local = "Oficina de Manutenção";
+                
+                // ARRANCANDO A PEÇA DA GAVETA (Isso resolve o bug de não trocar na tela)
+                pecaAntiga.veio = ""; 
+                pecaAntiga.posicaoFixa = ""; 
+                
+                alert(`⚠️ SUBSTITUIÇÃO ATIVA:\nA peça velha [${pecaAntiga.id}] foi retirada da gaveta ${posicao} e enviada para a aba de "Peças em Reparo".`);
+            }
+        }
+
+        // ===================================================
+        // CRIAÇÃO E INJEÇÃO DA PEÇA NOVA
+        // ===================================================
+        const novaPeca = {
+            id: tag,
+            tipo: familia,
+            veio: instalarDireto ? veio : "", // Só tem veio se for instalada
+            local: localFinal, 
+            posicaoFixa: instalarDireto ? posicao : "", // Só assume a gaveta se for instalada
+            status: statusFinal,
+            ton: 0,
+            dias: 0,
+            limite: limite
+        };
+
+        BANCO_ATIVOS.push(novaPeca); // Salva o equipamento novo no sistema
         
-        // Se instalou direto, recarrega o chassi para mostrar a peça nova na gaveta!
-        if (instalarDireto && typeof mudarVeioVisualizado === 'function') {
-            mudarVeioVisualizado(veio);
+        if (statusFinal === "Instalado") {
+            alert(`✅ Sucesso! A nova peça [${tag}] assumiu o controle da gaveta ${posicao} do Veio ${veio}.`);
+        } else {
+            alert(`✅ Sucesso! Peça [${tag}] criada e guardada no Estoque Reserva.`);
+        }
+        
+        // Limpa os campos de digitação pro próximo cadastro
+        document.getElementById("add-tag").value = "";
+        document.getElementById("add-meta").value = "";
+
+        // ===================================================
+        // ATUALIZAÇÃO GERAL DAS TELAS
+        // ===================================================
+        try { if(typeof renderReservas === 'function') renderReservas(); } catch(e){}
+        try { if(typeof renderAtivos === 'function') renderAtivos(); } catch(e){}
+        try { if(typeof renderReparos === 'function') renderReparos(); } catch(e){} // Atualiza a tela de Reparos!
+        
+        // Atualiza o Chassi para mostrar a peça nova na hora
+        if (instalarDireto && typeof window.mudarVeioVisualizado === 'function') {
+            window.mudarVeioVisualizado(veio);
         }
     }
 };
