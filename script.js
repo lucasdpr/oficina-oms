@@ -1,5 +1,5 @@
 // ==========================================
-// SCRIPT.JS - COMPLETO E ÚNICO
+// SCRIPT.JS - COMPLETO E CORRIGIDO
 // ==========================================
 
 import { 
@@ -227,7 +227,10 @@ function verificarAcesso() {
     return true;
 }
 
-function abrirAba(event, idAba) {
+// ==========================================
+// ABRIR ABA - CORRIGIDA E ÚNICA
+// ==========================================
+window.abrirAba = function(event, idAba) {
     if (event) event.preventDefault();
 
     document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
@@ -242,7 +245,13 @@ function abrirAba(event, idAba) {
     if (idAba === "aba-mcc3") renderizarGraficosMCC(3);
     if (idAba === "aba-mcc4") renderizarGraficosMCC(4);
     if (idAba === "aba-reparos") renderReparos();
-    if (idAba === "aba-reservas") renderReservas();
+    if (idAba === "aba-reservas") {
+        if (typeof window.renderReservas === 'function') {
+            window.renderReservas();
+        } else if (typeof renderReservas === 'function') {
+            renderReservas();
+        }
+    }
     if (idAba === "aba-rolos") renderRolos();
     if (idAba === "aba-almoxarifado") renderMateriais(); 
     if (idAba === "aba-historico") renderHistorico();
@@ -257,7 +266,7 @@ function abrirAba(event, idAba) {
     if (window.innerWidth <= 992) {
         document.getElementById('sidebar-menu').classList.remove('open');
     }
-}
+};
 
 // ==========================================
 // HISTÓRICO E AUDITORIA
@@ -648,14 +657,11 @@ function getSlotsPorVeio(veio) {
 }
 
 function mudarVeioVisualizado(veio) {
-    // Remove active de todos os botões
     document.querySelectorAll('.btn-veio-tab').forEach(b => b.classList.remove('active'));
     
-    // Adiciona active no botão clicado (se houver evento)
     if (window.event && window.event.currentTarget) {
         window.event.currentTarget.classList.add('active');
     } else {
-        // Fallback: procura o botão com o valor do veio
         document.querySelectorAll('.btn-veio-tab').forEach(b => {
             if (b.textContent.includes(`Veio ${veio}`)) {
                 b.classList.add('active');
@@ -672,7 +678,12 @@ function mudarVeioVisualizado(veio) {
 
     const container = document.getElementById("container-fluxo-horizontal-scroll");
     if (!container) return;
-    container.innerHTML = "";
+    
+    // MOSTRA UM LOADING
+    container.innerHTML = `<div style="padding: 30px; text-align: center; color: var(--text-muted);">
+        <i class="fas fa-spinner fa-spin" style="font-size: 30px; margin-bottom: 15px;"></i>
+        <p>Carregando equipamentos do Veio ${veio}...</p>
+    </div>`;
 
     const config = getConfiguracaoPorVeio(veio);
     if (!config) {
@@ -698,6 +709,7 @@ function mudarVeioVisualizado(veio) {
         return;
     }
 
+    // PEGA AS PEÇAS INSTALADAS
     const pecasInstaladas = BANCO_ATIVOS.filter(p => 
         (p.veio === veio && p.status === "Instalado") || 
         (p.local && p.local.includes(`Veio ${veio}`) && !p.local.includes("Oficina"))
@@ -764,7 +776,7 @@ function mudarVeioVisualizado(veio) {
                     <i class="fas fa-exclamation-triangle" style="font-size: 28px; color: var(--danger); margin-bottom: 8px; opacity: 0.6;"></i>
                     <h4 style="color: var(--danger); font-size: 0.85rem; margin: 0;">${slot.nome}</h4>
                     <p style="color: var(--danger); font-size: 0.65rem; margin: 4px 0 12px 0; opacity: 0.7;">GAVETA VAZIA</p>
-                    <button class="btn-premium btn-success" style="padding: 6px 16px; font-size: 0.7rem;" onclick="abrirAba(event, 'aba-reservas')">
+                    <button class="btn-premium btn-success" style="padding: 6px 16px; font-size: 0.7rem;" onclick="window.abrirAba(null, 'aba-reservas')">
                         <i class="fas fa-plus"></i> Alocar
                     </button>
                 </div>`;
@@ -923,111 +935,10 @@ function renderReparos() {
     }
 }
 
-function renderReservas() {
-    const resBody = document.getElementById("estoque-table-body");
-    if (!resBody) return;
-
-    const reservas = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reserva");
-
-    if (reservas.length === 0) {
-        resBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Estoque vazio. Nenhuma peça reserva disponível.</td></tr>`;
-    } else {
-        resBody.innerHTML = reservas.map(a => {
-            const isZerado = a.ton === 0 ? `<i class="fas fa-check"></i> Zerado` : `<i class="fas fa-adjust"></i> Parcial (${a.ton}t)`;
-
-            let optionsVeios = "";
-            if (a.mcc_compat === "2/3") {
-                optionsVeios = `
-                    <option value="C">Veio C (MCC 2)</option>
-                    <option value="D">Veio D (MCC 2)</option>
-                    <option value="E">Veio E (MCC 3)</option>
-                    <option value="F">Veio F (MCC 3)</option>
-                `;
-            } else if (a.mcc_compat === "4") {
-                optionsVeios = `
-                    <option value="H">Veio H (MCC 4)</option>
-                    <option value="G">Veio G (MCC 4)</option>
-                `;
-            }
-
-            return `
-                <tr>
-                    <td class="font-code">${a.id}</td>
-                    <td><span class="ind-card-tag bg-tag">${a.tipo} <span style="opacity:0.7; font-size:10px;">(MCC ${a.mcc_compat})</span></span></td>
-                    <td><span class="status-pill reserva">${isZerado}</span></td>
-                    <td>
-                        <div class="flex-align-center gap-10 action-buttons-mobile">
-                            <select id="swap-veio-${a.id}" class="premium-select select-sm">
-                                <option value="">Selecione...</option>
-                                ${optionsVeios}
-                            </select>
-                            <button class="btn-premium btn-success" onclick="window.efetuarSwapDireto('${a.id}')">
-                                <i class="fas fa-exchange-alt"></i> Swap
-                            </button>
-                            <button class="btn-premium" style="background:transparent; border-color:var(--text-accent); color:var(--text-accent); padding: 8px 12px;" onclick="abrirHistoricoIndividual('${a.id}')" title="Ver Prontuário">
-                                <i class="fas fa-book-open"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>`;
-        }).join("");
-    }
-}
-
-function iniciarSwapAlocacao(idReserva) {
-    if (!verificarAcesso()) return;
-
-    const novoLocal = document.getElementById(`alocar-veio-${idReserva}`).value;
-    let pecaReserva = BANCO_ATIVOS.find(a => a.id === idReserva);
-
-    if (pecaReserva) {
-        let pecaAntiga = BANCO_ATIVOS.find(a => a.local === novoLocal && a.tipo === pecaReserva.tipo);
-        if (pecaAntiga) {
-            if (confirm(`A peça ${pecaAntiga.id} será SACADA do ${novoLocal} para dar lugar à ${pecaReserva.id}. Precisamos do relatório de retirada.`)) {
-                MODO_MODAL_RELATORIO = { tipoAcao: 'SWAP', idSacado: pecaAntiga.id, idReserva: pecaReserva.id, localDestino: novoLocal };
-                abrirModalRelatorio(pecaAntiga);
-            }
-        } else {
-            if (confirm(`Instalar a reserva ${pecaReserva.id} no ${novoLocal}?`)) {
-                pecaReserva.local = novoLocal;
-                pecaReserva.pos = "Componente Instalado";
-                pecaReserva.ordem = getOrdemPadrao(pecaReserva.tipo);
-
-                localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-                registrarHistorico(pecaReserva.id, `Alocado no ${novoLocal}.`);
-
-                renderReparos();
-                renderReservas();
-                renderAtivos();
-                renderPainelVeios();
-                calcularKpisGlobais();
-            }
-        }
-    }
-}
-
-function executarSwapFinal(idReserva, idAntiga, novoLocal, laudo) {
-    let pecaAntiga = BANCO_ATIVOS.find(a => a.id === idAntiga);
-    let pecaReserva = BANCO_ATIVOS.find(a => a.id === idReserva);
-
-    if (pecaAntiga && pecaReserva) {
-        pecaAntiga.local = "Oficina / Reparo";
-        registrarHistorico(pecaAntiga.id, `Sacado do ${novoLocal} (Substituição). ${laudo}`);
-
-        pecaReserva.local = novoLocal;
-        pecaReserva.pos = pecaAntiga.pos;
-        pecaReserva.ordem = pecaAntiga.ordem;
-
-        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-        registrarHistorico(pecaReserva.id, `Alocado no ${novoLocal} substituindo ${pecaAntiga.id}.`);
-
-        renderReparos();
-        renderReservas();
-        renderAtivos();
-        renderPainelVeios();
-        calcularKpisGlobais();
-    }
-}
+// ==========================================
+// A FUNÇÃO renderReservas() ESTÁ NO ui.js
+// ==========================================
+// NÃO DUPLICAR AQUI!
 
 // ==========================================
 // MODAL CONCLUIR REPARO
@@ -2048,11 +1959,48 @@ function trocarAbaSegZero(event, idAba) {
 }
 
 // ==========================================
+// CONEXÃO COM O GOOGLE SHEETS (API)
+// ==========================================
+const API_PLANILHA_URL = "https://script.google.com/macros/s/AKfycbysCwZNwgPq9v0wxlj8zlidQs0jH1iBBudi5U1fFlYkCPElJvVp3eF4l1IUVJjYT8-w/exec";
+
+async function registrarSwapNaPlanilha(maquina, veio, slotId, pecaNova, pecaAntiga, nomeOperador) {
+    const dadosSwap = {
+        maquina: maquina,
+        veio: veio,
+        slotId: slotId,
+        pecaInstalada: pecaNova,
+        pecaRemovida: pecaAntiga || "Nenhuma (gaveta vazia)",
+        operador: nomeOperador || "Operador Padrão",
+        dataHora: new Date().toLocaleString('pt-BR')
+    };
+
+    console.log("⏳ Enviando dados para a planilha...", dadosSwap);
+
+    try {
+        const resposta = await fetch(API_PLANILHA_URL, {
+            method: "POST",
+            mode: "no-cors", // ← ESSENCIAL para evitar CORS
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(dadosSwap)
+        });
+
+        // Com 'no-cors', não podemos ler a resposta, mas os dados chegam
+        console.log("✅ Dados enviados para a planilha (no-cors). Verifique a planilha!");
+
+    } catch (erro) {
+        console.error("❌ Erro ao enviar para a planilha:", erro);
+    }
+}
+
+// Expor a função globalmente
+window.registrarSwapNaPlanilha = registrarSwapNaPlanilha;
+// ==========================================
 // EXPOSIÇÃO GLOBAL - TODAS AS FUNÇÕES
 // ==========================================
 window.processarAutenticacaoHome = processarAutenticacaoHome;
 window.fazerLogout = fazerLogout;
-window.abrirAba = abrirAba;
 window.toggleSidebar = toggleSidebar;
 window.toggleTheme = toggleTheme;
 window.verificarAcesso = verificarAcesso;
@@ -2096,15 +2044,41 @@ window.getConfiguracaoPorVeio = getConfiguracaoPorVeio;
 window.getSlotsPorVeio = getSlotsPorVeio;
 window.CONFIGURACOES_MAQUINAS = CONFIGURACOES_MAQUINAS;
 
-window.iniciarSwapAlocacao = iniciarSwapAlocacao;
-window.executarSwapFinal = executarSwapFinal;
+window.iniciarSwapAlocacao = function(idReserva) {
+    if (!verificarAcesso()) return;
+
+    const novoLocal = document.getElementById(`alocar-veio-${idReserva}`)?.value;
+    let pecaReserva = BANCO_ATIVOS.find(a => a.id === idReserva);
+
+    if (pecaReserva) {
+        let pecaAntiga = BANCO_ATIVOS.find(a => a.local === novoLocal && a.tipo === pecaReserva.tipo);
+        if (pecaAntiga) {
+            if (confirm(`A peça ${pecaAntiga.id} será SACADA do ${novoLocal} para dar lugar à ${pecaReserva.id}. Precisamos do relatório de retirada.`)) {
+                MODO_MODAL_RELATORIO = { tipoAcao: 'SWAP', idSacado: pecaAntiga.id, idReserva: pecaReserva.id, localDestino: novoLocal };
+                abrirModalRelatorio(pecaAntiga);
+            }
+        } else {
+            if (confirm(`Instalar a reserva ${pecaReserva.id} no ${novoLocal}?`)) {
+                pecaReserva.local = novoLocal;
+                pecaReserva.pos = "Componente Instalado";
+                pecaReserva.ordem = getOrdemPadrao(pecaReserva.tipo);
+
+                localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+                registrarHistorico(pecaReserva.id, `Alocado no ${novoLocal}.`);
+
+                renderReparos();
+                renderReservas();
+                renderAtivos();
+                renderPainelVeios();
+                calcularKpisGlobais();
+            }
+        }
+    }
+};
 
 window.efetuarSwapDireto = function(idPeca) {
     console.log("🔄 Iniciando SWAP para peça:", idPeca);
     
-    // ==========================================
-    // 1. VALIDAÇÕES INICIAIS
-    // ==========================================
     if (typeof window.verificarAcesso === 'function') {
         if (!window.verificarAcesso()) {
             alert("Acesso negado. Faça login novamente.");
@@ -2125,9 +2099,6 @@ window.efetuarSwapDireto = function(idPeca) {
     
     console.log("📦 Peça encontrada:", pecaReserva.id, "Tipo:", pecaReserva.tipo);
     
-    // ==========================================
-    // 2. CAPTURA O VEIO DE DESTINO
-    // ==========================================
     const selectVeio = document.getElementById(`swap-veio-${idPeca}`);
     if (!selectVeio) {
         alert("Erro: Seletor de Veio não encontrado.");
@@ -2142,9 +2113,6 @@ window.efetuarSwapDireto = function(idPeca) {
     
     console.log("🎯 Veio destino:", veioDestino);
     
-    // ==========================================
-    // 3. CAPTURA A POSIÇÃO DE DESTINO - CORRIGIDO!
-    // ==========================================
     const posEl = document.getElementById(`pos-${idPeca}`);
     let posicaoDigitada = "";
     
@@ -2152,12 +2120,10 @@ window.efetuarSwapDireto = function(idPeca) {
         if (posEl.tagName === "SELECT" || posEl.tagName === "INPUT") {
             posicaoDigitada = posEl.value.trim();
         } else {
-            // Fallback: pega o texto do elemento
             posicaoDigitada = posEl.textContent.trim();
         }
     }
     
-    // Se for um input hidden com valor fixo, pega o value
     if (!posicaoDigitada && posEl && posEl.tagName === "INPUT" && posEl.type === "hidden") {
         posicaoDigitada = posEl.value;
     }
@@ -2169,15 +2135,9 @@ window.efetuarSwapDireto = function(idPeca) {
     
     console.log("📍 Posição digitada:", posicaoDigitada);
     
-    // ==========================================
-    // 4. CONVERTE POSIÇÃO PARA SLOT CHASSI
-    // ==========================================
     const tipoUpper = (pecaReserva.tipo || "").toUpperCase();
     let slotChassi = "";
     
-    // ==========================================
-    // MCC 4 - ALTA PERFORMANCE
-    // ==========================================
     if (pecaReserva.mcc_compat === "4") {
         if (tipoUpper.includes("BOW")) {
             slotChassi = `BOW-${posicaoDigitada}`;
@@ -2194,11 +2154,7 @@ window.efetuarSwapDireto = function(idPeca) {
         } else {
             slotChassi = posicaoDigitada;
         }
-    }
-    // ==========================================
-    // MCC 2/3 - CONVENCIONAL
-    // ==========================================
-    else if (pecaReserva.mcc_compat === "2/3") {
+    } else if (pecaReserva.mcc_compat === "2/3") {
         if (tipoUpper.includes("CADEIRA SUPERIOR")) {
             slotChassi = `CAD-SUP-${posicaoDigitada}`;
         } else if (tipoUpper.includes("CADEIRA INFERIOR")) {
@@ -2220,16 +2176,10 @@ window.efetuarSwapDireto = function(idPeca) {
     
     console.log("🏷️ Slot Chassi:", slotChassi);
     
-    // ==========================================
-    // 5. CONFIRMAR AÇÃO
-    // ==========================================
     if (!confirm(`Confirmar instalação da peça [${pecaReserva.id}] na gaveta [${slotChassi}] do Veio ${veioDestino}?`)) {
         return;
     }
     
-    // ==========================================
-    // 6. CAÇADOR - PROCURA PEÇA ANTIGA (LOOP FOR)
-    // ==========================================
     let pecaExpulsa = false;
     let pecaExpulsaId = "";
     
@@ -2259,7 +2209,6 @@ window.efetuarSwapDireto = function(idPeca) {
         if (ehVelha) {
             console.log(`💥 EXPULSANDO peça velha: ${p.id}`);
             
-            // 🔴 MUTAÇÃO DIRETA - EXPULSA A PEÇA VELHA
             BANCO_ATIVOS[i].status = "Oficina / Reparo";
             BANCO_ATIVOS[i].local = "Oficina / Reparo";
             BANCO_ATIVOS[i].veio = "";
@@ -2282,9 +2231,6 @@ window.efetuarSwapDireto = function(idPeca) {
         console.log("ℹ️ Nenhuma peça encontrada na gaveta", slotChassi, "- instalação direta.");
     }
     
-    // ==========================================
-    // 7. INSTALA A NOVA PEÇA
-    // ==========================================
     const indexNovo = BANCO_ATIVOS.findIndex(a => a.id === idPeca);
     if (indexNovo === -1) {
         alert("Erro crítico: Peça não encontrada.");
@@ -2304,9 +2250,6 @@ window.efetuarSwapDireto = function(idPeca) {
         window.registrarHistorico(idPeca, `Instalada no Veio ${veioDestino} (${slotChassi}) via Estoque.`);
     }
     
-    // ==========================================
-    // 8. SALVAR E RENDERIZAR
-    // ==========================================
     localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
     
     if (typeof renderAtivos === 'function') renderAtivos();
@@ -2322,7 +2265,7 @@ window.efetuarSwapDireto = function(idPeca) {
     console.log("✅ SWAP concluído!");
     alert(`✅ Sucesso! Peça [${pecaReserva.id}] instalada no Veio ${veioDestino} (${slotChassi}).`);
 };
-// Forçar recriação da tabela de reservas
+
 window.forcarRenderReservas = function() {
     console.log("🔄 Forçando renderização de reservas...");
     if (typeof renderReservas === 'function') {
@@ -2332,9 +2275,7 @@ window.forcarRenderReservas = function() {
         console.error("❌ renderReservas não está disponível!");
     }
 };
-// ==========================================
-// FORÇAR CAMPOS DE POSIÇÃO - FALLBACK
-// ==========================================
+
 window.forcarCamposPosicao = function() {
     console.log("🔄 FORÇANDO CRIAÇÃO DOS CAMPOS DE POSIÇÃO (fallback)...");
     
@@ -2370,4 +2311,5 @@ window.forcarCamposPosicao = function() {
         console.log("ℹ️ Nenhum campo novo criado (já existem ou tabela vazia).");
     }
 };
+
 console.log("✅ Script.js carregado - todas as funções expostas globalmente");

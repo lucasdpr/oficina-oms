@@ -4,8 +4,37 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OMS - Dashboard Premium v32</title>
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* FORÇA OS CAMPOS DE POSIÇÃO A APARECEREM */
+    #estoque-table-body input[type="number"] {
+      display: inline-block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      border: 3px solid #10b981 !important;
+      background: #0f172a !important;
+      color: #ffffff !important;
+      width: 55px !important;
+      height: 32px !important;
+      padding: 4px 6px !important;
+      font-size: 14px !important;
+      font-weight: bold !important;
+      text-align: center !important;
+      border-radius: 4px !important;
+    }
+    #estoque-table-body select {
+      display: inline-block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      padding: 4px 6px !important;
+      font-size: 12px !important;
+      border-radius: 4px !important;
+      border: 1px solid #444 !important;
+      background: #1a1a2e !important;
+      color: #e0e0e0 !important;
+    }
+  </style>
 </head>
 <body>
 
@@ -36,7 +65,7 @@
             <i class="fas fa-key login-input-icon"></i>
           </div>
         </div>
-        <button type="button" class="btn-premium login-btn-submit" onclick="processarAutenticacaoHome()">Autenticar Terminal</button>
+        <button type="button" class="btn-premium login-btn-submit" onclick="window.processarAutenticacaoHome()">Autenticar Terminal</button>
       </div>
     </div>
   </div>
@@ -50,7 +79,7 @@
     <div id="barra-emergencia" class="emergency-bar" style="display: none;">
       <div class="emergency-content">
         <span id="texto-emergencia"></span>
-        <button class="btn-close-emergency" onclick="encerrarEmergencia()">Resetar Sistema</button>
+        <button class="btn-close-emergency" onclick="window.encerrarEmergencia()">Resetar Sistema</button>
       </div>
     </div>
 
@@ -62,43 +91,43 @@
         </div>
         <strong style="color: var(--text-heading); font-size: 16px;">OMS Mobile</strong>
       </div>
-      <button class="btn-mobile-menu" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+      <button class="btn-mobile-menu" onclick="window.toggleSidebar()"><i class="fas fa-bars"></i></button>
     </div>
 
     <!-- SIDEBAR -->
     <aside id="sidebar-menu" class="sidebar glass-panel">
       <div class="sidebar-header flex-between">
         <h2 style="color: var(--text-heading);"><i class="fas fa-industry text-accent"></i> Painel OMS</h2>
-        <button class="btn-close-sidebar hidden-desktop" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
+        <button class="btn-close-sidebar hidden-desktop" onclick="window.toggleSidebar()"><i class="fas fa-times"></i></button>
       </div>
       <div class="operator-box">
         <div class="operator-info">
-            <i class="fas fa-user-shield"></i>
-            <div>
-                <small>Líder Logado</small>
-                <p id="nome-operador-logado" style="color: var(--text-heading);">...</p>
-            </div>
+          <i class="fas fa-user-shield"></i>
+          <div>
+            <small>Líder Logado</small>
+            <p id="nome-operador-logado" style="color: var(--text-heading);">...</p>
+          </div>
         </div>
-        <button class="btn-auth" onclick="fazerLogout()">Encerrar Turno</button>
+        <button class="btn-auth" onclick="window.fazerLogout()">Encerrar Turno</button>
       </div>
       <nav class="sidebar-nav">
-        <a href="#" id="nav-painel" class="nav-link active" onclick="abrirAba(event, 'aba-painel')"><i class="fas fa-chart-pie"></i> Painel Geral OMS</a>
-        <a href="#" id="nav-fluxo" class="nav-link" onclick="abrirAba(event, 'aba-fluxo')"><i class="fas fa-stream"></i> Sequenciamento Veios</a>
-        <a href="#" id="nav-ativos" class="nav-link" onclick="abrirAba(event, 'aba-ativos')"><i class="fas fa-tools"></i> Matriz de Componentes</a>
+        <a href="#" id="nav-painel" class="nav-link active" onclick="window.abrirAba(event, 'aba-painel')"><i class="fas fa-chart-pie"></i> Painel Geral OMS</a>
+        <a href="#" id="nav-fluxo" class="nav-link" onclick="window.abrirAba(event, 'aba-fluxo')"><i class="fas fa-stream"></i> Sequenciamento Veios</a>
+        <a href="#" id="nav-ativos" class="nav-link" onclick="window.abrirAba(event, 'aba-ativos')"><i class="fas fa-tools"></i> Matriz de Componentes</a>
         
         <div class="nav-divider">Oficina &amp; Log</div>
-        <a href="#" id="nav-reparos" class="nav-link highlight-warning" onclick="abrirAba(event, 'aba-reparos')"><i class="fas fa-wrench"></i> Peças em Reparo</a>
-        <a href="#" id="nav-reservas" class="nav-link highlight-success" onclick="abrirAba(event, 'aba-reservas')"><i class="fas fa-boxes"></i> Estoque Reserva</a>
-        <a href="#" id="nav-rolos" class="nav-link highlight-rolos" onclick="abrirAba(event, 'aba-rolos')"><i class="fas fa-scroll"></i> Estoque de Rolos</a>
-        <a href="#" id="nav-almoxarifado" class="nav-link highlight-almoxarifado" onclick="abrirAba(event, 'aba-almoxarifado')"><i class="fas fa-pallet"></i> Almoxarifado Central</a>
-        <a href="#" id="nav-historico" class="nav-link" onclick="abrirAba(event, 'aba-historico')"><i class="fas fa-history"></i> Auditoria (Histórico)</a>
+        <a href="#" id="nav-reparos" class="nav-link highlight-warning" onclick="window.abrirAba(event, 'aba-reparos')"><i class="fas fa-wrench"></i> Peças em Reparo</a>
+        <a href="#" id="nav-reservas" class="nav-link highlight-success" onclick="window.abrirAba(event, 'aba-reservas')"><i class="fas fa-boxes"></i> Estoque Reserva</a>
+        <a href="#" id="nav-rolos" class="nav-link highlight-rolos" onclick="window.abrirAba(event, 'aba-rolos')"><i class="fas fa-scroll"></i> Estoque de Rolos</a>
+        <a href="#" id="nav-almoxarifado" class="nav-link highlight-almoxarifado" onclick="window.abrirAba(event, 'aba-almoxarifado')"><i class="fas fa-pallet"></i> Almoxarifado Central</a>
+        <a href="#" id="nav-historico" class="nav-link" onclick="window.abrirAba(event, 'aba-historico')"><i class="fas fa-history"></i> Auditoria (Histórico)</a>
         
         <div class="nav-divider">Análise Gráfica</div>
-        <a href="#" id="nav-mcc2" class="nav-link" onclick="abrirAba(event, 'aba-mcc2')"><i class="fas fa-chart-bar"></i> Gráficos MCC 2</a>
-        <a href="#" id="nav-mcc3" class="nav-link" onclick="abrirAba(event, 'aba-mcc3')"><i class="fas fa-chart-bar"></i> Gráficos MCC 3</a>
-        <a href="#" id="nav-mcc4" class="nav-link" onclick="abrirAba(event, 'aba-mcc4')"><i class="fas fa-chart-line"></i> Gráficos MCC 4</a>
+        <a href="#" id="nav-mcc2" class="nav-link" onclick="window.abrirAba(event, 'aba-mcc2')"><i class="fas fa-chart-bar"></i> Gráficos MCC 2</a>
+        <a href="#" id="nav-mcc3" class="nav-link" onclick="window.abrirAba(event, 'aba-mcc3')"><i class="fas fa-chart-bar"></i> Gráficos MCC 3</a>
+        <a href="#" id="nav-mcc4" class="nav-link" onclick="window.abrirAba(event, 'aba-mcc4')"><i class="fas fa-chart-line"></i> Gráficos MCC 4</a>
       </nav>
-      <button class="btn-panic glow-danger mt-15" onclick="dispararEmergencia()"><i class="fas fa-exclamation-triangle"></i> PÂNICO</button>
+      <button class="btn-panic glow-danger mt-15" onclick="window.dispararEmergencia()"><i class="fas fa-exclamation-triangle"></i> PÂNICO</button>
     </aside>
 
     <!-- MAIN CONTENT -->
@@ -108,12 +137,12 @@
       <section id="seletor-veios-container" class="veios-selector-section glass-panel hidden">
         <h3><i class="fas fa-compress-alt"></i> Filtragem Rápida de Veio</h3>
         <div class="veios-grid-buttons">
-          <button class="btn-veio-tab active" onclick="mudarVeioVisualizado('C')">Veio C (MCC 2)</button>
-          <button class="btn-veio-tab" onclick="mudarVeioVisualizado('D')">Veio D (MCC 2)</button>
-          <button class="btn-veio-tab" onclick="mudarVeioVisualizado('E')">Veio E (MCC 3)</button>
-          <button class="btn-veio-tab" onclick="mudarVeioVisualizado('F')">Veio F (MCC 3)</button>
-          <button class="btn-veio-tab" onclick="mudarVeioVisualizado('H')">Veio H (MCC 4)</button>
-          <button class="btn-veio-tab" onclick="mudarVeioVisualizado('G')">Veio G (MCC 4)</button>
+          <button class="btn-veio-tab active" onclick="window.mudarVeioVisualizado('C')">Veio C (MCC 2)</button>
+          <button class="btn-veio-tab" onclick="window.mudarVeioVisualizado('D')">Veio D (MCC 2)</button>
+          <button class="btn-veio-tab" onclick="window.mudarVeioVisualizado('E')">Veio E (MCC 3)</button>
+          <button class="btn-veio-tab" onclick="window.mudarVeioVisualizado('F')">Veio F (MCC 3)</button>
+          <button class="btn-veio-tab" onclick="window.mudarVeioVisualizado('H')">Veio H (MCC 4)</button>
+          <button class="btn-veio-tab" onclick="window.mudarVeioVisualizado('G')">Veio G (MCC 4)</button>
         </div>
       </section>
 
@@ -124,7 +153,7 @@
             <h1>Plataforma OMS - Gestão Avançada de Aciaria</h1>
             <p style="color: var(--text-main);">Visão computacional e desgaste preditivo de componentes do lingotamento.</p>
           </div>
-          <button class="btn-premium" onclick="toggleTheme()" id="btn-theme-toggle" style="background: var(--bg-card); color: var(--text-heading); border-color: var(--border-color);">
+          <button class="btn-premium" onclick="window.toggleTheme()" id="btn-theme-toggle" style="background: var(--bg-card); color: var(--text-heading); border-color: var(--border-color);">
             <i class="fas fa-sun" id="theme-icon"></i> <span id="theme-text">Modo Claro</span>
           </button>
         </div>
@@ -137,10 +166,10 @@
       
       <!-- ABA FLUXO -->
       <section id="aba-fluxo" class="tab-content">
-          <div class="panel-card glass-panel">
-            <div class="panel-card-header"><h1 id="titulo-veio-focado">Sequenciamento Síncrono</h1></div>
-            <div id="container-fluxo-horizontal-scroll" class="graficos-container"></div>
-          </div>
+        <div class="panel-card glass-panel">
+          <div class="panel-card-header"><h1 id="titulo-veio-focado">Sequenciamento Síncrono</h1></div>
+          <div id="container-fluxo-horizontal-scroll" class="graficos-container"></div>
+        </div>
       </section>
 
       <!-- ABA ATIVOS -->
@@ -149,7 +178,7 @@
           <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
             <h1><i class="fas fa-cubes"></i> Matriz Operacional Geral</h1>
             <div class="custom-select-wrapper w-mobile-100">
-              <select id="filtro-tipo-ativo" onchange="renderAtivos()" class="premium-select w-100">
+              <select id="filtro-tipo-ativo" onchange="window.renderAtivos()" class="premium-select w-100">
                 <option value="TODOS">Visão Geral (Todos)</option>
                 <option value="Molde">Apenas Moldes</option>
                 <option value="Cadeira Superior">Cadeiras Superiores</option>
@@ -179,15 +208,15 @@
             <h1>Análise MCC 2</h1>
             <div class="mcc-filters-wrapper">
               <div class="mcc-filter-group" id="filtros-veio-mcc2">
-                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="aplicarFiltrosMCC(2, this)">Todos Veios</button>
-                <button class="btn-filter-mcc" data-valor="C" onclick="aplicarFiltrosMCC(2, this)">Veio C</button>
-                <button class="btn-filter-mcc" data-valor="D" onclick="aplicarFiltrosMCC(2, this)">Veio D</button>
+                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="window.aplicarFiltrosMCC(2, this)">Todos Veios</button>
+                <button class="btn-filter-mcc" data-valor="C" onclick="window.aplicarFiltrosMCC(2, this)">Veio C</button>
+                <button class="btn-filter-mcc" data-valor="D" onclick="window.aplicarFiltrosMCC(2, this)">Veio D</button>
               </div>
               <div class="mcc-filter-group" id="filtros-status-mcc2">
-                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="aplicarFiltrosMCC(2, this)"><i class="fas fa-filter"></i> Tudo</button>
-                <button class="btn-filter-mcc" style="color:var(--success);" data-valor="VERDE" onclick="aplicarFiltrosMCC(2, this)">🟢 0-49%</button>
-                <button class="btn-filter-mcc" style="color:var(--warning);" data-valor="AMARELO" onclick="aplicarFiltrosMCC(2, this)">🟡 50-79%</button>
-                <button class="btn-filter-mcc" style="color:var(--danger);" data-valor="VERMELHO" onclick="aplicarFiltrosMCC(2, this)">🔴 +80%</button>
+                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="window.aplicarFiltrosMCC(2, this)"><i class="fas fa-filter"></i> Tudo</button>
+                <button class="btn-filter-mcc" style="color:var(--success);" data-valor="VERDE" onclick="window.aplicarFiltrosMCC(2, this)">🟢 0-49%</button>
+                <button class="btn-filter-mcc" style="color:var(--warning);" data-valor="AMARELO" onclick="window.aplicarFiltrosMCC(2, this)">🟡 50-79%</button>
+                <button class="btn-filter-mcc" style="color:var(--danger);" data-valor="VERMELHO" onclick="window.aplicarFiltrosMCC(2, this)">🔴 +80%</button>
               </div>
             </div>
           </div>
@@ -202,15 +231,15 @@
             <h1>Análise MCC 3</h1>
             <div class="mcc-filters-wrapper">
               <div class="mcc-filter-group" id="filtros-veio-mcc3">
-                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="aplicarFiltrosMCC(3, this)">Todos Veios</button>
-                <button class="btn-filter-mcc" data-valor="E" onclick="aplicarFiltrosMCC(3, this)">Veio E</button>
-                <button class="btn-filter-mcc" data-valor="F" onclick="aplicarFiltrosMCC(3, this)">Veio F</button>
+                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="window.aplicarFiltrosMCC(3, this)">Todos Veios</button>
+                <button class="btn-filter-mcc" data-valor="E" onclick="window.aplicarFiltrosMCC(3, this)">Veio E</button>
+                <button class="btn-filter-mcc" data-valor="F" onclick="window.aplicarFiltrosMCC(3, this)">Veio F</button>
               </div>
               <div class="mcc-filter-group" id="filtros-status-mcc3">
-                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="aplicarFiltrosMCC(3, this)"><i class="fas fa-filter"></i> Tudo</button>
-                <button class="btn-filter-mcc" style="color:var(--success);" data-valor="VERDE" onclick="aplicarFiltrosMCC(3, this)">🟢 0-49%</button>
-                <button class="btn-filter-mcc" style="color:var(--warning);" data-valor="AMARELO" onclick="aplicarFiltrosMCC(3, this)">🟡 50-79%</button>
-                <button class="btn-filter-mcc" style="color:var(--danger);" data-valor="VERMELHO" onclick="aplicarFiltrosMCC(3, this)">🔴 +80%</button>
+                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="window.aplicarFiltrosMCC(3, this)"><i class="fas fa-filter"></i> Tudo</button>
+                <button class="btn-filter-mcc" style="color:var(--success);" data-valor="VERDE" onclick="window.aplicarFiltrosMCC(3, this)">🟢 0-49%</button>
+                <button class="btn-filter-mcc" style="color:var(--warning);" data-valor="AMARELO" onclick="window.aplicarFiltrosMCC(3, this)">🟡 50-79%</button>
+                <button class="btn-filter-mcc" style="color:var(--danger);" data-valor="VERMELHO" onclick="window.aplicarFiltrosMCC(3, this)">🔴 +80%</button>
               </div>
             </div>
           </div>
@@ -225,15 +254,15 @@
             <h1>Análise MCC 4 (Alta Perf.)</h1>
             <div class="mcc-filters-wrapper">
               <div class="mcc-filter-group" id="filtros-veio-mcc4">
-                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="aplicarFiltrosMCC(4, this)">Todos Veios</button>
-                <button class="btn-filter-mcc" data-valor="H" onclick="aplicarFiltrosMCC(4, this)">Veio H</button>
-                <button class="btn-filter-mcc" data-valor="G" onclick="aplicarFiltrosMCC(4, this)">Veio G</button>
+                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="window.aplicarFiltrosMCC(4, this)">Todos Veios</button>
+                <button class="btn-filter-mcc" data-valor="H" onclick="window.aplicarFiltrosMCC(4, this)">Veio H</button>
+                <button class="btn-filter-mcc" data-valor="G" onclick="window.aplicarFiltrosMCC(4, this)">Veio G</button>
               </div>
               <div class="mcc-filter-group" id="filtros-status-mcc4">
-                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="aplicarFiltrosMCC(4, this)"><i class="fas fa-filter"></i> Tudo</button>
-                <button class="btn-filter-mcc" style="color:var(--success);" data-valor="VERDE" onclick="aplicarFiltrosMCC(4, this)">🟢 0-49%</button>
-                <button class="btn-filter-mcc" style="color:var(--warning);" data-valor="AMARELO" onclick="aplicarFiltrosMCC(4, this)">🟡 50-79%</button>
-                <button class="btn-filter-mcc" style="color:var(--danger);" data-valor="VERMELHO" onclick="aplicarFiltrosMCC(4, this)">🔴 +80%</button>
+                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="window.aplicarFiltrosMCC(4, this)"><i class="fas fa-filter"></i> Tudo</button>
+                <button class="btn-filter-mcc" style="color:var(--success);" data-valor="VERDE" onclick="window.aplicarFiltrosMCC(4, this)">🟢 0-49%</button>
+                <button class="btn-filter-mcc" style="color:var(--warning);" data-valor="AMARELO" onclick="window.aplicarFiltrosMCC(4, this)">🟡 50-79%</button>
+                <button class="btn-filter-mcc" style="color:var(--danger);" data-valor="VERMELHO" onclick="window.aplicarFiltrosMCC(4, this)">🔴 +80%</button>
               </div>
             </div>
           </div>
@@ -257,7 +286,7 @@
         </div>
       </section>
 
-                  <!-- ABA RESERVAS -->
+      <!-- ABA RESERVAS -->
       <section id="aba-reservas" class="tab-content">
         <div class="panel-card glass-panel" style="margin-bottom: 25px; border-top: 4px solid var(--success);">
           <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
@@ -265,7 +294,7 @@
               <h2 style="color: var(--success);"><i class="fas fa-boxes"></i> Estoque Disponível (Reserva)</h2>
               <p class="text-muted" style="font-size: 13px; margin-top: 5px;">Peças prontas para alocação via Swap Automático.</p>
             </div>
-            <button class="btn-premium w-mobile-100" onclick="toggleFormAdicionar()"><i class="fas fa-plus"></i> Cadastrar Peça Nova</button>
+            <button class="btn-premium w-mobile-100" onclick="window.toggleFormAdicionar()"><i class="fas fa-plus"></i> Cadastrar Peça Nova</button>
           </div>
 
           <div id="form-novo-equipamento" class="cadastrar-box hidden">
@@ -277,7 +306,7 @@
               </div>
               <div class="input-group">
                 <label>Família e Tipo</label>
-                <select id="add-tipo" style="font-size: 13px;" onchange="atualizarPosicoesCadastro()">
+                <select id="add-tipo" style="font-size: 13px;" onchange="window.atualizarPosicoesCadastro()">
                   <option value="">Selecione primeiro...</option>
                   <optgroup label="Família MCC 4 (Alta Perf.)">
                     <option value="Molde|4">Molde Alta Performance</option>
@@ -321,7 +350,7 @@
                 <label style="display: flex; align-items: center; gap: 5px; font-size: 12px; cursor: pointer; background: rgba(46, 204, 113, 0.1); padding: 10px; border-radius: 8px; border: 1px solid var(--success);">
                   <input type="checkbox" id="add-instalar-direto"> Instalar direto na Máquina agora
                 </label>
-                <button class="btn-premium btn-success" onclick="processarCadastroPeca()" style="flex: 1;"><i class="fas fa-save"></i> Salvar</button>
+                <button class="btn-premium btn-success" onclick="window.processarCadastroPeca()" style="flex: 1;"><i class="fas fa-save"></i> Salvar</button>
               </div>
             </div>
           </div>
@@ -380,19 +409,19 @@
             </div>
             <div class="flex-align-center gap-10 w-mobile-100" style="flex-wrap: wrap;">
               <div class="login-input-wrapper" style="position: relative; width: 260px; max-width: 100%;">
-                <input type="text" id="busca-material" placeholder="Buscar código ou descrição..." onkeyup="renderMateriais()" style="height: 40px; font-size: 13px; border-radius: 6px;">
+                <input type="text" id="busca-material" placeholder="Buscar código ou descrição..." onkeyup="window.renderMateriais()" style="height: 40px; font-size: 13px; border-radius: 6px;">
                 <i class="fas fa-search login-input-icon" style="top: 11px; font-size: 14px; color: #a855f7;"></i>
               </div>
-              <button class="btn-premium" style="border-color: #a855f7; color: #a855f7; background: rgba(168, 85, 247, 0.15); height: 40px;" onclick="toggleFormMaterial()">
-                  <i class="fas fa-plus"></i> Cadastrar Entrada
+              <button class="btn-premium" style="border-color: #a855f7; color: #a855f7; background: rgba(168, 85, 247, 0.15); height: 40px;" onclick="window.toggleFormMaterial()">
+                <i class="fas fa-plus"></i> Cadastrar Entrada
               </button>
             </div>
           </div>
 
           <div id="form-novo-material" class="cadastrar-box hidden" style="border-color: #a855f7; margin-top: 20px;">
             <div class="flex-between">
-                <h3 style="color: #a855f7;"><i class="fas fa-box-open"></i> Lançamento de Entrada de Material</h3>
-                <button class="btn-xs-primary" style="color: var(--text-muted); cursor: pointer;" onclick="toggleFormMaterial()"><i class="fas fa-times"></i> Fechar</button>
+              <h3 style="color: #a855f7;"><i class="fas fa-box-open"></i> Lançamento de Entrada de Material</h3>
+              <button class="btn-xs-primary" style="color: var(--text-muted); cursor: pointer;" onclick="window.toggleFormMaterial()"><i class="fas fa-times"></i> Fechar</button>
             </div>
             <p class="text-muted" style="font-size: 12px; margin-bottom: 15px;"><strong>Nota do Sistema:</strong> Se o código (SKU) digitado já existir, a quantidade será somada automaticamente ao saldo do item.</p>
             <div class="form-grid-4">
@@ -409,7 +438,7 @@
                 <input type="number" id="mat-qtd" placeholder="Ex: 50" min="1">
               </div>
               <div class="input-group" style="grid-column: span 4; display: flex; justify-content: flex-end; margin-top: 10px;">
-                <button class="btn-premium" style="background: #a855f7; color: white; border: none; padding: 12px 25px;" onclick="salvarEntradaMaterial()"><i class="fas fa-save"></i> Processar Entrada no Estoque</button>
+                <button class="btn-premium" style="background: #a855f7; color: white; border: none; padding: 12px 25px;" onclick="window.salvarEntradaMaterial()"><i class="fas fa-save"></i> Processar Entrada no Estoque</button>
               </div>
             </div>
           </div>
@@ -461,202 +490,47 @@
   <div id="modal-folhao-mcc4" class="modal-overlay hidden no-print">
     <div class="modal-content glass-panel premium-shadow" style="max-width: 900px; padding: 0;">
       <div class="modal-header-fixed" style="padding: 20px; border-bottom: 1px solid var(--border-color); background: var(--bg-th); border-radius: 16px 16px 0 0;">
-          <div class="flex-between">
-              <h2 style="color: var(--text-accent);"><i class="fas fa-clipboard-list"></i> Liberação Oficial - Molde MCC4</h2>
-              <button class="btn-close-emergency" onclick="fecharFolhaoMCC4()"><i class="fas fa-times"></i></button>
-          </div>
-          <div style="display: flex; gap: 15px; margin-top: 15px;">
-              <span class="ind-card-tag bg-tag" style="font-size: 14px;">TAG: <strong id="mcc4-tag-name"></strong></span>
-              <span class="text-muted" style="font-size: 14px;">Preenchimento obrigatório para envio à Reserva.</span>
-          </div>
+        <div class="flex-between">
+          <h2 style="color: var(--text-accent);"><i class="fas fa-clipboard-list"></i> Liberação Oficial - Molde MCC4</h2>
+          <button class="btn-close-emergency" onclick="window.fecharFolhaoMCC4()"><i class="fas fa-times"></i></button>
+        </div>
+        <div style="display: flex; gap: 15px; margin-top: 15px;">
+          <span class="ind-card-tag bg-tag" style="font-size: 14px;">TAG: <strong id="mcc4-tag-name"></strong></span>
+          <span class="text-muted" style="font-size: 14px;">Preenchimento obrigatório para envio à Reserva.</span>
+        </div>
       </div>
       <div class="folhao-tabs" style="display: flex; background: var(--bg-input); border-bottom: 1px solid var(--border-color); overflow-x: auto;">
-          <button class="folhao-tab active" onclick="trocarAbaFolhao(event, 'folhao-aba-dados')">1. Dados Básicos</button>
-          <button class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-recebimento')">2. Recebimento</button>
-          <button class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-revisao')">3. Revisão</button>
-          <button class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-hidraulica')">4. Hidráulica</button>
-          <button class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-final')">5. Check Final</button>
-          <button class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-peritagem')">6. Folgas de Aresta</button>
-          <button class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-eletrica')">7. Elétrica</button>
-          <button class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-materiais')">8. Materiais</button>
+        <button class="folhao-tab active" onclick="window.trocarAbaFolhao(event, 'folhao-aba-dados')">1. Dados Básicos</button>
+        <button class="folhao-tab" onclick="window.trocarAbaFolhao(event, 'folhao-aba-recebimento')">2. Recebimento</button>
+        <button class="folhao-tab" onclick="window.trocarAbaFolhao(event, 'folhao-aba-revisao')">3. Revisão</button>
+        <button class="folhao-tab" onclick="window.trocarAbaFolhao(event, 'folhao-aba-hidraulica')">4. Hidráulica</button>
+        <button class="folhao-tab" onclick="window.trocarAbaFolhao(event, 'folhao-aba-final')">5. Check Final</button>
+        <button class="folhao-tab" onclick="window.trocarAbaFolhao(event, 'folhao-aba-peritagem')">6. Folgas de Aresta</button>
+        <button class="folhao-tab" onclick="window.trocarAbaFolhao(event, 'folhao-aba-eletrica')">7. Elétrica</button>
+        <button class="folhao-tab" onclick="window.trocarAbaFolhao(event, 'folhao-aba-materiais')">8. Materiais</button>
       </div>
       <div class="folhao-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
-          <div id="folhao-aba-dados" class="folhao-content active">
-              <div class="form-grid-2-mobile" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                  <div class="input-group">
-                      <label>Data Início da Manutenção</label>
-                      <input type="date" id="mcc4-data-inicio">
-                  </div>
-                  <div class="input-group">
-                      <label>Data Fim da Manutenção</label>
-                      <input type="date" id="mcc4-data-fim">
-                  </div>
-                  <div class="input-group">
-                      <label>Nº do Ativo</label>
-                      <input type="text" id="mcc4-num-molde" placeholder="Ex: 06">
-                  </div>
-                  <div class="input-group">
-                      <label>Motivo do Reparo</label>
-                      <input type="text" id="mcc4-motivo" placeholder="Ex: Delta 't' (Vazamento)">
-                  </div>
-                  <div class="input-group">
-                      <label>Tipo de Execução</label>
-                      <select id="mcc4-tipo-execucao" class="premium-select">
-                          <option value="PARCIAL">PARCIAL (Apenas corretiva/ajuste)</option>
-                          <option value="GERAL">GERAL (Zerar toneladas - Reforma Completa)</option>
-                      </select>
-                  </div>
-                  <div class="input-group">
-                      <label>Desempenho Observado</label>
-                      <input type="text" id="mcc4-desempenho" placeholder="Ex: Face com ranhuras...">
-                  </div>
-              </div>
+        <div id="folhao-aba-dados" class="folhao-content active">
+          <div class="form-grid-2-mobile" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div class="input-group"><label>Data Início</label><input type="date" id="mcc4-data-inicio"></div>
+            <div class="input-group"><label>Data Fim</label><input type="date" id="mcc4-data-fim"></div>
+            <div class="input-group"><label>Nº do Ativo</label><input type="text" id="mcc4-num-molde" placeholder="Ex: 06"></div>
+            <div class="input-group"><label>Motivo do Reparo</label><input type="text" id="mcc4-motivo" placeholder="Ex: Delta 't' (Vazamento)"></div>
+            <div class="input-group"><label>Tipo de Execução</label><select id="mcc4-tipo-execucao" class="premium-select"><option value="PARCIAL">PARCIAL</option><option value="GERAL">GERAL</option></select></div>
+            <div class="input-group"><label>Desempenho</label><input type="text" id="mcc4-desempenho" placeholder="Ex: Face com ranhuras..."></div>
           </div>
-          <div id="folhao-aba-recebimento" class="folhao-content hidden">
-              <h3 style="margin-bottom: 15px; color: var(--text-heading);">Inspeção de Recebimento Mecânica/Elétrica</h3>
-              <div id="container-check-recebimento" class="checklist-container"></div>
-          </div>
-          <div id="folhao-aba-revisao" class="folhao-content hidden">
-              <h3 style="margin-bottom: 15px; color: var(--text-heading);">Revisão dos Componentes do Molde</h3>
-              <div id="container-check-revisao" class="checklist-container"></div>
-          </div>
-          <div id="folhao-aba-hidraulica" class="folhao-content hidden">
-              <h3 style="margin-bottom: 15px; color: var(--text-heading);">Check List Hidráulico</h3>
-              <div id="container-check-hidraulica" class="checklist-container"></div>
-          </div>
-          <div id="folhao-aba-final" class="folhao-content hidden">
-              <h3 style="margin-bottom: 15px; color: var(--text-heading);">Inspeção Final de Liberação</h3>
-              <div id="container-check-final" class="checklist-container"></div>
-          </div>
-          <div id="folhao-aba-peritagem" class="folhao-content hidden">
-              <h3 style="margin-bottom: 15px; color: var(--text-heading);">Folga de Aresta - Medição Multi-Largura</h3>
-              <p class="text-warning" style="font-size: 12px; margin-bottom: 15px;"><i class="fas fa-info-circle"></i> Selecione a largura, digite os valores e mude para a próxima. O sistema salva automaticamente!</p>
-              <div class="input-group" style="max-width: 300px; margin-bottom: 20px;">
-                  <label>LARGURA DA FACE DE REFERÊNCIA</label>
-                  <select id="folga-largura" class="premium-select" onchange="carregarMedidaAresta()">
-                      <option value="830">LARGURA 830</option>
-                      <option value="870">LARGURA 870</option>
-                      <option value="950">LARGURA 950</option>
-                      <option value="1030">LARGURA 1030</option>
-                      <option value="1100">LARGURA 1100</option>
-                      <option value="1180">LARGURA 1180</option>
-                      <option value="1230">LARGURA 1230</option>
-                      <option value="1300">LARGURA 1300</option>
-                      <option value="1380">LARGURA 1380</option>
-                      <option value="1460">LARGURA 1460</option>
-                      <option value="1500">LARGURA 1500</option>
-                      <option value="1530">LARGURA 1530</option>
-                      <option value="1550">LARGURA 1550</option>
-                      <option value="1580">LARGURA 1580</option>
-                      <option value="1620">LARGURA 1620</option>
-                  </select>
-              </div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                  <div style="background: var(--bg-th); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
-                      <h4 style="margin-bottom: 15px; color: var(--text-heading); text-align: center;">PLACA ESQUERDA</h4>
-                      <div class="input-group" style="margin-bottom: 10px;"><label>Medida Cima (O/M)</label><input type="text" id="fa-esq-cima" onkeyup="salvarMedidaAresta()"></div>
-                      <div class="input-group" style="margin-bottom: 10px;"><label>Medida Meio (V)</label><input type="text" id="fa-esq-meio" onkeyup="salvarMedidaAresta()"></div>
-                      <div class="input-group" style="margin-bottom: 10px;"><label>Medida Inferior (E/L)</label><input type="text" id="fa-esq-inf" onkeyup="salvarMedidaAresta()"></div>
-                      <hr style="border: 1px solid var(--border-color); margin: 15px 0;">
-                      <div class="input-group"><label style="color:var(--warning)">Folga da Chaveta Esq.</label><input type="text" id="fa-esq-chav" onkeyup="salvarMedidaAresta()"></div>
-                  </div>
-                  <div style="background: var(--bg-th); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
-                      <h4 style="margin-bottom: 15px; color: var(--text-heading); text-align: center;">PLACA DIREITA</h4>
-                      <div class="input-group" style="margin-bottom: 10px;"><label>Medida Cima (O/M)</label><input type="text" id="fa-dir-cima" onkeyup="salvarMedidaAresta()"></div>
-                      <div class="input-group" style="margin-bottom: 10px;"><label>Medida Meio (V)</label><input type="text" id="fa-dir-meio" onkeyup="salvarMedidaAresta()"></div>
-                      <div class="input-group" style="margin-bottom: 10px;"><label>Medida Inferior (E/L)</label><input type="text" id="fa-dir-inf" onkeyup="salvarMedidaAresta()"></div>
-                      <hr style="border: 1px solid var(--border-color); margin: 15px 0;">
-                      <div class="input-group"><label style="color:var(--warning)">Folga da Chaveta Dir.</label><input type="text" id="fa-dir-chav" onkeyup="salvarMedidaAresta()"></div>
-                  </div>
-              </div>
-          </div>
-          <div id="folhao-aba-eletrica" class="folhao-content hidden">
-              <h3 style="margin-bottom: 15px; color: var(--text-heading); border-bottom: 1px solid var(--text-accent); padding-bottom: 5px;">Isolamento dos Sensores de Nível do Molde (&gt;10 MΩ)</h3>
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 30px;">
-                  <div class="input-group"><label>Pinos 5 e 6</label><input type="text" id="iso-5-6"></div>
-                  <div class="input-group"><label>Pinos 5 e 8</label><input type="text" id="iso-5-8"></div>
-                  <div class="input-group"><label>Pinos 5 e 10</label><input type="text" id="iso-5-10"></div>
-                  <div class="input-group"><label>Pinos 5 e 15</label><input type="text" id="iso-5-15"></div>
-                  <div class="input-group"><label>Pinos 6 e 8</label><input type="text" id="iso-6-8"></div>
-                  <div class="input-group"><label>Pinos 6 e 10</label><input type="text" id="iso-6-10"></div>
-                  <div class="input-group"><label>Pinos 6 e 15</label><input type="text" id="iso-6-15"></div>
-                  <div class="input-group"><label>Pinos 8 e 10</label><input type="text" id="iso-8-10"></div>
-                  <div class="input-group"><label>Pinos 8 e 15</label><input type="text" id="iso-8-15"></div>
-                  <div class="input-group"><label>Pinos 10 e 15</label><input type="text" id="iso-10-15"></div>
-              </div>
-              <h3 style="margin-bottom: 15px; color: var(--text-heading); border-bottom: 1px solid var(--text-accent); padding-bottom: 5px;">Teste de Resistência: Placas LARGAS</h3>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
-                  <div style="background: var(--bg-th); padding: 10px; border-radius: 8px;">
-                      <h4 style="text-align: center; margin-bottom: 10px;">PLACA FIXA</h4>
-                      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                          <div class="input-group"><label>T.Par 1 (10-20 Ω)</label><input type="text" id="t-fix-1"></div>
-                          <div class="input-group"><label>T.Par 2 (10-20 Ω)</label><input type="text" id="t-fix-2"></div>
-                          <div class="input-group"><label>T.Par 3 (10-20 Ω)</label><input type="text" id="t-fix-3"></div>
-                          <div class="input-group"><label>T.Par 4 (10-20 Ω)</label><input type="text" id="t-fix-4"></div>
-                          <div class="input-group"><label>T.Par 5 (10-20 Ω)</label><input type="text" id="t-fix-5"></div>
-                          <div class="input-group"><label>T.Par 6 (10-20 Ω)</label><input type="text" id="t-fix-6"></div>
-                          <div class="input-group"><label>T.Par 7 (10-20 Ω)</label><input type="text" id="t-fix-7"></div>
-                          <div class="input-group"><label>T.Par 8 (10-20 Ω)</label><input type="text" id="t-fix-8"></div>
-                          <div class="input-group"><label>T.Par 9 (10-20 Ω)</label><input type="text" id="t-fix-9"></div>
-                          <div class="input-group"><label>T.Par 10 (10-20 Ω)</label><input type="text" id="t-fix-10"></div>
-                          <div class="input-group"><label>T.Par 11 (10-20 Ω)</label><input type="text" id="t-fix-11"></div>
-                          <div class="input-group"><label>T.Par 12 (10-20 Ω)</label><input type="text" id="t-fix-12"></div>
-                          <div class="input-group"><label style="color:var(--text-accent)">Positivo 1</label><input type="text" id="t-fix-p1"></div>
-                          <div class="input-group"><label style="color:var(--text-accent)">Positivo 2</label><input type="text" id="t-fix-p2"></div>
-                      </div>
-                  </div>
-                  <div style="background: var(--bg-th); padding: 10px; border-radius: 8px;">
-                      <h4 style="text-align: center; margin-bottom: 10px;">PLACA MÓVEL</h4>
-                      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                          <div class="input-group"><label>T.Par 1 (10-20 Ω)</label><input type="text" id="t-mov-1"></div>
-                          <div class="input-group"><label>T.Par 2 (10-20 Ω)</label><input type="text" id="t-mov-2"></div>
-                          <div class="input-group"><label>T.Par 3 (10-20 Ω)</label><input type="text" id="t-mov-3"></div>
-                          <div class="input-group"><label>T.Par 4 (10-20 Ω)</label><input type="text" id="t-mov-4"></div>
-                          <div class="input-group"><label>T.Par 5 (10-20 Ω)</label><input type="text" id="t-mov-5"></div>
-                          <div class="input-group"><label>T.Par 6 (10-20 Ω)</label><input type="text" id="t-mov-6"></div>
-                          <div class="input-group"><label>T.Par 7 (10-20 Ω)</label><input type="text" id="t-mov-7"></div>
-                          <div class="input-group"><label>T.Par 8 (10-20 Ω)</label><input type="text" id="t-mov-8"></div>
-                          <div class="input-group"><label>T.Par 9 (10-20 Ω)</label><input type="text" id="t-mov-9"></div>
-                          <div class="input-group"><label>T.Par 10 (10-20 Ω)</label><input type="text" id="t-mov-10"></div>
-                          <div class="input-group"><label>T.Par 11 (10-20 Ω)</label><input type="text" id="t-mov-11"></div>
-                          <div class="input-group"><label>T.Par 12 (10-20 Ω)</label><input type="text" id="t-mov-12"></div>
-                          <div class="input-group"><label style="color:var(--text-accent)">Positivo 1</label><input type="text" id="t-mov-p1"></div>
-                          <div class="input-group"><label style="color:var(--text-accent)">Positivo 2</label><input type="text" id="t-mov-p2"></div>
-                      </div>
-                  </div>
-              </div>
-              <h3 style="margin-bottom: 15px; color: var(--text-heading); border-bottom: 1px solid var(--text-accent); padding-bottom: 5px;">Teste de Resistência: Placas ESTREITAS</h3>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                  <div style="background: var(--bg-th); padding: 10px; border-radius: 8px;">
-                      <h4 style="text-align: center; margin-bottom: 10px;">ESTREITA ESQUERDA</h4>
-                      <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
-                          <div class="input-group"><label>T.Par 1 (5-15 Ω)</label><input type="text" id="t-esq-1"></div>
-                          <div class="input-group"><label>T.Par 2 (5-15 Ω)</label><input type="text" id="t-esq-2"></div>
-                          <div class="input-group"><label>T.Par 3 (5-15 Ω)</label><input type="text" id="t-esq-3"></div>
-                          <div class="input-group"><label style="color:var(--text-accent)">Positivo 1</label><input type="text" id="t-esq-p1"></div>
-                          <div class="input-group"><label style="color:var(--text-accent)">Positivo 2</label><input type="text" id="t-esq-p2"></div>
-                      </div>
-                  </div>
-                  <div style="background: var(--bg-th); padding: 10px; border-radius: 8px;">
-                      <h4 style="text-align: center; margin-bottom: 10px;">ESTREITA DIREITA</h4>
-                      <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
-                          <div class="input-group"><label>T.Par 1 (5-15 Ω)</label><input type="text" id="t-dir-1"></div>
-                          <div class="input-group"><label>T.Par 2 (5-15 Ω)</label><input type="text" id="t-dir-2"></div>
-                          <div class="input-group"><label>T.Par 3 (5-15 Ω)</label><input type="text" id="t-dir-3"></div>
-                          <div class="input-group"><label style="color:var(--text-accent)">Positivo 1</label><input type="text" id="t-dir-p1"></div>
-                          <div class="input-group"><label style="color:var(--text-accent)">Positivo 2</label><input type="text" id="t-dir-p2"></div>
-                      </div>
-                  </div>
-              </div>
-          </div>
-          <div id="folhao-aba-materiais" class="folhao-content hidden">
-              <h3 style="margin-bottom: 15px; color: var(--text-heading);">Relatório de Materiais Utilizados</h3>
-              <textarea id="materiais-utilizados-texto" class="premium-textarea" rows="10" placeholder="Liste as quantidades e materiais utilizados. Ex:&#10;4 Parafusos sextavados M24x140&#10;8 Arruelas Pressão&#10;Massa de calafetar&#10;..."></textarea>
-          </div>
+        </div>
+        <div id="folhao-aba-recebimento" class="folhao-content hidden"><h3>Inspeção de Recebimento</h3><div id="container-check-recebimento" class="checklist-container"></div></div>
+        <div id="folhao-aba-revisao" class="folhao-content hidden"><h3>Revisão dos Componentes</h3><div id="container-check-revisao" class="checklist-container"></div></div>
+        <div id="folhao-aba-hidraulica" class="folhao-content hidden"><h3>Check List Hidráulico</h3><div id="container-check-hidraulica" class="checklist-container"></div></div>
+        <div id="folhao-aba-final" class="folhao-content hidden"><h3>Inspeção Final</h3><div id="container-check-final" class="checklist-container"></div></div>
+        <div id="folhao-aba-peritagem" class="folhao-content hidden"><h3>Folga de Aresta</h3><div id="folga-aresta-container"></div></div>
+        <div id="folhao-aba-eletrica" class="folhao-content hidden"><h3>Elétrica</h3><div id="container-eletrica"></div></div>
+        <div id="folhao-aba-materiais" class="folhao-content hidden"><h3>Materiais</h3><textarea id="materiais-utilizados-texto" class="premium-textarea" rows="6"></textarea></div>
       </div>
       <div class="modal-actions flex-between" style="padding: 20px; background: var(--bg-th); border-top: 1px solid var(--border-color); border-radius: 0 0 16px 16px;">
-          <button class="btn-outline-danger" onclick="fecharFolhaoMCC4()">Cancelar</button>
-          <button class="btn-premium btn-success" onclick="salvarLaudoInteligente()"><i class="fas fa-check-double"></i> Salvar Laudo e Mover p/ Reserva</button>
+        <button class="btn-outline-danger" onclick="window.fecharFolhaoMCC4()">Cancelar</button>
+        <button class="btn-premium btn-success" onclick="window.salvarLaudoInteligente()"><i class="fas fa-check-double"></i> Salvar Laudo</button>
       </div>
     </div>
   </div>
@@ -664,690 +538,266 @@
   <!-- MODAL - FOLHÃO R2 -->
   <div id="modal-folhao-r2" class="modal-overlay hidden no-print">
     <div class="modal-content glass-panel" style="max-width: 1100px; max-height: 90vh; overflow-y: auto;">
-      
       <div class="flex-between" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
         <h2 style="color: var(--text-heading);"><i class="fas fa-clipboard-list text-blue-500 mr-2"></i> Liberação Oficial - STRAIGHTENER R2 (MCC 4)</h2>
-        <button class="btn-xs-primary" onclick="fecharFolhaoR2()" style="font-size: 20px; color: var(--text-muted);">&times;</button>
+        <button class="btn-xs-primary" onclick="window.fecharFolhaoR2()" style="font-size: 20px; color: var(--text-muted);">&times;</button>
       </div>
-
       <div style="background: var(--bg-td); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed var(--text-accent);">
         <div class="flex-between">
           <span class="ind-card-tag bg-tag" id="r2-tag-name" style="font-size: 14px;">TAG: STR-R2</span>
           <span style="font-size: 12px; color: var(--text-muted);">Preenchimento obrigatório para envio à Reserva.</span>
         </div>
       </div>
-
       <div class="folhao-tabs" style="border-bottom: 1px solid var(--border-color); margin-bottom: 20px; display: flex; overflow-x: auto;">
-        <button class="folhao-tab active" onclick="trocarAbaR2(event, 'r2-aba-chegada')">1. Chegada</button>
-        <button class="folhao-tab" onclick="trocarAbaR2(event, 'r2-aba-execucao')">2. Execução</button>
-        <button class="folhao-tab" onclick="trocarAbaR2(event, 'r2-aba-saida')">3. Saída</button>
-        <button class="folhao-tab" onclick="trocarAbaR2(event, 'r2-aba-materiais')">4. Materiais</button>
+        <button class="folhao-tab active" onclick="window.trocarAbaR2(event, 'r2-aba-chegada')">1. Chegada</button>
+        <button class="folhao-tab" onclick="window.trocarAbaR2(event, 'r2-aba-execucao')">2. Execução</button>
+        <button class="folhao-tab" onclick="window.trocarAbaR2(event, 'r2-aba-saida')">3. Saída</button>
+        <button class="folhao-tab" onclick="window.trocarAbaR2(event, 'r2-aba-materiais')">4. Materiais</button>
       </div>
-
       <div class="folhao-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
-        
         <div id="r2-aba-chegada" class="folhao-content active">
           <h3 style="margin-bottom: 10px; color: var(--text-heading);">Inspeção Geral de Chegada</h3>
-          <div class="table-responsive">
-            <table class="premium-table">
-              <thead>
-                <tr>
-                  <th style="width: 50px;">Item</th>
-                  <th>Descrição da Inspeção</th>
-                  <th style="width: 60px;">SIM</th>
-                  <th style="width: 60px;">NÃO</th>
-                </tr>
-              </thead>
-              <tbody id="tabela-r2-inspecao-chegada"></tbody>
-            </table>
-          </div>
-
-          <h3 style="margin: 25px 0 10px 0; color: var(--text-heading);">Aferição Pass Line (Chegada)</h3>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div>
-              <h4 class="text-center text-accent" style="margin-bottom: 10px;">Base Inferior</h4>
-              <div class="table-responsive">
-                <table class="premium-table" style="font-size: 11px;">
-                  <thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead>
-                  <tbody id="r2-passline-inf-chegada"></tbody>
-                </table>
-              </div>
-            </div>
-            <div>
-              <h4 class="text-center text-accent" style="margin-bottom: 10px;">Base Superior</h4>
-              <div class="table-responsive">
-                <table class="premium-table" style="font-size: 11px;">
-                  <thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead>
-                  <tbody id="r2-passline-sup-chegada"></tbody>
-                </table>
-              </div>
-            </div>
+          <div class="table-responsive"><table class="premium-table"><thead><tr><th style="width:50px;">Item</th><th>Descrição</th><th style="width:60px;">SIM</th><th style="width:60px;">NÃO</th></tr></thead><tbody id="tabela-r2-inspecao-chegada"></tbody></table></div>
+          <h3 style="margin:25px 0 10px 0;color:var(--text-heading);">Aferição Pass Line (Chegada)</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+            <div><h4 class="text-center text-accent">Base Inferior</h4><div class="table-responsive"><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="r2-passline-inf-chegada"></tbody></table></div></div>
+            <div><h4 class="text-center text-accent">Base Superior</h4><div class="table-responsive"><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="r2-passline-sup-chegada"></tbody></table></div></div>
           </div>
         </div>
-
         <div id="r2-aba-execucao" class="folhao-content hidden">
-          <h3 style="margin-bottom: 10px; color: var(--text-heading);">Checklist de Manutenção</h3>
-          <div class="table-responsive">
-            <table class="premium-table">
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Descrição da Atividade</th>
-                  <th style="width: 60px;">OK</th>
-                  <th>Executante (Matrícula)</th>
-                  <th>Data</th>
-                </tr>
-              </thead>
-              <tbody id="r2-tabela-manutencao"></tbody>
-            </table>
-          </div>
+          <h3 style="margin-bottom:10px;color:var(--text-heading);">Checklist de Manutenção</h3>
+          <div class="table-responsive"><table class="premium-table"><thead><tr><th>Item</th><th>Descrição</th><th style="width:60px;">OK</th><th>Executante</th><th>Data</th></tr></thead><tbody id="r2-tabela-manutencao"></tbody></table></div>
         </div>
-
         <div id="r2-aba-saida" class="folhao-content hidden">
-          <h3 style="margin-bottom: 10px; color: var(--text-heading);">Aferição Pass Line (Saída Final)</h3>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div>
-              <h4 class="text-center text-accent" style="margin-bottom: 10px;">Base Inferior</h4>
-              <div class="table-responsive">
-                <table class="premium-table" style="font-size: 11px;">
-                  <thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead>
-                  <tbody id="r2-passline-inf-saida"></tbody>
-                </table>
-              </div>
-            </div>
-            <div>
-              <h4 class="text-center text-accent" style="margin-bottom: 10px;">Base Superior</h4>
-              <div class="table-responsive">
-                <table class="premium-table" style="font-size: 11px;">
-                  <thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead>
-                  <tbody id="r2-passline-sup-saida"></tbody>
-                </table>
-              </div>
-            </div>
+          <h3 style="margin-bottom:10px;color:var(--text-heading);">Aferição Pass Line (Saída Final)</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+            <div><h4 class="text-center text-accent">Base Inferior</h4><div class="table-responsive"><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="r2-passline-inf-saida"></tbody></table></div></div>
+            <div><h4 class="text-center text-accent">Base Superior</h4><div class="table-responsive"><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="r2-passline-sup-saida"></tbody></table></div></div>
           </div>
         </div>
-
         <div id="r2-aba-materiais" class="folhao-content hidden">
-          <div class="flex-between" style="margin-bottom: 10px;">
-            <h3 style="color: var(--text-heading);">Materiais Aplicados no Reparo</h3>
-            <button class="btn-xs-primary" onclick="addLinhaMaterialR2()"><i class="fas fa-plus"></i> Adicionar Linha</button>
-          </div>
-          <div class="table-responsive">
-            <table class="premium-table">
-              <thead>
-                <tr>
-                  <th>Descrição do Material / SKU</th>
-                  <th style="width: 100px;">Quantidade</th>
-                </tr>
-              </thead>
-              <tbody id="r2-tabela-materiais"></tbody>
-            </table>
-          </div>
+          <div class="flex-between" style="margin-bottom:10px;"><h3 style="color:var(--text-heading);">Materiais</h3><button class="btn-xs-primary" onclick="window.addLinhaMaterialR2()"><i class="fas fa-plus"></i> Adicionar</button></div>
+          <div class="table-responsive"><table class="premium-table"><thead><tr><th>Descrição</th><th style="width:100px;">Qtd</th></tr></thead><tbody id="r2-tabela-materiais"></tbody></table></div>
         </div>
-
       </div>
-
-      <div class="flex-between" style="margin-top: 30px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-        <button class="btn-outline-danger" onclick="fecharFolhaoR2()">Cancelar</button>
-        <button class="btn-premium btn-success" onclick="salvarEImprimirFolhaoR2()"><i class="fas fa-check-double"></i> Salvar Laudo e Mover p/ Reserva</button>
+      <div class="flex-between" style="margin-top:30px;border-top:1px solid var(--border-color);padding-top:15px;">
+        <button class="btn-outline-danger" onclick="window.fecharFolhaoR2()">Cancelar</button>
+        <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoR2()"><i class="fas fa-check-double"></i> Salvar</button>
       </div>
-      
     </div>
   </div>
 
   <!-- MODAL - FOLHÃO HORIZONTAL -->
   <div id="modal-folhao-horizontal" class="modal-overlay hidden no-print">
     <div class="modal-content glass-panel" style="max-width: 1100px; max-height: 90vh; overflow-y: auto;">
-      
-      <div class="flex-between" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
-        <h2 style="color: var(--text-heading);"><i class="fas fa-ruler-horizontal text-purple-500 mr-2"></i> Liberação Oficial - HORIZONTAL (MCC 4)</h2>
-        <button class="btn-xs-primary" onclick="fecharFolhaoHorizontal()" style="font-size: 20px; color: var(--text-muted);">&times;</button>
+      <div class="flex-between" style="margin-bottom:20px;border-bottom:1px solid var(--border-color);padding-bottom:15px;">
+        <h2 style="color:var(--text-heading);"><i class="fas fa-ruler-horizontal text-purple-500 mr-2"></i> Liberação Oficial - HORIZONTAL (MCC 4)</h2>
+        <button class="btn-xs-primary" onclick="window.fecharFolhaoHorizontal()" style="font-size:20px;color:var(--text-muted);">&times;</button>
       </div>
-
-      <div style="background: var(--bg-td); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed var(--text-accent);">
-        <div class="flex-between">
-          <span class="ind-card-tag bg-tag" id="horizontal-tag-name" style="font-size: 14px;">TAG: HOR-1-4H</span>
-          <span style="font-size: 12px; color: var(--text-muted);">Preenchimento obrigatório para envio à Reserva.</span>
+      <div style="background:var(--bg-td);padding:15px;border-radius:8px;margin-bottom:20px;border:1px dashed var(--text-accent);">
+        <div class="flex-between"><span class="ind-card-tag bg-tag" id="horizontal-tag-name" style="font-size:14px;">TAG: HOR-1-4H</span><span style="font-size:12px;color:var(--text-muted);">Preenchimento obrigatório</span></div>
+      </div>
+      <div class="folhao-tabs" style="border-bottom:1px solid var(--border-color);margin-bottom:20px;display:flex;overflow-x:auto;">
+        <button class="folhao-tab active" onclick="window.trocarAbaHorizontal(event,'horiz-aba-dados')">1. Dados</button>
+        <button class="folhao-tab" onclick="window.trocarAbaHorizontal(event,'horiz-aba-chegada')">2. Chegada</button>
+        <button class="folhao-tab" onclick="window.trocarAbaHorizontal(event,'horiz-aba-execucao')">3. Execução</button>
+        <button class="folhao-tab" onclick="window.trocarAbaHorizontal(event,'horiz-aba-saida')">4. Saída</button>
+        <button class="folhao-tab" onclick="window.trocarAbaHorizontal(event,'horiz-aba-materiais')">5. Materiais</button>
+      </div>
+      <div class="folhao-body" style="padding:20px;max-height:60vh;overflow-y:auto;">
+        <div id="horiz-aba-dados" class="folhao-content active" style="display:block;">
+          <div class="form-grid-2-mobile" style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+            <div class="input-group"><label>Data Início/Fim</label><div style="display:flex;gap:10px;"><input type="date" id="horiz-data-inicio" class="w-100"><input type="date" id="horiz-data-fim" class="w-100"></div></div>
+            <div class="input-group"><label>Nº Segmento/Veio</label><div style="display:flex;gap:10px;"><input type="text" id="horiz-num-segmento" placeholder="Nº Seg." class="w-100"><select id="horiz-veio" class="premium-select w-100"><option value="G">Veio G</option><option value="H">Veio H</option></select></div></div>
+            <div class="input-group"><label>Motivo</label><input type="text" id="horiz-motivo" placeholder="Ex: Manutenção Preventiva"></div>
+            <div class="input-group"><label>Tipo Execução</label><select id="horiz-tipo-execucao" class="premium-select"><option value="PARCIAL">PARCIAL</option><option value="GERAL">GERAL</option></select></div>
+          </div>
+        </div>
+        <div id="horiz-aba-chegada" class="folhao-content hidden" style="display:none;">
+          <h3 style="margin-bottom:10px;color:var(--text-heading);">Inspeção Geral de Chegada</h3>
+          <div class="table-responsive"><table class="premium-table"><thead><tr><th style="width:50px;">Item</th><th>Descrição</th><th style="width:60px;">SIM</th><th style="width:60px;">NÃO</th></tr></thead><tbody id="tabela-horiz-inspecao-chegada"></tbody></table></div>
+          <h3 style="margin:25px 0 10px 0;color:var(--text-heading);">Aferição Pass Line (Chegada)</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+            <div><h4 class="text-center text-accent">Base Inferior</h4><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="horiz-passline-inf-chegada"></tbody></table></div>
+            <div><h4 class="text-center text-accent">Base Superior</h4><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="horiz-passline-sup-chegada"></tbody></table></div>
+          </div>
+        </div>
+        <div id="horiz-aba-execucao" class="folhao-content hidden" style="display:none;">
+          <h3 style="margin-bottom:10px;color:var(--text-heading);">Checklist de Manutenção</h3>
+          <div class="table-responsive" style="max-height:400px;overflow-y:auto;"><table class="premium-table"><thead><tr><th>Item</th><th>Descrição</th><th style="width:60px;">OK</th><th>Executante</th><th>Data</th></tr></thead><tbody id="horiz-tabela-manutencao"></tbody></table></div>
+        </div>
+        <div id="horiz-aba-saida" class="folhao-content hidden" style="display:none;">
+          <h3 style="margin-bottom:10px;color:var(--text-heading);">Aferição Pass Line (Saída Final)</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+            <div><h4 class="text-center text-accent">Base Inferior</h4><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="horiz-passline-inf-saida"></tbody></table></div>
+            <div><h4 class="text-center text-accent">Base Superior</h4><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="horiz-passline-sup-saida"></tbody></table></div>
+          </div>
+        </div>
+        <div id="horiz-aba-materiais" class="folhao-content hidden" style="display:none;">
+          <div class="flex-between" style="margin-bottom:10px;"><h3 style="color:var(--text-heading);">Materiais</h3><button class="btn-xs-primary" onclick="window.addLinhaMaterialHorizontal()"><i class="fas fa-plus"></i> Adicionar</button></div>
+          <table class="premium-table"><thead><tr><th>Descrição</th><th style="width:100px;">Qtd</th></tr></thead><tbody id="horiz-tabela-materiais"></tbody></table>
         </div>
       </div>
-
-      <div class="folhao-tabs" style="border-bottom: 1px solid var(--border-color); margin-bottom: 20px; display: flex; overflow-x: auto;">
-        <button class="folhao-tab active" onclick="trocarAbaHorizontal(event, 'horiz-aba-dados')">1. Dados Básicos</button>
-        <button class="folhao-tab" onclick="trocarAbaHorizontal(event, 'horiz-aba-chegada')">2. Chegada</button>
-        <button class="folhao-tab" onclick="trocarAbaHorizontal(event, 'horiz-aba-execucao')">3. Execução (108 Itens)</button>
-        <button class="folhao-tab" onclick="trocarAbaHorizontal(event, 'horiz-aba-saida')">4. Saída</button>
-        <button class="folhao-tab" onclick="trocarAbaHorizontal(event, 'horiz-aba-materiais')">5. Materiais</button>
+      <div class="flex-between" style="margin-top:30px;border-top:1px solid var(--border-color);padding-top:15px;">
+        <button class="btn-outline-danger" onclick="window.fecharFolhaoHorizontal()">Cancelar</button>
+        <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoHorizontal()"><i class="fas fa-print"></i> Salvar</button>
       </div>
-
-      <div class="folhao-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
-        
-        <div id="horiz-aba-dados" class="folhao-content active" style="display: block;">
-          <div class="form-grid-2-mobile" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-              <div class="input-group">
-                  <label>Data Início / Fim</label>
-                  <div style="display: flex; gap: 10px;">
-                    <input type="date" id="horiz-data-inicio" class="w-100">
-                    <input type="date" id="horiz-data-fim" class="w-100">
-                  </div>
-              </div>
-              <div class="input-group">
-                  <label>Nº Segmento / Veio</label>
-                  <div style="display: flex; gap: 10px;">
-                    <input type="text" id="horiz-num-segmento" placeholder="Nº Seg." class="w-100">
-                    <select id="horiz-veio" class="premium-select w-100">
-                      <option value="G">Veio G</option>
-                      <option value="H">Veio H</option>
-                    </select>
-                  </div>
-              </div>
-              <div class="input-group">
-                  <label>Motivo</label>
-                  <input type="text" id="horiz-motivo" placeholder="Ex: Manutenção Preventiva">
-              </div>
-              <div class="input-group">
-                  <label>Tipo de Execução</label>
-                  <select id="horiz-tipo-execucao" class="premium-select">
-                      <option value="PARCIAL">PARCIAL</option>
-                      <option value="GERAL">GERAL</option>
-                  </select>
-              </div>
-          </div>
-        </div>
-
-        <div id="horiz-aba-chegada" class="folhao-content hidden" style="display: none;">
-          <h3 style="margin-bottom: 10px; color: var(--text-heading);">Inspeção Geral de Chegada</h3>
-          <div class="table-responsive">
-            <table class="premium-table">
-              <thead>
-                <tr>
-                  <th style="width: 50px;">Item</th>
-                  <th>Descrição da Inspeção</th>
-                  <th style="width: 60px;">SIM</th>
-                  <th style="width: 60px;">NÃO</th>
-                </tr>
-              </thead>
-              <tbody id="tabela-horiz-inspecao-chegada"></tbody>
-            </table>
-          </div>
-
-          <h3 style="margin: 25px 0 10px 0; color: var(--text-heading);">Aferição Pass Line (Chegada)</h3>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div>
-              <h4 class="text-center text-accent" style="margin-bottom: 10px;">Base Inferior</h4>
-              <table class="premium-table" style="font-size: 11px;">
-                <thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead>
-                <tbody id="horiz-passline-inf-chegada"></tbody>
-              </table>
-            </div>
-            <div>
-              <h4 class="text-center text-accent" style="margin-bottom: 10px;">Base Superior</h4>
-              <table class="premium-table" style="font-size: 11px;">
-                <thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead>
-                <tbody id="horiz-passline-sup-chegada"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <div id="horiz-aba-execucao" class="folhao-content hidden" style="display: none;">
-          <h3 style="margin-bottom: 10px; color: var(--text-heading);">Checklist de Manutenção</h3>
-          <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-            <table class="premium-table">
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Descrição da Atividade</th>
-                  <th style="width: 60px;">OK</th>
-                  <th>Executante (Matrícula)</th>
-                  <th>Data</th>
-                </tr>
-              </thead>
-              <tbody id="horiz-tabela-manutencao"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div id="horiz-aba-saida" class="folhao-content hidden" style="display: none;">
-          <h3 style="margin-bottom: 10px; color: var(--text-heading);">Aferição Pass Line (Saída Final)</h3>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div>
-              <h4 class="text-center text-accent" style="margin-bottom: 10px;">Base Inferior</h4>
-              <table class="premium-table" style="font-size: 11px;">
-                <thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead>
-                <tbody id="horiz-passline-inf-saida"></tbody>
-              </table>
-            </div>
-            <div>
-              <h4 class="text-center text-accent" style="margin-bottom: 10px;">Base Superior</h4>
-              <table class="premium-table" style="font-size: 11px;">
-                <thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead>
-                <tbody id="horiz-passline-sup-saida"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <div id="horiz-aba-materiais" class="folhao-content hidden" style="display: none;">
-          <div class="flex-between" style="margin-bottom: 10px;">
-            <h3 style="color: var(--text-heading);">Materiais Aplicados no Reparo</h3>
-            <button class="btn-xs-primary" onclick="addLinhaMaterialHorizontal()"><i class="fas fa-plus"></i> Adicionar Linha</button>
-          </div>
-          <table class="premium-table">
-            <thead>
-              <tr>
-                <th>Descrição do Material / SKU</th>
-                <th style="width: 100px;">Quantidade</th>
-              </tr>
-            </thead>
-            <tbody id="horiz-tabela-materiais"></tbody>
-          </table>
-        </div>
-
-      </div>
-
-      <div class="flex-between" style="margin-top: 30px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-        <button class="btn-outline-danger" onclick="fecharFolhaoHorizontal()">Cancelar</button>
-        <button class="btn-premium btn-success" onclick="salvarEImprimirFolhaoHorizontal()"><i class="fas fa-print"></i> Salvar Laudo e Mover p/ Reserva</button>
-      </div>
-      
     </div>
   </div>
 
   <!-- MODAL - FOLHÃO BOW -->
   <div id="modal-folhao-bow" class="modal-overlay hidden no-print">
-    <div class="modal-content glass-panel" style="max-width: 1100px; max-height: 90vh; overflow-y: auto;">
-      
-      <div class="flex-between" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
-        <h2 style="color: var(--text-heading);"><i class="fas fa-magnet text-yellow-500 mr-2"></i> Liberação Oficial - BOW (MCC 4)</h2>
-        <button class="btn-xs-primary" onclick="fecharFolhaoBow()" style="font-size: 20px; color: var(--text-muted);">&times;</button>
+    <div class="modal-content glass-panel" style="max-width:1100px;max-height:90vh;overflow-y:auto;">
+      <div class="flex-between" style="margin-bottom:20px;border-bottom:1px solid var(--border-color);padding-bottom:15px;">
+        <h2 style="color:var(--text-heading);"><i class="fas fa-magnet text-yellow-500 mr-2"></i> Liberação Oficial - BOW (MCC 4)</h2>
+        <button class="btn-xs-primary" onclick="window.fecharFolhaoBow()" style="font-size:20px;color:var(--text-muted);">&times;</button>
       </div>
-
-      <div style="background: var(--bg-td); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed var(--text-accent);">
-        <div class="flex-between">
-          <span class="ind-card-tag bg-tag" id="bow-tag-name" style="font-size: 14px;">TAG: BOW-1-4H</span>
-          <span style="font-size: 12px; color: var(--text-muted);">Preenchimento obrigatório para envio à Reserva.</span>
+      <div style="background:var(--bg-td);padding:15px;border-radius:8px;margin-bottom:20px;border:1px dashed var(--text-accent);">
+        <div class="flex-between"><span class="ind-card-tag bg-tag" id="bow-tag-name" style="font-size:14px;">TAG: BOW-1-4H</span><span style="font-size:12px;color:var(--text-muted);">Preenchimento obrigatório</span></div>
+      </div>
+      <div class="folhao-tabs" style="border-bottom:1px solid var(--border-color);margin-bottom:20px;display:flex;overflow-x:auto;">
+        <button class="folhao-tab active" onclick="window.trocarAbaBow(event,'bow-aba-dados')">1. Dados</button>
+        <button class="folhao-tab" onclick="window.trocarAbaBow(event,'bow-aba-chegada')">2. Chegada</button>
+        <button class="folhao-tab" onclick="window.trocarAbaBow(event,'bow-aba-execucao')">3. Execução</button>
+        <button class="folhao-tab" onclick="window.trocarAbaBow(event,'bow-aba-saida')">4. Saída</button>
+        <button class="folhao-tab" onclick="window.trocarAbaBow(event,'bow-aba-materiais')">5. Materiais</button>
+      </div>
+      <div class="folhao-body" style="padding:20px;max-height:60vh;overflow-y:auto;">
+        <div id="bow-aba-dados" class="folhao-content active" style="display:block;">
+          <div class="form-grid-2-mobile" style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+            <div class="input-group"><label>Data Início/Fim</label><div style="display:flex;gap:10px;"><input type="date" id="bow-data-inicio" class="w-100"><input type="date" id="bow-data-fim" class="w-100"></div></div>
+            <div class="input-group"><label>Nº Segmento/Veio</label><div style="display:flex;gap:10px;"><input type="text" id="bow-num-segmento" placeholder="Nº Seg." class="w-100"><select id="bow-veio" class="premium-select w-100"><option value="G">Veio G</option><option value="H">Veio H</option></select></div></div>
+            <div class="input-group"><label>Motivo</label><input type="text" id="bow-motivo" placeholder="Ex: Manutenção Preventiva"></div>
+            <div class="input-group"><label>Tipo Execução</label><select id="bow-tipo-execucao" class="premium-select"><option value="PARCIAL">PARCIAL</option><option value="GERAL">GERAL</option></select></div>
+          </div>
+        </div>
+        <div id="bow-aba-chegada" class="folhao-content hidden" style="display:none;">
+          <h3 style="margin-bottom:10px;color:var(--text-heading);">Inspeção Geral de Chegada</h3>
+          <div class="table-responsive"><table class="premium-table"><tbody id="tabela-bow-inspecao-chegada"></tbody></table></div>
+          <h3 style="margin:25px 0 10px 0;color:var(--text-heading);">Aferição Pass Line (Chegada)</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+            <div><h4 class="text-center text-accent">Base Inferior</h4><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="bow-passline-inf-chegada"></tbody></table></div>
+            <div><h4 class="text-center text-accent">Base Superior</h4><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="bow-passline-sup-chegada"></tbody></table></div>
+          </div>
+        </div>
+        <div id="bow-aba-execucao" class="folhao-content hidden" style="display:none;">
+          <h3 style="margin-bottom:10px;color:var(--text-heading);">Checklist de Manutenção</h3>
+          <div class="table-responsive" style="max-height:400px;overflow-y:auto;"><table class="premium-table"><thead></thead><tbody id="bow-tabela-manutencao"></tbody></table></div>
+        </div>
+        <div id="bow-aba-saida" class="folhao-content hidden" style="display:none;">
+          <h3 style="margin-bottom:10px;color:var(--text-heading);">Aferição Pass Line (Saída Final)</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+            <div><h4 class="text-center text-accent">Base Inferior</h4><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="bow-passline-inf-saida"></tbody></table></div>
+            <div><h4 class="text-center text-accent">Base Superior</h4><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="bow-passline-sup-saida"></tbody></table></div>
+          </div>
+        </div>
+        <div id="bow-aba-materiais" class="folhao-content hidden" style="display:none;">
+          <div class="flex-between" style="margin-bottom:10px;"><h3 style="color:var(--text-heading);">Materiais</h3><button class="btn-xs-primary" onclick="window.addLinhaMaterialBow()"><i class="fas fa-plus"></i> Adicionar</button></div>
+          <table class="premium-table"><thead><tr><th>Descrição</th><th style="width:100px;">Qtd</th></tr></thead><tbody id="bow-tabela-materiais"></tbody></table>
         </div>
       </div>
-
-      <div class="folhao-tabs" style="border-bottom: 1px solid var(--border-color); margin-bottom: 20px; display: flex; overflow-x: auto;">
-        <button class="folhao-tab active" onclick="trocarAbaBow(event, 'bow-aba-dados')">1. Dados Básicos</button>
-        <button class="folhao-tab" onclick="trocarAbaBow(event, 'bow-aba-chegada')">2. Chegada</button>
-        <button class="folhao-tab" onclick="trocarAbaBow(event, 'bow-aba-execucao')">3. Execução (108 Itens)</button>
-        <button class="folhao-tab" onclick="trocarAbaBow(event, 'bow-aba-saida')">4. Saída</button>
-        <button class="folhao-tab" onclick="trocarAbaBow(event, 'bow-aba-materiais')">5. Materiais</button>
+      <div class="flex-between" style="margin-top:30px;border-top:1px solid var(--border-color);padding-top:15px;">
+        <button class="btn-outline-danger" onclick="window.fecharFolhaoBow()">Cancelar</button>
+        <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoBow()"><i class="fas fa-print"></i> Salvar</button>
       </div>
-
-      <div class="folhao-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
-        
-        <div id="bow-aba-dados" class="folhao-content active" style="display: block;">
-          <div class="form-grid-2-mobile" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-              <div class="input-group">
-                  <label>Data Início / Fim</label>
-                  <div style="display: flex; gap: 10px;">
-                    <input type="date" id="bow-data-inicio" class="w-100">
-                    <input type="date" id="bow-data-fim" class="w-100">
-                  </div>
-              </div>
-              <div class="input-group">
-                  <label>Nº Segmento / Veio</label>
-                  <div style="display: flex; gap: 10px;">
-                    <input type="text" id="bow-num-segmento" placeholder="Nº Seg." class="w-100">
-                    <select id="bow-veio" class="premium-select w-100">
-                      <option value="G">Veio G</option>
-                      <option value="H">Veio H</option>
-                    </select>
-                  </div>
-              </div>
-              <div class="input-group">
-                  <label>Motivo</label>
-                  <input type="text" id="bow-motivo" placeholder="Ex: Manutenção Preventiva">
-              </div>
-              <div class="input-group">
-                  <label>Tipo de Execução</label>
-                  <select id="bow-tipo-execucao" class="premium-select">
-                      <option value="PARCIAL">PARCIAL</option>
-                      <option value="GERAL">GERAL</option>
-                  </select>
-              </div>
-          </div>
-        </div>
-
-        <div id="bow-aba-chegada" class="folhao-content hidden" style="display: none;">
-          <h3 style="margin-bottom: 10px; color: var(--text-heading);">Inspeção Geral de Chegada</h3>
-          <div class="table-responsive">
-            <table class="premium-table">
-              <tbody id="tabela-bow-inspecao-chegada"></tbody>
-            </table>
-          </div>
-
-          <h3 style="margin: 25px 0 10px 0; color: var(--text-heading);">Aferição Pass Line (Chegada)</h3>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div>
-              <h4 class="text-center text-accent" style="margin-bottom: 10px;">Base Inferior</h4>
-              <table class="premium-table" style="font-size: 11px;">
-                <thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead>
-                <tbody id="bow-passline-inf-chegada"></tbody>
-              </table>
-            </div>
-            <div>
-              <h4 class="text-center text-accent" style="margin-bottom: 10px;">Base Superior</h4>
-              <table class="premium-table" style="font-size: 11px;">
-                <thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead>
-                <tbody id="bow-passline-sup-chegada"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <div id="bow-aba-execucao" class="folhao-content hidden" style="display: none;">
-          <h3 style="margin-bottom: 10px; color: var(--text-heading);">Checklist de Manutenção</h3>
-          <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-            <table class="premium-table">
-              <thead></thead>
-              <tbody id="bow-tabela-manutencao"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div id="bow-aba-saida" class="folhao-content hidden" style="display: none;">
-          <h3 style="margin-bottom: 10px; color: var(--text-heading);">Aferição Pass Line (Saída Final)</h3>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div>
-              <h4 class="text-center text-accent" style="margin-bottom: 10px;">Base Inferior</h4>
-              <table class="premium-table" style="font-size: 11px;">
-                <thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead>
-                <tbody id="bow-passline-inf-saida"></tbody>
-              </table>
-            </div>
-            <div>
-              <h4 class="text-center text-accent" style="margin-bottom: 10px;">Base Superior</h4>
-              <table class="premium-table" style="font-size: 11px;">
-                <thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead>
-                <tbody id="bow-passline-sup-saida"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <div id="bow-aba-materiais" class="folhao-content hidden" style="display: none;">
-          <div class="flex-between" style="margin-bottom: 10px;">
-            <h3 style="color: var(--text-heading);">Materiais Aplicados no Reparo</h3>
-            <button class="btn-xs-primary" onclick="addLinhaMaterialBow()"><i class="fas fa-plus"></i> Adicionar Linha</button>
-          </div>
-          <table class="premium-table">
-            <thead>
-              <tr>
-                <th>Descrição do Material / SKU</th>
-                <th style="width: 100px;">Quantidade</th>
-              </tr>
-            </thead>
-            <tbody id="bow-tabela-materiais"></tbody>
-          </table>
-        </div>
-
-      </div>
-
-      <div class="flex-between" style="margin-top: 30px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-        <button class="btn-outline-danger" onclick="fecharFolhaoBow()">Cancelar</button>
-        <button class="btn-premium btn-success" onclick="salvarEImprimirFolhaoBow()"><i class="fas fa-print"></i> Salvar Laudo e Mover p/ Reserva</button>
-      </div>
-      
     </div>
   </div>
 
   <!-- MODAL - FOLHÃO MOLDE 2/3 -->
   <div id="modal-folhao-molde23" class="modal-overlay hidden no-print">
-    <div class="modal-content glass-panel premium-shadow" style="max-width: 1000px; padding: 0;">
-      
-      <div class="modal-header-fixed" style="padding: 20px; border-bottom: 1px solid var(--border-color); background: var(--bg-th); border-radius: 16px 16px 0 0;">
-          <div class="flex-between">
-              <h2 style="color: var(--text-accent);"><i class="fas fa-clipboard-check"></i> Liberação Oficial - MOLDE (2 e 3)</h2>
-              <button class="btn-close-emergency" onclick="fecharFolhaoMolde23()"><i class="fas fa-times"></i></button>
-          </div>
-          <div style="display: flex; gap: 15px; margin-top: 15px;">
-              <span class="ind-card-tag bg-tag" style="font-size: 14px;">TAG: <strong id="molde23-tag-name"></strong></span>
-              <span class="text-muted" style="font-size: 14px;">Preenchimento obrigatório para envio à Reserva.</span>
-          </div>
+    <div class="modal-content glass-panel premium-shadow" style="max-width:1000px;padding:0;">
+      <div class="modal-header-fixed" style="padding:20px;border-bottom:1px solid var(--border-color);background:var(--bg-th);border-radius:16px 16px 0 0;">
+        <div class="flex-between"><h2 style="color:var(--text-accent);"><i class="fas fa-clipboard-check"></i> Liberação Oficial - MOLDE (2 e 3)</h2><button class="btn-close-emergency" onclick="window.fecharFolhaoMolde23()"><i class="fas fa-times"></i></button></div>
+        <div style="display:flex;gap:15px;margin-top:15px;"><span class="ind-card-tag bg-tag" style="font-size:14px;">TAG: <strong id="molde23-tag-name"></strong></span><span class="text-muted" style="font-size:14px;">Preenchimento obrigatório</span></div>
       </div>
-
-      <div class="folhao-tabs" style="display: flex; background: var(--bg-input); border-bottom: 1px solid var(--border-color); overflow-x: auto;">
-          <button class="folhao-tab active" onclick="trocarAbaMolde23(event, 'm23-aba-dados')">1. Dados Básicos</button>
-          <button class="folhao-tab" onclick="trocarAbaMolde23(event, 'm23-aba-recebimento')">2. Recebimento</button>
-          <button class="folhao-tab" onclick="trocarAbaMolde23(event, 'm23-aba-revisao')">3. Revisão</button>
-          <button class="folhao-tab" onclick="trocarAbaMolde23(event, 'm23-aba-hidraulica')">4. Hidráulica</button>
-          <button class="folhao-tab" onclick="trocarAbaMolde23(event, 'm23-aba-final')">5. Check Final</button>
+      <div class="folhao-tabs" style="display:flex;background:var(--bg-input);border-bottom:1px solid var(--border-color);overflow-x:auto;">
+        <button class="folhao-tab active" onclick="window.trocarAbaMolde23(event,'m23-aba-dados')">1. Dados</button>
+        <button class="folhao-tab" onclick="window.trocarAbaMolde23(event,'m23-aba-recebimento')">2. Recebimento</button>
+        <button class="folhao-tab" onclick="window.trocarAbaMolde23(event,'m23-aba-revisao')">3. Revisão</button>
+        <button class="folhao-tab" onclick="window.trocarAbaMolde23(event,'m23-aba-hidraulica')">4. Hidráulica</button>
+        <button class="folhao-tab" onclick="window.trocarAbaMolde23(event,'m23-aba-final')">5. Check Final</button>
       </div>
-
-      <div class="folhao-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
-        
+      <div class="folhao-body" style="padding:20px;max-height:60vh;overflow-y:auto;">
         <div id="m23-aba-dados" class="folhao-content active">
-            <div class="form-grid-2-mobile" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div class="input-group">
-                    <label>Data Início da Manutenção</label>
-                    <input type="date" id="molde23-data-inicio" class="w-100">
-                </div>
-                <div class="input-group">
-                    <label>Data Fim da Manutenção</label>
-                    <input type="date" id="molde23-data-fim" class="w-100">
-                </div>
-                <div class="input-group">
-                    <label>Nº do Molde</label>
-                    <input type="text" id="molde23-num" placeholder="Ex: 02" class="w-100">
-                </div>
-                <div class="input-group">
-                    <label>Líder Responsável</label>
-                    <input type="text" id="molde23-lider" placeholder="Nome ou Matrícula" class="w-100">
-                </div>
-                <div class="input-group">
-                    <label>Tipo de Execução</label>
-                    <select id="molde23-tipo-execucao" class="premium-select w-100">
-                        <option value="PARCIAL">PARCIAL</option>
-                        <option value="GERAL">GERAL (Zerar toneladas)</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>Desempenho Observado</label>
-                    <input type="text" id="molde23-desempenho" placeholder="Ex: Face com ranhuras..." class="w-100">
-                </div>
-            </div>
+          <div class="form-grid-2-mobile" style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+            <div class="input-group"><label>Data Início</label><input type="date" id="molde23-data-inicio" class="w-100"></div>
+            <div class="input-group"><label>Data Fim</label><input type="date" id="molde23-data-fim" class="w-100"></div>
+            <div class="input-group"><label>Nº do Molde</label><input type="text" id="molde23-num" placeholder="Ex: 02" class="w-100"></div>
+            <div class="input-group"><label>Líder Responsável</label><input type="text" id="molde23-lider" placeholder="Nome" class="w-100"></div>
+            <div class="input-group"><label>Tipo Execução</label><select id="molde23-tipo-execucao" class="premium-select w-100"><option value="PARCIAL">PARCIAL</option><option value="GERAL">GERAL</option></select></div>
+            <div class="input-group"><label>Desempenho</label><input type="text" id="molde23-desempenho" placeholder="Ex: Face com ranhuras..." class="w-100"></div>
+          </div>
         </div>
-
-        <div id="m23-aba-recebimento" class="folhao-content hidden">
-            <h3 style="margin-bottom: 10px; color: var(--text-heading);">Inspeção de Recebimento (Mecânica/Elétrica)</h3>
-            <div class="table-responsive">
-                <table class="premium-table">
-                    <thead><tr><th style="width: 50px;">Item</th><th>Descrição</th><th style="width: 60px;">SIM</th><th style="width: 60px;">NÃO</th></tr></thead>
-                    <tbody id="tabela-m23-recebimento"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="m23-aba-revisao" class="folhao-content hidden">
-            <h3 style="margin-bottom: 10px; color: var(--text-heading);">Revisão dos Componentes do Molde</h3>
-            <div class="table-responsive">
-                <table class="premium-table">
-                    <thead><tr><th style="width: 50px;">Item</th><th>Descrição</th><th style="width: 60px;">SIM</th><th style="width: 60px;">NÃO</th></tr></thead>
-                    <tbody id="tabela-m23-revisao"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="m23-aba-hidraulica" class="folhao-content hidden">
-            <h3 style="margin-bottom: 10px; color: var(--text-heading);">Check List Hidráulico</h3>
-            <div class="table-responsive">
-                <table class="premium-table">
-                    <thead><tr><th style="width: 50px;">Item</th><th>Descrição</th><th>Matrícula</th></tr></thead>
-                    <tbody id="tabela-m23-hidraulica"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="m23-aba-final" class="folhao-content hidden">
-            <h3 style="margin-bottom: 10px; color: var(--text-heading);">Inspeção Final e Sensores</h3>
-            <div class="table-responsive">
-                <table class="premium-table">
-                    <thead><tr><th style="width: 50px;">Item</th><th>Descrição</th><th style="width: 60px;">SIM</th><th style="width: 60px;">NÃO</th></tr></thead>
-                    <tbody id="tabela-m23-final"></tbody>
-                </table>
-            </div>
-        </div>
-
+        <div id="m23-aba-recebimento" class="folhao-content hidden"><h3>Inspeção de Recebimento</h3><div class="table-responsive"><table class="premium-table"><thead><tr><th style="width:50px;">Item</th><th>Descrição</th><th style="width:60px;">SIM</th><th style="width:60px;">NÃO</th></tr></thead><tbody id="tabela-m23-recebimento"></tbody></table></div></div>
+        <div id="m23-aba-revisao" class="folhao-content hidden"><h3>Revisão</h3><div class="table-responsive"><table class="premium-table"><thead><tr><th style="width:50px;">Item</th><th>Descrição</th><th style="width:60px;">SIM</th><th style="width:60px;">NÃO</th></tr></thead><tbody id="tabela-m23-revisao"></tbody></table></div></div>
+        <div id="m23-aba-hidraulica" class="folhao-content hidden"><h3>Hidráulico</h3><div class="table-responsive"><table class="premium-table"><thead><tr><th style="width:50px;">Item</th><th>Descrição</th><th>Matrícula</th></tr></thead><tbody id="tabela-m23-hidraulica"></tbody></table></div></div>
+        <div id="m23-aba-final" class="folhao-content hidden"><h3>Inspeção Final</h3><div class="table-responsive"><table class="premium-table"><thead><tr><th style="width:50px;">Item</th><th>Descrição</th><th style="width:60px;">SIM</th><th style="width:60px;">NÃO</th></tr></thead><tbody id="tabela-m23-final"></tbody></table></div></div>
       </div>
-
-      <div class="modal-actions flex-between" style="padding: 20px; background: var(--bg-th); border-top: 1px solid var(--border-color); border-radius: 0 0 16px 16px;">
-        <button class="btn-outline-danger" onclick="fecharFolhaoMolde23()">Cancelar</button>
-        <button class="btn-premium btn-success" onclick="salvarEImprimirFolhaoMolde23()"><i class="fas fa-check-double"></i> Salvar Laudo e Mover p/ Reserva</button>
+      <div class="modal-actions flex-between" style="padding:20px;background:var(--bg-th);border-top:1px solid var(--border-color);border-radius:0 0 16px 16px;">
+        <button class="btn-outline-danger" onclick="window.fecharFolhaoMolde23()">Cancelar</button>
+        <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoMolde23()"><i class="fas fa-check-double"></i> Salvar</button>
       </div>
-      
     </div>
   </div>
 
   <!-- MODAL - FOLHÃO SEGMENTO ZERO -->
   <div id="modal-folhao-segmento-zero" class="modal-overlay hidden no-print">
-    <div class="modal-content glass-panel premium-shadow" style="max-width: 1000px; padding: 0;">
-        
-      <div class="modal-header-fixed" style="padding: 20px; border-bottom: 1px solid var(--border-color); background: var(--bg-th); border-radius: 16px 16px 0 0;">
-        <div class="flex-between">
-          <h2 style="color: var(--text-accent);"><i class="fas fa-clipboard-check"></i> Liberação Oficial - SEGMENTO ZERO (MCC 2/3)</h2>
-          <button class="btn-close-emergency" onclick="document.getElementById('modal-folhao-segmento-zero').classList.add('hidden')"><i class="fas fa-times"></i></button>
-        </div>
-        <div style="display: flex; gap: 15px; margin-top: 15px;">
-          <span class="ind-card-tag bg-tag" style="font-size: 14px;">TAG: <strong id="segzero-tag-ativo">---</strong></span>
-          <span class="text-muted" style="font-size: 14px;">Preenchimento obrigatório para envio à Reserva.</span>
-        </div>
+    <div class="modal-content glass-panel premium-shadow" style="max-width:1000px;padding:0;">
+      <div class="modal-header-fixed" style="padding:20px;border-bottom:1px solid var(--border-color);background:var(--bg-th);border-radius:16px 16px 0 0;">
+        <div class="flex-between"><h2 style="color:var(--text-accent);"><i class="fas fa-clipboard-check"></i> Liberação - SEGMENTO ZERO (MCC 2/3)</h2><button class="btn-close-emergency" onclick="document.getElementById('modal-folhao-segmento-zero').classList.add('hidden')"><i class="fas fa-times"></i></button></div>
+        <div style="display:flex;gap:15px;margin-top:15px;"><span class="ind-card-tag bg-tag" style="font-size:14px;">TAG: <strong id="segzero-tag-ativo">---</strong></span><span class="text-muted" style="font-size:14px;">Preenchimento obrigatório</span></div>
       </div>
-
-      <div class="folhao-tabs" style="display: flex; background: var(--bg-input); border-bottom: 1px solid var(--border-color); overflow-x: auto;">
-        <button class="folhao-tab active" onclick="trocarAbaSegZero(event, 'segzero-aba-dados')">1. Dados Básicos</button>
-        <button class="folhao-tab" onclick="trocarAbaSegZero(event, 'segzero-aba-recebimento')">2. Inspeção Chegada</button>
-        <button class="folhao-tab" onclick="trocarAbaSegZero(event, 'segzero-aba-gap')">3. Aferição de GAP</button>
-        <button class="folhao-tab" onclick="trocarAbaSegZero(event, 'segzero-aba-saida')">4. Inspeção Saída</button>
-        <button class="folhao-tab" onclick="trocarAbaSegZero(event, 'segzero-aba-materiais')">5. Materiais Aplicados</button>
+      <div class="folhao-tabs" style="display:flex;background:var(--bg-input);border-bottom:1px solid var(--border-color);overflow-x:auto;">
+        <button class="folhao-tab active" onclick="window.trocarAbaSegZero(event,'segzero-aba-dados')">1. Dados</button>
+        <button class="folhao-tab" onclick="window.trocarAbaSegZero(event,'segzero-aba-recebimento')">2. Chegada</button>
+        <button class="folhao-tab" onclick="window.trocarAbaSegZero(event,'segzero-aba-gap')">3. GAP</button>
+        <button class="folhao-tab" onclick="window.trocarAbaSegZero(event,'segzero-aba-saida')">4. Saída</button>
+        <button class="folhao-tab" onclick="window.trocarAbaSegZero(event,'segzero-aba-materiais')">5. Materiais</button>
       </div>
-
-      <div class="folhao-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
-          
+      <div class="folhao-body" style="padding:20px;max-height:60vh;overflow-y:auto;">
         <div id="segzero-aba-dados" class="folhao-content active">
-          <div class="form-grid-2-mobile" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div class="input-group">
-              <label>Data Início da Manutenção</label>
-              <input type="date" id="segzero-data-inicio" class="w-100">
-            </div>
-            <div class="input-group">
-              <label>Data Fim da Manutenção</label>
-              <input type="date" id="segzero-data-fim" class="w-100">
-            </div>
-            <div class="input-group">
-              <label>Nº do Segmento</label>
-              <input type="text" id="segzero-num" placeholder="Ex: 01" class="w-100">
-            </div>
-            <div class="input-group">
-              <label>Veio (Saída)</label>
-              <select id="segzero-veio" class="premium-select w-100">
-                <option value="C">Veio C</option>
-                <option value="D">Veio D</option>
-                <option value="E">Veio E</option>
-                <option value="F">Veio F</option>
-              </select>
-            </div>
+          <div class="form-grid-2-mobile" style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+            <div class="input-group"><label>Data Início</label><input type="date" id="segzero-data-inicio" class="w-100"></div>
+            <div class="input-group"><label>Data Fim</label><input type="date" id="segzero-data-fim" class="w-100"></div>
+            <div class="input-group"><label>Nº do Segmento</label><input type="text" id="segzero-num" placeholder="Ex: 01" class="w-100"></div>
+            <div class="input-group"><label>Veio</label><select id="segzero-veio" class="premium-select w-100"><option value="C">Veio C</option><option value="D">Veio D</option><option value="E">Veio E</option><option value="F">Veio F</option></select></div>
           </div>
         </div>
-
         <div id="segzero-aba-recebimento" class="folhao-content hidden">
-          <h3 style="margin-bottom: 15px; color: var(--text-heading);">Inspeção de Chegada</h3>
-          <div class="table-responsive">
-            <table class="premium-table">
-              <thead>
-                <tr><th style="width: 50px;">Item</th><th>Descrição da Inspeção</th><th style="width: 60px;">SIM</th><th style="width: 60px;">NÃO</th></tr>
-              </thead>
-              <tbody>
-                <tr><td>01</td><td>Distribuidores de graxa com vazamentos</td><td style="text-align:center;"><input type="radio" name="szc1"></td><td style="text-align:center;"><input type="radio" name="szc1"></td></tr>
-                <tr><td>02</td><td>Distribuidores de graxa com agarramentos</td><td style="text-align:center;"><input type="radio" name="szc2"></td><td style="text-align:center;"><input type="radio" name="szc2"></td></tr>
-                <tr><td>03</td><td>Tubulações de graxa amassadas ou danificadas</td><td style="text-align:center;"><input type="radio" name="szc3"></td><td style="text-align:center;"><input type="radio" name="szc3"></td></tr>
-                <tr><td>04</td><td>Flexíveis com vazamentos e/ou avarias</td><td style="text-align:center;"><input type="radio" name="szc4"></td><td style="text-align:center;"><input type="radio" name="szc4"></td></tr>
-                <tr><td>05</td><td>Resfridores com vazamento</td><td style="text-align:center;"><input type="radio" name="szc5"></td><td style="text-align:center;"><input type="radio" name="szc5"></td></tr>
-                <tr><td>06</td><td>Bicos de spray obstruídos</td><td style="text-align:center;"><input type="radio" name="szc6"></td><td style="text-align:center;"><input type="radio" name="szc6"></td></tr>
-              </tbody>
-            </table>
-          </div>
+          <h3 style="margin-bottom:15px;color:var(--text-heading);">Inspeção de Chegada</h3>
+          <div class="table-responsive"><table class="premium-table"><thead><tr><th style="width:50px;">Item</th><th>Descrição</th><th style="width:60px;">SIM</th><th style="width:60px;">NÃO</th></tr></thead><tbody><tr><td>01</td><td>Distribuidores de graxa com vazamentos</td><td style="text-align:center;"><input type="radio" name="szc1"></td><td style="text-align:center;"><input type="radio" name="szc1"></td></tr><tr><td>02</td><td>Distribuidores de graxa com agarramentos</td><td style="text-align:center;"><input type="radio" name="szc2"></td><td style="text-align:center;"><input type="radio" name="szc2"></td></tr><tr><td>03</td><td>Tubulações de graxa amassadas</td><td style="text-align:center;"><input type="radio" name="szc3"></td><td style="text-align:center;"><input type="radio" name="szc3"></td></tr><tr><td>04</td><td>Flexíveis com vazamentos</td><td style="text-align:center;"><input type="radio" name="szc4"></td><td style="text-align:center;"><input type="radio" name="szc4"></td></tr><tr><td>05</td><td>Resfriadores com vazamento</td><td style="text-align:center;"><input type="radio" name="szc5"></td><td style="text-align:center;"><input type="radio" name="szc5"></td></tr><tr><td>06</td><td>Bicos de spray obstruídos</td><td style="text-align:center;"><input type="radio" name="szc6"></td><td style="text-align:center;"><input type="radio" name="szc6"></td></tr></tbody></table></div>
         </div>
-
         <div id="segzero-aba-gap" class="folhao-content hidden">
-          <h3 style="margin-bottom: 15px; color: var(--text-heading);">Aferição de Gap (Referência: 261,5 mm)</h3>
-          <div class="table-responsive">
-            <table class="premium-table">
-              <thead>
-                <tr><th>Conj. Rolo</th><th>Referência</th><th>Posição 1</th><th>Posição 2</th><th>Posição 3</th></tr>
-              </thead>
-              <tbody>
-                <tr><td>1º Conj. Rolo</td><td>261,5 (-0,1)</td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td></tr>
-                <tr><td>2º Conj. Rolo</td><td>261,5 (-0,1)</td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td></tr>
-                <tr><td>3º Conj. Rolo</td><td>261,5 (-0,1)</td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td></tr>
-              </tbody>
-            </table>
-          </div>
+          <h3 style="margin-bottom:15px;color:var(--text-heading);">Aferição de Gap (261,5 mm)</h3>
+          <div class="table-responsive"><table class="premium-table"><thead><tr><th>Conj. Rolo</th><th>Ref</th><th>Pos 1</th><th>Pos 2</th><th>Pos 3</th></tr></thead><tbody><tr><td>1º</td><td>261,5 (-0,1)</td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td></tr><tr><td>2º</td><td>261,5 (-0,1)</td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td></tr><tr><td>3º</td><td>261,5 (-0,1)</td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td></tr></tbody></table></div>
         </div>
-
         <div id="segzero-aba-saida" class="folhao-content hidden">
-          <h3 style="margin-bottom: 15px; color: var(--text-heading);">Inspeção de Saída</h3>
-          <div class="table-responsive">
-            <table class="premium-table">
-              <thead>
-                <tr><th style="width: 50px;">Item</th><th>Descrição dos Itens de Saída</th><th style="width: 60px;">SIM</th><th style="width: 60px;">NÃO</th></tr>
-              </thead>
-              <tbody>
-                <tr><td>01</td><td>Distribuidores de graxa sem vazamentos, isentos de agarramento</td><td style="text-align:center;"><input type="radio" name="szs1"></td><td style="text-align:center;"><input type="radio" name="szs1"></td></tr>
-                <tr><td>02</td><td>Mancais lubrificados</td><td style="text-align:center;"><input type="radio" name="szs2"></td><td style="text-align:center;"><input type="radio" name="szs2"></td></tr>
-                <tr><td>03</td><td>Flexíveis isentos de vazamentos</td><td style="text-align:center;"><input type="radio" name="szs3"></td><td style="text-align:center;"><input type="radio" name="szs3"></td></tr>
-                <tr><td>04</td><td>Gap em conformidade com o desenho</td><td style="text-align:center;"><input type="radio" name="szs4"></td><td style="text-align:center;"><input type="radio" name="szs4"></td></tr>
-              </tbody>
-            </table>
-          </div>
+          <h3 style="margin-bottom:15px;color:var(--text-heading);">Inspeção de Saída</h3>
+          <div class="table-responsive"><table class="premium-table"><thead><tr><th style="width:50px;">Item</th><th>Descrição</th><th style="width:60px;">SIM</th><th style="width:60px;">NÃO</th></tr></thead><tbody><tr><td>01</td><td>Distribuidores sem vazamentos</td><td style="text-align:center;"><input type="radio" name="szs1"></td><td style="text-align:center;"><input type="radio" name="szs1"></td></tr><tr><td>02</td><td>Mancais lubrificados</td><td style="text-align:center;"><input type="radio" name="szs2"></td><td style="text-align:center;"><input type="radio" name="szs2"></td></tr><tr><td>03</td><td>Flexíveis isentos de vazamentos</td><td style="text-align:center;"><input type="radio" name="szs3"></td><td style="text-align:center;"><input type="radio" name="szs3"></td></tr><tr><td>04</td><td>Gap em conformidade</td><td style="text-align:center;"><input type="radio" name="szs4"></td><td style="text-align:center;"><input type="radio" name="szs4"></td></tr></tbody></table></div>
         </div>
-
         <div id="segzero-aba-materiais" class="folhao-content hidden">
-          <h3 style="margin-bottom: 15px; color: var(--text-heading);">Materiais Aplicados no Reparo</h3>
-          <div class="table-responsive">
-            <table class="premium-table">
-              <thead>
-                <tr><th>Descrição do Material</th><th>Código SKU</th><th style="width: 100px;">Quantidade</th></tr>
-              </thead>
-              <tbody id="segzero-tabela-materiais-linhas">
-                <tr><td><input type="text" class="w-100" placeholder="Descrição"></td><td><input type="text" class="w-100" placeholder="Código"></td><td><input type="number" class="w-100" placeholder="Qtd"></td></tr>
-                <tr><td><input type="text" class="w-100" placeholder="Descrição"></td><td><input type="text" class="w-100" placeholder="Código"></td><td><input type="number" class="w-100" placeholder="Qtd"></td></tr>
-                <tr><td><input type="text" class="w-100" placeholder="Descrição"></td><td><input type="text" class="w-100" placeholder="Código"></td><td><input type="number" class="w-100" placeholder="Qtd"></td></tr>
-              </tbody>
-            </table>
-          </div>
+          <h3 style="margin-bottom:15px;color:var(--text-heading);">Materiais</h3>
+          <div class="table-responsive"><table class="premium-table"><thead><tr><th>Descrição</th><th>Código</th><th style="width:100px;">Qtd</th></tr></thead><tbody id="segzero-tabela-materiais-linhas"><tr><td><input type="text" class="w-100" placeholder="Descrição"></td><td><input type="text" class="w-100" placeholder="Código"></td><td><input type="number" class="w-100" placeholder="Qtd"></td></tr><tr><td><input type="text" class="w-100" placeholder="Descrição"></td><td><input type="text" class="w-100" placeholder="Código"></td><td><input type="number" class="w-100" placeholder="Qtd"></td></tr><tr><td><input type="text" class="w-100" placeholder="Descrição"></td><td><input type="text" class="w-100" placeholder="Código"></td><td><input type="number" class="w-100" placeholder="Qtd"></td></tr></tbody></table></div>
         </div>
-
       </div>
-
-      <div class="modal-actions flex-between" style="padding: 20px; background: var(--bg-th); border-top: 1px solid var(--border-color); border-radius: 0 0 16px 16px;">
+      <div class="modal-actions flex-between" style="padding:20px;background:var(--bg-th);border-top:1px solid var(--border-color);border-radius:0 0 16px 16px;">
         <button class="btn-outline-danger" onclick="document.getElementById('modal-folhao-segmento-zero').classList.add('hidden')">Cancelar</button>
-        <button class="btn-premium btn-success" onclick="salvarFolhaoSegmentoZero()"><i class="fas fa-check-double"></i> Salvar Laudo e Mover p/ Reserva</button>
+        <button class="btn-premium btn-success" onclick="window.salvarFolhaoSegmentoZero()"><i class="fas fa-check-double"></i> Salvar</button>
       </div>
-
     </div>
   </div>
 
   <!-- MODAL - RELATÓRIO -->
   <div id="modal-relatorio" class="modal-overlay hidden no-print">
     <div class="modal-content glass-panel premium-shadow">
-      <h2 style="color: var(--warning); margin-bottom: 5px;"><i class="fas fa-clipboard-check"></i> Relatório de Manutenção</h2>
-      <p class="text-muted" style="font-size: 13px; margin-bottom: 20px;">Preenchimento obrigatório para envio à Oficina.</p>
-      <p style="color: var(--text-main);">Componente a ser sacado: <strong id="modal-tag" class="font-code text-accent" style="font-size: 16px;"></strong></p>
-      <div class="input-group mt-15">
-         <label>Motivo da Retirada da Máquina</label>
-         <select id="modal-motivo" class="premium-select w-100"></select>
-      </div>
-      <div class="input-group mt-15">
-         <label>Condição de Chegada na Oficina (Laudo Visual)</label>
-         <textarea id="modal-condicao" rows="4" placeholder="Descreva os detalhes estruturais, vazamentos ou avarias observadas..." class="premium-textarea"></textarea>
-      </div>
-      <div class="modal-actions flex-between mt-15" style="margin-top: 25px;">
-         <button class="btn-outline-danger" onclick="fecharModalRelatorio()">Cancelar Operação</button>
-         <button class="btn-premium btn-warning" onclick="confirmarRelatorio()"><i class="fas fa-paper-plane"></i> Confirmar Retirada</button>
+      <h2 style="color:var(--warning);margin-bottom:5px;"><i class="fas fa-clipboard-check"></i> Relatório de Manutenção</h2>
+      <p class="text-muted" style="font-size:13px;margin-bottom:20px;">Preenchimento obrigatório para envio à Oficina.</p>
+      <p style="color:var(--text-main);">Componente: <strong id="modal-tag" class="font-code text-accent" style="font-size:16px;"></strong></p>
+      <div class="input-group mt-15"><label>Motivo</label><select id="modal-motivo" class="premium-select w-100"></select></div>
+      <div class="input-group mt-15"><label>Condição de Chegada</label><textarea id="modal-condicao" rows="4" placeholder="Descreva..." class="premium-textarea"></textarea></div>
+      <div class="modal-actions flex-between mt-15" style="margin-top:25px;">
+        <button class="btn-outline-danger" onclick="window.fecharModalRelatorio()">Cancelar</button>
+        <button class="btn-premium btn-warning" onclick="window.confirmarRelatorio()"><i class="fas fa-paper-plane"></i> Confirmar</button>
       </div>
     </div>
   </div>
@@ -1355,102 +805,69 @@
   <!-- MODAL - CONCLUIR REPARO -->
   <div id="modal-concluir-reparo" class="modal-overlay hidden no-print">
     <div class="modal-content glass-panel premium-shadow">
-      <h2 style="color: var(--success); margin-bottom: 5px;"><i class="fas fa-tools"></i> Conclusão de Reparo Simples</h2>
-      <p class="text-muted" style="font-size: 13px; margin-bottom: 20px;">Defina como a peça retornará ao estoque de Reserva.</p>
-      <p style="color: var(--text-main);">TAG em Manutenção: <strong id="modal-reparo-tag" class="font-code text-accent" style="font-size: 16px;"></strong></p>
-      <div class="input-group mt-15">
-         <label>Tipo de Reparo Realizado</label>
-         <select id="modal-tipo-reparo" class="premium-select w-100" onchange="toggleCamposReparoParcial()">
-           <option value="GERAL">Reparo Geral (Zerar Toneladas e Dias)</option>
-           <option value="PARCIAL">Reparo Parcial (Manter histórico parcial de uso)</option>
-         </select>
+      <h2 style="color:var(--success);margin-bottom:5px;"><i class="fas fa-tools"></i> Conclusão de Reparo</h2>
+      <p class="text-muted" style="font-size:13px;margin-bottom:20px;">Defina como a peça retornará ao estoque.</p>
+      <p style="color:var(--text-main);">TAG: <strong id="modal-reparo-tag" class="font-code text-accent" style="font-size:16px;"></strong></p>
+      <div class="input-group mt-15"><label>Tipo de Reparo</label><select id="modal-tipo-reparo" class="premium-select w-100" onchange="window.toggleCamposReparoParcial()"><option value="GERAL">Geral (Zerar)</option><option value="PARCIAL">Parcial</option></select></div>
+      <div id="campos-reparo-parcial" class="hidden" style="margin-top:15px;background:var(--bg-th);padding:15px;border-radius:8px;border:1px dashed var(--warning);">
+        <p class="text-warning" style="font-size:12px;margin-bottom:10px;"><i class="fas fa-info-circle"></i> Ajuste os valores:</p>
+        <div class="form-grid-2-mobile" style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+          <div class="input-group"><label>Tonelagem</label><input type="number" id="modal-reparo-ton" class="w-100"></div>
+          <div class="input-group"><label>Dias</label><input type="number" id="modal-reparo-dias" class="w-100"></div>
+        </div>
       </div>
-      <div id="campos-reparo-parcial" class="hidden" style="margin-top: 15px; background: var(--bg-th); padding: 15px; border-radius: 8px; border: 1px dashed var(--warning);">
-         <p class="text-warning" style="font-size: 12px; margin-bottom: 10px;"><i class="fas fa-info-circle"></i> Ajuste os valores com os quais o equipamento voltará para a máquina:</p>
-         <div class="form-grid-2-mobile" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-           <div class="input-group">
-             <label>Tonelagem Atualizada (t)</label>
-             <input type="number" id="modal-reparo-ton" class="w-100">
-           </div>
-           <div class="input-group">
-             <label>Dias de Uso Atualizados</label>
-             <input type="number" id="modal-reparo-dias" class="w-100">
-           </div>
-         </div>
-      </div>
-      <div class="modal-actions flex-between mt-15" style="margin-top: 25px;">
-         <button class="btn-outline-danger" onclick="fecharModalConcluirReparo()">Cancelar</button>
-         <button class="btn-premium btn-success" onclick="confirmarConclusaoReparo()"><i class="fas fa-check-double"></i> Finalizar</button>
+      <div class="modal-actions flex-between mt-15" style="margin-top:25px;">
+        <button class="btn-outline-danger" onclick="window.fecharModalConcluirReparo()">Cancelar</button>
+        <button class="btn-premium btn-success" onclick="window.confirmarConclusaoReparo()"><i class="fas fa-check-double"></i> Finalizar</button>
       </div>
     </div>
   </div>
 
   <!-- MODAL - HISTÓRICO INDIVIDUAL -->
   <div id="modal-historico-ativo" class="modal-overlay hidden no-print">
-    <div class="modal-content glass-panel premium-shadow" style="max-width: 700px; padding: 20px;">
-      <div class="flex-between" style="border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
-        <h2 style="color: var(--text-heading); font-size: 18px;"><i class="fas fa-book-medical text-accent"></i> Prontuário do Equipamento</h2>
-        <button class="btn-close-emergency" onclick="fecharModalHistorico()"><i class="fas fa-times"></i></button>
+    <div class="modal-content glass-panel premium-shadow" style="max-width:700px;padding:20px;">
+      <div class="flex-between" style="border-bottom:1px solid var(--border-color);padding-bottom:15px;margin-bottom:15px;">
+        <h2 style="color:var(--text-heading);font-size:18px;"><i class="fas fa-book-medical text-accent"></i> Prontuário</h2>
+        <button class="btn-close-emergency" onclick="window.fecharModalHistorico()"><i class="fas fa-times"></i></button>
       </div>
-      <div class="flex-between mobile-stack-info" style="background: var(--bg-th); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color);">
-        <div>
-          <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Identificação TAG</span>
-          <div id="hist-tag-nome" class="font-code text-accent" style="font-size: 18px; font-weight: bold;"></div>
-        </div>
-        <div class="text-right">
-           <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Localização Atual</span>
-           <div id="hist-tag-local" class="font-code" style="font-size: 13px; color: var(--text-heading);"></div>
-        </div>
+      <div class="flex-between mobile-stack-info" style="background:var(--bg-th);padding:15px;border-radius:8px;margin-bottom:15px;border:1px solid var(--border-color);">
+        <div><span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">TAG</span><div id="hist-tag-nome" class="font-code text-accent" style="font-size:18px;font-weight:bold;"></div></div>
+        <div class="text-right"><span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Localização</span><div id="hist-tag-local" class="font-code" style="font-size:13px;color:var(--text-heading);"></div></div>
       </div>
-      <div class="input-group mobile-stack-info gap-10" style="margin-bottom: 20px; display: flex; align-items: stretch;">
-        <input type="text" id="input-nota-manual" placeholder="Ex: Troca de válvula, lubrificação extra..." style="flex: 1; padding: 10px; border-radius: 6px;">
-        <button class="btn-premium" onclick="salvarRegistroManual()"><i class="fas fa-plus"></i> Registrar</button>
+      <div class="input-group mobile-stack-info gap-10" style="margin-bottom:20px;display:flex;align-items:stretch;">
+        <input type="text" id="input-nota-manual" placeholder="Ex: Troca de válvula..." style="flex:1;padding:10px;border-radius:6px;">
+        <button class="btn-premium" onclick="window.salvarRegistroManual()"><i class="fas fa-plus"></i> Registrar</button>
       </div>
-      <div class="scrollable-history table-responsive" style="max-height: 300px;">
-        <table class="industrial-table premium-table">
-          <thead><tr><th>Data/Hora</th><th>Evento / Descrição</th><th>Usuário</th></tr></thead>
-          <tbody id="tabela-historico-individual"></tbody>
-        </table>
+      <div class="scrollable-history table-responsive" style="max-height:300px;">
+        <table class="industrial-table premium-table"><thead><tr><th>Data/Hora</th><th>Evento</th><th>Usuário</th></tr></thead><tbody id="tabela-historico-individual"></tbody></table>
       </div>
     </div>
   </div>
 
-    <!-- ========================================= -->
-  <!-- SCRIPTS - CARREGAMENTO DOS MÓDULOS -->
   <!-- ========================================= -->
-  <script type="module">
-    // Importa o script principal que contém toda a lógica do sistema
-    import './script.js';
-    import './folhao.js';
-    import './folhaoR2.js';
-    import './folhaoHorizontal.js';
-    import './folhaoBow.js';
-    import './folhaoDesempenadeira.js';
-    import './folhaoSegmentoZero.js';
-    import './folhaoMolde23.js';
+  <!-- SCRIPTS -->
+  <!-- ========================================= -->
+<script type="module">
+    import './script.js?v=2';
+    import './ui.js?v=8';  // <-- Mude para v=7
+    import './folhao.js?v=2';
+    import './folhaoR2.js?v=2';
+    import './folhaoHorizontal.js?v=2';
+    import './folhaoBow.js?v=2';
+    import './folhaoDesempenadeira.js?v=2';
+    import './folhaoSegmentoZero.js?v=2';
+    import './folhaoMolde23.js?v=2';
     
-    console.log("✅ Sistema OMS inicializado com sucesso!");
+    console.log("✅ Sistema OMS inicializado!");
     
-    // Verifica se o usuário já está logado
     const operadorSalvo = localStorage.getItem("oms_operador_v32_local");
     if (operadorSalvo) {
       try {
         const operador = JSON.parse(operadorSalvo);
         window.OPERADOR_LOGADO = operador;
-        
-        // Esconde a tela de login e mostra o sistema
-        const telaLogin = document.getElementById("tela-login-home");
-        const sistema = document.getElementById("container-sistema-oms");
-        
-        if (telaLogin) telaLogin.style.display = "none";
-        if (sistema) sistema.style.display = "flex";
-        
-        // Atualiza a interface com os dados do operador
-        if (window.atualizarInterfaceUsuario) {
-          window.atualizarInterfaceUsuario();
-        }
-        
-        // Renderiza todos os componentes
+        document.getElementById("tela-login-home").style.display = "none";
+        document.getElementById("container-sistema-oms").style.display = "flex";
+        if (window.atualizarInterfaceUsuario) window.atualizarInterfaceUsuario();
         if (window.calcularKpisGlobais) window.calcularKpisGlobais();
         if (window.renderPainelVeios) window.renderPainelVeios();
         if (window.renderAtivos) window.renderAtivos();
@@ -1459,24 +876,91 @@
         if (window.renderRolos) window.renderRolos();
         if (window.renderMateriais) window.renderMateriais();
         if (window.renderHistorico) window.renderHistorico();
-        
-        console.log("✅ Usuário logado automaticamente:", operador.nome);
-      } catch (e) {
-        console.warn("Erro ao restaurar sessão:", e);
-      }
-    } else {
-      console.log("🔒 Nenhum usuário logado. Aguardando autenticação.");
+        console.log("✅ Usuário logado:", operador.nome);
+      } catch(e) { console.warn("Erro ao restaurar sessão:", e); }
     }
   </script>
-  <!-- BOTÃO DE EMERGÊNCIA PARA FORÇAR A EXIBIÇÃO DOS CAMPOS DE POSIÇÃO -->
-<button id="btn-forcar-posicao" style="position:fixed; bottom:10px; right:10px; z-index:9999; padding:10px 16px; background:#10b981; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer; box-shadow:0 4px 12px rgba(16,185,129,0.4); font-size:12px;">
-    ✅ FORÇAR POSIÇÃO
-</button>
+
+  <!-- SCRIPT PARA FORÇAR POSIÇÃO - EXECUTA AUTOMATICAMENTE -->
+  <script>
+    // FUNÇÃO PARA FORÇAR CRIAÇÃO DOS CAMPOS DE POSIÇÃO
+    function forcarCamposPosicao() {
+      console.log("🔄 FORÇANDO CAMPOS DE POSIÇÃO...");
+      
+      const rows = document.querySelectorAll('#estoque-table-body tr');
+      let count = 0;
+      
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 6) {
+          const posCell = cells[4];
+          const tagId = cells[0]?.textContent?.trim();
+          
+          if (!tagId || tagId === '') return;
+          
+          // Verifica se já tem input
+          const hasInput = posCell.querySelector('input');
+          
+          if (!hasInput) {
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.id = `pos-${tagId}`;
+            input.placeholder = 'Pos';
+            input.min = 1;
+            input.max = 99;
+            input.step = 1;
+            input.style.cssText = 'width:55px; height:32px; padding:4px 6px; font-size:14px; font-weight:bold; border-radius:4px; border:3px solid #10b981; background:#0f172a; color:#ffffff; text-align:center; display:inline-block !important; visibility:visible !important; opacity:1 !important;';
+            posCell.innerHTML = '';
+            posCell.appendChild(input);
+            count++;
+            console.log(`✅ Campo criado para: ${tagId}`);
+          }
+        }
+      });
+      
+      if (count > 0) {
+        console.log(`✅ ${count} campos criados!`);
+      } else {
+        console.log("ℹ️ Nenhum campo novo criado.");
+      }
+    }
+
+    // EXECUTA AUTOMATICAMENTE QUANDO A PÁGINA CARREGA
+    document.addEventListener('DOMContentLoaded', function() {
+      // Primeira execução após 500ms
+      setTimeout(forcarCamposPosicao, 500);
+      
+      // Segunda execução após 1.5s (garantia)
+      setTimeout(forcarCamposPosicao, 1500);
+      
+      // Observa a aba de reservas
+      const observer = new MutationObserver(function() {
+        const reservasAba = document.getElementById('aba-reservas');
+        if (reservasAba && reservasAba.classList.contains('active')) {
+          setTimeout(forcarCamposPosicao, 200);
+        }
+      });
+      observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+      
+      // Também observa quando o renderReservas for chamado
+      const originalRender = window.renderReservas;
+      if (originalRender) {
+        window.renderReservas = function() {
+          const result = originalRender.apply(this, arguments);
+          setTimeout(forcarCamposPosicao, 100);
+          return result;
+        };
+      }
+    });
+
+    window.forcarCamposPosicao = forcarCamposPosicao;
+    console.log("✅ Sistema de correção de posição ativado!");
+  </script>
 
 <script>
-// Função que força a criação dos campos de posição
-function forcarCamposPosicao() {
-    console.log("🔄 FORÇANDO CRIAÇÃO DOS CAMPOS DE POSIÇÃO...");
+// FORÇA A CRIAÇÃO DOS SELECTS DE POSIÇÃO
+function criarSelectsPosicao() {
+    console.log("🔄 CRIANDO SELECTS DE POSIÇÃO...");
     
     const rows = document.querySelectorAll('#estoque-table-body tr');
     let count = 0;
@@ -1485,130 +969,90 @@ function forcarCamposPosicao() {
         const cells = row.querySelectorAll('td');
         if (cells.length >= 6) {
             const posCell = cells[4];
-            const veioSelect = cells[3]?.querySelector('select');
             const tagId = cells[0]?.textContent?.trim();
+            const tipoCell = cells[1]?.textContent?.trim() || "";
             
-            // Verifica se já tem um input
-            const hasInput = posCell.querySelector('input');
+            if (!tagId || tagId === '') return;
+            
+            // Verifica se já tem select
             const hasSelect = posCell.querySelector('select');
+            const hasInput = posCell.querySelector('input');
             
-            if (!hasInput && !hasSelect && tagId) {
-                // Cria um input para a posição
-                const input = document.createElement('input');
-                input.type = 'number';
-                input.id = `pos-${tagId}`;
-                input.placeholder = 'Pos';
-                input.min = 1;
-                input.max = 99;
-                input.step = 1;
-                input.style.cssText = 'width:55px; padding:4px 6px; font-size:12px; border-radius:4px; border:2px solid #10b981; background:#1a1a2e; color:#fff; text-align:center;';
-                posCell.innerHTML = '';
-                posCell.appendChild(input);
-                count++;
-                console.log(`✅ Campo criado para: ${tagId}`);
+            if (!hasSelect && !hasInput) {
+                let options = '';
+                let placeholder = 'Pos';
+                
+                // DETERMINA O TIPO
+                const tipoUpper = tipoCell.toUpperCase();
+                const isBow = tipoUpper.includes('BOW');
+                const isHorizontal = tipoUpper.includes('HORIZONTAL');
+                const isCadeiraSup = tipoUpper.includes('CADEIRA SUPERIOR');
+                const isCadeiraInf = tipoUpper.includes('CADEIRA INFERIOR');
+                const isSegmento = tipoUpper.includes('SEGMENTO') || tipoUpper.includes('SEGUIMENTO');
+                
+                if (isBow) {
+                    placeholder = 'Bow';
+                    for (let i = 1; i <= 5; i++) options += `<option value="${i}">#${i}</option>`;
+                } else if (isHorizontal) {
+                    placeholder = 'Horiz';
+                    for (let i = 8; i <= 17; i++) options += `<option value="${i}">#${i}</option>`;
+                } else if (isCadeiraSup) {
+                    placeholder = 'Sup';
+                    for (let i = 43; i <= 79; i++) options += `<option value="${i}">#${i}</option>`;
+                } else if (isCadeiraInf) {
+                    placeholder = 'Inf';
+                    for (let i = 43; i <= 79; i++) options += `<option value="${i}">#${i}</option>`;
+                } else if (isSegmento) {
+                    placeholder = 'Seg';
+                    for (let i = 1; i <= 6; i++) options += `<option value="${i}">#${i}</option>`;
+                }
+                
+                // Se tiver opções, cria um SELECT
+                if (options) {
+                    const select = document.createElement('select');
+                    select.id = `pos-${tagId}`;
+                    select.style.cssText = 'width:65px; padding:4px 6px; font-size:12px; border-radius:4px; border:2px solid #10b981; background:#0f172a; color:#e0e0e0;';
+                    select.innerHTML = `<option value="">${placeholder}</option>${options}`;
+                    posCell.innerHTML = '';
+                    posCell.appendChild(select);
+                    count++;
+                    console.log(`✅ Select criado para: ${tagId} (${placeholder})`);
+                } else {
+                    // Única posição
+                    posCell.innerHTML = `<span style="font-size:12px;color:#888;">Única</span>`;
+                }
             }
         }
     });
     
-    if (count === 0) {
-        console.log("⚠️ Nenhum campo criado. Verificando se a tabela existe...");
-        const tableExists = document.querySelector('#estoque-table-body');
-        if (tableExists && tableExists.children.length === 0) {
-            console.log("📋 Tabela vazia. Recarregando reservas...");
-            if (typeof window.renderReservas === 'function') {
-                window.renderReservas();
-                setTimeout(forcarCamposPosicao, 300);
-            }
-        }
-    } else {
-        console.log(`✅ ${count} campos de posição foram criados!`);
+    if (count > 0) {
+        console.log(`✅ ${count} selects criados!`);
+        const div = document.createElement('div');
+        div.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:999999; background:#10b981; color:white; padding:12px 24px; border-radius:8px; font-weight:bold; font-size:15px; box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+        div.textContent = `✅ ${count} selects de posição criados!`;
+        document.body.appendChild(div);
+        setTimeout(() => div.remove(), 3000);
     }
 }
 
-// Quando a página carregar, espera 1 segundo e força os campos
+// Executa automaticamente
 document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(forcarCamposPosicao, 1000);
-});
-
-// Quando clicar no botão, força novamente
-document.getElementById('btn-forcar-posicao').addEventListener('click', forcarCamposPosicao);
-
-// Também força quando a aba de reservas for aberta
-const observer = new MutationObserver(function() {
-    const reservasAba = document.getElementById('aba-reservas');
-    if (reservasAba && reservasAba.classList.contains('active')) {
-        setTimeout(forcarCamposPosicao, 300);
-    }
-});
-observer.observe(document.body, { attributes: true, childList: true, subtree: true });
-</script>
-<!-- CORREÇÃO FORÇADA PARA CAMPOS DE POSIÇÃO -->
-<script>
-// Executa imediatamente quando a página carrega
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("🔄 Executando correção de posição...");
+    setTimeout(criarSelectsPosicao, 800);
+    setTimeout(criarSelectsPosicao, 2000);
     
-    // Função que cria os campos
-    function criarCamposPosicao() {
-        const rows = document.querySelectorAll('#estoque-table-body tr');
-        let count = 0;
-        
-        rows.forEach(row => {
-            const cells = row.querySelectorAll('td');
-            if (cells.length >= 6) {
-                const posCell = cells[4];
-                const tagId = cells[0]?.textContent?.trim();
-                
-                // Verifica se já tem input
-                const hasInput = posCell.querySelector('input');
-                const hasSelect = posCell.querySelector('select');
-                
-                if (!hasInput && !hasSelect && tagId) {
-                    posCell.innerHTML = '';
-                    const input = document.createElement('input');
-                    input.type = 'number';
-                    input.id = `pos-${tagId}`;
-                    input.placeholder = 'Pos';
-                    input.min = 1;
-                    input.max = 99;
-                    input.step = 1;
-                    input.style.cssText = 'width:55px; padding:4px 6px; font-size:14px; border-radius:4px; border:3px solid #10b981; background:#0f172a; color:#fff; text-align:center;';
-                    posCell.appendChild(input);
-                    count++;
-                }
-            }
-        });
-        
-        if (count > 0) {
-            console.log(`✅ ${count} campos criados!`);
-        } else {
-            console.log("ℹ️ Nenhum campo criado. Tentando novamente em 1s...");
-            setTimeout(criarCamposPosicao, 1000);
-        }
-    }
-    
-    // Tenta criar os campos imediatamente
-    setTimeout(criarCamposPosicao, 500);
-    
-    // Também quando a aba de reservas for aberta
+    // Observa a aba de reservas
     const observer = new MutationObserver(function() {
         const reservasAba = document.getElementById('aba-reservas');
         if (reservasAba && reservasAba.classList.contains('active')) {
-            setTimeout(criarCamposPosicao, 300);
+            setTimeout(criarSelectsPosicao, 300);
         }
     });
     observer.observe(document.body, { attributes: true, childList: true, subtree: true });
-    
-    // Também quando clicar no botão FORÇAR POSIÇÃO
-    const btnForcar = document.getElementById('btn-forcar-posicao');
-    if (btnForcar) {
-        btnForcar.addEventListener('click', function() {
-            setTimeout(criarCamposPosicao, 100);
-        });
-    }
-    
-    console.log("✅ Sistema de correção de posição ativado!");
 });
+
+window.criarSelectsPosicao = criarSelectsPosicao;
+console.log("✅ Sistema de selects de posição ativado!");
+
 </script>
 </body>
 </html>
