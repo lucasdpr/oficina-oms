@@ -1468,5 +1468,147 @@
       console.log("🔒 Nenhum usuário logado. Aguardando autenticação.");
     }
   </script>
+  <!-- BOTÃO DE EMERGÊNCIA PARA FORÇAR A EXIBIÇÃO DOS CAMPOS DE POSIÇÃO -->
+<button id="btn-forcar-posicao" style="position:fixed; bottom:10px; right:10px; z-index:9999; padding:10px 16px; background:#10b981; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer; box-shadow:0 4px 12px rgba(16,185,129,0.4); font-size:12px;">
+    ✅ FORÇAR POSIÇÃO
+</button>
+
+<script>
+// Função que força a criação dos campos de posição
+function forcarCamposPosicao() {
+    console.log("🔄 FORÇANDO CRIAÇÃO DOS CAMPOS DE POSIÇÃO...");
+    
+    const rows = document.querySelectorAll('#estoque-table-body tr');
+    let count = 0;
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 6) {
+            const posCell = cells[4];
+            const veioSelect = cells[3]?.querySelector('select');
+            const tagId = cells[0]?.textContent?.trim();
+            
+            // Verifica se já tem um input
+            const hasInput = posCell.querySelector('input');
+            const hasSelect = posCell.querySelector('select');
+            
+            if (!hasInput && !hasSelect && tagId) {
+                // Cria um input para a posição
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.id = `pos-${tagId}`;
+                input.placeholder = 'Pos';
+                input.min = 1;
+                input.max = 99;
+                input.step = 1;
+                input.style.cssText = 'width:55px; padding:4px 6px; font-size:12px; border-radius:4px; border:2px solid #10b981; background:#1a1a2e; color:#fff; text-align:center;';
+                posCell.innerHTML = '';
+                posCell.appendChild(input);
+                count++;
+                console.log(`✅ Campo criado para: ${tagId}`);
+            }
+        }
+    });
+    
+    if (count === 0) {
+        console.log("⚠️ Nenhum campo criado. Verificando se a tabela existe...");
+        const tableExists = document.querySelector('#estoque-table-body');
+        if (tableExists && tableExists.children.length === 0) {
+            console.log("📋 Tabela vazia. Recarregando reservas...");
+            if (typeof window.renderReservas === 'function') {
+                window.renderReservas();
+                setTimeout(forcarCamposPosicao, 300);
+            }
+        }
+    } else {
+        console.log(`✅ ${count} campos de posição foram criados!`);
+    }
+}
+
+// Quando a página carregar, espera 1 segundo e força os campos
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(forcarCamposPosicao, 1000);
+});
+
+// Quando clicar no botão, força novamente
+document.getElementById('btn-forcar-posicao').addEventListener('click', forcarCamposPosicao);
+
+// Também força quando a aba de reservas for aberta
+const observer = new MutationObserver(function() {
+    const reservasAba = document.getElementById('aba-reservas');
+    if (reservasAba && reservasAba.classList.contains('active')) {
+        setTimeout(forcarCamposPosicao, 300);
+    }
+});
+observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+</script>
+<!-- CORREÇÃO FORÇADA PARA CAMPOS DE POSIÇÃO -->
+<script>
+// Executa imediatamente quando a página carrega
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("🔄 Executando correção de posição...");
+    
+    // Função que cria os campos
+    function criarCamposPosicao() {
+        const rows = document.querySelectorAll('#estoque-table-body tr');
+        let count = 0;
+        
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 6) {
+                const posCell = cells[4];
+                const tagId = cells[0]?.textContent?.trim();
+                
+                // Verifica se já tem input
+                const hasInput = posCell.querySelector('input');
+                const hasSelect = posCell.querySelector('select');
+                
+                if (!hasInput && !hasSelect && tagId) {
+                    posCell.innerHTML = '';
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.id = `pos-${tagId}`;
+                    input.placeholder = 'Pos';
+                    input.min = 1;
+                    input.max = 99;
+                    input.step = 1;
+                    input.style.cssText = 'width:55px; padding:4px 6px; font-size:14px; border-radius:4px; border:3px solid #10b981; background:#0f172a; color:#fff; text-align:center;';
+                    posCell.appendChild(input);
+                    count++;
+                }
+            }
+        });
+        
+        if (count > 0) {
+            console.log(`✅ ${count} campos criados!`);
+        } else {
+            console.log("ℹ️ Nenhum campo criado. Tentando novamente em 1s...");
+            setTimeout(criarCamposPosicao, 1000);
+        }
+    }
+    
+    // Tenta criar os campos imediatamente
+    setTimeout(criarCamposPosicao, 500);
+    
+    // Também quando a aba de reservas for aberta
+    const observer = new MutationObserver(function() {
+        const reservasAba = document.getElementById('aba-reservas');
+        if (reservasAba && reservasAba.classList.contains('active')) {
+            setTimeout(criarCamposPosicao, 300);
+        }
+    });
+    observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+    
+    // Também quando clicar no botão FORÇAR POSIÇÃO
+    const btnForcar = document.getElementById('btn-forcar-posicao');
+    if (btnForcar) {
+        btnForcar.addEventListener('click', function() {
+            setTimeout(criarCamposPosicao, 100);
+        });
+    }
+    
+    console.log("✅ Sistema de correção de posição ativado!");
+});
+</script>
 </body>
 </html>

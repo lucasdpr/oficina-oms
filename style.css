@@ -2041,3 +2041,94 @@ h1, h2, h3, h4, h5, h6 {
     min-width: 80px;
   }
 }
+/* Força a exibição dos selects na tabela de reservas */
+#estoque-table-body select,
+#estoque-table-body .premium-select {
+    display: inline-block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    min-width: 60px !important;
+    height: 30px !important;
+    padding: 4px 8px !important;
+    font-size: 0.75rem !important;
+    background: var(--bg-input) !important;
+    color: var(--text-heading) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 4px !important;
+    appearance: auto !important;
+    -webkit-appearance: auto !important;
+}
+
+#estoque-table-body select option {
+    background: var(--bg-main) !important;
+    color: var(--text-heading) !important;
+    padding: 4px !important;
+}
+/* FORÇA A EXIBIÇÃO DOS SELECTS NA TABELA DE RESERVAS */
+#estoque-table-body select {
+    display: inline-block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    min-width: 50px !important;
+    height: auto !important;
+    padding: 4px 6px !important;
+    font-size: 12px !important;
+    background: #1a1a2e !important;
+    color: #e0e0e0 !important;
+    border: 1px solid #444 !important;
+    border-radius: 4px !important;
+    appearance: auto !important;
+    -webkit-appearance: auto !important;
+    pointer-events: auto !important;
+    z-index: 100 !important;
+}
+
+#estoque-table-body select option {
+    background: #1a1a2e !important;
+    color: #e0e0e0 !important;
+    padding: 4px 8px !important;
+}
+
+#estoque-table-body select:hover {
+    border-color: #38bdf8 !important;
+}
+
+#estoque-table-body select:focus {
+    outline: 2px solid #38bdf8 !important;
+    outline-offset: 1px !important;
+}
+/* FORÇA A EXIBIÇÃO DOS SELECTS NA TABELA DE RESERVAS */
+#estoque-table-body select {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-width: 60px !important;
+    height: 30px !important;
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+    background: #1a1a2e !important;
+    color: #e0e0e0 !important;
+    border: 1px solid #38bdf8 !important;
+    border-radius: 4px !important;
+    appearance: auto !important;
+    -webkit-appearance: auto !important;
+    pointer-events: auto !important;
+    z-index: 999 !important;
+    position: relative !important;
+}
+
+#estoque-table-body select option {
+    background: #1a1a2e !important;
+    color: #e0e0e0 !important;
+    padding: 4px 8px !important;
+}
+
+#estoque-table-body select:hover {
+    border-color: #10b981 !important;
+    cursor: pointer !important;
+}
+
+#estoque-table-body select:focus {
+    outline: 2px solid #38bdf8 !important;
+    outline-offset: 1px !important;
+}
