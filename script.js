@@ -1,3 +1,7 @@
+// ==========================================
+// SCRIPT.JS - PARTE 1
+// ==========================================
+
 import { 
     MOTIVOS_RETIRO, 
     CHECKLIST_RECEBIMENTO, 
@@ -254,6 +258,9 @@ function abrirAba(event, idAba) {
         document.getElementById('sidebar-menu').classList.remove('open');
     }
 }
+// ==========================================
+// SCRIPT.JS - PARTE 2
+// ==========================================
 
 // ==========================================
 // HISTÓRICO E AUDITORIA
@@ -432,17 +439,29 @@ function renderizarGraficosMCC(mccNumero) {
     if (!container) return;
 
     const divFiltroVeio = document.getElementById(`filtros-veio-mcc${mccNumero}`);
-    const veioAtivo = divFiltroVeio ? divFiltroVeio.querySelector('.active').getAttribute('data-valor') : 'TODOS';
+    const veioAtivo = divFiltroVeio ? divFiltroVeio.querySelector('.active')?.getAttribute('data-valor') : 'TODOS';
 
     const divFiltroStatus = document.getElementById(`filtros-status-mcc${mccNumero}`);
-    const statusAtivo = divFiltroStatus ? divFiltroStatus.querySelector('.active').getAttribute('data-valor') : 'TODOS';
+    const statusAtivo = divFiltroStatus ? divFiltroStatus.querySelector('.active')?.getAttribute('data-valor') : 'TODOS';
 
-    let filtrados = BANCO_ATIVOS.filter(a => a.local && a.local.includes(`MCC ${mccNumero}`));
+    // 🔴 FILTRA APENAS OS ATIVOS QUE ESTÃO INSTALADOS NA MÁQUINA
+    let filtrados = BANCO_ATIVOS.filter(a => {
+        // Está na máquina (não em reparo/reserva)
+        const estaNaMaquina = a.local && a.local.includes(`MCC ${mccNumero}`) && !a.local.includes("Oficina");
+        // OU tem veio definido e status Instalado
+        const estaInstalado = a.veio && a.status === "Instalado";
+        return estaNaMaquina || estaInstalado;
+    });
 
     if (veioAtivo !== 'TODOS') {
-        filtrados = filtrados.filter(a => a.local && a.local.includes(`Veio ${veioAtivo}`));
+        filtrados = filtrados.filter(a => {
+            const localVeio = a.local && a.local.includes(`Veio ${veioAtivo}`);
+            const veioProp = a.veio === veioAtivo;
+            return localVeio || veioProp;
+        });
     }
 
+    // 🔴 FILTRO DE STATUS (opcional - só aplica se não for TODOS)
     if (statusAtivo !== 'TODOS') {
         filtrados = filtrados.filter(a => {
             const pct = a.meta > 0 ? (a.ton / a.meta) * 100 : 0;
@@ -456,15 +475,14 @@ function renderizarGraficosMCC(mccNumero) {
     filtrados.sort((a, b) => (a.ordem || 999) - (b.ordem || 999));
 
     if (filtrados.length === 0) {
-        container.innerHTML = `<div class="vazio">Nenhum equipamento encontrado com a combinação de filtros.</div>`;
+        container.innerHTML = `<div class="vazio">Nenhum equipamento instalado no MCC ${mccNumero}.</div>`;
         return;
     }
 
     container.innerHTML = filtrados.map(gerarCardGraficoHTML).join("");
 }
 
-
-    // ==========================================
+// ==========================================
 // FUNÇÕES AUXILIARES - GERADOR DE SLOTS MCC 2/3
 // ==========================================
 function gerarSlotsMCC23() {
@@ -513,13 +531,17 @@ function mapearSlotLegadoMCC23(peca) {
         }
     }
     return null;
-}
+}// ==========================================
+// SCRIPT.JS - PARTE 3 (FINAL)
+// ==========================================
 
 // ==========================================
 // CONFIGURAÇÕES DAS MÁQUINAS
 // ==========================================
+// ==========================================
+// CONFIGURAÇÕES DAS MÁQUINAS
+// ==========================================
 const CONFIGURACOES_MAQUINAS = {
-
     // ==========================================
     // MÁQUINA 4 - VEIO H
     // ==========================================
@@ -581,7 +603,7 @@ const CONFIGURACOES_MAQUINAS = {
     },
 
     // ==========================================
-    // MÁQUINA 4 - VEIO G
+    // MÁQUINA 4 - VEIO G (AGORA COM SLOTS!)
     // ==========================================
     "G": {
         id: "MCC4_G",
@@ -589,8 +611,29 @@ const CONFIGURACOES_MAQUINAS = {
         mcc: "4",
         veio: "G",
         veioDisplay: "G",
-        slots: [],
+        slots: [
+            { id: "MOLDE", nome: "Molde Alta Perf.", tipo: "Molde" },
+            { id: "BENDER", nome: "Dobrador (Bender)", tipo: "Bender" },
+            { id: "BOW-1", nome: "Curvo Bow #01", tipo: "Bow" },
+            { id: "BOW-2", nome: "Curvo Bow #02", tipo: "Bow" },
+            { id: "BOW-3", nome: "Curvo Bow #03", tipo: "Bow" },
+            { id: "BOW-4", nome: "Curvo Bow #04", tipo: "Bow" },
+            { id: "BOW-5", nome: "Curvo Bow #05", tipo: "Bow" },
+            { id: "STR-1", nome: "Endireitador R1", tipo: "Straightener" },
+            { id: "STR-2", nome: "Endireitador R2", tipo: "Straightener" },
+            { id: "HOR-8", nome: "Segmento Horizontal #08", tipo: "Horizontal" },
+            { id: "HOR-9", nome: "Segmento Horizontal #09", tipo: "Horizontal" },
+            { id: "HOR-10", nome: "Segmento Horizontal #10", tipo: "Horizontal" },
+            { id: "HOR-11", nome: "Segmento Horizontal #11", tipo: "Horizontal" },
+            { id: "HOR-12", nome: "Segmento Horizontal #12", tipo: "Horizontal" },
+            { id: "HOR-13", nome: "Segmento Horizontal #13", tipo: "Horizontal" },
+            { id: "HOR-14", nome: "Segmento Horizontal #14", tipo: "Horizontal" },
+            { id: "HOR-15", nome: "Segmento Horizontal #15", tipo: "Horizontal" },
+            { id: "HOR-16", nome: "Segmento Horizontal #16", tipo: "Horizontal" },
+            { id: "HOR-17", nome: "Segmento Horizontal #17", tipo: "Horizontal" }
+        ],
         mapearSlotLegado: function(peca) {
+            // Usa o mesmo mapeamento do Veio H
             return CONFIGURACOES_MAQUINAS["H"].mapearSlotLegado(peca);
         }
     },
@@ -648,9 +691,6 @@ const CONFIGURACOES_MAQUINAS = {
     }
 };
 
-// ==========================================
-// FUNÇÕES DE ACESSO
-// ==========================================
 function getConfiguracaoPorVeio(veio) {
     return CONFIGURACOES_MAQUINAS[veio] || null;
 }
@@ -660,9 +700,6 @@ function getSlotsPorVeio(veio) {
     return config ? config.slots : [];
 }
 
-// ==========================================
-// GERENCIADOR DE CHASSIS - SEQUENCIAMENTO DE VEIOS
-// ==========================================
 function mudarVeioVisualizado(veio) {
     document.querySelectorAll('.btn-veio-tab').forEach(b => b.classList.remove('active'));
     if (event && event.currentTarget) event.currentTarget.classList.add('active');
@@ -730,48 +767,51 @@ function mudarVeioVisualizado(veio) {
             }
         }
 
-       if (pecaEncontrada) {
-    const pct = pecaEncontrada.meta > 0 ? (pecaEncontrada.ton / pecaEncontrada.meta) * 100 : 0;
-    const corClass = pct >= 80 ? "danger" : pct >= 50 ? "warning" : "success";
-    const pctDisplay = pct.toFixed(1);
+        if (pecaEncontrada) {
+            const pct = pecaEncontrada.meta > 0 ? (pecaEncontrada.ton / pecaEncontrada.meta) * 100 : 0;
+            const corClass = pct >= 80 ? "danger" : pct >= 50 ? "warning" : "success";
+            const pctDisplay = pct.toFixed(1);
 
-    htmlSlots += `
-        <div class="ind-card" style="border-top: 3px solid var(--${corClass}); min-width: 260px; max-width: 300px; background: var(--bg-td); border-radius: var(--radius-md); padding: 16px 18px; transition: all var(--transition-base);">
-            <div class="flex-between" style="margin-bottom: 4px;">
-                <span class="font-code" style="font-size: 0.9rem; font-weight: 700; color: var(--text-heading);">${pecaEncontrada.id}</span>
-                <span class="bg-tag" style="font-size: 0.55rem;">${pecaEncontrada.tipo}</span>
-            </div>
-            <div class="flex-between" style="margin-bottom: 8px;">
-                <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fas fa-layer-group"></i> ${slot.nome}</span>
-                <span style="font-weight: 700; font-family: var(--font-mono); font-size: 1.1rem; color: var(--${corClass});">${pctDisplay}%</span>
-            </div>
-            <div class="progress-container" style="margin: 4px 0 10px 0;">
-                <div class="progress-bar bg-${corClass}" style="width: ${Math.min(pct, 100)}%; height: 6px; border-radius: 10px;"></div>
-            </div>
-            <div class="flex-between" style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 12px;">
-                <span>Ton: <strong class="font-code" style="color: var(--text-heading);">${Number(pecaEncontrada.ton).toLocaleString('pt-BR')}</strong></span>
-                <span>Lim: <strong class="font-code" style="color: var(--text-heading);">${Number(pecaEncontrada.meta || 0).toLocaleString('pt-BR')}</strong></span>
-                <span>Dias: <strong class="font-code" style="color: var(--text-heading);">${pecaEncontrada.dias || 0}</strong></span>
-            </div>
-            <div class="flex-between gap-10" style="gap: 8px;">
-                <button class="btn-xs-primary" style="flex: 1; padding: 6px; font-size: 0.65rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm);" onclick="abrirHistoricoIndividual('${pecaEncontrada.id}')">
-                    <i class="fas fa-book"></i> Prontuário
-                </button>
-                <button class="btn-outline-danger" style="flex: 1; padding: 6px; font-size: 0.65rem; border-radius: var(--radius-sm);" onclick="iniciarSaque('${pecaEncontrada.id}')">
-                    <i class="fas fa-exchange-alt"></i> Sacar
-                </button>
-            </div>
-        </div>`;
-} else {
-    htmlSlots += `
-        <div class="ind-card" style="border: 2px dashed var(--danger); background: var(--danger-bg); min-width: 260px; max-width: 300px; border-radius: var(--radius-md); padding: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; min-height: 140px;">
-            <i class="fas fa-exclamation-triangle" style="font-size: 28px; color: var(--danger); margin-bottom: 8px; opacity: 0.6;"></i>
-            <h4 style="color: var(--danger); font-size: 0.85rem; margin: 0;">${slot.nome}</h4>
-            <p style="color: var(--danger); font-size: 0.65rem; margin: 4px 0 12px 0; opacity: 0.7;">GAVETA VAZIA</p>
-            <button class="btn-premium btn-success" style="padding: 6px 16px; font-size: 0.7rem;" onclick="abrirAba(event, 'aba-reservas')">
-                <i class="fas fa-plus"></i> Alocar
-            </button>
-        </div>`;
+            htmlSlots += `
+                <div class="ind-card" style="border-top: 3px solid var(--${corClass}); min-width: 260px; max-width: 300px; background: var(--bg-td); border-radius: var(--radius-md); padding: 16px 18px; transition: all var(--transition-base);">
+                    <div class="flex-between" style="margin-bottom: 4px;">
+                        <span class="font-code" style="font-size: 0.9rem; font-weight: 700; color: var(--text-heading);">${pecaEncontrada.id}</span>
+                        <span class="bg-tag" style="font-size: 0.55rem;">${pecaEncontrada.tipo}</span>
+                    </div>
+                    <div class="flex-between" style="margin-bottom: 8px;">
+                        <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fas fa-layer-group"></i> ${slot.nome}</span>
+                        <span style="font-weight: 700; font-family: var(--font-mono); font-size: 1.1rem; color: var(--${corClass});">${pctDisplay}%</span>
+                    </div>
+                    <div class="progress-container" style="margin: 4px 0 10px 0;">
+                        <div class="progress-bar bg-${corClass}" style="width: ${Math.min(pct, 100)}%; height: 6px; border-radius: 10px;"></div>
+                    </div>
+                    <div class="flex-between" style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 12px;">
+                        <span>Ton: <strong class="font-code" style="color: var(--text-heading);">${Number(pecaEncontrada.ton).toLocaleString('pt-BR')}</strong></span>
+                        <span>Lim: <strong class="font-code" style="color: var(--text-heading);">${Number(pecaEncontrada.meta || 0).toLocaleString('pt-BR')}</strong></span>
+                        <span>Dias: <strong class="font-code" style="color: var(--text-heading);">${pecaEncontrada.dias || 0}</strong></span>
+                    </div>
+                    <div class="flex-between gap-10" style="gap: 8px;">
+                        <button class="btn-xs-primary" style="flex: 1; padding: 6px; font-size: 0.65rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm);" onclick="abrirHistoricoIndividual('${pecaEncontrada.id}')">
+                            <i class="fas fa-book"></i> Prontuário
+                        </button>
+                        <button class="btn-outline-danger" style="flex: 1; padding: 6px; font-size: 0.65rem; border-radius: var(--radius-sm);" onclick="iniciarSaque('${pecaEncontrada.id}')">
+                            <i class="fas fa-exchange-alt"></i> Sacar
+                        </button>
+                    </div>
+                </div>`;
+        } else {
+            htmlSlots += `
+                <div class="ind-card" style="border: 2px dashed var(--danger); background: var(--danger-bg); min-width: 260px; max-width: 300px; border-radius: var(--radius-md); padding: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; min-height: 140px;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 28px; color: var(--danger); margin-bottom: 8px; opacity: 0.6;"></i>
+                    <h4 style="color: var(--danger); font-size: 0.85rem; margin: 0;">${slot.nome}</h4>
+                    <p style="color: var(--danger); font-size: 0.65rem; margin: 4px 0 12px 0; opacity: 0.7;">GAVETA VAZIA</p>
+                    <button class="btn-premium btn-success" style="padding: 6px 16px; font-size: 0.7rem;" onclick="abrirAba(event, 'aba-reservas')">
+                        <i class="fas fa-plus"></i> Alocar
+                    </button>
+                </div>`;
+        }
+    }
+    container.innerHTML = htmlSlots;
 }
 
 // ==========================================
@@ -1950,29 +1990,6 @@ function trocarAbaSegZero(event, idAba) {
     }
     event.currentTarget.classList.add('active');
 }
-
-// ==========================================
-// INICIALIZAÇÃO
-// ==========================================
-document.addEventListener("DOMContentLoaded", () => {
-    if (typeof carregarTema === 'function') carregarTema();
-    if (typeof exibirBarraEmergencia === 'function') exibirBarraEmergencia();
-    
-    if (OPERADOR_LOGADO) {
-        const telaLogin = document.getElementById("tela-login-home");
-        const telaSistema = document.getElementById("container-sistema-oms");
-        
-        if (telaLogin) telaLogin.style.display = "none";
-        if (telaSistema) telaSistema.style.display = "flex";
-        
-        if (typeof atualizarInterfaceUsuario === 'function') atualizarInterfaceUsuario();
-        if (typeof calcularKpisGlobais === 'function') calcularKpisGlobais();
-        if (typeof renderPainelVeios === 'function') renderPainelVeios();
-        if (typeof renderAtivos === 'function') renderAtivos();
-        if (typeof renderReparos === 'function') renderReparos();
-        if (typeof renderReservas === 'function') renderReservas();
-    }
-});
 
 // ==========================================
 // EXPOSIÇÃO GLOBAL - TODAS AS FUNÇÕES
