@@ -273,10 +273,7 @@ export function renderReservas() {
 }
 
 // ==============================================================
-// EFETUAR SWAP DIRETO
-// ==============================================================
-// ==============================================================
-// SWAP DIRETO (INTELIGENTE E BLINDADO) - VERSÃO CORRIGIDA
+// SWAP DIRETO (INTELIGENTE, BLINDADO E OTIMIZADO)
 // ==============================================================
 function efetuarSwapDireto(tagNova) {
     if (typeof BANCO_ATIVOS === 'undefined') {
@@ -438,7 +435,7 @@ function efetuarSwapDireto(tagNova) {
     // ==========================================
     // REGISTRA NA PLANILHA (se disponível)
     // ==========================================
-    const mcc = itemNovo.mcc_compat || "4";  // ← DECLARAÇÃO ÚNICA AQUI
+    const mcc = itemNovo.mcc_compat || "4";
     const nomeMaquina = `MCC ${mcc}`;
     const nomeOperador = window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Operador Desconhecido";
     const pecaAntigaId = pecaExpulsa ? pecaExpulsaId : "Gaveta Vazia";
@@ -471,43 +468,38 @@ function efetuarSwapDireto(tagNova) {
     }
 
     // ==========================================
-    // 8. SALVAR E ATUALIZAR A INTERFACE
+    // 8. SALVAR E ATUALIZAR A INTERFACE (OTIMIZADO)
     // ==========================================
     
     localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
     console.log("💾 Dados salvos no LocalStorage");
-    
-    console.log("🔄 Atualizando interface...");
-    
-    if (typeof renderAtivos === 'function') renderAtivos();
-    if (typeof renderReservas === 'function') renderReservas();
-    if (typeof renderReparos === 'function') renderReparos();
-    if (typeof renderPainelVeios === 'function') renderPainelVeios();
-    if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
-    
-    console.log(`🔄 Atualizando visualização do Veio ${veioDestino}...`);
-    if (typeof window.mudarVeioVisualizado === 'function') {
-        window.mudarVeioVisualizado(veioDestino);
-    } else if (typeof mudarVeioVisualizado === 'function') {
-        mudarVeioVisualizado(veioDestino);
-    }
-    
-    // 🔴 FORÇA A RECARGA DA ABA DE VEIOS (se estiver ativa)
-    const abaFluxo = document.getElementById('aba-fluxo');
-    if (abaFluxo && abaFluxo.classList.contains('active')) {
-        console.log("🔄 Recarregando aba de fluxo...");
-        if (typeof renderPainelVeios === 'function') renderPainelVeios();
-    }
-    
-    // 🔴 FORÇA A RECARGA DA ABA DE ATIVOS (se estiver ativa)
-    const abaAtivos = document.getElementById('aba-ativos');
-    if (abaAtivos && abaAtivos.classList.contains('active')) {
-        console.log("🔄 Recarregando aba de ativos...");
-        if (typeof renderAtivos === 'function') renderAtivos();
-    }
-    
-    console.log("✅ SWAP concluído com sucesso!");
+
+    // 🔥 EXIBE O ALERTA IMEDIATAMENTE enquanto a tela atualiza em segundo plano (mais fluido!)
     alert(`✅ Sucesso! A peça [${itemNovo.id}] assumiu a gaveta ${slotChassi} do Veio ${veioDestino}.`);
+
+    // Usa um pequeno delay (80ms) para agregar as atualizações e não travar a UI
+    setTimeout(() => {
+        console.log("🔄 Atualizando interface em segundo plano...");
+        
+        // Atualiza todas as abas necessárias
+        if (typeof renderAtivos === 'function') renderAtivos();
+        if (typeof renderReservas === 'function') renderReservas();
+        if (typeof renderReparos === 'function') renderReparos();
+        if (typeof renderPainelVeios === 'function') renderPainelVeios();
+        if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
+        
+        // Atualiza a visualização do veio específico
+        console.log(`🔄 Atualizando visualização do Veio ${veioDestino}...`);
+        if (typeof window.mudarVeioVisualizado === 'function') {
+            window.mudarVeioVisualizado(veioDestino);
+        } else if (typeof mudarVeioVisualizado === 'function') {
+            mudarVeioVisualizado(veioDestino);
+        }
+        
+        console.log("✅ Interface atualizada com sucesso!");
+    }, 80); // Delay curto para dar fluidez
+
+    console.log("✅ SWAP concluído com sucesso!");
 }
 // ==============================================================
 // ROLOS

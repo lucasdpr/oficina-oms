@@ -656,7 +656,17 @@ function getSlotsPorVeio(veio) {
     return config ? config.slots : [];
 }
 
+let ultimoVeioVisualizado = null;
+
 function mudarVeioVisualizado(veio) {
+    // Se já está no mesmo veio, não faz nada (evita recarregamento desnecessário)
+    if (ultimoVeioVisualizado === veio) {
+        console.log(`⏭️ Veio ${veio} já está visível, pulando...`);
+        return;
+    }
+    ultimoVeioVisualizado = veio;
+
+    // Atualiza os botões de veio
     document.querySelectorAll('.btn-veio-tab').forEach(b => b.classList.remove('active'));
     
     if (window.event && window.event.currentTarget) {
@@ -669,6 +679,7 @@ function mudarVeioVisualizado(veio) {
         });
     }
     
+    // Atualiza o título
     const titulo = document.getElementById("titulo-veio-focado");
     if (titulo) {
         const config = getConfiguracaoPorVeio(veio);
