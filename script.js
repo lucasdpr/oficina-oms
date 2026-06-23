@@ -895,11 +895,45 @@ function confirmarRelatorio() {
     fecharModalRelatorio();
 }
 
+// ==============================================================
+// CORRIGIR DATAS DE REPARO PARA EQUIPAMENTOS EXISTENTES
+// ==============================================================
+function corrigirDatasReparo() {
+    if (!confirm("Isso vai corrigir as datas de início dos equipamentos em reparo. Deseja continuar?")) return;
+    
+    const agora = Date.now();
+    let corrigidos = 0;
+    
+    BANCO_ATIVOS.forEach(a => {
+        if (a.local === "Oficina / Reparo" && !a.dataReparo) {
+            // Se já tem dias registrados, subtrai para manter a contagem
+            const diasAntigos = a.dias || 0;
+            a.dataReparo = agora - (diasAntigos * 24 * 60 * 60 * 1000);
+            corrigidos++;
+            console.log(`✅ Corrigido: ${a.id} - dias anteriores: ${diasAntigos}`);
+        }
+    });
+    
+    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    
+    // Atualiza a tabela de reparos
+    if (typeof renderReparos === 'function') renderReparos();
+    
+    alert(`✅ ${corrigidos} equipamentos corrigidos. Recarregue a página se necessário.`);
+}
+
+// Expor globalmente para o botão
+window.corrigirDatasReparo = corrigirDatasReparo;
 function executarSaqueFinal(id, laudo) {
     let item = BANCO_ATIVOS.find(a => a.id === id);
     if (item) {
         let loc = item.local;
         item.local = "Oficina / Reparo";
+        // 🔥 INÍCIO DA CONTAGEM AUTOMÁTICA
+        item.dataReparo = Date.now();  // salva o momento exato
+        item.dias = 0;                // zera o contador (será calculado dinamicamente)
+        // 🔥 FIM DA CONTAGEM
+
         localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
         registrarHistorico(id, `Sacado da linha (${loc}) p/ Reparo. ${laudo}`);
         
@@ -910,40 +944,64 @@ function executarSaqueFinal(id, laudo) {
         renderReservas();
     }
 }
-
+// ==============================================================
+// RENDER REPAROS (com correção automática de dataReparo)
+// ==============================================================
 function renderReparos() {
     const repBody = document.getElementById("reparos-table-body");
     if (!repBody) return;
 
+    // 🔥 CORREÇÃO AUTOMÁTICA: para cada item em reparo sem dataReparo, define uma data baseada no campo 'dias'
+    let precisaSalvar = false;
+    BANCO_ATIVOS.forEach(a => {
+        if (a.local === "Oficina / Reparo" && !a.dataReparo) {
+            const diasAtuais = a.dias || 0;
+            // Se já tem dias > 0, subtrai da data atual para manter a contagem
+            // Se dias = 0, define como agora
+            a.dataReparo = Date.now() - (diasAtuais * 24 * 60 * 60 * 1000);
+            precisaSalvar = true;
+            console.log(`🔧 Corrigido: ${a.id} - dataReparo definida (dias atuais: ${diasAtuais})`);
+        }
+    });
+    if (precisaSalvar) {
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+        console.log("✅ Correção automática de dataReparo salva.");
+    }
+
     const reparos = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reparo");
 
     if (reparos.length === 0) {
-        repBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Nenhum equipamento aguardando reparo.</td></tr>`;
-    } else {
-        repBody.innerHTML = reparos.map(a => {
-            const pct = a.meta > 0 ? ((a.ton / a.meta) * 100) : 0;
-            const pctFixed = pct.toFixed(1);
-            return `
-                <tr>
-                    <td class="font-code">${a.id}</td>
-                    <td><span class="ind-card-tag bg-tag">${a.tipo} <span style="opacity:0.7; font-size:10px;">(MCC ${a.mcc_compat || ''})</span></span></td>
-                    <td>
-                        <div class="flex-align-center gap-10">
-                            <span class="font-code bold w-40" style="color: var(--text-heading);">${pctFixed}%</span>
-                            <div class="ind-gauge-bar premium-bar w-100px">
-                                <div class="ind-gauge-fill bg-danger" style="width: ${Math.min(pct, 100)}%;"></div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="flex-align-center gap-10 action-buttons-mobile">
-                            <button class="btn-premium btn-warning" onclick="abrirModalConcluirReparo('${a.id}')"><i class="fas fa-hammer"></i> Concluir</button>
-                            <button class="btn-premium" style="background:transparent; border-color:var(--text-accent); color:var(--text-accent); padding: 8px 12px;" onclick="abrirHistoricoIndividual('${a.id}')" title="Ver Prontuário"><i class="fas fa-book-open"></i></button>
-                        </div>
-                    </td>
-                </tr>`;
-        }).join("");
+        repBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nenhum equipamento aguardando reparo.</td></tr>`;
+        return;
     }
+
+    repBody.innerHTML = reparos.map(a => {
+        const pct = a.meta > 0 ? ((a.ton / a.meta) * 100) : 0;
+        const pctFixed = pct.toFixed(1);
+        const dias = calcularDias(a); // agora vai funcionar porque dataReparo foi corrigido
+        const btnExcluir = `<button class="btn-outline-danger" style="border-color:var(--danger); color:var(--danger); padding: 4px 8px;" onclick="window.excluirEquipamento('${a.id}')" title="Excluir equipamento"><i class="fas fa-trash"></i></button>`;
+        return `
+            <tr>
+                <td class="font-code">${a.id}</td>
+                <td><span class="ind-card-tag bg-tag">${a.tipo} <span style="opacity:0.7; font-size:10px;">(MCC ${a.mcc_compat || ''})</span></span></td>
+                <td>
+                    <div class="flex-align-center gap-10">
+                        <span class="font-code bold w-40" style="color: var(--text-heading);">${pctFixed}%</span>
+                        <div class="ind-gauge-bar premium-bar w-100px">
+                            <div class="ind-gauge-fill bg-danger" style="width: ${Math.min(pct, 100)}%;"></div>
+                        </div>
+                    </div>
+                </td>
+                <td style="font-weight:bold; color:var(--warning);">${dias} dias</td>
+                <td>
+                    <div class="flex-align-center gap-10 action-buttons-mobile">
+                        <button class="btn-premium btn-warning" onclick="window.abrirModalConcluirReparo('${a.id}')"><i class="fas fa-hammer"></i> Concluir</button>
+                        <button class="btn-premium" style="background:transparent; border-color:var(--text-accent); color:var(--text-accent); padding: 8px 12px;" onclick="window.abrirHistoricoIndividual('${a.id}')" title="Ver Prontuário"><i class="fas fa-book-open"></i></button>
+                        ${btnExcluir}
+                    </div>
+                </td>
+            </tr>`;
+    }).join("");
 }
 
 // ==========================================
@@ -1015,6 +1073,10 @@ function confirmarConclusaoReparo() {
         msgHistorico = `Reparo PARCIAL finalizado. Retorna com ${novaTon}t e ${novosDias} dias.`;
     }
 
+    // 🔥 PARA A CONTAGEM QUANDO FINALIZAR
+    item.dataReparo = null;  // remove a referência
+    // 🔥 SE FOR GERAL, já zerou. Se for PARCIAL, mantém os dias manuais.
+
     item.local = "Oficina / Reserva";
     localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
     registrarHistorico(item.id, msgHistorico);
@@ -1024,6 +1086,16 @@ function confirmarConclusaoReparo() {
     renderReservas();
     renderAtivos();
     calcularKpisGlobais();
+
+    // 🔥 VAI PARA A ABA DE RESERVAS PARA MOSTRAR A PEÇA
+    abrirAba(null, 'aba-reservas');
+
+    // 🔥 GARANTIA EXTRA
+    setTimeout(() => {
+        if (typeof renderReservas === 'function') {
+            renderReservas();
+        }
+    }, 100);
 }
 
 // ==========================================
@@ -1909,6 +1981,10 @@ function fazerCelulaEditavel(elemento, id, campo) {
                 }
                 item.id = novoValor;
             } else if (campo === 'dias') {
+                // 🔥 SE O ITEM ESTIVER EM REPARO, AO EDITAR OS DIAS, REINICIAMOS O RELÓGIO
+                if (item.local === "Oficina / Reparo") {
+                    item.dataReparo = Date.now(); // reinicia a contagem a partir da edição
+                }
                 item.dias = parseFloat(novoValor) || 0;
             } else if (campo === 'ton') {
                 item.ton = parseFloat(novoValor) || 0;
@@ -1968,7 +2044,31 @@ function trocarAbaSegZero(event, idAba) {
     }
     event.currentTarget.classList.add('active');
 }
-
+function exibirToast(mensagem, tipo = 'success') {
+    const toast = document.getElementById('toastMessage');
+    if (!toast) {
+        // Se não existir o elemento, cria um temporário
+        const div = document.createElement('div');
+        div.id = 'toastMessage';
+        div.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:9999; background:#10b981; color:white; padding:14px 28px; border-radius:8px; font-weight:bold; box-shadow:0 4px 20px rgba(0,0,0,0.4); display:none;';
+        document.body.appendChild(div);
+        setTimeout(() => {
+            const el = document.getElementById('toastMessage');
+            if (el) {
+                el.textContent = mensagem;
+                el.style.display = 'block';
+                setTimeout(() => { el.style.display = 'none'; }, 4000);
+            }
+        }, 50);
+        return;
+    }
+    toast.textContent = mensagem;
+    toast.style.display = 'block';
+    if (tipo === 'success') toast.style.background = '#10b981';
+    else toast.style.background = '#f59e0b';
+    clearTimeout(window.toastTimeout);
+    window.toastTimeout = setTimeout(() => { toast.style.display = 'none'; }, 4000);
+}
 // ==========================================
 // CONEXÃO COM O GOOGLE SHEETS (API)
 // ==========================================
@@ -2007,6 +2107,7 @@ async function registrarSwapNaPlanilha(maquina, veio, slotId, pecaNova, pecaAnti
 
 // Expor a função globalmente
 window.registrarSwapNaPlanilha = registrarSwapNaPlanilha;
+
 // ==========================================
 // EXPOSIÇÃO GLOBAL - TODAS AS FUNÇÕES
 // ==========================================
