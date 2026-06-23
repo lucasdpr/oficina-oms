@@ -4,6 +4,7 @@ import { BANCO_ATIVOS, OPERADOR_LOGADO } from './banco.js';
 import { BIBLIOTECA_CHECKLISTS } from './dados.js'; 
 import { renderAtivos, renderReparos, renderReservas } from './ui.js';
 
+
 let ID_FOLHAO_ATUAL = null;
 let DADOS_FOLGA_ARESTA = {}; 
 

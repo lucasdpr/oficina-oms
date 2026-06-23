@@ -1,1113 +1,1282 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OMS - Dashboard Premium v32</title>
-  <link rel="stylesheet" href="style.css?v=4">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    /* FORÇA OS CAMPOS DE POSIÇÃO A APARECEREM */
-    #estoque-table-body input[type="number"] {
-      display: inline-block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-      border: 3px solid #10b981 !important;
-      background: #0f172a !important;
-      color: #ffffff !important;
-      width: 55px !important;
-      height: 32px !important;
-      padding: 4px 6px !important;
-      font-size: 14px !important;
-      font-weight: bold !important;
-      text-align: center !important;
-      border-radius: 4px !important;
-    }
-    #estoque-table-body select {
-      display: inline-block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-      padding: 4px 6px !important;
-      font-size: 12px !important;
-      border-radius: 4px !important;
-      border: 1px solid #444 !important;
-      background: #1a1a2e !important;
-      color: #e0e0e0 !important;
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>OMS | Oficina de Moldes e Segmentos – CSN</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
+    <style>
+        /* ===== RESET E VARIÁVEIS (identidade CSN) ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-base: #0a0e17;
+            --bg-surface: #111827;
+            --bg-card: #1a2332;
+            --primary: #f59e0b;    /* Laranja CSN */
+            --primary-hover: #d97706;
+            --secondary: #3b82f6;   /* Azul CSN */
+            --text-title: #ffffff;
+            --text-body: #c8d2e0;
+            --text-muted: #8a9bb5;
+            --border: #1f2a3f;
+            --radius: 12px;
+            --radius-lg: 20px;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-body);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-base);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn-primary {
+            background: var(--primary);
+            color: #0a0e17;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            transition: all var(--transition);
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text-title);
+            border: 1px solid var(--border);
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .btn-ghost {
+            background: rgba(245, 158, 11, 0.08);
+            color: var(--primary);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all var(--transition);
+            border: 1px solid rgba(245, 158, 11, 0.15);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-ghost:hover {
+            background: rgba(245, 158, 11, 0.15);
+            transform: translateY(-2px);
+        }
+
+        /* ===== BADGE ===== */
+        .badge {
+            display: inline-block;
+            padding: 6px 18px;
+            background: rgba(245, 158, 11, 0.12);
+            color: var(--primary);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .badge-csn {
+            background: rgba(59, 130, 246, 0.12);
+            color: var(--secondary);
+            border-color: rgba(59, 130, 246, 0.2);
+        }
+
+        /* ===== NAVBAR ===== */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 5%;
+            background: rgba(10, 14, 23, 0.92);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid var(--border);
+            transition: background var(--transition);
+        }
+
+        .logo {
+            color: var(--text-title);
+            font-size: 24px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo i {
+            color: var(--primary);
+            font-size: 26px;
+        }
+        .logo span {
+            color: var(--text-muted);
+            font-weight: 400;
+            font-size: 14px;
+            margin-left: 4px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+        }
+        .nav-links a {
+            color: var(--text-body);
+            font-size: 14px;
+            font-weight: 500;
+            transition: color var(--transition);
+            position: relative;
+        }
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: width var(--transition);
+        }
+        .nav-links a:hover {
+            color: var(--text-title);
+        }
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .nav-actions .btn-login {
+            color: var(--text-title);
+            font-weight: 600;
+            font-size: 14px;
+            transition: color var(--transition);
+        }
+        .nav-actions .btn-login:hover {
+            color: var(--primary);
+        }
+
+        /* ===== HERO ===== */
+        .hero {
+            padding: 140px 5% 80px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            right: -10%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.06) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 0;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-content .badge {
+            margin-bottom: 24px;
+        }
+
+        .hero-content h1 {
+            color: var(--text-title);
+            font-size: 52px;
+            font-weight: 800;
+            line-height: 1.08;
+            margin-bottom: 24px;
+            letter-spacing: -1.5px;
+        }
+        .hero-content h1 span {
+            color: var(--primary);
+        }
+
+        .hero-content p {
+            font-size: 18px;
+            color: var(--text-body);
+            max-width: 90%;
+            margin-bottom: 32px;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 40px;
+            margin-top: 40px;
+            padding-top: 32px;
+            border-top: 1px solid var(--border);
+        }
+        .hero-stats div {
+            text-align: left;
+        }
+        .hero-stats strong {
+            display: block;
+            color: var(--text-title);
+            font-size: 28px;
+            font-weight: 800;
+        }
+        .hero-stats span {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .hero-image-wrapper {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-image-wrapper .mockup-label {
+            position: absolute;
+            top: -20px;
+            right: -10px;
+            background: var(--primary);
+            color: #0a0e17;
+            font-weight: 700;
+            font-size: 11px;
+            padding: 6px 16px;
+            border-radius: 30px;
+            letter-spacing: 0.5px;
+            z-index: 2;
+        }
+
+        .dashboard-mockup {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            box-shadow: var(--shadow);
+            transform: perspective(1000px) rotateY(-3deg) rotateX(2deg);
+            transition: transform 0.6s ease;
+        }
+        .dashboard-mockup:hover {
+            transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
+        }
+
+        .mockup-header {
+            display: flex;
+            gap: 8px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 12px;
+        }
+        .mockup-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #3f3f46;
+        }
+        .mockup-dot:nth-child(1) { background: #ef4444; }
+        .mockup-dot:nth-child(2) { background: #f59e0b; }
+        .mockup-dot:nth-child(3) { background: #10b981; }
+
+        .mockup-body {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 12px;
+            height: 280px;
+        }
+        .mockup-sidebar {
+            background: #1a2332;
+            border-radius: 8px;
+        }
+        .mockup-main {
+            display: grid;
+            grid-template-rows: 1fr 2fr;
+            gap: 12px;
+        }
+        .mockup-kpi {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+        }
+        .mockup-kpi > div {
+            background: #1a2332;
+            border-radius: 8px;
+            height: 100%;
+        }
+        .mockup-chart {
+            background: #1a2332;
+            border-radius: 8px;
+        }
+
+        /* ===== SEÇÃO: PROPÓSITO (frase institucional) ===== */
+        .proposito {
+            padding: 80px 5%;
+            background: var(--bg-surface);
+            text-align: center;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .proposito .badge {
+            margin-bottom: 24px;
+        }
+
+        .proposito blockquote {
+            max-width: 900px;
+            margin: 0 auto;
+            font-size: 22px;
+            font-weight: 500;
+            color: var(--text-title);
+            line-height: 1.5;
+            font-style: italic;
+            padding: 0 20px;
+        }
+
+        .proposito blockquote::before {
+            content: '"';
+            font-size: 40px;
+            color: var(--primary);
+            opacity: 0.4;
+        }
+        .proposito blockquote::after {
+            content: '"';
+            font-size: 40px;
+            color: var(--primary);
+            opacity: 0.4;
+        }
+
+        .proposito .assinatura {
+            margin-top: 24px;
+            font-size: 14px;
+            color: var(--text-muted);
+            letter-spacing: 2px;
+        }
+        .proposito .assinatura strong {
+            color: var(--primary);
+        }
+
+        /* ===== SEÇÃO: IMAGENS DA EQUIPE ===== */
+        .equipe {
+            padding: 80px 5%;
+            background: var(--bg-base);
+            text-align: center;
+        }
+
+        .equipe h2 {
+            color: var(--text-title);
+            font-size: 40px;
+            margin-bottom: 16px;
+        }
+        .equipe > p {
+            max-width: 650px;
+            margin: 0 auto 40px;
+            font-size: 16px;
+        }
+
+        .galeria-imagens {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .galeria-imagens .img-wrapper {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            transition: all var(--transition);
+        }
+        .galeria-imagens .img-wrapper:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+        }
+
+        .galeria-imagens .img-wrapper img {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .galeria-imagens .img-wrapper .legenda {
+            padding: 16px 20px;
+            color: var(--text-body);
+            font-size: 14px;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+        }
+        .galeria-imagens .img-wrapper .legenda strong {
+            color: var(--text-title);
+        }
+
+        /* ===== SEÇÃO: DIFERENCIAIS ===== */
+        .diferenciais {
+            padding: 80px 5%;
+            background: var(--bg-surface);
+            text-align: center;
+            border-top: 1px solid var(--border);
+        }
+
+        .diferenciais h2 {
+            color: var(--text-title);
+            font-size: 40px;
+            margin-bottom: 16px;
+        }
+        .diferenciais > p {
+            max-width: 700px;
+            margin: 0 auto 60px;
+            font-size: 16px;
+        }
+
+        .diferenciais-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: left;
+        }
+
+        .diff-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 32px 28px;
+            border-radius: var(--radius);
+            transition: all var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .diff-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity var(--transition);
+        }
+        .diff-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-6px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        }
+        .diff-card:hover::before {
+            opacity: 1;
+        }
+        .diff-card i {
+            font-size: 32px;
+            color: var(--primary);
+            margin-bottom: 18px;
+            display: inline-block;
+        }
+        .diff-card h3 {
+            color: var(--text-title);
+            font-size: 20px;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+        .diff-card p {
+            color: var(--text-body);
+            font-size: 15px;
+        }
+
+        /* ===== SEÇÃO: SERVIÇOS ===== */
+        .servicos {
+            padding: 80px 5%;
+            background: var(--bg-base);
+            text-align: center;
+            border-top: 1px solid var(--border);
+        }
+
+        .servicos h2 {
+            color: var(--text-title);
+            font-size: 40px;
+            margin-bottom: 16px;
+        }
+        .servicos > p {
+            max-width: 700px;
+            margin: 0 auto 60px;
+            font-size: 16px;
+        }
+
+        .servicos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 24px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .servico-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 28px 20px;
+            border-radius: var(--radius);
+            transition: all var(--transition);
+            text-align: center;
+        }
+        .servico-item:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+        }
+        .servico-item i {
+            font-size: 32px;
+            color: var(--primary);
+            margin-bottom: 16px;
+            display: inline-block;
+        }
+        .servico-item h4 {
+            color: var(--text-title);
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        .servico-item p {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* ===== MCCs (lingotamento contínuo) ===== */
+        .sobre-mcc {
+            padding: 80px 5%;
+            background: var(--bg-surface);
+            text-align: center;
+            border-top: 1px solid var(--border);
+        }
+
+        .sobre-mcc h2 {
+            color: var(--text-title);
+            font-size: 40px;
+            margin-bottom: 16px;
+        }
+        .sobre-mcc > p {
+            max-width: 700px;
+            margin: 0 auto 40px;
+            font-size: 16px;
+        }
+
+        .mcc-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .mcc-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 32px 20px;
+            border-radius: var(--radius);
+            transition: all var(--transition);
+            text-align: center;
+        }
+        .mcc-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+        }
+        .mcc-card .numero {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--primary);
+            display: block;
+            margin-bottom: 8px;
+        }
+        .mcc-card h4 {
+            color: var(--text-title);
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+        .mcc-card span {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* ===== HISTÓRIA E GALERIA (INSERIDA AQUI A SEU PEDIDO) ===== */
+        .historia {
+            padding: 100px 5%;
+            background: var(--bg-base);
+            border-top: 1px solid var(--border);
+        }
+
+        .historia-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .historia-header h2 {
+            font-size: 40px;
+            color: var(--text-title);
+            margin-bottom: 16px;
+        }
+
+        .historia-header p {
+            max-width: 700px;
+            margin: 0 auto;
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+
+        .historia-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            max-width: 1400px;
+            margin: 0 auto;
+            align-items: center;
+        }
+
+        .historia-text .history-quote {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-title);
+            margin-bottom: 24px;
+            line-height: 1.4;
+        }
+
+        .historia-text > p {
+            font-size: 15px;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+        }
+
+        .history-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: all var(--transition);
+        }
+        
+        .history-card:hover {
+            border-color: var(--primary);
+            transform: translateX(8px);
+        }
+
+        .history-card i {
+            font-size: 24px;
+            color: var(--primary);
+            background: rgba(245, 158, 11, 0.1);
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            flex-shrink: 0;
+        }
+
+        .history-card.blue i { color: var(--secondary); background: rgba(59, 130, 246, 0.1); }
+        .history-card.green i { color: #10b981; background: rgba(16, 185, 129, 0.1); }
+
+        .history-card h4 {
+            color: var(--text-title);
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .history-card p {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* Galeria Estilo Masonry/Grid */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .photo-item {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: var(--bg-surface);
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.6s ease;
+        }
+
+        .photo-item:hover img {
+            transform: scale(1.05);
+        }
+
+        .photo-tall {
+            grid-row: span 2;
+        }
+
+        .photo-tall img {
+            min-height: 400px;
+        }
+
+        .photo-wide img {
+            min-height: 192px;
+        }
+
+        .photo-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(to top, rgba(10, 14, 23, 0.9), transparent);
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .photo-item:hover .photo-overlay {
+            opacity: 1;
+        }
+
+        /* ===== CTA FINAL ===== */
+        .cta-final {
+            padding: 80px 5%;
+            background: linear-gradient(135deg, var(--bg-base), var(--bg-surface));
+            text-align: center;
+            border-top: 1px solid var(--border);
+        }
+
+        .cta-final h2 {
+            color: var(--text-title);
+            font-size: 40px;
+            margin-bottom: 16px;
+        }
+        .cta-final p {
+            max-width: 550px;
+            margin: 0 auto 32px;
+            font-size: 16px;
+        }
+        .cta-final .cta-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            padding: 40px 5%;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            font-size: 14px;
+            color: var(--text-muted);
+            background: var(--bg-base);
+        }
+        .footer span {
+            color: var(--primary);
+            font-weight: 600;
+        }
+        .footer .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .footer .footer-links a {
+            color: var(--text-muted);
+            font-size: 13px;
+            transition: color var(--transition);
+        }
+        .footer .footer-links a:hover {
+            color: var(--text-title);
+        }
+
+        /* ===== RESPONSIVO ===== */
+        @media (max-width: 992px) {
+            .hero {
+                grid-template-columns: 1fr;
+                text-align: center;
+                padding-top: 120px;
+            }
+            .hero-content p {
+                max-width: 100%;
+                margin-left: auto;
+                margin-right: auto;
+            }
+            .hero-stats {
+                justify-content: center;
+            }
+            .hero-stats div {
+                text-align: center;
+            }
+            .nav-links {
+                display: none;
+            }
+            .mockup-body {
+                height: 200px;
+            }
+            .galeria-imagens {
+                grid-template-columns: 1fr;
+            }
+            .mcc-grid {
+                grid-template-columns: 1fr;
+                max-width: 300px;
+            }
+            .historia-grid { 
+                grid-template-columns: 1fr; 
+            }
+        }
+
+        @media (max-width: 600px) {
+            .hero-content h1 {
+                font-size: 36px;
+            }
+            .diferenciais h2,
+            .servicos h2,
+            .sobre-mcc h2,
+            .cta-final h2,
+            .equipe h2,
+            .historia-header h2 {
+                font-size: 30px;
+            }
+            .nav-actions .btn-primary {
+                padding: 8px 16px;
+                font-size: 12px;
+            }
+            .dashboard-mockup {
+                transform: none;
+            }
+            .mockup-body {
+                height: 160px;
+            }
+            .mockup-kpi {
+                grid-template-columns: 1fr;
+            }
+            .hero-stats {
+                flex-direction: column;
+                gap: 16px;
+            }
+            .proposito blockquote {
+                font-size: 18px;
+            }
+            .servicos-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .photo-grid { 
+                grid-template-columns: 1fr; 
+            } 
+            .photo-tall { 
+                grid-row: auto; 
+            }
+        }
+    </style>
 </head>
 <body>
 
-  <!-- TELA DE LOGIN -->
-  <div id="tela-login-home" class="login-home-container no-print">
-    <div class="login-bg-imagem"></div>
-    <div class="login-bg-overlay"></div>
-    <div class="login-card-central glass-panel">
-      <div class="login-logo-factory glow-effect">
-        <svg viewBox="0 0 24 24"><path d="M4,18V11.42L8.27,4H14V11H18V14H20V18H4M2,22V20H22V22H2M12,13H10V15H12V13M16,13H14V15H16V13M12,16H10V18H12V16M16,16H14V18H16V16Z" /></svg>
-      </div>
-      <div class="login-card-header">
-        <h1>SISTEMA OMS</h1>
-        <p>Aciaria - Lingotamento Contínuo</p>
-      </div>
-      <div class="login-industrial-form">
-        <div class="login-form-group">
-          <label>Operador / Líder</label>
-          <div class="login-input-wrapper">
-            <input type="text" id="login-nome" placeholder="Nome do Líder de Turno">
-            <i class="fas fa-user login-input-icon"></i>
-          </div>
+    <nav class="navbar">
+        <a href="#" class="logo">
+            <i class="fas fa-layer-group"></i> OMS <span>| CSN</span>
+        </a>
+        <div class="nav-links">
+            <a href="#proposito">Nosso Propósito</a>
+            <a href="#diferenciais">Serviços</a>
+            <a href="#equipe">Time</a>
+            <a href="#historia">História</a>
+            <a href="#mcc">MCCs</a>
         </div>
-        <div class="login-form-group">
-          <label>Matrícula</label>
-          <div class="login-input-wrapper">
-            <input type="password" id="login-matricula" placeholder="Matrícula Operacional">
-            <i class="fas fa-key login-input-icon"></i>
-          </div>
+        <div class="nav-actions">
+            <a href="app.html" class="btn-login">Entrar</a>
+            <a href="app.html" class="btn-primary">
+                <i class="fas fa-rocket"></i> Acessar Sistema
+            </a>
         </div>
-        <button type="button" class="btn-premium login-btn-submit" onclick="window.processarAutenticacaoHome()">Autenticar Terminal</button>
-      </div>
-    </div>
-  </div>
+    </nav>
 
-  <!-- ========================================= -->
-  <!-- CONTAINER PRINCIPAL DO SISTEMA -->
-  <!-- ========================================= -->
-  <div id="container-sistema-oms" class="app-container no-print" style="display: none;">
-    
-    <!-- BARRA DE EMERGÊNCIA -->
-    <div id="barra-emergencia" class="emergency-bar" style="display: none;">
-      <div class="emergency-content">
-        <span id="texto-emergencia"></span>
-        <button class="btn-close-emergency" onclick="window.encerrarEmergencia()">Resetar Sistema</button>
-      </div>
-    </div>
-
-    <!-- MOBILE HEADER -->
-    <div class="mobile-header glass-panel">
-      <div class="mobile-logo flex-align-center gap-10">
-        <div class="login-logo-factory" style="width: 35px; height: 35px; margin: 0; box-shadow: none;">
-          <svg viewBox="0 0 24 24" style="width: 20px; height: 20px;"><path d="M4,18V11.42L8.27,4H14V11H18V14H20V18H4M2,22V20H22V22H2M12,13H10V15H12V13M16,13H14V15H16V13M12,16H10V18H12V16M16,16H14V18H16V16Z" /></svg>
-        </div>
-        <strong style="color: var(--text-heading); font-size: 16px;">OMS Mobile</strong>
-      </div>
-      <button class="btn-mobile-menu" onclick="window.toggleSidebar()"><i class="fas fa-bars"></i></button>
-    </div>
-
-    <!-- SIDEBAR -->
-    <aside id="sidebar-menu" class="sidebar glass-panel">
-      <div class="sidebar-header flex-between">
-        <h2 style="color: var(--text-heading);"><i class="fas fa-industry text-accent"></i> Painel OMS</h2>
-        <button class="btn-close-sidebar hidden-desktop" onclick="window.toggleSidebar()"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="operator-box">
-        <div class="operator-info">
-          <i class="fas fa-user-shield"></i>
-          <div>
-            <small>Líder Logado</small>
-            <p id="nome-operador-logado" style="color: var(--text-heading);">...</p>
-          </div>
-        </div>
-        <button class="btn-auth" onclick="window.fazerLogout()">Encerrar Turno</button>
-      </div>
-      <nav class="sidebar-nav">
-        <a href="#" id="nav-painel" class="nav-link active" onclick="window.abrirAba(event, 'aba-painel')"><i class="fas fa-chart-pie"></i> Painel Geral OMS</a>
-        <a href="#" id="nav-fluxo" class="nav-link" onclick="window.abrirAba(event, 'aba-fluxo')"><i class="fas fa-stream"></i> Sequenciamento Veios</a>
-        <a href="#" id="nav-ativos" class="nav-link" onclick="window.abrirAba(event, 'aba-ativos')"><i class="fas fa-tools"></i> Matriz de Componentes</a>
-        
-        <div class="nav-divider">Oficina &amp; Log</div>
-        <a href="#" id="nav-reparos" class="nav-link highlight-warning" onclick="window.abrirAba(event, 'aba-reparos')"><i class="fas fa-wrench"></i> Peças em Reparo</a>
-        <a href="#" id="nav-reservas" class="nav-link highlight-success" onclick="window.abrirAba(event, 'aba-reservas')"><i class="fas fa-boxes"></i> Estoque Reserva</a>
-        <a href="#" id="nav-rolos" class="nav-link highlight-rolos" onclick="window.abrirAba(event, 'aba-rolos')"><i class="fas fa-scroll"></i> Estoque de Rolos</a>
-        <a href="#" id="nav-almoxarifado" class="nav-link highlight-almoxarifado" onclick="window.abrirAba(event, 'aba-almoxarifado')"><i class="fas fa-pallet"></i> Almoxarifado Central</a>
-        <a href="#" id="nav-historico" class="nav-link" onclick="window.abrirAba(event, 'aba-historico')"><i class="fas fa-history"></i> Auditoria (Histórico)</a>
-        
-        <div class="nav-divider">Análise Gráfica</div>
-        <a href="#" id="nav-mcc2" class="nav-link" onclick="window.abrirAba(event, 'aba-mcc2')"><i class="fas fa-chart-bar"></i> Gráficos MCC 2</a>
-        <a href="#" id="nav-mcc3" class="nav-link" onclick="window.abrirAba(event, 'aba-mcc3')"><i class="fas fa-chart-bar"></i> Gráficos MCC 3</a>
-        <a href="#" id="nav-mcc4" class="nav-link" onclick="window.abrirAba(event, 'aba-mcc4')"><i class="fas fa-chart-line"></i> Gráficos MCC 4</a>
-      </nav>
-      <button class="btn-panic glow-danger mt-15" onclick="window.dispararEmergencia()"><i class="fas fa-exclamation-triangle"></i> PÂNICO</button>
-    </aside>
-
-    <!-- MAIN CONTENT -->
-    <main class="main-content">
-      
-      <!-- SELETOR DE VEIOS -->
-      <section id="seletor-veios-container" class="veios-selector-section glass-panel hidden">
-        <h3><i class="fas fa-compress-alt"></i> Filtragem Rápida de Veio</h3>
-        <div class="veios-grid-buttons">
-          <button class="btn-veio-tab active" onclick="window.mudarVeioVisualizado('C')">Veio C (MCC 2)</button>
-          <button class="btn-veio-tab" onclick="window.mudarVeioVisualizado('D')">Veio D (MCC 2)</button>
-          <button class="btn-veio-tab" onclick="window.mudarVeioVisualizado('E')">Veio E (MCC 3)</button>
-          <button class="btn-veio-tab" onclick="window.mudarVeioVisualizado('F')">Veio F (MCC 3)</button>
-          <button class="btn-veio-tab" onclick="window.mudarVeioVisualizado('H')">Veio H (MCC 4)</button>
-          <button class="btn-veio-tab" onclick="window.mudarVeioVisualizado('G')">Veio G (MCC 4)</button>
-        </div>
-      </section>
-
-      <!-- ABA PAINEL -->
-      <section id="aba-painel" class="tab-content active">
-        <div class="welcome-box gradient-bg flex-between" style="flex-wrap: wrap; gap: 15px;">
-          <div>
-            <h1>Plataforma OMS - Gestão Avançada de Aciaria</h1>
-            <p style="color: var(--text-main);">Visão computacional e desgaste preditivo de componentes do lingotamento.</p>
-          </div>
-          <button class="btn-premium" onclick="window.toggleTheme()" id="btn-theme-toggle" style="background: var(--bg-card); color: var(--text-heading); border-color: var(--border-color);">
-            <i class="fas fa-sun" id="theme-icon"></i> <span id="theme-text">Modo Claro</span>
-          </button>
-        </div>
-        <div class="kpi-container" style="margin-top: 20px;">
-          <div class="kpi-card danger glass-panel"><div class="kpi-icon glow-danger"><i class="fas fa-radiation"></i></div><div class="kpi-data"><h4 id="kpi-criticos">0</h4><p>Críticos (&gt;= 80%)</p></div></div>
-          <div class="kpi-card warning glass-panel"><div class="kpi-icon glow-warning"><i class="fas fa-wrench"></i></div><div class="kpi-data"><h4 id="kpi-reparo">0</h4><p>Em Reparo</p></div></div>
-          <div class="kpi-card success glass-panel"><div class="kpi-icon glow-success"><i class="fas fa-boxes"></i></div><div class="kpi-data"><h4 id="kpi-reserva">0</h4><p>Reserva Pronta</p></div></div>
-        </div>
-      </section>
-      
-      <!-- ABA FLUXO -->
-      <section id="aba-fluxo" class="tab-content">
-        <div class="panel-card glass-panel">
-          <div class="panel-card-header"><h1 id="titulo-veio-focado">Sequenciamento Síncrono</h1></div>
-          <div id="container-fluxo-horizontal-scroll" class="graficos-container"></div>
-        </div>
-      </section>
-
-      <!-- ABA ATIVOS -->
-      <section id="aba-ativos" class="tab-content">
-        <div class="panel-card glass-panel">
-          <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
-            <h1><i class="fas fa-cubes"></i> Matriz Operacional Geral</h1>
-            <div class="custom-select-wrapper w-mobile-100">
-              <select id="filtro-tipo-ativo" onchange="window.renderAtivos()" class="premium-select w-100">
-                <option value="TODOS">Visão Geral (Todos)</option>
-                <option value="Molde">Apenas Moldes</option>
-                <option value="Cadeira Superior">Cadeiras Superiores</option>
-                <option value="Cadeira Inferior">Cadeiras Inferiores</option>
-                <option value="Bender">Bender</option>
-                <option value="Bow">Bow</option>
-                <option value="Straightener">Straightener</option>
-                <option value="Horizontal">Segmentos Horizontais</option>
-                <option value="Oficina / Reparo">Status: Em Reparo</option>
-                <option value="Oficina / Reserva">Status: Em Estoque</option>
-              </select>
+    <section class="hero">
+        <div class="hero-content">
+            <span class="badge">🏭 CSN – Volta Redonda</span>
+            <h1>Oficina de Moldes e <br><span>Segmentos</span></h1>
+            <p>
+                Referência em manutenção e recuperação de moldes e segmentos para
+                o lingotamento contínuo. Tecnologia, precisão e compromisso com a
+                excelência operacional da CSN.
+            </p>
+            <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+                <a href="app.html" class="btn-primary">
+                    <i class="fas fa-arrow-right"></i> Acessar Sistema
+                </a>
+                <a href="#proposito" class="btn-outline">
+                    <i class="fas fa-play-circle"></i> Conhecer
+                </a>
             </div>
-          </div>
-          <div class="table-responsive">
-            <table class="industrial-table premium-table">
-              <thead><tr><th>TAG ID</th><th>Tipo e Família</th><th>Localização</th><th>Dias</th><th>Ton</th><th>Limite</th><th>Saúde / Desgaste</th><th>Ações &amp; Consultas</th></tr></thead>
-              <tbody id="ativos-table-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- ABA MCC2 -->
-      <section id="aba-mcc2" class="tab-content">
-        <div class="panel-card glass-panel">
-          <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
-            <h1>Análise MCC 2</h1>
-            <div class="mcc-filters-wrapper">
-              <div class="mcc-filter-group" id="filtros-veio-mcc2">
-                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="window.aplicarFiltrosMCC(2, this)">Todos Veios</button>
-                <button class="btn-filter-mcc" data-valor="C" onclick="window.aplicarFiltrosMCC(2, this)">Veio C</button>
-                <button class="btn-filter-mcc" data-valor="D" onclick="window.aplicarFiltrosMCC(2, this)">Veio D</button>
-              </div>
-              <div class="mcc-filter-group" id="filtros-status-mcc2">
-                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="window.aplicarFiltrosMCC(2, this)"><i class="fas fa-filter"></i> Tudo</button>
-                <button class="btn-filter-mcc" style="color:var(--success);" data-valor="VERDE" onclick="window.aplicarFiltrosMCC(2, this)">🟢 0-49%</button>
-                <button class="btn-filter-mcc" style="color:var(--warning);" data-valor="AMARELO" onclick="window.aplicarFiltrosMCC(2, this)">🟡 50-79%</button>
-                <button class="btn-filter-mcc" style="color:var(--danger);" data-valor="VERMELHO" onclick="window.aplicarFiltrosMCC(2, this)">🔴 +80%</button>
-              </div>
+            <div class="hero-stats">
+                <div>
+                    <strong>150+</strong>
+                    <span>Profissionais capacitados</span>
+                </div>
+                <div>
+                    <strong>15+</strong>
+                    <span>Especialistas em manutenção</span>
+                </div>
+                <div>
+                    <strong>Laudos</strong>
+                    <span>100% digitais e rastreáveis</span>
+                </div>
             </div>
-          </div>
-          <div id="graficos-mcc2" class="graficos-container"></div>
         </div>
-      </section>
 
-      <!-- ABA MCC3 -->
-      <section id="aba-mcc3" class="tab-content">
-        <div class="panel-card glass-panel">
-          <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
-            <h1>Análise MCC 3</h1>
-            <div class="mcc-filters-wrapper">
-              <div class="mcc-filter-group" id="filtros-veio-mcc3">
-                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="window.aplicarFiltrosMCC(3, this)">Todos Veios</button>
-                <button class="btn-filter-mcc" data-valor="E" onclick="window.aplicarFiltrosMCC(3, this)">Veio E</button>
-                <button class="btn-filter-mcc" data-valor="F" onclick="window.aplicarFiltrosMCC(3, this)">Veio F</button>
-              </div>
-              <div class="mcc-filter-group" id="filtros-status-mcc3">
-                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="window.aplicarFiltrosMCC(3, this)"><i class="fas fa-filter"></i> Tudo</button>
-                <button class="btn-filter-mcc" style="color:var(--success);" data-valor="VERDE" onclick="window.aplicarFiltrosMCC(3, this)">🟢 0-49%</button>
-                <button class="btn-filter-mcc" style="color:var(--warning);" data-valor="AMARELO" onclick="window.aplicarFiltrosMCC(3, this)">🟡 50-79%</button>
-                <button class="btn-filter-mcc" style="color:var(--danger);" data-valor="VERMELHO" onclick="window.aplicarFiltrosMCC(3, this)">🔴 +80%</button>
-              </div>
+        <div class="hero-image-wrapper">
+            <span class="mockup-label">Sistema OMS</span>
+            <div class="dashboard-mockup">
+                <div class="mockup-header">
+                    <div class="mockup-dot"></div>
+                    <div class="mockup-dot"></div>
+                    <div class="mockup-dot"></div>
+                </div>
+                <div class="mockup-body">
+                    <div class="mockup-sidebar"></div>
+                    <div class="mockup-main">
+                        <div class="mockup-kpi">
+                            <div></div><div></div><div></div>
+                        </div>
+                        <div class="mockup-chart"></div>
+                    </div>
+                </div>
             </div>
-          </div>
-          <div id="graficos-mcc3" class="graficos-container"></div>
         </div>
-      </section>
+    </section>
 
-      <!-- ABA MCC4 -->
-      <section id="aba-mcc4" class="tab-content">
-        <div class="panel-card glass-panel">
-          <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
-            <h1>Análise MCC 4 (Alta Perf.)</h1>
-            <div class="mcc-filters-wrapper">
-              <div class="mcc-filter-group" id="filtros-veio-mcc4">
-                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="window.aplicarFiltrosMCC(4, this)">Todos Veios</button>
-                <button class="btn-filter-mcc" data-valor="H" onclick="window.aplicarFiltrosMCC(4, this)">Veio H</button>
-                <button class="btn-filter-mcc" data-valor="G" onclick="window.aplicarFiltrosMCC(4, this)">Veio G</button>
-              </div>
-              <div class="mcc-filter-group" id="filtros-status-mcc4">
-                <button class="btn-filter-mcc active" data-valor="TODOS" onclick="window.aplicarFiltrosMCC(4, this)"><i class="fas fa-filter"></i> Tudo</button>
-                <button class="btn-filter-mcc" style="color:var(--success);" data-valor="VERDE" onclick="window.aplicarFiltrosMCC(4, this)">🟢 0-49%</button>
-                <button class="btn-filter-mcc" style="color:var(--warning);" data-valor="AMARELO" onclick="window.aplicarFiltrosMCC(4, this)">🟡 50-79%</button>
-                <button class="btn-filter-mcc" style="color:var(--danger);" data-valor="VERMELHO" onclick="window.aplicarFiltrosMCC(4, this)">🔴 +80%</button>
-              </div>
+    <section id="proposito" class="proposito">
+        <span class="badge">Nosso Propósito</span>
+        <blockquote>
+            Cuidar da vida é o que nos move: promovemos um ambiente seguro e
+            saudável com conhecimento, técnica, ética e colaboração, porque
+            acreditamos que a segurança é um valor inegociável e a base que
+            transforma pessoas, equipes, organizações e o futuro da CSN.
+        </blockquote>
+        <div class="assinatura">
+            — <strong>OMS</strong> · GMLC / <strong>GGMA</strong>
+        </div>
+    </section>
+
+    <section id="equipe" class="equipe">
+        <span class="badge badge-csn">Nosso Time</span>
+        <h2>Mais de 150 profissionais capacitados</h2>
+        <p>
+            Equipe multidisciplinar composta por engenheiros, técnicos e
+            especialistas que atuam com excelência na recuperação de moldes
+            e segmentos para as máquinas de lingotamento contínuo.
+        </p>
+
+        <div class="galeria-imagens">
+            <div class="img-wrapper">
+                <img src="WhatsApp Image 2026-06-23 at 14.39.57.jpeg" alt="Oficina de Moldes e Segmentos - CSN" onerror="this.style.display='none'">
+                <div class="legenda">
+                    <strong>Oficina de Moldes e Segmentos</strong> — CSN Volta Redonda
+                </div>
             </div>
-          </div>
-          <div id="graficos-mcc4" class="graficos-container"></div>
-        </div>
-      </section>
-
-                <!-- ABA REPAROS -->
-<section id="aba-reparos" class="tab-content">
-  <div class="panel-card glass-panel" style="border-top: 4px solid var(--warning);">
-    <div class="panel-card-header">
-      <h2 style="color: var(--warning);"><i class="fas fa-tools"></i> Setor de Manutenção (Reparo)</h2>
-      <p class="text-muted" style="font-size: 13px;">Equipamentos que precisam de intervenção mecânica.</p>
-    </div>
-    <div class="table-responsive" style="margin-top: 15px;">
-      <table class="industrial-table premium-table">
-        <thead>
-          <tr>
-            <th>TAG Identificador</th>
-            <th>Tipo de Peça</th>
-            <th>Desgaste Apresentado</th>
-            <th>Dias em Reparo</th>
-            <th>Ações / Histórico</th>
-          </tr>
-        </thead>
-        <tbody id="reparos-table-body"></tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
-      <!-- ABA RESERVAS -->
-      <section id="aba-reservas" class="tab-content">
-        <div class="panel-card glass-panel" style="margin-bottom: 25px; border-top: 4px solid var(--success);">
-          <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
-            <div>
-              <h2 style="color: var(--success);"><i class="fas fa-boxes"></i> Estoque Disponível (Reserva)</h2>
-              <p class="text-muted" style="font-size: 13px; margin-top: 5px;">Peças prontas para alocação via Swap Automático.</p>
+            <div class="img-wrapper">
+                <img src="WhatsApp Image 2026-06-23 at 14.40.12.jpeg" alt="Propósito OMS - GMLC/GGMA" onerror="this.style.display='none'">
+                <div class="legenda">
+                    <strong>Propósito OMS</strong> — GMLC / GGMA
+                </div>
             </div>
-            <button class="btn-premium w-mobile-100" onclick="window.toggleFormAdicionar()"><i class="fas fa-plus"></i> Cadastrar Peça Nova</button>
-          </div>
+        </div>
+    </section>
 
-          <div id="form-novo-equipamento" class="cadastrar-box hidden">
-            <h3><i class="fas fa-box-open"></i> Especificar e Cadastrar Peça de Estoque</h3>
-            <div class="form-grid-4">
-              <div class="input-group">
-                <label>TAG (Identificador)</label>
-                <input type="text" id="add-tag" placeholder="Ex: MLD-NOVO-01">
-              </div>
-              <div class="input-group">
-                <label>Família e Tipo</label>
-                <select id="add-tipo" style="font-size: 13px;" onchange="window.atualizarPosicoesCadastro()">
-                  <option value="">Selecione primeiro...</option>
-                  <optgroup label="Família MCC 4 (Alta Perf.)">
-                    <option value="Molde|4">Molde Alta Performance</option>
-                    <option value="Bender|4">Bender</option>
-                    <option value="Bow|4">Curvo Bow</option>
-                    <option value="Straightener R1|4">Straightener R1</option>
-                    <option value="Straightener R2|4">Straightener R2</option>
-                    <option value="Horizontal|4">Segmento Horizontal</option>
-                  </optgroup>
-                  <optgroup label="Família MCC 2 e 3">
-                    <option value="Molde|2/3">Molde Convencional</option>
-                    <option value="Mesa Osciladora|2/3">Mesa Osciladora</option>
-                    <option value="Seguimento Zero|2/3">Seguimento Zero</option>
-                    <option value="Cadeira Superior|2/3">Cadeira Superior</option>
-                    <option value="Cadeira Inferior|2/3">Cadeira Inferior</option>
-                  </optgroup>
-                </select>
-              </div>
-              <div class="input-group">
-                <label>Posição / Slot Exato</label>
-                <select id="add-posicao" style="font-size: 13px; background: #0f172a;">
-                  <option value="">Aguardando Tipo...</option>
-                </select>
-              </div>
-              <div class="input-group">
-                <label>Veio de Aplicação</label>
-                <select id="add-veio" style="font-size: 13px;">
-                  <option value="H">Veio H</option>
-                  <option value="G">Veio G</option>
-                  <option value="C">Veio C</option>
-                  <option value="D">Veio D</option>
-                  <option value="E">Veio E</option>
-                  <option value="F">Veio F</option>
-                </select>
-              </div>
-              <div class="input-group">
-                <label>Meta Limite (Ton)</label>
-                <input type="number" id="add-meta" placeholder="Ex: 1500000">
-              </div>
-              <div class="input-group" style="grid-column: span 2; display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap;">
-                <label style="display: flex; align-items: center; gap: 5px; font-size: 12px; cursor: pointer; background: rgba(46, 204, 113, 0.1); padding: 10px; border-radius: 8px; border: 1px solid var(--success);">
-                  <input type="checkbox" id="add-instalar-direto"> Instalar direto na Máquina agora
-                </label>
-                <button class="btn-premium btn-success" onclick="window.processarCadastroPeca()" style="flex: 1;"><i class="fas fa-save"></i> Salvar</button>
-              </div>
+    <section id="diferenciais" class="diferenciais">
+        <span class="badge">Excelência em Manutenção</span>
+        <h2>O coração do lingotamento contínuo</h2>
+        <p>
+            Somos a oficina especializada em moldes e segmentos da CSN,
+            garantindo a máxima disponibilidade e qualidade dos equipamentos
+            que fazem a diferença na produção de aço.
+        </p>
+
+        <div class="diferenciais-grid">
+            <div class="diff-card">
+                <i class="fas fa-cogs"></i>
+                <h3>Recuperação de Moldes</h3>
+                <p>
+                    Serviço completo de inspeção, reparo e liberação de moldes,
+                    com rastreabilidade total e laudos técnicos detalhados.
+                </p>
             </div>
-          </div>
-          
-          <div class="table-responsive" style="margin-top: 15px;">
-            <table class="industrial-table premium-table">
-              <thead>
-                <tr>
-                  <th>TAG Identificador</th>
-                  <th>Família e Tipo</th>
-                  <th>Status</th>
-                  <th>Veio</th>
-                  <th>Posição</th>
-                  <th>Ações / Alocação Automática</th>
-                </tr>
-              </thead>
-              <tbody id="estoque-table-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-      
-      <!-- ABA ROLOS -->
-      <section id="aba-rolos" class="tab-content">
-        <div class="panel-card glass-panel" style="border-top: 4px solid var(--text-accent);">
-          <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
-            <div>
-              <h2 style="color: var(--text-accent);"><i class="fas fa-scroll"></i> Almoxarifado Central: Estoque de Rolos</h2>
-              <p class="text-muted" style="font-size: 13px; margin-top: 5px;">Controle de quantitativo de rolos agrupado por Equipamento.</p>
+
+            <div class="diff-card">
+                <i class="fas fa-ruler-combined"></i>
+                <h3>Manutenção de Segmentos</h3>
+                <p>
+                    Atuação em todos os segmentos do lingotamento, incluindo
+                    Bender, Bow, Straightener e horizontais, com precisão métrica.
+                </p>
             </div>
-          </div>
-          <div class="table-responsive" style="margin-top: 20px;">
-            <table class="industrial-table premium-table">
-              <thead>
-                <tr>
-                  <th>Modelo / Tipo de Rolo</th>
-                  <th>Conjunto Mecânico Relacionado</th>
-                  <th>Família de Máquina</th>
-                  <th>Saldo Atual Física</th>
-                  <th>Ações de Inventário</th>
-                </tr>
-              </thead>
-              <tbody id="rolos-table-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
 
-      <!-- ABA ALMOXARIFADO -->
-      <section id="aba-almoxarifado" class="tab-content">
-        <div class="panel-card glass-panel" style="border-top: 4px solid #a855f7;">
-          <div class="panel-card-header flex-between" style="flex-wrap: wrap; gap: 15px;">
-            <div>
-              <h2 style="color: #a855f7;"><i class="fas fa-pallet"></i> Almoxarifado Central (Peças e Consumíveis)</h2>
-              <p class="text-muted" style="font-size: 13px; margin-top: 5px;">Gestão de estoque geral integrado por código de material único.</p>
+            <div class="diff-card">
+                <i class="fas fa-clipboard-list"></i>
+                <h3>Laudos Digitais (Folhões)</h3>
+                <p>
+                    Cada equipamento liberado recebe um folhão digital completo,
+                    com checklists e medições de pass-line, hidráulica e elétrica.
+                </p>
             </div>
-            <div class="flex-align-center gap-10 w-mobile-100" style="flex-wrap: wrap;">
-              <div class="login-input-wrapper" style="position: relative; width: 260px; max-width: 100%;">
-                <input type="text" id="busca-material" placeholder="Buscar código ou descrição..." onkeyup="window.renderMateriais()" style="height: 40px; font-size: 13px; border-radius: 6px;">
-                <i class="fas fa-search login-input-icon" style="top: 11px; font-size: 14px; color: #a855f7;"></i>
-              </div>
-              <button class="btn-premium" style="border-color: #a855f7; color: #a855f7; background: rgba(168, 85, 247, 0.15); height: 40px;" onclick="window.toggleFormMaterial()">
-                <i class="fas fa-plus"></i> Cadastrar Entrada
-              </button>
+
+            <div class="diff-card">
+                <i class="fas fa-exchange-alt"></i>
+                <h3>Swap Inteligente</h3>
+                <p>
+                    Sistema integrado que permite a troca rápida de componentes
+                    entre a oficina e a linha de produção, com histórico automático.
+                </p>
             </div>
-          </div>
 
-          <div id="form-novo-material" class="cadastrar-box hidden" style="border-color: #a855f7; margin-top: 20px;">
-            <div class="flex-between">
-              <h3 style="color: #a855f7;"><i class="fas fa-box-open"></i> Lançamento de Entrada de Material</h3>
-              <button class="btn-xs-primary" style="color: var(--text-muted); cursor: pointer;" onclick="window.toggleFormMaterial()"><i class="fas fa-times"></i> Fechar</button>
+            <div class="diff-card">
+                <i class="fas fa-warehouse"></i>
+                <h3>Gestão de Estoque</h3>
+                <p>
+                    Controle preciso de peças em reserva, rolos e materiais
+                    consumíveis, com alertas de nível mínimo.
+                </p>
             </div>
-            <p class="text-muted" style="font-size: 12px; margin-bottom: 15px;"><strong>Nota do Sistema:</strong> Se o código (SKU) digitado já existir, a quantidade será somada automaticamente ao saldo do item.</p>
-            <div class="form-grid-4">
-              <div class="input-group">
-                <label>Código do Material (SKU)</label>
-                <input type="text" id="mat-codigo" placeholder="Ex: 1660669" class="font-code" style="text-transform: uppercase;">
-              </div>
-              <div class="input-group" style="grid-column: span 2;">
-                <label>Descrição / Texto Breve</label>
-                <input type="text" id="mat-descricao" placeholder="Ex: PARAFUSO CAB. SEXT. M12...">
-              </div>
-              <div class="input-group">
-                <label>Quantidade Entrando</label>
-                <input type="number" id="mat-qtd" placeholder="Ex: 50" min="1">
-              </div>
-              <div class="input-group" style="grid-column: span 4; display: flex; justify-content: flex-end; margin-top: 10px;">
-                <button class="btn-premium" style="background: #a855f7; color: white; border: none; padding: 12px 25px;" onclick="window.salvarEntradaMaterial()"><i class="fas fa-save"></i> Processar Entrada no Estoque</button>
-              </div>
+
+            <div class="diff-card">
+                <i class="fas fa-chart-bar"></i>
+                <h3>Análise de Desgaste</h3>
+                <p>
+                    Acompanhamento contínuo da tonelagem e dias de operação,
+                    permitindo decisões baseadas em dados reais.
+                </p>
             </div>
-          </div>
-
-          <div class="table-responsive" style="margin-top: 20px;">
-            <table class="industrial-table premium-table">
-              <thead>
-                <tr>
-                  <th>Cód. Material</th>
-                  <th>Descrição / Texto do Material</th>
-                  <th>Saldo Atual em Estoque</th>
-                  <th>Status do Nível</th>
-                  <th>Ações de Ajuste</th>
-                </tr>
-              </thead>
-              <tbody id="materiais-table-body"></tbody>
-            </table>
-          </div>
         </div>
-      </section>
+    </section>
 
-      <!-- ABA HISTÓRICO -->
-      <section id="aba-historico" class="tab-content">
-        <div class="panel-card glass-panel">
-          <h2><i class="fas fa-history"></i> Log de Auditoria Global</h2>
-          <p class="text-muted" style="font-size: 13px; margin-bottom: 15px;">Rastreabilidade completa de todas as operações e laudos.</p>
-          <div class="table-responsive">
-            <table class="industrial-table premium-table history-table">
-              <thead>
-                <tr><th>Horário</th><th>TAG / Módulo</th><th>Descrição da Ação e Laudo</th><th>Responsável</th></tr>
-              </thead>
-              <tbody id="historico-table-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
+    <section id="servicos" class="servicos">
+        <span class="badge badge-csn">Nossas Frentes</span>
+        <h2>O que fazemos</h2>
+        <p>
+            Da chegada do equipamento à liberação para a linha, cada etapa é
+            executada com rigor técnico e documentada digitalmente.
+        </p>
 
-    </main>
-  </div>
+        <div class="servicos-grid">
+            <div class="servico-item">
+                <i class="fas fa-clipboard-check"></i>
+                <h4>Inspeção de Chegada</h4>
+                <p>Análise crítica de cada componente, com checklists padronizados.</p>
+            </div>
+            <div class="servico-item">
+                <i class="fas fa-tools"></i>
+                <h4>Execução de Reparo</h4>
+                <p>Intervenções mecânicas, hidráulicas e elétricas com alta qualidade.</p>
+            </div>
+            <div class="servico-item">
+                <i class="fas fa-ruler"></i>
+                <h4>Aferição Pass-Line</h4>
+                <p>Medições precisas para garantir o alinhamento e desempenho.</p>
+            </div>
+            <div class="servico-item">
+                <i class="fas fa-check-double"></i>
+                <h4>Liberação Final</h4>
+                <p>Laudo completo e envio do equipamento à reserva ou linha.</p>
+            </div>
+        </div>
+    </section>
 
-  <!-- DIV PARA IMPRESSÃO (PDF) -->
-  <div id="print-content" class="print-only"></div>
+    <section id="mcc" class="sobre-mcc">
+        <span class="badge">Lingotamento Contínuo</span>
+        <h2>Atuação nas 3 MCCs</h2>
+        <p>
+            A OMS atende as três máquinas de lingotamento contínuo da CSN,
+            garantindo a disponibilidade e a qualidade dos componentes críticos.
+        </p>
 
-  <!-- ========================================= -->
-  <!-- MODAIS E FOLHÕES -->
-  <!-- ========================================= -->
-  
-  <!-- MODAL - FOLHÃO MCC4 -->
-  <div id="modal-folhao-mcc4" class="modal-overlay hidden no-print">
-    <div class="modal-content glass-panel premium-shadow" style="max-width: 900px; padding: 0;">
-      <div class="modal-header-fixed" style="padding: 20px; border-bottom: 1px solid var(--border-color); background: var(--bg-th); border-radius: 16px 16px 0 0;">
-        <div class="flex-between">
-          <h2 style="color: var(--text-accent);"><i class="fas fa-clipboard-list"></i> Liberação Oficial - Molde MCC4</h2>
-          <button class="btn-close-emergency" onclick="window.fecharFolhaoMCC4()"><i class="fas fa-times"></i></button>
+        <div class="mcc-grid">
+            <div class="mcc-card">
+                <span class="numero">MCC 2</span>
+                <h4>Veios C e D</h4>
+                <span>Moldes, segmentos e cadeiras</span>
+            </div>
+            <div class="mcc-card">
+                <span class="numero">MCC 3</span>
+                <h4>Veios E e F</h4>
+                <span>Moldes, segmentos e cadeiras</span>
+            </div>
+            <div class="mcc-card">
+                <span class="numero">MCC 4</span>
+                <h4>Veios G e H</h4>
+                <span>Moldes, bender, bow, straightener e horizontais</span>
+            </div>
         </div>
-        <div style="display: flex; gap: 15px; margin-top: 15px;">
-          <span class="ind-card-tag bg-tag" style="font-size: 14px;">TAG: <strong id="mcc4-tag-name"></strong></span>
-          <span class="text-muted" style="font-size: 14px;">Preenchimento obrigatório para envio à Reserva.</span>
-        </div>
-      </div>
-      <div class="folhao-tabs" style="display: flex; background: var(--bg-input); border-bottom: 1px solid var(--border-color); overflow-x: auto;">
-        <button class="folhao-tab active" onclick="window.trocarAbaFolhao(event, 'folhao-aba-dados')">1. Dados Básicos</button>
-        <button class="folhao-tab" onclick="window.trocarAbaFolhao(event, 'folhao-aba-recebimento')">2. Recebimento</button>
-        <button class="folhao-tab" onclick="window.trocarAbaFolhao(event, 'folhao-aba-revisao')">3. Revisão</button>
-        <button class="folhao-tab" onclick="window.trocarAbaFolhao(event, 'folhao-aba-hidraulica')">4. Hidráulica</button>
-        <button class="folhao-tab" onclick="window.trocarAbaFolhao(event, 'folhao-aba-final')">5. Check Final</button>
-        <button class="folhao-tab" onclick="window.trocarAbaFolhao(event, 'folhao-aba-peritagem')">6. Folgas de Aresta</button>
-        <button class="folhao-tab" onclick="window.trocarAbaFolhao(event, 'folhao-aba-eletrica')">7. Elétrica</button>
-        <button class="folhao-tab" onclick="window.trocarAbaFolhao(event, 'folhao-aba-materiais')">8. Materiais</button>
-      </div>
-      <div class="folhao-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
-        <div id="folhao-aba-dados" class="folhao-content active">
-          <div class="form-grid-2-mobile" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div class="input-group"><label>Data Início</label><input type="date" id="mcc4-data-inicio"></div>
-            <div class="input-group"><label>Data Fim</label><input type="date" id="mcc4-data-fim"></div>
-            <div class="input-group"><label>Nº do Ativo</label><input type="text" id="mcc4-num-molde" placeholder="Ex: 06"></div>
-            <div class="input-group"><label>Motivo do Reparo</label><input type="text" id="mcc4-motivo" placeholder="Ex: Delta 't' (Vazamento)"></div>
-            <div class="input-group"><label>Tipo de Execução</label><select id="mcc4-tipo-execucao" class="premium-select"><option value="PARCIAL">PARCIAL</option><option value="GERAL">GERAL</option></select></div>
-            <div class="input-group"><label>Desempenho</label><input type="text" id="mcc4-desempenho" placeholder="Ex: Face com ranhuras..."></div>
-          </div>
-        </div>
-        <div id="folhao-aba-recebimento" class="folhao-content hidden"><h3>Inspeção de Recebimento</h3><div id="container-check-recebimento" class="checklist-container"></div></div>
-        <div id="folhao-aba-revisao" class="folhao-content hidden"><h3>Revisão dos Componentes</h3><div id="container-check-revisao" class="checklist-container"></div></div>
-        <div id="folhao-aba-hidraulica" class="folhao-content hidden"><h3>Check List Hidráulico</h3><div id="container-check-hidraulica" class="checklist-container"></div></div>
-        <div id="folhao-aba-final" class="folhao-content hidden"><h3>Inspeção Final</h3><div id="container-check-final" class="checklist-container"></div></div>
-        <div id="folhao-aba-peritagem" class="folhao-content hidden"><h3>Folga de Aresta</h3><div id="folga-aresta-container"></div></div>
-        <div id="folhao-aba-eletrica" class="folhao-content hidden"><h3>Elétrica</h3><div id="container-eletrica"></div></div>
-        <div id="folhao-aba-materiais" class="folhao-content hidden"><h3>Materiais</h3><textarea id="materiais-utilizados-texto" class="premium-textarea" rows="6"></textarea></div>
-      </div>
-      <div class="modal-actions flex-between" style="padding: 20px; background: var(--bg-th); border-top: 1px solid var(--border-color); border-radius: 0 0 16px 16px;">
-        <button class="btn-outline-danger" onclick="window.fecharFolhaoMCC4()">Cancelar</button>
-        <button class="btn-premium btn-success" onclick="window.salvarLaudoInteligente()"><i class="fas fa-check-double"></i> Salvar Laudo</button>
-      </div>
-    </div>
-  </div>
+    </section>
 
-  <!-- MODAL - FOLHÃO R2 -->
-  <div id="modal-folhao-r2" class="modal-overlay hidden no-print">
-    <div class="modal-content glass-panel" style="max-width: 1100px; max-height: 90vh; overflow-y: auto;">
-      <div class="flex-between" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
-        <h2 style="color: var(--text-heading);"><i class="fas fa-clipboard-list text-blue-500 mr-2"></i> Liberação Oficial - STRAIGHTENER R2 (MCC 4)</h2>
-        <button class="btn-xs-primary" onclick="window.fecharFolhaoR2()" style="font-size: 20px; color: var(--text-muted);">&times;</button>
-      </div>
-      <div style="background: var(--bg-td); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed var(--text-accent);">
-        <div class="flex-between">
-          <span class="ind-card-tag bg-tag" id="r2-tag-name" style="font-size: 14px;">TAG: STR-R2</span>
-          <span style="font-size: 12px; color: var(--text-muted);">Preenchimento obrigatório para envio à Reserva.</span>
+    <section id="historia" class="historia">
+        <div class="historia-header">
+            <span class="badge badge-csn">Nossa Origem</span>
+            <h2>A Força por Trás da Aciaria</h2>
+            <p>O OMS não nasceu em um escritório convencional. Ele foi forjado no calor da operação, por engenheiros e mecânicos que vivem as dores reais do chão de fábrica todos os dias.</p>
         </div>
-      </div>
-      <div class="folhao-tabs" style="border-bottom: 1px solid var(--border-color); margin-bottom: 20px; display: flex; overflow-x: auto;">
-        <button class="folhao-tab active" onclick="window.trocarAbaR2(event, 'r2-aba-chegada')">1. Chegada</button>
-        <button class="folhao-tab" onclick="window.trocarAbaR2(event, 'r2-aba-execucao')">2. Execução</button>
-        <button class="folhao-tab" onclick="window.trocarAbaR2(event, 'r2-aba-saida')">3. Saída</button>
-        <button class="folhao-tab" onclick="window.trocarAbaR2(event, 'r2-aba-materiais')">4. Materiais</button>
-      </div>
-      <div class="folhao-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
-        <div id="r2-aba-chegada" class="folhao-content active">
-          <h3 style="margin-bottom: 10px; color: var(--text-heading);">Inspeção Geral de Chegada</h3>
-          <div class="table-responsive"><table class="premium-table"><thead><tr><th style="width:50px;">Item</th><th>Descrição</th><th style="width:60px;">SIM</th><th style="width:60px;">NÃO</th></tr></thead><tbody id="tabela-r2-inspecao-chegada"></tbody></table></div>
-          <h3 style="margin:25px 0 10px 0;color:var(--text-heading);">Aferição Pass Line (Chegada)</h3>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-            <div><h4 class="text-center text-accent">Base Inferior</h4><div class="table-responsive"><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="r2-passline-inf-chegada"></tbody></table></div></div>
-            <div><h4 class="text-center text-accent">Base Superior</h4><div class="table-responsive"><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="r2-passline-sup-chegada"></tbody></table></div></div>
-          </div>
-        </div>
-        <div id="r2-aba-execucao" class="folhao-content hidden">
-          <h3 style="margin-bottom:10px;color:var(--text-heading);">Checklist de Manutenção</h3>
-          <div class="table-responsive"><table class="premium-table"><thead><tr><th>Item</th><th>Descrição</th><th style="width:60px;">OK</th><th>Executante</th><th>Data</th></tr></thead><tbody id="r2-tabela-manutencao"></tbody></table></div>
-        </div>
-        <div id="r2-aba-saida" class="folhao-content hidden">
-          <h3 style="margin-bottom:10px;color:var(--text-heading);">Aferição Pass Line (Saída Final)</h3>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-            <div><h4 class="text-center text-accent">Base Inferior</h4><div class="table-responsive"><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="r2-passline-inf-saida"></tbody></table></div></div>
-            <div><h4 class="text-center text-accent">Base Superior</h4><div class="table-responsive"><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="r2-passline-sup-saida"></tbody></table></div></div>
-          </div>
-        </div>
-        <div id="r2-aba-materiais" class="folhao-content hidden">
-          <div class="flex-between" style="margin-bottom:10px;"><h3 style="color:var(--text-heading);">Materiais</h3><button class="btn-xs-primary" onclick="window.addLinhaMaterialR2()"><i class="fas fa-plus"></i> Adicionar</button></div>
-          <div class="table-responsive"><table class="premium-table"><thead><tr><th>Descrição</th><th style="width:100px;">Qtd</th></tr></thead><tbody id="r2-tabela-materiais"></tbody></table></div>
-        </div>
-      </div>
-      <div class="flex-between" style="margin-top:30px;border-top:1px solid var(--border-color);padding-top:15px;">
-        <button class="btn-outline-danger" onclick="window.fecharFolhaoR2()">Cancelar</button>
-        <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoR2()"><i class="fas fa-check-double"></i> Salvar</button>
-      </div>
-    </div>
-  </div>
 
-  <!-- MODAL - FOLHÃO HORIZONTAL -->
-  <div id="modal-folhao-horizontal" class="modal-overlay hidden no-print">
-    <div class="modal-content glass-panel" style="max-width: 1100px; max-height: 90vh; overflow-y: auto;">
-      <div class="flex-between" style="margin-bottom:20px;border-bottom:1px solid var(--border-color);padding-bottom:15px;">
-        <h2 style="color:var(--text-heading);"><i class="fas fa-ruler-horizontal text-purple-500 mr-2"></i> Liberação Oficial - HORIZONTAL (MCC 4)</h2>
-        <button class="btn-xs-primary" onclick="window.fecharFolhaoHorizontal()" style="font-size:20px;color:var(--text-muted);">&times;</button>
-      </div>
-      <div style="background:var(--bg-td);padding:15px;border-radius:8px;margin-bottom:20px;border:1px dashed var(--text-accent);">
-        <div class="flex-between"><span class="ind-card-tag bg-tag" id="horizontal-tag-name" style="font-size:14px;">TAG: HOR-1-4H</span><span style="font-size:12px;color:var(--text-muted);">Preenchimento obrigatório</span></div>
-      </div>
-      <div class="folhao-tabs" style="border-bottom:1px solid var(--border-color);margin-bottom:20px;display:flex;overflow-x:auto;">
-        <button class="folhao-tab active" onclick="window.trocarAbaHorizontal(event,'horiz-aba-dados')">1. Dados</button>
-        <button class="folhao-tab" onclick="window.trocarAbaHorizontal(event,'horiz-aba-chegada')">2. Chegada</button>
-        <button class="folhao-tab" onclick="window.trocarAbaHorizontal(event,'horiz-aba-execucao')">3. Execução</button>
-        <button class="folhao-tab" onclick="window.trocarAbaHorizontal(event,'horiz-aba-saida')">4. Saída</button>
-        <button class="folhao-tab" onclick="window.trocarAbaHorizontal(event,'horiz-aba-materiais')">5. Materiais</button>
-      </div>
-      <div class="folhao-body" style="padding:20px;max-height:60vh;overflow-y:auto;">
-        <div id="horiz-aba-dados" class="folhao-content active" style="display:block;">
-          <div class="form-grid-2-mobile" style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-            <div class="input-group"><label>Data Início/Fim</label><div style="display:flex;gap:10px;"><input type="date" id="horiz-data-inicio" class="w-100"><input type="date" id="horiz-data-fim" class="w-100"></div></div>
-            <div class="input-group"><label>Nº Segmento/Veio</label><div style="display:flex;gap:10px;"><input type="text" id="horiz-num-segmento" placeholder="Nº Seg." class="w-100"><select id="horiz-veio" class="premium-select w-100"><option value="G">Veio G</option><option value="H">Veio H</option></select></div></div>
-            <div class="input-group"><label>Motivo</label><input type="text" id="horiz-motivo" placeholder="Ex: Manutenção Preventiva"></div>
-            <div class="input-group"><label>Tipo Execução</label><select id="horiz-tipo-execucao" class="premium-select"><option value="PARCIAL">PARCIAL</option><option value="GERAL">GERAL</option></select></div>
-          </div>
+        <div class="historia-grid">
+            <div class="historia-text">
+                <div class="history-quote">
+                    "Construímos o software e os processos que nós mesmos sempre buscamos na manutenção industrial."
+                </div>
+                <p>
+                    Uma ferramenta que fala a língua da manutenção siderúrgica, elimina a burocracia do papel e foca no que realmente importa: a disponibilidade e a segurança dos ativos. Hoje, unimos a nossa vasta experiência técnica com a simplicidade digital.
+                </p>
+
+                <div class="history-card">
+                    <i class="fas fa-users-cog"></i>
+                    <div>
+                        <h4>Vasta experiência na operação</h4>
+                        <p>Engenheiros e mecânicos que vivem a siderurgia na prática, garantindo que o sistema funcione na realidade do chão de fábrica.</p>
+                    </div>
+                </div>
+
+                <div class="history-card blue">
+                    <i class="fas fa-shield-alt"></i>
+                    <div>
+                        <h4>Segurança e rastreabilidade</h4>
+                        <p>Cada laudo, check-list e medição é salvo em nuvem com assinatura digital, garantindo 100% de integridade nos processos.</p>
+                    </div>
+                </div>
+
+                <div class="history-card green">
+                    <i class="fas fa-sync-alt"></i>
+                    <div>
+                        <h4>Evolução contínua</h4>
+                        <p>As atualizações do sistema acompanham as reais necessidades dos operadores, supervisores e líderes da CSN.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="photo-grid">
+                <div class="photo-item photo-tall">
+                    <img src="USINAGEM.jpg" alt="Mecânico operando torno na Usinagem">
+                    <div class="photo-overlay">Usinagem de Precisão</div>
+                </div>
+                <div class="photo-item photo-wide">
+                    <img src="ELETRICA.jpg" alt="Manutenção Elétrica CSN">
+                    <div class="photo-overlay">Manutenção Elétrica</div>
+                </div>
+                <div class="photo-item photo-wide">
+                    <img src="SOLDA FOTO.jpg" alt="Soldador na manutenção">
+                    <div class="photo-overlay">Soldagem e Caldeiraria</div>
+                </div>
+            </div>
         </div>
-        <div id="horiz-aba-chegada" class="folhao-content hidden" style="display:none;">
-          <h3 style="margin-bottom:10px;color:var(--text-heading);">Inspeção Geral de Chegada</h3>
-          <div class="table-responsive"><table class="premium-table"><thead><tr><th style="width:50px;">Item</th><th>Descrição</th><th style="width:60px;">SIM</th><th style="width:60px;">NÃO</th></tr></thead><tbody id="tabela-horiz-inspecao-chegada"></tbody></table></div>
-          <h3 style="margin:25px 0 10px 0;color:var(--text-heading);">Aferição Pass Line (Chegada)</h3>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-            <div><h4 class="text-center text-accent">Base Inferior</h4><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="horiz-passline-inf-chegada"></tbody></table></div>
-            <div><h4 class="text-center text-accent">Base Superior</h4><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="horiz-passline-sup-chegada"></tbody></table></div>
-          </div>
+    </section>
+
+    <section class="cta-final">
+        <span class="badge">Pronto para otimizar sua manutenção?</span>
+        <h2>Acesse o sistema OMS</h2>
+        <p>
+            Gerencie os serviços da oficina, acompanhe laudos e tenha total
+            visibilidade do fluxo de reparos.
+        </p>
+        <div class="cta-buttons">
+            <a href="app.html" class="btn-primary">
+                <i class="fas fa-rocket"></i> Acessar Sistema
+            </a>
+            <a href="#proposito" class="btn-outline">
+                <i class="fas fa-info-circle"></i> Conheça a OMS
+            </a>
         </div>
-        <div id="horiz-aba-execucao" class="folhao-content hidden" style="display:none;">
-          <h3 style="margin-bottom:10px;color:var(--text-heading);">Checklist de Manutenção</h3>
-          <div class="table-responsive" style="max-height:400px;overflow-y:auto;"><table class="premium-table"><thead><tr><th>Item</th><th>Descrição</th><th style="width:60px;">OK</th><th>Executante</th><th>Data</th></tr></thead><tbody id="horiz-tabela-manutencao"></tbody></table></div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="#proposito">Propósito</a>
+            <a href="#diferenciais">Serviços</a>
+            <a href="#equipe">Time</a>
+            <a href="#historia">Nossa História</a>
+            <a href="#mcc">MCCs</a>
+            <a href="app.html">Sistema</a>
         </div>
-        <div id="horiz-aba-saida" class="folhao-content hidden" style="display:none;">
-          <h3 style="margin-bottom:10px;color:var(--text-heading);">Aferição Pass Line (Saída Final)</h3>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-            <div><h4 class="text-center text-accent">Base Inferior</h4><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="horiz-passline-inf-saida"></tbody></table></div>
-            <div><h4 class="text-center text-accent">Base Superior</h4><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="horiz-passline-sup-saida"></tbody></table></div>
-          </div>
-        </div>
-        <div id="horiz-aba-materiais" class="folhao-content hidden" style="display:none;">
-          <div class="flex-between" style="margin-bottom:10px;"><h3 style="color:var(--text-heading);">Materiais</h3><button class="btn-xs-primary" onclick="window.addLinhaMaterialHorizontal()"><i class="fas fa-plus"></i> Adicionar</button></div>
-          <table class="premium-table"><thead><tr><th>Descrição</th><th style="width:100px;">Qtd</th></tr></thead><tbody id="horiz-tabela-materiais"></tbody></table>
-        </div>
-      </div>
-      <div class="flex-between" style="margin-top:30px;border-top:1px solid var(--border-color);padding-top:15px;">
-        <button class="btn-outline-danger" onclick="window.fecharFolhaoHorizontal()">Cancelar</button>
-        <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoHorizontal()"><i class="fas fa-print"></i> Salvar</button>
-      </div>
-    </div>
-  </div>
+        <p>
+            &copy; 2026 <span>OMS</span> – Oficina de Moldes e Segmentos &bull;
+            CSN Volta Redonda &bull; GMLC / GGMA
+        </p>
+    </footer>
 
-  <!-- MODAL - FOLHÃO BOW -->
-  <div id="modal-folhao-bow" class="modal-overlay hidden no-print">
-    <div class="modal-content glass-panel" style="max-width:1100px;max-height:90vh;overflow-y:auto;">
-      <div class="flex-between" style="margin-bottom:20px;border-bottom:1px solid var(--border-color);padding-bottom:15px;">
-        <h2 style="color:var(--text-heading);"><i class="fas fa-magnet text-yellow-500 mr-2"></i> Liberação Oficial - BOW (MCC 4)</h2>
-        <button class="btn-xs-primary" onclick="window.fecharFolhaoBow()" style="font-size:20px;color:var(--text-muted);">&times;</button>
-      </div>
-      <div style="background:var(--bg-td);padding:15px;border-radius:8px;margin-bottom:20px;border:1px dashed var(--text-accent);">
-        <div class="flex-between"><span class="ind-card-tag bg-tag" id="bow-tag-name" style="font-size:14px;">TAG: BOW-1-4H</span><span style="font-size:12px;color:var(--text-muted);">Preenchimento obrigatório</span></div>
-      </div>
-      <div class="folhao-tabs" style="border-bottom:1px solid var(--border-color);margin-bottom:20px;display:flex;overflow-x:auto;">
-        <button class="folhao-tab active" onclick="window.trocarAbaBow(event,'bow-aba-dados')">1. Dados</button>
-        <button class="folhao-tab" onclick="window.trocarAbaBow(event,'bow-aba-chegada')">2. Chegada</button>
-        <button class="folhao-tab" onclick="window.trocarAbaBow(event,'bow-aba-execucao')">3. Execução</button>
-        <button class="folhao-tab" onclick="window.trocarAbaBow(event,'bow-aba-saida')">4. Saída</button>
-        <button class="folhao-tab" onclick="window.trocarAbaBow(event,'bow-aba-materiais')">5. Materiais</button>
-      </div>
-      <div class="folhao-body" style="padding:20px;max-height:60vh;overflow-y:auto;">
-        <div id="bow-aba-dados" class="folhao-content active" style="display:block;">
-          <div class="form-grid-2-mobile" style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-            <div class="input-group"><label>Data Início/Fim</label><div style="display:flex;gap:10px;"><input type="date" id="bow-data-inicio" class="w-100"><input type="date" id="bow-data-fim" class="w-100"></div></div>
-            <div class="input-group"><label>Nº Segmento/Veio</label><div style="display:flex;gap:10px;"><input type="text" id="bow-num-segmento" placeholder="Nº Seg." class="w-100"><select id="bow-veio" class="premium-select w-100"><option value="G">Veio G</option><option value="H">Veio H</option></select></div></div>
-            <div class="input-group"><label>Motivo</label><input type="text" id="bow-motivo" placeholder="Ex: Manutenção Preventiva"></div>
-            <div class="input-group"><label>Tipo Execução</label><select id="bow-tipo-execucao" class="premium-select"><option value="PARCIAL">PARCIAL</option><option value="GERAL">GERAL</option></select></div>
-          </div>
-        </div>
-        <div id="bow-aba-chegada" class="folhao-content hidden" style="display:none;">
-          <h3 style="margin-bottom:10px;color:var(--text-heading);">Inspeção Geral de Chegada</h3>
-          <div class="table-responsive"><table class="premium-table"><tbody id="tabela-bow-inspecao-chegada"></tbody></table></div>
-          <h3 style="margin:25px 0 10px 0;color:var(--text-heading);">Aferição Pass Line (Chegada)</h3>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-            <div><h4 class="text-center text-accent">Base Inferior</h4><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="bow-passline-inf-chegada"></tbody></table></div>
-            <div><h4 class="text-center text-accent">Base Superior</h4><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="bow-passline-sup-chegada"></tbody></table></div>
-          </div>
-        </div>
-        <div id="bow-aba-execucao" class="folhao-content hidden" style="display:none;">
-          <h3 style="margin-bottom:10px;color:var(--text-heading);">Checklist de Manutenção</h3>
-          <div class="table-responsive" style="max-height:400px;overflow-y:auto;"><table class="premium-table"><thead></thead><tbody id="bow-tabela-manutencao"></tbody></table></div>
-        </div>
-        <div id="bow-aba-saida" class="folhao-content hidden" style="display:none;">
-          <h3 style="margin-bottom:10px;color:var(--text-heading);">Aferição Pass Line (Saída Final)</h3>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-            <div><h4 class="text-center text-accent">Base Inferior</h4><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="bow-passline-inf-saida"></tbody></table></div>
-            <div><h4 class="text-center text-accent">Base Superior</h4><table class="premium-table" style="font-size:11px;"><thead><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr></thead><tbody id="bow-passline-sup-saida"></tbody></table></div>
-          </div>
-        </div>
-        <div id="bow-aba-materiais" class="folhao-content hidden" style="display:none;">
-          <div class="flex-between" style="margin-bottom:10px;"><h3 style="color:var(--text-heading);">Materiais</h3><button class="btn-xs-primary" onclick="window.addLinhaMaterialBow()"><i class="fas fa-plus"></i> Adicionar</button></div>
-          <table class="premium-table"><thead><tr><th>Descrição</th><th style="width:100px;">Qtd</th></tr></thead><tbody id="bow-tabela-materiais"></tbody></table>
-        </div>
-      </div>
-      <div class="flex-between" style="margin-top:30px;border-top:1px solid var(--border-color);padding-top:15px;">
-        <button class="btn-outline-danger" onclick="window.fecharFolhaoBow()">Cancelar</button>
-        <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoBow()"><i class="fas fa-print"></i> Salvar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL - FOLHÃO MOLDE 2/3 -->
-  <div id="modal-folhao-molde23" class="modal-overlay hidden no-print">
-    <div class="modal-content glass-panel premium-shadow" style="max-width:1000px;padding:0;">
-      <div class="modal-header-fixed" style="padding:20px;border-bottom:1px solid var(--border-color);background:var(--bg-th);border-radius:16px 16px 0 0;">
-        <div class="flex-between"><h2 style="color:var(--text-accent);"><i class="fas fa-clipboard-check"></i> Liberação Oficial - MOLDE (2 e 3)</h2><button class="btn-close-emergency" onclick="window.fecharFolhaoMolde23()"><i class="fas fa-times"></i></button></div>
-        <div style="display:flex;gap:15px;margin-top:15px;"><span class="ind-card-tag bg-tag" style="font-size:14px;">TAG: <strong id="molde23-tag-name"></strong></span><span class="text-muted" style="font-size:14px;">Preenchimento obrigatório</span></div>
-      </div>
-      <div class="folhao-tabs" style="display:flex;background:var(--bg-input);border-bottom:1px solid var(--border-color);overflow-x:auto;">
-        <button class="folhao-tab active" onclick="window.trocarAbaMolde23(event,'m23-aba-dados')">1. Dados</button>
-        <button class="folhao-tab" onclick="window.trocarAbaMolde23(event,'m23-aba-recebimento')">2. Recebimento</button>
-        <button class="folhao-tab" onclick="window.trocarAbaMolde23(event,'m23-aba-revisao')">3. Revisão</button>
-        <button class="folhao-tab" onclick="window.trocarAbaMolde23(event,'m23-aba-hidraulica')">4. Hidráulica</button>
-        <button class="folhao-tab" onclick="window.trocarAbaMolde23(event,'m23-aba-final')">5. Check Final</button>
-      </div>
-      <div class="folhao-body" style="padding:20px;max-height:60vh;overflow-y:auto;">
-        <div id="m23-aba-dados" class="folhao-content active">
-          <div class="form-grid-2-mobile" style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-            <div class="input-group"><label>Data Início</label><input type="date" id="molde23-data-inicio" class="w-100"></div>
-            <div class="input-group"><label>Data Fim</label><input type="date" id="molde23-data-fim" class="w-100"></div>
-            <div class="input-group"><label>Nº do Molde</label><input type="text" id="molde23-num" placeholder="Ex: 02" class="w-100"></div>
-            <div class="input-group"><label>Líder Responsável</label><input type="text" id="molde23-lider" placeholder="Nome" class="w-100"></div>
-            <div class="input-group"><label>Tipo Execução</label><select id="molde23-tipo-execucao" class="premium-select w-100"><option value="PARCIAL">PARCIAL</option><option value="GERAL">GERAL</option></select></div>
-            <div class="input-group"><label>Desempenho</label><input type="text" id="molde23-desempenho" placeholder="Ex: Face com ranhuras..." class="w-100"></div>
-          </div>
-        </div>
-        <div id="m23-aba-recebimento" class="folhao-content hidden"><h3>Inspeção de Recebimento</h3><div class="table-responsive"><table class="premium-table"><thead><tr><th style="width:50px;">Item</th><th>Descrição</th><th style="width:60px;">SIM</th><th style="width:60px;">NÃO</th></tr></thead><tbody id="tabela-m23-recebimento"></tbody></table></div></div>
-        <div id="m23-aba-revisao" class="folhao-content hidden"><h3>Revisão</h3><div class="table-responsive"><table class="premium-table"><thead><tr><th style="width:50px;">Item</th><th>Descrição</th><th style="width:60px;">SIM</th><th style="width:60px;">NÃO</th></tr></thead><tbody id="tabela-m23-revisao"></tbody></table></div></div>
-        <div id="m23-aba-hidraulica" class="folhao-content hidden"><h3>Hidráulico</h3><div class="table-responsive"><table class="premium-table"><thead><tr><th style="width:50px;">Item</th><th>Descrição</th><th>Matrícula</th></tr></thead><tbody id="tabela-m23-hidraulica"></tbody></table></div></div>
-        <div id="m23-aba-final" class="folhao-content hidden"><h3>Inspeção Final</h3><div class="table-responsive"><table class="premium-table"><thead><tr><th style="width:50px;">Item</th><th>Descrição</th><th style="width:60px;">SIM</th><th style="width:60px;">NÃO</th></tr></thead><tbody id="tabela-m23-final"></tbody></table></div></div>
-      </div>
-      <div class="modal-actions flex-between" style="padding:20px;background:var(--bg-th);border-top:1px solid var(--border-color);border-radius:0 0 16px 16px;">
-        <button class="btn-outline-danger" onclick="window.fecharFolhaoMolde23()">Cancelar</button>
-        <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoMolde23()"><i class="fas fa-check-double"></i> Salvar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL - FOLHÃO SEGMENTO ZERO -->
-  <div id="modal-folhao-segmento-zero" class="modal-overlay hidden no-print">
-    <div class="modal-content glass-panel premium-shadow" style="max-width:1000px;padding:0;">
-      <div class="modal-header-fixed" style="padding:20px;border-bottom:1px solid var(--border-color);background:var(--bg-th);border-radius:16px 16px 0 0;">
-        <div class="flex-between"><h2 style="color:var(--text-accent);"><i class="fas fa-clipboard-check"></i> Liberação - SEGMENTO ZERO (MCC 2/3)</h2><button class="btn-close-emergency" onclick="document.getElementById('modal-folhao-segmento-zero').classList.add('hidden')"><i class="fas fa-times"></i></button></div>
-        <div style="display:flex;gap:15px;margin-top:15px;"><span class="ind-card-tag bg-tag" style="font-size:14px;">TAG: <strong id="segzero-tag-ativo">---</strong></span><span class="text-muted" style="font-size:14px;">Preenchimento obrigatório</span></div>
-      </div>
-      <div class="folhao-tabs" style="display:flex;background:var(--bg-input);border-bottom:1px solid var(--border-color);overflow-x:auto;">
-        <button class="folhao-tab active" onclick="window.trocarAbaSegZero(event,'segzero-aba-dados')">1. Dados</button>
-        <button class="folhao-tab" onclick="window.trocarAbaSegZero(event,'segzero-aba-recebimento')">2. Chegada</button>
-        <button class="folhao-tab" onclick="window.trocarAbaSegZero(event,'segzero-aba-gap')">3. GAP</button>
-        <button class="folhao-tab" onclick="window.trocarAbaSegZero(event,'segzero-aba-saida')">4. Saída</button>
-        <button class="folhao-tab" onclick="window.trocarAbaSegZero(event,'segzero-aba-materiais')">5. Materiais</button>
-      </div>
-      <div class="folhao-body" style="padding:20px;max-height:60vh;overflow-y:auto;">
-        <div id="segzero-aba-dados" class="folhao-content active">
-          <div class="form-grid-2-mobile" style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-            <div class="input-group"><label>Data Início</label><input type="date" id="segzero-data-inicio" class="w-100"></div>
-            <div class="input-group"><label>Data Fim</label><input type="date" id="segzero-data-fim" class="w-100"></div>
-            <div class="input-group"><label>Nº do Segmento</label><input type="text" id="segzero-num" placeholder="Ex: 01" class="w-100"></div>
-            <div class="input-group"><label>Veio</label><select id="segzero-veio" class="premium-select w-100"><option value="C">Veio C</option><option value="D">Veio D</option><option value="E">Veio E</option><option value="F">Veio F</option></select></div>
-          </div>
-        </div>
-        <div id="segzero-aba-recebimento" class="folhao-content hidden">
-          <h3 style="margin-bottom:15px;color:var(--text-heading);">Inspeção de Chegada</h3>
-          <div class="table-responsive"><table class="premium-table"><thead><tr><th style="width:50px;">Item</th><th>Descrição</th><th style="width:60px;">SIM</th><th style="width:60px;">NÃO</th></tr></thead><tbody><tr><td>01</td><td>Distribuidores de graxa com vazamentos</td><td style="text-align:center;"><input type="radio" name="szc1"></td><td style="text-align:center;"><input type="radio" name="szc1"></td></tr><tr><td>02</td><td>Distribuidores de graxa com agarramentos</td><td style="text-align:center;"><input type="radio" name="szc2"></td><td style="text-align:center;"><input type="radio" name="szc2"></td></tr><tr><td>03</td><td>Tubulações de graxa amassadas</td><td style="text-align:center;"><input type="radio" name="szc3"></td><td style="text-align:center;"><input type="radio" name="szc3"></td></tr><tr><td>04</td><td>Flexíveis com vazamentos</td><td style="text-align:center;"><input type="radio" name="szc4"></td><td style="text-align:center;"><input type="radio" name="szc4"></td></tr><tr><td>05</td><td>Resfriadores com vazamento</td><td style="text-align:center;"><input type="radio" name="szc5"></td><td style="text-align:center;"><input type="radio" name="szc5"></td></tr><tr><td>06</td><td>Bicos de spray obstruídos</td><td style="text-align:center;"><input type="radio" name="szc6"></td><td style="text-align:center;"><input type="radio" name="szc6"></td></tr></tbody></table></div>
-        </div>
-        <div id="segzero-aba-gap" class="folhao-content hidden">
-          <h3 style="margin-bottom:15px;color:var(--text-heading);">Aferição de Gap (261,5 mm)</h3>
-          <div class="table-responsive"><table class="premium-table"><thead><tr><th>Conj. Rolo</th><th>Ref</th><th>Pos 1</th><th>Pos 2</th><th>Pos 3</th></tr></thead><tbody><tr><td>1º</td><td>261,5 (-0,1)</td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td></tr><tr><td>2º</td><td>261,5 (-0,1)</td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td></tr><tr><td>3º</td><td>261,5 (-0,1)</td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td><td><input type="number" step="0.01" style="width:80px;"></td></tr></tbody></table></div>
-        </div>
-        <div id="segzero-aba-saida" class="folhao-content hidden">
-          <h3 style="margin-bottom:15px;color:var(--text-heading);">Inspeção de Saída</h3>
-          <div class="table-responsive"><table class="premium-table"><thead><tr><th style="width:50px;">Item</th><th>Descrição</th><th style="width:60px;">SIM</th><th style="width:60px;">NÃO</th></tr></thead><tbody><tr><td>01</td><td>Distribuidores sem vazamentos</td><td style="text-align:center;"><input type="radio" name="szs1"></td><td style="text-align:center;"><input type="radio" name="szs1"></td></tr><tr><td>02</td><td>Mancais lubrificados</td><td style="text-align:center;"><input type="radio" name="szs2"></td><td style="text-align:center;"><input type="radio" name="szs2"></td></tr><tr><td>03</td><td>Flexíveis isentos de vazamentos</td><td style="text-align:center;"><input type="radio" name="szs3"></td><td style="text-align:center;"><input type="radio" name="szs3"></td></tr><tr><td>04</td><td>Gap em conformidade</td><td style="text-align:center;"><input type="radio" name="szs4"></td><td style="text-align:center;"><input type="radio" name="szs4"></td></tr></tbody></table></div>
-        </div>
-        <div id="segzero-aba-materiais" class="folhao-content hidden">
-          <h3 style="margin-bottom:15px;color:var(--text-heading);">Materiais</h3>
-          <div class="table-responsive"><table class="premium-table"><thead><tr><th>Descrição</th><th>Código</th><th style="width:100px;">Qtd</th></tr></thead><tbody id="segzero-tabela-materiais-linhas"><tr><td><input type="text" class="w-100" placeholder="Descrição"></td><td><input type="text" class="w-100" placeholder="Código"></td><td><input type="number" class="w-100" placeholder="Qtd"></td></tr><tr><td><input type="text" class="w-100" placeholder="Descrição"></td><td><input type="text" class="w-100" placeholder="Código"></td><td><input type="number" class="w-100" placeholder="Qtd"></td></tr><tr><td><input type="text" class="w-100" placeholder="Descrição"></td><td><input type="text" class="w-100" placeholder="Código"></td><td><input type="number" class="w-100" placeholder="Qtd"></td></tr></tbody></table></div>
-        </div>
-      </div>
-      <div class="modal-actions flex-between" style="padding:20px;background:var(--bg-th);border-top:1px solid var(--border-color);border-radius:0 0 16px 16px;">
-        <button class="btn-outline-danger" onclick="document.getElementById('modal-folhao-segmento-zero').classList.add('hidden')">Cancelar</button>
-        <button class="btn-premium btn-success" onclick="window.salvarFolhaoSegmentoZero()"><i class="fas fa-check-double"></i> Salvar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL - RELATÓRIO -->
-  <div id="modal-relatorio" class="modal-overlay hidden no-print">
-    <div class="modal-content glass-panel premium-shadow">
-      <h2 style="color:var(--warning);margin-bottom:5px;"><i class="fas fa-clipboard-check"></i> Relatório de Manutenção</h2>
-      <p class="text-muted" style="font-size:13px;margin-bottom:20px;">Preenchimento obrigatório para envio à Oficina.</p>
-      <p style="color:var(--text-main);">Componente: <strong id="modal-tag" class="font-code text-accent" style="font-size:16px;"></strong></p>
-      <div class="input-group mt-15"><label>Motivo</label><select id="modal-motivo" class="premium-select w-100"></select></div>
-      <div class="input-group mt-15"><label>Condição de Chegada</label><textarea id="modal-condicao" rows="4" placeholder="Descreva..." class="premium-textarea"></textarea></div>
-      <div class="modal-actions flex-between mt-15" style="margin-top:25px;">
-        <button class="btn-outline-danger" onclick="window.fecharModalRelatorio()">Cancelar</button>
-        <button class="btn-premium btn-warning" onclick="window.confirmarRelatorio()"><i class="fas fa-paper-plane"></i> Confirmar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL - CONCLUIR REPARO -->
-  <div id="modal-concluir-reparo" class="modal-overlay hidden no-print">
-    <div class="modal-content glass-panel premium-shadow">
-      <h2 style="color:var(--success);margin-bottom:5px;"><i class="fas fa-tools"></i> Conclusão de Reparo</h2>
-      <p class="text-muted" style="font-size:13px;margin-bottom:20px;">Defina como a peça retornará ao estoque.</p>
-      <p style="color:var(--text-main);">TAG: <strong id="modal-reparo-tag" class="font-code text-accent" style="font-size:16px;"></strong></p>
-      <div class="input-group mt-15"><label>Tipo de Reparo</label><select id="modal-tipo-reparo" class="premium-select w-100" onchange="window.toggleCamposReparoParcial()"><option value="GERAL">Geral (Zerar)</option><option value="PARCIAL">Parcial</option></select></div>
-      <div id="campos-reparo-parcial" class="hidden" style="margin-top:15px;background:var(--bg-th);padding:15px;border-radius:8px;border:1px dashed var(--warning);">
-        <p class="text-warning" style="font-size:12px;margin-bottom:10px;"><i class="fas fa-info-circle"></i> Ajuste os valores:</p>
-        <div class="form-grid-2-mobile" style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-          <div class="input-group"><label>Tonelagem</label><input type="number" id="modal-reparo-ton" class="w-100"></div>
-          <div class="input-group"><label>Dias</label><input type="number" id="modal-reparo-dias" class="w-100"></div>
-        </div>
-      </div>
-      <div class="modal-actions flex-between mt-15" style="margin-top:25px;">
-        <button class="btn-outline-danger" onclick="window.fecharModalConcluirReparo()">Cancelar</button>
-        <button class="btn-premium btn-success" onclick="window.confirmarConclusaoReparo()"><i class="fas fa-check-double"></i> Finalizar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL - HISTÓRICO INDIVIDUAL -->
-  <div id="modal-historico-ativo" class="modal-overlay hidden no-print">
-    <div class="modal-content glass-panel premium-shadow" style="max-width:700px;padding:20px;">
-      <div class="flex-between" style="border-bottom:1px solid var(--border-color);padding-bottom:15px;margin-bottom:15px;">
-        <h2 style="color:var(--text-heading);font-size:18px;"><i class="fas fa-book-medical text-accent"></i> Prontuário</h2>
-        <button class="btn-close-emergency" onclick="window.fecharModalHistorico()"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="flex-between mobile-stack-info" style="background:var(--bg-th);padding:15px;border-radius:8px;margin-bottom:15px;border:1px solid var(--border-color);">
-        <div><span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">TAG</span><div id="hist-tag-nome" class="font-code text-accent" style="font-size:18px;font-weight:bold;"></div></div>
-        <div class="text-right"><span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Localização</span><div id="hist-tag-local" class="font-code" style="font-size:13px;color:var(--text-heading);"></div></div>
-      </div>
-      <div class="input-group mobile-stack-info gap-10" style="margin-bottom:20px;display:flex;align-items:stretch;">
-        <input type="text" id="input-nota-manual" placeholder="Ex: Troca de válvula..." style="flex:1;padding:10px;border-radius:6px;">
-        <button class="btn-premium" onclick="window.salvarRegistroManual()"><i class="fas fa-plus"></i> Registrar</button>
-      </div>
-      <div class="scrollable-history table-responsive" style="max-height:300px;">
-        <table class="industrial-table premium-table"><thead><tr><th>Data/Hora</th><th>Evento</th><th>Usuário</th></tr></thead><tbody id="tabela-historico-individual"></tbody></table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ========================================= -->
-  <!-- SCRIPTS -->
-  <!-- ========================================= -->
-<script type="module">
-    import './script.js?v=2';
-    import './ui.js?v=8';  // <-- Mude para v=7
-    import './folhao.js?v=2';
-    import './folhaoR2.js?v=2';
-    import './folhaoHorizontal.js?v=2';
-    import './folhaoBow.js?v=2';
-    import './folhaoDesempenadeira.js?v=2';
-    import './folhaoSegmentoZero.js?v=2';
-    import './folhaoMolde23.js?v=2';
-    
-    console.log("✅ Sistema OMS inicializado!");
-    
-    const operadorSalvo = localStorage.getItem("oms_operador_v32_local");
-    if (operadorSalvo) {
-      try {
-        const operador = JSON.parse(operadorSalvo);
-        window.OPERADOR_LOGADO = operador;
-        document.getElementById("tela-login-home").style.display = "none";
-        document.getElementById("container-sistema-oms").style.display = "flex";
-        if (window.atualizarInterfaceUsuario) window.atualizarInterfaceUsuario();
-        if (window.calcularKpisGlobais) window.calcularKpisGlobais();
-        if (window.renderPainelVeios) window.renderPainelVeios();
-        if (window.renderAtivos) window.renderAtivos();
-        if (window.renderReparos) window.renderReparos();
-        if (window.renderReservas) window.renderReservas();
-        if (window.renderRolos) window.renderRolos();
-        if (window.renderMateriais) window.renderMateriais();
-        if (window.renderHistorico) window.renderHistorico();
-        console.log("✅ Usuário logado:", operador.nome);
-      } catch(e) { console.warn("Erro ao restaurar sessão:", e); }
-    }
-  </script>
-
- <script>
-// ==========================================
-// FORÇAR CAMPOS DE POSIÇÃO - VERSÃO OTIMIZADA
-// ==========================================
-
-let camposPosicaoExecutados = false;
-let timeoutForcarPosicao = null;
-
-function forcarCamposPosicao() {
-    // Se já executou e não precisa forçar novamente, sai
-    if (camposPosicaoExecutados) {
-        console.log("⏭️ Campos de posição já foram criados. Pulando execução.");
-        return;
-    }
-
-    console.log("🔄 FORÇANDO CAMPOS DE POSIÇÃO (primeira/única execução)...");
-    
-    const rows = document.querySelectorAll('#estoque-table-body tr');
-    let count = 0;
-    
-    rows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        if (cells.length >= 6) {
-            const posCell = cells[4];
-            const tagId = cells[0]?.textContent?.trim();
-            
-            if (!tagId || tagId === '') return;
-            
-            // Verifica se já tem input
-            const hasInput = posCell.querySelector('input');
-            const hasSelect = posCell.querySelector('select');
-            
-            // Só cria se não houver input nem select
-            if (!hasInput && !hasSelect) {
-                const input = document.createElement('input');
-                input.type = 'number';
-                input.id = `pos-${tagId}`;
-                input.placeholder = 'Pos';
-                input.min = 1;
-                input.max = 99;
-                input.step = 1;
-                input.style.cssText = 'width:55px; height:32px; padding:4px 6px; font-size:14px; font-weight:bold; border-radius:4px; border:3px solid #10b981; background:#0f172a; color:#ffffff; text-align:center; display:inline-block !important; visibility:visible !important; opacity:1 !important;';
-                posCell.innerHTML = '';
-                posCell.appendChild(input);
-                count++;
-                console.log(`✅ Campo criado para: ${tagId}`);
-            }
-        }
-    });
-    
-    // Marca como executado independente de ter criado ou não (evita repetições)
-    camposPosicaoExecutados = true;
-    
-    if (count > 0) {
-        console.log(`✅ ${count} campos criados.`);
-    } else {
-        console.log("ℹ️ Nenhum campo novo criado (já existem ou tabela vazia).");
-    }
-}
-
-// ==========================================
-// INICIALIZAÇÃO - APENAS UMA VEZ
-// ==========================================
-function initForcarCampos() {
-    // Limpa qualquer timeout pendente
-    if (timeoutForcarPosicao) {
-        clearTimeout(timeoutForcarPosicao);
-        timeoutForcarPosicao = null;
-    }
-    
-    // Executa após um pequeno delay para a página carregar
-    timeoutForcarPosicao = setTimeout(forcarCamposPosicao, 400);
-}
-
-// Executa quando o DOM estiver pronto
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initForcarCampos);
-} else {
-    // Se o DOM já estiver carregado, executa imediatamente
-    initForcarCampos();
-}
-
-// ==========================================
-// OBSERVADOR PARA QUANDO A ABA DE RESERVAS FOR ABERTA
-// ==========================================
-const observerReservas = new MutationObserver(function() {
-    const reservasAba = document.getElementById('aba-reservas');
-    if (reservasAba && reservasAba.classList.contains('active')) {
-        // Se a aba for ativada E os campos ainda não foram criados, força
-        if (!camposPosicaoExecutados) {
-            clearTimeout(timeoutForcarPosicao);
-            timeoutForcarPosicao = setTimeout(forcarCamposPosicao, 200);
-        }
-    }
-});
-observerReservas.observe(document.body, { 
-    attributes: true, 
-    attributeFilter: ['class'], 
-    subtree: true 
-});
-
-// ==========================================
-// INTERCEPTA O renderReservas PARA FORÇAR UMA ÚLTIMA VEZ
-// ==========================================
-const originalRender = window.renderReservas;
-if (originalRender) {
-    window.renderReservas = function() {
-        const result = originalRender.apply(this, arguments);
-        // Só força se ainda não tiver executado
-        if (!camposPosicaoExecutados) {
-            clearTimeout(timeoutForcarPosicao);
-            timeoutForcarPosicao = setTimeout(forcarCamposPosicao, 150);
-        }
-        return result;
-    };
-}
-
-// ==========================================
-// EXPÕE A FUNÇÃO GLOBALMENTE (para uso manual)
-// ==========================================
-window.forcarCamposPosicao = forcarCamposPosicao;
-
-console.log("✅ Sistema de correção de posição ativado (versão otimizada).");
-</script>
-// FORÇA A CRIAÇÃO DOS SELECTS DE POSIÇÃO
-function criarSelectsPosicao() {
-    console.log("🔄 CRIANDO SELECTS DE POSIÇÃO...");
-    
-    const rows = document.querySelectorAll('#estoque-table-body tr');
-    let count = 0;
-    
-    rows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        if (cells.length >= 6) {
-            const posCell = cells[4];
-            const tagId = cells[0]?.textContent?.trim();
-            const tipoCell = cells[1]?.textContent?.trim() || "";
-            
-            if (!tagId || tagId === '') return;
-            
-            // Verifica se já tem select
-            const hasSelect = posCell.querySelector('select');
-            const hasInput = posCell.querySelector('input');
-            
-            if (!hasSelect && !hasInput) {
-                let options = '';
-                let placeholder = 'Pos';
-                
-                // DETERMINA O TIPO
-                const tipoUpper = tipoCell.toUpperCase();
-                const isBow = tipoUpper.includes('BOW');
-                const isHorizontal = tipoUpper.includes('HORIZONTAL');
-                const isCadeiraSup = tipoUpper.includes('CADEIRA SUPERIOR');
-                const isCadeiraInf = tipoUpper.includes('CADEIRA INFERIOR');
-                const isSegmento = tipoUpper.includes('SEGMENTO') || tipoUpper.includes('SEGUIMENTO');
-                
-                if (isBow) {
-                    placeholder = 'Bow';
-                    for (let i = 1; i <= 5; i++) options += `<option value="${i}">#${i}</option>`;
-                } else if (isHorizontal) {
-                    placeholder = 'Horiz';
-                    for (let i = 8; i <= 17; i++) options += `<option value="${i}">#${i}</option>`;
-                } else if (isCadeiraSup) {
-                    placeholder = 'Sup';
-                    for (let i = 43; i <= 79; i++) options += `<option value="${i}">#${i}</option>`;
-                } else if (isCadeiraInf) {
-                    placeholder = 'Inf';
-                    for (let i = 43; i <= 79; i++) options += `<option value="${i}">#${i}</option>`;
-                } else if (isSegmento) {
-                    placeholder = 'Seg';
-                    for (let i = 1; i <= 6; i++) options += `<option value="${i}">#${i}</option>`;
-                }
-                
-                // Se tiver opções, cria um SELECT
-                if (options) {
-                    const select = document.createElement('select');
-                    select.id = `pos-${tagId}`;
-                    select.style.cssText = 'width:65px; padding:4px 6px; font-size:12px; border-radius:4px; border:2px solid #10b981; background:#0f172a; color:#e0e0e0;';
-                    select.innerHTML = `<option value="">${placeholder}</option>${options}`;
-                    posCell.innerHTML = '';
-                    posCell.appendChild(select);
-                    count++;
-                    console.log(`✅ Select criado para: ${tagId} (${placeholder})`);
-                } else {
-                    // Única posição
-                    posCell.innerHTML = `<span style="font-size:12px;color:#888;">Única</span>`;
-                }
-            }
-        }
-    });
-    
-    if (count > 0) {
-        console.log(`✅ ${count} selects criados!`);
-        const div = document.createElement('div');
-        div.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:999999; background:#10b981; color:white; padding:12px 24px; border-radius:8px; font-weight:bold; font-size:15px; box-shadow:0 4px 20px rgba(0,0,0,0.3);';
-        div.textContent = `✅ ${count} selects de posição criados!`;
-        document.body.appendChild(div);
-        setTimeout(() => div.remove(), 3000);
-    }
-}
-
-// Executa automaticamente
-document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(criarSelectsPosicao, 800);
-    setTimeout(criarSelectsPosicao, 2000);
-    
-    // Observa a aba de reservas
-    const observer = new MutationObserver(function() {
-        const reservasAba = document.getElementById('aba-reservas');
-        if (reservasAba && reservasAba.classList.contains('active')) {
-            setTimeout(criarSelectsPosicao, 300);
-        }
-    });
-    observer.observe(document.body, { attributes: true, childList: true, subtree: true });
-});
-
-window.criarSelectsPosicao = criarSelectsPosicao;
-console.log("✅ Sistema de selects de posição ativado!");
-
-</script>
 </body>
 </html>

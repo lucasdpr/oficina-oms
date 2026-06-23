@@ -131,49 +131,6 @@ function renderAtivos() {
 }
 
 // ==============================================================
-// RENDER REPAROS
-// ==============================================================
-function renderReparos() {
-    const repBody = document.getElementById("reparos-table-body");
-    if (!repBody) return;
-
-    const reparos = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reparo");
-
-    if (reparos.length === 0) {
-        repBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nenhum equipamento aguardando reparo.</td></tr>`;
-        return;
-    }
-
-    repBody.innerHTML = reparos.map(a => {
-        const pct = a.meta > 0 ? ((a.ton / a.meta) * 100) : 0;
-        const pctFixed = pct.toFixed(1);
-        const dias = calcularDias(a);
-        const btnExcluir = `<button class="btn-outline-danger" style="border-color:var(--danger); color:var(--danger); padding: 4px 8px;" onclick="window.excluirEquipamento('${a.id}')" title="Excluir equipamento"><i class="fas fa-trash"></i></button>`;
-        return `
-            <tr>
-                <td class="font-code">${a.id}</td>
-                <td><span class="ind-card-tag bg-tag">${a.tipo} <span style="opacity:0.7; font-size:10px;">(MCC ${a.mcc_compat || ''})</span></span></td>
-                <td>
-                    <div class="flex-align-center gap-10">
-                        <span class="font-code bold w-40" style="color: var(--text-heading);">${pctFixed}%</span>
-                        <div class="ind-gauge-bar premium-bar w-100px">
-                            <div class="ind-gauge-fill bg-danger" style="width: ${Math.min(pct, 100)}%;"></div>
-                        </div>
-                    </div>
-                </td>
-                <td style="font-weight:bold; color:var(--warning);">${dias} dias</td>
-                <td>
-                    <div class="flex-align-center gap-10 action-buttons-mobile">
-                        <button class="btn-premium btn-warning" onclick="window.abrirModalConcluirReparo('${a.id}')"><i class="fas fa-hammer"></i> Concluir</button>
-                        <button class="btn-premium" style="background:transparent; border-color:var(--text-accent); color:var(--text-accent); padding: 8px 12px;" onclick="window.abrirHistoricoIndividual('${a.id}')" title="Ver Prontuário"><i class="fas fa-book-open"></i></button>
-                        ${btnExcluir}
-                    </div>
-                </td>
-            </tr>`;
-    }).join("");
-}
-
-// ==============================================================
 // RENDER RESERVAS
 // ==============================================================
 function renderReservas() {
@@ -287,7 +244,83 @@ function renderReservas() {
     resBody.innerHTML = htmlFinal;
     console.log("✅ renderReservas() executado. Total:", reservas.length);
 }
+// ==============================================================
+// RENDER REPAROS (com correção automática de dataReparo)
+// ==============================================================
+function renderReparos() {
+    const repBody = document.getElementById("reparos-table-body");
+    if (!repBody) return;
 
+    // 🔥 CORREÇÃO AUTOMÁTICA: para cada item em reparo sem dataReparo, define uma data baseada no campo 'dias'
+    let precisaSalvar = false;
+    BANCO_ATIVOS.forEach(a => {
+        if (a.local === "Oficina / Reparo" && !a.dataReparo) {
+            const diasAtuais = a.dias || 0;
+            a.dataReparo = Date.now() - (diasAtuais * 24 * 60 * 60 * 1000);
+            precisaSalvar = true;
+            console.log(`🔧 Corrigido: ${a.id} - dataReparo definida (dias atuais: ${diasAtuais})`);
+        }
+    });
+    if (precisaSalvar) {
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+        console.log("✅ Correção automática de dataReparo salva.");
+    }
+
+    const reparos = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reparo");
+
+    if (reparos.length === 0) {
+        repBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nenhum equipamento aguardando reparo.</td></tr>`;
+        return;
+    }
+
+    repBody.innerHTML = reparos.map(a => {
+        const pct = a.meta > 0 ? ((a.ton / a.meta) * 100) : 0;
+        const pctFixed = pct.toFixed(1);
+        const dias = calcularDias(a); // usa a função que já existe no ui.js
+        const btnExcluir = `<button class="btn-outline-danger" style="border-color:var(--danger); color:var(--danger); padding: 4px 8px;" onclick="window.excluirEquipamento('${a.id}')" title="Excluir equipamento"><i class="fas fa-trash"></i></button>`;
+        return `
+            <tr>
+                <td class="font-code">${a.id}</td>
+                <td><span class="ind-card-tag bg-tag">${a.tipo} <span style="opacity:0.7; font-size:10px;">(MCC ${a.mcc_compat || ''})</span></span></td>
+                <td>
+                    <div class="flex-align-center gap-10">
+                        <span class="font-code bold w-40" style="color: var(--text-heading);">${pctFixed}%</span>
+                        <div class="ind-gauge-bar premium-bar w-100px">
+                            <div class="ind-gauge-fill bg-danger" style="width: ${Math.min(pct, 100)}%;"></div>
+                        </div>
+                    </div>
+                </td>
+                <td style="font-weight:bold; color:var(--warning);">${dias} dias</td>
+                <td>
+                    <div class="flex-align-center gap-10 action-buttons-mobile">
+                        <button class="btn-premium btn-warning" onclick="window.abrirModalConcluirReparo('${a.id}')"><i class="fas fa-hammer"></i> Concluir</button>
+                        <button class="btn-premium" style="background:transparent; border-color:var(--text-accent); color:var(--text-accent); padding: 8px 12px;" onclick="window.abrirHistoricoIndividual('${a.id}')" title="Ver Prontuário"><i class="fas fa-book-open"></i></button>
+                        ${btnExcluir}
+                    </div>
+                </td>
+            </tr>`;
+    }).join("");
+}
+// ==============================================================
+// RESETAR DIAS EM REPARO (ZERAR CONTAGEM)
+// ==============================================================
+function resetarDiasReparo() {
+    if (!confirm("⚠️ Isso vai zerar a contagem de dias de TODOS os equipamentos em reparo. Deseja continuar?")) return;
+
+    BANCO_ATIVOS.forEach(a => {
+        if (a.local === "Oficina / Reparo") {
+            a.dias = 0;
+            a.dataReparo = Date.now();
+            console.log(`🔄 Resetado: ${a.id}`);
+        }
+    });
+    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    renderReparos(); // atualiza a tabela na hora
+    alert("✅ Contagem de dias resetada para todos os equipamentos em reparo!");
+}
+
+// Exponha a função globalmente
+window.resetarDiasReparo = resetarDiasReparo;
 // ==============================================================
 // SWAP DIRETO
 // ==============================================================
