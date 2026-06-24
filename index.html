@@ -144,6 +144,12 @@
             border-color: rgba(59, 130, 246, 0.2);
         }
 
+        .badge-rosa {
+            background: rgba(236, 72, 153, 0.12);
+            color: #ec4899;
+            border-color: rgba(236, 72, 153, 0.2);
+        }
+
         /* ===== NAVBAR ===== */
         .navbar {
             display: flex;
@@ -424,7 +430,7 @@
             color: var(--primary);
         }
 
-        /* ===== SEÇÃO: IMAGENS DA EQUIPE ===== */
+        /* ===== SEÇÃO: IMAGENS DA EQUIPE (existente) ===== */
         .equipe {
             padding: 80px 5%;
             background: var(--bg-base);
@@ -477,6 +483,74 @@
             border-top: 1px solid var(--border);
         }
         .galeria-imagens .img-wrapper .legenda strong {
+            color: var(--text-title);
+        }
+
+        /* ===== SEÇÃO: DESTAQUE FEMININO (NOVA) ===== */
+        .diversidade {
+            padding: 80px 5%;
+            background: var(--bg-surface);
+            text-align: center;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .diversidade .badge-rosa {
+            margin-bottom: 24px;
+        }
+
+        .diversidade h2 {
+            color: var(--text-title);
+            font-size: 40px;
+            margin-bottom: 16px;
+        }
+        .diversidade h2 span {
+            color: var(--primary);
+        }
+        .diversidade > p {
+            max-width: 700px;
+            margin: 0 auto 40px;
+            font-size: 16px;
+        }
+
+        .diversidade .galeria-imagens {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .diversidade .galeria-imagens .img-wrapper {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            transition: all var(--transition);
+        }
+        .diversidade .galeria-imagens .img-wrapper:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+        }
+        .diversidade .galeria-imagens .img-wrapper img {
+            width: 100%;
+            height: 320px;
+            object-fit: cover;
+            display: block;
+        }
+        .diversidade .galeria-imagens .img-wrapper .legenda {
+            padding: 16px 20px;
+            color: var(--text-body);
+            font-size: 14px;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .diversidade .galeria-imagens .img-wrapper .legenda strong {
             color: var(--text-title);
         }
 
@@ -664,7 +738,7 @@
             color: var(--text-muted);
         }
 
-        /* ===== HISTÓRIA E GALERIA (INSERIDA AQUI A SEU PEDIDO) ===== */
+        /* ===== HISTÓRIA E GALERIA ===== */
         .historia {
             padding: 100px 5%;
             background: var(--bg-base);
@@ -915,6 +989,7 @@
             .sobre-mcc h2,
             .cta-final h2,
             .equipe h2,
+            .diversidade h2,
             .historia-header h2 {
                 font-size: 30px;
             }
@@ -960,6 +1035,7 @@
             <a href="#proposito">Nosso Propósito</a>
             <a href="#diferenciais">Serviços</a>
             <a href="#equipe">Time</a>
+            <a href="#diversidade">Diversidade</a>
             <a href="#historia">História</a>
             <a href="#mcc">MCCs</a>
         </div>
@@ -1038,6 +1114,7 @@
         </div>
     </section>
 
+    <!-- ===== SEÇÃO: IMAGENS DA EQUIPE (já existente) ===== -->
     <section id="equipe" class="equipe">
         <span class="badge badge-csn">Nosso Time</span>
         <h2>Mais de 150 profissionais capacitados</h2>
@@ -1058,6 +1135,35 @@
                 <img src="WhatsApp Image 2026-06-23 at 14.40.12.jpeg" alt="Propósito OMS - GMLC/GGMA" onerror="this.style.display='none'">
                 <div class="legenda">
                     <strong>Propósito OMS</strong> — GMLC / GGMA
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== NOVA SEÇÃO: DESTAQUE FEMININO ===== -->
+    <section id="diversidade" class="diversidade">
+        <span class="badge badge-rosa">
+            <i class="fas fa-venus-mars"></i> Diversidade que Transforma
+        </span>
+        <h2>O Maior Efetivo de Mulheres <br><span>da Oficina CSN</span></h2>
+        <p>
+            Na OMS, a força feminina é protagonista. Temos orgulho de contar com o
+            maior número de mulheres atuando diretamente na manutenção de moldes e
+            segmentos, rompendo barreiras e trazendo inovação, precisão e cuidado
+            para cada serviço executado.
+        </p>
+
+        <div class="galeria-imagens">
+            <div class="img-wrapper">
+                <img src="image.png" alt="Equipe feminina da OMS - CSN" onerror="this.style.display='none'">
+                <div class="legenda">
+                    <div>
+                        <strong style="color: var(--text-title);">Equipe feminina OMS</strong>
+                    </div>
+                    <div style="color: var(--text-muted); font-size: 13px;">
+                        <i class="fas fa-quote-left" style="color: var(--primary); opacity: 0.5;"></i>
+                        Excelência com olhar feminino
+                    </div>
                 </div>
             </div>
         </div>
@@ -1231,15 +1337,15 @@
 
             <div class="photo-grid">
                 <div class="photo-item photo-tall">
-                    <img src="USINAGEM.jpg" alt="Mecânico operando torno na Usinagem">
+                    <img src="USINAGEM.jpg" alt="Mecânico operando torno na Usinagem" onerror="this.style.display='none'">
                     <div class="photo-overlay">Usinagem de Precisão</div>
                 </div>
                 <div class="photo-item photo-wide">
-                    <img src="ELETRICA.jpg" alt="Manutenção Elétrica CSN">
+                    <img src="ELETRICA.jpg" alt="Manutenção Elétrica CSN" onerror="this.style.display='none'">
                     <div class="photo-overlay">Manutenção Elétrica</div>
                 </div>
                 <div class="photo-item photo-wide">
-                    <img src="SOLDA FOTO.jpg" alt="Soldador na manutenção">
+                    <img src="SOLDA FOTO.jpg" alt="Soldador na manutenção" onerror="this.style.display='none'">
                     <div class="photo-overlay">Soldagem e Caldeiraria</div>
                 </div>
             </div>
@@ -1268,6 +1374,7 @@
             <a href="#proposito">Propósito</a>
             <a href="#diferenciais">Serviços</a>
             <a href="#equipe">Time</a>
+            <a href="#diversidade">Diversidade</a>
             <a href="#historia">Nossa História</a>
             <a href="#mcc">MCCs</a>
             <a href="app.html">Sistema</a>
