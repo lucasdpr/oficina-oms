@@ -39,37 +39,42 @@
 <body>
 
   <!-- TELA DE LOGIN -->
-  <div id="tela-login-home" class="login-home-container no-print">
+<div id="tela-login-home" class="login-home-container no-print">
+    <!-- Botão Voltar -->
+    <a href="index.html" class="btn-voltar" title="Voltar para a página inicial">
+        <i class="fas fa-arrow-left"></i> Voltar
+    </a>
+    
     <div class="login-bg-imagem"></div>
     <div class="login-bg-overlay"></div>
     <div class="login-card-central glass-panel">
-      <div class="login-logo-factory glow-effect">
-        <svg viewBox="0 0 24 24"><path d="M4,18V11.42L8.27,4H14V11H18V14H20V18H4M2,22V20H22V22H2M12,13H10V15H12V13M16,13H14V15H16V13M12,16H10V18H12V16M16,16H14V18H16V16Z" /></svg>
-      </div>
-      <div class="login-card-header">
-        <h1>SISTEMA OMS</h1>
-        <p>Aciaria - Lingotamento Contínuo</p>
-      </div>
-      <div class="login-industrial-form">
-        <div class="login-form-group">
-          <label>Operador / Líder</label>
-          <div class="login-input-wrapper">
-            <input type="text" id="login-nome" placeholder="Nome do Líder de Turno">
-            <i class="fas fa-user login-input-icon"></i>
-          </div>
+
+    <div class="login-logo-factory glow-effect">
+      <svg viewBox="0 0 24 24"><path d="M4,18V11.42L8.27,4H14V11H18V14H20V18H4M2,22V20H22V22H2M12,13H10V15H12V13M16,13H14V15H16V13M12,16H10V18H12V16M16,16H14V18H16V16Z" /></svg>
+    </div>
+    <div class="login-card-header">
+      <h1>SISTEMA OMS</h1>
+      <p>Aciaria - Lingotamento Contínuo</p>
+    </div>
+    <div class="login-industrial-form">
+      <div class="login-form-group">
+        <label>Operador / Líder</label>
+        <div class="login-input-wrapper">
+          <input type="text" id="login-nome" placeholder="Nome do Líder de Turno">
+          <i class="fas fa-user login-input-icon"></i>
         </div>
-        <div class="login-form-group">
-          <label>Matrícula</label>
-          <div class="login-input-wrapper">
-            <input type="password" id="login-matricula" placeholder="Matrícula Operacional">
-            <i class="fas fa-key login-input-icon"></i>
-          </div>
-        </div>
-        <button type="button" class="btn-premium login-btn-submit" onclick="window.processarAutenticacaoHome()">Autenticar Terminal</button>
       </div>
+      <div class="login-form-group">
+        <label>Matrícula</label>
+        <div class="login-input-wrapper">
+          <input type="password" id="login-matricula" placeholder="Matrícula Operacional">
+          <i class="fas fa-key login-input-icon"></i>
+        </div>
+      </div>
+      <button type="button" class="btn-premium login-btn-submit" onclick="window.processarAutenticacaoHome()">Autenticar Terminal</button>
     </div>
   </div>
-
+</div>
   <!-- ========================================= -->
   <!-- CONTAINER PRINCIPAL DO SISTEMA -->
   <!-- ========================================= -->
