@@ -133,7 +133,7 @@ function renderAtivos() {
 // ==============================================================
 // RENDER RESERVAS
 // ==============================================================
-function renderReservas() {
+export function renderReservas() {
     console.log("🔄 renderReservas() executando...");
     
     const resBody = document.getElementById("estoque-table-body");
@@ -150,95 +150,134 @@ function renderReservas() {
         return;
     }
 
-    let htmlFinal = "";
-
-    reservas.forEach((a) => {
-        const isZerado = (a.ton || 0) === 0 ? `✅ Zerado` : `🔄 Parcial (${a.ton}t)`;
+    // Agrupa por MCC
+    const grupos = {};
+    reservas.forEach(a => {
         const mcc = a.mcc_compat || "2/3";
-        const familia = a.tipo || "";
-        const familiaUpper = familia.toUpperCase();
-        const mccCompat = a.mcc_compat || "";
-        
-        let optionsVeios = `<option value="">Selecione...</option>`;
-        if (mcc === "2/3") {
-            optionsVeios += `<option value="C">Veio C (MCC 2)</option><option value="D">Veio D (MCC 2)</option><option value="E">Veio E (MCC 3)</option><option value="F">Veio F (MCC 3)</option>`;
-        } else if (mcc === "4") {
-            optionsVeios += `<option value="H">Veio H (MCC 4)</option><option value="G">Veio G (MCC 4)</option>`;
-        }
+        if (!grupos[mcc]) grupos[mcc] = [];
+        grupos[mcc].push(a);
+    });
 
-        let posicaoHTML = "";
-        const isBow = familiaUpper === "BOW" || familiaUpper.includes("BOW");
-        const isHorizontal = familiaUpper === "HORIZONTAL" || familiaUpper.includes("HORIZONTAL");
-        const isCadeiraSup = familiaUpper === "CADEIRA SUPERIOR" || familiaUpper.includes("CADEIRA SUPERIOR");
-        const isCadeiraInf = familiaUpper === "CADEIRA INFERIOR" || familiaUpper.includes("CADEIRA INFERIOR");
-        const isSegmento = familiaUpper === "SEGMENTO" || familiaUpper.includes("SEGMENTO") || familiaUpper === "SEGUIMENTO ZERO";
-        const isMolde = familiaUpper === "MOLDE" || familiaUpper.includes("MOLDE");
-        const isBender = familiaUpper === "BENDER" || familiaUpper.includes("BENDER");
-        const isStraightener = familiaUpper === "STRAIGHTENER" || familiaUpper.includes("STRAIGHTENER");
-        const isOsciladora = familiaUpper === "MESA OSCILADORA" || familiaUpper.includes("MESA OSCILADORA");
-        
-        if (isBow && mccCompat === "4") {
-            let opts = '<option value="">Bow</option>';
-            for (let i = 1; i <= 5; i++) opts += `<option value="${i}">#${i}</option>`;
-            posicaoHTML = `<select id="pos-${a.id}" style="width:65px; padding:4px 6px; font-size:12px; border-radius:4px; border:2px solid #10b981; background:#0f172a; color:#e0e0e0;">${opts}</select>`;
-        }
-        else if (isHorizontal && mccCompat === "4") {
-            let opts = '<option value="">Horiz</option>';
-            for (let i = 8; i <= 17; i++) opts += `<option value="${i}">#${i}</option>`;
-            posicaoHTML = `<select id="pos-${a.id}" style="width:65px; padding:4px 6px; font-size:12px; border-radius:4px; border:2px solid #10b981; background:#0f172a; color:#e0e0e0;">${opts}</select>`;
-        }
-        else if (isCadeiraSup && mccCompat === "2/3") {
-            let opts = '<option value="">Sup</option>';
-            for (let i = 43; i <= 79; i++) opts += `<option value="${i}">#${i}</option>`;
-            posicaoHTML = `<select id="pos-${a.id}" style="width:65px; padding:4px 6px; font-size:12px; border-radius:4px; border:2px solid #10b981; background:#0f172a; color:#e0e0e0;">${opts}</select>`;
-        }
-        else if (isCadeiraInf && mccCompat === "2/3") {
-            let opts = '<option value="">Inf</option>';
-            for (let i = 43; i <= 79; i++) opts += `<option value="${i}">#${i}</option>`;
-            posicaoHTML = `<select id="pos-${a.id}" style="width:65px; padding:4px 6px; font-size:12px; border-radius:4px; border:2px solid #10b981; background:#0f172a; color:#e0e0e0;">${opts}</select>`;
-        }
-        else if (isSegmento && mccCompat === "2/3") {
-            let opts = '<option value="">Seg</option>';
-            for (let i = 1; i <= 6; i++) opts += `<option value="${i}">#${i}</option>`;
-            posicaoHTML = `<select id="pos-${a.id}" style="width:60px; padding:4px 6px; font-size:12px; border-radius:4px; border:2px solid #10b981; background:#0f172a; color:#e0e0e0;">${opts}</select>`;
-        }
-        else if (isMolde || isBender || isStraightener || isOsciladora) {
-            posicaoHTML = `<span style="font-size:12px; color:#888;">Única</span>`;
-        }
-        else {
-            posicaoHTML = `<span style="font-size:12px; color:#888;">Única</span>`;
-        }
+    let htmlFinal = "";
+    const coresMCC = { "2": "#3b82f6", "3": "#8b5cf6", "4": "#ec4899" };
 
-        const btnExcluir = `
-            <button onclick="window.excluirEquipamento('${a.id}')" style="padding:3px 8px; font-size:11px; background:transparent; border:1px solid #ef4444; color:#ef4444; border-radius:3px; cursor:pointer;" title="Excluir">
-                🗑️
-            </button>
-        `;
+    Object.keys(grupos).sort().forEach(mcc => {
+        const itens = grupos[mcc];
+        // Agrupa por tipo
+        const tipos = {};
+        itens.forEach(a => {
+            const tipo = a.tipo || "Outros";
+            if (!tipos[tipo]) tipos[tipo] = [];
+            tipos[tipo].push(a);
+        });
 
         htmlFinal += `
-            <tr>
-                <td style="font-family: monospace; font-weight:600; font-size:0.85rem; padding:6px 8px; color:#e0e0e0;">${a.id}</td>
-                <td style="padding:6px 8px;"><span style="background:rgba(56,189,248,0.15); padding:2px 10px; border-radius:4px; font-size:0.7rem; color:#38bdf8;">${a.tipo} (MCC ${a.mcc_compat})</span></td>
-                <td style="padding:6px 8px;"><span style="padding:2px 12px; border-radius:20px; font-size:0.65rem; font-weight:700; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.25);">${isZerado}</span></td>
-                <td style="padding:6px 8px;">
-                    <select id="swap-veio-${a.id}" style="width:120px; padding:4px 6px; font-size:12px; border-radius:4px; border:1px solid #444; background:#1a1a2e; color:#e0e0e0;">
-                        ${optionsVeios}
-                    </select>
-                </td>
-                <td style="padding:6px 8px; text-align:center;">${posicaoHTML}</td>
-                <td style="padding:6px 8px;">
-                    <div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">
-                        <button onclick="window.efetuarSwapDireto('${a.id}')" style="padding:4px 12px; font-size:0.7rem; background:rgba(16,185,129,0.15); border:1px solid #10b981; color:#10b981; border-radius:4px; cursor:pointer;">
-                            🔄 Swap
-                        </button>
-                        <button onclick="window.abrirHistoricoIndividual('${a.id}')" style="padding:4px 8px; font-size:0.7rem; background:transparent; border:1px solid #38bdf8; color:#38bdf8; border-radius:4px; cursor:pointer;" title="Prontuário">
-                            📖
-                        </button>
-                        ${btnExcluir}
-                    </div>
+            <tr style="background: ${coresMCC[mcc] || '#f59e0b'}20; border-top: 3px solid ${coresMCC[mcc] || '#f59e0b'};">
+                <td colspan="7" style="padding: 10px 16px; font-weight: 700; color: var(--text-heading); font-size: 15px;">
+                    <i class="fas fa-server"></i> MCC ${mcc}
                 </td>
             </tr>
         `;
+
+        Object.keys(tipos).sort().forEach(tipo => {
+            const lista = tipos[tipo];
+            htmlFinal += `
+                <tr style="background: var(--bg-th);">
+                    <td colspan="7" style="padding: 6px 16px; font-weight: 600; color: var(--text-muted); font-size: 13px; padding-left: 30px;">
+                        <i class="fas fa-tag"></i> ${tipo}
+                    </td>
+                </tr>
+            `;
+
+            lista.forEach((a) => {
+                const isZerado = (a.ton || 0) === 0 ? `✅ Zerado` : `🔄 Parcial (${a.ton}t)`;
+                const mccCompat = a.mcc_compat || "";
+                const familia = a.tipo || "";
+                const familiaUpper = familia.toUpperCase();
+
+                // Construção dos selects (mesmo código que você já tinha)
+                let optionsVeios = `<option value="">Selecione...</option>`;
+                if (mcc === "2/3") {
+                    optionsVeios += `<option value="C">Veio C (MCC 2)</option><option value="D">Veio D (MCC 2)</option><option value="E">Veio E (MCC 3)</option><option value="F">Veio F (MCC 3)</option>`;
+                } else if (mcc === "4") {
+                    optionsVeios += `<option value="H">Veio H (MCC 4)</option><option value="G">Veio G (MCC 4)</option>`;
+                }
+
+                let posicaoHTML = "";
+                const isBow = familiaUpper === "BOW" || familiaUpper.includes("BOW");
+                const isHorizontal = familiaUpper === "HORIZONTAL" || familiaUpper.includes("HORIZONTAL");
+                const isCadeiraSup = familiaUpper === "CADEIRA SUPERIOR" || familiaUpper.includes("CADEIRA SUPERIOR");
+                const isCadeiraInf = familiaUpper === "CADEIRA INFERIOR" || familiaUpper.includes("CADEIRA INFERIOR");
+                const isSegmento = familiaUpper === "SEGMENTO" || familiaUpper.includes("SEGMENTO") || familiaUpper === "SEGUIMENTO ZERO";
+                const isMolde = familiaUpper === "MOLDE" || familiaUpper.includes("MOLDE");
+                const isBender = familiaUpper === "BENDER" || familiaUpper.includes("BENDER");
+                const isStraightener = familiaUpper === "STRAIGHTENER" || familiaUpper.includes("STRAIGHTENER");
+                const isOsciladora = familiaUpper === "MESA OSCILADORA" || familiaUpper.includes("MESA OSCILADORA");
+
+                if (isBow && mccCompat === "4") {
+                    let opts = '<option value="">Bow</option>';
+                    for (let i = 1; i <= 5; i++) opts += `<option value="${i}">#${i}</option>`;
+                    posicaoHTML = `<select id="pos-${a.id}" style="width:65px; padding:4px 6px; font-size:12px; border-radius:4px; border:2px solid #10b981; background:#0f172a; color:#e0e0e0;">${opts}</select>`;
+                }
+                else if (isHorizontal && mccCompat === "4") {
+                    let opts = '<option value="">Horiz</option>';
+                    for (let i = 8; i <= 17; i++) opts += `<option value="${i}">#${i}</option>`;
+                    posicaoHTML = `<select id="pos-${a.id}" style="width:65px; padding:4px 6px; font-size:12px; border-radius:4px; border:2px solid #10b981; background:#0f172a; color:#e0e0e0;">${opts}</select>`;
+                }
+                else if (isCadeiraSup && mccCompat === "2/3") {
+                    let opts = '<option value="">Sup</option>';
+                    for (let i = 43; i <= 79; i++) opts += `<option value="${i}">#${i}</option>`;
+                    posicaoHTML = `<select id="pos-${a.id}" style="width:65px; padding:4px 6px; font-size:12px; border-radius:4px; border:2px solid #10b981; background:#0f172a; color:#e0e0e0;">${opts}</select>`;
+                }
+                else if (isCadeiraInf && mccCompat === "2/3") {
+                    let opts = '<option value="">Inf</option>';
+                    for (let i = 43; i <= 79; i++) opts += `<option value="${i}">#${i}</option>`;
+                    posicaoHTML = `<select id="pos-${a.id}" style="width:65px; padding:4px 6px; font-size:12px; border-radius:4px; border:2px solid #10b981; background:#0f172a; color:#e0e0e0;">${opts}</select>`;
+                }
+                else if (isSegmento && mccCompat === "2/3") {
+                    let opts = '<option value="">Seg</option>';
+                    for (let i = 1; i <= 6; i++) opts += `<option value="${i}">#${i}</option>`;
+                    posicaoHTML = `<select id="pos-${a.id}" style="width:60px; padding:4px 6px; font-size:12px; border-radius:4px; border:2px solid #10b981; background:#0f172a; color:#e0e0e0;">${opts}</select>`;
+                }
+                else if (isMolde || isBender || isStraightener || isOsciladora) {
+                    posicaoHTML = `<span style="font-size:12px; color:#888;">Única</span>`;
+                }
+                else {
+                    posicaoHTML = `<span style="font-size:12px; color:#888;">Única</span>`;
+                }
+
+                const btnExcluir = `
+                    <button onclick="window.excluirEquipamento('${a.id}')" style="padding:3px 8px; font-size:11px; background:transparent; border:1px solid #ef4444; color:#ef4444; border-radius:3px; cursor:pointer;" title="Excluir">
+                        🗑️
+                    </button>
+                `;
+
+                htmlFinal += `
+                    <tr>
+                        <td style="font-family: monospace; font-weight:600; font-size:0.85rem; padding:6px 8px; color:#e0e0e0; padding-left: 45px;">${a.id}</td>
+                        <td style="padding:6px 8px;"><span style="background:rgba(56,189,248,0.15); padding:2px 10px; border-radius:4px; font-size:0.7rem; color:#38bdf8;">${a.tipo}</span></td>
+                        <td style="padding:6px 8px;"><span style="padding:2px 12px; border-radius:20px; font-size:0.65rem; font-weight:700; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.25);">${isZerado}</span></td>
+                        <td style="padding:6px 8px;">
+                            <select id="swap-veio-${a.id}" style="width:120px; padding:4px 6px; font-size:12px; border-radius:4px; border:1px solid #444; background:#1a1a2e; color:#e0e0e0;">
+                                ${optionsVeios}
+                            </select>
+                        </td>
+                        <td style="padding:6px 8px; text-align:center;">${posicaoHTML}</td>
+                        <td style="padding:6px 8px;">
+                            <div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">
+                                <button onclick="window.efetuarSwapDireto('${a.id}')" style="padding:4px 12px; font-size:0.7rem; background:rgba(16,185,129,0.15); border:1px solid #10b981; color:#10b981; border-radius:4px; cursor:pointer;">
+                                    🔄 Swap
+                                </button>
+                                <button onclick="window.abrirHistoricoIndividual('${a.id}')" style="padding:4px 8px; font-size:0.7rem; background:transparent; border:1px solid #38bdf8; color:#38bdf8; border-radius:4px; cursor:pointer;" title="Prontuário">
+                                    📖
+                                </button>
+                                ${btnExcluir}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        });
     });
 
     resBody.innerHTML = htmlFinal;
@@ -727,6 +766,22 @@ window.excluirEquipamento = excluirEquipamento;
 window.iniciarSwapAlocacao = efetuarSwapDireto;
 
 // ==============================================================
+// EXPOSIÇÃO GLOBAL (para uso no HTML)
+// ==============================================================
+window.renderPainelVeios = renderPainelVeios;
+window.gerarCardGraficoHTML = gerarCardGraficoHTML;
+window.renderAtivos = renderAtivos;
+window.renderReparos = renderReparos;
+window.renderReservas = renderReservas;   // Mantém no window, pois é usado no HTML
+window.renderRolos = renderRolos;
+window.renderMateriais = renderMateriais;
+window.aplicarFiltrosMCC = aplicarFiltrosMCC;
+window.renderizarGraficosMCC = renderizarGraficosMCC;
+window.efetuarSwapDireto = efetuarSwapDireto;
+window.excluirEquipamento = excluirEquipamento;
+window.iniciarSwapAlocacao = efetuarSwapDireto;
+
+// ==============================================================
 // EXPORTAÇÕES NOMEADAS (para import { ... } from './ui.js')
 // ==============================================================
 export {
@@ -734,7 +789,7 @@ export {
     gerarCardGraficoHTML,
     renderAtivos,
     renderReparos,
-    renderReservas,
+    // renderReservas foi removido daqui porque já é exportado com 'export function'
     renderRolos,
     renderMateriais,
     aplicarFiltrosMCC,
@@ -751,7 +806,7 @@ export default {
     gerarCardGraficoHTML,
     renderAtivos,
     renderReparos,
-    renderReservas,
+    renderReservas,   // Aqui pode ficar, pois é exportação padrão, não nomeada
     renderRolos,
     renderMateriais,
     aplicarFiltrosMCC,

@@ -2186,3 +2186,107 @@ h1, h2, h3, h4, h5, h6 {
         font-size: 12px;
     }
 }
+/* ===== KPI CARDS MELHORADOS ===== */
+.kpi-card {
+    transition: all var(--transition);
+    cursor: default;
+}
+.kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+}
+
+/* ===== TOP CRÍTICOS ===== */
+.top-critico-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-td);
+    margin-bottom: 6px;
+    border-left: 3px solid var(--danger);
+    transition: all var(--transition);
+}
+.top-critico-item:hover {
+    background: var(--bg-hover);
+    transform: translateX(4px);
+}
+.top-critico-item .tag {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-heading);
+}
+.top-critico-item .porcentagem {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--danger);
+}
+.top-critico-item .tipo {
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--bg-th);
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+/* ===== ÚLTIMAS ATIVIDADES ===== */
+.atividade-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+.atividade-item:last-child {
+    border-bottom: none;
+}
+.atividade-item .time {
+    color: var(--text-muted);
+    font-size: 11px;
+    white-space: nowrap;
+    min-width: 80px;
+}
+.atividade-item .tag-badge {
+    background: var(--info-bg);
+    color: var(--text-accent);
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+}
+.atividade-item .desc {
+    flex: 1;
+    color: var(--text-main);
+}
+.atividade-item .usuario {
+    color: var(--text-muted);
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+/* ===== LEGENDA DO GRÁFICO ===== */
+.legenda-status-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+    font-size: 13px;
+}
+.legenda-status-item .cor {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+.legenda-status-item .label {
+    color: var(--text-main);
+}
+.legenda-status-item .count {
+    margin-left: auto;
+    font-weight: 600;
+    color: var(--text-heading);
+}

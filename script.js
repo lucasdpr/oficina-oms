@@ -1,5 +1,5 @@
 // ==========================================
-// SCRIPT.JS - COMPLETO E CORRIGIDO
+// SCRIPT.JS - COMPLETO E CORRIGIDO (PAINEL TURBINADO)
 // ==========================================
 
 import { 
@@ -24,6 +24,7 @@ let DADOS_FOLGA_ARESTA = {};
 let EM_EMERGENCIA = JSON.parse(localStorage.getItem("oms_emergencia_v32_local")) || null;
 let OPERADOR_LOGADO = JSON.parse(localStorage.getItem("oms_operador_v32_local")) || null;
 let VEIO_SELECIONADO_PAINEL = "C";
+let FILTRO_CRITICOS = false; // 🔥 NOVA VARIÁVEL PARA FILTRO DE CRÍTICOS
 
 const CADASTRO_MATRICULAS = {
     "40090430": "Filipe (Líder)",
@@ -54,7 +55,7 @@ function getOrdemPadrao(tipo) {
 }
 
 // ==========================================================================
-// INICIALIZAÇÃO DE BANCOS DE DADOS
+// INICIALIZAÇÃO DE BANCOS DE DADOS (já existente)
 // ==========================================================================
 if (!BANCO_ATIVOS || BANCO_ATIVOS.length < 150) {
     BANCO_ATIVOS = [];
@@ -133,6 +134,15 @@ if (BANCO_ROLOS) {
         localStorage.setItem("oms_rolos_v32_local", JSON.stringify(BANCO_ROLOS));
     }
 }
+function calcularDias(item) {
+    if (item.local === "Oficina / Reparo" && item.dataReparo) {
+        const agora = Date.now();
+        const diffMs = agora - item.dataReparo;
+        const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        return diffDias;
+    }
+    return item.dias || 0;
+}
 
 // ==========================================
 // TEMA E UI GLOBAL
@@ -202,7 +212,8 @@ function processarAutenticacaoHome() {
         if (typeof renderReparos === 'function') renderReparos();
         if (typeof renderReservas === 'function') renderReservas();
         if (typeof renderRolos === 'function') renderRolos();
-        if (typeof renderMateriais === 'function') renderMateriais(); 
+        if (typeof renderMateriais === 'function') renderMateriais();
+        if (typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
     } else {
         alert("Falha: Matrícula não localizada.");
     }
@@ -228,9 +239,9 @@ function verificarAcesso() {
 }
 
 // ==========================================
-// ABRIR ABA - CORRIGIDA E ÚNICA
+// ABRIR ABA - CORRIGIDA
 // ==========================================
-window.abrirAba = function(event, idAba) {
+function abrirAba(event, idAba) {
     if (event) event.preventDefault();
 
     document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
@@ -241,20 +252,24 @@ window.abrirAba = function(event, idAba) {
     }
     document.getElementById(idAba).classList.add("active");
 
+    // Renderiza conforme a aba
     if (idAba === "aba-mcc2") renderizarGraficosMCC(2);
     if (idAba === "aba-mcc3") renderizarGraficosMCC(3);
     if (idAba === "aba-mcc4") renderizarGraficosMCC(4);
     if (idAba === "aba-reparos") renderReparos();
-    if (idAba === "aba-reservas") {
-        if (typeof window.renderReservas === 'function') {
-            window.renderReservas();
-        } else if (typeof renderReservas === 'function') {
-            renderReservas();
-        }
-    }
+    if (idAba === "aba-reservas") renderReservas();
     if (idAba === "aba-rolos") renderRolos();
-    if (idAba === "aba-almoxarifado") renderMateriais(); 
+    if (idAba === "aba-almoxarifado") renderMateriais();
     if (idAba === "aba-historico") renderHistorico();
+    if (idAba === "aba-painel") {
+        if (typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
+    }
+    if (idAba === "aba-ativos") {
+        renderAtivos();
+    }
+    if (idAba === "aba-fluxo") {   // ← ADICIONE ESTA LINHA
+        renderPainelVeios();       // ← ADICIONE ESTA LINHA
+    }
 
     const selVeios = document.getElementById("seletor-veios-container");
     if (idAba === "aba-fluxo" || idAba === "aba-ativos") {
@@ -266,7 +281,7 @@ window.abrirAba = function(event, idAba) {
     if (window.innerWidth <= 992) {
         document.getElementById('sidebar-menu').classList.remove('open');
     }
-};
+}
 
 // ==========================================
 // HISTÓRICO E AUDITORIA
@@ -336,25 +351,123 @@ function calcularKpisGlobais() {
 function renderPainelVeios() {
     const container = document.getElementById("container-fluxo-horizontal-scroll");
     const titulo = document.getElementById("titulo-veio-focado");
-    if (!container || !titulo) return;
-
-    titulo.innerHTML = `Sequenciamento Dinâmico: <span style="color:var(--text-accent)">Veio ${VEIO_SELECIONADO_PAINEL}</span>`;
-
-    let ativos = BANCO_ATIVOS.filter(a => a.local && a.local.includes(`Veio ${VEIO_SELECIONADO_PAINEL}`));
-    ativos.sort((a, b) => (a.ordem || 999) - (b.ordem || 999));
-
-    if (ativos.length === 0) {
-        container.innerHTML = `<div class="vazio">Nenhum componente instalado no Veio ${VEIO_SELECIONADO_PAINEL}.</div>`;
+    if (!container || !titulo) {
+        console.warn("⚠️ Elementos da aba fluxo não encontrados.");
         return;
     }
 
-    container.innerHTML = ativos.map(gerarCardGraficoHTML).join("");
+    // Busca a configuração do veio atual
+    const config = getConfiguracaoPorVeio(VEIO_SELECIONADO_PAINEL);
+    if (!config) {
+        container.innerHTML = `
+            <div style="padding: 30px; text-align: center; color: var(--text-muted);">
+                <i class="fas fa-tools" style="font-size: 40px; margin-bottom: 15px; opacity: 0.5;"></i>
+                <h3>Configuração não encontrada para o Veio ${VEIO_SELECIONADO_PAINEL}</h3>
+                <p>Verifique se a máquina está configurada.</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Atualiza o título
+    titulo.innerHTML = `Sequenciamento Estrutural: <span style="color: var(--text-accent);">${config.nome}</span>`;
+
+    // Pega as peças instaladas neste veio
+    const pecasInstaladas = BANCO_ATIVOS.filter(p => 
+        (p.veio === VEIO_SELECIONADO_PAINEL && p.status === "Instalado") || 
+        (p.local && p.local.includes(`Veio ${VEIO_SELECIONADO_PAINEL}`) && !p.local.includes("Oficina"))
+    );
+
+    // Gera os slots
+    const slots = config.slots || [];
+    if (slots.length === 0) {
+        container.innerHTML = `
+            <div style="padding: 30px; text-align: center; color: var(--text-muted);">
+                <i class="fas fa-tools" style="font-size: 40px; margin-bottom: 15px; opacity: 0.5;"></i>
+                <h3>Estrutura da Máquina ${config.nome} em Construção</h3>
+                <p>Os slots serão configurados em breve.</p>
+            </div>
+        `;
+        return;
+    }
+
+    let htmlSlots = "";
+
+    slots.forEach(slot => {
+        let pecaEncontrada = null;
+
+        // Procura uma peça que ocupe este slot
+        for (const p of pecasInstaladas) {
+            if (p.posicaoFixa && p.posicaoFixa === slot.id) {
+                pecaEncontrada = p;
+                break;
+            }
+            if (!p.posicaoFixa && config.mapearSlotLegado) {
+                const slotMapeado = config.mapearSlotLegado(p);
+                if (slotMapeado === slot.id) {
+                    pecaEncontrada = p;
+                    break;
+                }
+            }
+        }
+
+        if (pecaEncontrada) {
+            // Calcula o desgaste
+            const pct = pecaEncontrada.meta > 0 ? (pecaEncontrada.ton / pecaEncontrada.meta) * 100 : 0;
+            const corClass = pct >= 80 ? "danger" : pct >= 50 ? "warning" : "success";
+            const pctDisplay = pct.toFixed(1);
+            const dias = calcularDias(pecaEncontrada);
+
+            htmlSlots += `
+                <div class="ind-card" style="border-top: 3px solid var(--${corClass}); min-width: 260px; max-width: 300px; background: var(--bg-td); border-radius: var(--radius-md); padding: 16px 18px; transition: all var(--transition-base);">
+                    <div class="flex-between" style="margin-bottom: 4px;">
+                        <span class="font-code" style="font-size: 0.9rem; font-weight: 700; color: var(--text-heading);">${pecaEncontrada.id}</span>
+                        <span class="bg-tag" style="font-size: 0.55rem;">${pecaEncontrada.tipo}</span>
+                    </div>
+                    <div class="flex-between" style="margin-bottom: 8px;">
+                        <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fas fa-layer-group"></i> ${slot.nome}</span>
+                        <span style="font-weight: 700; font-family: var(--font-mono); font-size: 1.1rem; color: var(--${corClass});">${pctDisplay}%</span>
+                    </div>
+                    <div class="progress-container" style="margin: 4px 0 10px 0;">
+                        <div class="progress-bar bg-${corClass}" style="width: ${Math.min(pct, 100)}%; height: 6px; border-radius: 10px;"></div>
+                    </div>
+                    <div class="flex-between" style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 12px;">
+                        <span>Ton: <strong class="font-code" style="color: var(--text-heading);">${Number(pecaEncontrada.ton || 0).toLocaleString('pt-BR')}</strong></span>
+                        <span>Lim: <strong class="font-code" style="color: var(--text-heading);">${Number(pecaEncontrada.meta || 0).toLocaleString('pt-BR')}</strong></span>
+                        <span>Dias: <strong class="font-code" style="color: var(--text-heading);">${dias}</strong></span>
+                    </div>
+                    <div class="flex-between gap-10" style="gap: 8px;">
+                        <button class="btn-xs-primary" style="flex: 1; padding: 6px; font-size: 0.65rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm);" onclick="window.abrirHistoricoIndividual('${pecaEncontrada.id}')">
+                            <i class="fas fa-book"></i> Prontuário
+                        </button>
+                        <button class="btn-outline-danger" style="flex: 1; padding: 6px; font-size: 0.65rem; border-radius: var(--radius-sm);" onclick="window.iniciarSaque('${pecaEncontrada.id}')">
+                            <i class="fas fa-exchange-alt"></i> Sacar
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else {
+            htmlSlots += `
+                <div class="ind-card" style="border: 2px dashed var(--danger); background: var(--danger-bg); min-width: 260px; max-width: 300px; border-radius: var(--radius-md); padding: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; min-height: 140px;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 28px; color: var(--danger); margin-bottom: 8px; opacity: 0.6;"></i>
+                    <h4 style="color: var(--danger); font-size: 0.85rem; margin: 0;">${slot.nome}</h4>
+                    <p style="color: var(--danger); font-size: 0.65rem; margin: 4px 0 12px 0; opacity: 0.7;">GAVETA VAZIA</p>
+                    <button class="btn-premium btn-success" style="padding: 6px 16px; font-size: 0.7rem;" onclick="window.abrirAba(null, 'aba-reservas')">
+                        <i class="fas fa-plus"></i> Alocar
+                    </button>
+                </div>
+            `;
+        }
+    });
+
+    container.innerHTML = htmlSlots;
 }
 
 function gerarCardGraficoHTML(a) {
     const pct = a.meta > 0 ? ((a.ton / a.meta) * 100) : 0;
     const pctFixed = pct.toFixed(1);
     let cor = pct >= 80 ? "var(--danger)" : (pct >= 50 ? "var(--warning)" : "var(--success)");
+    const dias = a.dias || 0; // se tiver dataReparo, use calcularDias
 
     return `
         <div class="mcc-grafico-card premium-shadow" style="border-top: 3px solid ${cor};">
@@ -372,6 +485,7 @@ function gerarCardGraficoHTML(a) {
             <div class="grafico-legenda" style="margin-bottom: 10px;">
                 <span>Ton: <strong>${Math.round(a.ton || 0).toLocaleString()}</strong></span>
                 <span>Lim: ${(a.meta || 0).toLocaleString()}</span>
+                <span>Dias: <strong>${dias}</strong></span>
             </div>
             <button class="btn-xs-primary w-100" style="border: 1px dashed var(--text-accent); color: var(--text-accent); background: rgba(56,189,248,0.05); padding: 8px; border-radius: 4px; cursor: pointer;" onclick="abrirHistoricoIndividual('${a.id}')">
                 <i class="fas fa-book-open"></i> Ver Prontuário
@@ -380,7 +494,7 @@ function gerarCardGraficoHTML(a) {
 }
 
 // ==========================================
-// 1. RENDERIZADOR DE ATIVOS BLINDADO
+// RENDER ATIVOS (COM FILTRO DE CRÍTICOS)
 // ==========================================
 function renderAtivos() {
     const tbody = document.getElementById("ativos-table-body");
@@ -389,6 +503,20 @@ function renderAtivos() {
 
     let f = BANCO_ATIVOS.filter(a => (a.local || "").includes(`Veio ${VEIO_SELECIONADO_PAINEL}`) || filtroEl.value.includes("Oficina"));
     
+    // 🔥 FILTRO DE CRÍTICOS
+    if (FILTRO_CRITICOS) {
+        f = f.filter(a => {
+            const pct = a.meta > 0 ? (a.ton / a.meta) * 100 : 0;
+            return pct >= 80 && !a.local.includes("Oficina");
+        });
+        FILTRO_CRITICOS = false;
+        const titulo = document.querySelector('#aba-ativos .panel-card-header h1');
+        if (titulo) titulo.innerHTML = `<i class="fas fa-exclamation-triangle" style="color: var(--danger);"></i> Equipamentos Críticos (≥80%)`;
+    } else {
+        const titulo = document.querySelector('#aba-ativos .panel-card-header h1');
+        if (titulo) titulo.innerHTML = `<i class="fas fa-cubes"></i> Matriz Operacional Geral`;
+    }
+
     if (filtroEl.value === "Oficina / Reparo") {
         f = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reparo");
     } else if (filtroEl.value === "Oficina / Reserva") {
@@ -403,18 +531,15 @@ function renderAtivos() {
         const pct = a.meta > 0 ? ((a.ton / a.meta) * 100) : 0;
         const pctFixed = pct.toFixed(1);
         let classe = pct >= 80 ? "reparo" : "operação";
-        
-        if (a.local === "Oficina / Reserva") {
-            classe = "reserva";
-        } else if (a.local === "Oficina / Reparo") {
-            classe = "reparo";
-        }
+        if (a.local === "Oficina / Reserva") classe = "reserva";
+        else if (a.local === "Oficina / Reparo") classe = "reparo";
 
         let btnAcao = (a.local || "").includes("Veio")
             ? `<button class="btn-outline-danger" onclick="iniciarSaque('${a.id}')">Sacar</button>`
             : `<span class="text-muted" style="margin-right:10px;"><i class="fas fa-warehouse"></i></span>`;
 
         let btnHist = `<button class="btn-outline-danger" style="border-color:var(--text-accent); color:var(--text-accent);" onclick="abrirHistoricoIndividual('${a.id}')"><i class="fas fa-book-open"></i></button>`;
+        let btnExcluir = `<button class="btn-outline-danger" style="border-color:var(--danger); color:var(--danger); padding: 4px 8px;" onclick="excluirEquipamento('${a.id}')" title="Excluir equipamento"><i class="fas fa-trash"></i></button>`;
 
         return `
             <tr>
@@ -425,10 +550,118 @@ function renderAtivos() {
                 <td class="editavel font-code" onclick="fazerCelulaEditavel(this, '${a.id}', 'ton')">${Math.round(a.ton || 0).toLocaleString()}</td>
                 <td class="font-code text-muted">${(a.meta || 0).toLocaleString()}</td>
                 <td><span class="status-pill ${classe}">${pctFixed}%</span></td>
-                <td><div class="flex-align-center gap-10 action-buttons-mobile">${btnAcao} ${btnHist}</div></td>
+                <td><div class="flex-align-center gap-10 action-buttons-mobile">${btnAcao} ${btnHist} ${btnExcluir}</div></td>
             </tr>`;
     }).join("");
 }
+
+// ==========================================
+// RENDER REPAROS (AGRUPADO POR MCC E TIPO)
+// ==========================================
+function renderReparos() {
+    const repBody = document.getElementById("reparos-table-body");
+    if (!repBody) return;
+
+    // 🔥 CORREÇÃO AUTOMÁTICA DE DATA (se necessário)
+    let precisaSalvar = false;
+    BANCO_ATIVOS.forEach(a => {
+        if (a.local === "Oficina / Reparo" && !a.dataReparo) {
+            const diasAtuais = a.dias || 0;
+            a.dataReparo = Date.now() - (diasAtuais * 24 * 60 * 60 * 1000);
+            precisaSalvar = true;
+        }
+    });
+    if (precisaSalvar) {
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    }
+
+    const reparos = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reparo");
+    if (reparos.length === 0) {
+        repBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nenhum equipamento aguardando reparo.</td></tr>`;
+        return;
+    }
+
+    // Agrupa por MCC
+    const grupos = {};
+    reparos.forEach(a => {
+        const mcc = a.mcc_compat || "2/3";
+        if (!grupos[mcc]) grupos[mcc] = [];
+        grupos[mcc].push(a);
+    });
+
+    let htmlFinal = "";
+    const coresMCC = { "2": "#3b82f6", "3": "#8b5cf6", "4": "#ec4899" };
+
+    Object.keys(grupos).sort().forEach(mcc => {
+        const itens = grupos[mcc];
+        // Agrupa por tipo dentro do MCC
+        const tipos = {};
+        itens.forEach(a => {
+            const tipo = a.tipo || "Outros";
+            if (!tipos[tipo]) tipos[tipo] = [];
+            tipos[tipo].push(a);
+        });
+
+        // Cabeçalho do MCC
+        htmlFinal += `
+            <tr style="background: ${coresMCC[mcc] || '#f59e0b'}20; border-top: 3px solid ${coresMCC[mcc] || '#f59e0b'};">
+                <td colspan="5" style="padding: 10px 16px; font-weight: 700; color: var(--text-heading); font-size: 15px;">
+                    <i class="fas fa-server"></i> MCC ${mcc}
+                </td>
+            </tr>
+        `;
+
+        // Para cada tipo
+        Object.keys(tipos).sort().forEach(tipo => {
+            const lista = tipos[tipo];
+            // Sub-cabeçalho do tipo
+            htmlFinal += `
+                <tr style="background: var(--bg-th);">
+                    <td colspan="5" style="padding: 6px 16px; font-weight: 600; color: var(--text-muted); font-size: 13px; padding-left: 30px;">
+                        <i class="fas fa-tag"></i> ${tipo}
+                    </td>
+                </tr>
+            `;
+            // Linhas dos equipamentos
+            lista.forEach(a => {
+                const pct = a.meta > 0 ? ((a.ton / a.meta) * 100) : 0;
+                const pctFixed = pct.toFixed(1);
+                const dias = a.dias || 0; // pode ser calculado com dataReparo
+                const btnExcluir = `<button class="btn-outline-danger" style="border-color:var(--danger); color:var(--danger); padding: 4px 8px;" onclick="excluirEquipamento('${a.id}')" title="Excluir"><i class="fas fa-trash"></i></button>`;
+                htmlFinal += `
+                    <tr>
+                        <td class="font-code" style="padding-left: 45px;">${a.id}</td>
+                        <td><span class="ind-card-tag bg-tag">${a.tipo}</span></td>
+                        <td>
+                            <div class="flex-align-center gap-10">
+                                <span class="font-code bold w-40" style="color: var(--text-heading);">${pctFixed}%</span>
+                                <div class="ind-gauge-bar premium-bar w-100px">
+                                    <div class="ind-gauge-fill bg-danger" style="width: ${Math.min(pct, 100)}%;"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="font-weight:bold; color:var(--warning);">${dias} dias</td>
+                        <td>
+                            <div class="flex-align-center gap-10 action-buttons-mobile">
+                                <button class="btn-premium btn-warning" onclick="abrirModalConcluirReparo('${a.id}')"><i class="fas fa-hammer"></i> Concluir</button>
+                                <button class="btn-premium" style="background:transparent; border-color:var(--text-accent); color:var(--text-accent); padding: 8px 12px;" onclick="abrirHistoricoIndividual('${a.id}')" title="Ver Prontuário"><i class="fas fa-book-open"></i></button>
+                                ${btnExcluir}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        });
+    });
+
+    repBody.innerHTML = htmlFinal;
+}
+
+// ==========================================
+// RENDER RESERVAS (AGRUPADO POR MCC E TIPO)
+// ==========================================
+// A função renderReservas está em ui.js (não duplicar aqui)
+// Ela será importada e usada conforme necessário.
 
 // ==========================================
 // FILTROS MCC
@@ -444,19 +677,24 @@ function renderizarGraficosMCC(mccNumero) {
     const container = document.getElementById(`graficos-mcc${mccNumero}`);
     if (!container) return;
 
+    // Pega o filtro de veio ativo
     const divFiltroVeio = document.getElementById(`filtros-veio-mcc${mccNumero}`);
-    const veioAtivo = divFiltroVeio ? divFiltroVeio.querySelector('.active').getAttribute('data-valor') : 'TODOS';
+    const veioAtivo = divFiltroVeio ? divFiltroVeio.querySelector('.active')?.getAttribute('data-valor') : 'TODOS';
 
+    // Pega o filtro de status ativo
     const divFiltroStatus = document.getElementById(`filtros-status-mcc${mccNumero}`);
-    const statusAtivo = divFiltroStatus ? divFiltroStatus.querySelector('.active').getAttribute('data-valor') : 'TODOS';
+    const statusAtivo = divFiltroStatus ? divFiltroStatus.querySelector('.active')?.getAttribute('data-valor') : 'TODOS';
 
+    // Filtra os ativos que pertencem à MCC
     let filtrados = BANCO_ATIVOS.filter(a => a.local && a.local.includes(`MCC ${mccNumero}`));
 
-    if (veioAtivo !== 'TODOS') {
+    // Aplica filtro de veio
+    if (veioAtivo && veioAtivo !== 'TODOS') {
         filtrados = filtrados.filter(a => a.local && a.local.includes(`Veio ${veioAtivo}`));
     }
 
-    if (statusAtivo !== 'TODOS') {
+    // Aplica filtro de status
+    if (statusAtivo && statusAtivo !== 'TODOS') {
         filtrados = filtrados.filter(a => {
             const pct = a.meta > 0 ? (a.ton / a.meta) * 100 : 0;
             if (statusAtivo === 'VERMELHO') return pct >= 80;
@@ -659,141 +897,25 @@ function getSlotsPorVeio(veio) {
 let ultimoVeioVisualizado = null;
 
 function mudarVeioVisualizado(veio) {
-    // Se já está no mesmo veio, não faz nada (evita recarregamento desnecessário)
-    if (ultimoVeioVisualizado === veio) {
-        console.log(`⏭️ Veio ${veio} já está visível, pulando...`);
-        return;
-    }
-    ultimoVeioVisualizado = veio;
+    // Atualiza o veio selecionado
+    VEIO_SELECIONADO_PAINEL = veio;
 
     // Atualiza os botões de veio
     document.querySelectorAll('.btn-veio-tab').forEach(b => b.classList.remove('active'));
-    
-    if (window.event && window.event.currentTarget) {
-        window.event.currentTarget.classList.add('active');
-    } else {
-        document.querySelectorAll('.btn-veio-tab').forEach(b => {
-            if (b.textContent.includes(`Veio ${veio}`)) {
-                b.classList.add('active');
-            }
-        });
-    }
-    
-    // Atualiza o título
-    const titulo = document.getElementById("titulo-veio-focado");
-    if (titulo) {
-        const config = getConfiguracaoPorVeio(veio);
-        const nomeMaquina = config ? config.nome : `Veio ${veio}`;
-        titulo.innerHTML = `Sequenciamento Estrutural: <span style="color: var(--text-accent);">${nomeMaquina}</span>`;
-    }
-
-    const container = document.getElementById("container-fluxo-horizontal-scroll");
-    if (!container) return;
-    
-    // MOSTRA UM LOADING
-    container.innerHTML = `<div style="padding: 30px; text-align: center; color: var(--text-muted);">
-        <i class="fas fa-spinner fa-spin" style="font-size: 30px; margin-bottom: 15px;"></i>
-        <p>Carregando equipamentos do Veio ${veio}...</p>
-    </div>`;
-
-    const config = getConfiguracaoPorVeio(veio);
-    if (!config) {
-        container.innerHTML = `
-            <div style="padding: 30px; text-align: center; color: var(--text-muted);">
-                <i class="fas fa-tools" style="font-size: 40px; margin-bottom: 15px; opacity: 0.5;"></i>
-                <h3>Configuração não encontrada para o Veio ${veio}</h3>
-                <p>Verifique se a máquina está configurada.</p>
-            </div>
-        `;
-        return;
-    }
-
-    const slots = config.slots || [];
-    if (slots.length === 0) {
-        container.innerHTML = `
-            <div style="padding: 30px; text-align: center; color: var(--text-muted);">
-                <i class="fas fa-tools" style="font-size: 40px; margin-bottom: 15px; opacity: 0.5;"></i>
-                <h3>Estrutura da Máquina ${config.nome} em Construção</h3>
-                <p>Os slots serão configurados em breve.</p>
-            </div>
-        `;
-        return;
-    }
-
-    // PEGA AS PEÇAS INSTALADAS
-    const pecasInstaladas = BANCO_ATIVOS.filter(p => 
-        (p.veio === veio && p.status === "Instalado") || 
-        (p.local && p.local.includes(`Veio ${veio}`) && !p.local.includes("Oficina"))
-    );
-
-    let htmlSlots = "";
-    
-    for (let i = 0; i < slots.length; i++) {
-        const slot = slots[i];
-        let pecaEncontrada = null;
-        
-        for (let j = 0; j < pecasInstaladas.length; j++) {
-            const p = pecasInstaladas[j];
-            
-            if (p.posicaoFixa && p.posicaoFixa === slot.id) {
-                pecaEncontrada = p;
-                break;
-            }
-            
-            if (!p.posicaoFixa && config.mapearSlotLegado) {
-                const slotMapeado = config.mapearSlotLegado(p);
-                if (slotMapeado === slot.id) {
-                    pecaEncontrada = p;
-                    break;
-                }
-            }
+    document.querySelectorAll('.btn-veio-tab').forEach(b => {
+        if (b.textContent.includes(`Veio ${veio}`)) {
+            b.classList.add('active');
         }
+    });
 
-        if (pecaEncontrada) {
-            const pct = pecaEncontrada.meta > 0 ? (pecaEncontrada.ton / pecaEncontrada.meta) * 100 : 0;
-            const corClass = pct >= 80 ? "danger" : pct >= 50 ? "warning" : "success";
-            const pctDisplay = pct.toFixed(1);
+    // Força a renderização do painel
+    renderPainelVeios();
 
-            htmlSlots += `
-                <div class="ind-card" style="border-top: 3px solid var(--${corClass}); min-width: 260px; max-width: 300px; background: var(--bg-td); border-radius: var(--radius-md); padding: 16px 18px; transition: all var(--transition-base);">
-                    <div class="flex-between" style="margin-bottom: 4px;">
-                        <span class="font-code" style="font-size: 0.9rem; font-weight: 700; color: var(--text-heading);">${pecaEncontrada.id}</span>
-                        <span class="bg-tag" style="font-size: 0.55rem;">${pecaEncontrada.tipo}</span>
-                    </div>
-                    <div class="flex-between" style="margin-bottom: 8px;">
-                        <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fas fa-layer-group"></i> ${slot.nome}</span>
-                        <span style="font-weight: 700; font-family: var(--font-mono); font-size: 1.1rem; color: var(--${corClass});">${pctDisplay}%</span>
-                    </div>
-                    <div class="progress-container" style="margin: 4px 0 10px 0;">
-                        <div class="progress-bar bg-${corClass}" style="width: ${Math.min(pct, 100)}%; height: 6px; border-radius: 10px;"></div>
-                    </div>
-                    <div class="flex-between" style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 12px;">
-                        <span>Ton: <strong class="font-code" style="color: var(--text-heading);">${Number(pecaEncontrada.ton || 0).toLocaleString('pt-BR')}</strong></span>
-                        <span>Lim: <strong class="font-code" style="color: var(--text-heading);">${Number(pecaEncontrada.meta || 0).toLocaleString('pt-BR')}</strong></span>
-                        <span>Dias: <strong class="font-code" style="color: var(--text-heading);">${pecaEncontrada.dias || 0}</strong></span>
-                    </div>
-                    <div class="flex-between gap-10" style="gap: 8px;">
-                        <button class="btn-xs-primary" style="flex: 1; padding: 6px; font-size: 0.65rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm);" onclick="abrirHistoricoIndividual('${pecaEncontrada.id}')">
-                            <i class="fas fa-book"></i> Prontuário
-                        </button>
-                        <button class="btn-outline-danger" style="flex: 1; padding: 6px; font-size: 0.65rem; border-radius: var(--radius-sm);" onclick="iniciarSaque('${pecaEncontrada.id}')">
-                            <i class="fas fa-exchange-alt"></i> Sacar
-                        </button>
-                    </div>
-                </div>`;
-        } else {
-            htmlSlots += `
-                <div class="ind-card" style="border: 2px dashed var(--danger); background: var(--danger-bg); min-width: 260px; max-width: 300px; border-radius: var(--radius-md); padding: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; min-height: 140px;">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 28px; color: var(--danger); margin-bottom: 8px; opacity: 0.6;"></i>
-                    <h4 style="color: var(--danger); font-size: 0.85rem; margin: 0;">${slot.nome}</h4>
-                    <p style="color: var(--danger); font-size: 0.65rem; margin: 4px 0 12px 0; opacity: 0.7;">GAVETA VAZIA</p>
-                    <button class="btn-premium btn-success" style="padding: 6px 16px; font-size: 0.7rem;" onclick="window.abrirAba(null, 'aba-reservas')">
-                        <i class="fas fa-plus"></i> Alocar
-                    </button>
-                </div>`;
-        }
+    // Se a aba fluxo não estiver ativa, ativa ela
+    const abaFluxo = document.getElementById('aba-fluxo');
+    if (abaFluxo && !abaFluxo.classList.contains('active')) {
+        abrirAba(null, 'aba-fluxo');
     }
-    container.innerHTML = htmlSlots;
 }
 
 // ==========================================
@@ -895,45 +1017,13 @@ function confirmarRelatorio() {
     fecharModalRelatorio();
 }
 
-// ==============================================================
-// CORRIGIR DATAS DE REPARO PARA EQUIPAMENTOS EXISTENTES
-// ==============================================================
-function corrigirDatasReparo() {
-    if (!confirm("Isso vai corrigir as datas de início dos equipamentos em reparo. Deseja continuar?")) return;
-    
-    const agora = Date.now();
-    let corrigidos = 0;
-    
-    BANCO_ATIVOS.forEach(a => {
-        if (a.local === "Oficina / Reparo" && !a.dataReparo) {
-            // Se já tem dias registrados, subtrai para manter a contagem
-            const diasAntigos = a.dias || 0;
-            a.dataReparo = agora - (diasAntigos * 24 * 60 * 60 * 1000);
-            corrigidos++;
-            console.log(`✅ Corrigido: ${a.id} - dias anteriores: ${diasAntigos}`);
-        }
-    });
-    
-    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-    
-    // Atualiza a tabela de reparos
-    if (typeof renderReparos === 'function') renderReparos();
-    
-    alert(`✅ ${corrigidos} equipamentos corrigidos. Recarregue a página se necessário.`);
-}
-
-// Expor globalmente para o botão
-window.corrigirDatasReparo = corrigirDatasReparo;
 function executarSaqueFinal(id, laudo) {
     let item = BANCO_ATIVOS.find(a => a.id === id);
     if (item) {
         let loc = item.local;
         item.local = "Oficina / Reparo";
-        // 🔥 INÍCIO DA CONTAGEM AUTOMÁTICA
-        item.dataReparo = Date.now();  // salva o momento exato
-        item.dias = 0;                // zera o contador (será calculado dinamicamente)
-        // 🔥 FIM DA CONTAGEM
-
+        item.dataReparo = Date.now();
+        item.dias = 0;
         localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
         registrarHistorico(id, `Sacado da linha (${loc}) p/ Reparo. ${laudo}`);
         
@@ -942,13 +1032,9 @@ function executarSaqueFinal(id, laudo) {
         calcularKpisGlobais();
         renderReparos();
         renderReservas();
+        atualizarPainelCompleto();
     }
 }
-
-// ==========================================
-// A FUNÇÃO renderReservas() ESTÁ NO ui.js
-// ==========================================
-// NÃO DUPLICAR AQUI!
 
 // ==========================================
 // MODAL CONCLUIR REPARO
@@ -1014,11 +1100,8 @@ function confirmarConclusaoReparo() {
         msgHistorico = `Reparo PARCIAL finalizado. Retorna com ${novaTon}t e ${novosDias} dias.`;
     }
 
-    // 🔥 PARA A CONTAGEM QUANDO FINALIZAR
-    item.dataReparo = null;  // remove a referência
-    // 🔥 SE FOR GERAL, já zerou. Se for PARCIAL, mantém os dias manuais.
-
     item.local = "Oficina / Reserva";
+    item.dataReparo = null;
     localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
     registrarHistorico(item.id, msgHistorico);
     
@@ -1027,15 +1110,11 @@ function confirmarConclusaoReparo() {
     renderReservas();
     renderAtivos();
     calcularKpisGlobais();
-
-    // 🔥 VAI PARA A ABA DE RESERVAS PARA MOSTRAR A PEÇA
+    atualizarPainelCompleto();
     abrirAba(null, 'aba-reservas');
-
-    // 🔥 GARANTIA EXTRA
     setTimeout(() => {
-        if (typeof renderReservas === 'function') {
-            renderReservas();
-        }
+        if (typeof renderReservas === 'function') renderReservas();
+        if (typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
     }, 100);
 }
 
@@ -1485,13 +1564,9 @@ function atualizarPosicoesCadastro() {
         return;
     }
 
-    const tipoUpper = tipo.toUpperCase();
     const familia = tipo.split("|")[0] || "";
     const mcc = tipo.split("|")[1] || "";
 
-    // ==========================================
-    // MCC 4 - FAMÍLIA ALTA PERFORMANCE
-    // ==========================================
     if (familia === "Molde" && mcc === "4") {
         selectPos.innerHTML = `<option value="MOLDE">Molde (Única posição)</option>`;
     } 
@@ -1514,10 +1589,6 @@ function atualizarPosicoesCadastro() {
             selectPos.innerHTML += `<option value="${i}">Horizontal Posição #${i}</option>`;
         }
     }
-
-    // ==========================================
-    // MCC 2/3 - FAMÍLIA CONVENCIONAL
-    // ==========================================
     else if (familia === "Molde" && mcc === "2/3") {
         selectPos.innerHTML = `<option value="MOLDE">Molde (Única posição)</option>`;
     } 
@@ -1577,15 +1648,9 @@ function processarCadastroPeca() {
     let statusFinal = instalarDireto ? "Instalado" : "Oficina / Reserva";
     let localFinal = instalarDireto ? `MCC ${mccCompat} - Veio ${veio}` : "Oficina / Reserva";
 
-    // ==========================================
-    // CONVERTE POSIÇÃO PARA SLOT CHASSI
-    // ==========================================
     const tipoUpper = (familia || "").toUpperCase();
     let slotChassi = "";
 
-    // ==========================================
-    // MCC 4 - ALTA PERFORMANCE
-    // ==========================================
     if (mccCompat === "4") {
         if (tipoUpper.includes("BOW")) {
             slotChassi = `BOW-${posicao}`;
@@ -1602,11 +1667,7 @@ function processarCadastroPeca() {
         } else {
             slotChassi = posicao;
         }
-    }
-    // ==========================================
-    // MCC 2/3 - CONVENCIONAL
-    // ==========================================
-    else if (mccCompat === "2/3") {
+    } else if (mccCompat === "2/3") {
         if (tipoUpper.includes("CADEIRA SUPERIOR")) {
             slotChassi = `CAD-SUP-${posicao}`;
         } else if (tipoUpper.includes("CADEIRA INFERIOR")) {
@@ -1626,9 +1687,6 @@ function processarCadastroPeca() {
         slotChassi = posicao;
     }
 
-    // ==========================================
-    // SWAP - BUSCA COM LOOP FOR E MUTAÇÃO DIRETA
-    // ==========================================
     if (instalarDireto && veio && slotChassi) {
         const config = getConfiguracaoPorVeio(veio);
         let pecaExpulsa = false;
@@ -1654,12 +1712,13 @@ function processarCadastroPeca() {
             }
             
             if (ehVelha) {
-                // 🔴 MUTAÇÃO DIRETA - EXPULSA A PEÇA VELHA
                 BANCO_ATIVOS[i].status = "Oficina / Reparo";
                 BANCO_ATIVOS[i].local = "Oficina / Reparo";
                 BANCO_ATIVOS[i].veio = "";
                 BANCO_ATIVOS[i].posicaoFixa = "";
                 BANCO_ATIVOS[i].pos = "";
+                BANCO_ATIVOS[i].dataReparo = Date.now();
+                BANCO_ATIVOS[i].dias = 0;
                 
                 pecaExpulsa = true;
                 pecaExpulsaId = p.id;
@@ -1676,9 +1735,6 @@ function processarCadastroPeca() {
         }
     }
 
-    // ==========================================
-    // CRIA A NOVA PEÇA
-    // ==========================================
     const novaPeca = {
         id: tag,
         tipo: familia,
@@ -1691,7 +1747,8 @@ function processarCadastroPeca() {
         dias: 0,
         meta: limite,
         mcc_compat: mccCompat,
-        ordem: getOrdemPadrao(familia)
+        ordem: getOrdemPadrao(familia),
+        dataReparo: null
     };
 
     BANCO_ATIVOS.push(novaPeca);
@@ -1703,25 +1760,18 @@ function processarCadastroPeca() {
         alert(`✅ Sucesso! Peça [${tag}] criada e guardada no Estoque Reserva.`);
     }
     
-    // ==========================================
-    // LIMPA OS CAMPOS DO FORMULÁRIO
-    // ==========================================
     document.getElementById("add-tag").value = "";
     document.getElementById("add-meta").value = "";
     document.getElementById("add-instalar-direto").checked = false;
 
-    // ==========================================
-    // ATUALIZA A INTERFACE
-    // ==========================================
-    if (typeof renderReservas === 'function') renderReservas();
-    if (typeof renderAtivos === 'function') renderAtivos();
-    if (typeof renderReparos === 'function') renderReparos();
-    if (typeof renderPainelVeios === 'function') renderPainelVeios();
-    if (typeof calcularKpisGlobais === 'function') calcularKpisGlobais();
+    renderReservas();
+    renderAtivos();
+    renderReparos();
+    renderPainelVeios();
+    calcularKpisGlobais();
+    atualizarPainelCompleto();
     
-    if (instalarDireto && typeof mudarVeioVisualizado === 'function') {
-        mudarVeioVisualizado(veio);
-    }
+    if (instalarDireto) mudarVeioVisualizado(veio);
 }
 
 function renderRolos() {
@@ -1922,9 +1972,8 @@ function fazerCelulaEditavel(elemento, id, campo) {
                 }
                 item.id = novoValor;
             } else if (campo === 'dias') {
-                // 🔥 SE O ITEM ESTIVER EM REPARO, AO EDITAR OS DIAS, REINICIAMOS O RELÓGIO
                 if (item.local === "Oficina / Reparo") {
-                    item.dataReparo = Date.now(); // reinicia a contagem a partir da edição
+                    item.dataReparo = Date.now();
                 }
                 item.dias = parseFloat(novoValor) || 0;
             } else if (campo === 'ton') {
@@ -1939,6 +1988,7 @@ function fazerCelulaEditavel(elemento, id, campo) {
             } else {
                 elemento.innerText = novoValor;
             }
+            atualizarPainelCompleto();
         } else {
             elemento.innerText = valorAtual;
         }
@@ -1985,31 +2035,7 @@ function trocarAbaSegZero(event, idAba) {
     }
     event.currentTarget.classList.add('active');
 }
-function exibirToast(mensagem, tipo = 'success') {
-    const toast = document.getElementById('toastMessage');
-    if (!toast) {
-        // Se não existir o elemento, cria um temporário
-        const div = document.createElement('div');
-        div.id = 'toastMessage';
-        div.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:9999; background:#10b981; color:white; padding:14px 28px; border-radius:8px; font-weight:bold; box-shadow:0 4px 20px rgba(0,0,0,0.4); display:none;';
-        document.body.appendChild(div);
-        setTimeout(() => {
-            const el = document.getElementById('toastMessage');
-            if (el) {
-                el.textContent = mensagem;
-                el.style.display = 'block';
-                setTimeout(() => { el.style.display = 'none'; }, 4000);
-            }
-        }, 50);
-        return;
-    }
-    toast.textContent = mensagem;
-    toast.style.display = 'block';
-    if (tipo === 'success') toast.style.background = '#10b981';
-    else toast.style.background = '#f59e0b';
-    clearTimeout(window.toastTimeout);
-    window.toastTimeout = setTimeout(() => { toast.style.display = 'none'; }, 4000);
-}
+
 // ==========================================
 // CONEXÃO COM O GOOGLE SHEETS (API)
 // ==========================================
@@ -2031,14 +2057,13 @@ async function registrarSwapNaPlanilha(maquina, veio, slotId, pecaNova, pecaAnti
     try {
         const resposta = await fetch(API_PLANILHA_URL, {
             method: "POST",
-            mode: "no-cors", // ← ESSENCIAL para evitar CORS
+            mode: "no-cors",
             headers: {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify(dadosSwap)
         });
 
-        // Com 'no-cors', não podemos ler a resposta, mas os dados chegam
         console.log("✅ Dados enviados para a planilha (no-cors). Verifique a planilha!");
 
     } catch (erro) {
@@ -2046,27 +2071,211 @@ async function registrarSwapNaPlanilha(maquina, veio, slotId, pecaNova, pecaAnti
     }
 }
 
-// Expor a função globalmente
 window.registrarSwapNaPlanilha = registrarSwapNaPlanilha;
 
 // ==========================================
-// EXPOSIÇÃO GLOBAL - TODAS AS FUNÇÕES
+// FUNÇÕES PARA O PAINEL TURBINADO (NOVAS)
 // ==========================================
-window.processarAutenticacaoHome = processarAutenticacaoHome;
-window.fazerLogout = fazerLogout;
+
+function renderizarGraficoStatus() {
+    const canvas = document.getElementById('grafico-status');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width || 180;
+    const h = canvas.height || 180;
+    canvas.width = w;
+    canvas.height = h;
+    
+    const instalados = BANCO_ATIVOS.filter(a => a.local && a.local.includes('Veio') && !a.local.includes('Oficina')).length;
+    const reparo = BANCO_ATIVOS.filter(a => a.local === 'Oficina / Reparo').length;
+    const reserva = BANCO_ATIVOS.filter(a => a.local === 'Oficina / Reserva').length;
+    const total = instalados + reparo + reserva;
+    
+    if (total === 0) {
+        ctx.fillStyle = '#8a9bb5';
+        ctx.font = '14px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Sem dados', w/2, h/2);
+        return;
+    }
+    
+    const cores = ['#10b981', '#f59e0b', '#3b82f6'];
+    const labels = ['Instalados', 'Em Reparo', 'Reserva'];
+    const valores = [instalados, reparo, reserva];
+    
+    const cx = w/2, cy = h/2, raio = Math.min(w, h)/2 - 10;
+    let startAngle = -Math.PI/2;
+    
+    valores.forEach((v, i) => {
+        if (v === 0) return;
+        const slice = (v / total) * 2 * Math.PI;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, raio, startAngle, startAngle + slice);
+        ctx.closePath();
+        ctx.fillStyle = cores[i];
+        ctx.fill();
+        startAngle += slice;
+    });
+    
+    const legendaContainer = document.getElementById('legenda-status');
+    if (legendaContainer) {
+        legendaContainer.innerHTML = valores.map((v, i) => `
+            <div class="legenda-status-item">
+                <div class="cor" style="background: ${cores[i]};"></div>
+                <span class="label">${labels[i]}</span>
+                <span class="count">${v}</span>
+            </div>
+        `).join('');
+    }
+}
+
+function renderizarTopCriticos() {
+    const container = document.getElementById('top-criticos-container');
+    if (!container) return;
+    
+    const ativos = BANCO_ATIVOS.filter(a => 
+        a.local && a.local.includes('Veio') && !a.local.includes('Oficina')
+    );
+    
+    const ordenados = ativos
+        .map(a => ({ ...a, pct: a.meta > 0 ? (a.ton / a.meta) * 100 : 0 }))
+        .sort((a, b) => b.pct - a.pct)
+        .slice(0, 5);
+    
+    if (ordenados.length === 0) {
+        container.innerHTML = '<div class="text-muted" style="text-align:center;padding:20px 0;">Nenhum equipamento crítico.</div>';
+        return;
+    }
+    
+    container.innerHTML = ordenados.map(a => {
+        let mccAba = 'aba-mcc2';
+        if (a.mcc_compat === '3') mccAba = 'aba-mcc3';
+        else if (a.mcc_compat === '4') mccAba = 'aba-mcc4';
+        let veio = 'C';
+        const match = a.local?.match(/Veio\s*([A-Z])/i);
+        if (match) veio = match[1].toUpperCase();
+        const onclick = `window.abrirAba(null, '${mccAba}'); setTimeout(() => { window.mudarVeioVisualizado('${veio}'); }, 200);`;
+        
+        return `
+            <div class="top-critico-item" style="cursor: pointer;" onclick="${onclick}">
+                <span class="tag">${a.id}</span>
+                <span class="tipo">${a.tipo}</span>
+                <span class="porcentagem">${a.pct.toFixed(1)}%</span>
+                <span style="font-size: 10px; color: var(--text-muted);">🔗 ${a.mcc_compat ? 'MCC '+a.mcc_compat : ''} · Veio ${veio}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderizarUltimasAtividades() {
+    const container = document.getElementById('ultimas-atividades-container');
+    if (!container) return;
+    
+    const historico = HISTORICO_ACOES.slice(0, 6);
+    
+    if (historico.length === 0) {
+        container.innerHTML = '<div class="text-muted" style="text-align:center;padding:20px 0;">Nenhuma atividade recente.</div>';
+        return;
+    }
+    
+    container.innerHTML = historico.map(h => `
+        <div class="atividade-item">
+            <span class="time">${h.data || '--'}</span>
+            <span class="tag-badge">${h.tag || 'Sistema'}</span>
+            <span class="desc">${h.acao || 'Ação registrada'}</span>
+            <span class="usuario">${h.responsavel || 'Sistema'}</span>
+        </div>
+    `).join('');
+}
+
+function atualizarKPIsAvancados() {
+    const total = BANCO_ATIVOS.length;
+    const totalEl = document.getElementById('kpi-total');
+    if (totalEl) totalEl.innerText = total;
+    
+    const instalados = BANCO_ATIVOS.filter(a => a.local && a.local.includes('Veio') && !a.local.includes('Oficina'));
+    if (instalados.length > 0) {
+        const soma = instalados.reduce((acc, a) => acc + (a.meta > 0 ? (a.ton / a.meta) * 100 : 0), 0);
+        const media = (soma / instalados.length);
+        const mediaEl = document.getElementById('kpi-media-desgaste');
+        if (mediaEl) mediaEl.innerText = media.toFixed(1) + '%';
+    } else {
+        const mediaEl = document.getElementById('kpi-media-desgaste');
+        if (mediaEl) mediaEl.innerText = '0%';
+    }
+    
+    const emReparo = BANCO_ATIVOS.filter(a => a.local === 'Oficina / Reparo');
+    if (emReparo.length > 0) {
+        const somaDias = emReparo.reduce((acc, a) => {
+            const dias = a.dataReparo ? Math.floor((Date.now() - a.dataReparo) / (1000*60*60*24)) : (a.dias || 0);
+            return acc + dias;
+        }, 0);
+        const mediaDias = Math.round(somaDias / emReparo.length);
+        const mediaReparoEl = document.getElementById('kpi-media-reparo');
+        if (mediaReparoEl) mediaReparoEl.innerText = mediaDias + ' dias';
+    } else {
+        const mediaReparoEl = document.getElementById('kpi-media-reparo');
+        if (mediaReparoEl) mediaReparoEl.innerText = '0 dias';
+    }
+    
+    const mulheresEl = document.getElementById('kpi-mulheres');
+    if (mulheresEl) mulheresEl.innerText = '+30%';
+}
+
+function abrirCriticos() {
+    FILTRO_CRITICOS = true;
+    abrirAba(null, 'aba-ativos');
+    if (typeof renderAtivos === 'function') {
+        renderAtivos();
+    }
+}
+
+function atualizarNovosKPIs() {
+    const total = BANCO_ATIVOS.length;
+    document.getElementById('kpi-total').innerText = total;
+    
+    const moldesReparo = BANCO_ATIVOS.filter(a => a.local === 'Oficina / Reparo' && a.tipo === 'Molde').length;
+    document.getElementById('kpi-moldes-reparo').innerText = moldesReparo;
+    
+    const segmentosReparo = BANCO_ATIVOS.filter(a => a.local === 'Oficina / Reparo' && a.tipo !== 'Molde').length;
+    document.getElementById('kpi-segmentos-reparo').innerText = segmentosReparo;
+    
+    let totalRolos = 0;
+    if (BANCO_ROLOS && Array.isArray(BANCO_ROLOS)) {
+        totalRolos = BANCO_ROLOS.reduce((acc, r) => acc + (r.qtd || 0), 0);
+    }
+    document.getElementById('kpi-total-rolos').innerText = totalRolos;
+}
+
+function atualizarPainelCompleto() {
+    if (typeof calcularKpisGlobais === 'function') {
+        calcularKpisGlobais();
+    }
+    atualizarNovosKPIs();
+    renderizarTopCriticos();
+}
+
+// ==========================================
+// EXPOSIÇÃO GLOBAL - APENAS FUNÇÕES DO SCRIPT.JS
+// ==========================================
+
+// ===== FUNÇÕES DE NAVEGAÇÃO E UI (definidas no script.js) =====
+window.abrirAba = abrirAba;
 window.toggleSidebar = toggleSidebar;
 window.toggleTheme = toggleTheme;
+window.processarAutenticacaoHome = processarAutenticacaoHome;
+window.fazerLogout = fazerLogout;
 window.verificarAcesso = verificarAcesso;
 
-window.dispararEmergencia = dispararEmergencia;
-window.encerrarEmergencia = encerrarEmergencia;
-
+// ===== FUNÇÕES DE HISTÓRICO =====
 window.registrarHistorico = registrarHistorico;
-window.renderHistorico = renderHistorico;
 window.abrirHistoricoIndividual = abrirHistoricoIndividual;
 window.fecharModalHistorico = fecharModalHistorico;
 window.salvarRegistroManual = salvarRegistroManual;
 
+// ===== FUNÇÕES DE MANUTENÇÃO (SAQUE, REPARO, SWAP) =====
 window.iniciarSaque = iniciarSaque;
 window.confirmarRelatorio = confirmarRelatorio;
 window.fecharModalRelatorio = fecharModalRelatorio;
@@ -2075,6 +2284,7 @@ window.fecharModalConcluirReparo = fecharModalConcluirReparo;
 window.confirmarConclusaoReparo = confirmarConclusaoReparo;
 window.toggleCamposReparoParcial = toggleCamposReparoParcial;
 
+// ===== FUNÇÕES DE CADASTRO =====
 window.toggleFormAdicionar = toggleFormAdicionar;
 window.atualizarPosicoesCadastro = atualizarPosicoesCadastro;
 window.processarCadastroPeca = processarCadastroPeca;
@@ -2084,19 +2294,27 @@ window.ajustarSaldoMaterial = ajustarSaldoMaterial;
 window.removerMaterial = removerMaterial;
 window.alterarSaldoRolo = alterarSaldoRolo;
 
+// ===== FUNÇÕES DE EDIÇÃO E UTILITÁRIOS =====
 window.fazerCelulaEditavel = fazerCelulaEditavel;
+// excluirEquipamento é definido no ui.js - NÃO reatribua aqui
+window.dispararEmergencia = dispararEmergencia;
+window.encerrarEmergencia = encerrarEmergencia;
 
-window.mudarVeioVisualizado = mudarVeioVisualizado;
-window.aplicarFiltrosMCC = aplicarFiltrosMCC;
-window.renderizarGraficosMCC = renderizarGraficosMCC;
-
+// ===== FUNÇÕES DO PAINEL (definidas no script.js) =====
 window.calcularKpisGlobais = calcularKpisGlobais;
 window.atualizarInterfaceUsuario = atualizarInterfaceUsuario;
+window.abrirCriticos = abrirCriticos;
+window.renderizarTopCriticos = renderizarTopCriticos;
+window.atualizarNovosKPIs = atualizarNovosKPIs;
+window.atualizarPainelCompleto = atualizarPainelCompleto;
 
+// ===== FUNÇÕES DE CONFIGURAÇÃO DOS VEIOS =====
+window.mudarVeioVisualizado = mudarVeioVisualizado;
 window.getConfiguracaoPorVeio = getConfiguracaoPorVeio;
 window.getSlotsPorVeio = getSlotsPorVeio;
 window.CONFIGURACOES_MAQUINAS = CONFIGURACOES_MAQUINAS;
 
+// ===== FUNÇÕES DE SWAP E FORÇAR RENDER =====
 window.iniciarSwapAlocacao = function(idReserva) {
     if (!verificarAcesso()) return;
 
@@ -2115,15 +2333,15 @@ window.iniciarSwapAlocacao = function(idReserva) {
                 pecaReserva.local = novoLocal;
                 pecaReserva.pos = "Componente Instalado";
                 pecaReserva.ordem = getOrdemPadrao(pecaReserva.tipo);
-
                 localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
                 registrarHistorico(pecaReserva.id, `Alocado no ${novoLocal}.`);
-
-                renderReparos();
-                renderReservas();
-                renderAtivos();
-                renderPainelVeios();
+                // As funções abaixo são do ui.js, mas já estão disponíveis globalmente
+                if (typeof renderReparos === 'function') renderReparos();
+                if (typeof renderReservas === 'function') renderReservas();
+                if (typeof renderAtivos === 'function') renderAtivos();
+                if (typeof renderPainelVeios === 'function') renderPainelVeios();
                 calcularKpisGlobais();
+                atualizarPainelCompleto();
             }
         }
     }
@@ -2267,6 +2485,8 @@ window.efetuarSwapDireto = function(idPeca) {
             BANCO_ATIVOS[i].veio = "";
             BANCO_ATIVOS[i].posicaoFixa = "";
             BANCO_ATIVOS[i].pos = "";
+            BANCO_ATIVOS[i].dataReparo = Date.now();
+            BANCO_ATIVOS[i].dias = 0;
             
             pecaExpulsa = true;
             pecaExpulsaId = p.id;
@@ -2298,6 +2518,8 @@ window.efetuarSwapDireto = function(idPeca) {
     BANCO_ATIVOS[indexNovo].posicaoFixa = slotChassi;
     BANCO_ATIVOS[indexNovo].pos = slotChassi;
     BANCO_ATIVOS[indexNovo].status = "Instalado";
+    BANCO_ATIVOS[indexNovo].dataReparo = null;
+    BANCO_ATIVOS[indexNovo].dias = 0;
     
     if (window.registrarHistorico) {
         window.registrarHistorico(idPeca, `Instalada no Veio ${veioDestino} (${slotChassi}) via Estoque.`);
@@ -2305,11 +2527,13 @@ window.efetuarSwapDireto = function(idPeca) {
     
     localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
     
+    // Funções do ui.js (já disponíveis globalmente)
     if (typeof renderAtivos === 'function') renderAtivos();
     if (typeof renderReservas === 'function') renderReservas();
     if (typeof renderReparos === 'function') renderReparos();
     if (typeof renderPainelVeios === 'function') renderPainelVeios();
     if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
+    if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
     
     if (typeof window.mudarVeioVisualizado === 'function') {
         window.mudarVeioVisualizado(veioDestino);
