@@ -143,90 +143,12 @@ function calcularDias(item) {
     }
     return item.dias || 0;
 }
-function doGet(e) {
-  const acao = e.parameter.acao;
-  
-  if (acao === 'getOficina') {
-    return getOficinaData();
-  }
-  
-  return ContentService.createTextOutput('Ação não reconhecida');
-}
 
-function getOficinaData() {
-  const planilha = SpreadsheetApp.getActiveSpreadsheet();
-  const aba = planilha.getSheetByName('OFICINA');
-  
-  if (!aba) {
-    return ContentService.createTextOutput(JSON.stringify({ erro: 'Aba OFICINA não encontrada' }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-  
-  const dados = aba.getDataRange().getValues();
-  const cabecalho = dados[0];
-  const linhas = dados.slice(1);
-  
-  // Converte para array de objetos JSON
-  const resultado = linhas.map(linha => {
-    const obj = {};
-    cabecalho.forEach((coluna, index) => {
-      obj[coluna] = linha[index];
-    });
-    return obj;
-  });
-  
-  return ContentService.createTextOutput(JSON.stringify(resultado))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-function doPost(e) {
-  const dados = JSON.parse(e.postData.contents);
-  const acao = dados.acao;
-  
-  if (acao === 'updateOficina') {
-    return updateOficina(dados);
-  }
-  
-  return ContentService.createTextOutput(JSON.stringify({ erro: 'Ação não reconhecida' }))
-    .setMimeType(ContentService.MimeType.JSON);
-}
 
-function updateOficina(dados) {
-  const planilha = SpreadsheetApp.getActiveSpreadsheet();
-  const aba = planilha.getSheetByName('OFICINA');
-  
-  if (!aba) {
-    return ContentService.createTextOutput(JSON.stringify({ erro: 'Aba OFICINA não encontrada' }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-  
-  // Exemplo: atualiza o % de conclusão de uma atividade específica
-  const todasLinhas = aba.getDataRange().getValues();
-  const cabecalho = todasLinhas[0];
-  
-  // Encontra a coluna "ID" ou "ATIVIDADE" para localizar a linha certa
-  let colunaId = -1;
-  let colunaConclusao = -1;
-  cabecalho.forEach((nome, i) => {
-    if (nome === 'ID') colunaId = i;
-    if (nome === '% CONCLUSÃO') colunaConclusao = i;
-  });
-  
-  if (colunaId === -1 || colunaConclusao === -1) {
-    return ContentService.createTextOutput(JSON.stringify({ erro: 'Colunas não encontradas' }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-  
-  // Procura a linha pelo ID
-  for (let i = 1; i < todasLinhas.length; i++) {
-    if (todasLinhas[i][colunaId] == dados.id) {
-      aba.getRange(i + 1, colunaConclusao + 1).setValue(dados.percentual);
-      break;
-    }
-  }
-  
-  return ContentService.createTextOutput(JSON.stringify({ sucesso: true, mensagem: 'Atualizado!' }))
-    .setMimeType(ContentService.MimeType.JSON);
-}
+
+
+
+
 
 // ==========================================
 // TEMA E UI GLOBAL
@@ -351,8 +273,12 @@ function abrirAba(event, idAba) {
     if (idAba === "aba-ativos") {
         renderAtivos();
     }
-    if (idAba === "aba-fluxo") {   // ← ADICIONE ESTA LINHA
-        renderPainelVeios();       // ← ADICIONE ESTA LINHA
+    if (idAba === "aba-fluxo") {
+        renderPainelVeios();
+    }
+    // ===== ADICIONE ESTA LINHA ABAIXO =====
+    if (idAba === "aba-oficina") {
+        if (typeof carregarOficina === 'function') carregarOficina();
     }
 
     const selVeios = document.getElementById("seletor-veios-container");
@@ -366,7 +292,6 @@ function abrirAba(event, idAba) {
         document.getElementById('sidebar-menu').classList.remove('open');
     }
 }
-
 // ==========================================
 // HISTÓRICO E AUDITORIA
 // ==========================================
@@ -2339,6 +2264,81 @@ function atualizarPainelCompleto() {
     }
     atualizarNovosKPIs();
     renderizarTopCriticos();
+}
+// ==========================================
+// CARREGAR DADOS DA OFICINA VIA API
+// ==========================================
+async function carregarOficina() {
+    const container = document.getElementById('oficina-container');
+    if (!container) return;
+    
+    container.innerHTML = `<div class="text-muted" style="text-align:center;padding:40px 0;">
+        <i class="fas fa-spinner fa-pulse" style="font-size:24px;"></i> Carregando dados...
+    </div>`;
+    
+    try {
+        const resposta = await fetch(`${API_PLANILHA_URL}?acao=getOficina`);
+        const dados = await resposta.json();
+        
+        if (dados.erro) {
+            container.innerHTML = `<div class="text-danger" style="text-align:center;padding:40px 0;">
+                <i class="fas fa-exclamation-triangle" style="font-size:24px;"></i> ${dados.erro}
+            </div>`;
+            return;
+        }
+        
+        if (dados.length === 0) {
+            container.innerHTML = `<div class="text-muted" style="text-align:center;padding:40px 0;">
+                Nenhuma atividade registrada na oficina.
+            </div>`;
+            return;
+        }
+        
+        // Agrupa por ÁREA
+        const areas = {};
+        dados.forEach(item => {
+            const area = item.ÁREA || 'Geral';
+            if (!areas[area]) areas[area] = [];
+            areas[area].push(item);
+        });
+        
+        let html = '';
+        Object.keys(areas).forEach(nomeArea => {
+            const atividades = areas[nomeArea];
+            html += `
+                <div class="glass-panel" style="padding:16px;margin-bottom:16px;border-left:4px solid var(--text-accent);">
+                    <h3 style="color:var(--text-heading);margin-bottom:10px;"><i class="fas fa-people-group"></i> ${nomeArea}</h3>
+                    <div style="display:grid;grid-template-columns:1fr;gap:8px;">
+            `;
+            atividades.forEach(a => {
+                const pct = parseFloat(a['% CONCLUSÃO']) || 0;
+                const cor = pct >= 80 ? 'var(--success)' : (pct >= 50 ? 'var(--warning)' : 'var(--danger)');
+                html += `
+                    <div style="background:var(--bg-td);padding:12px 16px;border-radius:8px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;">
+                        <div>
+                            <strong style="color:var(--text-heading);">${a.ATIVIDADE || 'Atividade'}</strong>
+                            <span style="font-size:12px;color:var(--text-muted);margin-left:8px;">${a.EQUIPAMENTO || ''}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <span style="color:${cor};font-weight:bold;">${pct}%</span>
+                            <div style="width:100px;height:6px;background:var(--bg-input);border-radius:10px;overflow:hidden;">
+                                <div style="width:${Math.min(pct,100)}%;height:100%;background:${cor};border-radius:10px;"></div>
+                            </div>
+                            <span style="font-size:11px;color:var(--text-muted);">${a.DATA || ''}</span>
+                            <span style="font-size:11px;color:var(--text-muted);">${a.RESPONSÁVEL || ''}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div></div>`;
+        });
+        container.innerHTML = html;
+        
+    } catch (erro) {
+        container.innerHTML = `<div class="text-danger" style="text-align:center;padding:40px 0;">
+            <i class="fas fa-exclamation-triangle"></i> Erro ao carregar dados: ${erro.message}
+        </div>`;
+    }
 }
 
 // ==========================================
