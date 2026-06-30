@@ -1,12 +1,13 @@
+// folhaoMolde23.js - VERSÃO FINAL COM TODOS OS CAMPOS E FALLBACK DE CONTAINERS
+
 import { BANCO_ATIVOS } from './banco.js';
 import { renderAtivos, renderReparos, renderReservas } from './ui.js';
 
 let ID_FOLHAO_MOLDE23_ATUAL = null;
 
 // ==============================================================
-// 1. DADOS DAS TABELAS (Transcritos do Documento)
+// 1. DADOS DAS TABELAS (transcritos do documento)
 // ==============================================================
-
 const recebimentoMecanica = [
     "Os engates rápidos do sistema hidráulico e do sistema de nitrogênio estão completos e em perfeitas condições?",
     "Os flexíveis das faces estreitas e spray estão amassados e/ou danificados?",
@@ -84,79 +85,559 @@ const checkHidraulico = [
 ];
 
 // ==============================================================
-// 2. FUNÇÕES DE JANELA (ABRIR, FECHAR, ABAS)
+// 2. FUNÇÕES AUXILIARES
 // ==============================================================
+function getV(id) {
+    const el = document.getElementById(id);
+    return el ? el.value : '';
+}
 
+function getRadioValue(name) {
+    const radios = document.getElementsByName(name);
+    for (let r of radios) if (r.checked) return r.value;
+    return 'NÃO';
+}
+
+function getCheckboxValue(id) {
+    const el = document.getElementById(id);
+    return el && el.checked ? 'OK' : '';
+}
+
+// ==============================================================
+// 3. GARANTIR QUE OS CONTAINERS EXISTAM (FALLBACK)
+// ==============================================================
+function garantirContainer(id) {
+    let container = document.getElementById(id);
+    if (!container) {
+        // Cria o container dentro do corpo do modal (procura a aba correspondente)
+        const aba = document.querySelector(`#aba-m23-${id.split('-')[2] || 'identificacao'}`);
+        if (aba) {
+            container = document.createElement('div');
+            container.id = id;
+            aba.appendChild(container);
+        } else {
+            // Fallback: coloca no final do body do modal
+            const body = document.querySelector('.folhao-body');
+            if (body) {
+                container = document.createElement('div');
+                container.id = id;
+                body.appendChild(container);
+            }
+        }
+    }
+    return container;
+}
+
+// ==============================================================
+// 4. RENDERIZAR TABELAS DE CHECKLIST (RECEBIMENTO, REVISÃO, etc.)
+// ==============================================================
+function renderizarChecklist(containerId, array, prefix, isMatricula = false) {
+    const container = garantirContainer(containerId);
+    if (!container) return;
+    let html = `<table class="premium-table" style="font-size:10px; width:100%; border-collapse:collapse;">
+        <thead><tr><th style="width:5%;">ITEM</th><th>DESCRIÇÃO</th>`;
+    if (isMatricula) {
+        html += `<th style="width:15%;">NOME</th><th style="width:12%;">MATRÍCULA</th>`;
+    } else {
+        html += `<th style="width:8%;">SIM</th><th style="width:8%;">NÃO</th>`;
+    }
+    html += `</tr></thead><tbody>`;
+    array.forEach((desc, i) => {
+        const name = `${prefix}-${i}`;
+        html += `<tr><td style="text-align:center;">${i+1}</td><td>${desc}</td>`;
+        if (isMatricula) {
+            html += `<td><input id="${name}-nome" class="w-100"></td><td><input id="${name}-mat" class="w-100"></td>`;
+        } else {
+            html += `<td style="text-align:center;"><input type="radio" name="${name}" value="SIM" checked></td>
+                     <td style="text-align:center;"><input type="radio" name="${name}" value="NÃO"></td>`;
+        }
+        html += `</tr>`;
+    });
+    html += `</tbody></table>`;
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 5. RENDERIZAR IDENTIFICAÇÃO
+// ==============================================================
+function renderizarIdentificacao() {
+    const container = garantirContainer('molde23-identificacao');
+    if (!container) return;
+    const html = `
+        <h3 style="color:var(--text-heading);">IDENTIFICAÇÃO</h3>
+        <table class="premium-table" style="font-size:10px;">
+            <thead><tr><th>PLACAS</th><th>SAÍDA MÁQUINA</th><th>SAÍDA OFICINA</th>
+                <th>REDUTORES</th><th>SAIR MÁQUINA</th><th>SAIR OFICINA</th>
+                <th>CILINDROS</th><th>SAIR MÁQUINA</th><th>SAIR OFICINA</th></tr></thead>
+            <tbody>
+                <tr><td>FIXA:</td><td><input id="id-placa-fixa-mq"></td><td><input id="id-placa-fixa-of"></td>
+                    <td>SUP DIREITO</td><td><input id="id-red-sup-dir-mq"></td><td><input id="id-red-sup-dir-of"></td>
+                    <td>SUP DIR</td><td><input id="id-cil-sup-dir-mq"></td><td><input id="id-cil-sup-dir-of"></td></tr>
+                <tr><td>MÓVEL</td><td><input id="id-placa-movel-mq"></td><td><input id="id-placa-movel-of"></td>
+                    <td>INF. DIREITO</td><td><input id="id-red-inf-dir-mq"></td><td><input id="id-red-inf-dir-of"></td>
+                    <td>INF. DIR</td><td><input id="id-cil-inf-dir-mq"></td><td><input id="id-cil-inf-dir-of"></td></tr>
+                <tr><td>DIREITA:</td><td><input id="id-placa-dir-mq"></td><td><input id="id-placa-dir-of"></td>
+                    <td>SUP. ESQ</td><td><input id="id-red-sup-esq-mq"></td><td><input id="id-red-sup-esq-of"></td>
+                    <td>SUP. ESQ</td><td><input id="id-cil-sup-esq-mq"></td><td><input id="id-cil-sup-esq-of"></td></tr>
+                <tr><td>ESQUERDA:</td><td><input id="id-placa-esq-mq"></td><td><input id="id-placa-esq-of"></td>
+                    <td>INF. ESQ</td><td><input id="id-red-inf-esq-mq"></td><td><input id="id-red-inf-esq-of"></td>
+                    <td>INF. ESQ</td><td><input id="id-cil-inf-esq-mq"></td><td><input id="id-cil-inf-esq-of"></td></tr>
+            </tbody>
+        </table>
+    `;
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 6. DIÂMETROS DOS ROLOS (CHEGADA e SAÍDA)
+// ==============================================================
+function renderizarDiametrosRolos(tipo) {
+    const idContainer = tipo === 'chegada' ? 'molde23-diametros-chegada' : 'molde23-diametros-saida';
+    const container = garantirContainer(idContainer);
+    if (!container) return;
+    const titulo = tipo === 'chegada' ? 'AO CHEGAR NA OFICINA' : 'AO SAIR DA OFICINA';
+    const prefix = tipo === 'chegada' ? 'dia-c' : 'dia-s';
+    const html = `
+        <h4 style="color:var(--text-heading);">VERIFICAÇÃO DOS DIÂMETROS DOS ROLOS DO FOOT ROLL E EDGE ROLL ${titulo}</h4>
+        <table class="premium-table" style="font-size:10px;">
+            <tr><th>LADO FIXO</th><td><input id="${prefix}-fixo"></td>
+                <th>LADO MÓVEL</th><td><input id="${prefix}-movel"></td></tr>
+            <tr><th>LADO DIREITO</th><td><input id="${prefix}-dir"></td>
+                <th>LADO ESQUERDO</th><td><input id="${prefix}-esq"></td></tr>
+        </table>
+        <div style="display:flex; gap:20px; flex-wrap:wrap; margin:10px 0;">
+            <div><label>DATA: </label><input type="date" id="${prefix}-data"></div>
+            <div><label>NOME: </label><input id="${prefix}-nome"></div>
+            <div><label>MATRÍCULA: </label><input id="${prefix}-matricula"></div>
+        </div>
+    `;
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 7. ALINHAMENTO DOS ROLOS
+// ==============================================================
+function renderizarAlinhamentoRolos() {
+    const container = garantirContainer('molde23-alinhamento-rolos');
+    if (!container) return;
+    const html = `
+        <h3 style="color:var(--text-heading);">VERIFICAÇÃO DO ALINHAMENTO DOS ROLOS</h3>
+        <table class="premium-table" style="font-size:10px;">
+            <tr><th>LADO FIXO</th><td><input id="alinh-fixo"></td>
+                <th>LADO MÓVEL</th><td><input id="alinh-movel"></td></tr>
+        </table>
+        <div style="display:flex; gap:20px; flex-wrap:wrap; margin:10px 0;">
+            <div><label>DATA: </label><input type="date" id="alinh-data"></div>
+            <div><label>NOME: </label><input id="alinh-nome"></div>
+            <div><label>MATRÍCULA: </label><input id="alinh-matricula"></div>
+        </div>
+    `;
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 8. SENSOR DE NÍVEL (PLANILHA E RESISTÊNCIA)
+// ==============================================================
+function renderizarSensorNivel() {
+    const container = garantirContainer('molde23-sensor-nivel');
+    if (!container) return;
+    const html = `
+        <h3 style="color:var(--text-heading);">PLANILHA DE AJUSTE E MEDIDAS DO SENSOR DE NÍVEL</h3>
+        <table class="premium-table" style="font-size:10px;">
+            <tr><th>ITEM</th><th>DESCRIÇÃO</th><th>OK</th></tr>
+            ${[1,2,3,4,5,6,7].map(i => `
+                <tr><td>${i}</td><td>${['VERIFICAR TAMPA DE PROTEÇÃO;','EFETUAR A TROCA DAS GAXETAS DE ISOLAÇÃO DO SENSOR','VERIFICAR PARAFUSO DE FIXAÇÃO DO SUPORTE DO SENSOR, TORQUE 50 NM;','VERIFICAR PARAFUSO DE FIXAÇÃO DA TAMPA DE PROTEÇÃO DO SENSOR, TORQUE 40 NM;','VERIFICAR ESTADO DE CONSERVAÇÃO E LIMPEZA;','TESTE DE ESTANQUIEDADE (5 BAR);','CHECK NA CONEXÕES DE ALIMENTAÇÃO DE ÁGUA;'][i-1]}</td>
+                    <td style="text-align:center;"><input type="checkbox" id="sn-${i}"></td></tr>
+            `).join('')}
+        </table>
+        <h4>MEDIÇÃO RESISTÊNCIA NO SENSOR DE NÍVEL</h4>
+        <table class="premium-table" style="font-size:10px;">
+            <tr><th>ITEM</th><th>DESCRIÇÃO</th><th>VALOR</th></tr>
+            ${[8,9,10,11,12,13,14,15].map(i => `
+                <tr><td>${i}</td><td>${['VERIFICAR RESISTÊNCIA ENTRE OS PINOS 1-2 LIMITES DE Ω (140...300)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 3-4 LIMITES DE Ω (0...2)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 1-5 LIMITES DE Ω (70...150)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 3-5 LIMITES DE Ω (0...1)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 7-8 LIMITES DE Ω (0...1)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 8-9 LIMITES DE Ω (100...140)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 15-16 LIMITES DE Ω (3...10)','VERIFICAR RESISTÊNCIA NO PINO 10 E A CARCAÇA DO SENSOR LIMITE DE Ω (0...1)'][i-8]}</td>
+                    <td><input id="sn-${i}"></td></tr>
+            `).join('')}
+        </table>
+        <div style="display:flex; gap:20px; flex-wrap:wrap; margin:10px 0;">
+            <div><label>DATA: </label><input type="date" id="sn-data"></div>
+            <div><label>NOME: </label><input id="sn-nome"></div>
+            <div><label>MATRÍCULA: </label><input id="sn-matricula"></div>
+        </div>
+    `;
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 9. ISOLAÇÃO DOS SENSORES DE NÍVEL
+// ==============================================================
+function renderizarIsolamentoSensores() {
+    const container = garantirContainer('molde23-isolamento');
+    if (!container) return;
+    const pinos = ["5 e 6","5 e 8","5 e 10","5 e 15","6 e 8","6 e 10","6 e 15","8 e 10","8 e 15","10 e 15"];
+    let rows = '';
+    pinos.forEach((p, i) => {
+        rows += `<tr><td>${p}</td><td>>10 MΩ</td><td><input id="iso-${i}"></td></tr>`;
+    });
+    const html = `
+        <h3 style="color:var(--text-heading);">ISOLAÇÃO DOS SENSORES DE NÍVEL DO MOLDE (MΩ)</h3>
+        <p>OBS: ESCALA DE MEDIÇÃO DE 100VCA</p>
+        <table class="premium-table" style="font-size:10px;">
+            <tr><th>PINO CONECTOR</th><th>LIMITE (MΩ)</th><th>VALOR MEDIDO</th></tr>
+            ${rows}
+        </table>
+        <div style="display:flex; gap:20px; flex-wrap:wrap; margin:10px 0;">
+            <div><label>DATA: </label><input type="date" id="iso-data"></div>
+            <div><label>NOME: </label><input id="iso-nome"></div>
+            <div><label>MATRÍCULA: </label><input id="iso-matricula"></div>
+        </div>
+    `;
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 10. TERMOPARES
+// ==============================================================
+function renderizarTermopares() {
+    const container = garantirContainer('molde23-termopares');
+    if (!container) return;
+    const html = `
+        <h3 style="color:var(--text-heading);">IDENTIFICAÇÃO DAS CAIXAS DOS TERMOPARES</h3>
+        <div style="display:flex; gap:20px; flex-wrap:wrap;">
+            <div><h4>PLACA FIXA</h4><input id="termo-fixa" style="width:200px;"></div>
+            <div><h4>PLACA MÓVEL</h4><input id="termo-movel" style="width:200px;"></div>
+        </div>
+        <h4>MANUTENÇÃO TERMOPARES DO MOLDE</h4>
+        <table class="premium-table" style="font-size:10px;">
+            <tr><th>DESCRIÇÃO</th><th>CONDIÇÃO</th></tr>
+            <tr><td>VERIFICAR PARAFUSOS DA BASE DAS CAIXAS DOS TERMOPARES</td><td><input id="termo-cond1"></td></tr>
+            <tr><td>TESTE DE AR (INDICAÇÃO WAMBOY)</td><td><input id="termo-cond2"></td></tr>
+            <tr><td>ESTADO/LIMPEZA</td><td><input id="termo-cond3"></td></tr>
+            <tr><td>BORRACHAS E VEDAÇÕES</td><td><input id="termo-cond4"></td></tr>
+            <tr><td>TRAVAS</td><td><input id="termo-cond5"></td></tr>
+        </table>
+        <div style="display:flex; gap:20px; flex-wrap:wrap; margin:10px 0;">
+            <div><label>DATA: </label><input type="date" id="termo-data"></div>
+            <div><label>NOME: </label><input id="termo-nome"></div>
+            <div><label>MATRÍCULA: </label><input id="termo-matricula"></div>
+        </div>
+    `;
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 11. CHECK DO JB 2
+// ==============================================================
+function renderizarCheckJB2() {
+    const container = garantirContainer('molde23-checkjb2');
+    if (!container) return;
+    const html = `
+        <h3 style="color:var(--text-heading);">CHECK DO JB 2</h3>
+        <table class="premium-table" style="font-size:10px;">
+            <tr><th>DESCRIÇÃO</th><th>STATUS</th><th>OBSERVAÇÕES</th></tr>
+            <tr><td>FECHO PAINEL</td><td><select id="jb2-fecho"><option>NORMAL</option><option>ANORMAL</option></select></td><td><input id="jb2-fecho-obs"></td></tr>
+            <tr><td>CONECTORES DO WANBOY COM MOLDE</td><td><select id="jb2-wanboy"><option>NORMAL</option><option>ANORMAL</option></select></td><td><input id="jb2-wanboy-obs"></td></tr>
+            <tr><td>VEDAÇÃO DO JB 2</td><td><select id="jb2-vedacao"><option>NORMAL</option><option>ANORMAL</option></select></td><td><input id="jb2-vedacao-obs"></td></tr>
+        </table>
+        <h4>CHECK CONECTORES DA VÁLVULA PROPORCIONAL</h4>
+        <table class="premium-table" style="font-size:10px;">
+            <tr><th>DESCRIÇÃO</th><th>STATUS</th><th>OBSERVAÇÕES</th></tr>
+            <tr><td>SUPERIOR ESQUERDO</td><td><select id="vp-se"><option>NORMAL</option><option>ANORMAL</option></select></td><td><input id="vp-se-obs"></td></tr>
+            <tr><td>SUPERIOR DIREITO</td><td><select id="vp-sd"><option>NORMAL</option><option>ANORMAL</option></select></td><td><input id="vp-sd-obs"></td></tr>
+            <tr><td>INFERIOR ESQUERDO</td><td><select id="vp-ie"><option>NORMAL</option><option>ANORMAL</option></select></td><td><input id="vp-ie-obs"></td></tr>
+            <tr><td>INFERIOR DIREITO</td><td><select id="vp-id"><option>NORMAL</option><option>ANORMAL</option></select></td><td><input id="vp-id-obs"></td></tr>
+        </table>
+        <h4>CHECK CONECTORES DOS TRANSDUTORES DE POSIÇÃO</h4>
+        <table class="premium-table" style="font-size:10px;">
+            <tr><th>DESCRIÇÃO</th><th>STATUS</th><th>OBSERVAÇÕES</th></tr>
+            <tr><td>SUPERIOR ESQUERDO</td><td><select id="tp-se"><option>NORMAL</option><option>ANORMAL</option></select></td><td><input id="tp-se-obs"></td></tr>
+            <tr><td>SUPERIOR DIREITO</td><td><select id="tp-sd"><option>NORMAL</option><option>ANORMAL</option></select></td><td><input id="tp-sd-obs"></td></tr>
+            <tr><td>INFERIOR ESQUERDO</td><td><select id="tp-ie"><option>NORMAL</option><option>ANORMAL</option></select></td><td><input id="tp-ie-obs"></td></tr>
+            <tr><td>INFERIOR DIREITO</td><td><select id="tp-id"><option>NORMAL</option><option>ANORMAL</option></select></td><td><input id="tp-id-obs"></td></tr>
+        </table>
+        <h4>BLOCO PRINCIPAL</h4>
+        <table class="premium-table" style="font-size:10px;">
+            <tr><th>DESCRIÇÃO</th><th>STATUS</th><th>OBSERVAÇÕES</th></tr>
+            <tr><td>VEDAÇÕES</td><td><select id="bp-ved"><option>NORMAL</option><option>ANORMAL</option></select></td><td><input id="bp-ved-obs"></td></tr>
+            <tr><td>VÁLVULAS E CONECTORES</td><td><select id="bp-valv"><option>NORMAL</option><option>ANORMAL</option></select></td><td><input id="bp-valv-obs"></td></tr>
+            <tr><td>TRANSDUTORES (ÓLEO/AR)</td><td><select id="bp-trans"><option>NORMAL</option><option>ANORMAL</option></select></td><td><input id="bp-trans-obs"></td></tr>
+        </table>
+        <h4>CHECK CABOS DO AJUSTE DE LARGURA DO MOLDE</h4>
+        <table class="premium-table" style="font-size:10px;">
+            <tr><th>DESCRIÇÃO</th><th>STATUS</th><th>OBSERVAÇÕES</th></tr>
+            <tr><td>SUPERIOR ESQUERDO</td><td><select id="cal-se"><option>NORMAL</option><option>ANORMAL</option></select></td><td><input id="cal-se-obs"></td></tr>
+            <tr><td>SUPERIOR DIREITO</td><td><select id="cal-sd"><option>NORMAL</option><option>ANORMAL</option></select></td><td><input id="cal-sd-obs"></td></tr>
+            <tr><td>INFERIOR ESQUERDO</td><td><select id="cal-ie"><option>NORMAL</option><option>ANORMAL</option></select></td><td><input id="cal-ie-obs"></td></tr>
+            <tr><td>INFERIOR DIREITO</td><td><select id="cal-id"><option>NORMAL</option><option>ANORMAL</option></select></td><td><input id="cal-id-obs"></td></tr>
+            <tr><td>BANCO DE VÁLVULAS</td><td><select id="cal-bv"><option>NORMAL</option><option>ANORMAL</option></select></td><td><input id="cal-bv-obs"></td></tr>
+        </table>
+        <div style="display:flex; gap:20px; flex-wrap:wrap; margin:10px 0;">
+            <div><label>DATA: </label><input type="date" id="jb2-data"></div>
+            <div><label>NOME: </label><input id="jb2-nome"></div>
+            <div><label>MATRÍCULA: </label><input id="jb2-matricula"></div>
+        </div>
+    `;
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 12. RESISTÊNCIA DAS PLACAS
+// ==============================================================
+function renderizarResistenciaPlacas() {
+    const container = garantirContainer('molde23-resistencia-placas');
+    if (!container) return;
+    const html = `
+        <h3 style="color:var(--text-heading);">TESTE DE RESISTÊNCIA DAS PLACAS</h3>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+            <div><h4>PLACA MÓVEL</h4><input id="res-placa-movel" style="width:100%;"></div>
+            <div><h4>PLACA FIXA</h4><input id="res-placa-fixa" style="width:100%;"></div>
+            <div><h4>PLACA ESTREITA DIREITA</h4><input id="res-placa-est-dir" style="width:100%;"></div>
+            <div><h4>PLACA ESTREITA ESQUERDA</h4><input id="res-placa-est-esq" style="width:100%;"></div>
+        </div>
+        <div style="display:flex; gap:20px; flex-wrap:wrap; margin:10px 0;">
+            <div><label>DATA: </label><input type="date" id="res-data"></div>
+            <div><label>NOME: </label><input id="res-nome"></div>
+            <div><label>MATRÍCULA: </label><input id="res-matricula"></div>
+        </div>
+    `;
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 13. PERITAGEM DAS PLACAS LARGAS (ENTRADA E SAÍDA)
+// ==============================================================
+function renderizarPeritagemPlacasLargas(tipo) {
+    const idContainer = tipo === 'entrada' ? 'molde23-peritagem-largas-entrada' : 'molde23-peritagem-largas-saida';
+    const container = garantirContainer(idContainer);
+    if (!container) return;
+    const titulo = tipo === 'entrada' ? 'AO ENTRAR NA OFICINA' : 'AO SAIR DA OFICINA';
+    const prefix = tipo === 'entrada' ? 'pl-ent' : 'pl-sai';
+    const html = `
+        <h3 style="color:var(--text-heading);">PERITAGEM DAS PLACAS LARGAS ${titulo}</h3>
+        <h4>FACE NORTE</h4>
+        <table class="premium-table" style="font-size:9px;">
+            <tr><th>1600</th><th>1300</th><th>1000</th><th>LINHA CENTRO</th><th>1000</th><th>1300</th><th>1600</th></tr>
+            ${[1,2,3].map(linha => `
+                <tr>${[1,2,3,4,5,6,7].map(col => `<td><input id="${prefix}-n${linha}-${col}"></td>`).join('')}</tr>
+            `).join('')}
+        </table>
+        <h4>FACE SUL</h4>
+        <table class="premium-table" style="font-size:9px;">
+            <tr><th>1600</th><th>1300</th><th>1000</th><th>LINHA CENTRO</th><th>1000</th><th>1300</th><th>1600</th></tr>
+            ${[1,2,3].map(linha => `
+                <tr>${[1,2,3,4,5,6,7].map(col => `<td><input id="${prefix}-s${linha}-${col}"></td>`).join('')}</tr>
+            `).join('')}
+        </table>
+        <h4>RESULTADO DO ALINHAMENTO FACE PRINCIPAL NORTE (FIXA)</h4>
+        <table class="premium-table" style="font-size:10px;">
+            <tr><th>RÉGUA LESTE</th><th>RÉGUA OESTE</th></tr>
+            <tr><td>SUPERIOR (1): <input id="${prefix}-alinh-n1"></td><td>SUPERIOR (3): <input id="${prefix}-alinh-n3"></td></tr>
+            <tr><td>INFERIOR (2): <input id="${prefix}-alinh-n2"></td><td>INFERIOR (4): <input id="${prefix}-alinh-n4"></td></tr>
+            <tr><td colspan="2">TOLERÂNCIA (1,0+/-0,1)</td></tr>
+        </table>
+        <h4>RESULTADO DO ALINHAMENTO FACE PRINCIPAL SUL (MÓVEL)</h4>
+        <table class="premium-table" style="font-size:10px;">
+            <tr><th>RÉGUA LESTE</th><th>RÉGUA OESTE</th></tr>
+            <tr><td>SUPERIOR (1): <input id="${prefix}-alinh-s1"></td><td>SUPERIOR (3): <input id="${prefix}-alinh-s3"></td></tr>
+            <tr><td>INFERIOR (2): <input id="${prefix}-alinh-s2"></td><td>INFERIOR (4): <input id="${prefix}-alinh-s4"></td></tr>
+            <tr><td colspan="2">SUPERIOR 0.1 mm E INFERIOR 0.2 mm</td></tr>
+        </table>
+        <div style="display:flex; gap:20px; flex-wrap:wrap; margin:10px 0;">
+            <div><label>DATA: </label><input type="date" id="${prefix}-data"></div>
+            <div><label>NOME: </label><input id="${prefix}-nome"></div>
+            <div><label>MATRÍCULA: </label><input id="${prefix}-matricula"></div>
+        </div>
+    `;
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 14. PERITAGEM DAS PLACAS ESTREITAS (CHEGADA E SAÍDA)
+// ==============================================================
+function renderizarPeritagemPlacasEstreitas(tipo) {
+    const idContainer = tipo === 'chegada' ? 'molde23-peritagem-estreitas-chegada' : 'molde23-peritagem-estreitas-saida';
+    const container = garantirContainer(idContainer);
+    if (!container) return;
+    const titulo = tipo === 'chegada' ? 'AO CHEGAR DA OFICINA' : 'AO SAIR DA OFICINA';
+    const prefix = tipo === 'chegada' ? 'pe-c' : 'pe-s';
+    const html = `
+        <h3 style="color:var(--text-heading);">PERITAGEM DAS PLACAS ESTREITAS ${titulo}</h3>
+        <div>
+            <label>PLACA ESQUERDA AFASTADA: <input type="radio" name="${prefix}-esq-af" value="SIM"> SIM <input type="radio" name="${prefix}-esq-af" value="NÃO" checked> NÃO</label>
+        </div>
+        <div>
+            <label>PLACA DIREITA AFASTADA: <input type="radio" name="${prefix}-dir-af" value="SIM"> SIM <input type="radio" name="${prefix}-dir-af" value="NÃO" checked> NÃO</label>
+        </div>
+        <table class="premium-table" style="font-size:10px;">
+            <tr><th>PONTO</th><th>ESQUERDA</th><th>DIREITA</th></tr>
+            ${[1,2,3].map(i => `
+                <tr><td>${i}</td><td><input id="${prefix}-e${i}"></td><td><input id="${prefix}-d${i}"></td></tr>
+            `).join('')}
+        </table>
+        <div style="display:flex; gap:20px; flex-wrap:wrap; margin:10px 0;">
+            <div><label>DATA: </label><input type="date" id="${prefix}-data"></div>
+            <div><label>NOME: </label><input id="${prefix}-nome"></div>
+            <div><label>MATRÍCULA: </label><input id="${prefix}-matricula"></div>
+        </div>
+    `;
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 15. AJUSTE DE CHAVETAS
+// ==============================================================
+function renderizarAjusteChavetas() {
+    const container = garantirContainer('molde23-ajuste-chavetas');
+    if (!container) return;
+    const html = `
+        <h3 style="color:var(--text-heading);">AJUSTE DE CHAVETAS DAS PLACAS ESTREITAS</h3>
+        <h4>PLACA ESQUERDA</h4>
+        <table class="premium-table" style="font-size:10px;">
+            <tr><th>Posição</th><th>LADO A</th><th>LADO B</th><th>NOME</th><th>REG</th></tr>
+            <tr><td>Lado A</td><td><input id="chav-esq-a-a"></td><td><input id="chav-esq-a-b"></td><td><input id="chav-esq-a-nome"></td><td><input id="chav-esq-a-reg"></td></tr>
+            <tr><td>Lado B</td><td><input id="chav-esq-b-a"></td><td><input id="chav-esq-b-b"></td><td><input id="chav-esq-b-nome"></td><td><input id="chav-esq-b-reg"></td></tr>
+        </table>
+        <h4>PLACA DIREITA</h4>
+        <table class="premium-table" style="font-size:10px;">
+            <tr><th>Posição</th><th>LADO A</th><th>LADO B</th><th>NOME</th><th>REG</th></tr>
+            <tr><td>Lado A</td><td><input id="chav-dir-a-a"></td><td><input id="chav-dir-a-b"></td><td><input id="chav-dir-a-nome"></td><td><input id="chav-dir-a-reg"></td></tr>
+            <tr><td>Lado B</td><td><input id="chav-dir-b-a"></td><td><input id="chav-dir-b-b"></td><td><input id="chav-dir-b-nome"></td><td><input id="chav-dir-b-reg"></td></tr>
+        </table>
+        <div style="display:flex; gap:20px; flex-wrap:wrap; margin:10px 0;">
+            <div><label>DATA: </label><input type="date" id="chav-data"></div>
+            <div><label>NOME: </label><input id="chav-nome"></div>
+            <div><label>MATRÍCULA: </label><input id="chav-matricula"></div>
+        </div>
+    `;
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 16. RELATÓRIO FOLGA DE ARESTA (TODAS AS LARGURAS)
+// ==============================================================
+function renderizarFolgaAresta() {
+    const container = garantirContainer('molde23-folga-aresta');
+    if (!container) return;
+    const larguras = [830,870,950,1030,1100,1180,1230,1300,1380,1460,1500,1530,1550,1580,1620];
+    let html = `<h3 style="color:var(--text-heading);">RELATÓRIO FOLGA DE ARESTA</h3><p>Tolerância -- 0.25 por face.</p>`;
+    larguras.forEach(l => {
+        html += `
+            <h4>LARGURA ${l}</h4>
+            <table class="premium-table" style="font-size:9px;">
+                <tr><th>POSIÇÃO</th><th>ESQUERDA</th><th>DIREITA</th></tr>
+                <tr><td>SUPERIOR</td><td><input id="fa-${l}-esq-sup"></td><td><input id="fa-${l}-dir-sup"></td></tr>
+                <tr><td>MEIO</td><td><input id="fa-${l}-esq-meio"></td><td><input id="fa-${l}-dir-meio"></td></tr>
+                <tr><td>INFERIOR</td><td><input id="fa-${l}-esq-inf"></td><td><input id="fa-${l}-dir-inf"></td></tr>
+            </table>
+        `;
+    });
+    html += `
+        <div style="display:flex; gap:20px; flex-wrap:wrap; margin:10px 0;">
+            <div><label>DATA: </label><input type="date" id="fa-data"></div>
+            <div><label>NOME: </label><input id="fa-nome"></div>
+            <div><label>MATRÍCULA: </label><input id="fa-matricula"></div>
+        </div>
+    `;
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 17. AVALIAÇÃO DO SISTEMA DE RESFRIAMENTO
+// ==============================================================
+function renderizarResfriamento() {
+    const container = garantirContainer('molde23-resfriamento');
+    if (!container) return;
+    const html = `
+        <h3 style="color:var(--text-heading);">AVALIAÇÃO DO SISTEMA DE RESFRIAMENTO NA SAÍDA</h3>
+        <h4>FACE NORTE / FIXA</h4>
+        <input id="ref-norte" style="width:100%;">
+        <h4>FACE SUL / MÓVEL</h4>
+        <input id="ref-sul" style="width:100%;">
+        <div style="display:flex; gap:20px; flex-wrap:wrap; margin:10px 0;">
+            <div><label>DATA: </label><input type="date" id="ref-data"></div>
+            <div><label>NOME: </label><input id="ref-nome"></div>
+            <div><label>MATRÍCULA: </label><input id="ref-matricula"></div>
+        </div>
+    `;
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 18. MATERIAIS UTILIZADOS
+// ==============================================================
+function renderizarMateriais() {
+    const container = garantirContainer('molde23-materiais');
+    if (!container) return;
+    let rows = '';
+    for (let i = 1; i <= 20; i++) {
+        rows += `<tr><td><input id="mat-desc-${i}" style="width:100%;"></td><td><input id="mat-qtd-${i}" style="width:60px;"></td></tr>`;
+    }
+    const html = `
+        <h3 style="color:var(--text-heading);">MATERIAIS UTILIZADOS NA MANUTENÇÃO</h3>
+        <table class="premium-table" style="font-size:10px;">
+            <thead><tr><th style="width:80%;">DESCRIÇÃO DO MATERIAL / SKU</th><th style="width:20%;">QUANTIDADE</th></tr></thead>
+            <tbody>${rows}</tbody>
+        </table>
+    `;
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 19. FUNÇÃO PRINCIPAL DE ABRIR O FOLHÃO
+// ==============================================================
 window.abrirFolhaoMolde23 = function(id) {
     ID_FOLHAO_MOLDE23_ATUAL = id;
-    let tagNameEl = document.getElementById('molde23-tag-name');
-    if (tagNameEl) tagNameEl.innerText = "TAG: " + id;
-    
-    document.getElementById('modal-folhao-molde23').classList.remove('hidden');
-    // Se você tiver as funções de renderizar interface, chame-as aqui
-    // renderizarTabelasMolde23();
-}
-
-window.fecharFolhaoMolde23 = function() {
-    document.getElementById('modal-folhao-molde23').classList.add('hidden');
-    ID_FOLHAO_MOLDE23_ATUAL = null;
-}
-
-window.trocarAbaMolde23 = function(evt, abaId) {
-    document.querySelectorAll('#modal-folhao-molde23 .folhao-content').forEach(aba => {
-        aba.classList.add('hidden');
-        aba.classList.remove('active');
-    });
-    document.querySelectorAll('#modal-folhao-molde23 .folhao-tab').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    
-    let abaDestino = document.getElementById(abaId);
-    if(abaDestino) {
-        abaDestino.classList.remove('hidden');
-        abaDestino.classList.add('active');
+    const modal = document.getElementById('modal-folhao-molde23');
+    if (!modal) {
+        console.error("Modal #modal-folhao-molde23 não encontrado!");
+        alert("Erro: Modal do Molde 2/3 não encontrado. Verifique o HTML.");
+        return;
     }
-    
-    if(evt && evt.currentTarget) evt.currentTarget.classList.add('active');
-}
+
+    // Preenche cabeçalho
+    const tagNameEl = document.getElementById('molde23-tag-name');
+    if (tagNameEl) tagNameEl.innerText = id;
+    const dataInicio = document.getElementById('molde23-data-inicio');
+    const dataFim = document.getElementById('molde23-data-fim');
+    if (dataInicio) dataInicio.valueAsDate = new Date();
+    if (dataFim) dataFim.valueAsDate = new Date();
+
+    // Renderiza todas as seções (com fallback de containers)
+    renderizarIdentificacao();
+    renderizarChecklist('container-check-recebimento-m23', recebimentoMecanica, 'rec');
+    renderizarChecklist('container-check-eletrica-m23', recebimentoEletrica, 'ele');
+    renderizarChecklist('container-check-revisao-m23', revisaoMoldes, 'rev');
+    renderizarChecklist('container-check-hidraulica-m23', checkHidraulico, 'hid', true);
+    renderizarChecklist('container-check-final-m23', inspecaoFinal, 'fin');
+    renderizarDiametrosRolos('chegada');
+    renderizarDiametrosRolos('saida');
+    renderizarAlinhamentoRolos();
+    renderizarSensorNivel();
+    renderizarIsolamentoSensores();
+    renderizarTermopares();
+    renderizarCheckJB2();
+    renderizarResistenciaPlacas();
+    renderizarPeritagemPlacasLargas('entrada');
+    renderizarPeritagemPlacasLargas('saida');
+    renderizarPeritagemPlacasEstreitas('chegada');
+    renderizarPeritagemPlacasEstreitas('saida');
+    renderizarAjusteChavetas();
+    renderizarFolgaAresta();
+    renderizarResfriamento();
+    renderizarMateriais();
+
+    modal.classList.remove('hidden');
+};
 
 // ==============================================================
-// 3. O MEGA GERADOR DE PDF
+// 20. GERAR PDF (CORRIGIDO)
 // ==============================================================
-
-const cssBase = `
-<style>
-    .pdf-base { font-family: Arial, sans-serif; font-size: 9px; color: #000; }
-    .pdf-base table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-    .pdf-base th, .pdf-base td { border: 1px solid #000; padding: 4px; }
-    .pdf-base th { background: #e0e0e0; text-align: center; font-weight: bold; font-size: 10px;}
-    .pdf-base .titulo-secao { background: #002b5e; color: #fff; font-weight: bold; padding: 6px; text-align: left; margin: 15px 0 5px 0; border: 1px solid #000; font-size: 12px; text-transform: uppercase;}
-    .pdf-base .subtitulo { background: #d0d0d0; font-weight: bold; text-align: center; padding: 4px; font-size: 10px;}
-    @media print { .quebra-pagina { break-before: page; page-break-before: always; margin-top: 15px;} }
-</style>`;
-
-const getCabecalhoUnico = (titulo, tag, inicio, fim, lider) => `
-<div style="display: flex; border: 2px solid #000; border-bottom: 5px solid #002b5e; margin-bottom: 10px; align-items: center; background: #fff;">
-    <div style="width: 20%; text-align: center; border-right: 2px solid #000; padding: 10px;"><span style="font-family: Arial, sans-serif; font-weight: 900; font-size: 30px; color: #002b5e; letter-spacing: -2px;">CSN</span></div>
-    <div style="width: 60%; text-align: center; padding: 10px;">
-        <h2 style="margin: 0; font-size: 14px; color: #000;">${titulo}</h2>
-        <p style="margin: 5px 0 0 0; font-size: 9px; color: #333; font-weight: bold;">DATA INÍCIO: ${inicio} | DATA FIM: ${fim}</p>
-        <p style="margin: 2px 0 0 0; font-size: 9px; color: #333; font-weight: bold;">LÍDER RESPONSÁVEL: ${lider}</p>
-    </div>
-    <div style="width: 20%; font-size: 11px; border-left: 2px solid #000; padding: 10px; line-height: 1.5; font-weight: bold;">
-        <div style="color: #002b5e;">MOLDE TAG: <span style="color:#000;">${tag}</span></div>
-    </div>
-</div>`;
-
 window.salvarEImprimirFolhaoMolde23 = function() {
-    console.log("Iniciando geração de PDF para Molde 2/3...");
+    if (!window.verificarAcesso || !window.verificarAcesso()) { alert("Acesso negado."); return; }
+    if (!ID_FOLHAO_MOLDE23_ATUAL) { alert("Nenhuma TAG carregada."); return; }
 
-    if (window.verificarAcesso && !window.verificarAcesso()) { alert("Acesso negado."); return; }
-    if (!ID_FOLHAO_MOLDE23_ATUAL) { alert("Erro: Nenhuma TAG carregada."); return; }
-
-    let tag = ID_FOLHAO_MOLDE23_ATUAL;
-    let item = BANCO_ATIVOS.find(a => a.id === tag);
-    
+    // 1. DECLARA A TAG PRIMEIRO
+    const tag = ID_FOLHAO_MOLDE23_ATUAL;
+    const item = BANCO_ATIVOS.find(a => a.id === tag);
     if (item) {
         item.ton = 0;
         item.dias = 0;
@@ -164,165 +645,319 @@ window.salvarEImprimirFolhaoMolde23 = function() {
         localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
     }
 
-    // Busca dados do Cabeçalho (Puxa os IDs dos inputs caso você crie eles no HTML)
-    let lider = document.getElementById('molde23-lider') ? document.getElementById('molde23-lider').value : "_______________";
-    let dataInicio = document.getElementById('molde23-data-inicio') ? document.getElementById('molde23-data-inicio').value : new Date().toLocaleDateString('pt-BR');
-    let dataFim = document.getElementById('molde23-data-fim') ? document.getElementById('molde23-data-fim').value : new Date().toLocaleDateString('pt-BR');
+    // 2. COLETA DADOS DO CABEÇALHO
+    const lider = getV('molde23-lider') || '_______________';
+    const dataInicio = getV('molde23-data-inicio') || new Date().toLocaleDateString('pt-BR');
+    const dataFim = getV('molde23-data-fim') || new Date().toLocaleDateString('pt-BR');
+    const numMolde = getV('molde23-num-molde') || '______';
+    const motivo = getV('molde23-motivo') || '_______________';
+    const tipoExec = document.getElementById('molde23-tipo-exec')?.value || 'GERAL';
+    const desempenho = getV('molde23-desempenho') || '_______________';
 
-    // Montando o HTML de impressão gigante
-    let htmlImp = `${cssBase}<div class="pdf-base">
-        ${getCabecalhoUnico("CHECK LIST GERAL DO MOLDE MCC 2 E 3", tag, dataInicio, dataFim, lider)}
+    // 3. FUNÇÃO AUXILIAR PARA CHECKLISTS
+    function gerarLinhasChecklist(prefix, array, isMatricula = false) {
+        let html = '';
+        array.forEach((desc, i) => {
+            const name = `${prefix}-${i}`;
+            html += `<tr><td>${i+1}</td><td>${desc}</td>`;
+            if (isMatricula) {
+                html += `<td>${getV(`${name}-nome`)}</td><td>${getV(`${name}-mat`)}</td>`;
+            } else {
+                const val = getRadioValue(name);
+                html += `<td style="text-align:center;">${val === 'SIM' ? 'X' : ''}</td><td style="text-align:center;">${val === 'NÃO' ? 'X' : ''}</td>`;
+            }
+            html += `</tr>`;
+        });
+        return html;
+    }
 
+    // 4. MONTA O HTML DO PDF (USANDO A TAG JÁ DECLARADA)
+    let htmlPDF = `
+    <style>
+        .pdf-base { font-family: Arial, sans-serif; font-size: 9px; color: #000; }
+        .pdf-base table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+        .pdf-base th, .pdf-base td { border: 1px solid #000; padding: 3px; }
+        .pdf-base th { background: #e0e0e0; text-align: center; font-weight: bold; font-size: 9px; }
+        .pdf-base .titulo-secao { background: #002b5e; color: #fff; font-weight: bold; padding: 4px; text-align: left; margin: 12px 0 4px 0; border: 1px solid #000; font-size: 10px; text-transform: uppercase; }
+        .pdf-base .subtitulo { background: #d0d0d0; font-weight: bold; text-align: center; padding: 3px; font-size: 9px; }
+        @media print { .quebra-pagina { break-before: page; page-break-before: always; margin-top: 10px; } }
+        .pdf-base .campo-linha { display: inline-block; width: 120px; border-bottom: 1px solid #000; margin: 0 5px; }
+    </style>
+    <div class="pdf-base">
+        <!-- Cabeçalho -->
+        <div style="display: flex; border: 2px solid #000; border-bottom: 5px solid #002b5e; margin-bottom: 8px; align-items: center; background: #fff;">
+            <div style="width: 20%; text-align: center; border-right: 2px solid #000; padding: 8px;"><span style="font-weight: 900; font-size: 28px; color: #002b5e; letter-spacing: -2px;">CSN</span></div>
+            <div style="width: 60%; text-align: center; padding: 8px;">
+                <h2 style="margin: 0; font-size: 13px; color: #000;">CHECK LIST GERAL DO MOLDE MCC 2 E 3</h2>
+                <p style="margin: 4px 0 0 0; font-size: 8px; color: #333; font-weight: bold;">DATA INÍCIO: ${dataInicio} | DATA FIM: ${dataFim}</p>
+                <p style="margin: 2px 0 0 0; font-size: 8px; color: #333; font-weight: bold;">LÍDER RESPONSÁVEL: ${lider}</p>
+            </div>
+            <div style="width: 20%; font-size: 9px; border-left: 2px solid #000; padding: 8px; line-height: 1.4; font-weight: bold;">
+                <div style="color: #002b5e;">MOLDE TAG: <span style="color:#000;">${tag}</span></div>
+            </div>
+        </div>
+
+        <!-- Dados adicionais -->
+        <table>
+            <tr><td><strong>Nº MOLDE:</strong> ${numMolde}</td><td><strong>MOTIVO:</strong> ${motivo}</td><td><strong>TIPO EXECUÇÃO:</strong> ${tipoExec}</td></tr>
+            <tr><td colspan="2"><strong>LÍDER RESPONSÁVEL:</strong> ${lider}</td><td><strong>DESEMPENHO:</strong> ${desempenho}</td></tr>
+        </table>
+
+        <!-- IDENTIFICAÇÃO -->
+        <div class="titulo-secao">IDENTIFICAÇÃO</div>
+        <table>
+            <tr><th>PLACAS</th><th>SAÍDA MÁQUINA</th><th>SAÍDA OFICINA</th>
+                <th>REDUTORES</th><th>SAIR MÁQUINA</th><th>SAIR OFICINA</th>
+                <th>CILINDROS</th><th>SAIR MÁQUINA</th><th>SAIR OFICINA</th></tr>
+            <tr><td>FIXA:</td><td>${getV('id-placa-fixa-mq')}</td><td>${getV('id-placa-fixa-of')}</td>
+                <td>SUP DIREITO</td><td>${getV('id-red-sup-dir-mq')}</td><td>${getV('id-red-sup-dir-of')}</td>
+                <td>SUP DIR</td><td>${getV('id-cil-sup-dir-mq')}</td><td>${getV('id-cil-sup-dir-of')}</td></tr>
+            <tr><td>MÓVEL</td><td>${getV('id-placa-movel-mq')}</td><td>${getV('id-placa-movel-of')}</td>
+                <td>INF. DIREITO</td><td>${getV('id-red-inf-dir-mq')}</td><td>${getV('id-red-inf-dir-of')}</td>
+                <td>INF. DIR</td><td>${getV('id-cil-inf-dir-mq')}</td><td>${getV('id-cil-inf-dir-of')}</td></tr>
+            <tr><td>DIREITA:</td><td>${getV('id-placa-dir-mq')}</td><td>${getV('id-placa-dir-of')}</td>
+                <td>SUP. ESQ</td><td>${getV('id-red-sup-esq-mq')}</td><td>${getV('id-red-sup-esq-of')}</td>
+                <td>SUP. ESQ</td><td>${getV('id-cil-sup-esq-mq')}</td><td>${getV('id-cil-sup-esq-of')}</td></tr>
+            <tr><td>ESQUERDA:</td><td>${getV('id-placa-esq-mq')}</td><td>${getV('id-placa-esq-of')}</td>
+                <td>INF. ESQ</td><td>${getV('id-red-inf-esq-mq')}</td><td>${getV('id-red-inf-esq-of')}</td>
+                <td>INF. ESQ</td><td>${getV('id-cil-inf-esq-mq')}</td><td>${getV('id-cil-inf-esq-of')}</td></tr>
+        </table>
+
+        <!-- INSPEÇÃO DE RECEBIMENTO -->
         <div class="titulo-secao">1. INSPEÇÃO DE RECEBIMENTO MECÂNICA</div>
-        <table>
-            <tr><th style="width:5%;">ITEM</th><th>DESCRIÇÃO DO SERVIÇO</th><th style="width:5%;">SIM</th><th style="width:5%;">NÃO</th></tr>`;
-    
-    recebimentoMecanica.forEach((desc, index) => {
-        htmlImp += `<tr><td style="text-align:center;">${index+1}</td><td>${desc}</td><td></td><td></td></tr>`;
-    });
+        <table><tr><th>ITEM</th><th>DESCRIÇÃO</th><th>SIM</th><th>NÃO</th></tr>${gerarLinhasChecklist('rec', recebimentoMecanica)}</table>
 
-    htmlImp += `</table>
         <div class="titulo-secao">2. INSPEÇÃO DE RECEBIMENTO ELÉTRICA</div>
-        <table>
-            <tr><th style="width:5%;">ITEM</th><th>DESCRIÇÃO DO SERVIÇO</th><th style="width:5%;">SIM</th><th style="width:5%;">NÃO</th></tr>`;
-            
-    recebimentoEletrica.forEach((desc, index) => {
-        htmlImp += `<tr><td style="text-align:center;">${index+1}</td><td>${desc}</td><td></td><td></td></tr>`;
-    });
+        <table><tr><th>ITEM</th><th>DESCRIÇÃO</th><th>SIM</th><th>NÃO</th></tr>${gerarLinhasChecklist('ele', recebimentoEletrica)}</table>
 
-    htmlImp += `</table><div class="quebra-pagina"></div>`;
+        <div class="quebra-pagina"></div>
 
-    // BLOCO 2: REVISÃO E EXECUÇÃO
-    htmlImp += `${getCabecalhoUnico("CHECK LIST GERAL DO MOLDE MCC 2 E 3", tag, dataInicio, dataFim, lider)}
+        <!-- REVISÃO DOS MOLDES -->
         <div class="titulo-secao">3. REVISÃO DOS MOLDES</div>
-        <table>
-            <tr><th style="width:5%;">ITEM</th><th>DESCRIÇÃO DO SERVIÇO</th><th style="width:5%;">SIM</th><th style="width:5%;">NÃO</th></tr>`;
-    
-    revisaoMoldes.forEach((desc, index) => {
-        htmlImp += `<tr><td style="text-align:center;">${index+1}</td><td>${desc}</td><td></td><td></td></tr>`;
-    });
+        <table><tr><th>ITEM</th><th>DESCRIÇÃO</th><th>SIM</th><th>NÃO</th></tr>${gerarLinhasChecklist('rev', revisaoMoldes)}</table>
 
-    htmlImp += `</table>
+        <!-- CHECK LIST HIDRÁULICO -->
         <div class="titulo-secao">4. CHECK LIST HIDRÁULICO</div>
-        <table>
-            <tr><th style="width:5%;">ITEM</th><th>DESCRIÇÃO DO SERVIÇO</th><th style="width:20%;">NOME</th><th style="width:15%;">MATRÍCULA</th></tr>`;
-            
-    checkHidraulico.forEach((desc, index) => {
-        htmlImp += `<tr><td style="text-align:center;">${index+1}</td><td>${desc}</td><td></td><td></td></tr>`;
-    });
+        <table><tr><th>ITEM</th><th>DESCRIÇÃO</th><th>NOME</th><th>MATRÍCULA</th></tr>${gerarLinhasChecklist('hid', checkHidraulico, true)}</table>
 
-    htmlImp += `</table><div class="quebra-pagina"></div>`;
+        <div class="quebra-pagina"></div>
 
-    // BLOCO 3: INSPEÇÃO FINAL E SENSORES
-    htmlImp += `${getCabecalhoUnico("CHECK LIST GERAL DO MOLDE MCC 2 E 3", tag, dataInicio, dataFim, lider)}
+        <!-- INSPEÇÃO FINAL -->
         <div class="titulo-secao">5. INSPEÇÃO FINAL DOS MOLDES</div>
-        <table>
-            <tr><th style="width:5%;">ITEM</th><th>DESCRIÇÃO DO SERVIÇO</th><th style="width:5%;">SIM</th><th style="width:5%;">NÃO</th></tr>`;
-    
-    inspecaoFinal.forEach((desc, index) => {
-        htmlImp += `<tr><td style="text-align:center;">${index+1}</td><td>${desc}</td><td></td><td></td></tr>`;
-    });
+        <table><tr><th>ITEM</th><th>DESCRIÇÃO</th><th>SIM</th><th>NÃO</th></tr>${gerarLinhasChecklist('fin', inspecaoFinal)}</table>
 
-    htmlImp += `</table>
-        <div class="titulo-secao">6. SENSORES DE NÍVEL (PLANILHA E RESISTÊNCIA)</div>
-        <table>
-            <tr><th colspan="4" class="subtitulo">RESULTADOS DO SENSOR COM SIMULAÇÃO</th></tr>
-            <tr><th>Posição</th><th>Profundidade (mm)</th><th>Ref. Corrente (mA)</th><th>Valor Corrente (mA)</th></tr>
-            <tr><td style="text-align:center;">1</td><td style="text-align:center;">0</td><td style="text-align:center;">20</td><td></td></tr>
-            <tr><td style="text-align:center;">2</td><td style="text-align:center;">80</td><td style="text-align:center;">12</td><td></td></tr>
-            <tr><td style="text-align:center;">3</td><td style="text-align:center;">160</td><td style="text-align:center;">4</td><td></td></tr>
+        <!-- DIÂMETROS DOS ROLOS (CHEGADA) -->
+        <div class="titulo-secao">6. DIÂMETROS DOS ROLOS - CHEGADA</div>
+        <table><tr><th>LADO FIXO</th><td>${getV('dia-c-fixo')}</td><th>LADO MÓVEL</th><td>${getV('dia-c-movel')}</td></tr>
+            <tr><th>LADO DIREITO</th><td>${getV('dia-c-dir')}</td><th>LADO ESQUERDO</th><td>${getV('dia-c-esq')}</td></tr>
         </table>
-        
-        <table style="margin-top: 5px;">
-            <tr><th colspan="2" class="subtitulo">MEDIÇÃO RESISTÊNCIA E ISOLAÇÃO</th></tr>
-            <tr><td>RESISTÊNCIA PINOS 1-2 (140...300 Ω)</td><td></td></tr>
-            <tr><td>RESISTÊNCIA PINOS 3-4 (0...2 Ω)</td><td></td></tr>
-            <tr><td>ISOLAÇÃO PINOS 5 e 6 (>10 MΩ)</td><td></td></tr>
-            <tr><td>ISOLAÇÃO PINOS 5 e 8 (>10 MΩ)</td><td></td></tr>
-        </table><div class="quebra-pagina"></div>`;
+        <div>DATA: ${getV('dia-c-data')} | NOME: ${getV('dia-c-nome')} | MATRÍCULA: ${getV('dia-c-matricula')}</div>
 
-    // BLOCO 4: DADOS EXTRAS E ASSINATURAS
-    htmlImp += `${getCabecalhoUnico("CHECK LIST GERAL DO MOLDE MCC 2 E 3", tag, dataInicio, dataFim, lider)}
-        <div class="titulo-secao">7. TESTE DE RESISTÊNCIA DAS PLACAS (TERMOPARES)</div>
-        <table style="text-align:center;">
-            <tr><th>TERMOPAR</th><th>REFERÊNCIA</th><th>PLACA MÓVEL</th><th>PLACA FIXA</th><th>ESTREITA DIR.</th><th>ESTREITA ESQ.</th></tr>
-            <tr><td>1 a 12 (Largos)</td><td>10 A 20 Ω</td><td>OK ( ) NOK ( )</td><td>OK ( ) NOK ( )</td><td>-</td><td>-</td></tr>
-            <tr><td>1 a 3 (Estreitos)</td><td>5 A 15 Ω</td><td>-</td><td>-</td><td>OK ( ) NOK ( )</td><td>OK ( ) NOK ( )</td></tr>
-            <tr><td>POSITIVO 1 e 2</td><td>-</td><td></td><td></td><td></td><td></td></tr>
+        <div class="titulo-secao">6.1 DIÂMETROS DOS ROLOS - SAÍDA</div>
+        <table><tr><th>LADO FIXO</th><td>${getV('dia-s-fixo')}</td><th>LADO MÓVEL</th><td>${getV('dia-s-movel')}</td></tr>
+            <tr><th>LADO DIREITO</th><td>${getV('dia-s-dir')}</td><th>LADO ESQUERDO</th><td>${getV('dia-s-esq')}</td></tr>
+        </table>
+        <div>DATA: ${getV('dia-s-data')} | NOME: ${getV('dia-s-nome')} | MATRÍCULA: ${getV('dia-s-matricula')}</div>
+
+        <!-- ALINHAMENTO DOS ROLOS -->
+        <div class="titulo-secao">7. ALINHAMENTO DOS ROLOS</div>
+        <table><tr><th>LADO FIXO</th><td>${getV('alinh-fixo')}</td><th>LADO MÓVEL</th><td>${getV('alinh-movel')}</td></tr></table>
+        <div>DATA: ${getV('alinh-data')} | NOME: ${getV('alinh-nome')} | MATRÍCULA: ${getV('alinh-matricula')}</div>
+
+        <div class="quebra-pagina"></div>
+
+        <!-- SENSOR DE NÍVEL -->
+        <div class="titulo-secao">8. SENSOR DE NÍVEL</div>
+        <table><tr><th>ITEM</th><th>DESCRIÇÃO</th><th>OK</th></tr>
+            ${[1,2,3,4,5,6,7].map(i => `<tr><td>${i}</td><td>${['VERIFICAR TAMPA DE PROTEÇÃO;','EFETUAR A TROCA DAS GAXETAS DE ISOLAÇÃO DO SENSOR','VERIFICAR PARAFUSO DE FIXAÇÃO DO SUPORTE DO SENSOR, TORQUE 50 NM;','VERIFICAR PARAFUSO DE FIXAÇÃO DA TAMPA DE PROTEÇÃO DO SENSOR, TORQUE 40 NM;','VERIFICAR ESTADO DE CONSERVAÇÃO E LIMPEZA;','TESTE DE ESTANQUIEDADE (5 BAR);','CHECK NA CONEXÕES DE ALIMENTAÇÃO DE ÁGUA;'][i-1]}</td><td>${getCheckboxValue(`sn-${i}`)}</td></tr>`).join('')}
+        </table>
+        <table><tr><th>ITEM</th><th>DESCRIÇÃO</th><th>VALOR</th></tr>
+            ${[8,9,10,11,12,13,14,15].map(i => `<tr><td>${i}</td><td>${['VERIFICAR RESISTÊNCIA ENTRE OS PINOS 1-2 LIMITES DE Ω (140...300)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 3-4 LIMITES DE Ω (0...2)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 1-5 LIMITES DE Ω (70...150)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 3-5 LIMITES DE Ω (0...1)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 7-8 LIMITES DE Ω (0...1)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 8-9 LIMITES DE Ω (100...140)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 15-16 LIMITES DE Ω (3...10)','VERIFICAR RESISTÊNCIA NO PINO 10 E A CARCAÇA DO SENSOR LIMITE DE Ω (0...1)'][i-8]}</td><td>${getV(`sn-${i}`)}</td></tr>`).join('')}
+        </table>
+        <div>DATA: ${getV('sn-data')} | NOME: ${getV('sn-nome')} | MATRÍCULA: ${getV('sn-matricula')}</div>
+
+        <!-- ISOLAÇÃO DOS SENSORES -->
+        <div class="titulo-secao">9. ISOLAÇÃO DOS SENSORES DE NÍVEL</div>
+        <table><tr><th>PINO CONECTOR</th><th>LIMITE</th><th>VALOR</th></tr>
+            ${["5 e 6","5 e 8","5 e 10","5 e 15","6 e 8","6 e 10","6 e 15","8 e 10","8 e 15","10 e 15"].map((p,i) => `<tr><td>${p}</td><td>>10 MΩ</td><td>${getV(`iso-${i}`)}</td></tr>`).join('')}
+        </table>
+        <div>DATA: ${getV('iso-data')} | NOME: ${getV('iso-nome')} | MATRÍCULA: ${getV('iso-matricula')}</div>
+
+        <div class="quebra-pagina"></div>
+
+        <!-- TERMOPARES -->
+        <div class="titulo-secao">10. TERMOPARES</div>
+        <div>PLACA FIXA: ${getV('termo-fixa')} | PLACA MÓVEL: ${getV('termo-movel')}</div>
+        <table><tr><th>DESCRIÇÃO</th><th>CONDIÇÃO</th></tr>
+            <tr><td>VERIFICAR PARAFUSOS DA BASE DAS CAIXAS DOS TERMOPARES</td><td>${getV('termo-cond1')}</td></tr>
+            <tr><td>TESTE DE AR (INDICAÇÃO WAMBOY)</td><td>${getV('termo-cond2')}</td></tr>
+            <tr><td>ESTADO/LIMPEZA</td><td>${getV('termo-cond3')}</td></tr>
+            <tr><td>BORRACHAS E VEDAÇÕES</td><td>${getV('termo-cond4')}</td></tr>
+            <tr><td>TRAVAS</td><td>${getV('termo-cond5')}</td></tr>
+        </table>
+        <div>DATA: ${getV('termo-data')} | NOME: ${getV('termo-nome')} | MATRÍCULA: ${getV('termo-matricula')}</div>
+
+        <!-- CHECK JB2 -->
+        <div class="titulo-secao">11. CHECK DO JB 2</div>
+        <table><tr><th>DESCRIÇÃO</th><th>STATUS</th><th>OBS</th></tr>
+            <tr><td>FECHO PAINEL</td><td>${getV('jb2-fecho')}</td><td>${getV('jb2-fecho-obs')}</td></tr>
+            <tr><td>CONECTORES DO WANBOY COM MOLDE</td><td>${getV('jb2-wanboy')}</td><td>${getV('jb2-wanboy-obs')}</td></tr>
+            <tr><td>VEDAÇÃO DO JB 2</td><td>${getV('jb2-vedacao')}</td><td>${getV('jb2-vedacao-obs')}</td></tr>
+        </table>
+        <table><tr><th>DESCRIÇÃO (VÁLVULA PROPORCIONAL)</th><th>STATUS</th><th>OBS</th></tr>
+            <tr><td>SUPERIOR ESQUERDO</td><td>${getV('vp-se')}</td><td>${getV('vp-se-obs')}</td></tr>
+            <tr><td>SUPERIOR DIREITO</td><td>${getV('vp-sd')}</td><td>${getV('vp-sd-obs')}</td></tr>
+            <tr><td>INFERIOR ESQUERDO</td><td>${getV('vp-ie')}</td><td>${getV('vp-ie-obs')}</td></tr>
+            <tr><td>INFERIOR DIREITO</td><td>${getV('vp-id')}</td><td>${getV('vp-id-obs')}</td></tr>
+        </table>
+        <table><tr><th>DESCRIÇÃO (TRANSDUTORES)</th><th>STATUS</th><th>OBS</th></tr>
+            <tr><td>SUPERIOR ESQUERDO</td><td>${getV('tp-se')}</td><td>${getV('tp-se-obs')}</td></tr>
+            <tr><td>SUPERIOR DIREITO</td><td>${getV('tp-sd')}</td><td>${getV('tp-sd-obs')}</td></tr>
+            <tr><td>INFERIOR ESQUERDO</td><td>${getV('tp-ie')}</td><td>${getV('tp-ie-obs')}</td></tr>
+            <tr><td>INFERIOR DIREITO</td><td>${getV('tp-id')}</td><td>${getV('tp-id-obs')}</td></tr>
+        </table>
+        <table><tr><th>DESCRIÇÃO (BLOCO PRINCIPAL)</th><th>STATUS</th><th>OBS</th></tr>
+            <tr><td>VEDAÇÕES</td><td>${getV('bp-ved')}</td><td>${getV('bp-ved-obs')}</td></tr>
+            <tr><td>VÁLVULAS E CONECTORES</td><td>${getV('bp-valv')}</td><td>${getV('bp-valv-obs')}</td></tr>
+            <tr><td>TRANSDUTORES (ÓLEO/AR)</td><td>${getV('bp-trans')}</td><td>${getV('bp-trans-obs')}</td></tr>
+        </table>
+        <table><tr><th>DESCRIÇÃO (CABOS AJUSTE LARGURA)</th><th>STATUS</th><th>OBS</th></tr>
+            <tr><td>SUPERIOR ESQUERDO</td><td>${getV('cal-se')}</td><td>${getV('cal-se-obs')}</td></tr>
+            <tr><td>SUPERIOR DIREITO</td><td>${getV('cal-sd')}</td><td>${getV('cal-sd-obs')}</td></tr>
+            <tr><td>INFERIOR ESQUERDO</td><td>${getV('cal-ie')}</td><td>${getV('cal-ie-obs')}</td></tr>
+            <tr><td>INFERIOR DIREITO</td><td>${getV('cal-id')}</td><td>${getV('cal-id-obs')}</td></tr>
+            <tr><td>BANCO DE VÁLVULAS</td><td>${getV('cal-bv')}</td><td>${getV('cal-bv-obs')}</td></tr>
+        </table>
+        <div>DATA: ${getV('jb2-data')} | NOME: ${getV('jb2-nome')} | MATRÍCULA: ${getV('jb2-matricula')}</div>
+
+        <div class="quebra-pagina"></div>
+
+        <!-- RESISTÊNCIA DAS PLACAS -->
+        <div class="titulo-secao">12. TESTE DE RESISTÊNCIA DAS PLACAS</div>
+        <div>PLACA MÓVEL: ${getV('res-placa-movel')} | PLACA FIXA: ${getV('res-placa-fixa')}</div>
+        <div>ESTREITA DIREITA: ${getV('res-placa-est-dir')} | ESTREITA ESQUERDA: ${getV('res-placa-est-esq')}</div>
+        <div>DATA: ${getV('res-data')} | NOME: ${getV('res-nome')} | MATRÍCULA: ${getV('res-matricula')}</div>
+
+        <!-- PERITAGEM LARGAS - ENTRADA -->
+        <div class="titulo-secao">13. PERITAGEM PLACAS LARGAS - ENTRADA</div>
+        <table><tr><th>FACE NORTE</th>${[1600,1300,1000,'LINHA CENTRO',1000,1300,1600].map(h => `<th>${h}</th>`).join('')}</tr>
+            ${[1,2,3].map(l => `<tr><td>LINHA ${l}</td>${[1,2,3,4,5,6,7].map(c => `<td>${getV(`pl-ent-n${l}-${c}`)}</td>`).join('')}</tr>`).join('')}
+        </table>
+        <table><tr><th>FACE SUL</th>${[1600,1300,1000,'LINHA CENTRO',1000,1300,1600].map(h => `<th>${h}</th>`).join('')}</tr>
+            ${[1,2,3].map(l => `<tr><td>LINHA ${l}</td>${[1,2,3,4,5,6,7].map(c => `<td>${getV(`pl-ent-s${l}-${c}`)}</td>`).join('')}</tr>`).join('')}
+        </table>
+        <div><strong>ALINHAMENTO NORTE (FIXA):</strong> SUP1: ${getV('pl-ent-alinh-n1')} | INF2: ${getV('pl-ent-alinh-n2')} | SUP3: ${getV('pl-ent-alinh-n3')} | INF4: ${getV('pl-ent-alinh-n4')}</div>
+        <div><strong>ALINHAMENTO SUL (MÓVEL):</strong> SUP1: ${getV('pl-ent-alinh-s1')} | INF2: ${getV('pl-ent-alinh-s2')} | SUP3: ${getV('pl-ent-alinh-s3')} | INF4: ${getV('pl-ent-alinh-s4')}</div>
+        <div>DATA: ${getV('pl-ent-data')} | NOME: ${getV('pl-ent-nome')} | MATRÍCULA: ${getV('pl-ent-matricula')}</div>
+
+        <div class="titulo-secao">13.1 PERITAGEM PLACAS LARGAS - SAÍDA</div>
+        <table><tr><th>FACE NORTE</th>${[1600,1300,1000,'LINHA CENTRO',1000,1300,1600].map(h => `<th>${h}</th>`).join('')}</tr>
+            ${[1,2,3].map(l => `<tr><td>LINHA ${l}</td>${[1,2,3,4,5,6,7].map(c => `<td>${getV(`pl-sai-n${l}-${c}`)}</td>`).join('')}</tr>`).join('')}
+        </table>
+        <table><tr><th>FACE SUL</th>${[1600,1300,1000,'LINHA CENTRO',1000,1300,1600].map(h => `<th>${h}</th>`).join('')}</tr>
+            ${[1,2,3].map(l => `<tr><td>LINHA ${l}</td>${[1,2,3,4,5,6,7].map(c => `<td>${getV(`pl-sai-s${l}-${c}`)}</td>`).join('')}</tr>`).join('')}
+        </table>
+        <div><strong>ALINHAMENTO NORTE (FIXA):</strong> SUP1: ${getV('pl-sai-alinh-n1')} | INF2: ${getV('pl-sai-alinh-n2')} | SUP3: ${getV('pl-sai-alinh-n3')} | INF4: ${getV('pl-sai-alinh-n4')}</div>
+        <div><strong>ALINHAMENTO SUL (MÓVEL):</strong> SUP1: ${getV('pl-sai-alinh-s1')} | INF2: ${getV('pl-sai-alinh-s2')} | SUP3: ${getV('pl-sai-alinh-s3')} | INF4: ${getV('pl-sai-alinh-s4')}</div>
+        <div>DATA: ${getV('pl-sai-data')} | NOME: ${getV('pl-sai-nome')} | MATRÍCULA: ${getV('pl-sai-matricula')}</div>
+
+        <div class="quebra-pagina"></div>
+
+        <!-- PERITAGEM ESTREITAS -->
+        <div class="titulo-secao">14. PERITAGEM PLACAS ESTREITAS - CHEGADA</div>
+        <div>ESQ AFASTADA: ${getRadioValue('pe-c-esq-af')} | DIR AFASTADA: ${getRadioValue('pe-c-dir-af')}</div>
+        <table><tr><th>PONTO</th><th>ESQUERDA</th><th>DIREITA</th></tr>
+            ${[1,2,3].map(i => `<tr><td>${i}</td><td>${getV(`pe-c-e${i}`)}</td><td>${getV(`pe-c-d${i}`)}</td></tr>`).join('')}
+        </table>
+        <div>DATA: ${getV('pe-c-data')} | NOME: ${getV('pe-c-nome')} | MATRÍCULA: ${getV('pe-c-matricula')}</div>
+
+        <div class="titulo-secao">14.1 PERITAGEM PLACAS ESTREITAS - SAÍDA</div>
+        <div>ESQ AFASTADA: ${getRadioValue('pe-s-esq-af')} | DIR AFASTADA: ${getRadioValue('pe-s-dir-af')}</div>
+        <table><tr><th>PONTO</th><th>ESQUERDA</th><th>DIREITA</th></tr>
+            ${[1,2,3].map(i => `<tr><td>${i}</td><td>${getV(`pe-s-e${i}`)}</td><td>${getV(`pe-s-d${i}`)}</td></tr>`).join('')}
+        </table>
+        <div>DATA: ${getV('pe-s-data')} | NOME: ${getV('pe-s-nome')} | MATRÍCULA: ${getV('pe-s-matricula')}</div>
+
+        <!-- AJUSTE DE CHAVETAS -->
+        <div class="titulo-secao">15. AJUSTE DE CHAVETAS</div>
+        <table><tr><th>PLACA</th><th>LADO</th><th>A</th><th>B</th><th>NOME</th><th>REG</th></tr>
+            <tr><td rowspan="2">ESQUERDA</td><td>A</td><td>${getV('chav-esq-a-a')}</td><td>${getV('chav-esq-a-b')}</td><td>${getV('chav-esq-a-nome')}</td><td>${getV('chav-esq-a-reg')}</td></tr>
+            <tr><td>B</td><td>${getV('chav-esq-b-a')}</td><td>${getV('chav-esq-b-b')}</td><td>${getV('chav-esq-b-nome')}</td><td>${getV('chav-esq-b-reg')}</td></tr>
+            <tr><td rowspan="2">DIREITA</td><td>A</td><td>${getV('chav-dir-a-a')}</td><td>${getV('chav-dir-a-b')}</td><td>${getV('chav-dir-a-nome')}</td><td>${getV('chav-dir-a-reg')}</td></tr>
+            <tr><td>B</td><td>${getV('chav-dir-b-a')}</td><td>${getV('chav-dir-b-b')}</td><td>${getV('chav-dir-b-nome')}</td><td>${getV('chav-dir-b-reg')}</td></tr>
+        </table>
+        <div>DATA: ${getV('chav-data')} | NOME: ${getV('chav-nome')} | MATRÍCULA: ${getV('chav-matricula')}</div>
+
+        <!-- FOLGA DE ARESTA (resumido) -->
+        <div class="titulo-secao">16. RELATÓRIO FOLGA DE ARESTA</div>
+        <table><tr><th>LARGURA</th><th>POSIÇÃO</th><th>ESQUERDA</th><th>DIREITA</th></tr>
+            ${[830,870,950,1030,1100,1180,1230,1300,1380,1460,1500,1530,1550,1580,1620].map(l => `
+                <tr><td rowspan="3">${l}</td><td>SUP</td><td>${getV(`fa-${l}-esq-sup`)}</td><td>${getV(`fa-${l}-dir-sup`)}</td></tr>
+                <tr><td>MEIO</td><td>${getV(`fa-${l}-esq-meio`)}</td><td>${getV(`fa-${l}-dir-meio`)}</td></tr>
+                <tr><td>INF</td><td>${getV(`fa-${l}-esq-inf`)}</td><td>${getV(`fa-${l}-dir-inf`)}</td></tr>
+            `).join('')}
+        </table>
+        <div>DATA: ${getV('fa-data')} | NOME: ${getV('fa-nome')} | MATRÍCULA: ${getV('fa-matricula')}</div>
+
+        <!-- RESFRIAMENTO -->
+        <div class="titulo-secao">17. AVALIAÇÃO DO SISTEMA DE RESFRIAMENTO</div>
+        <div><strong>FACE NORTE / FIXA:</strong> ${getV('ref-norte')}</div>
+        <div><strong>FACE SUL / MÓVEL:</strong> ${getV('ref-sul')}</div>
+        <div>DATA: ${getV('ref-data')} | NOME: ${getV('ref-nome')} | MATRÍCULA: ${getV('ref-matricula')}</div>
+
+        <!-- MATERIAIS -->
+        <div class="titulo-secao">18. MATERIAIS UTILIZADOS</div>
+        <table><tr><th>DESCRIÇÃO</th><th>QUANTIDADE</th></tr>
+            ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].map(i => `
+                <tr><td>${getV(`mat-desc-${i}`)}</td><td>${getV(`mat-qtd-${i}`)}</td></tr>
+            `).join('')}
         </table>
 
-        <div class="titulo-secao">8. MATERIAIS UTILIZADOS NA MANUTENÇÃO</div>
-        <table>
-            <tr><th style="width: 80%;">DESCRIÇÃO DO MATERIAL / SKU</th><th style="width: 20%;">QUANTIDADE</th></tr>
-            <tr><td style="height: 15px;"></td><td></td></tr>
-            <tr><td style="height: 15px;"></td><td></td></tr>
-            <tr><td style="height: 15px;"></td><td></td></tr>
-            <tr><td style="height: 15px;"></td><td></td></tr>
-        </table>
-
-        <div style="margin-top: 50px; display: flex; justify-content: space-around; text-align: center; font-size: 11px; font-weight: bold; padding-bottom:30px;">
+        <!-- ASSINATURAS -->
+        <div style="margin-top:40px; display:flex; justify-content:space-around; text-align:center; font-size:10px; font-weight:bold;">
             <div><p>___________________________________</p><p>Assinatura Mecânica</p></div>
             <div><p>___________________________________</p><p>Assinatura Elétrica</p></div>
             <div><p>___________________________________</p><p>Inspetor de Qualidade</p></div>
         </div>
     </div>`;
 
-    let printContent = document.getElementById('print-content');
-    if (!printContent) { alert("Erro: Div 'print-content' não encontrada!"); return; }
+    // 5. SALVA NO HISTÓRICO (AGORA TAG E HTMLPDF EXISTEM)
+    if (typeof window.salvarLaudoNoHistorico === 'function') {
+        window.salvarLaudoNoHistorico(tag, "Molde MCC 2/3", htmlPDF);
+    }
 
-    printContent.innerHTML = htmlImp;
+    // 6. IMPRIME E ATUALIZA A INTERFACE
+    const printDiv = document.getElementById('print-content');
+    if (!printDiv) { alert("Div 'print-content' não encontrada!"); return; }
+    printDiv.innerHTML = htmlPDF;
     window.fecharFolhaoMolde23();
-    
-    if(typeof renderReparos === 'function') renderReparos(); 
-    if(typeof renderReservas === 'function') renderReservas(); 
-    if(typeof renderAtivos === 'function') renderAtivos(); 
-    
+    if (typeof renderReparos === 'function') renderReparos();
+    if (typeof renderReservas === 'function') renderReservas();
+    if (typeof renderAtivos === 'function') renderAtivos();
+    if (typeof renderPainelVeios === 'function') renderPainelVeios(); // atualiza sequenciamento
+    if (typeof renderHistorico === 'function') renderHistorico();      // atualiza auditoria
+    if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
+    if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
     setTimeout(() => window.print(), 500);
 };
+
 // ==============================================================
-// 4. FUNÇÕES DE RENDERIZAR TABELAS (NOVIDADE!)
+// 21. FUNÇÕES DE FECHAR E TROCAR ABA
 // ==============================================================
+window.fecharFolhaoMolde23 = function() {
+    const modal = document.getElementById('modal-folhao-molde23');
+    if (modal) modal.classList.add('hidden');
+    ID_FOLHAO_MOLDE23_ATUAL = null;
+};
 
-function renderizarTabelasMolde23() {
-    const renderTable = (id, array, isMatricula = false) => {
-        const tbody = document.getElementById(id);
-        if(!tbody) return;
-        tbody.innerHTML = '';
-        array.forEach((item, index) => {
-            const tr = document.createElement('tr');
-            if (isMatricula) {
-                tr.innerHTML = `
-                    <td style="text-align:center; font-weight:bold;">${index + 1}</td>
-                    <td style="font-size: 11px;">${item}</td>
-                    <td><input type="text" class="w-100" placeholder="Matrícula"></td>
-                `;
-            } else {
-                tr.innerHTML = `
-                    <td style="text-align:center; font-weight:bold;">${index + 1}</td>
-                    <td style="font-size: 11px;">${item}</td>
-                    <td style="text-align:center;"><input type="radio" name="${id}_${index}" value="SIM" checked></td>
-                    <td style="text-align:center;"><input type="radio" name="${id}_${index}" value="NÃO"></td>
-                `;
-            }
-            tbody.appendChild(tr);
-        });
-    };
+window.trocarAbaMolde23 = function(evt, abaId) {
+    const modal = document.getElementById('modal-folhao-molde23');
+    if (!modal) return;
+    modal.querySelectorAll('.folhao-content').forEach(c => c.classList.add('hidden'));
+    modal.querySelectorAll('.folhao-tab').forEach(b => b.classList.remove('active'));
+    const aba = document.getElementById(abaId);
+    if (aba) aba.classList.remove('hidden');
+    if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+};
 
-    // Preenche as abas com as listas
-    renderTable('tabela-m23-recebimento', [...recebimentoMecanica, ...recebimentoEletrica]);
-    renderTable('tabela-m23-revisao', revisaoMoldes);
-    renderTable('tabela-m23-hidraulica', checkHidraulico, true);
-    renderTable('tabela-m23-final', inspecaoFinal);
-}
-
-// Sobrescrevendo a função de abrir para ela chamar o preenchimento das tabelas
-window.abrirFolhaoMolde23 = function(id) {
-    ID_FOLHAO_MOLDE23_ATUAL = id;
-    let tagNameEl = document.getElementById('molde23-tag-name');
-    if (tagNameEl) tagNameEl.innerText = id;
-    
-    document.getElementById('modal-folhao-molde23').classList.remove('hidden');
-    
-    // MÁGICA: Preenche as tabelas quando a tela abre!
-    renderizarTabelasMolde23(); 
-}
+console.log("✅ folhaoMolde23.js carregado com todas as seções e campos.");

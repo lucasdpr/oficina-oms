@@ -144,12 +144,6 @@ function calcularDias(item) {
     return item.dias || 0;
 }
 
-
-
-
-
-
-
 // ==========================================
 // TEMA E UI GLOBAL
 // ==========================================
@@ -276,7 +270,6 @@ function abrirAba(event, idAba) {
     if (idAba === "aba-fluxo") {
         renderPainelVeios();
     }
-    // ===== ADICIONE ESTA LINHA ABAIXO =====
     if (idAba === "aba-oficina") {
         if (typeof carregarOficina === 'function') carregarOficina();
     }
@@ -292,6 +285,7 @@ function abrirAba(event, idAba) {
         document.getElementById('sidebar-menu').classList.remove('open');
     }
 }
+
 // ==========================================
 // HISTÓRICO E AUDITORIA
 // ==========================================
@@ -318,14 +312,80 @@ function renderHistorico() {
     const tbody = document.getElementById("historico-table-body");
     if (!tbody) return;
 
-    tbody.innerHTML = HISTORICO_ACOES.map(h => `
-        <tr>
-            <td><small class="text-muted">${h.data}</small></td>
-            <td><span class="ind-card-tag bg-tag">${h.tag}</span></td>
-            <td style="color: var(--text-main);">${h.acao}</td>
-            <td><small class="text-muted">${h.responsavel}</small></td>
-        </tr>
-    `).join("");
+    const filtroData = document.getElementById("filtro-data-historico")?.value || '';
+    const laudos = getLaudosSalvos();
+
+    let todos = [
+        ...HISTORICO_ACOES.map(h => ({ 
+            ...h, 
+            tipo: 'acao',
+            dataTimestamp: (() => {
+                try {
+                    const partes = h.data.split(' ');
+                    const dataPartes = partes[0].split('/');
+                    const dataStr = dataPartes[2] + '-' + dataPartes[1] + '-' + dataPartes[0];
+                    return new Date(dataStr + 'T' + partes[1]).getTime();
+                } catch(e) { return 0; }
+            })()
+        })),
+        ...laudos.map(l => ({
+            data: l.data,
+            tag: l.tag,
+            acao: `<i class="fas fa-file-pdf" style="color:var(--danger);"></i> Laudo PDF: ${l.tipo}`,
+            responsavel: 'Sistema',
+            tipo: 'laudo',
+            id: l.id,
+            html: l.html,
+            dataTimestamp: l.timestamp
+        }))
+    ];
+
+    todos.sort((a, b) => (b.dataTimestamp || 0) - (a.dataTimestamp || 0));
+
+    if (filtroData) {
+        const dataFiltro = new Date(filtroData);
+        const inicioDia = new Date(dataFiltro.getFullYear(), dataFiltro.getMonth(), dataFiltro.getDate()).getTime();
+        const fimDia = inicioDia + 24 * 60 * 60 * 1000;
+        todos = todos.filter(item => {
+            const ts = item.dataTimestamp || 0;
+            return ts >= inicioDia && ts < fimDia;
+        });
+    }
+
+    if (todos.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Nenhum registro encontrado.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = todos.map(item => {
+        if (item.tipo === 'laudo') {
+            return `
+                <tr>
+                    <td><small class="text-muted">${item.data}</small></td>
+                    <td><span class="ind-card-tag bg-tag">${item.tag}</span></td>
+                    <td style="color: var(--text-main);">
+                        ${item.acao}
+                        <button class="btn-xs-primary" onclick="window.visualizarLaudo('${item.id}')" style="margin-left:8px; color:var(--text-accent);">
+                            <i class="fas fa-eye"></i> Ver PDF
+                        </button>
+                        <button class="btn-xs-primary" onclick="window.excluirLaudo('${item.id}')" style="color:var(--danger);">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                    <td><small class="text-muted">${item.responsavel}</small></td>
+                </tr>
+            `;
+        } else {
+            return `
+                <tr>
+                    <td><small class="text-muted">${item.data}</small></td>
+                    <td><span class="ind-card-tag bg-tag">${item.tag}</span></td>
+                    <td style="color: var(--text-main);">${item.acao}</td>
+                    <td><small class="text-muted">${item.responsavel}</small></td>
+                </tr>
+            `;
+        }
+    }).join("");
 }
 
 function atualizarInterfaceUsuario() {
@@ -652,7 +712,7 @@ function renderReparos() {
                         <td style="font-weight:bold; color:var(--warning);">${dias} dias</td>
                         <td>
                             <div class="flex-align-center gap-10 action-buttons-mobile">
-                                <button class="btn-premium btn-warning" onclick="abrirModalConcluirReparo('${a.id}')"><i class="fas fa-hammer"></i> Concluir</button>
+                                <button class="btn-premium btn-warning" onclick="window.abrirFolhaoPorTipo('${a.id}')"><i class="fas fa-hammer"></i> Concluir</button>
                                 <button class="btn-premium" style="background:transparent; border-color:var(--text-accent); color:var(--text-accent); padding: 8px 12px;" onclick="abrirHistoricoIndividual('${a.id}')" title="Ver Prontuário"><i class="fas fa-book-open"></i></button>
                                 ${btnExcluir}
                             </div>
@@ -935,11 +995,14 @@ function abrirHistoricoIndividual(id) {
     let item = BANCO_ATIVOS.find(a => a.id === id);
     if (!item) return;
 
-    document.getElementById("hist-tag-nome").innerText = item.id;
-    document.getElementById("hist-tag-local").innerText = item.local;
+    const tagNome = document.getElementById("hist-tag-nome");
+    const tagLocal = document.getElementById("hist-tag-local");
+    if (tagNome) tagNome.innerText = item.id;
+    if (tagLocal) tagLocal.innerText = item.local;
     
     renderizarTabelaHistoricoIndividual(id);
-    document.getElementById("modal-historico-ativo").classList.remove("hidden");
+    const modal = document.getElementById("modal-historico-ativo");
+    if (modal) modal.classList.remove("hidden");
 }
 
 function fecharModalHistorico() {
@@ -1046,31 +1109,18 @@ function executarSaqueFinal(id, laudo) {
 }
 
 // ==========================================
-// MODAL CONCLUIR REPARO
+// MODAL CONCLUIR REPARO (AGORA DESATIVADO)
 // ==========================================
 function abrirModalConcluirReparo(id) {
-    const modalSimples = document.getElementById("modal-concluir-reparo");
-    if (!modalSimples) return;
-
-    ID_REPARO_ATUAL = id;
-    
-    const tagElement = document.getElementById("modal-reparo-tag");
-    if (tagElement) tagElement.innerText = id;
-    
-    const tipoReparo = document.getElementById("modal-tipo-reparo");
-    if (tipoReparo) tipoReparo.value = "GERAL";
-    
-    let item = BANCO_ATIVOS.find(a => a.id === id);
-    if (item) {
-        const repTon = document.getElementById("modal-reparo-ton");
-        if (repTon) repTon.value = Math.round(item.ton || 0);
-        
-        const repDias = document.getElementById("modal-reparo-dias");
-        if (repDias) repDias.value = item.dias || 0;
+    // Esta função foi substituída por window.abrirFolhaoPorTipo
+    // Mantida apenas para compatibilidade, mas não é mais usada
+    console.warn("abrirModalConcluirReparo foi substituído por abrirFolhaoPorTipo");
+    // Redireciona para o folhão
+    if (typeof window.abrirFolhaoPorTipo === 'function') {
+        window.abrirFolhaoPorTipo(id);
+    } else {
+        alert("Função de abertura de folhão não disponível.");
     }
-    
-    toggleCamposReparoParcial();
-    modalSimples.classList.remove("hidden");
 }
 
 function fecharModalConcluirReparo() {
@@ -1118,6 +1168,8 @@ function confirmarConclusaoReparo() {
     renderReparos();
     renderReservas();
     renderAtivos();
+    renderPainelVeios(); // 👈 NOVO: atualiza o sequenciamento
+    renderHistorico();   // 👈 NOVO: atualiza a auditoria
     calcularKpisGlobais();
     atualizarPainelCompleto();
     abrirAba(null, 'aba-reservas');
@@ -2265,6 +2317,7 @@ function atualizarPainelCompleto() {
     atualizarNovosKPIs();
     renderizarTopCriticos();
 }
+
 // ==========================================
 // CARREGAR DADOS DA OFICINA VIA API
 // ==========================================
@@ -2342,6 +2395,143 @@ async function carregarOficina() {
 }
 
 // ==========================================
+// FUNÇÃO PARA ABRIR O FOLHÃO CORRETO POR TIPO
+// ==========================================
+window.abrirFolhaoPorTipo = function(id) {
+    const item = BANCO_ATIVOS.find(a => a.id === id);
+    if (!item) {
+        alert('Equipamento não encontrado.');
+        return;
+    }
+
+    const tipo = item.tipo || '';
+    const mcc = item.mcc_compat || '';
+
+    // Roteia para o folhão correto
+    if (tipo === 'Molde') {
+        if (mcc === '2/3') {
+            if (typeof window.abrirFolhaoMolde23 === 'function') {
+                window.abrirFolhaoMolde23(id);
+            } else {
+                alert('Função abrirFolhaoMolde23 não disponível.');
+            }
+        } else {
+            if (typeof window.abrirFolhaoMCC4 === 'function') {
+                window.abrirFolhaoMCC4(id);
+            } else {
+                alert('Função abrirFolhaoMCC4 não disponível.');
+            }
+        }
+    } else if (tipo === 'Bender') {
+        if (typeof window.abrirFolhaoMCC4 === 'function') {
+            window.abrirFolhaoMCC4(id);
+        } else {
+            alert('Função abrirFolhaoMCC4 não disponível.');
+        }
+    } else if (tipo === 'Bow') {
+        if (typeof window.abrirFolhaoBow === 'function') {
+            window.abrirFolhaoBow(id);
+        } else {
+            alert('Função abrirFolhaoBow não disponível.');
+        }
+    } else if (tipo === 'Horizontal') {
+        if (typeof window.abrirFolhaoHorizontal === 'function') {
+            window.abrirFolhaoHorizontal(id);
+        } else {
+            alert('Função abrirFolhaoHorizontal não disponível.');
+        }
+    } else if (tipo === 'Straightener') {
+        // NOVO: Roteia para R1 ou R2 ou MCC4 (fallback)
+        if (id.includes('STR-1') || id.includes('R1')) {
+            if (typeof window.abrirFolhaoR1 === 'function') {
+                window.abrirFolhaoR1(id);
+            } else {
+                alert('Função abrirFolhaoR1 não disponível.');
+            }
+        } else if (id.includes('STR-2') || id.includes('R2')) {
+            if (typeof window.abrirFolhaoR2 === 'function') {
+                window.abrirFolhaoR2(id);
+            } else {
+                alert('Função abrirFolhaoR2 não disponível.');
+            }
+        } else {
+            // Fallback para MCC4 (caso não identifique R1/R2)
+            if (typeof window.abrirFolhaoMCC4 === 'function') {
+                window.abrirFolhaoMCC4(id);
+            } else {
+                alert('Função abrirFolhaoMCC4 não disponível.');
+            }
+        }
+    } else if (tipo === 'Seguimento Zero' || tipo === 'Segmento Zero') {
+        if (typeof window.abrirFolhaoSegmentoZero === 'function') {
+            window.abrirFolhaoSegmentoZero(id);
+        } else {
+            alert('Função abrirFolhaoSegmentoZero não disponível.');
+        }
+    } else {
+        alert('Tipo de equipamento sem folhão definido: ' + tipo);
+    }
+};
+// ==========================================
+// HISTÓRICO DE LAUDOS SALVOS (PDF)
+// ==========================================
+function salvarLaudoNoHistorico(tag, tipo, htmlPDF) {
+    const laudos = JSON.parse(localStorage.getItem("oms_laudos_salvos")) || [];
+    const agora = new Date();
+    const dataStr = agora.toLocaleDateString('pt-BR') + " " + agora.toLocaleTimeString('pt-BR');
+    const id = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    
+    laudos.unshift({
+        id: id,
+        tag: tag,
+        tipo: tipo,
+        data: dataStr,
+        timestamp: agora.getTime(),
+        html: htmlPDF
+    });
+    
+    if (laudos.length > 200) laudos.pop();
+    localStorage.setItem("oms_laudos_salvos", JSON.stringify(laudos));
+    renderHistorico(); // atualiza a lista
+    return id;
+}
+
+function getLaudosSalvos() {
+    return JSON.parse(localStorage.getItem("oms_laudos_salvos")) || [];
+}
+
+function excluirLaudo(id) {
+    let laudos = getLaudosSalvos();
+    laudos = laudos.filter(l => l.id !== id);
+    localStorage.setItem("oms_laudos_salvos", JSON.stringify(laudos));
+    renderHistorico();
+}
+
+window.visualizarLaudo = function(id) {
+    const laudos = getLaudosSalvos();
+    const laudo = laudos.find(l => l.id === id);
+    if (!laudo) {
+        alert("Laudo não encontrado.");
+        return;
+    }
+    const win = window.open('', '_blank', 'width=1100,height=800');
+    if (win) {
+        win.document.write(laudo.html);
+        win.document.close();
+    } else {
+        const printDiv = document.getElementById('print-content');
+        if (printDiv) {
+            printDiv.innerHTML = laudo.html;
+            window.print();
+        }
+    }
+};
+
+window.salvarLaudoNoHistorico = salvarLaudoNoHistorico;
+window.getLaudosSalvos = getLaudosSalvos;
+window.excluirLaudo = excluirLaudo;
+
+// ==========================================
 // EXPOSIÇÃO GLOBAL - APENAS FUNÇÕES DO SCRIPT.JS
 // ==========================================
 
@@ -2363,10 +2553,11 @@ window.salvarRegistroManual = salvarRegistroManual;
 window.iniciarSaque = iniciarSaque;
 window.confirmarRelatorio = confirmarRelatorio;
 window.fecharModalRelatorio = fecharModalRelatorio;
-window.abrirModalConcluirReparo = abrirModalConcluirReparo;
+window.abrirModalConcluirReparo = abrirModalConcluirReparo; // mantido por compatibilidade
 window.fecharModalConcluirReparo = fecharModalConcluirReparo;
 window.confirmarConclusaoReparo = confirmarConclusaoReparo;
 window.toggleCamposReparoParcial = toggleCamposReparoParcial;
+window.abrirFolhaoPorTipo = abrirFolhaoPorTipo;
 
 // ===== FUNÇÕES DE CADASTRO =====
 window.toggleFormAdicionar = toggleFormAdicionar;
@@ -2616,6 +2807,13 @@ window.efetuarSwapDireto = function(idPeca) {
     if (typeof renderReservas === 'function') renderReservas();
     if (typeof renderReparos === 'function') renderReparos();
     if (typeof renderPainelVeios === 'function') renderPainelVeios();
+    if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
+    if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
+    if (typeof renderAtivos === 'function') renderAtivos();
+    if (typeof renderReservas === 'function') renderReservas();
+    if (typeof renderReparos === 'function') renderReparos();
+    if (typeof renderPainelVeios === 'function') renderPainelVeios(); // 👈 NOVO
+    if (typeof renderHistorico === 'function') renderHistorico();   // 👈 NOVO
     if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
     if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
     

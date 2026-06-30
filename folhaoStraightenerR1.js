@@ -1,15 +1,15 @@
-// folhaoBow.js - VERSÃO COMPLETA COM TODAS AS SEÇÕES DO DOCUMENTO OFICIAL
+// folhaoStraightenerR1.js - VERSÃO COMPLETA PARA STRAIGHTENER R1
 
 import { BANCO_ATIVOS } from './banco.js';
 import { renderAtivos, renderReparos, renderReservas } from './ui.js';
 
-let ID_FOLHAO_BOW_ATUAL = null;
+let ID_FOLHAO_R1_ATUAL = null;
 
 // ==============================================================
-// 1. DADOS DAS TABELAS (transcritos do documento)
+// 1. DADOS DAS TABELAS (transcritos do documento oficial R1)
 // ==============================================================
 
-const itensChegadaBow = [
+const itensChegadaR1 = [
     { grupo: "LUBRIFICAÇÃO", desc: "Sistema de lubrificação isento de vazamentos." },
     { grupo: "", desc: "Tubulação amassada." },
     { grupo: "", desc: "Distribuidores de graxa funcionando corretamente sem vazamentos." },
@@ -32,13 +32,18 @@ const itensChegadaBow = [
     { grupo: "", desc: "Rolamentos quebrados." },
     { grupo: "", desc: "Rolos travados" },
     { grupo: "", desc: "Mancais furados." },
+    { grupo: "", desc: "Estrias do rolo puxador danificada." },
     { grupo: "", desc: "Conexões apertadas." }
 ];
 
-const refPassLineInfBow = ["68,66", "91,34", "105,13", "110,00", "105,13", "91,34", "68,66"];
-const refPassLineSupBow = ["124,13", "102,66", "89,61", "85,00", "89,61", "102,66", "124,13"];
+const refPassLineInfR1 = ["12,46", "41,22", "56,80", "60,15", "52,68", "36,07", "12,11"];
+const refPassLineSupR1 = ["79,75", "52,18", "37,61", "35,00", "42,83", "59,38", "82,89"];
 
-const manutencaoBow = [
+// Mesmos refs de saída (Bow) conforme documento
+const refsInfSaiR1 = ["68,66", "91,34", "105,13", "110,00", "105,13", "91,34", "68,66"];
+const refsSupSaiR1 = ["124,13", "102,66", "89,61", "85,00", "89,61", "102,66", "124,13"];
+
+const manutencaoR1 = [
     { item: "1", desc: "Lavagem e/ou Limpeza Mecânica" },
     { item: "2.1", desc: "Teste Hidrostático" },
     { item: "2.2", desc: "Teste Hidráulico" },
@@ -184,13 +189,13 @@ function garantirContainer(id) {
 // ==============================================================
 // 3. RENDERIZAR CHECKLIST DE CHEGADA (com categorias)
 // ==============================================================
-function renderizarInspecaoChegadaBow() {
-    const container = garantirContainer('container-check-recebimento-bow');
+function renderizarInspecaoChegadaR1() {
+    const container = garantirContainer('container-check-recebimento-r1');
     if (!container) return;
 
     let categorias = {};
     let currentGroup = "GERAL";
-    itensChegadaBow.forEach(item => {
+    itensChegadaR1.forEach(item => {
         if (item.grupo && item.grupo.trim() !== "") currentGroup = item.grupo;
         if (!categorias[currentGroup]) categorias[currentGroup] = [];
         categorias[currentGroup].push(item.desc);
@@ -201,7 +206,7 @@ function renderizarInspecaoChegadaBow() {
     for (const [nomeCategoria, perguntas] of Object.entries(categorias)) {
         html += `<h4 style="margin: 20px 0 10px 0; color: var(--text-accent); border-bottom: 1px dashed var(--border-color); padding-bottom: 5px;"><i class="fas fa-tasks"></i> ${nomeCategoria}</h4><div class="checklist-container">`;
         perguntas.forEach((pergunta, index) => {
-            const name = `bw-g${groupIndex}-q${index}`;
+            const name = `r1-g${groupIndex}-q${index}`;
             html += `<div class="check-item"><p>${index + 1}. ${pergunta}</p><div class="check-options"><label><input type="radio" name="${name}" value="SIM" checked> SIM</label><label><input type="radio" name="${name}" value="NÃO"> NÃO</label></div></div>`;
         });
         html += `</div>`;
@@ -213,17 +218,17 @@ function renderizarInspecaoChegadaBow() {
 // ==============================================================
 // 4. GAP (7 conjuntos)
 // ==============================================================
-function renderizarGapBow() {
-    const container = garantirContainer('bow-gap');
+function renderizarGapR1() {
+    const container = garantirContainer('r1-gap');
     if (!container) return;
     let html = `<h3 style="color:var(--text-heading);">AFERIÇÃO DE GAP (255+0,3/-0,3)</h3>
         <table class="premium-table" style="font-size:10px;">
             <tr><th>CONJ. ROLO</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr>`;
     for (let i = 1; i <= 7; i++) {
         html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>
-            <td><input id="gap-${i}-a"></td>
-            <td><input id="gap-${i}-b"></td>
-            <td><input id="gap-${i}-c"></td></tr>`;
+            <td><input id="r1gap-${i}-a"></td>
+            <td><input id="r1gap-${i}-b"></td>
+            <td><input id="r1gap-${i}-c"></td></tr>`;
     }
     html += `</table>`;
     container.innerHTML = html;
@@ -232,8 +237,8 @@ function renderizarGapBow() {
 // ==============================================================
 // 5. CANGALHAS (Superior e Inferior)
 // ==============================================================
-function renderizarCangalhasBow() {
-    const container = garantirContainer('bow-cangalhas');
+function renderizarCangalhasR1() {
+    const container = garantirContainer('r1-cangalhas');
     if (!container) return;
     const bases = ['Sup', 'Inf'];
     let html = `<h3 style="color:var(--text-heading);">INSPEÇÃO DE CANGALHAS</h3>`;
@@ -245,10 +250,10 @@ function renderizarCangalhasBow() {
                 <tr><th></th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th></tr>`;
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td>${i}ª</td>
-                <td style="text-align:center;"><input type="radio" name="cang-${prefix}-${i}-a" value="OK" checked></td>
-                <td style="text-align:center;"><input type="radio" name="cang-${prefix}-${i}-a" value="NOK"></td>
-                <td style="text-align:center;"><input type="radio" name="cang-${prefix}-${i}-b" value="OK" checked></td>
-                <td style="text-align:center;"><input type="radio" name="cang-${prefix}-${i}-b" value="NOK"></td></tr>`;
+                <td style="text-align:center;"><input type="radio" name="r1cang-${prefix}-${i}-a" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="r1cang-${prefix}-${i}-a" value="NOK"></td>
+                <td style="text-align:center;"><input type="radio" name="r1cang-${prefix}-${i}-b" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="r1cang-${prefix}-${i}-b" value="NOK"></td></tr>`;
         }
         html += `</table>`;
     });
@@ -258,7 +263,7 @@ function renderizarCangalhasBow() {
 // ==============================================================
 // 6. PASS LINE (Chegada e Saída)
 // ==============================================================
-function renderizarPassLinesBow() {
+function renderizarPassLinesR1() {
     const renderTable = (id, refs, titulo) => {
         const container = garantirContainer(id);
         if (!container) return;
@@ -275,17 +280,17 @@ function renderizarPassLinesBow() {
         html += `</table>`;
         container.innerHTML = html;
     };
-    renderTable('bow-passline-inf-chegada', refPassLineInfBow, 'PASS LINE - BASE INFERIOR (CHEGADA)');
-    renderTable('bow-passline-sup-chegada', refPassLineSupBow, 'PASS LINE - BASE SUPERIOR (CHEGADA)');
-    renderTable('bow-passline-inf-saida', refPassLineInfBow, 'PASS LINE - BASE INFERIOR (SAÍDA)');
-    renderTable('bow-passline-sup-saida', refPassLineSupBow, 'PASS LINE - BASE SUPERIOR (SAÍDA)');
+    renderTable('r1-passline-inf-chegada', refPassLineInfR1, 'PASS LINE - BASE INFERIOR (CHEGADA)');
+    renderTable('r1-passline-sup-chegada', refPassLineSupR1, 'PASS LINE - BASE SUPERIOR (CHEGADA)');
+    renderTable('r1-passline-inf-saida', refsInfSaiR1, 'PASS LINE - BASE INFERIOR (SAÍDA)');
+    renderTable('r1-passline-sup-saida', refsSupSaiR1, 'PASS LINE - BASE SUPERIOR (SAÍDA)');
 }
 
 // ==============================================================
 // 7. CILINDROS HIDRÁULICOS (Chegada)
 // ==============================================================
-function renderizarCilindrosChegadaBow() {
-    const container = garantirContainer('bow-cilindros-chegada');
+function renderizarCilindrosChegadaR1() {
+    const container = garantirContainer('r1-cilindros-chegada');
     if (!container) return;
     const tipos = [
         { nome: 'Cilindro de Elevação', prefix: 'ce', pos: ['A','B','C','D'] },
@@ -299,11 +304,11 @@ function renderizarCilindrosChegadaBow() {
                 <tr><th>Posição</th><th>Número</th><th>Produção</th><th>OK</th><th>NOK</th><th>Observação</th></tr>`;
         t.pos.forEach(p => {
             html += `<tr><td style="text-align:center;font-weight:bold;">${p}</td>
-                <td><input id="cil-${t.prefix}-num-${p}"></td>
-                <td><input id="cil-${t.prefix}-prod-${p}"></td>
-                <td style="text-align:center;"><input type="radio" name="cil-${t.prefix}-${p}" value="OK" checked></td>
-                <td style="text-align:center;"><input type="radio" name="cil-${t.prefix}-${p}" value="NOK"></td>
-                <td><input id="cil-${t.prefix}-obs-${p}"></td></tr>`;
+                <td><input id="r1cil-${t.prefix}-num-${p}"></td>
+                <td><input id="r1cil-${t.prefix}-prod-${p}"></td>
+                <td style="text-align:center;"><input type="radio" name="r1cil-${t.prefix}-${p}" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="r1cil-${t.prefix}-${p}" value="NOK"></td>
+                <td><input id="r1cil-${t.prefix}-obs-${p}"></td></tr>`;
         });
         html += `</table>`;
     });
@@ -313,8 +318,8 @@ function renderizarCilindrosChegadaBow() {
 // ==============================================================
 // 8. CILINDROS HIDRÁULICOS (Saída)
 // ==============================================================
-function renderizarCilindrosSaidaBow() {
-    const container = garantirContainer('bow-cilindros-saida');
+function renderizarCilindrosSaidaR1() {
+    const container = garantirContainer('r1-cilindros-saida');
     if (!container) return;
     const tipos = [
         { nome: 'Cilindro de Elevação', prefix: 'se', pos: ['A','B','C','D'] },
@@ -328,12 +333,12 @@ function renderizarCilindrosSaidaBow() {
                 <tr><th>Posição</th><th>Número</th><th>Produção</th><th>Reparado</th><th>Reutilizado</th><th>Novo</th><th>Observação</th></tr>`;
         t.pos.forEach(p => {
             html += `<tr><td style="text-align:center;font-weight:bold;">${p}</td>
-                <td><input id="cils-${t.prefix}-num-${p}"></td>
-                <td><input id="cils-${t.prefix}-prod-${p}"></td>
-                <td style="text-align:center;"><input type="checkbox" id="cils-${t.prefix}-rep-${p}"></td>
-                <td style="text-align:center;"><input type="checkbox" id="cils-${t.prefix}-reu-${p}"></td>
-                <td style="text-align:center;"><input type="checkbox" id="cils-${t.prefix}-nov-${p}"></td>
-                <td><input id="cils-${t.prefix}-obs-${p}"></td></tr>`;
+                <td><input id="r1cils-${t.prefix}-num-${p}"></td>
+                <td><input id="r1cils-${t.prefix}-prod-${p}"></td>
+                <td style="text-align:center;"><input type="checkbox" id="r1cils-${t.prefix}-rep-${p}"></td>
+                <td style="text-align:center;"><input type="checkbox" id="r1cils-${t.prefix}-reu-${p}"></td>
+                <td style="text-align:center;"><input type="checkbox" id="r1cils-${t.prefix}-nov-${p}"></td>
+                <td><input id="r1cils-${t.prefix}-obs-${p}"></td></tr>`;
         });
         html += `</table>`;
     });
@@ -343,8 +348,8 @@ function renderizarCilindrosSaidaBow() {
 // ==============================================================
 // 9. INSPEÇÃO DE ROLOS (Chegada e Saída)
 // ==============================================================
-function renderizarInspecaoRolosBow(tipo) {
-    const idContainer = `bow-rolos-${tipo}`;
+function renderizarInspecaoRolosR1(tipo) {
+    const idContainer = `r1-rolos-${tipo}`;
     const container = garantirContainer(idContainer);
     if (!container) return;
     const titulo = tipo === 'chegada' ? 'CHEGADA' : 'SAÍDA';
@@ -361,8 +366,8 @@ function renderizarInspecaoRolosBow(tipo) {
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>`;
             for (let j = 1; j <= 4; j++) {
-                html += `<td style="text-align:center;"><input type="radio" name="rol-${prefix}-${bPrefix}-${i}-${j}" value="OK" checked></td>
-                         <td style="text-align:center;"><input type="radio" name="rol-${prefix}-${bPrefix}-${i}-${j}" value="NOK"></td>`;
+                html += `<td style="text-align:center;"><input type="radio" name="r1rol-${prefix}-${bPrefix}-${i}-${j}" value="OK" checked></td>
+                         <td style="text-align:center;"><input type="radio" name="r1rol-${prefix}-${bPrefix}-${i}-${j}" value="NOK"></td>`;
             }
             html += `</tr>`;
         }
@@ -374,8 +379,8 @@ function renderizarInspecaoRolosBow(tipo) {
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>`;
             for (let j = 1; j <= 4; j++) {
-                html += `<td style="text-align:center;"><input type="radio" name="hid-${prefix}-${bPrefix}-${i}-${j}" value="OK" checked></td>
-                         <td style="text-align:center;"><input type="radio" name="hid-${prefix}-${bPrefix}-${i}-${j}" value="NOK"></td>`;
+                html += `<td style="text-align:center;"><input type="radio" name="r1hid-${prefix}-${bPrefix}-${i}-${j}" value="OK" checked></td>
+                         <td style="text-align:center;"><input type="radio" name="r1hid-${prefix}-${bPrefix}-${i}-${j}" value="NOK"></td>`;
             }
             html += `</tr>`;
         }
@@ -386,12 +391,12 @@ function renderizarInspecaoRolosBow(tipo) {
                 <tr><th></th><th>Num</th><th>Medida</th><th>Num</th><th>Medida</th><th>Num</th><th>Medida</th></tr>`;
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>
-                <td><input id="med-${prefix}-${bPrefix}-${i}-n1"></td>
-                <td><input id="med-${prefix}-${bPrefix}-${i}-m1"></td>
-                <td><input id="med-${prefix}-${bPrefix}-${i}-n2"></td>
-                <td><input id="med-${prefix}-${bPrefix}-${i}-m2"></td>
-                <td><input id="med-${prefix}-${bPrefix}-${i}-n3"></td>
-                <td><input id="med-${prefix}-${bPrefix}-${i}-m3"></td></tr>`;
+                <td><input id="r1med-${prefix}-${bPrefix}-${i}-n1"></td>
+                <td><input id="r1med-${prefix}-${bPrefix}-${i}-m1"></td>
+                <td><input id="r1med-${prefix}-${bPrefix}-${i}-n2"></td>
+                <td><input id="r1med-${prefix}-${bPrefix}-${i}-m2"></td>
+                <td><input id="r1med-${prefix}-${bPrefix}-${i}-n3"></td>
+                <td><input id="r1med-${prefix}-${bPrefix}-${i}-m3"></td></tr>`;
         }
         html += `</table>
             <p style="font-size:8px;color:var(--text-muted);">*Nota: Diâmetros nominais: Bow: 230,00mm louco; Bow 250,00mm acionado; H e R: 300,00mm.</p>`;
@@ -402,8 +407,8 @@ function renderizarInspecaoRolosBow(tipo) {
 // ==============================================================
 // 10. DISTRIBUIÇÃO DE GRAXA
 // ==============================================================
-function renderizarGraxaBow() {
-    const container = garantirContainer('bow-graxa');
+function renderizarGraxaR1() {
+    const container = garantirContainer('r1-graxa');
     if (!container) return;
     const bases = ['Superior', 'Inferior'];
     let html = `<h3 style="color:var(--text-heading);">INSPEÇÃO DE DISTRIBUIÇÃO DE GRAXA</h3>
@@ -416,9 +421,9 @@ function renderizarGraxaBow() {
                 <tr><th></th><th>OK</th><th>VT</th><th>SA</th><th></th><th></th></tr>`;
         for (let i = 7; i >= 1; i--) {
             html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>
-                <td style="text-align:center;"><input type="radio" name="grx-${prefix}-${i}" value="OK" checked></td>
-                <td style="text-align:center;"><input type="radio" name="grx-${prefix}-${i}" value="VT"></td>
-                <td style="text-align:center;"><input type="radio" name="grx-${prefix}-${i}" value="SA"></td>
+                <td style="text-align:center;"><input type="radio" name="r1grx-${prefix}-${i}" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="r1grx-${prefix}-${i}" value="VT"></td>
+                <td style="text-align:center;"><input type="radio" name="r1grx-${prefix}-${i}" value="SA"></td>
                 <td></td>
                 <td style="text-align:center;font-weight:bold;">${i}</td></tr>`;
         }
@@ -431,20 +436,20 @@ function renderizarGraxaBow() {
 // ==============================================================
 // 11. CHECKLIST DE MANUTENÇÃO (com P, G, Executante, Matrícula, Data)
 // ==============================================================
-function renderizarChecklistManutencaoBow() {
-    const container = garantirContainer('bow-checklist-manutencao');
+function renderizarChecklistManutencaoR1() {
+    const container = garantirContainer('r1-checklist-manutencao');
     if (!container) return;
     let html = `<h3 style="color:var(--text-heading);">CHECKLIST DE MANUTENÇÃO</h3>
         <table class="premium-table" style="font-size:9px;">
             <tr><th>Item</th><th>Descrição da Atividade</th><th style="width:30px;">P</th><th style="width:30px;">G</th><th>Executante</th><th>Matrícula</th><th>Data</th></tr>`;
-    manutencaoBow.forEach((tarefa, index) => {
+    manutencaoR1.forEach((tarefa, index) => {
         html += `<tr><td style="text-align:center;font-weight:bold;">${tarefa.item}</td>
             <td style="font-size:9px;">${tarefa.desc}</td>
-            <td style="text-align:center;"><input type="checkbox" id="bw-p-${index}"></td>
-            <td style="text-align:center;"><input type="checkbox" id="bw-g-${index}"></td>
-            <td><input id="bw-resp-${index}"></td>
-            <td><input id="bw-mat-${index}"></td>
-            <td><input type="date" id="bw-dat-${index}"></td></tr>`;
+            <td style="text-align:center;"><input type="checkbox" id="r1-p-${index}"></td>
+            <td style="text-align:center;"><input type="checkbox" id="r1-g-${index}"></td>
+            <td><input id="r1-resp-${index}"></td>
+            <td><input id="r1-mat-${index}"></td>
+            <td><input type="date" id="r1-dat-${index}"></td></tr>`;
     });
     html += `</table>`;
     container.innerHTML = html;
@@ -453,12 +458,12 @@ function renderizarChecklistManutencaoBow() {
 // ==============================================================
 // 12. MATERIAIS APLICADOS
 // ==============================================================
-function renderizarMateriaisBow() {
-    const container = garantirContainer('bow-materiais');
+function renderizarMateriaisR1() {
+    const container = garantirContainer('r1-materiais');
     if (!container) return;
     let rows = '';
     for (let i = 1; i <= 30; i++) {
-        rows += `<tr><td><input id="mat-desc-${i}" style="width:100%;"></td><td><input id="mat-qtd-${i}" style="width:60px;"></td></tr>`;
+        rows += `<tr><td><input id="r1mat-desc-${i}" style="width:100%;"></td><td><input id="r1mat-qtd-${i}" style="width:60px;"></td></tr>`;
     }
     const html = `<h3 style="color:var(--text-heading);">MATERIAIS APLICADOS</h3>
         <table class="premium-table" style="font-size:9px;">
@@ -471,53 +476,53 @@ function renderizarMateriaisBow() {
 // ==============================================================
 // 13. FUNÇÃO PRINCIPAL DE ABRIR
 // ==============================================================
-window.abrirFolhaoBow = function(id) {
-    ID_FOLHAO_BOW_ATUAL = id;
-    const modal = document.getElementById('modal-folhao-bow');
+window.abrirFolhaoR1 = function(id) {
+    ID_FOLHAO_R1_ATUAL = id;
+    const modal = document.getElementById('modal-folhao-r1');
     if (!modal) {
-        console.error("Modal #modal-folhao-bow não encontrado!");
+        console.error("Modal #modal-folhao-r1 não encontrado!");
         return;
     }
 
     // Preenche cabeçalho
-    const tagNameEl = document.getElementById('bow-tag-name');
+    const tagNameEl = document.getElementById('r1-tag-name');
     if (tagNameEl) tagNameEl.innerText = id;
-    const dataInicio = document.getElementById('bow-data-inicio');
-    const dataFim = document.getElementById('bow-data-fim');
+    const dataInicio = document.getElementById('r1-data-inicio');
+    const dataFim = document.getElementById('r1-data-fim');
     if (dataInicio) dataInicio.valueAsDate = new Date();
     if (dataFim) dataFim.valueAsDate = new Date();
-    const motivoEl = document.getElementById('bow-motivo');
+    const motivoEl = document.getElementById('r1-motivo');
     if (motivoEl) motivoEl.value = '';
 
     // Renderiza todas as abas
-    renderizarInspecaoChegadaBow();
-    renderizarGapBow();
-    renderizarCangalhasBow();
-    renderizarPassLinesBow();
-    renderizarCilindrosChegadaBow();
-    renderizarCilindrosSaidaBow();
-    renderizarInspecaoRolosBow('chegada');
-    renderizarInspecaoRolosBow('saida');
-    renderizarGraxaBow();
-    renderizarChecklistManutencaoBow();
-    renderizarMateriaisBow();
+    renderizarInspecaoChegadaR1();
+    renderizarGapR1();
+    renderizarCangalhasR1();
+    renderizarPassLinesR1();
+    renderizarCilindrosChegadaR1();
+    renderizarCilindrosSaidaR1();
+    renderizarInspecaoRolosR1('chegada');
+    renderizarInspecaoRolosR1('saida');
+    renderizarGraxaR1();
+    renderizarChecklistManutencaoR1();
+    renderizarMateriaisR1();
 
     modal.classList.remove('hidden');
     // Ativa a primeira aba
-    window.trocarAbaBow({ currentTarget: document.querySelector('#modal-folhao-bow .folhao-tab') }, 'bow-aba-dados');
+    window.trocarAbaR1({ currentTarget: document.querySelector('#modal-folhao-r1 .folhao-tab') }, 'r1-aba-dados');
 };
 
 // ==============================================================
 // 14. FECHAR E TROCAR ABA
 // ==============================================================
-window.fecharFolhaoBow = function() {
-    const modal = document.getElementById('modal-folhao-bow');
+window.fecharFolhaoR1 = function() {
+    const modal = document.getElementById('modal-folhao-r1');
     if (modal) modal.classList.add('hidden');
-    ID_FOLHAO_BOW_ATUAL = null;
+    ID_FOLHAO_R1_ATUAL = null;
 };
 
-window.trocarAbaBow = function(evt, abaId) {
-    const modal = document.getElementById('modal-folhao-bow');
+window.trocarAbaR1 = function(evt, abaId) {
+    const modal = document.getElementById('modal-folhao-r1');
     if (!modal) return;
     modal.querySelectorAll('.folhao-content').forEach(c => c.classList.add('hidden'));
     modal.querySelectorAll('.folhao-tab').forEach(b => b.classList.remove('active'));
@@ -529,11 +534,11 @@ window.trocarAbaBow = function(evt, abaId) {
 // ==============================================================
 // 15. GERAR PDF COMPLETO
 // ==============================================================
-window.salvarEImprimirFolhaoBow = function() {
+window.salvarEImprimirFolhaoR1 = function() {
     if (!window.verificarAcesso || !window.verificarAcesso()) { alert("Acesso negado."); return; }
-    if (!ID_FOLHAO_BOW_ATUAL) { alert("Nenhuma TAG carregada."); return; }
+    if (!ID_FOLHAO_R1_ATUAL) { alert("Nenhuma TAG carregada."); return; }
 
-    const tag = ID_FOLHAO_BOW_ATUAL;
+    const tag = ID_FOLHAO_R1_ATUAL;
     const item = BANCO_ATIVOS.find(a => a.id === tag);
     if (item) {
         item.ton = 0;
@@ -543,19 +548,19 @@ window.salvarEImprimirFolhaoBow = function() {
     }
 
     // Coleta dados do cabeçalho
-    const dtInicio = getV('bow-data-inicio') || new Date().toLocaleDateString('pt-BR');
-    const dtFim = getV('bow-data-fim') || new Date().toLocaleDateString('pt-BR');
-    const numSeg = getV('bow-num-segmento') || '______';
-    const veio = document.getElementById('bow-veio')?.value || '';
-    const motivo = getV('bow-motivo') || '_______________';
-    const tipoExec = document.getElementById('bow-tipo-execucao')?.value || 'GERAL';
+    const dtInicio = getV('r1-data-inicio') || new Date().toLocaleDateString('pt-BR');
+    const dtFim = getV('r1-data-fim') || new Date().toLocaleDateString('pt-BR');
+    const numSeg = getV('r1-num-segmento') || '______';
+    const veio = document.getElementById('r1-veio')?.value || '';
+    const motivo = getV('r1-motivo') || '_______________';
+    const tipoExec = document.getElementById('r1-tipo-execucao')?.value || 'GERAL';
 
     // Função auxiliar para checklist de chegada
     function gerarLinhasChegada() {
         let html = '';
         let categorias = {};
         let currentGroup = "GERAL";
-        itensChegadaBow.forEach(it => {
+        itensChegadaR1.forEach(it => {
             if (it.grupo && it.grupo.trim() !== "") currentGroup = it.grupo;
             if (!categorias[currentGroup]) categorias[currentGroup] = [];
             categorias[currentGroup].push(it.desc);
@@ -565,7 +570,7 @@ window.salvarEImprimirFolhaoBow = function() {
             html += `<tr><th colspan="3" style="background:#002b5e; color:#fff; font-size:10px; text-align:left; padding:4px; border:1px solid #000;">${nomeCategoria}</th></tr>`;
             html += `<tr><th style="border:1px solid #000; padding:3px; width:5%;">Item</th><th style="border:1px solid #000; padding:3px;">Descrição</th><th style="border:1px solid #000; padding:3px; width:12%;">Status</th></tr>`;
             perguntas.forEach((pergunta, index) => {
-                const name = `bw-g${groupIndex}-q${index}`;
+                const name = `r1-g${groupIndex}-q${index}`;
                 const val = getRadioValue(name);
                 html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px;">${index+1}</td>
                     <td style="border:1px solid #000; padding:3px;">${pergunta}</td>
@@ -581,9 +586,9 @@ window.salvarEImprimirFolhaoBow = function() {
         let html = '';
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`gap-${i}-a`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`gap-${i}-b`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`gap-${i}-c`)}</td></tr>`;
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1gap-${i}-a`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1gap-${i}-b`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1gap-${i}-c`)}</td></tr>`;
         }
         return html;
     }
@@ -602,8 +607,8 @@ window.salvarEImprimirFolhaoBow = function() {
                     <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th>
                     <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th></tr>`;
             for (let i = 1; i <= 7; i++) {
-                const a = getRadioValue(`cang-${b}-${i}-a`);
-                const bVal = getRadioValue(`cang-${b}-${i}-b`);
+                const a = getRadioValue(`r1cang-${b}-${i}-a`);
+                const bVal = getRadioValue(`r1cang-${b}-${i}-b`);
                 html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px;">${i}ª</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${a === 'OK' ? 'X' : ''}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${a === 'NOK' ? 'X' : ''}</td>
@@ -641,13 +646,13 @@ window.salvarEImprimirFolhaoBow = function() {
                     <th style="border:1px solid #000; padding:3px;">Produção</th><th style="border:1px solid #000; padding:3px;">OK</th>
                     <th style="border:1px solid #000; padding:3px;">NOK</th><th style="border:1px solid #000; padding:3px;">Obs</th></tr>`;
             t.pos.forEach(p => {
-                const ok = getRadioValue(`cil-${t.prefix}-${p}`);
+                const ok = getRadioValue(`r1cil-${t.prefix}-${p}`);
                 html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`cil-${t.prefix}-num-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`cil-${t.prefix}-prod-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cil-${t.prefix}-num-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cil-${t.prefix}-prod-${p}`)}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${ok === 'OK' ? 'X' : ''}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${ok === 'NOK' ? 'X' : ''}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`cil-${t.prefix}-obs-${p}`)}</td></tr>`;
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cil-${t.prefix}-obs-${p}`)}</td></tr>`;
             });
         });
         return html;
@@ -669,12 +674,12 @@ window.salvarEImprimirFolhaoBow = function() {
                     <th style="border:1px solid #000; padding:3px;">Obs</th></tr>`;
             t.pos.forEach(p => {
                 html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`cils-${t.prefix}-num-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`cils-${t.prefix}-prod-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`cils-${t.prefix}-rep-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`cils-${t.prefix}-reu-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`cils-${t.prefix}-nov-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`cils-${t.prefix}-obs-${p}`)}</td></tr>`;
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cils-${t.prefix}-num-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cils-${t.prefix}-prod-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`r1cils-${t.prefix}-rep-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`r1cils-${t.prefix}-reu-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`r1cils-${t.prefix}-nov-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cils-${t.prefix}-obs-${p}`)}</td></tr>`;
             });
         });
         return html;
@@ -699,7 +704,7 @@ window.salvarEImprimirFolhaoBow = function() {
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>`;
             for (let j = 1; j <= 4; j++) {
-                const val = getRadioValue(`rol-${prefix}-${bPrefix}-${i}-${j}`);
+                const val = getRadioValue(`r1rol-${prefix}-${bPrefix}-${i}-${j}`);
                 html += `<td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'OK' ? 'X' : ''}</td>
                          <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'NOK' ? 'X' : ''}</td>`;
             }
@@ -719,7 +724,7 @@ window.salvarEImprimirFolhaoBow = function() {
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>`;
             for (let j = 1; j <= 4; j++) {
-                const val = getRadioValue(`hid-${prefix}-${bPrefix}-${i}-${j}`);
+                const val = getRadioValue(`r1hid-${prefix}-${bPrefix}-${i}-${j}`);
                 html += `<td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'OK' ? 'X' : ''}</td>
                          <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'NOK' ? 'X' : ''}</td>`;
             }
@@ -736,12 +741,12 @@ window.salvarEImprimirFolhaoBow = function() {
                 <th style="border:1px solid #000; padding:3px;">Num</th><th style="border:1px solid #000; padding:3px;">Medida</th></tr>`;
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`med-${prefix}-${bPrefix}-${i}-n1`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`med-${prefix}-${bPrefix}-${i}-m1`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`med-${prefix}-${bPrefix}-${i}-n2`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`med-${prefix}-${bPrefix}-${i}-m2`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`med-${prefix}-${bPrefix}-${i}-n3`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`med-${prefix}-${bPrefix}-${i}-m3`)}</td></tr>`;
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-n1`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-m1`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-n2`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-m2`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-n3`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-m3`)}</td></tr>`;
         }
         return html;
     }
@@ -757,7 +762,7 @@ window.salvarEImprimirFolhaoBow = function() {
                     <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">VT</th>
                     <th style="border:1px solid #000; padding:3px;">SA</th><th style="border:1px solid #000; padding:3px;">Dir</th></tr>`;
             for (let i = 7; i >= 1; i--) {
-                const val = getRadioValue(`grx-${b}-${i}`);
+                const val = getRadioValue(`r1grx-${b}-${i}`);
                 html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'OK' ? 'X' : ''}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'VT' ? 'X' : ''}</td>
@@ -771,11 +776,11 @@ window.salvarEImprimirFolhaoBow = function() {
     // Gera Checklist de Manutenção
     function gerarManutencaoPDF() {
         let html = '';
-        manutencaoBow.forEach((tarefa, index) => {
-            const p = document.getElementById(`bw-p-${index}`)?.checked ? 'X' : '';
-            const g = document.getElementById(`bw-g-${index}`)?.checked ? 'X' : '';
-            const mat = getV(`bw-mat-${index}`);
-            const data = getV(`bw-dat-${index}`);
+        manutencaoR1.forEach((tarefa, index) => {
+            const p = document.getElementById(`r1-p-${index}`)?.checked ? 'X' : '';
+            const g = document.getElementById(`r1-g-${index}`)?.checked ? 'X' : '';
+            const mat = getV(`r1-mat-${index}`);
+            const data = getV(`r1-dat-${index}`);
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${tarefa.item}</td>
                 <td style="border:1px solid #000; padding:3px; font-size:9px;">${tarefa.desc}</td>
                 <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
@@ -804,7 +809,7 @@ window.salvarEImprimirFolhaoBow = function() {
         <div style="display: flex; border: 2px solid #000; border-bottom: 5px solid #002b5e; margin-bottom: 8px; align-items: center; background: #fff;">
             <div style="width: 20%; text-align: center; border-right: 2px solid #000; padding: 8px;"><span style="font-weight: 900; font-size: 28px; color: #002b5e; letter-spacing: -2px;">CSN</span></div>
             <div style="width: 60%; text-align: center; padding: 8px;">
-                <h2 style="margin: 0; font-size: 12px; color: #000;">CHECK LIST GERAL SEGMENTOS BOW MCC#4</h2>
+                <h2 style="margin: 0; font-size: 12px; color: #000;">CHECK LIST GERAL SEGMENTOS STRAIGHTENER R-I MCC#4</h2>
                 <p style="margin: 4px 0 0 0; font-size: 8px; color: #333; font-weight: bold;">DATA INÍCIO: ${dtInicio} | DATA FIM: ${dtFim}</p>
             </div>
             <div style="width: 20%; font-size: 9px; border-left: 2px solid #000; padding: 8px; line-height: 1.4; font-weight: bold;">
@@ -848,14 +853,14 @@ window.salvarEImprimirFolhaoBow = function() {
                 <tr><th style="border:1px solid #000; padding:3px;">Conj</th><th style="border:1px solid #000; padding:3px;">Ref</th>
                     <th style="border:1px solid #000; padding:3px;">Pos A</th><th style="border:1px solid #000; padding:3px;">Pos B</th>
                     <th style="border:1px solid #000; padding:3px;">Pos C</th></tr>
-                ${gerarPassLinePDF('bow-passline-inf-chegada', refPassLineInfBow)}
+                ${gerarPassLinePDF('r1-passline-inf-chegada', refPassLineInfR1)}
             </table></div>
             <div style="width:50%;"><table>
                 <tr><th colspan="5" style="background:#ddd; border:1px solid #000; padding:3px;">BASE SUPERIOR (CHEGADA)</th></tr>
                 <tr><th style="border:1px solid #000; padding:3px;">Conj</th><th style="border:1px solid #000; padding:3px;">Ref</th>
                     <th style="border:1px solid #000; padding:3px;">Pos A</th><th style="border:1px solid #000; padding:3px;">Pos B</th>
                     <th style="border:1px solid #000; padding:3px;">Pos C</th></tr>
-                ${gerarPassLinePDF('bow-passline-sup-chegada', refPassLineSupBow)}
+                ${gerarPassLinePDF('r1-passline-sup-chegada', refPassLineSupR1)}
             </table></div>
         </div>
 
@@ -897,14 +902,14 @@ window.salvarEImprimirFolhaoBow = function() {
                 <tr><th style="border:1px solid #000; padding:3px;">Conj</th><th style="border:1px solid #000; padding:3px;">Ref</th>
                     <th style="border:1px solid #000; padding:3px;">Pos A</th><th style="border:1px solid #000; padding:3px;">Pos B</th>
                     <th style="border:1px solid #000; padding:3px;">Pos C</th></tr>
-                ${gerarPassLinePDF('bow-passline-inf-saida', refPassLineInfBow)}
+                ${gerarPassLinePDF('r1-passline-inf-saida', refsInfSaiR1)}
             </table></div>
             <div style="width:50%;"><table>
                 <tr><th colspan="5" style="background:#ddd; border:1px solid #000; padding:3px;">BASE SUPERIOR (SAÍDA)</th></tr>
                 <tr><th style="border:1px solid #000; padding:3px;">Conj</th><th style="border:1px solid #000; padding:3px;">Ref</th>
                     <th style="border:1px solid #000; padding:3px;">Pos A</th><th style="border:1px solid #000; padding:3px;">Pos B</th>
                     <th style="border:1px solid #000; padding:3px;">Pos C</th></tr>
-                ${gerarPassLinePDF('bow-passline-sup-saida', refPassLineSupBow)}
+                ${gerarPassLinePDF('r1-passline-sup-saida', refsSupSaiR1)}
             </table></div>
         </div>
 
@@ -926,7 +931,7 @@ window.salvarEImprimirFolhaoBow = function() {
         <table>
             <tr><th style="width:80%;">MATERIAIS</th><th style="width:20%;">QUANTIDADE</th></tr>
             ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30].map(i => `
-                <tr><td>${getV(`mat-desc-${i}`)}</td><td>${getV(`mat-qtd-${i}`)}</td></tr>
+                <tr><td>${getV(`r1mat-desc-${i}`)}</td><td>${getV(`r1mat-qtd-${i}`)}</td></tr>
             `).join('')}
         </table>
 
@@ -939,14 +944,14 @@ window.salvarEImprimirFolhaoBow = function() {
 
     // ===== SALVA NO HISTÓRICO =====
     if (typeof window.salvarLaudoNoHistorico === 'function') {
-        window.salvarLaudoNoHistorico(tag, "Bow MCC 4", htmlPDF);
+        window.salvarLaudoNoHistorico(tag, "Straightener R1 MCC 4", htmlPDF);
     }
 
     // ===== IMPRIME =====
     const printDiv = document.getElementById('print-content');
     if (!printDiv) { alert("Div 'print-content' não encontrada!"); return; }
     printDiv.innerHTML = htmlPDF;
-    window.fecharFolhaoBow();
+    window.fecharFolhaoR1();
     if (typeof renderReparos === 'function') renderReparos();
     if (typeof renderReservas === 'function') renderReservas();
     if (typeof renderAtivos === 'function') renderAtivos();
@@ -957,4 +962,4 @@ window.salvarEImprimirFolhaoBow = function() {
     setTimeout(() => window.print(), 500);
 };
 
-console.log("✅ folhaoBow.js carregado com todas as seções do documento oficial.");
+console.log("✅ folhaoStraightenerR1.js carregado com todas as seções do documento oficial.");

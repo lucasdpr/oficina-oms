@@ -679,43 +679,16 @@ function renderizarGraficosMCC(mccNumero) {
 }
 
 // ==============================================================
-// ATUALIZAÇÃO AUTOMÁTICA (30 segundos)
+// ATUALIZAÇÃO AUTOMÁTICA (DESATIVADA)
 // ==============================================================
 function iniciarAtualizacaoAutomatica() {
-    setInterval(() => {
-        const abaReparos = document.getElementById('aba-reparos');
-        const abaAtivos = document.getElementById('aba-ativos');
-        const abaFluxo = document.getElementById('aba-fluxo');
-        const abaMCC2 = document.getElementById('aba-mcc2');
-        const abaMCC3 = document.getElementById('aba-mcc3');
-        const abaMCC4 = document.getElementById('aba-mcc4');
-
-        if (abaReparos && abaReparos.classList.contains('active')) {
-            if (typeof renderReparos === 'function') renderReparos();
-        }
-        if (abaAtivos && abaAtivos.classList.contains('active')) {
-            if (typeof renderAtivos === 'function') renderAtivos();
-        }
-        if (abaFluxo && abaFluxo.classList.contains('active')) {
-            if (typeof renderPainelVeios === 'function') renderPainelVeios();
-        }
-        if (abaMCC2 && abaMCC2.classList.contains('active')) {
-            if (typeof renderizarGraficosMCC === 'function') renderizarGraficosMCC(2);
-        }
-        if (abaMCC3 && abaMCC3.classList.contains('active')) {
-            if (typeof renderizarGraficosMCC === 'function') renderizarGraficosMCC(3);
-        }
-        if (abaMCC4 && abaMCC4.classList.contains('active')) {
-            if (typeof renderizarGraficosMCC === 'function') renderizarGraficosMCC(4);
-        }
-        console.log("⏰ Atualização automática executada (30s)");
-    }, 30000);
-}
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', iniciarAtualizacaoAutomatica);
-} else {
-    iniciarAtualizacaoAutomatica();
+    console.log("⏸️ Atualização automática desativada.");
+    // Remove qualquer intervalo anterior se existir
+    if (window._atualizacaoInterval) {
+        clearInterval(window._atualizacaoInterval);
+        window._atualizacaoInterval = null;
+    }
+    // Não inicia o intervalo – desativado permanentemente
 }
 
 // ==============================================================
@@ -766,22 +739,6 @@ window.excluirEquipamento = excluirEquipamento;
 window.iniciarSwapAlocacao = efetuarSwapDireto;
 
 // ==============================================================
-// EXPOSIÇÃO GLOBAL (para uso no HTML)
-// ==============================================================
-window.renderPainelVeios = renderPainelVeios;
-window.gerarCardGraficoHTML = gerarCardGraficoHTML;
-window.renderAtivos = renderAtivos;
-window.renderReparos = renderReparos;
-window.renderReservas = renderReservas;   // Mantém no window, pois é usado no HTML
-window.renderRolos = renderRolos;
-window.renderMateriais = renderMateriais;
-window.aplicarFiltrosMCC = aplicarFiltrosMCC;
-window.renderizarGraficosMCC = renderizarGraficosMCC;
-window.efetuarSwapDireto = efetuarSwapDireto;
-window.excluirEquipamento = excluirEquipamento;
-window.iniciarSwapAlocacao = efetuarSwapDireto;
-
-// ==============================================================
 // EXPORTAÇÕES NOMEADAS (para import { ... } from './ui.js')
 // ==============================================================
 export {
@@ -789,7 +746,6 @@ export {
     gerarCardGraficoHTML,
     renderAtivos,
     renderReparos,
-    // renderReservas foi removido daqui porque já é exportado com 'export function'
     renderRolos,
     renderMateriais,
     aplicarFiltrosMCC,
@@ -806,7 +762,7 @@ export default {
     gerarCardGraficoHTML,
     renderAtivos,
     renderReparos,
-    renderReservas,   // Aqui pode ficar, pois é exportação padrão, não nomeada
+    renderReservas,
     renderRolos,
     renderMateriais,
     aplicarFiltrosMCC,
@@ -814,3 +770,8 @@ export default {
     efetuarSwapDireto,
     excluirEquipamento
 };
+
+// Inicializa (desativado)
+iniciarAtualizacaoAutomatica();
+
+console.log("✅ ui.js carregado – atualização automática desativada.");

@@ -1,9 +1,14 @@
+// folhaoHorizontal.js - VERSÃO COMPLETA COM TODAS AS SEÇÕES DO DOCUMENTO OFICIAL
+
 import { BANCO_ATIVOS } from './banco.js';
 import { renderAtivos, renderReparos, renderReservas } from './ui.js';
 
 let ID_FOLHAO_HORIZ_ATUAL = null;
 
-// DADOS DO DOCUMENTO: INSPEÇÃO DE CHEGADA
+// ==============================================================
+// 1. DADOS DAS TABELAS (transcritos do documento)
+// ==============================================================
+
 const itensChegadaHorizontal = [
     { grupo: "LUBRIFICAÇÃO", desc: "Sistema de lubrificação isento de vazamentos." },
     { grupo: "", desc: "Tubulação amassada." },
@@ -30,8 +35,8 @@ const itensChegadaHorizontal = [
     { grupo: "", desc: "Conexões apertadas." }
 ];
 
-const refPassLineInfHorizontal = ["60,00", "60,00", "60,00", "60,00", "60,00", "60,00", "60,00"]; 
-const refPassLineSupHorizontal = ["35,00", "35,00", "35,00", "35,00", "35,00", "35,00", "35,00"]; 
+const refPassLineInfHoriz = ["60,00", "60,00", "60,00", "60,00", "60,00", "60,00", "60,00"];
+const refPassLineSupHoriz = ["35,00", "35,00", "35,00", "35,00", "35,00", "35,00", "35,00"];
 
 const manutencaoHorizontal = [
     { item: "1", desc: "Lavagem e/ou Limpeza Mecânica" },
@@ -144,282 +149,812 @@ const manutencaoHorizontal = [
     { item: "10.5", desc: "Teste de lubrificação geral" }
 ];
 
-window.abrirFolhaoHorizontal = function(id) {
-    ID_FOLHAO_HORIZ_ATUAL = id;
-    let tituloPdf = document.getElementById('titulo-pdf');
-    if(tituloPdf) tituloPdf.innerText = "SISTEMA OMS - FOLHA DE LIBERAÇÃO - SEGMENTO HORIZONTAL (MCC 4)";
+// ==============================================================
+// 2. FUNÇÕES AUXILIARES
+// ==============================================================
+function getV(id) {
+    const el = document.getElementById(id);
+    return el ? el.value : '';
+}
 
-    let tagNameEl = document.getElementById('horizontal-tag-name');
-    if(tagNameEl) tagNameEl.innerText = id;
+function getRadioValue(name) {
+    const radios = document.getElementsByName(name);
+    for (let r of radios) if (r.checked) return r.value;
+    return 'NÃO';
+}
 
-    document.getElementById('horiz-data-inicio').valueAsDate = new Date();
-    document.getElementById('horiz-data-fim').valueAsDate = new Date();
+function getCheckboxValue(id) {
+    const el = document.getElementById(id);
+    return el && el.checked ? 'X' : '';
+}
 
-    document.getElementById('modal-folhao-horizontal').classList.remove('hidden');
-    renderizarInspecaoChegadaHorizontal();
-    renderizarPassLinesHorizontal();
-    renderizarChecklistManutencaoHorizontal();
-    renderizarTabelaMateriaisIniciaisHorizontal();
-    
-    window.trocarAbaHorizontal({ currentTarget: document.querySelector('#modal-folhao-horizontal .folhao-tab') }, 'horiz-aba-dados');
-};
-
-window.fecharFolhaoHorizontal = function() {
-    document.getElementById('modal-folhao-horizontal').classList.add('hidden');
-    ID_FOLHAO_HORIZ_ATUAL = null;
-};
-
-window.trocarAbaHorizontal = function(evt, abaId) {
-    document.querySelectorAll('#modal-folhao-horizontal .folhao-content').forEach(aba => {
-        aba.classList.add('hidden');
-        aba.classList.remove('active');
-        aba.style.display = ''; 
-    });
-    document.querySelectorAll('#modal-folhao-horizontal .folhao-tab').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    let abaDestino = document.getElementById(abaId);
-    if(abaDestino) {
-        abaDestino.classList.remove('hidden');
-        abaDestino.classList.add('active');
-        abaDestino.style.display = ''; 
+function garantirContainer(id) {
+    let container = document.getElementById(id);
+    if (!container) {
+        const body = document.querySelector('.folhao-body');
+        if (body) {
+            container = document.createElement('div');
+            container.id = id;
+            body.appendChild(container);
+        }
     }
-    if(evt && evt.currentTarget) evt.currentTarget.classList.add('active');
-};
+    return container;
+}
 
-// ==========================================
-// PADRÃO MOLDE PREMIUM - CHEGADA
-// ==========================================
+// ==============================================================
+// 3. RENDERIZAR CHECKLIST DE CHEGADA (com categorias)
+// ==============================================================
 function renderizarInspecaoChegadaHorizontal() {
-    const tbody = document.getElementById('tabela-horiz-inspecao-chegada');
-    // Transforma a tabela num Container Flex Premium
-    if(tbody) {
-        const tableResponsive = tbody.closest('.table-responsive');
-        if(tableResponsive) tableResponsive.outerHTML = `<div id="container-check-recebimento-horizontal" class="checklist-container"></div>`;
-    }
-    
-    const container = document.getElementById('container-check-recebimento-horizontal');
-    if(!container) return;
+    const container = garantirContainer('container-check-recebimento-horizontal');
+    if (!container) return;
 
     let categorias = {};
     let currentGroup = "GERAL";
     itensChegadaHorizontal.forEach(item => {
-        if(item.grupo && item.grupo.trim() !== "") currentGroup = item.grupo;
-        if(!categorias[currentGroup]) categorias[currentGroup] = [];
+        if (item.grupo && item.grupo.trim() !== "") currentGroup = item.grupo;
+        if (!categorias[currentGroup]) categorias[currentGroup] = [];
         categorias[currentGroup].push(item.desc);
     });
 
-    let html = ""; let groupIndex = 0;
+    let html = "";
+    let groupIndex = 0;
     for (const [nomeCategoria, perguntas] of Object.entries(categorias)) {
         html += `<h4 style="margin: 20px 0 10px 0; color: var(--text-accent); border-bottom: 1px dashed var(--border-color); padding-bottom: 5px;"><i class="fas fa-tasks"></i> ${nomeCategoria}</h4><div class="checklist-container">`;
         perguntas.forEach((pergunta, index) => {
-            let name = `hz-g${groupIndex}-q${index}`;
+            const name = `hz-g${groupIndex}-q${index}`;
             html += `<div class="check-item"><p>${index + 1}. ${pergunta}</p><div class="check-options"><label><input type="radio" name="${name}" value="SIM" checked> SIM</label><label><input type="radio" name="${name}" value="NÃO"> NÃO</label></div></div>`;
         });
-        html += `</div>`; groupIndex++;
+        html += `</div>`;
+        groupIndex++;
     }
     container.innerHTML = html;
 }
 
-// ==========================================
-// PADRÃO MOLDE PREMIUM - EXECUÇÃO (P E G)
-// ==========================================
-function renderizarChecklistManutencaoHorizontal() {
-    const tbody = document.getElementById('horiz-tabela-manutencao');
-    if(!tbody) return;
-    const thead = tbody.closest('table').querySelector('thead');
-    if(thead) {
-        thead.innerHTML = `<tr><th>Item</th><th>Descrição da Atividade</th><th style="width: 40px; text-align:center;">P</th><th style="width: 40px; text-align:center;">G</th><th>Executante</th><th>Matrícula</th><th>Data</th></tr>`;
+// ==============================================================
+// 4. GAP (7 conjuntos)
+// ==============================================================
+function renderizarGapHorizontal() {
+    const container = garantirContainer('horiz-gap');
+    if (!container) return;
+    let html = `<h3 style="color:var(--text-heading);">AFERIÇÃO DE GAP (255+0,3/-0,3)</h3>
+        <table class="premium-table" style="font-size:10px;">
+            <tr><th>CONJ. ROLO</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr>`;
+    for (let i = 1; i <= 7; i++) {
+        html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>
+            <td><input id="hgap-${i}-a"></td>
+            <td><input id="hgap-${i}-b"></td>
+            <td><input id="hgap-${i}-c"></td></tr>`;
     }
-    
-    let htmlContent = '';
+    html += `</table>`;
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 5. CANGALHAS (Superior e Inferior)
+// ==============================================================
+function renderizarCangalhasHorizontal() {
+    const container = garantirContainer('horiz-cangalhas');
+    if (!container) return;
+    const bases = ['Sup', 'Inf'];
+    let html = `<h3 style="color:var(--text-heading);">INSPEÇÃO DE CANGALHAS</h3>`;
+    bases.forEach(base => {
+        const prefix = base === 'Sup' ? 'sup' : 'inf';
+        html += `<h4>Base ${base}</h4>
+            <table class="premium-table" style="font-size:9px;">
+                <tr><th>Posição</th><th colspan="2">Posição Bico A</th><th colspan="2">Posição Bico B</th></tr>
+                <tr><th></th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th></tr>`;
+        for (let i = 1; i <= 7; i++) {
+            html += `<tr><td>${i}ª</td>
+                <td style="text-align:center;"><input type="radio" name="hcang-${prefix}-${i}-a" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="hcang-${prefix}-${i}-a" value="NOK"></td>
+                <td style="text-align:center;"><input type="radio" name="hcang-${prefix}-${i}-b" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="hcang-${prefix}-${i}-b" value="NOK"></td></tr>`;
+        }
+        html += `</table>`;
+    });
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 6. PASS LINE (Chegada e Saída)
+// ==============================================================
+function renderizarPassLinesHorizontal() {
+    const renderTable = (id, refs, titulo) => {
+        const container = garantirContainer(id);
+        if (!container) return;
+        let html = `<h3 style="color:var(--text-heading);">${titulo}</h3>
+            <table class="premium-table" style="font-size:9px;">
+                <tr><th>Conj. Rolo</th><th>Referência</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr>`;
+        refs.forEach((ref, i) => {
+            html += `<tr><td style="text-align:center;font-weight:bold;">${i+1}°</td>
+                <td style="text-align:center;font-weight:bold;">${ref}</td>
+                <td><input id="${id}-a-${i}"></td>
+                <td><input id="${id}-b-${i}"></td>
+                <td><input id="${id}-c-${i}"></td></tr>`;
+        });
+        html += `</table>`;
+        container.innerHTML = html;
+    };
+    renderTable('horiz-passline-inf-chegada', refPassLineInfHoriz, 'PASS LINE - BASE INFERIOR (CHEGADA)');
+    renderTable('horiz-passline-sup-chegada', refPassLineSupHoriz, 'PASS LINE - BASE SUPERIOR (CHEGADA)');
+    renderTable('horiz-passline-inf-saida', refPassLineInfHoriz, 'PASS LINE - BASE INFERIOR (SAÍDA)');
+    renderTable('horiz-passline-sup-saida', refPassLineSupHoriz, 'PASS LINE - BASE SUPERIOR (SAÍDA)');
+}
+
+// ==============================================================
+// 7. CILINDROS HIDRÁULICOS (Chegada)
+// ==============================================================
+function renderizarCilindrosChegadaHorizontal() {
+    const container = garantirContainer('horiz-cilindros-chegada');
+    if (!container) return;
+    const tipos = [
+        { nome: 'Cilindro de Elevação', prefix: 'ce', pos: ['A','B','C','D'] },
+        { nome: 'Cilindro Clamp (Porcas Hidráulicas)', prefix: 'cc', pos: ['A','B','C','D'] },
+        { nome: 'Cilindros Motriz', prefix: 'cm', pos: ['A','B'] }
+    ];
+    let html = `<h3 style="color:var(--text-heading);">CILINDROS HIDRÁULICOS (CHEGADA)</h3>`;
+    tipos.forEach(t => {
+        html += `<h4>${t.nome}</h4>
+            <table class="premium-table" style="font-size:9px;">
+                <tr><th>Posição</th><th>Número</th><th>Produção</th><th>OK</th><th>NOK</th><th>Observação</th></tr>`;
+        t.pos.forEach(p => {
+            html += `<tr><td style="text-align:center;font-weight:bold;">${p}</td>
+                <td><input id="hcil-${t.prefix}-num-${p}"></td>
+                <td><input id="hcil-${t.prefix}-prod-${p}"></td>
+                <td style="text-align:center;"><input type="radio" name="hcil-${t.prefix}-${p}" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="hcil-${t.prefix}-${p}" value="NOK"></td>
+                <td><input id="hcil-${t.prefix}-obs-${p}"></td></tr>`;
+        });
+        html += `</table>`;
+    });
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 8. CILINDROS HIDRÁULICOS (Saída)
+// ==============================================================
+function renderizarCilindrosSaidaHorizontal() {
+    const container = garantirContainer('horiz-cilindros-saida');
+    if (!container) return;
+    const tipos = [
+        { nome: 'Cilindro de Elevação', prefix: 'se', pos: ['A','B','C','D'] },
+        { nome: 'Cilindro Clamp (Porcas Hidráulicas)', prefix: 'sc', pos: ['A','B','C','D'] },
+        { nome: 'Cilindros Motriz', prefix: 'sm', pos: ['A','B'] }
+    ];
+    let html = `<h3 style="color:var(--text-heading);">CILINDROS HIDRÁULICOS (SAÍDA)</h3>`;
+    tipos.forEach(t => {
+        html += `<h4>${t.nome}</h4>
+            <table class="premium-table" style="font-size:9px;">
+                <tr><th>Posição</th><th>Número</th><th>Produção</th><th>Reparado</th><th>Reutilizado</th><th>Novo</th><th>Observação</th></tr>`;
+        t.pos.forEach(p => {
+            html += `<tr><td style="text-align:center;font-weight:bold;">${p}</td>
+                <td><input id="hcils-${t.prefix}-num-${p}"></td>
+                <td><input id="hcils-${t.prefix}-prod-${p}"></td>
+                <td style="text-align:center;"><input type="checkbox" id="hcils-${t.prefix}-rep-${p}"></td>
+                <td style="text-align:center;"><input type="checkbox" id="hcils-${t.prefix}-reu-${p}"></td>
+                <td style="text-align:center;"><input type="checkbox" id="hcils-${t.prefix}-nov-${p}"></td>
+                <td><input id="hcils-${t.prefix}-obs-${p}"></td></tr>`;
+        });
+        html += `</table>`;
+    });
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 9. INSPEÇÃO DE ROLOS (Chegada e Saída)
+// ==============================================================
+function renderizarInspecaoRolosHorizontal(tipo) {
+    const idContainer = `horiz-rolos-${tipo}`;
+    const container = garantirContainer(idContainer);
+    if (!container) return;
+    const titulo = tipo === 'chegada' ? 'CHEGADA' : 'SAÍDA';
+    const prefix = tipo === 'chegada' ? 'ch' : 'sa';
+    const bases = ['Inferior', 'Superior'];
+    let html = `<h3 style="color:var(--text-heading);">INSPEÇÃO DE ROLOS (${titulo})</h3>`;
+    bases.forEach(base => {
+        const bPrefix = base === 'Inferior' ? 'inf' : 'sup';
+        html += `<h4>Base ${base}</h4>
+            <h5>Rolamento</h5>
+            <table class="premium-table" style="font-size:8px;">
+                <tr><th>Posição</th><th colspan="2">1</th><th colspan="2">2</th><th colspan="2">3</th><th colspan="2">4</th></tr>
+                <tr><th></th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th></tr>`;
+        for (let i = 1; i <= 7; i++) {
+            html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>`;
+            for (let j = 1; j <= 4; j++) {
+                html += `<td style="text-align:center;"><input type="radio" name="hrol-${prefix}-${bPrefix}-${i}-${j}" value="OK" checked></td>
+                         <td style="text-align:center;"><input type="radio" name="hrol-${prefix}-${bPrefix}-${i}-${j}" value="NOK"></td>`;
+            }
+            html += `</tr>`;
+        }
+        html += `</table>
+            <h5>Teste Hidrostático</h5>
+            <table class="premium-table" style="font-size:8px;">
+                <tr><th>Posição</th><th colspan="2">1</th><th colspan="2">2</th><th colspan="2">3</th><th colspan="2">4</th></tr>
+                <tr><th></th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th></tr>`;
+        for (let i = 1; i <= 7; i++) {
+            html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>`;
+            for (let j = 1; j <= 4; j++) {
+                html += `<td style="text-align:center;"><input type="radio" name="hhid-${prefix}-${bPrefix}-${i}-${j}" value="OK" checked></td>
+                         <td style="text-align:center;"><input type="radio" name="hhid-${prefix}-${bPrefix}-${i}-${j}" value="NOK"></td>`;
+            }
+            html += `</tr>`;
+        }
+        html += `</table>
+            <h5>Medidas dos Rolos</h5>
+            <table class="premium-table" style="font-size:8px;">
+                <tr><th>Posição</th><th colspan="2">1</th><th colspan="2">2</th><th colspan="2">3</th></tr>
+                <tr><th></th><th>Num</th><th>Medida</th><th>Num</th><th>Medida</th><th>Num</th><th>Medida</th></tr>`;
+        for (let i = 1; i <= 7; i++) {
+            html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>
+                <td><input id="hmed-${prefix}-${bPrefix}-${i}-n1"></td>
+                <td><input id="hmed-${prefix}-${bPrefix}-${i}-m1"></td>
+                <td><input id="hmed-${prefix}-${bPrefix}-${i}-n2"></td>
+                <td><input id="hmed-${prefix}-${bPrefix}-${i}-m2"></td>
+                <td><input id="hmed-${prefix}-${bPrefix}-${i}-n3"></td>
+                <td><input id="hmed-${prefix}-${bPrefix}-${i}-m3"></td></tr>`;
+        }
+        html += `</table>
+            <p style="font-size:8px;color:var(--text-muted);">*Nota: Diâmetros nominais: Bow: 230,00mm louco; Bow 250,00mm acionado; H e R: 300,00mm.</p>`;
+    });
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 10. DISTRIBUIÇÃO DE GRAXA
+// ==============================================================
+function renderizarGraxaHorizontal() {
+    const container = garantirContainer('horiz-graxa');
+    if (!container) return;
+    const bases = ['Superior', 'Inferior'];
+    let html = `<h3 style="color:var(--text-heading);">INSPEÇÃO DE DISTRIBUIÇÃO DE GRAXA</h3>
+        <p style="font-size:9px;color:var(--text-muted);">*Nota: Checklist de vazamento (Tubulações e distribuidores)</p>`;
+    bases.forEach(base => {
+        const prefix = base === 'Superior' ? 'sup' : 'inf';
+        html += `<h4>Base ${base}</h4>
+            <table class="premium-table" style="font-size:9px;">
+                <tr><th>Esquerda</th><th colspan="4">Status</th><th>Direita</th></tr>
+                <tr><th></th><th>OK</th><th>VT</th><th>SA</th><th></th><th></th></tr>`;
+        for (let i = 7; i >= 1; i--) {
+            html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>
+                <td style="text-align:center;"><input type="radio" name="hgrx-${prefix}-${i}" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="hgrx-${prefix}-${i}" value="VT"></td>
+                <td style="text-align:center;"><input type="radio" name="hgrx-${prefix}-${i}" value="SA"></td>
+                <td></td>
+                <td style="text-align:center;font-weight:bold;">${i}</td></tr>`;
+        }
+        html += `</table>`;
+    });
+    html += `<p style="font-size:9px;color:var(--text-muted);">*Nota: VT – Vazamento em tubulação; SA – Sem alimentação;</p>`;
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 11. CHECKLIST DE MANUTENÇÃO (com P, G, Executante, Matrícula, Data)
+// ==============================================================
+function renderizarChecklistManutencaoHorizontal() {
+    const container = garantirContainer('horiz-checklist-manutencao');
+    if (!container) return;
+    let html = `<h3 style="color:var(--text-heading);">CHECKLIST DE MANUTENÇÃO</h3>
+        <table class="premium-table" style="font-size:9px;">
+            <tr><th>Item</th><th>Descrição da Atividade</th><th style="width:30px;">P</th><th style="width:30px;">G</th><th>Executante</th><th>Matrícula</th><th>Data</th></tr>`;
     manutencaoHorizontal.forEach((tarefa, index) => {
-        htmlContent += `<tr>
-            <td style="text-align:center; font-weight:bold;" class="text-warning">${tarefa.item}</td>
-            <td style="font-size: 11px;">${tarefa.desc}</td>
+        html += `<tr><td style="text-align:center;font-weight:bold;">${tarefa.item}</td>
+            <td style="font-size:9px;">${tarefa.desc}</td>
             <td style="text-align:center;"><input type="checkbox" id="hz-p-${index}"></td>
             <td style="text-align:center;"><input type="checkbox" id="hz-g-${index}"></td>
-            <td><input type="text" class="w-100" id="hz-resp-${index}" placeholder="Nome"></td>
-            <td><input type="text" class="w-100" id="hz-mat-${index}" placeholder="Matrícula"></td>
-            <td><input type="date" class="w-100" id="hz-dat-${index}"></td>
-        </tr>`;
+            <td><input id="hz-resp-${index}"></td>
+            <td><input id="hz-mat-${index}"></td>
+            <td><input type="date" id="hz-dat-${index}"></td></tr>`;
     });
-    tbody.innerHTML = htmlContent;
+    html += `</table>`;
+    container.innerHTML = html;
 }
 
-function renderizarPassLinesHorizontal() {
-    const renderTable = (idTbody, refs) => {
-        const tbody = document.getElementById(idTbody);
-        if(!tbody) return;
-        let htmlContent = '';
-        refs.forEach((ref, index) => {
-            htmlContent += `<tr>
-                <td style="text-align:center; font-weight:bold;">${index + 1}º</td>
-                <td style="text-align:center; font-weight:bold;">${ref}</td>
-                <td><input type="number" id="${idTbody}-a-${index}" class="w-100" step="0.01"></td>
-                <td><input type="number" id="${idTbody}-b-${index}" class="w-100" step="0.01"></td>
-                <td><input type="number" id="${idTbody}-c-${index}" class="w-100" step="0.01"></td>
-            </tr>`;
-        });
-        tbody.innerHTML = htmlContent;
-    };
-    renderTable('horiz-passline-inf-chegada', refPassLineInfHorizontal);
-    renderTable('horiz-passline-sup-chegada', refPassLineSupHorizontal);
-    renderTable('horiz-passline-inf-saida', refPassLineInfHorizontal);
-    renderTable('horiz-passline-sup-saida', refPassLineSupHorizontal);
+// ==============================================================
+// 12. MATERIAIS APLICADOS
+// ==============================================================
+function renderizarMateriaisHorizontal() {
+    const container = garantirContainer('horiz-materiais');
+    if (!container) return;
+    let rows = '';
+    for (let i = 1; i <= 30; i++) {
+        rows += `<tr><td><input id="hmat-desc-${i}" style="width:100%;"></td><td><input id="hmat-qtd-${i}" style="width:60px;"></td></tr>`;
+    }
+    const html = `<h3 style="color:var(--text-heading);">MATERIAIS APLICADOS</h3>
+        <table class="premium-table" style="font-size:9px;">
+            <tr><th style="width:80%;">MATERIAIS</th><th style="width:20%;">QUANTIDADE</th></tr>
+            ${rows}
+        </table>`;
+    container.innerHTML = html;
 }
 
-window.addLinhaMaterialHorizontal = function() {
-    const tbody = document.getElementById('horiz-tabela-materiais');
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td><input type="text" class="w-100" placeholder="SKU / Material"></td>
-                    <td><input type="number" style="width: 80px;" placeholder="Qtd"></td>`;
-    tbody.appendChild(tr);
+// ==============================================================
+// 13. FUNÇÃO PRINCIPAL DE ABRIR
+// ==============================================================
+window.abrirFolhaoHorizontal = function(id) {
+    ID_FOLHAO_HORIZ_ATUAL = id;
+    const modal = document.getElementById('modal-folhao-horizontal');
+    if (!modal) {
+        console.error("Modal #modal-folhao-horizontal não encontrado!");
+        return;
+    }
+
+    // Preenche cabeçalho
+    const tagNameEl = document.getElementById('horizontal-tag-name');
+    if (tagNameEl) tagNameEl.innerText = id;
+    const dataInicio = document.getElementById('horiz-data-inicio');
+    const dataFim = document.getElementById('horiz-data-fim');
+    if (dataInicio) dataInicio.valueAsDate = new Date();
+    if (dataFim) dataFim.valueAsDate = new Date();
+    const motivoEl = document.getElementById('horiz-motivo');
+    if (motivoEl) motivoEl.value = '';
+
+    // Renderiza todas as abas
+    renderizarInspecaoChegadaHorizontal();
+    renderizarGapHorizontal();
+    renderizarCangalhasHorizontal();
+    renderizarPassLinesHorizontal();
+    renderizarCilindrosChegadaHorizontal();
+    renderizarCilindrosSaidaHorizontal();
+    renderizarInspecaoRolosHorizontal('chegada');
+    renderizarInspecaoRolosHorizontal('saida');
+    renderizarGraxaHorizontal();
+    renderizarChecklistManutencaoHorizontal();
+    renderizarMateriaisHorizontal();
+
+    modal.classList.remove('hidden');
+    // Ativa a primeira aba
+    window.trocarAbaHorizontal({ currentTarget: document.querySelector('#modal-folhao-horizontal .folhao-tab') }, 'horiz-aba-dados');
 };
 
-function renderizarTabelaMateriaisIniciaisHorizontal() {
-    document.getElementById('horiz-tabela-materiais').innerHTML = '';
-    for(let i = 0; i < 3; i++) { window.addLinhaMaterialHorizontal(); }
-}
+// ==============================================================
+// 14. FECHAR E TROCAR ABA
+// ==============================================================
+window.fecharFolhaoHorizontal = function() {
+    const modal = document.getElementById('modal-folhao-horizontal');
+    if (modal) modal.classList.add('hidden');
+    ID_FOLHAO_HORIZ_ATUAL = null;
+};
 
-const cssBase = `
-<style>
-    .pdf-base { font-family: Arial, sans-serif; font-size: 10px; color: #000; }
-    .pdf-base table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-    .pdf-base th, .pdf-base td { border: 1px solid #000; padding: 4px; }
-    .pdf-base th { background: #f0f0f0; text-align: center; font-weight: bold; }
-    .pdf-base .titulo-secao { background: #002b5e; color: #fff; font-weight: bold; padding: 6px; text-align: left; margin: 10px 0; border: 1px solid #000; font-size: 11px;}
-    @media print { .quebra-pagina { break-before: page; page-break-before: always; margin-top: 15px;} }
-</style>`;
+window.trocarAbaHorizontal = function(evt, abaId) {
+    const modal = document.getElementById('modal-folhao-horizontal');
+    if (!modal) return;
+    modal.querySelectorAll('.folhao-content').forEach(c => c.classList.add('hidden'));
+    modal.querySelectorAll('.folhao-tab').forEach(b => b.classList.remove('active'));
+    const aba = document.getElementById(abaId);
+    if (aba) aba.classList.remove('hidden');
+    if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+};
 
-const getCabecalhoUnico = (titulo, tag, inicio, fim) => `
-<div style="display: flex; border: 2px solid #000; border-bottom: 5px solid #002b5e; margin-bottom: 15px; align-items: center; background: #fff;">
-    <div style="width: 20%; text-align: center; border-right: 2px solid #000; padding: 10px;"><span style="font-family: Arial, sans-serif; font-weight: 900; font-size: 34px; color: #002b5e; letter-spacing: -2px;">CSN</span></div>
-    <div style="width: 60%; text-align: center; padding: 10px;"><h2 style="margin: 0; font-size: 16px; color: #000; text-decoration: underline;">${titulo}</h2><p style="margin: 5px 0 0 0; font-size: 10px; color: #333; text-transform: uppercase; font-weight: bold;">Laudo Oficial de Manutenção e Peritagem</p></div>
-    <div style="width: 20%; font-size: 10px; border-left: 2px solid #000; padding: 10px; line-height: 1.5; font-weight: bold;"><div style="color: #002b5e;">TAG: <span style="color:#000;">${tag}</span></div><div>INÍCIO: <span style="color:#000; font-weight:normal;">${inicio}</span></div><div>FIM: <span style="color:#000; font-weight:normal;">${fim}</span></div></div>
-</div>`;
-
+// ==============================================================
+// 15. GERAR PDF COMPLETO
+// ==============================================================
 window.salvarEImprimirFolhaoHorizontal = function() {
-    if (!window.verificarAcesso() || !ID_FOLHAO_HORIZ_ATUAL) return;
+    if (!window.verificarAcesso || !window.verificarAcesso()) { alert("Acesso negado."); return; }
+    if (!ID_FOLHAO_HORIZ_ATUAL) { alert("Nenhuma TAG carregada."); return; }
 
-    let tag = ID_FOLHAO_HORIZ_ATUAL;
-    let item = BANCO_ATIVOS.find(a => a.id === tag);
-    if (!item) return;
+    const tag = ID_FOLHAO_HORIZ_ATUAL;
+    const item = BANCO_ATIVOS.find(a => a.id === tag);
+    if (item) {
+        item.ton = 0;
+        item.dias = 0;
+        item.local = "Oficina / Reserva";
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    }
 
-    item.ton = 0;
-    item.dias = 0;
-    item.local = "Oficina / Reserva";
-    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    // Coleta dados do cabeçalho
+    const dtInicio = getV('horiz-data-inicio') || new Date().toLocaleDateString('pt-BR');
+    const dtFim = getV('horiz-data-fim') || new Date().toLocaleDateString('pt-BR');
+    const numSeg = getV('horiz-num-segmento') || '______';
+    const veio = document.getElementById('horiz-veio')?.value || '';
+    const motivo = getV('horiz-motivo') || '_______________';
+    const tipoExec = document.getElementById('horiz-tipo-execucao')?.value || 'GERAL';
 
-    let motivo = document.getElementById('horiz-motivo') ? document.getElementById('horiz-motivo').value : 'Manutenção';
-    let btnPDF = `<button onclick="window.abrirFolhaoHorizontal('${tag}')" class="btn-outline-danger" style="padding: 2px 8px; font-size: 10px; margin-left: 10px; cursor: pointer;"><i class="fas fa-file-pdf"></i> Visualizar Folhão</button>`;
-    
-    if (window.registrarHistorico) window.registrarHistorico(tag, `Laudo Oficial (Horizontal) concluído. Motivo: ${motivo}. <br><div style="margin-top: 5px;">${btnPDF}</div>`);
+    // Função auxiliar para checklist de chegada
+    function gerarLinhasChegada() {
+        let html = '';
+        let categorias = {};
+        let currentGroup = "GERAL";
+        itensChegadaHorizontal.forEach(it => {
+            if (it.grupo && it.grupo.trim() !== "") currentGroup = it.grupo;
+            if (!categorias[currentGroup]) categorias[currentGroup] = [];
+            categorias[currentGroup].push(it.desc);
+        });
+        let groupIndex = 0;
+        for (const [nomeCategoria, perguntas] of Object.entries(categorias)) {
+            html += `<tr><th colspan="3" style="background:#002b5e; color:#fff; font-size:10px; text-align:left; padding:4px; border:1px solid #000;">${nomeCategoria}</th></tr>`;
+            html += `<tr><th style="border:1px solid #000; padding:3px; width:5%;">Item</th><th style="border:1px solid #000; padding:3px;">Descrição</th><th style="border:1px solid #000; padding:3px; width:12%;">Status</th></tr>`;
+            perguntas.forEach((pergunta, index) => {
+                const name = `hz-g${groupIndex}-q${index}`;
+                const val = getRadioValue(name);
+                html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px;">${index+1}</td>
+                    <td style="border:1px solid #000; padding:3px;">${pergunta}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${val}</td></tr>`;
+            });
+            groupIndex++;
+        }
+        return html;
+    }
 
-    renderReparos(); 
-    renderReservas(); 
-    renderAtivos(); 
-    if (window.calcularKpisGlobais) window.calcularKpisGlobais();
+    // Gera tabela de GAP
+    function gerarGapPDF() {
+        let html = '';
+        for (let i = 1; i <= 7; i++) {
+            html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hgap-${i}-a`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hgap-${i}-b`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hgap-${i}-c`)}</td></tr>`;
+        }
+        return html;
+    }
 
-    const dtInicio = document.getElementById('horiz-data-inicio') ? document.getElementById('horiz-data-inicio').value : '';
-    const dtFim = document.getElementById('horiz-data-fim') ? document.getElementById('horiz-data-fim').value : '';
-    const numSeg = document.getElementById('horiz-num-segmento') ? document.getElementById('horiz-num-segmento').value : '';
-    const veio = document.getElementById('horiz-veio') ? document.getElementById('horiz-veio').value : '';
-    const tipoExec = document.getElementById('horiz-tipo-execucao') ? document.getElementById('horiz-tipo-execucao').value : '';
+    // Gera tabela de Cangalhas
+    function gerarCangalhasPDF() {
+        let html = '';
+        const bases = ['sup', 'inf'];
+        const labels = ['Superior', 'Inferior'];
+        bases.forEach((b, idx) => {
+            html += `<tr><th colspan="5" style="background:#ddd; border:1px solid #000; padding:3px;">Base ${labels[idx]}</th></tr>
+                <tr><th style="border:1px solid #000; padding:3px;">Posição</th>
+                    <th colspan="2" style="border:1px solid #000; padding:3px;">Bico A</th>
+                    <th colspan="2" style="border:1px solid #000; padding:3px;">Bico B</th></tr>
+                <tr><th style="border:1px solid #000; padding:3px;"></th>
+                    <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th>
+                    <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th></tr>`;
+            for (let i = 1; i <= 7; i++) {
+                const a = getRadioValue(`hcang-${b}-${i}-a`);
+                const bVal = getRadioValue(`hcang-${b}-${i}-b`);
+                html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px;">${i}ª</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${a === 'OK' ? 'X' : ''}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${a === 'NOK' ? 'X' : ''}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${bVal === 'OK' ? 'X' : ''}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${bVal === 'NOK' ? 'X' : ''}</td></tr>`;
+            }
+        });
+        return html;
+    }
 
-    let htmlImp = `${cssBase}<div class="pdf-base">
-        ${getCabecalhoUnico("CHECK LIST GERAL SEGMENTO HORIZONTAL MCC#4", tag, dtInicio, dtFim)}
-        <table style="margin-top:5px; background: #f9f9f9;">
-            <tr>
-                <td><strong>VEIO:</strong> ${veio}</td>
-                <td><strong>SEGMENTO:</strong> ${numSeg}</td>
-                <td><strong>MOTIVO DA OS:</strong> ${motivo}</td>
-                <td><strong>TIPO:</strong> ${tipoExec}</td>
-            </tr>
+    // Gera Pass Line
+    function gerarPassLinePDF(id, refs) {
+        let html = '';
+        refs.forEach((ref, i) => {
+            html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i+1}°</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${ref}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${id}-a-${i}`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${id}-b-${i}`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${id}-c-${i}`)}</td></tr>`;
+        });
+        return html;
+    }
+
+    // Gera Cilindros Chegada
+    function gerarCilindrosChegadaPDF() {
+        let html = '';
+        const tipos = [
+            { nome: 'Cilindro de Elevação', prefix: 'ce', pos: ['A','B','C','D'] },
+            { nome: 'Cilindro Clamp (Porcas Hidráulicas)', prefix: 'cc', pos: ['A','B','C','D'] },
+            { nome: 'Cilindros Motriz', prefix: 'cm', pos: ['A','B'] }
+        ];
+        tipos.forEach(t => {
+            html += `<tr><th colspan="6" style="background:#ddd; border:1px solid #000; padding:3px;">${t.nome}</th></tr>
+                <tr><th style="border:1px solid #000; padding:3px;">Pos</th><th style="border:1px solid #000; padding:3px;">Número</th>
+                    <th style="border:1px solid #000; padding:3px;">Produção</th><th style="border:1px solid #000; padding:3px;">OK</th>
+                    <th style="border:1px solid #000; padding:3px;">NOK</th><th style="border:1px solid #000; padding:3px;">Obs</th></tr>`;
+            t.pos.forEach(p => {
+                const ok = getRadioValue(`hcil-${t.prefix}-${p}`);
+                html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hcil-${t.prefix}-num-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hcil-${t.prefix}-prod-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${ok === 'OK' ? 'X' : ''}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${ok === 'NOK' ? 'X' : ''}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hcil-${t.prefix}-obs-${p}`)}</td></tr>`;
+            });
+        });
+        return html;
+    }
+
+    // Gera Cilindros Saída
+    function gerarCilindrosSaidaPDF() {
+        let html = '';
+        const tipos = [
+            { nome: 'Cilindro de Elevação', prefix: 'se', pos: ['A','B','C','D'] },
+            { nome: 'Cilindro Clamp (Porcas Hidráulicas)', prefix: 'sc', pos: ['A','B','C','D'] },
+            { nome: 'Cilindros Motriz', prefix: 'sm', pos: ['A','B'] }
+        ];
+        tipos.forEach(t => {
+            html += `<tr><th colspan="7" style="background:#ddd; border:1px solid #000; padding:3px;">${t.nome}</th></tr>
+                <tr><th style="border:1px solid #000; padding:3px;">Pos</th><th style="border:1px solid #000; padding:3px;">Número</th>
+                    <th style="border:1px solid #000; padding:3px;">Produção</th><th style="border:1px solid #000; padding:3px;">Rep</th>
+                    <th style="border:1px solid #000; padding:3px;">Reu</th><th style="border:1px solid #000; padding:3px;">Novo</th>
+                    <th style="border:1px solid #000; padding:3px;">Obs</th></tr>`;
+            t.pos.forEach(p => {
+                html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hcils-${t.prefix}-num-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hcils-${t.prefix}-prod-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`hcils-${t.prefix}-rep-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`hcils-${t.prefix}-reu-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`hcils-${t.prefix}-nov-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hcils-${t.prefix}-obs-${p}`)}</td></tr>`;
+            });
+        });
+        return html;
+    }
+
+    // Gera Rolos
+    function gerarRolosPDF(tipo, base) {
+        const prefix = tipo === 'chegada' ? 'ch' : 'sa';
+        const bPrefix = base === 'Inferior' ? 'inf' : 'sup';
+        let html = '';
+        html += `<tr><th colspan="9" style="background:#ddd; border:1px solid #000; padding:3px;">Rolamento - Base ${base}</th></tr>
+            <tr><th style="border:1px solid #000; padding:3px;">Pos</th>
+                <th colspan="2" style="border:1px solid #000; padding:3px;">1</th>
+                <th colspan="2" style="border:1px solid #000; padding:3px;">2</th>
+                <th colspan="2" style="border:1px solid #000; padding:3px;">3</th>
+                <th colspan="2" style="border:1px solid #000; padding:3px;">4</th></tr>
+            <tr><th style="border:1px solid #000; padding:3px;"></th>
+                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th>
+                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th>
+                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th>
+                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th></tr>`;
+        for (let i = 1; i <= 7; i++) {
+            html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>`;
+            for (let j = 1; j <= 4; j++) {
+                const val = getRadioValue(`hrol-${prefix}-${bPrefix}-${i}-${j}`);
+                html += `<td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'OK' ? 'X' : ''}</td>
+                         <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'NOK' ? 'X' : ''}</td>`;
+            }
+            html += `</tr>`;
+        }
+        html += `<tr><th colspan="9" style="background:#ddd; border:1px solid #000; padding:3px;">Teste Hidrostático - Base ${base}</th></tr>
+            <tr><th style="border:1px solid #000; padding:3px;">Pos</th>
+                <th colspan="2" style="border:1px solid #000; padding:3px;">1</th>
+                <th colspan="2" style="border:1px solid #000; padding:3px;">2</th>
+                <th colspan="2" style="border:1px solid #000; padding:3px;">3</th>
+                <th colspan="2" style="border:1px solid #000; padding:3px;">4</th></tr>
+            <tr><th style="border:1px solid #000; padding:3px;"></th>
+                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th>
+                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th>
+                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th>
+                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th></tr>`;
+        for (let i = 1; i <= 7; i++) {
+            html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>`;
+            for (let j = 1; j <= 4; j++) {
+                const val = getRadioValue(`hhid-${prefix}-${bPrefix}-${i}-${j}`);
+                html += `<td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'OK' ? 'X' : ''}</td>
+                         <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'NOK' ? 'X' : ''}</td>`;
+            }
+            html += `</tr>`;
+        }
+        html += `<tr><th colspan="7" style="background:#ddd; border:1px solid #000; padding:3px;">Medidas dos Rolos - Base ${base}</th></tr>
+            <tr><th style="border:1px solid #000; padding:3px;">Pos</th>
+                <th colspan="2" style="border:1px solid #000; padding:3px;">1</th>
+                <th colspan="2" style="border:1px solid #000; padding:3px;">2</th>
+                <th colspan="2" style="border:1px solid #000; padding:3px;">3</th></tr>
+            <tr><th style="border:1px solid #000; padding:3px;"></th>
+                <th style="border:1px solid #000; padding:3px;">Num</th><th style="border:1px solid #000; padding:3px;">Medida</th>
+                <th style="border:1px solid #000; padding:3px;">Num</th><th style="border:1px solid #000; padding:3px;">Medida</th>
+                <th style="border:1px solid #000; padding:3px;">Num</th><th style="border:1px solid #000; padding:3px;">Medida</th></tr>`;
+        for (let i = 1; i <= 7; i++) {
+            html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hmed-${prefix}-${bPrefix}-${i}-n1`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hmed-${prefix}-${bPrefix}-${i}-m1`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hmed-${prefix}-${bPrefix}-${i}-n2`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hmed-${prefix}-${bPrefix}-${i}-m2`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hmed-${prefix}-${bPrefix}-${i}-n3`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hmed-${prefix}-${bPrefix}-${i}-m3`)}</td></tr>`;
+        }
+        return html;
+    }
+
+    // Gera Graxa
+    function gerarGraxaPDF() {
+        let html = '';
+        const bases = ['sup', 'inf'];
+        const labels = ['Superior', 'Inferior'];
+        bases.forEach((b, idx) => {
+            html += `<tr><th colspan="5" style="background:#ddd; border:1px solid #000; padding:3px;">Base ${labels[idx]}</th></tr>
+                <tr><th style="border:1px solid #000; padding:3px;">Esq</th>
+                    <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">VT</th>
+                    <th style="border:1px solid #000; padding:3px;">SA</th><th style="border:1px solid #000; padding:3px;">Dir</th></tr>`;
+            for (let i = 7; i >= 1; i--) {
+                const val = getRadioValue(`hgrx-${b}-${i}`);
+                html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'OK' ? 'X' : ''}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'VT' ? 'X' : ''}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'SA' ? 'X' : ''}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td></tr>`;
+            }
+        });
+        return html;
+    }
+
+    // Gera Checklist de Manutenção
+    function gerarManutencaoPDF() {
+        let html = '';
+        manutencaoHorizontal.forEach((tarefa, index) => {
+            const p = document.getElementById(`hz-p-${index}`)?.checked ? 'X' : '';
+            const g = document.getElementById(`hz-g-${index}`)?.checked ? 'X' : '';
+            const mat = getV(`hz-mat-${index}`);
+            const data = getV(`hz-dat-${index}`);
+            html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${tarefa.item}</td>
+                <td style="border:1px solid #000; padding:3px; font-size:9px;">${tarefa.desc}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${g}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${mat}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${data}</td></tr>`;
+        });
+        return html;
+    }
+
+    // ==============================================================
+    // MONTA HTML DO PDF
+    // ==============================================================
+    let htmlPDF = `
+    <style>
+        .pdf-base { font-family: Arial, sans-serif; font-size: 9px; color: #000; }
+        .pdf-base table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+        .pdf-base th, .pdf-base td { border: 1px solid #000; padding: 3px; }
+        .pdf-base th { background: #e0e0e0; text-align: center; font-weight: bold; font-size: 9px; }
+        .pdf-base .titulo-secao { background: #002b5e; color: #fff; font-weight: bold; padding: 4px; text-align: left; margin: 10px 0 4px 0; border: 1px solid #000; font-size: 10px; text-transform: uppercase; }
+        .pdf-base .subtitulo { background: #d0d0d0; font-weight: bold; text-align: center; padding: 3px; font-size: 9px; }
+        @media print { .quebra-pagina { break-before: page; page-break-before: always; margin-top: 10px; } }
+    </style>
+    <div class="pdf-base">
+        <!-- Cabeçalho -->
+        <div style="display: flex; border: 2px solid #000; border-bottom: 5px solid #002b5e; margin-bottom: 8px; align-items: center; background: #fff;">
+            <div style="width: 20%; text-align: center; border-right: 2px solid #000; padding: 8px;"><span style="font-weight: 900; font-size: 28px; color: #002b5e; letter-spacing: -2px;">CSN</span></div>
+            <div style="width: 60%; text-align: center; padding: 8px;">
+                <h2 style="margin: 0; font-size: 12px; color: #000;">CHECK LIST GERAL SEGMENTOS HORIZONTAL MCC#4</h2>
+                <p style="margin: 4px 0 0 0; font-size: 8px; color: #333; font-weight: bold;">DATA INÍCIO: ${dtInicio} | DATA FIM: ${dtFim}</p>
+            </div>
+            <div style="width: 20%; font-size: 9px; border-left: 2px solid #000; padding: 8px; line-height: 1.4; font-weight: bold;">
+                <div style="color: #002b5e;">TAG: <span style="color:#000;">${tag}</span></div>
+            </div>
+        </div>
+
+        <!-- Dados adicionais -->
+        <table>
+            <tr><td><strong>Nº SEGMENTO:</strong> ${numSeg}</td>
+                <td><strong>VEIO(SAIDA):</strong> ${veio}</td>
+                <td><strong>TIPO EXECUÇÃO:</strong> ${tipoExec}</td></tr>
+            <tr><td><strong>MOTIVO:</strong> ${motivo}</td>
+                <td colspan="2"><strong>VEIO(ENTRADA):</strong> ${veio}</td></tr>
         </table>
 
-        <div class="titulo-secao">1. INSPEÇÃO DE CHEGADA OFICIAL</div>
-        <table>`;
-    
-    let categorias = {};
-    let currentGroup = "GERAL";
-    itensChegadaHorizontal.forEach(it => {
-        if(it.grupo && it.grupo.trim() !== "") currentGroup = it.grupo;
-        if(!categorias[currentGroup]) categorias[currentGroup] = [];
-        categorias[currentGroup].push(it.desc);
-    });
+        <!-- INSPEÇÃO DE CHEGADA -->
+        <div class="titulo-secao">1. INSPEÇÃO DE CHEGADA</div>
+        <table>${gerarLinhasChegada()}</table>
 
-    let groupIndex = 0;
-    for (const [nomeCategoria, perguntas] of Object.entries(categorias)) {
-        htmlImp += `<tr><th colspan="3" style="background:#002b5e; color:#fff; font-size:12px; text-align:left; padding: 6px; border: 1px solid #000;">${nomeCategoria}</th></tr>`;
-        htmlImp += `<tr><th style="border: 1px solid #000; padding: 4px; width:5%;">Item</th><th style="border: 1px solid #000; padding: 4px;">Descrição do Serviço</th><th style="border: 1px solid #000; padding: 4px; width:15%;">Status</th></tr>`;
-        perguntas.forEach((pergunta, index) => {
-            let name = `hz-g${groupIndex}-q${index}`;
-            let resposta = 'NÃO';
-            document.getElementsByName(name).forEach(r => { if(r.checked) resposta = r.value; });
-            htmlImp += `<tr><td style="text-align:center; font-weight:bold; border: 1px solid #000; padding: 4px;">${index+1}</td><td style="border: 1px solid #000; padding: 4px;">${pergunta}</td><td style="text-align:center; font-weight:bold; border: 1px solid #000; padding: 4px;">${resposta}</td></tr>`;
-        });
-        groupIndex++;
-    }
-    htmlImp += `</table><div class="quebra-pagina"></div>`;
+        <div class="quebra-pagina"></div>
 
-    htmlImp += `<div class="titulo-secao">2. AFERIÇÃO PASS LINE (CHEGADA)</div>
-        <div style="display:flex; gap:10px; width:100%;">
-            <div style="width:50%;"><table><tr><th colspan="5">BASE INFERIOR (CHEGADA)</th></tr><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr>`;
-    refPassLineInfHorizontal.forEach((ref, index) => {
-        let a = document.getElementById(`horiz-passline-inf-chegada-a-${index}`)?.value || '';
-        let b = document.getElementById(`horiz-passline-inf-chegada-b-${index}`)?.value || '';
-        let c = document.getElementById(`horiz-passline-inf-chegada-c-${index}`)?.value || '';
-        htmlImp += `<tr><td style="text-align:center;">${index+1}º</td><td style="text-align:center; font-weight:bold;">${ref}</td><td style="text-align:center;">${a}</td><td style="text-align:center;">${b}</td><td style="text-align:center;">${c}</td></tr>`;
-    });
-    htmlImp += `</table></div>
-            <div style="width:50%;"><table><tr><th colspan="5">BASE SUPERIOR (CHEGADA)</th></tr><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr>`;
-    refPassLineSupHorizontal.forEach((ref, index) => {
-        let a = document.getElementById(`horiz-passline-sup-chegada-a-${index}`)?.value || '';
-        let b = document.getElementById(`horiz-passline-sup-chegada-b-${index}`)?.value || '';
-        let c = document.getElementById(`horiz-passline-sup-chegada-c-${index}`)?.value || '';
-        htmlImp += `<tr><td style="text-align:center;">${index+1}º</td><td style="text-align:center; font-weight:bold;">${ref}</td><td style="text-align:center;">${a}</td><td style="text-align:center;">${b}</td><td style="text-align:center;">${c}</td></tr>`;
-    });
-    htmlImp += `</table></div></div><div class="quebra-pagina"></div>`;
+        <!-- AFERIÇÃO DE GAP -->
+        <div class="titulo-secao">2. AFERIÇÃO DE GAP (255+0,3/-0,3)</div>
+        <table>
+            <tr><th style="width:15%;">CONJ. ROLO</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr>
+            ${gerarGapPDF()}
+        </table>
 
-    htmlImp += `<div class="titulo-secao">3. CHECKLIST DE EXECUÇÃO</div>
-        <table><tr><th style="width:5%;">Item</th><th>Descrição da Atividade</th><th style="width:5%;">P</th><th style="width:5%;">G</th><th style="width:15%;">Matrícula</th><th style="width:15%;">Data</th></tr>`;
-    manutencaoHorizontal.forEach((tarefa, index) => {
-        const p = document.getElementById(`hz-p-${index}`)?.checked ? 'X' : '';
-        const g = document.getElementById(`hz-g-${index}`)?.checked ? 'X' : '';
-        const mat = document.getElementById(`hz-mat-${index}`)?.value || '';
-        const data = document.getElementById(`hz-dat-${index}`)?.value || '';
-        htmlImp += `<tr><td style="text-align:center;">${tarefa.item}</td><td style="font-size:10px;">${tarefa.desc}</td><td style="text-align:center; font-weight:bold;">${p}</td><td style="text-align:center; font-weight:bold;">${g}</td><td style="text-align:center;">${mat}</td><td style="text-align:center;">${data}</td></tr>`;
-    });
-    htmlImp += `</table><div class="quebra-pagina"></div>`;
+        <!-- CANGALHAS -->
+        <div class="titulo-secao">3. INSPEÇÃO DE CANGALHAS</div>
+        <table>${gerarCangalhasPDF()}</table>
 
-    htmlImp += `<div class="titulo-secao">4. AFERIÇÃO PASS LINE (SAÍDA FINAL)</div>
-        <div style="display:flex; gap:10px; width:100%;">
-            <div style="width:50%;"><table><tr><th colspan="5">BASE INFERIOR (SAÍDA)</th></tr><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr>`;
-    refPassLineInfHorizontal.forEach((ref, index) => {
-        let a = document.getElementById(`horiz-passline-inf-saida-a-${index}`)?.value || '';
-        let b = document.getElementById(`horiz-passline-inf-saida-b-${index}`)?.value || '';
-        let c = document.getElementById(`horiz-passline-inf-saida-c-${index}`)?.value || '';
-        htmlImp += `<tr><td style="text-align:center;">${index+1}º</td><td style="text-align:center; font-weight:bold;">${ref}</td><td style="text-align:center;">${a}</td><td style="text-align:center;">${b}</td><td style="text-align:center;">${c}</td></tr>`;
-    });
-    htmlImp += `</table></div>
-            <div style="width:50%;"><table><tr><th colspan="5">BASE SUPERIOR (SAÍDA)</th></tr><tr><th>Rolo</th><th>Ref</th><th>Pos A</th><th>Pos B</th><th>Pos C</th></tr>`;
-    refPassLineSupHorizontal.forEach((ref, index) => {
-        let a = document.getElementById(`horiz-passline-sup-saida-a-${index}`)?.value || '';
-        let b = document.getElementById(`horiz-passline-sup-saida-b-${index}`)?.value || '';
-        let c = document.getElementById(`horiz-passline-sup-saida-c-${index}`)?.value || '';
-        htmlImp += `<tr><td style="text-align:center;">${index+1}º</td><td style="text-align:center; font-weight:bold;">${ref}</td><td style="text-align:center;">${a}</td><td style="text-align:center;">${b}</td><td style="text-align:center;">${c}</td></tr>`;
-    });
-    htmlImp += `</table></div></div>`;
+        <div class="quebra-pagina"></div>
 
-    htmlImp += `
-        <div style="margin-top: 50px; display: flex; justify-content: space-around; text-align: center; font-size: 12px; font-weight: bold; padding-bottom:30px;">
+        <!-- PASS LINE - CHEGADA -->
+        <div class="titulo-secao">4. PASS LINE (CHEGADA)</div>
+        <div style="display:flex; gap:8px; width:100%;">
+            <div style="width:50%;"><table>
+                <tr><th colspan="5" style="background:#ddd; border:1px solid #000; padding:3px;">BASE INFERIOR (CHEGADA)</th></tr>
+                <tr><th style="border:1px solid #000; padding:3px;">Conj</th><th style="border:1px solid #000; padding:3px;">Ref</th>
+                    <th style="border:1px solid #000; padding:3px;">Pos A</th><th style="border:1px solid #000; padding:3px;">Pos B</th>
+                    <th style="border:1px solid #000; padding:3px;">Pos C</th></tr>
+                ${gerarPassLinePDF('horiz-passline-inf-chegada', refPassLineInfHoriz)}
+            </table></div>
+            <div style="width:50%;"><table>
+                <tr><th colspan="5" style="background:#ddd; border:1px solid #000; padding:3px;">BASE SUPERIOR (CHEGADA)</th></tr>
+                <tr><th style="border:1px solid #000; padding:3px;">Conj</th><th style="border:1px solid #000; padding:3px;">Ref</th>
+                    <th style="border:1px solid #000; padding:3px;">Pos A</th><th style="border:1px solid #000; padding:3px;">Pos B</th>
+                    <th style="border:1px solid #000; padding:3px;">Pos C</th></tr>
+                ${gerarPassLinePDF('horiz-passline-sup-chegada', refPassLineSupHoriz)}
+            </table></div>
+        </div>
+
+        <!-- CILINDROS HIDRÁULICOS (CHEGADA) -->
+        <div class="titulo-secao">5. CILINDROS HIDRÁULICOS (CHEGADA)</div>
+        <table>${gerarCilindrosChegadaPDF()}</table>
+
+        <div class="quebra-pagina"></div>
+
+        <!-- INSPEÇÃO DE ROLOS (CHEGADA) -->
+        <div class="titulo-secao">6. INSPEÇÃO DE ROLOS (CHEGADA)</div>
+        <table>
+            ${gerarRolosPDF('chegada', 'Inferior')}
+            ${gerarRolosPDF('chegada', 'Superior')}
+        </table>
+
+        <div class="quebra-pagina"></div>
+
+        <!-- GRAXA -->
+        <div class="titulo-secao">7. INSPEÇÃO DE DISTRIBUIÇÃO DE GRAXA</div>
+        <table>${gerarGraxaPDF()}</table>
+
+        <!-- CHECKLIST DE MANUTENÇÃO -->
+        <div class="titulo-secao">8. CHECKLIST DE MANUTENÇÃO</div>
+        <table>
+            <tr><th style="width:5%;">Item</th><th>Descrição da Atividade</th>
+                <th style="width:4%;">P</th><th style="width:4%;">G</th>
+                <th style="width:12%;">Matrícula</th><th style="width:12%;">Data</th></tr>
+            ${gerarManutencaoPDF()}
+        </table>
+
+        <div class="quebra-pagina"></div>
+
+        <!-- PASS LINE - SAÍDA -->
+        <div class="titulo-secao">9. PASS LINE (SAÍDA FINAL)</div>
+        <div style="display:flex; gap:8px; width:100%;">
+            <div style="width:50%;"><table>
+                <tr><th colspan="5" style="background:#ddd; border:1px solid #000; padding:3px;">BASE INFERIOR (SAÍDA)</th></tr>
+                <tr><th style="border:1px solid #000; padding:3px;">Conj</th><th style="border:1px solid #000; padding:3px;">Ref</th>
+                    <th style="border:1px solid #000; padding:3px;">Pos A</th><th style="border:1px solid #000; padding:3px;">Pos B</th>
+                    <th style="border:1px solid #000; padding:3px;">Pos C</th></tr>
+                ${gerarPassLinePDF('horiz-passline-inf-saida', refPassLineInfHoriz)}
+            </table></div>
+            <div style="width:50%;"><table>
+                <tr><th colspan="5" style="background:#ddd; border:1px solid #000; padding:3px;">BASE SUPERIOR (SAÍDA)</th></tr>
+                <tr><th style="border:1px solid #000; padding:3px;">Conj</th><th style="border:1px solid #000; padding:3px;">Ref</th>
+                    <th style="border:1px solid #000; padding:3px;">Pos A</th><th style="border:1px solid #000; padding:3px;">Pos B</th>
+                    <th style="border:1px solid #000; padding:3px;">Pos C</th></tr>
+                ${gerarPassLinePDF('horiz-passline-sup-saida', refPassLineSupHoriz)}
+            </table></div>
+        </div>
+
+        <!-- CILINDROS HIDRÁULICOS (SAÍDA) -->
+        <div class="titulo-secao">10. CILINDROS HIDRÁULICOS (SAÍDA)</div>
+        <table>${gerarCilindrosSaidaPDF()}</table>
+
+        <div class="quebra-pagina"></div>
+
+        <!-- INSPEÇÃO DE ROLOS (SAÍDA) -->
+        <div class="titulo-secao">11. INSPEÇÃO DE ROLOS (SAÍDA)</div>
+        <table>
+            ${gerarRolosPDF('saida', 'Inferior')}
+            ${gerarRolosPDF('saida', 'Superior')}
+        </table>
+
+        <!-- MATERIAIS -->
+        <div class="titulo-secao">12. MATERIAIS APLICADOS</div>
+        <table>
+            <tr><th style="width:80%;">MATERIAIS</th><th style="width:20%;">QUANTIDADE</th></tr>
+            ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30].map(i => `
+                <tr><td>${getV(`hmat-desc-${i}`)}</td><td>${getV(`hmat-qtd-${i}`)}</td></tr>
+            `).join('')}
+        </table>
+
+        <!-- ASSINATURAS -->
+        <div style="margin-top:40px; display:flex; justify-content:space-around; text-align:center; font-size:10px; font-weight:bold;">
             <div><p>___________________________________</p><p>Líder Responsável / Operador</p></div>
             <div><p>___________________________________</p><p>Inspetor de Qualidade</p></div>
         </div>
     </div>`;
 
-    document.getElementById('print-content').innerHTML = htmlImp;
+    // ===== SALVA NO HISTÓRICO =====
+    if (typeof window.salvarLaudoNoHistorico === 'function') {
+        window.salvarLaudoNoHistorico(tag, "Horizontal MCC 4", htmlPDF);
+    }
+
+    // ===== IMPRIME =====
+    const printDiv = document.getElementById('print-content');
+    if (!printDiv) { alert("Div 'print-content' não encontrada!"); return; }
+    printDiv.innerHTML = htmlPDF;
     window.fecharFolhaoHorizontal();
+    if (typeof renderReparos === 'function') renderReparos();
+    if (typeof renderReservas === 'function') renderReservas();
+    if (typeof renderAtivos === 'function') renderAtivos();
+    if (typeof renderPainelVeios === 'function') renderPainelVeios();
+    if (typeof renderHistorico === 'function') renderHistorico();
+    if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
+    if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
     setTimeout(() => window.print(), 500);
 };
+
+console.log("✅ folhaoHorizontal.js carregado com todas as seções do documento oficial.");

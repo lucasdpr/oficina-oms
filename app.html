@@ -926,143 +926,352 @@
     <!-- ===== DIV PARA IMPRESSÃO (PDF) ===== -->
     <div id="print-content" class="print-only"></div>
 
-    <!-- ========================================= -->
-    <!-- MODAIS (FOLHÕES) -->
-    <!-- ========================================= -->
+   <!-- ===== MODAL STRAIGHTENER R1 ===== -->
+<div id="modal-folhao-r1" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 1100px; max-height: 90vh; overflow-y: auto;">
+        <!-- Cabeçalho -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+            <h2 style="color:var(--text-heading);"><i class="fas fa-clipboard-check"></i> Liberação Oficial - STRAIGHTENER R1</h2>
+            <button class="btn-close-emergency" onclick="window.fecharFolhaoR1()"><i class="fas fa-times"></i></button>
+        </div>
 
-    <!-- MODAL MCC4 (Bender, Molde, Straightener) -->
-    <div id="modal-folhao-mcc4" class="modal-overlay hidden">
-        <div class="modal-content" style="max-width: 1000px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-                <h2><i class="fas fa-clipboard-check"></i> Liberação Oficial - MCC4</h2>
-                <button class="btn-close-emergency" onclick="window.fecharFolhaoMCC4()"><i class="fas fa-times"></i></button>
+        <!-- Campos do cabeçalho -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:10px; margin-bottom:15px; background:var(--bg-th); padding:12px; border-radius:8px;">
+            <div class="input-group"><label>TAG</label><input type="text" id="r1-tag-name" readonly></div>
+            <div class="input-group"><label>Nº SEGMENTO</label><input type="text" id="r1-num-segmento" placeholder="Ex: STR-01"></div>
+            <div class="input-group"><label>VEIO (SAÍDA)</label>
+                <select id="r1-veio" class="premium-select">
+                    <option value="G">G</option>
+                    <option value="H">H</option>
+                </select>
             </div>
-            <div style="display:flex;gap:15px;flex-wrap:wrap;margin-bottom:15px;">
-                <div class="input-group"><label>TAG</label><input type="text" id="mcc4-tag-name" readonly></div>
-                <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="mcc4-data-inicio"></div>
-                <div class="input-group"><label>DATA FIM</label><input type="date" id="mcc4-data-fim"></div>
-                <div class="input-group"><label>MOTIVO</label><input type="text" id="mcc4-motivo" placeholder="Motivo da OS"></div>
-            </div>
-            <div class="folhao-tabs">
-                <button class="folhao-tab active" onclick="window.trocarAbaFolhao(event, 'folhao-aba-recebimento')">1. Check List Geral</button>
-            </div>
-            <div class="folhao-body">
-                <div id="folhao-aba-recebimento" class="folhao-content">
-                    <div id="container-check-recebimento"></div>
-                </div>
-            </div>
-            <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
-                <button class="btn-premium btn-success" onclick="window.salvarLaudoInteligente()"><i class="fas fa-save"></i> Salvar e Imprimir</button>
-                <button class="btn-outline-danger" onclick="window.fecharFolhaoMCC4()">Fechar</button>
+            <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="r1-data-inicio"></div>
+            <div class="input-group"><label>DATA FIM</label><input type="date" id="r1-data-fim"></div>
+            <div class="input-group"><label>MOTIVO</label><input type="text" id="r1-motivo" placeholder="Motivo da OS"></div>
+            <div class="input-group"><label>TIPO EXECUÇÃO</label>
+                <select id="r1-tipo-execucao" class="premium-select">
+                    <option value="GERAL">GERAL</option>
+                    <option value="PARCIAL">PARCIAL</option>
+                </select>
             </div>
         </div>
+
+        <!-- Abas -->
+        <div class="folhao-tabs" style="display:flex; flex-wrap:nowrap; overflow-x:auto; gap:4px; border-bottom:2px solid var(--border-color); margin-bottom:10px;">
+            <button class="folhao-tab active" onclick="window.trocarAbaR1(event, 'r1-aba-dados')">1. Inspeção Chegada</button>
+            <button class="folhao-tab" onclick="window.trocarAbaR1(event, 'r1-aba-gap')">2. Gap / Cangalhas</button>
+            <button class="folhao-tab" onclick="window.trocarAbaR1(event, 'r1-aba-passline')">3. Pass Line</button>
+            <button class="folhao-tab" onclick="window.trocarAbaR1(event, 'r1-aba-cilindros')">4. Cilindros</button>
+            <button class="folhao-tab" onclick="window.trocarAbaR1(event, 'r1-aba-rolos-chegada')">5. Rolos Chegada</button>
+            <button class="folhao-tab" onclick="window.trocarAbaR1(event, 'r1-aba-graxa')">6. Graxa</button>
+            <button class="folhao-tab" onclick="window.trocarAbaR1(event, 'r1-aba-manutencao')">7. Manutenção</button>
+            <button class="folhao-tab" onclick="window.trocarAbaR1(event, 'r1-aba-saida')">8. Saída</button>
+            <button class="folhao-tab" onclick="window.trocarAbaR1(event, 'r1-aba-rolos-saida')">9. Rolos Saída</button>
+            <button class="folhao-tab" onclick="window.trocarAbaR1(event, 'r1-aba-materiais')">10. Materiais</button>
+        </div>
+
+        <!-- Conteúdo das abas -->
+        <div class="folhao-body" style="padding:4px 0;">
+
+            <!-- ABA 1 – INSPEÇÃO CHEGADA -->
+            <div id="r1-aba-dados" class="folhao-content">
+                <div id="container-check-recebimento-r1"></div>
+            </div>
+
+            <!-- ABA 2 – GAP E CANGALHAS -->
+            <div id="r1-aba-gap" class="folhao-content hidden">
+                <div id="r1-gap"></div>
+                <hr style="margin:15px 0; border-color:var(--border-color);">
+                <div id="r1-cangalhas"></div>
+            </div>
+
+            <!-- ABA 3 – PASS LINE -->
+            <div id="r1-aba-passline" class="folhao-content hidden">
+                <div id="r1-passline-inf-chegada"></div>
+                <div id="r1-passline-sup-chegada"></div>
+            </div>
+
+            <!-- ABA 4 – CILINDROS -->
+            <div id="r1-aba-cilindros" class="folhao-content hidden">
+                <div id="r1-cilindros-chegada"></div>
+            </div>
+
+            <!-- ABA 5 – ROLOS CHEGADA -->
+            <div id="r1-aba-rolos-chegada" class="folhao-content hidden">
+                <div id="r1-rolos-chegada"></div>
+            </div>
+
+            <!-- ABA 6 – GRAXA -->
+            <div id="r1-aba-graxa" class="folhao-content hidden">
+                <div id="r1-graxa"></div>
+            </div>
+
+            <!-- ABA 7 – MANUTENÇÃO -->
+            <div id="r1-aba-manutencao" class="folhao-content hidden">
+                <div id="r1-checklist-manutencao"></div>
+            </div>
+
+            <!-- ABA 8 – SAÍDA (Pass Line + Cilindros Saída) -->
+            <div id="r1-aba-saida" class="folhao-content hidden">
+                <div id="r1-passline-inf-saida"></div>
+                <div id="r1-passline-sup-saida"></div>
+                <hr style="margin:15px 0; border-color:var(--border-color);">
+                <div id="r1-cilindros-saida"></div>
+            </div>
+
+            <!-- ABA 9 – ROLOS SAÍDA -->
+            <div id="r1-aba-rolos-saida" class="folhao-content hidden">
+                <div id="r1-rolos-saida"></div>
+            </div>
+
+            <!-- ABA 10 – MATERIAIS -->
+            <div id="r1-aba-materiais" class="folhao-content hidden">
+                <div id="r1-materiais"></div>
+            </div>
+
+        </div>
+
+        <!-- Botões -->
+        <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end; flex-wrap:wrap;">
+            <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoR1()">
+                <i class="fas fa-save"></i> Salvar e Imprimir
+            </button>
+            <button class="btn-outline-danger" onclick="window.fecharFolhaoR1()">Fechar</button>
+        </div>
     </div>
+</div>
 
     <!-- MODAL BOW -->
-    <div id="modal-folhao-bow" class="modal-overlay hidden">
-        <div class="modal-content" style="max-width: 1000px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-                <h2><i class="fas fa-clipboard-check"></i> Liberação Oficial - BOW</h2>
-                <button class="btn-close-emergency" onclick="window.fecharFolhaoBow()"><i class="fas fa-times"></i></button>
+    <!-- ===== MODAL BOW ===== -->
+<div id="modal-folhao-bow" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 1100px; max-height: 90vh; overflow-y: auto;">
+        <!-- Cabeçalho -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+            <h2 style="color:var(--text-heading);"><i class="fas fa-clipboard-check"></i> Liberação Oficial - BOW</h2>
+            <button class="btn-close-emergency" onclick="window.fecharFolhaoBow()"><i class="fas fa-times"></i></button>
+        </div>
+
+        <!-- Campos do cabeçalho -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:10px; margin-bottom:15px; background:var(--bg-th); padding:12px; border-radius:8px;">
+            <div class="input-group"><label>TAG</label><input type="text" id="bow-tag-name" readonly></div>
+            <div class="input-group"><label>Nº SEGMENTO</label><input type="text" id="bow-num-segmento" placeholder="Ex: BOW-01"></div>
+            <div class="input-group"><label>VEIO (SAÍDA)</label>
+                <select id="bow-veio" class="premium-select">
+                    <option value="G">G</option>
+                    <option value="H">H</option>
+                </select>
             </div>
-            <div style="display:flex;gap:15px;flex-wrap:wrap;margin-bottom:15px;">
-                <div class="input-group"><label>TAG</label><input type="text" id="bow-tag-name" readonly></div>
-                <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="bow-data-inicio"></div>
-                <div class="input-group"><label>DATA FIM</label><input type="date" id="bow-data-fim"></div>
-                <div class="input-group"><label>MOTIVO</label><input type="text" id="bow-motivo" placeholder="Motivo da OS"></div>
-            </div>
-            <div class="folhao-tabs">
-                <button class="folhao-tab active" onclick="window.trocarAbaBow(event, 'bow-aba-dados')">1. Inspeção Chegada</button>
-                <button class="folhao-tab" onclick="window.trocarAbaBow(event, 'bow-aba-execucao')">2. Execução</button>
-                <button class="folhao-tab" onclick="window.trocarAbaBow(event, 'bow-aba-saida')">3. Saída</button>
-            </div>
-            <div class="folhao-body">
-                <div id="bow-aba-dados" class="folhao-content">
-                    <div id="container-check-recebimento-bow"></div>
-                    <div style="margin-top:20px;">
-                        <h3>Pass Line - Chegada</h3>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-                            <div><h4>Base Inferior</h4><table class="premium-table" id="bow-passline-inf-chegada"><tbody></tbody></table></div>
-                            <div><h4>Base Superior</h4><table class="premium-table" id="bow-passline-sup-chegada"><tbody></tbody></table></div>
-                        </div>
-                    </div>
-                </div>
-                <div id="bow-aba-execucao" class="folhao-content hidden">
-                    <h3>Checklist de Manutenção</h3>
-                    <table class="premium-table"><thead></thead><tbody id="bow-tabela-manutencao"></tbody></table>
-                </div>
-                <div id="bow-aba-saida" class="folhao-content hidden">
-                    <h3>Pass Line - Saída</h3>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-                        <div><h4>Base Inferior</h4><table class="premium-table" id="bow-passline-inf-saida"><tbody></tbody></table></div>
-                        <div><h4>Base Superior</h4><table class="premium-table" id="bow-passline-sup-saida"><tbody></tbody></table></div>
-                    </div>
-                    <div style="margin-top:20px;">
-                        <h3>Materiais</h3>
-                        <table class="premium-table"><tbody id="bow-tabela-materiais"></tbody></table>
-                        <button class="btn-xs-primary" onclick="window.addLinhaMaterialBow()">+ Adicionar</button>
-                    </div>
-                </div>
-            </div>
-            <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
-                <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoBow()"><i class="fas fa-save"></i> Salvar e Imprimir</button>
-                <button class="btn-outline-danger" onclick="window.fecharFolhaoBow()">Fechar</button>
+            <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="bow-data-inicio"></div>
+            <div class="input-group"><label>DATA FIM</label><input type="date" id="bow-data-fim"></div>
+            <div class="input-group"><label>MOTIVO</label><input type="text" id="bow-motivo" placeholder="Motivo da OS"></div>
+            <div class="input-group"><label>TIPO EXECUÇÃO</label>
+                <select id="bow-tipo-execucao" class="premium-select">
+                    <option value="GERAL">GERAL</option>
+                    <option value="PARCIAL">PARCIAL</option>
+                </select>
             </div>
         </div>
+
+        <!-- Abas -->
+        <div class="folhao-tabs" style="display:flex; flex-wrap:nowrap; overflow-x:auto; gap:4px; border-bottom:2px solid var(--border-color); margin-bottom:10px;">
+            <button class="folhao-tab active" onclick="window.trocarAbaBow(event, 'bow-aba-dados')">1. Inspeção Chegada</button>
+            <button class="folhao-tab" onclick="window.trocarAbaBow(event, 'bow-aba-gap')">2. Gap / Cangalhas</button>
+            <button class="folhao-tab" onclick="window.trocarAbaBow(event, 'bow-aba-passline')">3. Pass Line</button>
+            <button class="folhao-tab" onclick="window.trocarAbaBow(event, 'bow-aba-cilindros')">4. Cilindros</button>
+            <button class="folhao-tab" onclick="window.trocarAbaBow(event, 'bow-aba-rolos-chegada')">5. Rolos Chegada</button>
+            <button class="folhao-tab" onclick="window.trocarAbaBow(event, 'bow-aba-graxa')">6. Graxa</button>
+            <button class="folhao-tab" onclick="window.trocarAbaBow(event, 'bow-aba-manutencao')">7. Manutenção</button>
+            <button class="folhao-tab" onclick="window.trocarAbaBow(event, 'bow-aba-saida')">8. Saída</button>
+            <button class="folhao-tab" onclick="window.trocarAbaBow(event, 'bow-aba-rolos-saida')">9. Rolos Saída</button>
+            <button class="folhao-tab" onclick="window.trocarAbaBow(event, 'bow-aba-materiais')">10. Materiais</button>
+        </div>
+
+        <!-- Conteúdo das abas -->
+        <div class="folhao-body" style="padding:4px 0;">
+
+            <!-- ABA 1 – INSPEÇÃO CHEGADA -->
+            <div id="bow-aba-dados" class="folhao-content">
+                <div id="container-check-recebimento-bow"></div>
+            </div>
+
+            <!-- ABA 2 – GAP E CANGALHAS -->
+            <div id="bow-aba-gap" class="folhao-content hidden">
+                <div id="bow-gap"></div>
+                <hr style="margin:15px 0; border-color:var(--border-color);">
+                <div id="bow-cangalhas"></div>
+            </div>
+
+            <!-- ABA 3 – PASS LINE -->
+            <div id="bow-aba-passline" class="folhao-content hidden">
+                <div id="bow-passline-inf-chegada"></div>
+                <div id="bow-passline-sup-chegada"></div>
+            </div>
+
+            <!-- ABA 4 – CILINDROS -->
+            <div id="bow-aba-cilindros" class="folhao-content hidden">
+                <div id="bow-cilindros-chegada"></div>
+            </div>
+
+            <!-- ABA 5 – ROLOS CHEGADA -->
+            <div id="bow-aba-rolos-chegada" class="folhao-content hidden">
+                <div id="bow-rolos-chegada"></div>
+            </div>
+
+            <!-- ABA 6 – GRAXA -->
+            <div id="bow-aba-graxa" class="folhao-content hidden">
+                <div id="bow-graxa"></div>
+            </div>
+
+            <!-- ABA 7 – MANUTENÇÃO -->
+            <div id="bow-aba-manutencao" class="folhao-content hidden">
+                <div id="bow-checklist-manutencao"></div>
+            </div>
+
+            <!-- ABA 8 – SAÍDA (Pass Line + Cilindros Saída) -->
+            <div id="bow-aba-saida" class="folhao-content hidden">
+                <div id="bow-passline-inf-saida"></div>
+                <div id="bow-passline-sup-saida"></div>
+                <hr style="margin:15px 0; border-color:var(--border-color);">
+                <div id="bow-cilindros-saida"></div>
+            </div>
+
+            <!-- ABA 9 – ROLOS SAÍDA -->
+            <div id="bow-aba-rolos-saida" class="folhao-content hidden">
+                <div id="bow-rolos-saida"></div>
+            </div>
+
+            <!-- ABA 10 – MATERIAIS -->
+            <div id="bow-aba-materiais" class="folhao-content hidden">
+                <div id="bow-materiais"></div>
+            </div>
+
+        </div>
+
+        <!-- Botões -->
+        <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end; flex-wrap:wrap;">
+            <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoBow()">
+                <i class="fas fa-save"></i> Salvar e Imprimir
+            </button>
+            <button class="btn-outline-danger" onclick="window.fecharFolhaoBow()">Fechar</button>
+        </div>
     </div>
+</div>
 
     <!-- MODAL HORIZONTAL -->
-    <div id="modal-folhao-horizontal" class="modal-overlay hidden">
-        <div class="modal-content" style="max-width: 1000px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-                <h2><i class="fas fa-clipboard-check"></i> Liberação Oficial - HORIZONTAL</h2>
-                <button class="btn-close-emergency" onclick="window.fecharFolhaoHorizontal()"><i class="fas fa-times"></i></button>
+    <!-- ===== MODAL HORIZONTAL ===== -->
+<div id="modal-folhao-horizontal" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 1100px; max-height: 90vh; overflow-y: auto;">
+        <!-- Cabeçalho -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+            <h2 style="color:var(--text-heading);"><i class="fas fa-clipboard-check"></i> Liberação Oficial - HORIZONTAL</h2>
+            <button class="btn-close-emergency" onclick="window.fecharFolhaoHorizontal()"><i class="fas fa-times"></i></button>
+        </div>
+
+        <!-- Campos do cabeçalho -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:10px; margin-bottom:15px; background:var(--bg-th); padding:12px; border-radius:8px;">
+            <div class="input-group"><label>TAG</label><input type="text" id="horizontal-tag-name" readonly></div>
+            <div class="input-group"><label>Nº SEGMENTO</label><input type="text" id="horiz-num-segmento" placeholder="Ex: HOR-08"></div>
+            <div class="input-group"><label>VEIO (SAÍDA)</label>
+                <select id="horiz-veio" class="premium-select">
+                    <option value="G">G</option>
+                    <option value="H">H</option>
+                </select>
             </div>
-            <div style="display:flex;gap:15px;flex-wrap:wrap;margin-bottom:15px;">
-                <div class="input-group"><label>TAG</label><input type="text" id="horizontal-tag-name" readonly></div>
-                <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="horiz-data-inicio"></div>
-                <div class="input-group"><label>DATA FIM</label><input type="date" id="horiz-data-fim"></div>
-                <div class="input-group"><label>MOTIVO</label><input type="text" id="horiz-motivo" placeholder="Motivo da OS"></div>
-            </div>
-            <div class="folhao-tabs">
-                <button class="folhao-tab active" onclick="window.trocarAbaHorizontal(event, 'horiz-aba-dados')">1. Inspeção Chegada</button>
-                <button class="folhao-tab" onclick="window.trocarAbaHorizontal(event, 'horiz-aba-execucao')">2. Execução</button>
-                <button class="folhao-tab" onclick="window.trocarAbaHorizontal(event, 'horiz-aba-saida')">3. Saída</button>
-            </div>
-            <div class="folhao-body">
-                <div id="horiz-aba-dados" class="folhao-content">
-                    <div id="container-check-recebimento-horizontal"></div>
-                    <div style="margin-top:20px;">
-                        <h3>Pass Line - Chegada</h3>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-                            <div><h4>Base Inferior</h4><table class="premium-table" id="horiz-passline-inf-chegada"><tbody></tbody></table></div>
-                            <div><h4>Base Superior</h4><table class="premium-table" id="horiz-passline-sup-chegada"><tbody></tbody></table></div>
-                        </div>
-                    </div>
-                </div>
-                <div id="horiz-aba-execucao" class="folhao-content hidden">
-                    <h3>Checklist de Manutenção</h3>
-                    <table class="premium-table"><thead></thead><tbody id="horiz-tabela-manutencao"></tbody></table>
-                </div>
-                <div id="horiz-aba-saida" class="folhao-content hidden">
-                    <h3>Pass Line - Saída</h3>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-                        <div><h4>Base Inferior</h4><table class="premium-table" id="horiz-passline-inf-saida"><tbody></tbody></table></div>
-                        <div><h4>Base Superior</h4><table class="premium-table" id="horiz-passline-sup-saida"><tbody></tbody></table></div>
-                    </div>
-                    <div style="margin-top:20px;">
-                        <h3>Materiais</h3>
-                        <table class="premium-table"><tbody id="horiz-tabela-materiais"></tbody></table>
-                        <button class="btn-xs-primary" onclick="window.addLinhaMaterialHorizontal()">+ Adicionar</button>
-                    </div>
-                </div>
-            </div>
-            <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
-                <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoHorizontal()"><i class="fas fa-save"></i> Salvar e Imprimir</button>
-                <button class="btn-outline-danger" onclick="window.fecharFolhaoHorizontal()">Fechar</button>
+            <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="horiz-data-inicio"></div>
+            <div class="input-group"><label>DATA FIM</label><input type="date" id="horiz-data-fim"></div>
+            <div class="input-group"><label>MOTIVO</label><input type="text" id="horiz-motivo" placeholder="Motivo da OS"></div>
+            <div class="input-group"><label>TIPO EXECUÇÃO</label>
+                <select id="horiz-tipo-execucao" class="premium-select">
+                    <option value="GERAL">GERAL</option>
+                    <option value="PARCIAL">PARCIAL</option>
+                </select>
             </div>
         </div>
+
+        <!-- Abas -->
+        <div class="folhao-tabs" style="display:flex; flex-wrap:nowrap; overflow-x:auto; gap:4px; border-bottom:2px solid var(--border-color); margin-bottom:10px;">
+            <button class="folhao-tab active" onclick="window.trocarAbaHorizontal(event, 'horiz-aba-dados')">1. Inspeção Chegada</button>
+            <button class="folhao-tab" onclick="window.trocarAbaHorizontal(event, 'horiz-aba-gap')">2. Gap / Cangalhas</button>
+            <button class="folhao-tab" onclick="window.trocarAbaHorizontal(event, 'horiz-aba-passline')">3. Pass Line</button>
+            <button class="folhao-tab" onclick="window.trocarAbaHorizontal(event, 'horiz-aba-cilindros')">4. Cilindros</button>
+            <button class="folhao-tab" onclick="window.trocarAbaHorizontal(event, 'horiz-aba-rolos-chegada')">5. Rolos Chegada</button>
+            <button class="folhao-tab" onclick="window.trocarAbaHorizontal(event, 'horiz-aba-graxa')">6. Graxa</button>
+            <button class="folhao-tab" onclick="window.trocarAbaHorizontal(event, 'horiz-aba-manutencao')">7. Manutenção</button>
+            <button class="folhao-tab" onclick="window.trocarAbaHorizontal(event, 'horiz-aba-saida')">8. Saída</button>
+            <button class="folhao-tab" onclick="window.trocarAbaHorizontal(event, 'horiz-aba-rolos-saida')">9. Rolos Saída</button>
+            <button class="folhao-tab" onclick="window.trocarAbaHorizontal(event, 'horiz-aba-materiais')">10. Materiais</button>
+        </div>
+
+        <!-- Conteúdo das abas -->
+        <div class="folhao-body" style="padding:4px 0;">
+
+            <!-- ABA 1 – INSPEÇÃO CHEGADA -->
+            <div id="horiz-aba-dados" class="folhao-content">
+                <div id="container-check-recebimento-horizontal"></div>
+            </div>
+
+            <!-- ABA 2 – GAP E CANGALHAS -->
+            <div id="horiz-aba-gap" class="folhao-content hidden">
+                <div id="horiz-gap"></div>
+                <hr style="margin:15px 0; border-color:var(--border-color);">
+                <div id="horiz-cangalhas"></div>
+            </div>
+
+            <!-- ABA 3 – PASS LINE -->
+            <div id="horiz-aba-passline" class="folhao-content hidden">
+                <div id="horiz-passline-inf-chegada"></div>
+                <div id="horiz-passline-sup-chegada"></div>
+            </div>
+
+            <!-- ABA 4 – CILINDROS -->
+            <div id="horiz-aba-cilindros" class="folhao-content hidden">
+                <div id="horiz-cilindros-chegada"></div>
+            </div>
+
+            <!-- ABA 5 – ROLOS CHEGADA -->
+            <div id="horiz-aba-rolos-chegada" class="folhao-content hidden">
+                <div id="horiz-rolos-chegada"></div>
+            </div>
+
+            <!-- ABA 6 – GRAXA -->
+            <div id="horiz-aba-graxa" class="folhao-content hidden">
+                <div id="horiz-graxa"></div>
+            </div>
+
+            <!-- ABA 7 – MANUTENÇÃO -->
+            <div id="horiz-aba-manutencao" class="folhao-content hidden">
+                <div id="horiz-checklist-manutencao"></div>
+            </div>
+
+            <!-- ABA 8 – SAÍDA (Pass Line + Cilindros Saída) -->
+            <div id="horiz-aba-saida" class="folhao-content hidden">
+                <div id="horiz-passline-inf-saida"></div>
+                <div id="horiz-passline-sup-saida"></div>
+                <hr style="margin:15px 0; border-color:var(--border-color);">
+                <div id="horiz-cilindros-saida"></div>
+            </div>
+
+            <!-- ABA 9 – ROLOS SAÍDA -->
+            <div id="horiz-aba-rolos-saida" class="folhao-content hidden">
+                <div id="horiz-rolos-saida"></div>
+            </div>
+
+            <!-- ABA 10 – MATERIAIS -->
+            <div id="horiz-aba-materiais" class="folhao-content hidden">
+                <div id="horiz-materiais"></div>
+            </div>
+
+        </div>
+
+        <!-- Botões -->
+        <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end; flex-wrap:wrap;">
+            <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoHorizontal()">
+                <i class="fas fa-save"></i> Salvar e Imprimir
+            </button>
+            <button class="btn-outline-danger" onclick="window.fecharFolhaoHorizontal()">Fechar</button>
+        </div>
     </div>
+</div>
 
     <!-- MODAL SEGMENTO ZERO -->
     <div id="modal-folhao-segmento-zero" class="modal-overlay hidden">
@@ -1163,37 +1372,261 @@
         </div>
     </div>
 
-    <!-- MODAL MOLDE 2/3 -->
-    <div id="modal-folhao-molde23" class="modal-overlay hidden">
-        <div class="modal-content" style="max-width: 1000px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-                <h2><i class="fas fa-clipboard-check"></i> Liberação - Molde MCC 2/3</h2>
-                <button class="btn-close-emergency" onclick="window.fecharFolhaoMolde23()"><i class="fas fa-times"></i></button>
-            </div>
-            <div style="display:flex;gap:15px;flex-wrap:wrap;margin-bottom:15px;">
-                <div class="input-group"><label>TAG</label><input type="text" id="molde23-tag-name" readonly></div>
-                <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="molde23-data-inicio"></div>
-                <div class="input-group"><label>DATA FIM</label><input type="date" id="molde23-data-fim"></div>
-                <div class="input-group"><label>LÍDER</label><input type="text" id="molde23-lider"></div>
-            </div>
-            <div class="folhao-tabs">
-                <button class="folhao-tab active" onclick="window.trocarAbaMolde23(event, 'aba-m23-recebimento')">1. Recebimento</button>
-                <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'aba-m23-revisao')">2. Revisão</button>
-                <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'aba-m23-hidraulica')">3. Hidráulica</button>
-                <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'aba-m23-final')">4. Inspeção Final</button>
-            </div>
-            <div class="folhao-body">
-                <div id="aba-m23-recebimento" class="folhao-content"><table class="premium-table"><tbody id="tabela-m23-recebimento"></tbody></table></div>
-                <div id="aba-m23-revisao" class="folhao-content hidden"><table class="premium-table"><tbody id="tabela-m23-revisao"></tbody></table></div>
-                <div id="aba-m23-hidraulica" class="folhao-content hidden"><table class="premium-table"><tbody id="tabela-m23-hidraulica"></tbody></table></div>
-                <div id="aba-m23-final" class="folhao-content hidden"><table class="premium-table"><tbody id="tabela-m23-final"></tbody></table></div>
-            </div>
-            <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
-                <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoMolde23()"><i class="fas fa-save"></i> Salvar e Imprimir</button>
-                <button class="btn-outline-danger" onclick="window.fecharFolhaoMolde23()">Fechar</button>
-            </div>
+    <!-- ===== MODAL MOLDE 2/3 (COMPLETO) ===== -->
+<div id="modal-folhao-molde23" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 1100px; max-height: 90vh; overflow-y: auto;">
+        <!-- Cabeçalho do Modal -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+            <h2 style="color:var(--text-heading);"><i class="fas fa-clipboard-check"></i> Liberação - Molde MCC 2/3</h2>
+            <button class="btn-close-emergency" onclick="window.fecharFolhaoMolde23()"><i class="fas fa-times"></i></button>
         </div>
+
+        <!-- Campos do Cabeçalho (exatamente como no documento) -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:12px; margin-bottom:15px; background:var(--bg-th); padding:12px; border-radius:8px;">
+            <div class="input-group"><label>Nº MOLDE</label><input type="text" id="molde23-num-molde" placeholder="Ex: 2C-01"></div>
+            <div class="input-group"><label>MOTIVO</label><input type="text" id="molde23-motivo" placeholder="Motivo da manutenção"></div>
+            <div class="input-group"><label>TIPO EXECUÇÃO</label>
+                <select id="molde23-tipo-exec" class="premium-select">
+                    <option value="GERAL">GERAL</option>
+                    <option value="PARCIAL">PARCIAL</option>
+                </select>
+            </div>
+            <div class="input-group"><label>LÍDER RESPONSÁVEL</label><input type="text" id="molde23-lider"></div>
+            <div class="input-group"><label>DESEMPENHO</label><input type="text" id="molde23-desempenho" placeholder="Ex: BOM, REGULAR"></div>
+            <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="molde23-data-inicio"></div>
+            <div class="input-group"><label>DATA FIM</label><input type="date" id="molde23-data-fim"></div>
+        </div>
+
+        <!-- Abas (Tabs) -->
+        <div class="folhao-tabs" style="display:flex; flex-wrap:nowrap; overflow-x:auto; gap:4px; border-bottom:2px solid var(--border-color); margin-bottom:10px;">
+            <button class="folhao-tab active" onclick="window.trocarAbaMolde23(event, 'aba-m23-identificacao')">1. Identificação</button>
+            <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'aba-m23-recebimento')">2. Recebimento</button>
+            <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'aba-m23-revisao')">3. Revisão</button>
+            <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'aba-m23-hidraulica')">4. Hidráulica</button>
+            <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'aba-m23-final')">5. Inspeção Final</button>
+            <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'aba-m23-diametros')">6. Diâmetros</button>
+            <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'aba-m23-alinhamento')">7. Alinhamento</button>
+            <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'aba-m23-sensor')">8. Sensor Nível</button>
+            <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'aba-m23-isolamento')">9. Isolação</button>
+            <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'aba-m23-termopares')">10. Termopares</button>
+            <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'aba-m23-checkjb2')">11. JB2</button>
+            <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'aba-m23-resistencia')">12. Resistência</button>
+            <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'aba-m23-peritagem-largas')">13. Peritagem Largas</button>
+            <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'aba-m23-peritagem-estreitas')">14. Peritagem Estreitas</button>
+            <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'aba-m23-chavetas')">15. Chavetas</button>
+            <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'aba-m23-folga')">16. Folga Aresta</button>
+            <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'aba-m23-resfriamento')">17. Resfriamento</button>
+            <button class="folhao-tab" onclick="window.trocarAbaMolde23(event, 'aba-m23-materiais')">18. Materiais</button>
+        </div>
+
+        <!-- Conteúdo das Abas -->
+        <div class="folhao-body" style="padding:4px 0;">
+
+            <!-- 1. IDENTIFICAÇÃO -->
+            <div id="aba-m23-identificacao" class="folhao-content active">
+                <div id="molde23-identificacao"></div>
+            </div>
+
+            <!-- 2. RECEBIMENTO (Mecânica + Elétrica) -->
+            <div id="aba-m23-recebimento" class="folhao-content hidden">
+                <div id="container-check-recebimento-m23"></div>
+                <div id="container-check-eletrica-m23"></div>
+            </div>
+
+            <!-- 3. REVISÃO DOS MOLDES -->
+            <div id="aba-m23-revisao" class="folhao-content hidden">
+                <div id="container-check-revisao-m23"></div>
+            </div>
+
+            <!-- 4. CHECK LIST HIDRÁULICO -->
+            <div id="aba-m23-hidraulica" class="folhao-content hidden">
+                <div id="container-check-hidraulica-m23"></div>
+            </div>
+
+            <!-- 5. INSPEÇÃO FINAL -->
+            <div id="aba-m23-final" class="folhao-content hidden">
+                <div id="container-check-final-m23"></div>
+            </div>
+
+            <!-- 6. DIÂMETROS DOS ROLOS (Chegada e Saída) -->
+            <div id="aba-m23-diametros" class="folhao-content hidden">
+                <div id="molde23-diametros-chegada"></div>
+                <hr style="margin:15px 0; border-color:var(--border-color);">
+                <div id="molde23-diametros-saida"></div>
+            </div>
+
+            <!-- 7. ALINHAMENTO DOS ROLOS -->
+            <div id="aba-m23-alinhamento" class="folhao-content hidden">
+                <div id="molde23-alinhamento-rolos"></div>
+            </div>
+
+            <!-- 8. SENSOR DE NÍVEL (Planilha e Medidas) -->
+            <div id="aba-m23-sensor" class="folhao-content hidden">
+                <div id="molde23-sensor-nivel"></div>
+            </div>
+
+            <!-- 9. ISOLAÇÃO DOS SENSORES DE NÍVEL -->
+            <div id="aba-m23-isolamento" class="folhao-content hidden">
+                <div id="molde23-isolamento"></div>
+            </div>
+
+            <!-- 10. TERMOPARES (Caixas) -->
+            <div id="aba-m23-termopares" class="folhao-content hidden">
+                <div id="molde23-termopares"></div>
+            </div>
+
+            <!-- 11. CHECK DO JB 2 -->
+            <div id="aba-m23-checkjb2" class="folhao-content hidden">
+                <div id="molde23-checkjb2"></div>
+            </div>
+
+            <!-- 12. TESTE DE RESISTÊNCIA DAS PLACAS -->
+            <div id="aba-m23-resistencia" class="folhao-content hidden">
+                <div id="molde23-resistencia-placas"></div>
+            </div>
+
+            <!-- 13. PERITAGEM DAS PLACAS LARGAS (Entrada e Saída) -->
+            <div id="aba-m23-peritagem-largas" class="folhao-content hidden">
+                <div id="molde23-peritagem-largas-entrada"></div>
+                <hr style="margin:15px 0; border-color:var(--border-color);">
+                <div id="molde23-peritagem-largas-saida"></div>
+            </div>
+
+            <!-- 14. PERITAGEM DAS PLACAS ESTREITAS (Chegada e Saída) -->
+            <div id="aba-m23-peritagem-estreitas" class="folhao-content hidden">
+                <div id="molde23-peritagem-estreitas-chegada"></div>
+                <hr style="margin:15px 0; border-color:var(--border-color);">
+                <div id="molde23-peritagem-estreitas-saida"></div>
+            </div>
+
+            <!-- 15. AJUSTE DE CHAVETAS -->
+            <div id="aba-m23-chavetas" class="folhao-content hidden">
+                <div id="molde23-ajuste-chavetas"></div>
+            </div>
+
+            <!-- 16. RELATÓRIO FOLGA DE ARESTA -->
+            <div id="aba-m23-folga" class="folhao-content hidden">
+                <div id="molde23-folga-aresta"></div>
+            </div>
+
+            <!-- 17. AVALIAÇÃO DO SISTEMA DE RESFRIAMENTO -->
+            <div id="aba-m23-resfriamento" class="folhao-content hidden">
+                <div id="molde23-resfriamento"></div>
+            </div>
+
+            <!-- 18. MATERIAIS UTILIZADOS -->
+            <div id="aba-m23-materiais" class="folhao-content hidden">
+                <div id="molde23-materiais"></div>
+            </div>
+
+        </div><!-- fim .folhao-body -->
+
+        <!-- Botões de ação -->
+        <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end; flex-wrap:wrap;">
+            <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoMolde23()">
+                <i class="fas fa-save"></i> Salvar e Imprimir
+            </button>
+            <button class="btn-outline-danger" onclick="window.fecharFolhaoMolde23()">Fechar</button>
+        </div>
+
     </div>
+</div>
+<!-- Modal MCC4 bender -->
+<div id="modal-folhao-mcc4" class="modal hidden">
+  <div class="modal-content" style="width: 95%; max-width: 1400px; max-height: 90vh; display: flex; flex-direction: column;">
+    <!-- Cabeçalho do Modal -->
+    <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; border-bottom: 2px solid #002b5e;">
+      <h2 style="margin: 0; font-size: 20px; color: #002b5e;">
+        <i class="fas fa-clipboard-check text-blue-500 mr-2"></i> Liberação Oficial - <span id="mcc4-tipo-equip">BENDER</span>
+      </h2>
+      <button onclick="fecharFolhaoMCC4()" style="background: none; border: none; font-size: 28px; cursor: pointer; color: #999;">&times;</button>
+    </div>
+
+    <!-- Corpo do Modal (rolável) -->
+    <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 15px;">
+
+      <!-- Abas (Tabs) -->
+      <div class="folhao-tabs" style="display: flex; gap: 5px; border-bottom: 2px solid #002b5e; margin-bottom: 15px; flex-wrap: wrap;">
+        <!-- Aba 1: Identificação (fixa) -->
+        <button class="folhao-tab active" onclick="trocarAbaFolhao(event, 'folhao-aba-ident')">1. Identificação</button>
+        <!-- Aba 2: Check List Geral (fixa) -->
+        <button class="folhao-tab" onclick="trocarAbaFolhao(event, 'folhao-aba-recebimento')">2. Check List Geral</button>
+        <!-- As demais abas serão inseridas dinamicamente via JavaScript -->
+      </div>
+
+      <!-- Conteúdo das Abas -->
+      <div class="folhao-body" style="padding: 10px 0;">
+
+        <!-- Aba Identificação (fixa) -->
+        <div id="folhao-aba-ident" class="folhao-content">
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+            <div class="input-group">
+              <label>Nº DO EQUIPAMENTO</label>
+              <input id="mcc4-tag-name" class="premium-input" readonly style="background: #f0f0f0; font-weight: bold;">
+            </div>
+            <div class="input-group">
+              <label>DATA DE INÍCIO DA MANUTENÇÃO</label>
+              <input id="mcc4-data-inicio" type="date" class="premium-input">
+            </div>
+            <div class="input-group">
+              <label>DATA DE FIM DA MANUTENÇÃO</label>
+              <input id="mcc4-data-fim" type="date" class="premium-input">
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+            <div class="input-group">
+              <label>VEIO (SAÍDA): ( ) G ( ) H</label>
+              <select id="mcc4-veio-saida" class="premium-select">
+                <option value="">Selecione</option>
+                <option value="G">G</option>
+                <option value="H">H</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label>VEIO (ENTRADA): ( ) G ( ) H</label>
+              <select id="mcc4-veio-entrada" class="premium-select">
+                <option value="">Selecione</option>
+                <option value="G">G</option>
+                <option value="H">H</option>
+              </select>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px; margin-top: 15px;">
+            <div class="input-group">
+              <label>MOTIVO DA MANUTENÇÃO</label>
+              <input id="mcc4-motivo" class="premium-input" placeholder="Ex: Quebra de rolo, desgaste, etc.">
+            </div>
+            <div class="input-group">
+              <label>TIPO DE EXECUÇÃO</label>
+              <select id="mcc4-tipo-exec" class="premium-select">
+                <option value="PARCIAL">PARCIAL</option>
+                <option value="GERAL" selected>GERAL</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Aba Check List Geral (fixa) -->
+        <div id="folhao-aba-recebimento" class="folhao-content hidden">
+          <div id="container-check-recebimento"></div>
+        </div>
+
+        <!-- Aqui serão inseridas as abas dinâmicas (Bender, Molde, etc.) -->
+      </div>
+    </div>
+
+    <!-- Rodapé do Modal -->
+    <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 10px 20px; border-top: 1px solid #ddd; background: #f9f9f9;">
+      <button class="btn-secondary" onclick="fecharFolhaoMCC4()" style="padding: 8px 16px; background: #6c757d; color: #fff; border: none; border-radius: 4px; cursor: pointer;">Cancelar</button>
+      <button class="btn-success" onclick="salvarLaudoInteligente()" style="padding: 8px 16px; background: #28a745; color: #fff; border: none; border-radius: 4px; cursor: pointer;">
+        <i class="fas fa-save"></i> Salvar e Liberar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Div para impressão (PDF) -->
+<div id="print-content" style="display: none;"></div>
 
     <!-- ========================================= -->
     <!-- SCRIPTS -->
@@ -1208,6 +1641,8 @@
         import './folhaoDesempenadeira.js?v=2';
         import './folhaoSegmentoZero.js?v=2';
         import './folhaoMolde23.js?v=2';
+        import './folhaoStraightenerR1.js?v=2';
+        
 
         console.log("✅ Sistema OMS inicializado!");
 
