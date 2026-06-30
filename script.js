@@ -11,6 +11,8 @@ import {
     BIBLIOTECA_CHECKLISTS 
 } from './dados.js';
 
+import { sincronizarAtivosReaisMCC4 } from './banco.js';
+
 // ==========================================================================
 // BANCO DE DADOS CORE - SISTEMA OMS
 // ==========================================================================
@@ -55,9 +57,9 @@ function getOrdemPadrao(tipo) {
 }
 
 // ==========================================================================
-// INICIALIZAÇÃO DE BANCOS DE DADOS (já existente)
+// INICIALIZAÇÃO AUTOMÁTICA DOS BANCOS DE DADOS
 // ==========================================================================
-if (!BANCO_ATIVOS || BANCO_ATIVOS.length < 150) {
+if (!BANCO_ATIVOS || BANCO_ATIVOS.length === 0) {   
     BANCO_ATIVOS = [];
     const veiosMcc23 = [{ mcc: 2, veio: "C" }, { mcc: 2, veio: "D" }, { mcc: 3, veio: "E" }, { mcc: 3, veio: "F" }];
     
@@ -79,11 +81,18 @@ if (!BANCO_ATIVOS || BANCO_ATIVOS.length < 150) {
         const vNome = `MCC 4 - Veio ${veio}`;
         BANCO_ATIVOS.push({ id: `MLD-4${veio}`, tipo: "Molde", local: vNome, pos: "Molde Alta Perf.", dias: 12, ton: 180000, meta: 1000000, ordem: 10, mcc_compat: "4" });
         BANCO_ATIVOS.push({ id: `BND-4${veio}`, tipo: "Bender", local: vNome, pos: "Dobrador (Bender)", dias: 45, ton: 520000, meta: 1500000, ordem: 40, mcc_compat: "4" });
+        
+        // Bow (Mantido de 1 a 5)
         for (let b = 1; b <= 5; b++) BANCO_ATIVOS.push({ id: `BOW-${b}-4${veio}`, tipo: "Bow", local: vNome, pos: `Curvo Bow #0${b}`, dias: 60, ton: 650000, meta: 1600000, ordem: 300 + b, mcc_compat: "4" });
-        for (let s = 1; s <= 2; s++) BANCO_ATIVOS.push({ id: `STR-${s}-4${veio}`, tipo: "Straightener", local: vNome, pos: `Endireitador #0${s}`, dias: 88, ton: 910000, meta: 1800000, ordem: 400 + s, mcc_compat: "4" });
-        for (let h = 1; h <= 10; h++) BANCO_ATIVOS.push({ id: `HOR-${h}-4${veio}`, tipo: "Horizontal", local: vNome, pos: `Horizontal #0${h}`, dias: 102, ton: 430000, meta: 2000000, ordem: 500 + h, mcc_compat: "4" });
+        
+        // ⚡ CORREÇÃO: Alinhado Straightener de 6 a 7 (RI e RII) conforme a planilha real
+        for (let s = 6; s <= 7; s++) BANCO_ATIVOS.push({ id: `STR-${s}-4${veio}`, tipo: "Straightener", local: vNome, pos: `Endireitador #0${s === 6 ? '1' : '2'}`, dias: 88, ton: 910000, meta: 1800000, ordem: 400 + s, mcc_compat: "4" });
+        
+        // ⚡ CORREÇÃO: Alinhado Horizontal de 8 a 17 conforme a planilha real da gerência
+        for (let h = 8; h <= 17; h++) BANCO_ATIVOS.push({ id: `HOR-${h}-4${veio}`, tipo: "Horizontal", local: vNome, pos: `Horizontal #${h < 10 ? '0'+h : h}`, dias: 102, ton: 430000, meta: 2000000, ordem: 500 + h, mcc_compat: "4" });
     });
 
+    // Peças sobressalentes centrais da oficina
     BANCO_ATIVOS.push({ id: `MLD-RES-01`, tipo: "Molde", local: "Oficina / Reserva", pos: "Estoque Central", dias: 0, ton: 0, meta: 1200000, ordem: 10, mcc_compat: "2/3" });
     BANCO_ATIVOS.push({ id: `MLD-MCC4-REP`, tipo: "Molde", local: "Oficina / Reparo", pos: "Bancada", dias: 25, ton: 800000, meta: 1000000, ordem: 10, mcc_compat: "4" });
 
@@ -133,15 +142,6 @@ if (BANCO_ROLOS) {
     if (atualizouNomes) {
         localStorage.setItem("oms_rolos_v32_local", JSON.stringify(BANCO_ROLOS));
     }
-}
-function calcularDias(item) {
-    if (item.local === "Oficina / Reparo" && item.dataReparo) {
-        const agora = Date.now();
-        const diffMs = agora - item.dataReparo;
-        const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        return diffDias;
-    }
-    return item.dias || 0;
 }
 
 // ==========================================
@@ -864,7 +864,9 @@ function gerarSlotsMCC4() {
     ];
 }
 
-// FUNÇÃO PARA MAPEAR SLOTS LEGADO MCC 4
+// ==========================================================================
+// CORREÇÃO DO MAPEAMENTO DE GAVETAS (script.js)
+// ==========================================================================
 function mapearSlotLegadoMCC4(peca) {
     const tipoUpper = (peca.tipo || "").toUpperCase();
     const idUpper = (peca.id || "").toUpperCase();
@@ -874,22 +876,18 @@ function mapearSlotLegadoMCC4(peca) {
     
     if (tipoUpper.includes("BOW")) {
         const match = idUpper.match(/BOW-(\d)/);
-        if (match && match[1] >= 1 && match[1] <= 5) return `BOW-${match[1]}`;
+        if (match) return `BOW-${match[1]}`;
     }
     
     if (tipoUpper.includes("STRAIGHTENER")) {
-        if (idUpper.includes("STR-1") || idUpper.includes("R1")) return "STR-1";
-        if (idUpper.includes("STR-2") || idUpper.includes("R2")) return "STR-2";
+        // Mapeia a peça STR-6 para a gaveta STR-1 e a peça STR-7 para a STR-2
+        if (idUpper.includes("STR-6") || idUpper.includes("R1")) return "STR-1";
+        if (idUpper.includes("STR-7") || idUpper.includes("R2")) return "STR-2";
     }
     
     if (tipoUpper.includes("HORIZONTAL")) {
         const match = idUpper.match(/HOR-(\d+)/);
-        if (match) {
-            const num = parseInt(match[1]);
-            if (num >= 1 && num <= 10) {
-                return `HOR-${num + 7}`;
-            }
-        }
+        if (match) return `HOR-${match[1]}`; // Vincula direto HOR-8 na gaveta HOR-8
     }
     return null;
 }
@@ -2872,3 +2870,48 @@ window.forcarCamposPosicao = function() {
 };
 
 console.log("✅ Script.js carregado - todas as funções expostas globalmente");
+
+// ==========================================
+// INICIALIZAÇÃO DO SISTEMA (BOOTLOADER)
+// ==========================================
+// ==========================================
+// INICIALIZAÇÃO E SINCRONIZAÇÃO COM A PLANILHA
+// ==========================================
+document.addEventListener('DOMContentLoaded', async () => {
+    carregarTema(); // Aplica o tema escuro/claro salvo
+    
+    console.log("🔄 Buscando dados reais da Planilha Google...");
+    
+    // Chama a API lá do banco.js
+    const atualizou = await sincronizarAtivosReaisMCC4();
+    
+    if (atualizou) {
+        // Verifica se já recarregamos a página nesta sessão para não ficar em loop
+        const jaRecarregou = sessionStorage.getItem('oms_sincronizado_hoje');
+        
+        if (!jaRecarregou) {
+            console.log("✨ Dados novos salvos no cache! Recarregando a tela para aplicar em todos os arquivos...");
+            sessionStorage.setItem('oms_sincronizado_hoje', 'true');
+            
+            // Recarrega a página rapidamente para forçar o ui.js e o script.js a lerem os dados reais
+            window.location.reload();
+        } else {
+            console.log("✨ Tela atualizada com os dados 100% reais da planilha!");
+            
+            // Remove a trava de sessão para permitir nova sincronização no próximo F5
+            sessionStorage.removeItem('oms_sincronizado_hoje');
+            
+            // Força a atualização global (caso o reload não seja suficiente)
+            BANCO_ATIVOS = JSON.parse(localStorage.getItem("oms_ativos_v32_local"));
+            window.BANCO_ATIVOS = BANCO_ATIVOS;
+            
+            if (typeof renderPainelVeios === 'function') renderPainelVeios();
+            if (typeof renderAtivos === 'function') renderAtivos();
+            if (typeof renderReparos === 'function') renderReparos();
+            if (typeof renderReservas === 'function') renderReservas();
+            if (typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
+        }
+    } else {
+        console.log("⚠️ Usando os dados em cache (offline ou sem dados novos).");
+    }
+})

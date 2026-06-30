@@ -1,87 +1,77 @@
-<script src="gas-api.js"></script>
+// gas-api.js - Integração do Front-End com a API do Google Apps Script
 
+// Cole aqui a URL de implantação /exec do seu Google Apps Script
+const URL_API_GAS = "https://script.google.com/macros/s/AKfycbyrZv6UDupcXxHNQoYFDtmmthQMnFUEB6Jv9mMLapWTVnT1kG4Imjnhb7Sg1rW3_Ygp/exec";
 
-function doGet(e) {
-  const acao = e.parameter.acao;
-  
-  if (acao === 'getOficina') {
-    return getOficinaData();
-  }
-  
-  return ContentService.createTextOutput('Ação não reconhecida');
-}
-
-function doPost(e) {
-  const dados = JSON.parse(e.postData.contents);
-  const acao = dados.acao;
-  
-  if (acao === 'updateOficina') {
-    return updateOficina(dados);
-  }
-  
-  return ContentService.createTextOutput(JSON.stringify({ erro: 'Ação não reconhecida' }))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function getOficinaData() {
-  const planilha = SpreadsheetApp.getActiveSpreadsheet();
-  const aba = planilha.getSheetByName('OFICINA');
-  
-  if (!aba) {
-    return ContentService.createTextOutput(JSON.stringify({ erro: 'Aba OFICINA não encontrada' }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-  
-  const dados = aba.getDataRange().getValues();
-  const cabecalho = dados[0];
-  const linhas = dados.slice(1);
-  
-  // Converte para array de objetos JSON
-  const resultado = linhas.map(linha => {
-    const obj = {};
-    cabecalho.forEach((coluna, index) => {
-      obj[coluna] = linha[index];
-    });
-    return obj;
-  });
-  
-  return ContentService.createTextOutput(JSON.stringify(resultado))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-function updateOficina(dados) {
-  const planilha = SpreadsheetApp.getActiveSpreadsheet();
-  const aba = planilha.getSheetByName('OFICINA');
-  
-  if (!aba) {
-    return ContentService.createTextOutput(JSON.stringify({ erro: 'Aba OFICINA não encontrada' }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-  
-  // Exemplo: atualiza o % de conclusão de uma atividade específica
-  const todasLinhas = aba.getDataRange().getValues();
-  const cabecalho = todasLinhas[0];
-  
-  // Encontra a coluna "ID" ou "ATIVIDADE" para localizar a linha certa
-  let colunaId = -1;
-  let colunaConclusao = -1;
-  cabecalho.forEach((nome, i) => {
-    if (nome === 'ID') colunaId = i;
-    if (nome === '% CONCLUSÃO') colunaConclusao = i;
-  });
-  
-  if (colunaId === -1 || colunaConclusao === -1) {
-    return ContentService.createTextOutput(JSON.stringify({ erro: 'Colunas não encontradas' }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-  
-  // Procura a linha pelo ID
-  for (let i = 1; i < todasLinhas.length; i++) {
-    if (todasLinhas[i][colunaId] == dados.id) {
-      aba.getRange(i + 1, colunaConclusao + 1).setValue(dados.percentual);
-      break;
+/**
+ * Busca todos os dados de manutenção e atividades da aba 'OFICINA'
+ * @returns {Promise<Array>} Array de objetos com as linhas da planilha
+ */
+async function buscarDadosOficina() {
+    try {
+        const resposta = await fetch(`${URL_API_GAS}?acao=getOficina`);
+        
+        if (!resposta.ok) {
+            throw new Error(`Erro na requisição: ${resposta.status}`);
+        }
+        
+        const dados = await resposta.json();
+        
+        if (dados.erro) {
+            console.error("⚠️ Erro retornado pela API do GAS:", dados.erro);
+            return [];
+        }
+        
+        console.log("✅ Dados da Oficina carregados com sucesso:", dados);
+        return dados;
+    } catch (erro) {
+        console.error("❌ Falha de rede ou CORS ao buscar dados da Oficina:", erro);
+        return [];
     }
-  }
-  
-  return ContentService.createTextOutput(JSON.stringify({ sucesso: true, mensagem: 'Atualizado!' }))
-    .setMimeType(ContentService.MimeType.JSON);
 }
+
+/**
+ * Atualiza o percentual de conclusão de uma atividade na aba 'OFICINA' usando o ID
+ * @param {string|number} id - O ID da linha/atividade na planilha
+ * @param {number} novoPercentual - Valor decimal ou inteiro (ex: 0.75 ou 75 dependendo de como digita na planilha)
+ * @returns {Promise<boolean>} Retorna true se atualizou com sucesso
+ */
+async function atualizarPercentualOficina(id, novoPercentual) {
+    try {
+        const payload = {
+            acao: "updateOficina",
+            id: id,
+            percentual: novoPercentual
+        };
+
+        const resposta = await fetch(URL_API_GAS, {
+            method: "POST",
+            mode: "cors",
+            headers: {
+                "Content-Type": "text/plain;charset=utf-8" // Usar text/plain evita problemas de pré-voo (CORS preflight) no GAS
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!resposta.ok) {
+            throw new Error(`Erro ao enviar dados: ${resposta.status}`);
+        }
+
+        const resultado = await resposta.json();
+        
+        if (resultado.sucesso) {
+            console.log(`✅ ID ${id} atualizado para ${novoPercentual}% na planilha.`);
+            return true;
+        } else {
+            console.error("⚠️ Falha na atualização:", resultado.erro);
+            return false;
+        }
+    } catch (erro) {
+        console.error("❌ Erro ao tentar atualizar dados da Oficina via POST:", erro);
+        return false;
+    }
+}
+
+// Torna as funções disponíveis globalmente caso use módulos em outros scripts
+window.buscarDadosOficina = buscarDadosOficina;
+window.atualizarPercentualOficina = atualizarPercentualOficina;

@@ -16,6 +16,8 @@ export const CADASTRO_MATRICULAS = {
     "1011": "Supervisor"
 };
 
+
+const URL_API_MCC = "https://script.google.com/macros/s/AKfycby_XSR5hrrvOgDEqlWhbKC2l7iPjthe6ht5YrabNliXsFlkNhzYGFU2BR8JUhzv8yY2/exec";
 // ==========================================================================
 // FUNÇÃO AUXILIAR EXPORTADA PARA ORDEM PADRÃO
 // ==========================================================================
@@ -35,7 +37,7 @@ export function getOrdemPadrao(tipo) {
 // ==========================================================================
 // INICIALIZAÇÃO AUTOMÁTICA DOS BANCOS DE DADOS
 // ==========================================================================
-if (!BANCO_ATIVOS || BANCO_ATIVOS.length < 150) {
+if (!BANCO_ATIVOS || BANCO_ATIVOS.length === 0) {   
     BANCO_ATIVOS = [];
     const veiosMcc23 = [{ mcc: 2, veio: "C" }, { mcc: 2, veio: "D" }, { mcc: 3, veio: "E" }, { mcc: 3, veio: "F" }];
     
@@ -57,11 +59,18 @@ if (!BANCO_ATIVOS || BANCO_ATIVOS.length < 150) {
         const vNome = `MCC 4 - Veio ${veio}`;
         BANCO_ATIVOS.push({ id: `MLD-4${veio}`, tipo: "Molde", local: vNome, pos: "Molde Alta Perf.", dias: 12, ton: 180000, meta: 1000000, ordem: 10, mcc_compat: "4" });
         BANCO_ATIVOS.push({ id: `BND-4${veio}`, tipo: "Bender", local: vNome, pos: "Dobrador (Bender)", dias: 45, ton: 520000, meta: 1500000, ordem: 40, mcc_compat: "4" });
+        
+        // Bow (Mantido padrão de 1 a 5)
         for (let b = 1; b <= 5; b++) BANCO_ATIVOS.push({ id: `BOW-${b}-4${veio}`, tipo: "Bow", local: vNome, pos: `Curvo Bow #0${b}`, dias: 60, ton: 650000, meta: 1600000, ordem: 300 + b, mcc_compat: "4" });
-        for (let s = 1; s <= 2; s++) BANCO_ATIVOS.push({ id: `STR-${s}-4${veio}`, tipo: "Straightener", local: vNome, pos: `Endireitador #0${s}`, dias: 88, ton: 910000, meta: 1800000, ordem: 400 + s, mcc_compat: "4" });
-        for (let h = 1; h <= 10; h++) BANCO_ATIVOS.push({ id: `HOR-${h}-4${veio}`, tipo: "Horizontal", local: vNome, pos: `Horizontal #0${h}`, dias: 102, ton: 430000, meta: 2000000, ordem: 500 + h, mcc_compat: "4" });
+        
+        // ⚡ CORREÇÃO: Straightener configurado com ID real de 6 e 7 (R1 e R2)
+        for (let s = 6; s <= 7; s++) BANCO_ATIVOS.push({ id: `STR-${s}-4${veio}`, tipo: "Straightener", local: vNome, pos: `Endireitador #0${s === 6 ? '1' : '2'}`, dias: 88, ton: 910000, meta: 1800000, ordem: 400 + s, mcc_compat: "4" });
+        
+        // ⚡ CORREÇÃO: Horizontal configurado com ID real de 8 a 17 para sincronizar com a planilha
+        for (let h = 8; h <= 17; h++) BANCO_ATIVOS.push({ id: `HOR-${h}-4${veio}`, tipo: "Horizontal", local: vNome, pos: `Horizontal #${h < 10 ? '0'+h : h}`, dias: 102, ton: 430000, meta: 2000000, ordem: 500 + h, mcc_compat: "4" });
     });
 
+    // Pushes de Equipamentos Reservas e de Oficina
     BANCO_ATIVOS.push({ id: `MLD-RES-01`, tipo: "Molde", local: "Oficina / Reserva", pos: "Estoque Central", dias: 0, ton: 0, meta: 1200000, ordem: 10, mcc_compat: "2/3" });
     BANCO_ATIVOS.push({ id: `MLD-MCC4-REP`, tipo: "Molde", local: "Oficina / Reparo", pos: "Bancada", dias: 25, ton: 800000, meta: 1000000, ordem: 10, mcc_compat: "4" });
 
@@ -118,8 +127,91 @@ export function setOperador(novoOperador) { OPERADOR_LOGADO = novoOperador; }
 export function setEmergencia(status) { EM_EMERGENCIA = status; }
 export function setVeioSelecionado(veio) { VEIO_SELECIONADO_PAINEL = veio; }
 
+/**
+ * Busca os ativos reais da MCC#4 na planilha (via Apps Script)
+ * e atualiza o BANCO_ATIVOS local, substituindo os valores reais.
+ */
+export async function sincronizarAtivosReaisMCC4() {
+    try {
+        const resposta = await fetch(`${URL_API_MCC}?acao=getAtivosMCC4`);
+
+        if (!resposta.ok) {
+            throw new Error(`API respondeu com status ${resposta.status}`);
+        }
+
+        const ativosReais = await resposta.json();
+
+        if (!Array.isArray(ativosReais) || ativosReais.length === 0) {
+            console.warn("⚠️ API retornou vazio ou em formato inesperado. Mantendo dados locais.");
+            return false;
+        }
+
+        console.log(`✅ Recebidos ${ativosReais.length} ativos reais da planilha.`);
+
+        ativosReais.forEach(ativoReal => {
+            const itemLocal = encontrarAtivoCorrespondente(ativoReal);
+
+            if (itemLocal) {
+                itemLocal.ton = ativoReal.tonelagem;
+                itemLocal.meta = ativoReal.meta || itemLocal.meta;
+                itemLocal.dias = ativoReal.diasOperando;
+                itemLocal.numeroReal = ativoReal.numero;
+                itemLocal.dataEntrada = ativoReal.dataEntrada;
+                itemLocal.motivoUltimaTroca = ativoReal.motivo;
+            } else {
+                console.warn(`⚠️ Não encontrei correspondência local para:`, ativoReal);
+            }
+        });
+
+        // Salva a versão atualizada no localStorage
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+        return true;
+
+    } catch (erro) {
+        console.error("❌ Falha ao buscar dados reais da API. Usando dados locais.", erro);
+        return false;
+    }
+}
+
+/**
+ * Casa o ativo da planilha com o ID do banco local de forma exata.
+ * Suporta o formato MCC4 (HOR-8-4G) e MCC2/3 (CAD-SUP-43-2C).
+ */
+function encontrarAtivoCorrespondente(ativoReal) {
+    // 1. Identifica a letra do veio (C, D, E, F, G ou H)
+    const matchVeio = String(ativoReal.veio).match(/[CDEFGH]/i);
+    const letraVeio = matchVeio ? matchVeio[0].toUpperCase() : null;
+
+    if (!letraVeio) return null;
+
+    // 2. Filtra pelo tipo e pela letra do veio correspondente
+    const candidatos = BANCO_ATIVOS.filter(item =>
+        item.tipo === ativoReal.tipo &&
+        item.local && item.local.includes(`Veio ${letraVeio}`)
+    );
+
+    if (candidatos.length === 0) return null;
+    if (candidatos.length === 1) return candidatos[0];
+
+    // 3. Se houver mais de um candidato, busca pelo número da posição (ex: 43 ou 8)
+    const textoBusca = ativoReal.posicao ? String(ativoReal.posicao) : String(ativoReal.veio);
+    const matchPosicao = textoBusca.match(/(\d+)/);
+    
+    if (matchPosicao) {
+        const posicaoDesejada = matchPosicao[1];
+        // Quebra o ID local por hífens e verifica se o número da posição está contido ali
+        const porPosicaoExata = candidatos.find(item => {
+            const partes = item.id.split('-');
+            return partes.includes(posicaoDesejada);
+        });
+        if (porPosicaoExata) return porPosicaoExata;
+    }
+
+    return candidatos[0]; // Retorna o primeiro caso não ache a posição exata
+}
+
 // ==========================================================================
-// EXPORTAÇÃO PADRÃO - IMPORTANTE!
+// EXPORTAÇÃO PADRÃO
 // ==========================================================================
 export default {
     BANCO_ATIVOS,
@@ -133,5 +225,6 @@ export default {
     getOrdemPadrao,
     setOperador,
     setEmergencia,
-    setVeioSelecionado
+    setVeioSelecionado,
+    sincronizarAtivosReaisMCC4
 };
