@@ -1,25 +1,9 @@
-// ui.js - VERSÃO FINAL CORRIGIDA (SEM DUPLICATAS DE EXPORTAÇÃO)
+// ui.js - Versão harmonizada + reexportações para compatibilidade com folhões
 
 import { BANCO_ATIVOS, BANCO_ROLOS, BANCO_MATERIAIS, VEIO_SELECIONADO_PAINEL } from './banco.js';
 
 // ==============================================================
-// FUNÇÃO AUXILIAR PARA ORDEM PADRÃO
-// ==============================================================
-function getOrdemPadrao(tipo) {
-    if (tipo === "Molde") return 10;
-    if (tipo === "Mesa Osciladora") return 20;
-    if (tipo === "Seguimento Zero") return 30;
-    if (tipo === "Bender") return 40;
-    if (tipo === "Cadeira Superior") return 100;
-    if (tipo === "Cadeira Inferior") return 200;
-    if (tipo === "Bow") return 300;
-    if (tipo === "Straightener") return 400;
-    if (tipo === "Horizontal") return 500;
-    return 999;
-}
-
-// ==============================================================
-// FUNÇÃO PARA CALCULAR DIAS EM REPARO (AUTOMÁTICO)
+// FUNÇÃO AUXILIAR PARA CALCULAR DIAS EM REPARO
 // ==============================================================
 function calcularDias(item) {
     if (item.local === "Oficina / Reparo" && item.dataReparo) {
@@ -32,108 +16,9 @@ function calcularDias(item) {
 }
 
 // ==============================================================
-// RENDERIZA O PAINEL DE VEIOS (FLUXO)
+// RENDER RESERVAS (com selects de posição e swap)
 // ==============================================================
-function renderPainelVeios() {
-    const container = document.getElementById("container-fluxo-horizontal-scroll");
-    const titulo = document.getElementById("titulo-veio-focado");
-    if (!container || !titulo) return;
-    titulo.innerHTML = `Sequenciamento Dinâmico: <span style="color:var(--text-accent)">Veio ${VEIO_SELECIONADO_PAINEL}</span>`;
-    let ativos = BANCO_ATIVOS.filter(a => a.local && a.local.includes(`Veio ${VEIO_SELECIONADO_PAINEL}`));
-    ativos.sort((a, b) => (a.ordem || 999) - (b.ordem || 999));
-    if (ativos.length === 0) {
-        container.innerHTML = `<div class="vazio">Nenhum componente instalado no Veio ${VEIO_SELECIONADO_PAINEL}.</div>`;
-        return;
-    }
-    container.innerHTML = ativos.map(gerarCardGraficoHTML).join("");
-}
-
-// ==============================================================
-// GERADOR DE CARD GRÁFICO
-// ==============================================================
-function gerarCardGraficoHTML(a) {
-    const pct = a.meta > 0 ? ((a.ton / a.meta) * 100) : 0;
-    const pctFixed = pct.toFixed(1);
-    let cor = pct >= 80 ? "var(--danger)" : (pct >= 50 ? "var(--warning)" : "var(--success)");
-    const dias = calcularDias(a);
-    return `
-        <div class="mcc-grafico-card premium-shadow" style="border-top: 3px solid ${cor};">
-            <div class="mcc-grafico-header">
-                <div class="mcc-grafico-info">
-                    <span class="mcc-tag-id">${a.id}</span>
-                    <span class="ind-card-tag bg-tag">${a.tipo}</span>
-                </div>
-                <div class="mcc-grafico-porcentagem" style="color:${cor};">${pctFixed}%</div>
-            </div>
-            <div class="mcc-grafico-pos text-muted">${a.pos || a.posicao || "Única"}</div>
-            <div class="ind-gauge-bar premium-bar">
-                <div class="ind-gauge-fill" style="width:${Math.min(pct, 100)}%; background:${cor};"></div>
-            </div>
-            <div class="grafico-legenda" style="margin-bottom: 10px;">
-                <span>Ton: <strong>${Math.round(a.ton || 0).toLocaleString()}</strong></span>
-                <span>Lim: ${(a.meta || 0).toLocaleString()}</span>
-                <span>Dias: <strong>${dias}</strong></span>
-            </div>
-            <button class="btn-xs-primary w-100" style="border: 1px dashed var(--text-accent); color: var(--text-accent); background: rgba(56,189,248,0.05); padding: 8px; border-radius: 4px; cursor: pointer;" onclick="window.abrirHistoricoIndividual('${a.id}')">
-                <i class="fas fa-book-open"></i> Ver Prontuário
-            </button>
-        </div>`;
-}
-
-// ==============================================================
-// RENDER ATIVOS
-// ==============================================================
-function renderAtivos() {
-    const tbody = document.getElementById("ativos-table-body");
-    const filtroEl = document.getElementById("filtro-tipo-ativo");
-    if (!tbody || !filtroEl) return;
-
-    let f = BANCO_ATIVOS.filter(a => (a.local || "").includes(`Veio ${VEIO_SELECIONADO_PAINEL}`) || filtroEl.value.includes("Oficina"));
-    
-    if (filtroEl.value === "Oficina / Reparo") {
-        f = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reparo");
-    } else if (filtroEl.value === "Oficina / Reserva") {
-        f = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reserva");
-    } else if (filtroEl.value !== "TODOS") {
-        f = f.filter(a => a.tipo === filtroEl.value);
-    }
-
-    f.sort((a, b) => (a.ordem || 999) - (b.ordem || 999));
-
-    tbody.innerHTML = f.map(a => {
-        const pct = a.meta > 0 ? ((a.ton / a.meta) * 100) : 0;
-        const pctFixed = pct.toFixed(1);
-        let classe = pct >= 80 ? "reparo" : "operação";
-        if (a.local === "Oficina / Reserva") classe = "reserva";
-        else if (a.local === "Oficina / Reparo") classe = "reparo";
-
-        const dias = calcularDias(a);
-
-        let btnAcao = (a.local || "").includes("Veio")
-            ? `<button class="btn-outline-danger" onclick="window.iniciarSaque('${a.id}')">Sacar</button>`
-            : `<span class="text-muted" style="margin-right:10px;"><i class="fas fa-warehouse"></i></span>`;
-
-        let btnHist = `<button class="btn-outline-danger" style="border-color:var(--text-accent); color:var(--text-accent);" onclick="window.abrirHistoricoIndividual('${a.id}')"><i class="fas fa-book-open"></i></button>`;
-        let btnExcluir = `<button class="btn-outline-danger" style="border-color:var(--danger); color:var(--danger); padding: 4px 8px;" onclick="window.excluirEquipamento('${a.id}')" title="Excluir equipamento"><i class="fas fa-trash"></i></button>`;
-
-        return `
-            <tr>
-                <td class="editavel font-code" onclick="window.fazerCelulaEditavel(this, '${a.id}', 'id')">${a.id}</td>
-                <td><span class="ind-card-tag bg-tag">${a.tipo} <span style="opacity:0.7; font-size:10px;">(MCC ${a.mcc_compat || ''})</span></span></td>
-                <td class="font-code text-muted">${a.local || "Não Alocado"}</td>
-                <td class="editavel font-code" onclick="window.fazerCelulaEditavel(this, '${a.id}', 'dias')">${dias}</td>
-                <td class="editavel font-code" onclick="window.fazerCelulaEditavel(this, '${a.id}', 'ton')">${Math.round(a.ton || 0).toLocaleString()}</td>
-                <td class="font-code text-muted">${(a.meta || 0).toLocaleString()}</td>
-                <td><span class="status-pill ${classe}">${pctFixed}%</span></td>
-                <td><div class="flex-align-center gap-10 action-buttons-mobile">${btnAcao} ${btnHist} ${btnExcluir}</div></td>
-            </tr>`;
-    }).join("");
-}
-
-// ==============================================================
-// RENDER RESERVAS
-// ==============================================================
-export function renderReservas() {
+function renderReservas() {
     console.log("🔄 renderReservas() executando...");
     
     const resBody = document.getElementById("estoque-table-body");
@@ -163,7 +48,6 @@ export function renderReservas() {
 
     Object.keys(grupos).sort().forEach(mcc => {
         const itens = grupos[mcc];
-        // Agrupa por tipo
         const tipos = {};
         itens.forEach(a => {
             const tipo = a.tipo || "Outros";
@@ -195,7 +79,6 @@ export function renderReservas() {
                 const familia = a.tipo || "";
                 const familiaUpper = familia.toUpperCase();
 
-                // Construção dos selects (mesmo código que você já tinha)
                 let optionsVeios = `<option value="">Selecione...</option>`;
                 if (mcc === "2/3") {
                     optionsVeios += `<option value="C">Veio C (MCC 2)</option><option value="D">Veio D (MCC 2)</option><option value="E">Veio E (MCC 3)</option><option value="F">Veio F (MCC 3)</option>`;
@@ -283,85 +166,9 @@ export function renderReservas() {
     resBody.innerHTML = htmlFinal;
     console.log("✅ renderReservas() executado. Total:", reservas.length);
 }
+
 // ==============================================================
-// RENDER REPAROS (com correção automática de dataReparo)
-// ==============================================================
-function renderReparos() {
-    const repBody = document.getElementById("reparos-table-body");
-    if (!repBody) return;
-
-    // 🔥 CORREÇÃO AUTOMÁTICA: para cada item em reparo sem dataReparo, define uma data baseada no campo 'dias'
-    let precisaSalvar = false;
-    BANCO_ATIVOS.forEach(a => {
-        if (a.local === "Oficina / Reparo" && !a.dataReparo) {
-            const diasAtuais = a.dias || 0;
-            a.dataReparo = Date.now() - (diasAtuais * 24 * 60 * 60 * 1000);
-            precisaSalvar = true;
-            console.log(`🔧 Corrigido: ${a.id} - dataReparo definida (dias atuais: ${diasAtuais})`);
-        }
-    });
-    if (precisaSalvar) {
-        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-        console.log("✅ Correção automática de dataReparo salva.");
-    }
-
-    const reparos = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reparo");
-
-    if (reparos.length === 0) {
-        repBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nenhum equipamento aguardando reparo.</td></tr>`;
-        return;
-    }
-
-    repBody.innerHTML = reparos.map(a => {
-        const pct = a.meta > 0 ? ((a.ton / a.meta) * 100) : 0;
-        const pctFixed = pct.toFixed(1);
-        const dias = calcularDias(a); // usa a função que já existe no ui.js
-        const btnExcluir = `<button class="btn-outline-danger" style="border-color:var(--danger); color:var(--danger); padding: 4px 8px;" onclick="window.excluirEquipamento('${a.id}')" title="Excluir equipamento"><i class="fas fa-trash"></i></button>`;
-        return `
-            <tr>
-                <td class="font-code">${a.id}</td>
-                <td><span class="ind-card-tag bg-tag">${a.tipo} <span style="opacity:0.7; font-size:10px;">(MCC ${a.mcc_compat || ''})</span></span></td>
-                <td>
-                    <div class="flex-align-center gap-10">
-                        <span class="font-code bold w-40" style="color: var(--text-heading);">${pctFixed}%</span>
-                        <div class="ind-gauge-bar premium-bar w-100px">
-                            <div class="ind-gauge-fill bg-danger" style="width: ${Math.min(pct, 100)}%;"></div>
-                        </div>
-                    </div>
-                </td>
-                <td style="font-weight:bold; color:var(--warning);">${dias} dias</td>
-                <td>
-                    <div class="flex-align-center gap-10 action-buttons-mobile">
-                        <button class="btn-premium btn-warning" onclick="window.abrirModalConcluirReparo('${a.id}')"><i class="fas fa-hammer"></i> Concluir</button>
-                        <button class="btn-premium" style="background:transparent; border-color:var(--text-accent); color:var(--text-accent); padding: 8px 12px;" onclick="window.abrirHistoricoIndividual('${a.id}')" title="Ver Prontuário"><i class="fas fa-book-open"></i></button>
-                        ${btnExcluir}
-                    </div>
-                </td>
-            </tr>`;
-    }).join("");
-}
-// ==============================================================
-// RESETAR DIAS EM REPARO (ZERAR CONTAGEM)
-// ==============================================================
-function resetarDiasReparo() {
-    if (!confirm("⚠️ Isso vai zerar a contagem de dias de TODOS os equipamentos em reparo. Deseja continuar?")) return;
-
-    BANCO_ATIVOS.forEach(a => {
-        if (a.local === "Oficina / Reparo") {
-            a.dias = 0;
-            a.dataReparo = Date.now();
-            console.log(`🔄 Resetado: ${a.id}`);
-        }
-    });
-    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-    renderReparos(); // atualiza a tabela na hora
-    alert("✅ Contagem de dias resetada para todos os equipamentos em reparo!");
-}
-
-// Exponha a função globalmente
-window.resetarDiasReparo = resetarDiasReparo;
-// ==============================================================
-// SWAP DIRETO
+// SWAP DIRETO (completo, com registro na planilha e histórico)
 // ==============================================================
 function efetuarSwapDireto(tagNova) {
     if (typeof BANCO_ATIVOS === 'undefined') {
@@ -401,18 +208,6 @@ function efetuarSwapDireto(tagNova) {
             posicaoDigitada = posEl.value;
         } else {
             posicaoDigitada = posEl.textContent.trim();
-        }
-    }
-    
-    if (!posicaoDigitada) {
-        const row = posEl ? posEl.closest('tr') : null;
-        if (row) {
-            const inputs = row.querySelectorAll('input[type="number"]');
-            inputs.forEach(inp => {
-                if (inp.id && inp.id.includes('pos-')) {
-                    posicaoDigitada = inp.value.trim();
-                }
-            });
         }
     }
     
@@ -561,134 +356,20 @@ function efetuarSwapDireto(tagNova) {
 }
 
 // ==============================================================
-// ROLOS
+// RESETAR DIAS EM REPARO
 // ==============================================================
-function renderRolos() {
-    const tbody = document.getElementById("rolos-table-body");
-    if (!tbody) return;
-    const equipamentosDiferentes = [...new Set(BANCO_ROLOS.map(r => r.conjunto))].sort();
-    let htmlFinal = "";
-    equipamentosDiferentes.forEach(equipamento => {
-        htmlFinal += `
-            <tr style="background: rgba(56, 189, 248, 0.08); border-left: 4px solid var(--text-accent);">
-                <td colspan="5" style="padding: 12px 16px; color: var(--text-accent); font-weight: 700; text-transform: uppercase; font-size: 14px;">
-                    <i class="fas fa-layer-group"></i> Equipamento: ${equipamento}
-                </td>
-            </tr>
-        `;
-        const rolosDesteEquipamento = BANCO_ROLOS.filter(r => r.conjunto === equipamento);
-        rolosDesteEquipamento.forEach(r => {
-            htmlFinal += `
-                <tr>
-                    <td class="font-code" style="color:var(--text-heading); padding-left: 25px;"><strong>${r.nome}</strong></td>
-                    <td><span class="ind-card-tag bg-tag">${r.conjunto}</span></td>
-                    <td><code>MCC ${r.mcc_compat}</code></td>
-                    <td><span class="font-code bold" id="saldo-rolo-${r.id}" style="font-size:16px; color:var(--text-accent); margin-right:15px;">${r.qtd} Pçs</span></td>
-                    <td>
-                        <div style="display:inline-flex; gap:5px;">
-                            <button class="btn-premium btn-success" style="padding:4px 10px;" onclick="window.alterarSaldoRolo('${r.id}', 1)"><i class="fas fa-plus"></i></button>
-                            <button class="btn-premium btn-warning" style="padding:4px 10px;" onclick="window.alterarSaldoRolo('${r.id}', -1)"><i class="fas fa-minus"></i></button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        });
-    });
-    tbody.innerHTML = htmlFinal;
-}
+function resetarDiasReparo() {
+    if (!confirm("⚠️ Isso vai zerar a contagem de dias de TODOS os equipamentos em reparo. Deseja continuar?")) return;
 
-// ==============================================================
-// MATERIAIS
-// ==============================================================
-function renderMateriais() {
-    const tbody = document.getElementById("materiais-table-body");
-    const busca = document.getElementById("busca-material");
-    if (!tbody) return;
-    const buscaText = busca ? busca.value.toLowerCase() : "";
-    let filtrados = BANCO_MATERIAIS;
-    if (buscaText) {
-        filtrados = BANCO_MATERIAIS.filter(m => m.codigo.toLowerCase().includes(buscaText) || m.descricao.toLowerCase().includes(buscaText));
-    }
-    if (filtrados.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nenhum material encontrado.</td></tr>`;
-        return;
-    }
-    tbody.innerHTML = filtrados.map(m => {
-        let statusHtml = "";
-        if (m.qtd > 10) {
-            statusHtml = `<span class="status-pill operação" style="color: var(--success); border-color: var(--success);"><i class="fas fa-check-circle"></i> Normal</span>`;
-        } else if (m.qtd > 0) {
-            statusHtml = `<span class="status-pill reserva" style="color: var(--warning); border-color: var(--warning);"><i class="fas fa-exclamation-triangle"></i> Baixo</span>`;
-        } else {
-            statusHtml = `<span class="status-pill reparo" style="color: var(--danger); border-color: var(--danger);"><i class="fas fa-times-circle"></i> Zerado</span>`;
+    BANCO_ATIVOS.forEach(a => {
+        if (a.local === "Oficina / Reparo") {
+            a.dias = 0;
+            a.dataReparo = Date.now();
         }
-        return `
-            <tr>
-                <td class="font-code" style="color: var(--text-heading); font-size: 15px;">${m.codigo}</td>
-                <td style="color: var(--text-main); font-weight: 500; font-size: 13px; max-width: 350px; overflow: hidden; text-overflow: ellipsis;">${m.descricao}</td>
-                <td><span class="font-code bold" style="font-size:16px; color: #a855f7;">${m.qtd.toLocaleString()} UN</span></td>
-                <td>${statusHtml}</td>
-                <td>
-                    <div style="display:inline-flex; gap:5px;">
-                        <button class="btn-premium btn-success" style="padding:4px 10px;" onclick="window.ajustarSaldoMaterial('${m.codigo}', 1)" title="Adicionar"><i class="fas fa-plus"></i></button>
-                        <button class="btn-premium btn-warning" style="padding:4px 10px;" onclick="window.ajustarSaldoMaterial('${m.codigo}', -1)" title="Baixar"><i class="fas fa-minus"></i></button>
-                        <button class="btn-outline-danger" style="padding:4px 10px;" onclick="window.removerMaterial('${m.codigo}')" title="Excluir"><i class="fas fa-trash"></i></button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    }).join("");
-}
-
-// ==============================================================
-// FILTROS E GRÁFICOS
-// ==============================================================
-function aplicarFiltrosMCC(mccNumero, btnElement) {
-    const grupo = btnElement.parentElement;
-    grupo.querySelectorAll('.btn-filter-mcc').forEach(b => b.classList.remove('active'));
-    btnElement.classList.add('active');
-    renderizarGraficosMCC(mccNumero);
-}
-
-function renderizarGraficosMCC(mccNumero) {
-    const container = document.getElementById(`graficos-mcc${mccNumero}`);
-    if (!container) return;
-    const divFiltroVeio = document.getElementById(`filtros-veio-mcc${mccNumero}`);
-    const veioAtivo = divFiltroVeio ? divFiltroVeio.querySelector('.active')?.getAttribute('data-valor') : 'TODOS';
-    const divFiltroStatus = document.getElementById(`filtros-status-mcc${mccNumero}`);
-    const statusAtivo = divFiltroStatus ? divFiltroStatus.querySelector('.active')?.getAttribute('data-valor') : 'TODOS';
-    let filtrados = BANCO_ATIVOS.filter(a => a.local && a.local.includes(`MCC ${mccNumero}`));
-    if (veioAtivo && veioAtivo !== 'TODOS') {
-        filtrados = filtrados.filter(a => a.local && a.local.includes(`Veio ${veioAtivo}`));
-    }
-    if (statusAtivo && statusAtivo !== 'TODOS') {
-        filtrados = filtrados.filter(a => {
-            const pct = a.meta > 0 ? (a.ton / a.meta) * 100 : 0;
-            if (statusAtivo === 'VERMELHO') return pct >= 80;
-            if (statusAtivo === 'AMARELO') return pct >= 50 && pct < 80;
-            if (statusAtivo === 'VERDE') return pct < 50;
-            return true;
-        });
-    }
-    filtrados.sort((a, b) => (a.ordem || 999) - (b.ordem || 999));
-    if (filtrados.length === 0) {
-        container.innerHTML = `<div class="vazio">Nenhum equipamento encontrado.</div>`;
-        return;
-    }
-    container.innerHTML = filtrados.map(gerarCardGraficoHTML).join("");
-}
-
-// ==============================================================
-// ATUALIZAÇÃO AUTOMÁTICA (DESATIVADA)
-// ==============================================================
-function iniciarAtualizacaoAutomatica() {
-    console.log("⏸️ Atualização automática desativada.");
-    // Remove qualquer intervalo anterior se existir
-    if (window._atualizacaoInterval) {
-        clearInterval(window._atualizacaoInterval);
-        window._atualizacaoInterval = null;
-    }
-    // Não inicia o intervalo – desativado permanentemente
+    });
+    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    if (typeof window.renderReparos === 'function') window.renderReparos();
+    alert("✅ Contagem de dias resetada para todos os equipamentos em reparo!");
 }
 
 // ==============================================================
@@ -713,65 +394,53 @@ function excluirEquipamento(id) {
         if (window.registrarHistorico) {
             window.registrarHistorico(id, `🚨 Equipamento [${id}] foi EXCLUÍDO.`);
         }
-        if (typeof renderAtivos === 'function') renderAtivos();
-        if (typeof renderReparos === 'function') renderReparos();
-        if (typeof renderReservas === 'function') renderReservas();
-        if (typeof renderPainelVeios === 'function') renderPainelVeios();
+        if (typeof window.renderAtivos === 'function') window.renderAtivos();
+        if (typeof window.renderReparos === 'function') window.renderReparos();
+        if (typeof window.renderReservas === 'function') window.renderReservas();
+        if (typeof window.renderPainelVeios === 'function') window.renderPainelVeios();
         if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
         alert(`✅ [${id}] excluído.`);
     }
 }
 
 // ==============================================================
-// EXPOSIÇÃO GLOBAL (para uso no HTML)
+// EXPOSIÇÃO GLOBAL (apenas o essencial)
 // ==============================================================
-window.renderPainelVeios = renderPainelVeios;
-window.gerarCardGraficoHTML = gerarCardGraficoHTML;
-window.renderAtivos = renderAtivos;
-window.renderReparos = renderReparos;
 window.renderReservas = renderReservas;
-window.renderRolos = renderRolos;
-window.renderMateriais = renderMateriais;
-window.aplicarFiltrosMCC = aplicarFiltrosMCC;
-window.renderizarGraficosMCC = renderizarGraficosMCC;
 window.efetuarSwapDireto = efetuarSwapDireto;
 window.excluirEquipamento = excluirEquipamento;
-window.iniciarSwapAlocacao = efetuarSwapDireto;
+window.resetarDiasReparo = resetarDiasReparo;
+window.calcularDias = calcularDias;
 
 // ==============================================================
-// EXPORTAÇÕES NOMEADAS (para import { ... } from './ui.js')
+// REEXPORTAÇÕES PARA COMPATIBILIDADE COM OS FOLHÕES
+// (Obtidas do window, definidas pelo script.js)
 // ==============================================================
+const renderAtivos = window.renderAtivos;
+const renderPainelVeios = window.renderPainelVeios;
+const renderReparos = window.renderReparos;
+const renderRolos = window.renderRolos;
+const renderMateriais = window.renderMateriais;
+const renderHistorico = window.renderHistorico;
+const gerarCardGraficoHTML = window.gerarCardGraficoHTML;
+const aplicarFiltrosMCC = window.aplicarFiltrosMCC;
+const renderizarGraficosMCC = window.renderizarGraficosMCC;
+
 export {
-    renderPainelVeios,
-    gerarCardGraficoHTML,
-    renderAtivos,
-    renderReparos,
-    renderRolos,
-    renderMateriais,
-    aplicarFiltrosMCC,
-    renderizarGraficosMCC,
-    efetuarSwapDireto,
-    excluirEquipamento
-};
-
-// ==============================================================
-// EXPORTAÇÃO PADRÃO (para import ui from './ui.js')
-// ==============================================================
-export default {
-    renderPainelVeios,
-    gerarCardGraficoHTML,
-    renderAtivos,
-    renderReparos,
+    calcularDias,
     renderReservas,
+    efetuarSwapDireto,
+    excluirEquipamento,
+    resetarDiasReparo,
+    renderAtivos,
+    renderPainelVeios,
+    renderReparos,
     renderRolos,
     renderMateriais,
+    renderHistorico,
+    gerarCardGraficoHTML,
     aplicarFiltrosMCC,
-    renderizarGraficosMCC,
-    efetuarSwapDireto,
-    excluirEquipamento
+    renderizarGraficosMCC
 };
 
-// Inicializa (desativado)
-iniciarAtualizacaoAutomatica();
-
-console.log("✅ ui.js carregado – atualização automática desativada.");
+console.log("✅ ui.js carregado – sem conflitos e com reexportações para folhões.");

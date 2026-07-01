@@ -554,31 +554,138 @@
     </div>
 
     <!-- MODAL R2 (Straightener R2) -->
-    <div id="modal-folhao-r2" class="modal-overlay hidden">
-        <div class="modal-content" style="max-width: 1000px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;"><h2><i class="fas fa-clipboard-check"></i> Liberação - Straightener R2</h2><button class="btn-close-emergency" onclick="window.fecharFolhaoR2()"><i class="fas fa-times"></i></button></div>
-            <div style="display:flex;gap:15px;flex-wrap:wrap;margin-bottom:15px;">
-                <div class="input-group"><label>TAG</label><input type="text" id="r2-tag-name" readonly></div>
-                <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="r2-data-inicio"></div>
-                <div class="input-group"><label>DATA FIM</label><input type="date" id="r2-data-fim"></div>
-                <div class="input-group"><label>MOTIVO</label><input type="text" id="r2-motivo" placeholder="Motivo da OS"></div>
-            </div>
-            <div class="folhao-tabs">
-                <button class="folhao-tab active" onclick="window.trocarAbaR2(event, 'r2-aba-chegada')">1. Inspeção Chegada</button>
-                <button class="folhao-tab" onclick="window.trocarAbaR2(event, 'r2-aba-execucao')">2. Execução</button>
-                <button class="folhao-tab" onclick="window.trocarAbaR2(event, 'r2-aba-saida')">3. Saída</button>
-            </div>
-            <div class="folhao-body">
-                <div id="r2-aba-chegada" class="folhao-content"><div id="container-check-recebimento-r2"></div><div style="margin-top:20px;"><h3>Pass Line - Chegada</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;"><div><h4>Base Inferior</h4><table class="premium-table" id="r2-passline-inf-chegada"><tbody></tbody></table></div><div><h4>Base Superior</h4><table class="premium-table" id="r2-passline-sup-chegada"><tbody></tbody></table></div></div></div></div>
-                <div id="r2-aba-execucao" class="folhao-content hidden"><h3>Checklist de Manutenção</h3><table class="premium-table"><thead></thead><tbody id="r2-tabela-manutencao"></tbody></table></div>
-                <div id="r2-aba-saida" class="folhao-content hidden"><h3>Pass Line - Saída</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;"><div><h4>Base Inferior</h4><table class="premium-table" id="r2-passline-inf-saida"><tbody></tbody></table></div><div><h4>Base Superior</h4><table class="premium-table" id="r2-passline-sup-saida"><tbody></tbody></table></div></div><div style="margin-top:20px;"><h3>Materiais</h3><table class="premium-table"><tbody id="r2-tabela-materiais"></tbody></table><button class="btn-xs-primary" onclick="window.addLinhaMaterialR2()">+ Adicionar</button></div></div>
-            </div>
-            <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
-                <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoR2()"><i class="fas fa-save"></i> Salvar e Imprimir</button>
-                <button class="btn-outline-danger" onclick="window.fecharFolhaoR2()">Fechar</button>
+<div id="modal-folhao-mcc4" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 1200px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+            <h2><i class="fas fa-clipboard-check"></i> Liberação - Straightener R2</h2>
+            <button class="btn-close-emergency" onclick="window.fecharFolhaoR2()"><i class="fas fa-times"></i></button>
+        </div>
+        <div style="display:flex;gap:15px;flex-wrap:wrap;margin-bottom:15px;">
+            <div class="input-group"><label>TAG</label><input type="text" id="mcc4-tag-name" readonly></div>
+            <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="mcc4-data-inicio"></div>
+            <div class="input-group"><label>DATA FIM</label><input type="date" id="mcc4-data-fim"></div>
+            <div class="input-group"><label>MOTIVO</label><input type="text" id="mcc4-motivo" placeholder="Motivo da OS"></div>
+            <div class="input-group"><label>Nº SEGMENTO</label><input type="text" id="mcc4-num-segmento" placeholder="Nº"></div>
+            <div class="input-group"><label>TIPO EXECUÇÃO</label>
+                <select id="mcc4-tipo-exec">
+                    <option value="GERAL">GERAL</option>
+                    <option value="PARCIAL">PARCIAL</option>
+                </select>
             </div>
         </div>
+
+        <!-- Abas -->
+        <div class="folhao-tabs">
+            <button class="folhao-tab active" onclick="window.trocarAbaR2(event, 'r2-chegada')">1. Inspeção Chegada</button>
+            <button class="folhao-tab" onclick="window.trocarAbaR2(event, 'r2-manutencao')">2. Execução</button>
+            <button class="folhao-tab" onclick="window.trocarAbaR2(event, 'r2-saida')">3. Saída</button>
+        </div>
+
+        <div class="folhao-body" style="max-height: 70vh; overflow-y: auto;">
+
+            <!-- ========== ABA 1 - CHEGADA ========== -->
+            <div id="r2-chegada" class="folhao-content">
+                <h3>1.1 Inspeção de Chegada</h3>
+                <table class="premium-table" id="tabela-r2-chegada">
+                    <thead><tr><th>Item</th><th>Descrição</th><th>SIM</th><th>NÃO</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+
+                <h3>1.2 Aferição de Gap (255+0,3/-0,3)</h3>
+                <table class="premium-table" id="gap-r2-cheg-tbody">
+                    <thead><tr><th>Conj. Rolo</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+
+                <h3>1.3 Pass Line - Chegada</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                    <div><h4>Base Inferior</h4><table class="premium-table" id="pl-r2-inf-cheg-tbody"><thead><tr><th>Rolo</th><th>Ref</th><th>A</th><th>B</th><th>C</th></tr></thead><tbody></tbody></table></div>
+                    <div><h4>Base Superior</h4><table class="premium-table" id="pl-r2-sup-cheg-tbody"><thead><tr><th>Rolo</th><th>Ref</th><th>A</th><th>B</th><th>C</th></tr></thead><tbody></tbody></table></div>
+                </div>
+
+                <h3>1.4 Inspeção de Cangalhas</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                    <div><h4>Base Superior</h4><table class="premium-table" id="cangalha-r2-sup-tbody"><thead><tr><th>Pos</th><th>Bico A</th><th>Bico B</th></tr></thead><tbody></tbody></table></div>
+                    <div><h4>Base Inferior</h4><table class="premium-table" id="cangalha-r2-inf-tbody"><thead><tr><th>Pos</th><th>Bico A</th><th>Bico B</th></tr></thead><tbody></tbody></table></div>
+                </div>
+
+                <h3>1.5 Cilindros Hidráulicos</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+                    <div><h4>Elevação</h4><table class="premium-table" id="cil-r2-elevacao-tbody"><thead><tr><th>Pos</th><th>Nº</th><th>Prod</th><th>OK</th><th>NOK</th><th>Obs</th></tr></thead><tbody></tbody></table></div>
+                    <div><h4>Clamp</h4><table class="premium-table" id="cil-r2-clamp-tbody"><thead><tr><th>Pos</th><th>Nº</th><th>Prod</th><th>OK</th><th>NOK</th><th>Obs</th></tr></thead><tbody></tbody></table></div>
+                    <div><h4>Motriz</h4><table class="premium-table" id="cil-r2-motriz-tbody"><thead><tr><th>Pos</th><th>Nº</th><th>Prod</th><th>OK</th><th>NOK</th><th>Obs</th></tr></thead><tbody></tbody></table></div>
+                </div>
+
+                <h3>1.6 Check de Lubrificação</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                    <div><h4>Base Inferior</h4><table class="premium-table" id="lub-r2-inf-tbody"><thead><tr><th>Rolo</th><th>Status</th><th>Obs</th></tr></thead><tbody></tbody></table></div>
+                    <div><h4>Base Superior</h4><table class="premium-table" id="lub-r2-sup-tbody"><thead><tr><th>Rolo</th><th>Status</th><th>Obs</th></tr></thead><tbody></tbody></table></div>
+                </div>
+
+                <h3>1.7 Inspeção de Rolos - Chegada</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                    <div><h4>Base Inferior</h4><table class="premium-table" id="rol-r2-inf-cheg-tbody"><thead><tr><th>Pos</th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead><tbody></tbody></table></div>
+                    <div><h4>Base Superior</h4><table class="premium-table" id="rol-r2-sup-cheg-tbody"><thead><tr><th>Pos</th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead><tbody></tbody></table></div>
+                </div>
+
+                <h3>1.8 Medidas dos Rolos - Chegada</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                    <div><h4>Base Inferior</h4><table class="premium-table" id="med-r2-inf-cheg-tbody"><thead><tr><th>R</th><th>N1</th><th>M1</th><th>N2</th><th>M2</th><th>N3</th><th>M3</th><th>Classe</th></tr></thead><tbody></tbody></table></div>
+                    <div><h4>Base Superior</h4><table class="premium-table" id="med-r2-sup-cheg-tbody"><thead><tr><th>R</th><th>N1</th><th>M1</th><th>N2</th><th>M2</th><th>N3</th><th>M3</th><th>Classe</th></tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- ========== ABA 2 - EXECUÇÃO ========== -->
+            <div id="r2-manutencao" class="folhao-content hidden">
+                <h3>2. Checklist de Manutenção</h3>
+                <table class="premium-table" id="tabela-r2-manutencao">
+                    <thead><tr><th>Item</th><th>Descrição</th><th>P</th><th>G</th><th>Responsável</th><th>Matrícula</th><th>Data</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <!-- ========== ABA 3 - SAÍDA ========== -->
+            <div id="r2-saida" class="folhao-content hidden">
+                <h3>3.1 Aferição de Gap - Saída</h3>
+                <table class="premium-table" id="gap-r2-sai-tbody">
+                    <thead><tr><th>Conj. Rolo</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+
+                <h3>3.2 Pass Line - Saída</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                    <div><h4>Base Inferior</h4><table class="premium-table" id="pl-r2-inf-sai-tbody"><thead><tr><th>Rolo</th><th>Ref</th><th>A</th><th>B</th><th>C</th></tr></thead><tbody></tbody></table></div>
+                    <div><h4>Base Superior</h4><table class="premium-table" id="pl-r2-sup-sai-tbody"><thead><tr><th>Rolo</th><th>Ref</th><th>A</th><th>B</th><th>C</th></tr></thead><tbody></tbody></table></div>
+                </div>
+
+                <h3>3.3 Inspeção de Rolos - Saída</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                    <div><h4>Base Inferior</h4><table class="premium-table" id="rol-r2-inf-sai-tbody"><thead><tr><th>Pos</th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead><tbody></tbody></table></div>
+                    <div><h4>Base Superior</h4><table class="premium-table" id="rol-r2-sup-sai-tbody"><thead><tr><th>Pos</th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead><tbody></tbody></table></div>
+                </div>
+
+                <h3>3.4 Medidas dos Rolos - Saída</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                    <div><h4>Base Inferior</h4><table class="premium-table" id="med-r2-inf-sai-tbody"><thead><tr><th>R</th><th>N1</th><th>M1</th><th>N2</th><th>M2</th><th>N3</th><th>M3</th><th>Classe</th></tr></thead><tbody></tbody></table></div>
+                    <div><h4>Base Superior</h4><table class="premium-table" id="med-r2-sup-sai-tbody"><thead><tr><th>R</th><th>N1</th><th>M1</th><th>N2</th><th>M2</th><th>N3</th><th>M3</th><th>Classe</th></tr></thead><tbody></tbody></table></div>
+                </div>
+
+                <h3>3.5 Materiais Aplicados</h3>
+                <table class="premium-table" id="tabela-r2-materiais">
+                    <thead><tr><th>Material</th><th>Quantidade</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <button class="btn-xs-primary" onclick="window.addLinhaMaterialR2()">+ Adicionar</button>
+            </div>
+
+        </div><!-- fim folhao-body -->
+
+        <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
+            <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoR2()"><i class="fas fa-save"></i> Salvar e Imprimir</button>
+            <button class="btn-outline-danger" onclick="window.fecharFolhaoR2()">Fechar</button>
+        </div>
     </div>
+</div>
 
     <!-- MODAL MOLDE 2/3 -->
     <div id="modal-folhao-molde23" class="modal-overlay hidden">
@@ -1321,7 +1428,7 @@
         };
     </script>
 
-    <script>
+        <script>
         // ==========================================
         // FORÇAR CAMPOS DE POSIÇÃO
         // ==========================================
@@ -1330,10 +1437,8 @@
 
         function forcarCamposPosicao() {
             if (camposPosicaoExecutados) {
-                console.log("⏭️ Campos de posição já criados.");
                 return;
             }
-            console.log("🔄 FORÇANDO CAMPOS DE POSIÇÃO...");
             const rows = document.querySelectorAll('#estoque-table-body tr');
             let count = 0;
             rows.forEach(row => {
@@ -1354,13 +1459,10 @@
                         posCell.innerHTML = '';
                         posCell.appendChild(input);
                         count++;
-                        console.log(`✅ Campo criado para: ${tagId}`);
                     }
                 }
             });
             camposPosicaoExecutados = true;
-            if (count > 0) console.log(`✅ ${count} campos criados.`);
-            else console.log("ℹ️ Nenhum campo novo criado.");
         }
 
         function initForcarCampos() {
@@ -1396,7 +1498,6 @@
         }
 
         window.forcarCamposPosicao = forcarCamposPosicao;
-        console.log("✅ Sistema de correção de posição ativado.");
 
         // ==========================================
         // FUNÇÃO PARA TESTAR O MODAL MCC4
@@ -1408,92 +1509,6 @@
                 alert('Função abrirFolhaoMCC4 não está disponível. Verifique os imports.');
             }
         };
-
-        // ==========================================
-        // EMERGÊNCIA E OUTROS (placeholders)
-        // ==========================================
-        window.dispararEmergencia = function() {
-            alert('⚠️ EMERGÊNCIA ATIVADA!');
-        };
-        window.encerrarEmergencia = function() {
-            document.getElementById('barra-emergencia').style.display = 'none';
-        };
-        window.toggleSidebar = function() {
-            document.getElementById('sidebar-menu').classList.toggle('open');
-        };
-        window.toggleTheme = function() {
-            document.body.classList.toggle('light-theme');
-            const icon = document.getElementById('theme-icon');
-            const text = document.getElementById('theme-text');
-            if (document.body.classList.contains('light-theme')) {
-                icon.className = 'fas fa-moon';
-                text.textContent = 'Modo Escuro';
-            } else {
-                icon.className = 'fas fa-sun';
-                text.textContent = 'Modo Claro';
-            }
-        };
-        window.abrirAba = function(event, abaId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.getElementById(abaId).classList.add('active');
-            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
-            if (event && event.currentTarget) event.currentTarget.classList.add('active');
-        };
-        window.abrirCriticos = function() {
-            alert('Função abrirCriticos em desenvolvimento.');
-        };
-        window.fazerLogout = function() {
-            localStorage.removeItem('oms_operador_v32_local');
-            location.reload();
-        };
-        window.toggleFormAdicionar = function() {
-            document.getElementById('form-novo-equipamento').classList.toggle('hidden');
-        };
-        window.toggleFormMaterial = function() {
-            document.getElementById('form-novo-material').classList.toggle('hidden');
-        };
-        window.processarCadastroPeca = function() {
-            alert('Função processarCadastroPeca em desenvolvimento.');
-        };
-        window.salvarEntradaMaterial = function() {
-            alert('Função salvarEntradaMaterial em desenvolvimento.');
-        };
-        window.resetarDiasReparo = function() {
-            if (confirm('Resetar dias de reparo para todos os equipamentos?')) {
-                alert('Função resetarDiasReparo em desenvolvimento.');
-            }
-        };
-        window.mudarVeioVisualizado = function(veio) {
-            document.querySelectorAll('.btn-veio-tab').forEach(b => b.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-            console.log('Veio selecionado:', veio);
-        };
-        window.aplicarFiltrosMCC = function(mcc, btn) {
-            document.querySelectorAll(`#filtros-veio-mcc${mcc} .btn-filter-mcc, #filtros-status-mcc${mcc} .btn-filter-mcc`).forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            console.log(`Filtro aplicado no MCC ${mcc}:`, btn.dataset.valor);
-        };
-        window.atualizarPosicoesCadastro = function() {
-            // Placeholder
-        };
-        window.addLinhaMaterialR2 = function() {
-            alert('Adicionar linha de material R2');
-        };
-        // Funções dos modais (placeholders para evitar erros)
-        const modalFuncs = [
-            'abrirFolhaoMCC4', 'fecharFolhaoMCC4', 'trocarAbaFolhao', 'salvarLaudoInteligente',
-            'fecharFolhaoR1', 'trocarAbaR1', 'salvarEImprimirFolhaoR1',
-            'fecharFolhaoBow', 'trocarAbaBow', 'salvarEImprimirFolhaoBow',
-            'fecharFolhaoHorizontal', 'trocarAbaHorizontal', 'salvarEImprimirFolhaoHorizontal',
-            'fecharFolhaoSegmentoZero', 'trocarAbaSegZero', 'salvarFolhaoSegmentoZero', 'imprimirFolhaoSegmentoZero',
-            'fecharFolhaoR2', 'trocarAbaR2', 'salvarEImprimirFolhaoR2',
-            'fecharFolhaoMolde23', 'trocarAbaMolde23', 'salvarEImprimirFolhaoMolde23'
-        ];
-        modalFuncs.forEach(fn => {
-            if (typeof window[fn] !== 'function') {
-                window[fn] = function() { console.warn(`Função ${fn} chamada (placeholder).`); };
-            }
-        });
     </script>
 </body>
 </html>

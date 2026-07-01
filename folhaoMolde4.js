@@ -1,7 +1,4 @@
-// folhaoMolde4.js - Orquestrador para BENDER (e outros futuros)
-import { BANCO_ATIVOS } from './banco.js';
 import { BIBLIOTECA_CHECKLISTS } from './dados.js';
-import { renderAtivos, renderReparos, renderReservas } from './ui.js';
 import { gerarTelasBenderHTML, imprimirPDFBender } from './folhao_bender.js';
 
 let ID_FOLHAO_ATUAL = null;
@@ -56,50 +53,73 @@ function prepararAbasDinamicamente(tipoUpper) {
   }
 }
 
+// ==============================================================
+// FUNÇÃO PRINCIPAL - ABRIR FOLHÃO (CORRIGIDA)
+// ==============================================================
 export function abrirFolhaoMCC4(id) {
   ID_FOLHAO_ATUAL = id;
   let item = BANCO_ATIVOS.find(a => a.id === id);
   if (!item) return alert('Equipamento não encontrado!');
 
-  let tipoPeca = item.tipo.toUpperCase();
-  // Força BENDER para teste
-  tipoPeca = "BENDER";
+  let tipoPeca = item.tipo.trim();
+  console.log('Tipo detectado:', tipoPeca);
 
-  document.getElementById("mcc4-tag-name").innerText = id;
-  document.getElementById("mcc4-data-inicio").valueAsDate = new Date();
-  document.getElementById("mcc4-data-fim").valueAsDate = new Date();
+  // ---- STRAIGHTENER R2 (reconhece qualquer variação) ----
+  if (tipoPeca.toLowerCase().includes('straightener r2') || 
+      tipoPeca.toLowerCase().includes('straightener r-ii')) {
+    console.log('Abrindo Straightener R2...');
+    if (typeof window.abrirFolhaoR2 === 'function') {
+      window.abrirFolhaoR2(id);
+      return; // IMPORTANTE: não continua
+    } else {
+      alert('Função abrirFolhaoR2 não encontrada. Verifique se folhaoR2.js foi carregado.');
+      return;
+    }
+  }
 
-  prepararAbasDinamicamente(tipoPeca);
+  // ---- BENDER ----
+  if (tipoPeca.toUpperCase() === 'BENDER') {
+    console.log('Abrindo BENDER...');
+    document.getElementById("mcc4-tag-name").innerText = id;
+    document.getElementById("mcc4-data-inicio").valueAsDate = new Date();
+    document.getElementById("mcc4-data-fim").valueAsDate = new Date();
 
-  let objChecklist = {
-    "LUBRIFICAÇÃO": [
-      "Sistema de lubrificação isento de vazamentos.",
-      "Tubulação amassada.",
-      "Distribuidores de graxa funcionando corretamente sem vazamentos.",
-      "Flexíveis estão perfeitos, sem avarias",
-      "Tubulações Inox ou Cobre danificadas"
-    ],
-    "REFRIGERAÇÃO": [
-      "Resfriadores completos e alinhados.",
-      "Bicos completos e obstruídos.",
-      "Flexíveis isentos de vazamentos.",
-      "Tubulações isentas de empenos.",
-      "Tubulações furadas."
-    ],
-    "ESTRUTURA": [
-      "Rolos Lubrificados, girando normalmente",
-      "Proteções isentas de avarias.",
-      "Estrutura com break-out.",
-      "Rolamentos quebrados.",
-      "Rolos travados",
-      "Parafusos de fixação dos mancais todos apertados",
-      "Conexões apertadas."
-    ]
-  };
-  renderizarChecklist(objChecklist, "container-check-recebimento", "geral");
+    prepararAbasDinamicamente(tipoPeca);
 
-  document.querySelectorAll('.folhao-tab')[0].click();
-  document.getElementById("modal-folhao-mcc4").classList.remove("hidden");
+    let objChecklist = {
+      "LUBRIFICAÇÃO": [
+        "Sistema de lubrificação isento de vazamentos.",
+        "Tubulação amassada.",
+        "Distribuidores de graxa funcionando corretamente sem vazamentos.",
+        "Flexíveis estão perfeitos, sem avarias",
+        "Tubulações Inox ou Cobre danificadas"
+      ],
+      "REFRIGERAÇÃO": [
+        "Resfriadores completos e alinhados.",
+        "Bicos completos e obstruídos.",
+        "Flexíveis isentos de vazamentos.",
+        "Tubulações isentas de empenos.",
+        "Tubulações furadas."
+      ],
+      "ESTRUTURA": [
+        "Rolos Lubrificados, girando normalmente",
+        "Proteções isentas de avarias.",
+        "Estrutura com break-out.",
+        "Rolamentos quebrados.",
+        "Rolos travados",
+        "Parafusos de fixação dos mancais todos apertados",
+        "Conexões apertadas."
+      ]
+    };
+    renderizarChecklist(objChecklist, "container-check-recebimento", "geral");
+
+    document.querySelectorAll('.folhao-tab')[0].click();
+    document.getElementById("modal-folhao-mcc4").classList.remove("hidden");
+    return;
+  }
+
+  // ---- OUTROS TIPOS ----
+  alert('Tipo de equipamento sem folhão definido: ' + tipoPeca);
 }
 
 export function salvarLaudoInteligente() {

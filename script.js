@@ -11,12 +11,11 @@ import {
     BIBLIOTECA_CHECKLISTS 
 } from './dados.js';
 
-import { sincronizarAtivosReaisMCC4 } from './banco.js';
+import { BANCO_ATIVOS, sincronizarAtivosReaisMCC4 } from './banco.js';
 
 // ==========================================================================
 // BANCO DE DADOS CORE - SISTEMA OMS
 // ==========================================================================
-let BANCO_ATIVOS = JSON.parse(localStorage.getItem("oms_ativos_v32_local"));
 let HISTORICO_ACOES = JSON.parse(localStorage.getItem("oms_historico_v32_local")) || [];
 let BANCO_ROLOS = JSON.parse(localStorage.getItem("oms_rolos_v32_local"));
 let BANCO_MATERIAIS = JSON.parse(localStorage.getItem("oms_materiais_v32_local"));
@@ -56,48 +55,7 @@ function getOrdemPadrao(tipo) {
     return 999;
 }
 
-// ==========================================================================
-// INICIALIZAÇÃO AUTOMÁTICA DOS BANCOS DE DADOS
-// ==========================================================================
-if (!BANCO_ATIVOS || BANCO_ATIVOS.length === 0) {   
-    BANCO_ATIVOS = [];
-    const veiosMcc23 = [{ mcc: 2, veio: "C" }, { mcc: 2, veio: "D" }, { mcc: 3, veio: "E" }, { mcc: 3, veio: "F" }];
-    
-    veiosMcc23.forEach(m => {
-        const vNome = `MCC ${m.mcc} - Veio ${m.veio}`;
-        BANCO_ATIVOS.push({ id: `MLD-2${m.veio}`, tipo: "Molde", local: vNome, pos: `Molde Veio ${m.veio}`, dias: 14, ton: 1000000, meta: 1200000, ordem: 10, mcc_compat: "2/3" });
-        BANCO_ATIVOS.push({ id: `OSC-2${m.veio}`, tipo: "Mesa Osciladora", local: vNome, pos: `Osciladora ${m.veio}`, dias: 65, ton: 610000, meta: 1800000, ordem: 20, mcc_compat: "2/3" });
-        BANCO_ATIVOS.push({ id: `SEG-0-2${m.veio}`, tipo: "Seguimento Zero", local: vNome, pos: "Segmento Zero", dias: 38, ton: 142100, meta: 450000, ordem: 30, mcc_compat: "2/3" });
 
-        for (let c = 43; c <= 79; c++) {
-            let isTracionada = [45, 48, 52, 56, 60, 64, 68, 72, 76, 79].includes(c);
-            BANCO_ATIVOS.push({ id: `CAD-SUP-${c}-2${m.veio}`, tipo: "Cadeira Superior", local: vNome, pos: `Cad Sup ${c}`, dias: 45, ton: c === 43 ? 1438977 : 943444, meta: 2000000, ordem: 100 + c, mcc_compat: "2/3" });
-            BANCO_ATIVOS.push({ id: `CAD-INF-${c}-2${m.veio}`, tipo: "Cadeira Inferior", local: vNome, pos: `Cad Inf ${c} ${isTracionada ? '(⚡)' : ''}`, dias: 50, ton: c === 43 ? 1348264 : 1414185, meta: 2500000, ordem: 200 + c, mcc_compat: "2/3" });
-        }
-    });
-
-    const veiosMcc4 = ["H", "G"];
-    veiosMcc4.forEach(veio => {
-        const vNome = `MCC 4 - Veio ${veio}`;
-        BANCO_ATIVOS.push({ id: `MLD-4${veio}`, tipo: "Molde", local: vNome, pos: "Molde Alta Perf.", dias: 12, ton: 180000, meta: 1000000, ordem: 10, mcc_compat: "4" });
-        BANCO_ATIVOS.push({ id: `BND-4${veio}`, tipo: "Bender", local: vNome, pos: "Dobrador (Bender)", dias: 45, ton: 520000, meta: 1500000, ordem: 40, mcc_compat: "4" });
-        
-        // Bow (Mantido de 1 a 5)
-        for (let b = 1; b <= 5; b++) BANCO_ATIVOS.push({ id: `BOW-${b}-4${veio}`, tipo: "Bow", local: vNome, pos: `Curvo Bow #0${b}`, dias: 60, ton: 650000, meta: 1600000, ordem: 300 + b, mcc_compat: "4" });
-        
-        // ⚡ CORREÇÃO: Alinhado Straightener de 6 a 7 (RI e RII) conforme a planilha real
-        for (let s = 6; s <= 7; s++) BANCO_ATIVOS.push({ id: `STR-${s}-4${veio}`, tipo: "Straightener", local: vNome, pos: `Endireitador #0${s === 6 ? '1' : '2'}`, dias: 88, ton: 910000, meta: 1800000, ordem: 400 + s, mcc_compat: "4" });
-        
-        // ⚡ CORREÇÃO: Alinhado Horizontal de 8 a 17 conforme a planilha real da gerência
-        for (let h = 8; h <= 17; h++) BANCO_ATIVOS.push({ id: `HOR-${h}-4${veio}`, tipo: "Horizontal", local: vNome, pos: `Horizontal #${h < 10 ? '0'+h : h}`, dias: 102, ton: 430000, meta: 2000000, ordem: 500 + h, mcc_compat: "4" });
-    });
-
-    // Peças sobressalentes centrais da oficina
-    BANCO_ATIVOS.push({ id: `MLD-RES-01`, tipo: "Molde", local: "Oficina / Reserva", pos: "Estoque Central", dias: 0, ton: 0, meta: 1200000, ordem: 10, mcc_compat: "2/3" });
-    BANCO_ATIVOS.push({ id: `MLD-MCC4-REP`, tipo: "Molde", local: "Oficina / Reparo", pos: "Bancada", dias: 25, ton: 800000, meta: 1000000, ordem: 10, mcc_compat: "4" });
-
-    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-}
 
 if (!BANCO_ROLOS) {
     BANCO_ROLOS = [
@@ -2098,7 +2056,7 @@ function trocarAbaSegZero(event, idAba) {
 // ==========================================
 // CONEXÃO COM O GOOGLE SHEETS (API)
 // ==========================================
-const API_PLANILHA_URL = "https://script.google.com/macros/s/AKfycbyrZv6UDupcXxHNQoYFDtmmthQMnFUEB6Jv9mMLapWTVnT1kG4Imjnhb7Sg1rW3_Ygp/exec";
+const API_PLANILHA_URL = "https://script.google.com/macros/s/AKfycby_XSR5hrrvOgDEqlWhbKC2l7iPjthe6ht5YrabNliXsFlkNhzYGFU2BR8JUhzv8yY2/exec";
 
 async function registrarSwapNaPlanilha(maquina, veio, slotId, pecaNova, pecaAntiga, nomeOperador) {
     const dadosSwap = {
@@ -2567,9 +2525,9 @@ window.ajustarSaldoMaterial = ajustarSaldoMaterial;
 window.removerMaterial = removerMaterial;
 window.alterarSaldoRolo = alterarSaldoRolo;
 
-// ===== FUNÇÕES DE EDIÇÃO E UTILITÁRIOS =====
+// ===== FUNÇÕES DE EDIÇaquiÃO E UTILITÁRIOS =====
 window.fazerCelulaEditavel = fazerCelulaEditavel;
-// excluirEquipamento é definido no ui.js - NÃO reatribua aqui
+// excluirEquipamento é definido no ui.js - NÃO reatribua 
 window.dispararEmergencia = dispararEmergencia;
 window.encerrarEmergencia = encerrarEmergencia;
 
@@ -2620,208 +2578,6 @@ window.iniciarSwapAlocacao = function(idReserva) {
     }
 };
 
-window.efetuarSwapDireto = function(idPeca) {
-    console.log("🔄 Iniciando SWAP para peça:", idPeca);
-    
-    if (typeof window.verificarAcesso === 'function') {
-        if (!window.verificarAcesso()) {
-            alert("Acesso negado. Faça login novamente.");
-            return;
-        }
-    }
-    
-    const pecaReserva = BANCO_ATIVOS.find(a => a.id === idPeca);
-    if (!pecaReserva) {
-        alert("Erro: Peça não encontrada no estoque.");
-        return;
-    }
-    
-    if (pecaReserva.local !== "Oficina / Reserva" && pecaReserva.status !== "Oficina / Reserva") {
-        alert("Esta peça não está disponível no estoque de reserva.");
-        return;
-    }
-    
-    console.log("📦 Peça encontrada:", pecaReserva.id, "Tipo:", pecaReserva.tipo);
-    
-    const selectVeio = document.getElementById(`swap-veio-${idPeca}`);
-    if (!selectVeio) {
-        alert("Erro: Seletor de Veio não encontrado.");
-        return;
-    }
-    
-    const veioDestino = selectVeio.value;
-    if (!veioDestino) {
-        alert("Por favor, selecione o Veio de destino.");
-        return;
-    }
-    
-    console.log("🎯 Veio destino:", veioDestino);
-    
-    const posEl = document.getElementById(`pos-${idPeca}`);
-    let posicaoDigitada = "";
-    
-    if (posEl) {
-        if (posEl.tagName === "SELECT" || posEl.tagName === "INPUT") {
-            posicaoDigitada = posEl.value.trim();
-        } else {
-            posicaoDigitada = posEl.textContent.trim();
-        }
-    }
-    
-    if (!posicaoDigitada && posEl && posEl.tagName === "INPUT" && posEl.type === "hidden") {
-        posicaoDigitada = posEl.value;
-    }
-    
-    if (!posicaoDigitada) {
-        alert("Por favor, selecione a Posição de destino.");
-        return;
-    }
-    
-    console.log("📍 Posição digitada:", posicaoDigitada);
-    
-    const tipoUpper = (pecaReserva.tipo || "").toUpperCase();
-    let slotChassi = "";
-    
-    if (pecaReserva.mcc_compat === "4") {
-        if (tipoUpper.includes("BOW")) {
-            slotChassi = `BOW-${posicaoDigitada}`;
-        } else if (tipoUpper.includes("HORIZONTAL")) {
-            slotChassi = `HOR-${posicaoDigitada}`;
-        } else if (tipoUpper.includes("STRAIGHTENER R1") || tipoUpper.includes("R1")) {
-            slotChassi = "STR-1";
-        } else if (tipoUpper.includes("STRAIGHTENER R2") || tipoUpper.includes("R2")) {
-            slotChassi = "STR-2";
-        } else if (tipoUpper.includes("MOLDE")) {
-            slotChassi = "MOLDE";
-        } else if (tipoUpper.includes("BENDER")) {
-            slotChassi = "BENDER";
-        } else {
-            slotChassi = posicaoDigitada;
-        }
-    } else if (pecaReserva.mcc_compat === "2/3") {
-        if (tipoUpper.includes("CADEIRA SUPERIOR")) {
-            slotChassi = `CAD-SUP-${posicaoDigitada}`;
-        } else if (tipoUpper.includes("CADEIRA INFERIOR")) {
-            slotChassi = `CAD-INF-${posicaoDigitada}`;
-        } else if (tipoUpper.includes("SEGMENTO ZERO") || tipoUpper.includes("SEGUIMENTO ZERO")) {
-            slotChassi = "SEG-ZERO";
-        } else if (tipoUpper.includes("MESA OSCILADORA")) {
-            slotChassi = "OSCILADORA";
-        } else if (tipoUpper.includes("SEGMENTO") || tipoUpper.includes("SEG-")) {
-            slotChassi = `SEG-${posicaoDigitada}`;
-        } else if (tipoUpper.includes("MOLDE")) {
-            slotChassi = "MOLDE";
-        } else {
-            slotChassi = posicaoDigitada;
-        }
-    } else {
-        slotChassi = posicaoDigitada;
-    }
-    
-    console.log("🏷️ Slot Chassi:", slotChassi);
-    
-    if (!confirm(`Confirmar instalação da peça [${pecaReserva.id}] na gaveta [${slotChassi}] do Veio ${veioDestino}?`)) {
-        return;
-    }
-    
-    let pecaExpulsa = false;
-    let pecaExpulsaId = "";
-    
-    const config = getConfiguracaoPorVeio(veioDestino);
-    
-    console.log("🔎 Procurando peça antiga na gaveta", slotChassi);
-    
-    for (let i = 0; i < BANCO_ATIVOS.length; i++) {
-        const p = BANCO_ATIVOS[i];
-        
-        const taNoVeio = (p.veio === veioDestino && p.status === "Instalado") || 
-                       (p.local && p.local.includes(`Veio ${veioDestino}`) && !p.local.includes("Oficina"));
-        
-        if (!taNoVeio || p.id === idPeca) continue;
-        
-        let ehVelha = false;
-        
-        if (p.posicaoFixa && p.posicaoFixa === slotChassi) {
-            ehVelha = true;
-        } else if (!p.posicaoFixa && config && config.mapearSlotLegado) {
-            const slotMapeado = config.mapearSlotLegado(p);
-            if (slotMapeado === slotChassi) {
-                ehVelha = true;
-            }
-        }
-        
-        if (ehVelha) {
-            console.log(`💥 EXPULSANDO peça velha: ${p.id}`);
-            
-            BANCO_ATIVOS[i].status = "Oficina / Reparo";
-            BANCO_ATIVOS[i].local = "Oficina / Reparo";
-            BANCO_ATIVOS[i].veio = "";
-            BANCO_ATIVOS[i].posicaoFixa = "";
-            BANCO_ATIVOS[i].pos = "";
-            BANCO_ATIVOS[i].dataReparo = Date.now();
-            BANCO_ATIVOS[i].dias = 0;
-            
-            pecaExpulsa = true;
-            pecaExpulsaId = p.id;
-            
-            if (window.registrarHistorico) {
-                window.registrarHistorico(p.id, `Sacado da gaveta ${slotChassi} (Veio ${veioDestino}) via SWAP.`);
-            }
-            
-            alert(`⚠️ Peça velha [${pecaExpulsaId}] foi removida e enviada para REPARO.`);
-            break;
-        }
-    }
-    
-    if (!pecaExpulsa) {
-        console.log("ℹ️ Nenhuma peça encontrada na gaveta", slotChassi, "- instalação direta.");
-    }
-    
-    const indexNovo = BANCO_ATIVOS.findIndex(a => a.id === idPeca);
-    if (indexNovo === -1) {
-        alert("Erro crítico: Peça não encontrada.");
-        return;
-    }
-    
-    console.log(`📥 Instalando ${pecaReserva.id} na gaveta ${slotChassi}`);
-    
-    const mcc = pecaReserva.mcc_compat || "4";
-    BANCO_ATIVOS[indexNovo].local = `MCC ${mcc} - Veio ${veioDestino}`;
-    BANCO_ATIVOS[indexNovo].veio = veioDestino;
-    BANCO_ATIVOS[indexNovo].posicaoFixa = slotChassi;
-    BANCO_ATIVOS[indexNovo].pos = slotChassi;
-    BANCO_ATIVOS[indexNovo].status = "Instalado";
-    BANCO_ATIVOS[indexNovo].dataReparo = null;
-    BANCO_ATIVOS[indexNovo].dias = 0;
-    
-    if (window.registrarHistorico) {
-        window.registrarHistorico(idPeca, `Instalada no Veio ${veioDestino} (${slotChassi}) via Estoque.`);
-    }
-    
-    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-    
-    // Funções do ui.js (já disponíveis globalmente)
-    if (typeof renderAtivos === 'function') renderAtivos();
-    if (typeof renderReservas === 'function') renderReservas();
-    if (typeof renderReparos === 'function') renderReparos();
-    if (typeof renderPainelVeios === 'function') renderPainelVeios();
-    if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
-    if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
-    if (typeof renderAtivos === 'function') renderAtivos();
-    if (typeof renderReservas === 'function') renderReservas();
-    if (typeof renderReparos === 'function') renderReparos();
-    if (typeof renderPainelVeios === 'function') renderPainelVeios(); // 👈 NOVO
-    if (typeof renderHistorico === 'function') renderHistorico();   // 👈 NOVO
-    if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
-    if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
-    
-    if (typeof window.mudarVeioVisualizado === 'function') {
-        window.mudarVeioVisualizado(veioDestino);
-    }
-    
-    console.log("✅ SWAP concluído!");
-    alert(`✅ Sucesso! Peça [${pecaReserva.id}] instalada no Veio ${veioDestino} (${slotChassi}).`);
-};
 
 window.forcarRenderReservas = function() {
     console.log("🔄 Forçando renderização de reservas...");
@@ -2872,9 +2628,6 @@ window.forcarCamposPosicao = function() {
 console.log("✅ Script.js carregado - todas as funções expostas globalmente");
 
 // ==========================================
-// INICIALIZAÇÃO DO SISTEMA (BOOTLOADER)
-// ==========================================
-// ==========================================
 // INICIALIZAÇÃO E SINCRONIZAÇÃO COM A PLANILHA
 // ==========================================
 document.addEventListener('DOMContentLoaded', async () => {
@@ -2901,9 +2654,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Remove a trava de sessão para permitir nova sincronização no próximo F5
             sessionStorage.removeItem('oms_sincronizado_hoje');
             
-            // Força a atualização global (caso o reload não seja suficiente)
-            BANCO_ATIVOS = JSON.parse(localStorage.getItem("oms_ativos_v32_local"));
-            window.BANCO_ATIVOS = BANCO_ATIVOS;
+           
+            const dadosCache = JSON.parse(localStorage.getItem("oms_ativos_v32_local"));
+
+            if (dadosCache && Array.isArray(dadosCache)) {
+
+                BANCO_ATIVOS.length = 0;
+
+                Array.prototype.push.apply(BANCO_ATIVOS, dadosCache);
+
+            }
+
+            window.BANCO_ATIVOS = BANCO_ATIVOS; // se outras partes usarem window.BANCO_ATIVOS
             
             if (typeof renderPainelVeios === 'function') renderPainelVeios();
             if (typeof renderAtivos === 'function') renderAtivos();
