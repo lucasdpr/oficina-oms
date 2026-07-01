@@ -341,28 +341,15 @@ function renderizarMateriaisR2() {
     }
 }
 
-// 4.11 Adicionar linha de material (botão)
-window.adicionarLinhaMaterialR2 = function() {
-    const tbody = document.getElementById('tabela-r2-materiais');
-    if (!tbody) return;
-    const i = tbody.children.length;
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-        <td><input id="mat-r2-${i}" style="width:100%;" placeholder="Material"></td>
-        <td><input id="qtd-r2-${i}" style="width:80px;" placeholder="Qtd"></td>
-    `;
-    tbody.appendChild(tr);
-};
-
 // ==============================================================
 // 5. TROCAR ABA (R2)
 // ==============================================================
 window.trocarAbaR2 = function(evt, abaId) {
-    document.querySelectorAll('#modal-folhao-mcc4 .folhao-content').forEach(aba => {
+    document.querySelectorAll('#modal-folhao-r2 .folhao-content').forEach(aba => {
         aba.classList.add('hidden');
         aba.classList.remove('active');
     });
-    document.querySelectorAll('#modal-folhao-mcc4 .folhao-tab').forEach(btn => {
+    document.querySelectorAll('#modal-folhao-r2 .folhao-tab').forEach(btn => {
         btn.classList.remove('active');
     });
 
@@ -376,18 +363,14 @@ window.trocarAbaR2 = function(evt, abaId) {
 };
 
 // ==============================================================
-// 6. ABRIR FOLHÃO R2 (FUNÇÃO PRINCIPAL)
+// 6. ABRIR FOLHÃO R2
 // ==============================================================
-function abrirFolhaoR2(id) {
-    console.log('abrirFolhaoR2 chamado para:', id);
+window.abrirFolhaoR2 = function(id) {
     ID_FOLHAO_R2_ATUAL = id;
-    let tagNameEl = document.getElementById('mcc4-tag-name');
-    if (tagNameEl) tagNameEl.innerText = id;
+    let tagNameEl = document.getElementById('r2-tag-name');
+    if (tagNameEl) tagNameEl.value = id;
 
-    let tipoEquip = document.getElementById('mcc4-tipo-equip');
-    if (tipoEquip) tipoEquip.innerText = 'STRAIGHTENER R-II';
-
-    document.getElementById('modal-folhao-mcc4').classList.remove('hidden');
+    document.getElementById('modal-folhao-r2').classList.remove('hidden');
 
     // Renderiza todas as seções
     renderizarInspecaoChegadaR2();
@@ -412,25 +395,20 @@ function abrirFolhaoR2(id) {
     renderizarChecklistManutencaoR2();
     renderizarMateriaisR2();
 
-    let firstTab = document.querySelector('#modal-folhao-mcc4 .folhao-tab');
+    let firstTab = document.querySelector('#modal-folhao-r2 .folhao-tab');
     if (firstTab) {
         window.trocarAbaR2({ currentTarget: firstTab }, 'r2-chegada');
     }
 
     let hoje = new Date().toISOString().split('T')[0];
-    let dataInicio = document.getElementById('mcc4-data-inicio');
-    let dataFim = document.getElementById('mcc4-data-fim');
+    let dataInicio = document.getElementById('r2-data-inicio');
+    let dataFim = document.getElementById('r2-data-fim');
     if (dataInicio) dataInicio.value = hoje;
     if (dataFim) dataFim.value = hoje;
-}
+};
 
 // ==============================================================
-// 7. EXPORTA FUNÇÃO GLOBALMENTE (para ser chamada pelo molde4.js)
-// ==============================================================
-window.abrirFolhaoR2 = abrirFolhaoR2;
-
-// ==============================================================
-// 8. SALVAR E IMPRIMIR PDF (R2)
+// 7. SALVAR E IMPRIMIR PDF (R2) - CORRIGIDO
 // ==============================================================
 window.salvarEImprimirFolhaoR2 = function() {
     console.log("Iniciando geração de PDF para STRAIGHTENER R-II...");
@@ -441,7 +419,7 @@ window.salvarEImprimirFolhaoR2 = function() {
     }
 
     let tag = ID_FOLHAO_R2_ATUAL;
-    let item = BANCO_ATIVOS.find(a => a.id === tag);
+    let item = window.BANCO_ATIVOS.find(a => a.id === tag);
 
     if (!item) {
         alert(`Erro: A TAG ${tag} não foi encontrada no BANCO_ATIVOS.`);
@@ -451,7 +429,7 @@ window.salvarEImprimirFolhaoR2 = function() {
     item.ton = 0;
     item.dias = 0;
     item.local = "Oficina / Reserva";
-    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(window.BANCO_ATIVOS));
 
     let btnPDF = `<button onclick="window.abrirFolhaoR2('${tag}')" class="btn-outline-danger" style="padding: 2px 8px; font-size: 10px; margin-left: 10px; cursor: pointer;"><i class="fas fa-file-pdf"></i> Visualizar Folhão</button>`;
 
@@ -466,10 +444,10 @@ window.salvarEImprimirFolhaoR2 = function() {
 
     // ========== CONSTRUÇÃO DO PDF ==========
     const hoje = new Date().toLocaleDateString('pt-BR');
-    const dataInicio = document.getElementById('mcc4-data-inicio')?.value || hoje;
-    const dataFim = document.getElementById('mcc4-data-fim')?.value || hoje;
-    const motivo = document.getElementById('mcc4-motivo')?.value || 'Manutenção';
-    const numSegmento = document.getElementById('mcc4-num-segmento')?.value || '';
+    const dataInicio = document.getElementById('r2-data-inicio')?.value || hoje;
+    const dataFim = document.getElementById('r2-data-fim')?.value || hoje;
+    const motivo = document.getElementById('r2-motivo')?.value || 'Manutenção';
+    const numSegmento = document.getElementById('r2-num-segmento')?.value || '';
 
     let html = `
     <style>
@@ -486,7 +464,7 @@ window.salvarEImprimirFolhaoR2 = function() {
                 <span style="font-family: Arial, sans-serif; font-weight: 900; font-size: 34px; color: #002b5e; letter-spacing: -2px;">CSN</span>
             </div>
             <div style="width: 60%; text-align: center; padding: 10px;">
-                <h2 style="margin: 0; font-size: 16px; color: #000; text-decoration: underline;">CHECK LIST GERAL SEGMENTOS STRAIGHTENER R-II MCC#4</h2>
+                <h2 style="margin: 0; font-size: 16px; color: #000; text-decoration: underline;">CHECK LIST GERAL SEGMENTOS STRAIGHTENER R-II</h2>
                 <p style="margin: 5px 0 0 0; font-size: 10px; color: #333; text-transform: uppercase; font-weight: bold;">Laudo Oficial de Manutenção e Peritagem</p>
             </div>
             <div style="width: 20%; font-size: 10px; border-left: 2px solid #000; padding: 10px; line-height: 1.5; font-weight: bold;">
@@ -497,7 +475,7 @@ window.salvarEImprimirFolhaoR2 = function() {
         </div>
 
         <table style="margin-top:5px; background: #f9f9f9;">
-            <tr><td><strong>Nº SEGMENTO:</strong> ${numSegmento}</td><td><strong>MOTIVO:</strong> ${motivo}</td><td><strong>TIPO EXECUÇÃO:</strong> ${document.querySelector('input[name="mcc4-tipo-exec"]:checked')?.value || 'GERAL'}</td></tr>
+            <tr><td><strong>Nº SEGMENTO:</strong> ${numSegmento}</td><td><strong>MOTIVO:</strong> ${motivo}</td><td><strong>TIPO EXECUÇÃO:</strong> ${document.querySelector('select#r2-tipo-exec')?.value || 'GERAL'}</td></tr>
         </table>
 
         <div class="titulo-secao">1. INSPEÇÃO DE CHEGADA</div>
@@ -718,7 +696,7 @@ window.salvarEImprimirFolhaoR2 = function() {
 
     // Observações
     html += `<div class="titulo-secao">15. OBSERVAÇÕES</div>
-        <div style="border:1px solid #000; padding:10px; min-height:50px;">${document.getElementById('mcc4-observacoes')?.value || ''}</div>
+        <div style="border:1px solid #000; padding:10px; min-height:50px;">${document.getElementById('r2-observacoes')?.value || ''}</div>
     `;
 
     // Assinaturas
@@ -735,19 +713,29 @@ window.salvarEImprimirFolhaoR2 = function() {
         return;
     }
     printContent.innerHTML = html;
-    window.fecharFolhaoMCC4?.();
+    window.fecharFolhaoR2?.();
     setTimeout(() => window.print(), 500);
 };
 
 // ==============================================================
-// 9. FECHAR FOLHÃO R2
+// 8. FECHAR FOLHÃO R2
 // ==============================================================
 window.fecharFolhaoR2 = function() {
-    document.getElementById('modal-folhao-mcc4').classList.add('hidden');
+    document.getElementById('modal-folhao-r2').classList.add('hidden');
     ID_FOLHAO_R2_ATUAL = null;
 };
-window.abrirFolhaoR2 = window.abrirFolhaoR2 || function(id) {
-    // Se a função interna se chamar abrirFolhaoR2, chame ela
-    if (typeof abrirFolhaoR2 === 'function') abrirFolhaoR2(id);
-    else if (typeof abrirR2 === 'function') abrirR2(id);
+
+// ==============================================================
+// 9. ADICIONAR LINHA MATERIAL
+// ==============================================================
+window.adicionarLinhaMaterialR2 = function() {
+    const tbody = document.querySelector('#tabela-r2-materiais tbody');
+    if (!tbody) return;
+    const i = tbody.children.length;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td><input id="mat-r2-${i}" style="width:100%;" placeholder="Material"></td>
+        <td><input id="qtd-r2-${i}" style="width:80px;" placeholder="Qtd"></td>
+    `;
+    tbody.appendChild(tr);
 };

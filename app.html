@@ -553,14 +553,14 @@
         </div>
     </div>
 
-    <!-- MODAL R2 (Straightener R2) -->
-<div id="modal-folhao-mcc4" class="modal-overlay hidden">
-    <div class="modal-content" style="max-width: 1200px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+    <!-- MODAL R2 (Straightener R2) - COMPLETO -->
+<div id="modal-folhao-r2" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 1200px; max-height: 90vh; display: flex; flex-direction: column;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px; flex-shrink:0;">
             <h2><i class="fas fa-clipboard-check"></i> Liberação - Straightener R2</h2>
             <button class="btn-close-emergency" onclick="window.fecharFolhaoR2()"><i class="fas fa-times"></i></button>
         </div>
-        <div style="display:flex;gap:15px;flex-wrap:wrap;margin-bottom:15px;">
+        <div style="display:flex;gap:15px;flex-wrap:wrap;margin-bottom:15px; flex-shrink:0;">
             <div class="input-group"><label>TAG</label><input type="text" id="mcc4-tag-name" readonly></div>
             <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="mcc4-data-inicio"></div>
             <div class="input-group"><label>DATA FIM</label><input type="date" id="mcc4-data-fim"></div>
@@ -575,13 +575,14 @@
         </div>
 
         <!-- Abas -->
-        <div class="folhao-tabs">
+        <div class="folhao-tabs" style="flex-shrink:0;">
             <button class="folhao-tab active" onclick="window.trocarAbaR2(event, 'r2-chegada')">1. Inspeção Chegada</button>
             <button class="folhao-tab" onclick="window.trocarAbaR2(event, 'r2-manutencao')">2. Execução</button>
             <button class="folhao-tab" onclick="window.trocarAbaR2(event, 'r2-saida')">3. Saída</button>
         </div>
 
-        <div class="folhao-body" style="max-height: 70vh; overflow-y: auto;">
+        <!-- Corpo rolável -->
+        <div class="folhao-body" style="flex:1; overflow-y: auto; padding: 10px 0;">
 
             <!-- ========== ABA 1 - CHEGADA ========== -->
             <div id="r2-chegada" class="folhao-content">
@@ -675,12 +676,13 @@
                     <thead><tr><th>Material</th><th>Quantidade</th></tr></thead>
                     <tbody></tbody>
                 </table>
-                <button class="btn-xs-primary" onclick="window.addLinhaMaterialR2()">+ Adicionar</button>
+                <button class="btn-xs-primary" onclick="window.adicionarLinhaMaterialR2()">+ Adicionar</button>
             </div>
 
         </div><!-- fim folhao-body -->
 
-        <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
+        <!-- Rodapé fixo -->
+        <div style="display:flex;gap:10px;margin-top:15px;justify-content:flex-end; flex-shrink:0; padding-top:10px; border-top:1px solid var(--border);">
             <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoR2()"><i class="fas fa-save"></i> Salvar e Imprimir</button>
             <button class="btn-outline-danger" onclick="window.fecharFolhaoR2()">Fechar</button>
         </div>

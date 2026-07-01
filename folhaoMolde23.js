@@ -1,7 +1,5 @@
 // folhaoMolde23.js - VERSÃO FINAL COM TODOS OS CAMPOS E FALLBACK DE CONTAINERS
 
-import { BANCO_ATIVOS } from './banco.js';
-import { renderAtivos, renderReparos, renderReservas } from './ui.js';
 
 let ID_FOLHAO_MOLDE23_ATUAL = null;
 

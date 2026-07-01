@@ -1,5 +1,5 @@
 // ==========================================
-// SCRIPT.JS - COMPLETO E CORRIGIDO (PAINEL TURBINADO)
+// SCRIPT.JS - COMPLETO E CORRIGIDO (SINTAXE E R2)
 // ==========================================
 
 import { 
@@ -25,7 +25,7 @@ let DADOS_FOLGA_ARESTA = {};
 let EM_EMERGENCIA = JSON.parse(localStorage.getItem("oms_emergencia_v32_local")) || null;
 let OPERADOR_LOGADO = JSON.parse(localStorage.getItem("oms_operador_v32_local")) || null;
 let VEIO_SELECIONADO_PAINEL = "C";
-let FILTRO_CRITICOS = false; // 🔥 NOVA VARIÁVEL PARA FILTRO DE CRÍTICOS
+let FILTRO_CRITICOS = false;
 
 const CADASTRO_MATRICULAS = {
     "40090430": "Filipe (Líder)",
@@ -55,8 +55,9 @@ function getOrdemPadrao(tipo) {
     return 999;
 }
 
-
-
+// ==========================================================================
+// INICIALIZAÇÃO DOS BANCOS (se não existirem)
+// ==========================================================================
 if (!BANCO_ROLOS) {
     BANCO_ROLOS = [
         { id: "R-S5", nome: "Rolo de Cadeira 450", conjunto: "Cadeira", mcc_compat: "2/3", qtd: 14 },
@@ -81,25 +82,6 @@ if (!BANCO_MATERIAIS) {
         { codigo: "8004825", descricao: "CADEADO DE LATAO 35MM PAPAIZ", qtd: 10 }
     ];
     localStorage.setItem("oms_materiais_v32_local", JSON.stringify(BANCO_MATERIAIS));
-}
-
-const NOVOS_NOMES_ROLOS = {
-    "R-S5": "Rolo de Cadeira 450",
-    "R-S5P": "Rolo de Cadeira 450 Puxador",
-    "R-H300A": "Rolo Horizontal de 300 Acionado"
-};
-
-if (BANCO_ROLOS) {
-    let atualizouNomes = false;
-    BANCO_ROLOS.forEach(rolo => {
-        if (NOVOS_NOMES_ROLOS[rolo.id] && rolo.nome !== NOVOS_NOMES_ROLOS[rolo.id]) {
-            rolo.nome = NOVOS_NOMES_ROLOS[rolo.id];
-            atualizouNomes = true;
-        }
-    });
-    if (atualizouNomes) {
-        localStorage.setItem("oms_rolos_v32_local", JSON.stringify(BANCO_ROLOS));
-    }
 }
 
 // ==========================================
@@ -210,7 +192,6 @@ function abrirAba(event, idAba) {
     }
     document.getElementById(idAba).classList.add("active");
 
-    // Renderiza conforme a aba
     if (idAba === "aba-mcc2") renderizarGraficosMCC(2);
     if (idAba === "aba-mcc3") renderizarGraficosMCC(3);
     if (idAba === "aba-mcc4") renderizarGraficosMCC(4);
@@ -373,375 +354,6 @@ function calcularKpisGlobais() {
 }
 
 // ==========================================
-// RENDERIZAÇÃO DE DADOS VEIOS E ATIVOS
-// ==========================================
-function renderPainelVeios() {
-    const container = document.getElementById("container-fluxo-horizontal-scroll");
-    const titulo = document.getElementById("titulo-veio-focado");
-    if (!container || !titulo) {
-        console.warn("⚠️ Elementos da aba fluxo não encontrados.");
-        return;
-    }
-
-    // Busca a configuração do veio atual
-    const config = getConfiguracaoPorVeio(VEIO_SELECIONADO_PAINEL);
-    if (!config) {
-        container.innerHTML = `
-            <div style="padding: 30px; text-align: center; color: var(--text-muted);">
-                <i class="fas fa-tools" style="font-size: 40px; margin-bottom: 15px; opacity: 0.5;"></i>
-                <h3>Configuração não encontrada para o Veio ${VEIO_SELECIONADO_PAINEL}</h3>
-                <p>Verifique se a máquina está configurada.</p>
-            </div>
-        `;
-        return;
-    }
-
-    // Atualiza o título
-    titulo.innerHTML = `Sequenciamento Estrutural: <span style="color: var(--text-accent);">${config.nome}</span>`;
-
-    // Pega as peças instaladas neste veio
-    const pecasInstaladas = BANCO_ATIVOS.filter(p => 
-        (p.veio === VEIO_SELECIONADO_PAINEL && p.status === "Instalado") || 
-        (p.local && p.local.includes(`Veio ${VEIO_SELECIONADO_PAINEL}`) && !p.local.includes("Oficina"))
-    );
-
-    // Gera os slots
-    const slots = config.slots || [];
-    if (slots.length === 0) {
-        container.innerHTML = `
-            <div style="padding: 30px; text-align: center; color: var(--text-muted);">
-                <i class="fas fa-tools" style="font-size: 40px; margin-bottom: 15px; opacity: 0.5;"></i>
-                <h3>Estrutura da Máquina ${config.nome} em Construção</h3>
-                <p>Os slots serão configurados em breve.</p>
-            </div>
-        `;
-        return;
-    }
-
-    let htmlSlots = "";
-
-    slots.forEach(slot => {
-        let pecaEncontrada = null;
-
-        // Procura uma peça que ocupe este slot
-        for (const p of pecasInstaladas) {
-            if (p.posicaoFixa && p.posicaoFixa === slot.id) {
-                pecaEncontrada = p;
-                break;
-            }
-            if (!p.posicaoFixa && config.mapearSlotLegado) {
-                const slotMapeado = config.mapearSlotLegado(p);
-                if (slotMapeado === slot.id) {
-                    pecaEncontrada = p;
-                    break;
-                }
-            }
-        }
-
-        if (pecaEncontrada) {
-            // Calcula o desgaste
-            const pct = pecaEncontrada.meta > 0 ? (pecaEncontrada.ton / pecaEncontrada.meta) * 100 : 0;
-            const corClass = pct >= 80 ? "danger" : pct >= 50 ? "warning" : "success";
-            const pctDisplay = pct.toFixed(1);
-            const dias = calcularDias(pecaEncontrada);
-
-            htmlSlots += `
-                <div class="ind-card" style="border-top: 3px solid var(--${corClass}); min-width: 260px; max-width: 300px; background: var(--bg-td); border-radius: var(--radius-md); padding: 16px 18px; transition: all var(--transition-base);">
-                    <div class="flex-between" style="margin-bottom: 4px;">
-                        <span class="font-code" style="font-size: 0.9rem; font-weight: 700; color: var(--text-heading);">${pecaEncontrada.id}</span>
-                        <span class="bg-tag" style="font-size: 0.55rem;">${pecaEncontrada.tipo}</span>
-                    </div>
-                    <div class="flex-between" style="margin-bottom: 8px;">
-                        <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fas fa-layer-group"></i> ${slot.nome}</span>
-                        <span style="font-weight: 700; font-family: var(--font-mono); font-size: 1.1rem; color: var(--${corClass});">${pctDisplay}%</span>
-                    </div>
-                    <div class="progress-container" style="margin: 4px 0 10px 0;">
-                        <div class="progress-bar bg-${corClass}" style="width: ${Math.min(pct, 100)}%; height: 6px; border-radius: 10px;"></div>
-                    </div>
-                    <div class="flex-between" style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 12px;">
-                        <span>Ton: <strong class="font-code" style="color: var(--text-heading);">${Number(pecaEncontrada.ton || 0).toLocaleString('pt-BR')}</strong></span>
-                        <span>Lim: <strong class="font-code" style="color: var(--text-heading);">${Number(pecaEncontrada.meta || 0).toLocaleString('pt-BR')}</strong></span>
-                        <span>Dias: <strong class="font-code" style="color: var(--text-heading);">${dias}</strong></span>
-                    </div>
-                    <div class="flex-between gap-10" style="gap: 8px;">
-                        <button class="btn-xs-primary" style="flex: 1; padding: 6px; font-size: 0.65rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm);" onclick="window.abrirHistoricoIndividual('${pecaEncontrada.id}')">
-                            <i class="fas fa-book"></i> Prontuário
-                        </button>
-                        <button class="btn-outline-danger" style="flex: 1; padding: 6px; font-size: 0.65rem; border-radius: var(--radius-sm);" onclick="window.iniciarSaque('${pecaEncontrada.id}')">
-                            <i class="fas fa-exchange-alt"></i> Sacar
-                        </button>
-                    </div>
-                </div>
-            `;
-        } else {
-            htmlSlots += `
-                <div class="ind-card" style="border: 2px dashed var(--danger); background: var(--danger-bg); min-width: 260px; max-width: 300px; border-radius: var(--radius-md); padding: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; min-height: 140px;">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 28px; color: var(--danger); margin-bottom: 8px; opacity: 0.6;"></i>
-                    <h4 style="color: var(--danger); font-size: 0.85rem; margin: 0;">${slot.nome}</h4>
-                    <p style="color: var(--danger); font-size: 0.65rem; margin: 4px 0 12px 0; opacity: 0.7;">GAVETA VAZIA</p>
-                    <button class="btn-premium btn-success" style="padding: 6px 16px; font-size: 0.7rem;" onclick="window.abrirAba(null, 'aba-reservas')">
-                        <i class="fas fa-plus"></i> Alocar
-                    </button>
-                </div>
-            `;
-        }
-    });
-
-    container.innerHTML = htmlSlots;
-}
-
-function gerarCardGraficoHTML(a) {
-    const pct = a.meta > 0 ? ((a.ton / a.meta) * 100) : 0;
-    const pctFixed = pct.toFixed(1);
-    let cor = pct >= 80 ? "var(--danger)" : (pct >= 50 ? "var(--warning)" : "var(--success)");
-    const dias = a.dias || 0; // se tiver dataReparo, use calcularDias
-
-    return `
-        <div class="mcc-grafico-card premium-shadow" style="border-top: 3px solid ${cor};">
-            <div class="mcc-grafico-header">
-                <div class="mcc-grafico-info">
-                    <span class="mcc-tag-id">${a.id}</span>
-                    <span class="ind-card-tag bg-tag">${a.tipo}</span>
-                </div>
-                <div class="mcc-grafico-porcentagem" style="color:${cor};">${pctFixed}%</div>
-            </div>
-            <div class="mcc-grafico-pos text-muted">${a.pos || a.posicao || "Única"}</div>
-            <div class="ind-gauge-bar premium-bar">
-                <div class="ind-gauge-fill" style="width:${Math.min(pct, 100)}%; background:${cor};"></div>
-            </div>
-            <div class="grafico-legenda" style="margin-bottom: 10px;">
-                <span>Ton: <strong>${Math.round(a.ton || 0).toLocaleString()}</strong></span>
-                <span>Lim: ${(a.meta || 0).toLocaleString()}</span>
-                <span>Dias: <strong>${dias}</strong></span>
-            </div>
-            <button class="btn-xs-primary w-100" style="border: 1px dashed var(--text-accent); color: var(--text-accent); background: rgba(56,189,248,0.05); padding: 8px; border-radius: 4px; cursor: pointer;" onclick="abrirHistoricoIndividual('${a.id}')">
-                <i class="fas fa-book-open"></i> Ver Prontuário
-            </button>
-        </div>`;
-}
-
-// ==========================================
-// RENDER ATIVOS (COM FILTRO DE CRÍTICOS)
-// ==========================================
-function renderAtivos() {
-    const tbody = document.getElementById("ativos-table-body");
-    const filtroEl = document.getElementById("filtro-tipo-ativo");
-    if (!tbody || !filtroEl) return;
-
-    let f = BANCO_ATIVOS.filter(a => (a.local || "").includes(`Veio ${VEIO_SELECIONADO_PAINEL}`) || filtroEl.value.includes("Oficina"));
-    
-    // 🔥 FILTRO DE CRÍTICOS
-    if (FILTRO_CRITICOS) {
-        f = f.filter(a => {
-            const pct = a.meta > 0 ? (a.ton / a.meta) * 100 : 0;
-            return pct >= 80 && !a.local.includes("Oficina");
-        });
-        FILTRO_CRITICOS = false;
-        const titulo = document.querySelector('#aba-ativos .panel-card-header h1');
-        if (titulo) titulo.innerHTML = `<i class="fas fa-exclamation-triangle" style="color: var(--danger);"></i> Equipamentos Críticos (≥80%)`;
-    } else {
-        const titulo = document.querySelector('#aba-ativos .panel-card-header h1');
-        if (titulo) titulo.innerHTML = `<i class="fas fa-cubes"></i> Matriz Operacional Geral`;
-    }
-
-    if (filtroEl.value === "Oficina / Reparo") {
-        f = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reparo");
-    } else if (filtroEl.value === "Oficina / Reserva") {
-        f = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reserva");
-    } else if (filtroEl.value !== "TODOS") {
-        f = f.filter(a => a.tipo === filtroEl.value);
-    }
-
-    f.sort((a, b) => (a.ordem || 999) - (b.ordem || 999));
-
-    tbody.innerHTML = f.map(a => {
-        const pct = a.meta > 0 ? ((a.ton / a.meta) * 100) : 0;
-        const pctFixed = pct.toFixed(1);
-        let classe = pct >= 80 ? "reparo" : "operação";
-        if (a.local === "Oficina / Reserva") classe = "reserva";
-        else if (a.local === "Oficina / Reparo") classe = "reparo";
-
-        let btnAcao = (a.local || "").includes("Veio")
-            ? `<button class="btn-outline-danger" onclick="iniciarSaque('${a.id}')">Sacar</button>`
-            : `<span class="text-muted" style="margin-right:10px;"><i class="fas fa-warehouse"></i></span>`;
-
-        let btnHist = `<button class="btn-outline-danger" style="border-color:var(--text-accent); color:var(--text-accent);" onclick="abrirHistoricoIndividual('${a.id}')"><i class="fas fa-book-open"></i></button>`;
-        let btnExcluir = `<button class="btn-outline-danger" style="border-color:var(--danger); color:var(--danger); padding: 4px 8px;" onclick="excluirEquipamento('${a.id}')" title="Excluir equipamento"><i class="fas fa-trash"></i></button>`;
-
-        return `
-            <tr>
-                <td class="editavel font-code" onclick="fazerCelulaEditavel(this, '${a.id}', 'id')">${a.id}</td>
-                <td><span class="ind-card-tag bg-tag">${a.tipo} <span style="opacity:0.7; font-size:10px;">(MCC ${a.mcc_compat || ''})</span></span></td>
-                <td class="font-code text-muted">${a.local || "Não Alocado"}</td>
-                <td class="editavel font-code" onclick="fazerCelulaEditavel(this, '${a.id}', 'dias')">${a.dias || 0}</td>
-                <td class="editavel font-code" onclick="fazerCelulaEditavel(this, '${a.id}', 'ton')">${Math.round(a.ton || 0).toLocaleString()}</td>
-                <td class="font-code text-muted">${(a.meta || 0).toLocaleString()}</td>
-                <td><span class="status-pill ${classe}">${pctFixed}%</span></td>
-                <td><div class="flex-align-center gap-10 action-buttons-mobile">${btnAcao} ${btnHist} ${btnExcluir}</div></td>
-            </tr>`;
-    }).join("");
-}
-
-// ==========================================
-// RENDER REPAROS (AGRUPADO POR MCC E TIPO)
-// ==========================================
-function renderReparos() {
-    const repBody = document.getElementById("reparos-table-body");
-    if (!repBody) return;
-
-    // 🔥 CORREÇÃO AUTOMÁTICA DE DATA (se necessário)
-    let precisaSalvar = false;
-    BANCO_ATIVOS.forEach(a => {
-        if (a.local === "Oficina / Reparo" && !a.dataReparo) {
-            const diasAtuais = a.dias || 0;
-            a.dataReparo = Date.now() - (diasAtuais * 24 * 60 * 60 * 1000);
-            precisaSalvar = true;
-        }
-    });
-    if (precisaSalvar) {
-        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-    }
-
-    const reparos = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reparo");
-    if (reparos.length === 0) {
-        repBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nenhum equipamento aguardando reparo.</td></tr>`;
-        return;
-    }
-
-    // Agrupa por MCC
-    const grupos = {};
-    reparos.forEach(a => {
-        const mcc = a.mcc_compat || "2/3";
-        if (!grupos[mcc]) grupos[mcc] = [];
-        grupos[mcc].push(a);
-    });
-
-    let htmlFinal = "";
-    const coresMCC = { "2": "#3b82f6", "3": "#8b5cf6", "4": "#ec4899" };
-
-    Object.keys(grupos).sort().forEach(mcc => {
-        const itens = grupos[mcc];
-        // Agrupa por tipo dentro do MCC
-        const tipos = {};
-        itens.forEach(a => {
-            const tipo = a.tipo || "Outros";
-            if (!tipos[tipo]) tipos[tipo] = [];
-            tipos[tipo].push(a);
-        });
-
-        // Cabeçalho do MCC
-        htmlFinal += `
-            <tr style="background: ${coresMCC[mcc] || '#f59e0b'}20; border-top: 3px solid ${coresMCC[mcc] || '#f59e0b'};">
-                <td colspan="5" style="padding: 10px 16px; font-weight: 700; color: var(--text-heading); font-size: 15px;">
-                    <i class="fas fa-server"></i> MCC ${mcc}
-                </td>
-            </tr>
-        `;
-
-        // Para cada tipo
-        Object.keys(tipos).sort().forEach(tipo => {
-            const lista = tipos[tipo];
-            // Sub-cabeçalho do tipo
-            htmlFinal += `
-                <tr style="background: var(--bg-th);">
-                    <td colspan="5" style="padding: 6px 16px; font-weight: 600; color: var(--text-muted); font-size: 13px; padding-left: 30px;">
-                        <i class="fas fa-tag"></i> ${tipo}
-                    </td>
-                </tr>
-            `;
-            // Linhas dos equipamentos
-            lista.forEach(a => {
-                const pct = a.meta > 0 ? ((a.ton / a.meta) * 100) : 0;
-                const pctFixed = pct.toFixed(1);
-                const dias = a.dias || 0; // pode ser calculado com dataReparo
-                const btnExcluir = `<button class="btn-outline-danger" style="border-color:var(--danger); color:var(--danger); padding: 4px 8px;" onclick="excluirEquipamento('${a.id}')" title="Excluir"><i class="fas fa-trash"></i></button>`;
-                htmlFinal += `
-                    <tr>
-                        <td class="font-code" style="padding-left: 45px;">${a.id}</td>
-                        <td><span class="ind-card-tag bg-tag">${a.tipo}</span></td>
-                        <td>
-                            <div class="flex-align-center gap-10">
-                                <span class="font-code bold w-40" style="color: var(--text-heading);">${pctFixed}%</span>
-                                <div class="ind-gauge-bar premium-bar w-100px">
-                                    <div class="ind-gauge-fill bg-danger" style="width: ${Math.min(pct, 100)}%;"></div>
-                                </div>
-                            </div>
-                        </td>
-                        <td style="font-weight:bold; color:var(--warning);">${dias} dias</td>
-                        <td>
-                            <div class="flex-align-center gap-10 action-buttons-mobile">
-                                <button class="btn-premium btn-warning" onclick="window.abrirFolhaoPorTipo('${a.id}')"><i class="fas fa-hammer"></i> Concluir</button>
-                                <button class="btn-premium" style="background:transparent; border-color:var(--text-accent); color:var(--text-accent); padding: 8px 12px;" onclick="abrirHistoricoIndividual('${a.id}')" title="Ver Prontuário"><i class="fas fa-book-open"></i></button>
-                                ${btnExcluir}
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            });
-        });
-    });
-
-    repBody.innerHTML = htmlFinal;
-}
-
-// ==========================================
-// RENDER RESERVAS (AGRUPADO POR MCC E TIPO)
-// ==========================================
-// A função renderReservas está em ui.js (não duplicar aqui)
-// Ela será importada e usada conforme necessário.
-
-// ==========================================
-// FILTROS MCC
-// ==========================================
-function aplicarFiltrosMCC(mccNumero, btnElement) {
-    const grupo = btnElement.parentElement;
-    grupo.querySelectorAll('.btn-filter-mcc').forEach(b => b.classList.remove('active'));
-    btnElement.classList.add('active');
-    renderizarGraficosMCC(mccNumero);
-}
-
-function renderizarGraficosMCC(mccNumero) {
-    const container = document.getElementById(`graficos-mcc${mccNumero}`);
-    if (!container) return;
-
-    // Pega o filtro de veio ativo
-    const divFiltroVeio = document.getElementById(`filtros-veio-mcc${mccNumero}`);
-    const veioAtivo = divFiltroVeio ? divFiltroVeio.querySelector('.active')?.getAttribute('data-valor') : 'TODOS';
-
-    // Pega o filtro de status ativo
-    const divFiltroStatus = document.getElementById(`filtros-status-mcc${mccNumero}`);
-    const statusAtivo = divFiltroStatus ? divFiltroStatus.querySelector('.active')?.getAttribute('data-valor') : 'TODOS';
-
-    // Filtra os ativos que pertencem à MCC
-    let filtrados = BANCO_ATIVOS.filter(a => a.local && a.local.includes(`MCC ${mccNumero}`));
-
-    // Aplica filtro de veio
-    if (veioAtivo && veioAtivo !== 'TODOS') {
-        filtrados = filtrados.filter(a => a.local && a.local.includes(`Veio ${veioAtivo}`));
-    }
-
-    // Aplica filtro de status
-    if (statusAtivo && statusAtivo !== 'TODOS') {
-        filtrados = filtrados.filter(a => {
-            const pct = a.meta > 0 ? (a.ton / a.meta) * 100 : 0;
-            if (statusAtivo === 'VERMELHO') return pct >= 80;
-            if (statusAtivo === 'AMARELO') return pct >= 50 && pct < 80;
-            if (statusAtivo === 'VERDE') return pct < 50;
-            return true;
-        });
-    }
-
-    filtrados.sort((a, b) => (a.ordem || 999) - (b.ordem || 999));
-
-    if (filtrados.length === 0) {
-        container.innerHTML = `<div class="vazio">Nenhum equipamento encontrado com a combinação de filtros.</div>`;
-        return;
-    }
-
-    container.innerHTML = filtrados.map(gerarCardGraficoHTML).join("");
-}
-
-// ==========================================
 // CONFIGURAÇÕES DAS MÁQUINAS
 // ==========================================
 
@@ -823,7 +435,7 @@ function gerarSlotsMCC4() {
 }
 
 // ==========================================================================
-// CORREÇÃO DO MAPEAMENTO DE GAVETAS (script.js)
+// CORREÇÃO DO MAPEAMENTO DE GAVETAS
 // ==========================================================================
 function mapearSlotLegadoMCC4(peca) {
     const tipoUpper = (peca.tipo || "").toUpperCase();
@@ -838,14 +450,13 @@ function mapearSlotLegadoMCC4(peca) {
     }
     
     if (tipoUpper.includes("STRAIGHTENER")) {
-        // Mapeia a peça STR-6 para a gaveta STR-1 e a peça STR-7 para a STR-2
         if (idUpper.includes("STR-6") || idUpper.includes("R1")) return "STR-1";
         if (idUpper.includes("STR-7") || idUpper.includes("R2")) return "STR-2";
     }
     
     if (tipoUpper.includes("HORIZONTAL")) {
         const match = idUpper.match(/HOR-(\d+)/);
-        if (match) return `HOR-${match[1]}`; // Vincula direto HOR-8 na gaveta HOR-8
+        if (match) return `HOR-${match[1]}`;
     }
     return null;
 }
@@ -922,25 +533,362 @@ function getSlotsPorVeio(veio) {
 let ultimoVeioVisualizado = null;
 
 function mudarVeioVisualizado(veio) {
-    // Atualiza o veio selecionado
     VEIO_SELECIONADO_PAINEL = veio;
-
-    // Atualiza os botões de veio
     document.querySelectorAll('.btn-veio-tab').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.btn-veio-tab').forEach(b => {
         if (b.textContent.includes(`Veio ${veio}`)) {
             b.classList.add('active');
         }
     });
-
-    // Força a renderização do painel
     renderPainelVeios();
-
-    // Se a aba fluxo não estiver ativa, ativa ela
     const abaFluxo = document.getElementById('aba-fluxo');
     if (abaFluxo && !abaFluxo.classList.contains('active')) {
         abrirAba(null, 'aba-fluxo');
     }
+}
+
+// ==========================================
+// RENDERIZAÇÃO DE DADOS VEIOS E ATIVOS
+// ==========================================
+function renderPainelVeios() {
+    const container = document.getElementById("container-fluxo-horizontal-scroll");
+    const titulo = document.getElementById("titulo-veio-focado");
+    if (!container || !titulo) {
+        console.warn("⚠️ Elementos da aba fluxo não encontrados.");
+        return;
+    }
+
+    const config = getConfiguracaoPorVeio(VEIO_SELECIONADO_PAINEL);
+    if (!config) {
+        container.innerHTML = `
+            <div style="padding: 30px; text-align: center; color: var(--text-muted);">
+                <i class="fas fa-tools" style="font-size: 40px; margin-bottom: 15px; opacity: 0.5;"></i>
+                <h3>Configuração não encontrada para o Veio ${VEIO_SELECIONADO_PAINEL}</h3>
+                <p>Verifique se a máquina está configurada.</p>
+            </div>
+        `;
+        return;
+    }
+
+    titulo.innerHTML = `Sequenciamento Estrutural: <span style="color: var(--text-accent);">${config.nome}</span>`;
+
+    const pecasInstaladas = BANCO_ATIVOS.filter(p => 
+        (p.veio === VEIO_SELECIONADO_PAINEL && p.status === "Instalado") || 
+        (p.local && p.local.includes(`Veio ${VEIO_SELECIONADO_PAINEL}`) && !p.local.includes("Oficina"))
+    );
+
+    const slots = config.slots || [];
+    if (slots.length === 0) {
+        container.innerHTML = `
+            <div style="padding: 30px; text-align: center; color: var(--text-muted);">
+                <i class="fas fa-tools" style="font-size: 40px; margin-bottom: 15px; opacity: 0.5;"></i>
+                <h3>Estrutura da Máquina ${config.nome} em Construção</h3>
+                <p>Os slots serão configurados em breve.</p>
+            </div>
+        `;
+        return;
+    }
+
+    let htmlSlots = "";
+
+    slots.forEach(slot => {
+        let pecaEncontrada = null;
+
+        for (const p of pecasInstaladas) {
+            if (p.posicaoFixa && p.posicaoFixa === slot.id) {
+                pecaEncontrada = p;
+                break;
+            }
+            if (!p.posicaoFixa && config.mapearSlotLegado) {
+                const slotMapeado = config.mapearSlotLegado(p);
+                if (slotMapeado === slot.id) {
+                    pecaEncontrada = p;
+                    break;
+                }
+            }
+        }
+
+        if (pecaEncontrada) {
+            const pct = pecaEncontrada.meta > 0 ? (pecaEncontrada.ton / pecaEncontrada.meta) * 100 : 0;
+            const corClass = pct >= 80 ? "danger" : pct >= 50 ? "warning" : "success";
+            const pctDisplay = pct.toFixed(1);
+            const dias = calcularDias(pecaEncontrada);
+
+            htmlSlots += `
+                <div class="ind-card" style="border-top: 3px solid var(--${corClass}); min-width: 260px; max-width: 300px; background: var(--bg-td); border-radius: var(--radius-md); padding: 16px 18px; transition: all var(--transition-base);">
+                    <div class="flex-between" style="margin-bottom: 4px;">
+                        <span class="font-code" style="font-size: 0.9rem; font-weight: 700; color: var(--text-heading);">${pecaEncontrada.id}</span>
+                        <span class="bg-tag" style="font-size: 0.55rem;">${pecaEncontrada.tipo}</span>
+                    </div>
+                    <div class="flex-between" style="margin-bottom: 8px;">
+                        <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fas fa-layer-group"></i> ${slot.nome}</span>
+                        <span style="font-weight: 700; font-family: var(--font-mono); font-size: 1.1rem; color: var(--${corClass});">${pctDisplay}%</span>
+                    </div>
+                    <div class="progress-container" style="margin: 4px 0 10px 0;">
+                        <div class="progress-bar bg-${corClass}" style="width: ${Math.min(pct, 100)}%; height: 6px; border-radius: 10px;"></div>
+                    </div>
+                    <div class="flex-between" style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 12px;">
+                        <span>Ton: <strong class="font-code" style="color: var(--text-heading);">${Number(pecaEncontrada.ton || 0).toLocaleString('pt-BR')}</strong></span>
+                        <span>Lim: <strong class="font-code" style="color: var(--text-heading);">${Number(pecaEncontrada.meta || 0).toLocaleString('pt-BR')}</strong></span>
+                        <span>Dias: <strong class="font-code" style="color: var(--text-heading);">${dias}</strong></span>
+                    </div>
+                    <div class="flex-between gap-10" style="gap: 8px;">
+                        <button class="btn-xs-primary" style="flex: 1; padding: 6px; font-size: 0.65rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm);" onclick="window.abrirHistoricoIndividual('${pecaEncontrada.id}')">
+                            <i class="fas fa-book"></i> Prontuário
+                        </button>
+                        <button class="btn-outline-danger" style="flex: 1; padding: 6px; font-size: 0.65rem; border-radius: var(--radius-sm);" onclick="window.iniciarSaque('${pecaEncontrada.id}')">
+                            <i class="fas fa-exchange-alt"></i> Sacar
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else {
+            htmlSlots += `
+                <div class="ind-card" style="border: 2px dashed var(--danger); background: var(--danger-bg); min-width: 260px; max-width: 300px; border-radius: var(--radius-md); padding: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; min-height: 140px;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 28px; color: var(--danger); margin-bottom: 8px; opacity: 0.6;"></i>
+                    <h4 style="color: var(--danger); font-size: 0.85rem; margin: 0;">${slot.nome}</h4>
+                    <p style="color: var(--danger); font-size: 0.65rem; margin: 4px 0 12px 0; opacity: 0.7;">GAVETA VAZIA</p>
+                    <button class="btn-premium btn-success" style="padding: 6px 16px; font-size: 0.7rem;" onclick="window.abrirAba(null, 'aba-reservas')">
+                        <i class="fas fa-plus"></i> Alocar
+                    </button>
+                </div>
+            `;
+        }
+    });
+
+    container.innerHTML = htmlSlots;
+}
+
+function gerarCardGraficoHTML(a) {
+    const pct = a.meta > 0 ? ((a.ton / a.meta) * 100) : 0;
+    const pctFixed = pct.toFixed(1);
+    let cor = pct >= 80 ? "var(--danger)" : (pct >= 50 ? "var(--warning)" : "var(--success)");
+    const dias = a.dias || 0;
+
+    return `
+        <div class="mcc-grafico-card premium-shadow" style="border-top: 3px solid ${cor};">
+            <div class="mcc-grafico-header">
+                <div class="mcc-grafico-info">
+                    <span class="mcc-tag-id">${a.id}</span>
+                    <span class="ind-card-tag bg-tag">${a.tipo}</span>
+                </div>
+                <div class="mcc-grafico-porcentagem" style="color:${cor};">${pctFixed}%</div>
+            </div>
+            <div class="mcc-grafico-pos text-muted">${a.pos || a.posicao || "Única"}</div>
+            <div class="ind-gauge-bar premium-bar">
+                <div class="ind-gauge-fill" style="width:${Math.min(pct, 100)}%; background:${cor};"></div>
+            </div>
+            <div class="grafico-legenda" style="margin-bottom: 10px;">
+                <span>Ton: <strong>${Math.round(a.ton || 0).toLocaleString()}</strong></span>
+                <span>Lim: ${(a.meta || 0).toLocaleString()}</span>
+                <span>Dias: <strong>${dias}</strong></span>
+            </div>
+            <button class="btn-xs-primary w-100" style="border: 1px dashed var(--text-accent); color: var(--text-accent); background: rgba(56,189,248,0.05); padding: 8px; border-radius: 4px; cursor: pointer;" onclick="abrirHistoricoIndividual('${a.id}')">
+                <i class="fas fa-book-open"></i> Ver Prontuário
+            </button>
+        </div>`;
+}
+
+// ==========================================
+// RENDER ATIVOS (COM FILTRO DE CRÍTICOS)
+// ==========================================
+function renderAtivos() {
+    const tbody = document.getElementById("ativos-table-body");
+    const filtroEl = document.getElementById("filtro-tipo-ativo");
+    if (!tbody || !filtroEl) return;
+
+    let f = BANCO_ATIVOS.filter(a => (a.local || "").includes(`Veio ${VEIO_SELECIONADO_PAINEL}`) || filtroEl.value.includes("Oficina"));
+    
+    if (FILTRO_CRITICOS) {
+        f = f.filter(a => {
+            const pct = a.meta > 0 ? (a.ton / a.meta) * 100 : 0;
+            return pct >= 80 && !a.local.includes("Oficina");
+        });
+        FILTRO_CRITICOS = false;
+        const titulo = document.querySelector('#aba-ativos .panel-card-header h1');
+        if (titulo) titulo.innerHTML = `<i class="fas fa-exclamation-triangle" style="color: var(--danger);"></i> Equipamentos Críticos (≥80%)`;
+    } else {
+        const titulo = document.querySelector('#aba-ativos .panel-card-header h1');
+        if (titulo) titulo.innerHTML = `<i class="fas fa-cubes"></i> Matriz Operacional Geral`;
+    }
+
+    if (filtroEl.value === "Oficina / Reparo") {
+        f = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reparo");
+    } else if (filtroEl.value === "Oficina / Reserva") {
+        f = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reserva");
+    } else if (filtroEl.value !== "TODOS") {
+        f = f.filter(a => a.tipo === filtroEl.value);
+    }
+
+    f.sort((a, b) => (a.ordem || 999) - (b.ordem || 999));
+
+    tbody.innerHTML = f.map(a => {
+        const pct = a.meta > 0 ? ((a.ton / a.meta) * 100) : 0;
+        const pctFixed = pct.toFixed(1);
+        let classe = pct >= 80 ? "reparo" : "operação";
+        if (a.local === "Oficina / Reserva") classe = "reserva";
+        else if (a.local === "Oficina / Reparo") classe = "reparo";
+
+        let btnAcao = (a.local || "").includes("Veio")
+            ? `<button class="btn-outline-danger" onclick="iniciarSaque('${a.id}')">Sacar</button>`
+            : `<span class="text-muted" style="margin-right:10px;"><i class="fas fa-warehouse"></i></span>`;
+
+        let btnHist = `<button class="btn-outline-danger" style="border-color:var(--text-accent); color:var(--text-accent);" onclick="abrirHistoricoIndividual('${a.id}')"><i class="fas fa-book-open"></i></button>`;
+        let btnExcluir = `<button class="btn-outline-danger" style="border-color:var(--danger); color:var(--danger); padding: 4px 8px;" onclick="excluirEquipamento('${a.id}')" title="Excluir equipamento"><i class="fas fa-trash"></i></button>`;
+
+        return `
+            <tr>
+                <td class="editavel font-code" onclick="fazerCelulaEditavel(this, '${a.id}', 'id')">${a.id}</td>
+                <td><span class="ind-card-tag bg-tag">${a.tipo} <span style="opacity:0.7; font-size:10px;">(MCC ${a.mcc_compat || ''})</span></span></td>
+                <td class="font-code text-muted">${a.local || "Não Alocado"}</td>
+                <td class="editavel font-code" onclick="fazerCelulaEditavel(this, '${a.id}', 'dias')">${a.dias || 0}</td>
+                <td class="editavel font-code" onclick="fazerCelulaEditavel(this, '${a.id}', 'ton')">${Math.round(a.ton || 0).toLocaleString()}</td>
+                <td class="font-code text-muted">${(a.meta || 0).toLocaleString()}</td>
+                <td><span class="status-pill ${classe}">${pctFixed}%</span></td>
+                <td><div class="flex-align-center gap-10 action-buttons-mobile">${btnAcao} ${btnHist} ${btnExcluir}</div></td>
+            </tr>`;
+    }).join("");
+}
+
+// ==========================================
+// RENDER REPAROS (AGRUPADO POR MCC E TIPO)
+// ==========================================
+function renderReparos() {
+    const repBody = document.getElementById("reparos-table-body");
+    if (!repBody) return;
+
+    let precisaSalvar = false;
+    BANCO_ATIVOS.forEach(a => {
+        if (a.local === "Oficina / Reparo" && !a.dataReparo) {
+            const diasAtuais = a.dias || 0;
+            a.dataReparo = Date.now() - (diasAtuais * 24 * 60 * 60 * 1000);
+            precisaSalvar = true;
+        }
+    });
+    if (precisaSalvar) {
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    }
+
+    const reparos = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reparo");
+    if (reparos.length === 0) {
+        repBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nenhum equipamento aguardando reparo.</td></tr>`;
+        return;
+    }
+
+    const grupos = {};
+    reparos.forEach(a => {
+        const mcc = a.mcc_compat || "2/3";
+        if (!grupos[mcc]) grupos[mcc] = [];
+        grupos[mcc].push(a);
+    });
+
+    let htmlFinal = "";
+    const coresMCC = { "2": "#3b82f6", "3": "#8b5cf6", "4": "#ec4899" };
+
+    Object.keys(grupos).sort().forEach(mcc => {
+        const itens = grupos[mcc];
+        const tipos = {};
+        itens.forEach(a => {
+            const tipo = a.tipo || "Outros";
+            if (!tipos[tipo]) tipos[tipo] = [];
+            tipos[tipo].push(a);
+        });
+
+        htmlFinal += `
+            <tr style="background: ${coresMCC[mcc] || '#f59e0b'}20; border-top: 3px solid ${coresMCC[mcc] || '#f59e0b'};">
+                <td colspan="5" style="padding: 10px 16px; font-weight: 700; color: var(--text-heading); font-size: 15px;">
+                    <i class="fas fa-server"></i> MCC ${mcc}
+                </td>
+            </tr>
+        `;
+
+        Object.keys(tipos).sort().forEach(tipo => {
+            const lista = tipos[tipo];
+            htmlFinal += `
+                <tr style="background: var(--bg-th);">
+                    <td colspan="5" style="padding: 6px 16px; font-weight: 600; color: var(--text-muted); font-size: 13px; padding-left: 30px;">
+                        <i class="fas fa-tag"></i> ${tipo}
+                    </td>
+                </tr>
+            `;
+            lista.forEach(a => {
+                const pct = a.meta > 0 ? ((a.ton / a.meta) * 100) : 0;
+                const pctFixed = pct.toFixed(1);
+                const dias = a.dias || 0;
+                const btnExcluir = `<button class="btn-outline-danger" style="border-color:var(--danger); color:var(--danger); padding: 4px 8px;" onclick="excluirEquipamento('${a.id}')" title="Excluir"><i class="fas fa-trash"></i></button>`;
+                htmlFinal += `
+                    <tr>
+                        <td class="font-code" style="padding-left: 45px;">${a.id}</td>
+                        <td><span class="ind-card-tag bg-tag">${a.tipo}</span></td>
+                        <td>
+                            <div class="flex-align-center gap-10">
+                                <span class="font-code bold w-40" style="color: var(--text-heading);">${pctFixed}%</span>
+                                <div class="ind-gauge-bar premium-bar w-100px">
+                                    <div class="ind-gauge-fill bg-danger" style="width: ${Math.min(pct, 100)}%;"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="font-weight:bold; color:var(--warning);">${dias} dias</td>
+                        <td>
+                            <div class="flex-align-center gap-10 action-buttons-mobile">
+                                <button class="btn-premium btn-warning" onclick="window.abrirFolhaoPorTipo('${a.id}')"><i class="fas fa-hammer"></i> Concluir</button>
+                                <button class="btn-premium" style="background:transparent; border-color:var(--text-accent); color:var(--text-accent); padding: 8px 12px;" onclick="abrirHistoricoIndividual('${a.id}')" title="Ver Prontuário"><i class="fas fa-book-open"></i></button>
+                                ${btnExcluir}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        });
+    });
+
+    repBody.innerHTML = htmlFinal;
+}
+
+// ==========================================
+// FILTROS MCC
+// ==========================================
+function aplicarFiltrosMCC(mccNumero, btnElement) {
+    const grupo = btnElement.parentElement;
+    grupo.querySelectorAll('.btn-filter-mcc').forEach(b => b.classList.remove('active'));
+    btnElement.classList.add('active');
+    renderizarGraficosMCC(mccNumero);
+}
+
+function renderizarGraficosMCC(mccNumero) {
+    const container = document.getElementById(`graficos-mcc${mccNumero}`);
+    if (!container) return;
+
+    const divFiltroVeio = document.getElementById(`filtros-veio-mcc${mccNumero}`);
+    const veioAtivo = divFiltroVeio ? divFiltroVeio.querySelector('.active')?.getAttribute('data-valor') : 'TODOS';
+
+    const divFiltroStatus = document.getElementById(`filtros-status-mcc${mccNumero}`);
+    const statusAtivo = divFiltroStatus ? divFiltroStatus.querySelector('.active')?.getAttribute('data-valor') : 'TODOS';
+
+    let filtrados = BANCO_ATIVOS.filter(a => a.local && a.local.includes(`MCC ${mccNumero}`));
+
+    if (veioAtivo && veioAtivo !== 'TODOS') {
+        filtrados = filtrados.filter(a => a.local && a.local.includes(`Veio ${veioAtivo}`));
+    }
+
+    if (statusAtivo && statusAtivo !== 'TODOS') {
+        filtrados = filtrados.filter(a => {
+            const pct = a.meta > 0 ? (a.ton / a.meta) * 100 : 0;
+            if (statusAtivo === 'VERMELHO') return pct >= 80;
+            if (statusAtivo === 'AMARELO') return pct >= 50 && pct < 80;
+            if (statusAtivo === 'VERDE') return pct < 50;
+            return true;
+        });
+    }
+
+    filtrados.sort((a, b) => (a.ordem || 999) - (b.ordem || 999));
+
+    if (filtrados.length === 0) {
+        container.innerHTML = `<div class="vazio">Nenhum equipamento encontrado com a combinação de filtros.</div>`;
+        return;
+    }
+
+    container.innerHTML = filtrados.map(gerarCardGraficoHTML).join("");
 }
 
 // ==========================================
@@ -1068,10 +1016,7 @@ function executarSaqueFinal(id, laudo) {
 // MODAL CONCLUIR REPARO (AGORA DESATIVADO)
 // ==========================================
 function abrirModalConcluirReparo(id) {
-    // Esta função foi substituída por window.abrirFolhaoPorTipo
-    // Mantida apenas para compatibilidade, mas não é mais usada
     console.warn("abrirModalConcluirReparo foi substituído por abrirFolhaoPorTipo");
-    // Redireciona para o folhão
     if (typeof window.abrirFolhaoPorTipo === 'function') {
         window.abrirFolhaoPorTipo(id);
     } else {
@@ -1124,8 +1069,8 @@ function confirmarConclusaoReparo() {
     renderReparos();
     renderReservas();
     renderAtivos();
-    renderPainelVeios(); // 👈 NOVO: atualiza o sequenciamento
-    renderHistorico();   // 👈 NOVO: atualiza a auditoria
+    renderPainelVeios();
+    renderHistorico();
     calcularKpisGlobais();
     atualizarPainelCompleto();
     abrirAba(null, 'aba-reservas');
@@ -2303,7 +2248,6 @@ async function carregarOficina() {
             return;
         }
         
-        // Agrupa por ÁREA
         const areas = {};
         dados.forEach(item => {
             const area = item.ÁREA || 'Geral';
@@ -2351,7 +2295,7 @@ async function carregarOficina() {
 }
 
 // ==========================================
-// FUNÇÃO PARA ABRIR O FOLHÃO CORRETO POR TIPO
+// FUNÇÃO PARA ABRIR O FOLHÃO CORRETO POR TIPO (CORRIGIDA)
 // ==========================================
 window.abrirFolhaoPorTipo = function(id) {
     const item = BANCO_ATIVOS.find(a => a.id === id);
@@ -2363,7 +2307,17 @@ window.abrirFolhaoPorTipo = function(id) {
     const tipo = item.tipo || '';
     const mcc = item.mcc_compat || '';
 
-    // Roteia para o folhão correto
+    // 👇 ADICIONA O RECONHECIMENTO DO STRAIGHTENER R2
+    if (tipo === 'Straightener R2' || (tipo === 'Straightener' && item.id && item.id.includes('STR-2'))) {
+        if (typeof window.abrirFolhaoR2 === 'function') {
+            window.abrirFolhaoR2(item.id);
+            return;
+        } else {
+            alert('Função abrirFolhaoR2 não disponível.');
+            return;
+        }
+    }
+
     if (tipo === 'Molde') {
         if (mcc === '2/3') {
             if (typeof window.abrirFolhaoMolde23 === 'function') {
@@ -2397,7 +2351,6 @@ window.abrirFolhaoPorTipo = function(id) {
             alert('Função abrirFolhaoHorizontal não disponível.');
         }
     } else if (tipo === 'Straightener') {
-        // NOVO: Roteia para R1 ou R2 ou MCC4 (fallback)
         if (id.includes('STR-1') || id.includes('R1')) {
             if (typeof window.abrirFolhaoR1 === 'function') {
                 window.abrirFolhaoR1(id);
@@ -2411,7 +2364,6 @@ window.abrirFolhaoPorTipo = function(id) {
                 alert('Função abrirFolhaoR2 não disponível.');
             }
         } else {
-            // Fallback para MCC4 (caso não identifique R1/R2)
             if (typeof window.abrirFolhaoMCC4 === 'function') {
                 window.abrirFolhaoMCC4(id);
             } else {
@@ -2428,6 +2380,7 @@ window.abrirFolhaoPorTipo = function(id) {
         alert('Tipo de equipamento sem folhão definido: ' + tipo);
     }
 };
+
 // ==========================================
 // HISTÓRICO DE LAUDOS SALVOS (PDF)
 // ==========================================
@@ -2448,7 +2401,7 @@ function salvarLaudoNoHistorico(tag, tipo, htmlPDF) {
     
     if (laudos.length > 200) laudos.pop();
     localStorage.setItem("oms_laudos_salvos", JSON.stringify(laudos));
-    renderHistorico(); // atualiza a lista
+    renderHistorico();
     return id;
 }
 
@@ -2491,7 +2444,7 @@ window.excluirLaudo = excluirLaudo;
 // EXPOSIÇÃO GLOBAL - APENAS FUNÇÕES DO SCRIPT.JS
 // ==========================================
 
-// ===== FUNÇÕES DE NAVEGAÇÃO E UI (definidas no script.js) =====
+// ===== FUNÇÕES DE NAVEGAÇÃO E UI =====
 window.abrirAba = abrirAba;
 window.toggleSidebar = toggleSidebar;
 window.toggleTheme = toggleTheme;
@@ -2505,15 +2458,15 @@ window.abrirHistoricoIndividual = abrirHistoricoIndividual;
 window.fecharModalHistorico = fecharModalHistorico;
 window.salvarRegistroManual = salvarRegistroManual;
 
-// ===== FUNÇÕES DE MANUTENÇÃO (SAQUE, REPARO, SWAP) =====
+// ===== FUNÇÕES DE MANUTENÇÃO =====
 window.iniciarSaque = iniciarSaque;
 window.confirmarRelatorio = confirmarRelatorio;
 window.fecharModalRelatorio = fecharModalRelatorio;
-window.abrirModalConcluirReparo = abrirModalConcluirReparo; // mantido por compatibilidade
+window.abrirModalConcluirReparo = abrirModalConcluirReparo;
 window.fecharModalConcluirReparo = fecharModalConcluirReparo;
 window.confirmarConclusaoReparo = confirmarConclusaoReparo;
 window.toggleCamposReparoParcial = toggleCamposReparoParcial;
-window.abrirFolhaoPorTipo = abrirFolhaoPorTipo;
+window.abrirFolhaoPorTipo = window.abrirFolhaoPorTipo;
 
 // ===== FUNÇÕES DE CADASTRO =====
 window.toggleFormAdicionar = toggleFormAdicionar;
@@ -2525,13 +2478,12 @@ window.ajustarSaldoMaterial = ajustarSaldoMaterial;
 window.removerMaterial = removerMaterial;
 window.alterarSaldoRolo = alterarSaldoRolo;
 
-// ===== FUNÇÕES DE EDIÇaquiÃO E UTILITÁRIOS =====
+// ===== FUNÇÕES DE EDIÇÃO E UTILITÁRIOS =====
 window.fazerCelulaEditavel = fazerCelulaEditavel;
-// excluirEquipamento é definido no ui.js - NÃO reatribua 
 window.dispararEmergencia = dispararEmergencia;
 window.encerrarEmergencia = encerrarEmergencia;
 
-// ===== FUNÇÕES DO PAINEL (definidas no script.js) =====
+// ===== FUNÇÕES DO PAINEL =====
 window.calcularKpisGlobais = calcularKpisGlobais;
 window.atualizarInterfaceUsuario = atualizarInterfaceUsuario;
 window.abrirCriticos = abrirCriticos;
@@ -2545,7 +2497,9 @@ window.getConfiguracaoPorVeio = getConfiguracaoPorVeio;
 window.getSlotsPorVeio = getSlotsPorVeio;
 window.CONFIGURACOES_MAQUINAS = CONFIGURACOES_MAQUINAS;
 
-// ===== FUNÇÕES DE SWAP E FORÇAR RENDER =====
+window.BANCO_ATIVOS = BANCO_ATIVOS;
+
+// ===== FUNÇÕES DE SWAP =====
 window.iniciarSwapAlocacao = function(idReserva) {
     if (!verificarAcesso()) return;
 
@@ -2566,7 +2520,6 @@ window.iniciarSwapAlocacao = function(idReserva) {
                 pecaReserva.ordem = getOrdemPadrao(pecaReserva.tipo);
                 localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
                 registrarHistorico(pecaReserva.id, `Alocado no ${novoLocal}.`);
-                // As funções abaixo são do ui.js, mas já estão disponíveis globalmente
                 if (typeof renderReparos === 'function') renderReparos();
                 if (typeof renderReservas === 'function') renderReservas();
                 if (typeof renderAtivos === 'function') renderAtivos();
@@ -2577,7 +2530,6 @@ window.iniciarSwapAlocacao = function(idReserva) {
         }
     }
 };
-
 
 window.forcarRenderReservas = function() {
     console.log("🔄 Forçando renderização de reservas...");
@@ -2631,41 +2583,31 @@ console.log("✅ Script.js carregado - todas as funções expostas globalmente")
 // INICIALIZAÇÃO E SINCRONIZAÇÃO COM A PLANILHA
 // ==========================================
 document.addEventListener('DOMContentLoaded', async () => {
-    carregarTema(); // Aplica o tema escuro/claro salvo
+    carregarTema();
     
     console.log("🔄 Buscando dados reais da Planilha Google...");
     
-    // Chama a API lá do banco.js
     const atualizou = await sincronizarAtivosReaisMCC4();
     
     if (atualizou) {
-        // Verifica se já recarregamos a página nesta sessão para não ficar em loop
         const jaRecarregou = sessionStorage.getItem('oms_sincronizado_hoje');
         
         if (!jaRecarregou) {
             console.log("✨ Dados novos salvos no cache! Recarregando a tela para aplicar em todos os arquivos...");
             sessionStorage.setItem('oms_sincronizado_hoje', 'true');
-            
-            // Recarrega a página rapidamente para forçar o ui.js e o script.js a lerem os dados reais
             window.location.reload();
         } else {
             console.log("✨ Tela atualizada com os dados 100% reais da planilha!");
-            
-            // Remove a trava de sessão para permitir nova sincronização no próximo F5
             sessionStorage.removeItem('oms_sincronizado_hoje');
-            
            
             const dadosCache = JSON.parse(localStorage.getItem("oms_ativos_v32_local"));
 
             if (dadosCache && Array.isArray(dadosCache)) {
-
                 BANCO_ATIVOS.length = 0;
-
                 Array.prototype.push.apply(BANCO_ATIVOS, dadosCache);
-
             }
 
-            window.BANCO_ATIVOS = BANCO_ATIVOS; // se outras partes usarem window.BANCO_ATIVOS
+            window.BANCO_ATIVOS = BANCO_ATIVOS;
             
             if (typeof renderPainelVeios === 'function') renderPainelVeios();
             if (typeof renderAtivos === 'function') renderAtivos();
@@ -2676,4 +2618,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
         console.log("⚠️ Usando os dados em cache (offline ou sem dados novos).");
     }
-})
+});

@@ -17,8 +17,7 @@ export const CADASTRO_MATRICULAS = {
 };
 
 
-const URL_API_MCC = "https://script.google.com/macros/s/AKfycby_XSR5hrrvOgDEqlWhbKC2l7iPjthe6ht5YrabNliXsFlkNhzYGFU2BR8JUhzv8yY2/exec";
-// ==========================================================================
+const API_PLANILHA_URL = "https://script.google.com/macros/s/AKfycby_XSR5hrrvOgDEqlWhbKC2l7iPjthe6ht5YrabNliXsFlkNhzYGFU2BR8JUhzv8yY2/exec";
 // FUNÇÃO AUXILIAR EXPORTADA PARA ORDEM PADRÃO
 // ==========================================================================
 export function getOrdemPadrao(tipo) {

@@ -2290,3 +2290,30 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 600;
     color: var(--text-heading);
 }
+/* Garantir que o modal seja uma coluna flexível */
+.modal-content {
+    display: flex;
+    flex-direction: column;
+    max-height: 95vh; /* Limita a altura total */
+    overflow: hidden; /* Evita que o conteúdo vaze */
+}
+
+/* Cabeçalho fixo (não rola) */
+.modal-content > div:first-child,
+.modal-content > div.input-group-wrapper,
+.modal-content > .folhao-tabs {
+    flex-shrink: 0; /* Não encolhe */
+}
+
+/* Corpo rolável */
+.folhao-body {
+    flex: 1;
+    overflow-y: auto; /* Scroll vertical */
+    padding: 10px;
+    min-height: 300px; /* Ajuste conforme necessário */
+}
+
+/* Abas e conteúdo */
+.folhao-content {
+    display: block; /* Garante que o conteúdo ocupe espaço */
+}

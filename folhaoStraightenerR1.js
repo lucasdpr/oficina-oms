@@ -1,8 +1,5 @@
 // folhaoStraightenerR1.js - VERSÃO COMPLETA PARA STRAIGHTENER R1
 
-import { BANCO_ATIVOS } from './banco.js';
-import { renderAtivos, renderReparos, renderReservas } from './ui.js';
-
 let ID_FOLHAO_R1_ATUAL = null;
 
 // ==============================================================
