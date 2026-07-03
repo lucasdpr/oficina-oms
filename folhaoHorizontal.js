@@ -1,7 +1,5 @@
 // folhaoHorizontal.js - VERSÃO COMPLETA COM TODAS AS SEÇÕES DO DOCUMENTO OFICIAL
 
-import { BANCO_ATIVOS } from './banco.js';
-import { renderAtivos, renderReparos, renderReservas } from './ui.js';
 
 let ID_FOLHAO_HORIZ_ATUAL = null;
 

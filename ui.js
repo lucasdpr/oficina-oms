@@ -91,7 +91,7 @@ function renderReservas() {
                 const isHorizontal = familiaUpper === "HORIZONTAL" || familiaUpper.includes("HORIZONTAL");
                 const isCadeiraSup = familiaUpper === "CADEIRA SUPERIOR" || familiaUpper.includes("CADEIRA SUPERIOR");
                 const isCadeiraInf = familiaUpper === "CADEIRA INFERIOR" || familiaUpper.includes("CADEIRA INFERIOR");
-                const isSegmento = familiaUpper === "SEGMENTO" || familiaUpper.includes("SEGMENTO") || familiaUpper === "SEGUIMENTO ZERO";
+                const isSegmento = familiaUpper === "SEGMENTO" || familiaUpper.includes("SEGMENTO") || familiaUpper === "SEGMENTO ZERO";
                 const isMolde = familiaUpper === "MOLDE" || familiaUpper.includes("MOLDE");
                 const isBender = familiaUpper === "BENDER" || familiaUpper.includes("BENDER");
                 const isStraightener = familiaUpper === "STRAIGHTENER" || familiaUpper.includes("STRAIGHTENER");
@@ -236,7 +236,7 @@ function efetuarSwapDireto(tagNova) {
         slotChassi = `CAD-SUP-${posicaoDigitada}`;
     } else if (tipoUpper.includes("CADEIRA INFERIOR")) {
         slotChassi = `CAD-INF-${posicaoDigitada}`;
-    } else if (tipoUpper.includes("SEGMENTO ZERO") || tipoUpper.includes("SEGUIMENTO ZERO")) {
+    } else if (tipoUpper.includes("SEGMENTO ZERO") || tipoUpper.includes("SEGMENTO ZERO")) {
         slotChassi = "SEG-ZERO";
     } else if (tipoUpper.includes("MESA OSCILADORA")) {
         slotChassi = "OSCILADORA";

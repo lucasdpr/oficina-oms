@@ -45,7 +45,7 @@ let ID_HISTORICO_ATUAL = null;
 function getOrdemPadrao(tipo) {
     if (tipo === "Molde") return 10;
     if (tipo === "Mesa Osciladora") return 20;
-    if (tipo === "Seguimento Zero") return 30;
+    if (tipo === "Segmento Zero") return 30;
     if (tipo === "Bender") return 40;
     if (tipo === "Cadeira Superior") return 100;
     if (tipo === "Cadeira Inferior") return 200;
@@ -65,7 +65,7 @@ if (!BANCO_ROLOS) {
         { id: "R-S4", nome: "Rolo de Cadeira 400", conjunto: "Cadeira", mcc_compat: "2/3", qtd: 12 },
         { id: "R-S4P", nome: "Rolo de Cadeira 400 Puxador", conjunto: "Cadeira", mcc_compat: "2/3", qtd: 6 },
         { id: "R-H300A", nome: "Rolo Horizontal de 300 Acionado", conjunto: "Segmento", mcc_compat: "4", qtd: 6 },
-        { id: "R-200", nome: "Rolo 200", conjunto: "Seguimento Zero", mcc_compat: "2/3/4", qtd: 8 },
+        { id: "R-200", nome: "Rolo 200", conjunto: "Segmento Zero", mcc_compat: "2/3/4", qtd: 8 },
         { id: "R-FR23", nome: "Foot Roll", conjunto: "Molde", mcc_compat: "2/3", qtd: 4 }
     ];
     localStorage.setItem("oms_rolos_v32_local", JSON.stringify(BANCO_ROLOS));
@@ -362,7 +362,7 @@ function gerarSlotsMCC23() {
     const slots = [
         { id: "MOLDE", nome: "Molde Convencional", tipo: "Molde" },
         { id: "OSCILADORA", nome: "Mesa Osciladora", tipo: "Mesa Osciladora" },
-        { id: "SEG-ZERO", nome: "Segmento Zero", tipo: "Seguimento Zero" }
+        { id: "SEG-ZERO", nome: "Segmento Zero", tipo: "Segmento Zero" }
     ];
     for (let i = 1; i <= 6; i++) {
         slots.push({ id: `SEG-${i}`, nome: `Segmento #${i}`, tipo: "Segmento" });
@@ -385,7 +385,7 @@ function mapearSlotLegadoMCC23(peca) {
     if (tipo.includes("OSCILADORA")) return "OSCILADORA";
     if (tipo.includes("ZERO") || tipo.includes("SEG-0")) return "SEG-ZERO";
     
-    if (tipo.includes("SEGMENTO") || tipo.includes("SEGUIMENTO")) {
+    if (tipo.includes("SEGMENTO") || tipo.includes("SEGMENTO")) {
         const match = id.match(/SEG-?(\d+)/);
         if (match) {
             const num = parseInt(match[1]);
@@ -1557,7 +1557,7 @@ function atualizarPosicoesCadastro() {
     else if (familia === "Mesa Osciladora" && mcc === "2/3") {
         selectPos.innerHTML = `<option value="OSCILADORA">Mesa Osciladora (Única)</option>`;
     } 
-    else if (familia === "Seguimento Zero" && mcc === "2/3") {
+    else if (familia === "Segmento Zero" && mcc === "2/3") {
         selectPos.innerHTML = `<option value="SEG-ZERO">Segmento Zero (Única)</option>`;
     } 
     else if (familia === "Cadeira Superior" && mcc === "2/3") {
@@ -1634,7 +1634,7 @@ function processarCadastroPeca() {
             slotChassi = `CAD-SUP-${posicao}`;
         } else if (tipoUpper.includes("CADEIRA INFERIOR")) {
             slotChassi = `CAD-INF-${posicao}`;
-        } else if (tipoUpper.includes("SEGMENTO ZERO") || tipoUpper.includes("SEGUIMENTO ZERO")) {
+        } else if (tipoUpper.includes("SEGMENTO ZERO") || tipoUpper.includes("SEGMENTO ZERO")) {
             slotChassi = "SEG-ZERO";
         } else if (tipoUpper.includes("MESA OSCILADORA")) {
             slotChassi = "OSCILADORA";
@@ -2370,7 +2370,7 @@ window.abrirFolhaoPorTipo = function(id) {
                 alert('Função abrirFolhaoMCC4 não disponível.');
             }
         }
-    } else if (tipo === 'Seguimento Zero' || tipo === 'Segmento Zero') {
+    } else if (tipo === 'Segmento Zero' || tipo === 'Segmento Zero') {
         if (typeof window.abrirFolhaoSegmentoZero === 'function') {
             window.abrirFolhaoSegmentoZero(id);
         } else {

@@ -23,7 +23,7 @@ const API_PLANILHA_URL = "https://script.google.com/macros/s/AKfycby_XSR5hrrvOgD
 export function getOrdemPadrao(tipo) {
     if (tipo === "Molde") return 10;
     if (tipo === "Mesa Osciladora") return 20;
-    if (tipo === "Seguimento Zero") return 30;
+    if (tipo === "Segmento Zero") return 30;
     if (tipo === "Bender") return 40;
     if (tipo === "Cadeira Superior") return 100;
     if (tipo === "Cadeira Inferior") return 200;
@@ -44,7 +44,7 @@ if (!BANCO_ATIVOS || BANCO_ATIVOS.length === 0) {
         const vNome = `MCC ${m.mcc} - Veio ${m.veio}`;
         BANCO_ATIVOS.push({ id: `MLD-2${m.veio}`, tipo: "Molde", local: vNome, pos: `Molde Veio ${m.veio}`, dias: 14, ton: 1000000, meta: 1200000, ordem: 10, mcc_compat: "2/3" });
         BANCO_ATIVOS.push({ id: `OSC-2${m.veio}`, tipo: "Mesa Osciladora", local: vNome, pos: `Osciladora ${m.veio}`, dias: 65, ton: 610000, meta: 1800000, ordem: 20, mcc_compat: "2/3" });
-        BANCO_ATIVOS.push({ id: `SEG-0-2${m.veio}`, tipo: "Seguimento Zero", local: vNome, pos: "Segmento Zero", dias: 38, ton: 142100, meta: 450000, ordem: 30, mcc_compat: "2/3" });
+        BANCO_ATIVOS.push({ id: `SEG-0-2${m.veio}`, tipo: "Segmento Zero", local: vNome, pos: "Segmento Zero", dias: 38, ton: 142100, meta: 450000, ordem: 30, mcc_compat: "2/3" });
 
         for (let c = 43; c <= 79; c++) {
             let isTracionada = [45, 48, 52, 56, 60, 64, 68, 72, 76, 79].includes(c);
@@ -83,7 +83,7 @@ if (!BANCO_ROLOS) {
         { id: "R-S4", nome: "Rolo de Cadeira 400", conjunto: "Cadeira", mcc_compat: "2/3", qtd: 12 },
         { id: "R-S4P", nome: "Rolo de Cadeira 400 Puxador", conjunto: "Cadeira", mcc_compat: "2/3", qtd: 6 },
         { id: "R-H300A", nome: "Rolo Horizontal de 300 Acionado", conjunto: "Segmento", mcc_compat: "4", qtd: 6 },
-        { id: "R-200", nome: "Rolo 200", conjunto: "Seguimento Zero", mcc_compat: "2/3/4", qtd: 8 },
+        { id: "R-200", nome: "Rolo 200", conjunto: "Segmento Zero", mcc_compat: "2/3/4", qtd: 8 },
         { id: "R-FR23", nome: "Foot Roll", conjunto: "Molde", mcc_compat: "2/3", qtd: 4 }
     ];
     localStorage.setItem("oms_rolos_v32_local", JSON.stringify(BANCO_ROLOS));
