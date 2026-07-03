@@ -1507,6 +1507,7 @@ function imprimirLaudoSalvo(tag, motivo) {
     window.print();
 }
 
+
 // ==========================================
 // CADASTRO DE NOVAS PEÇAS E ROLOS
 // ==========================================
@@ -1557,7 +1558,8 @@ function atualizarPosicoesCadastro() {
     else if (familia === "Mesa Osciladora" && mcc === "2/3") {
         selectPos.innerHTML = `<option value="OSCILADORA">Mesa Osciladora (Única)</option>`;
     } 
-    else if (familia === "Seguimento Zero" && mcc === "2/3") {
+    // CORREÇÃO: Blinda qualquer variação de "Segmento Zero" ou "Seguimento Zero" para garantir a posição única
+    else if ((familia === "Seguimento Zero" || familia === "Segmento Zero") && mcc === "2/3") {
         selectPos.innerHTML = `<option value="SEG-ZERO">Segmento Zero (Única)</option>`;
     } 
     else if (familia === "Cadeira Superior" && mcc === "2/3") {
@@ -1570,7 +1572,8 @@ function atualizarPosicoesCadastro() {
             selectPos.innerHTML += `<option value="${i}">Cadeira Inferior #${i}</option>`;
         }
     } 
-    else if (familia.includes("Segmento") && mcc === "2/3") {
+    // CORREÇÃO: Evita que o Segmento Zero caia acidentalmente na regra de repetição de 1 a 6
+    else if (familia.includes("Segmento") && !familia.includes("Zero") && mcc === "2/3") {
         for (let i = 1; i <= 6; i++) {
             selectPos.innerHTML += `<option value="${i}">Segmento #${i}</option>`;
         }
@@ -1579,7 +1582,6 @@ function atualizarPosicoesCadastro() {
         selectPos.innerHTML = `<option value="GERAL">Geral / Sem posição fixa</option>`;
     }
 }
-
 function processarCadastroPeca() {
     const tag = document.getElementById("add-tag").value.trim() || `NOVA-PECA-${Math.floor(Math.random()*1000)}`;
     const tipoValor = document.getElementById("add-tipo").value || "";
@@ -2451,6 +2453,7 @@ window.toggleTheme = toggleTheme;
 window.processarAutenticacaoHome = processarAutenticacaoHome;
 window.fazerLogout = fazerLogout;
 window.verificarAcesso = verificarAcesso;
+window.processarAutenticacaoHome = processarAutenticacaoHome;
 
 // ===== FUNÇÕES DE HISTÓRICO =====
 window.registrarHistorico = registrarHistorico;
