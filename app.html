@@ -319,7 +319,7 @@
                         <h3><i class="fas fa-box-open"></i> Especificar e Cadastrar Peça de Estoque</h3>
                         <div class="form-grid-4" style="margin-top:12px;">
                             <div class="input-group"><label>TAG</label><input type="text" id="add-tag" placeholder="Ex: MLD-NOVO-01"></div>
-                            <div class="input-group"><label>Família e Tipo</label><select id="add-tipo" onchange="window.atualizarPosicoesCadastro()"><option value="">Selecione...</option><optgroup label="MCC 4 (Alta Perf.)"><option value="Molde|4">Molde Alta Performance</option><option value="Bender|4">Bender</option><option value="Bow|4">Curvo Bow</option><option value="Straightener R1|4">Straightener R1</option><option value="Straightener R2|4">Straightener R2</option><option value="Horizontal|4">Segmento Horizontal</option></optgroup><optgroup label="MCC 2 e 3"><option value="Molde|2/3">Molde Convencional</option><option value="Mesa Osciladora|2/3">Mesa Osciladora</option><option value="Segmento Zero|2/3">Segmento Zero</option><option value="Cadeira Superior|2/3">Cadeira Superior</option><option value="Cadeira Inferior|2/3">Cadeira Inferior</option></optgroup></select></div>
+                            <div class="input-group"><label>Família e Tipo</label><select id="add-tipo" onchange="window.atualizarPosicoesCadastro()"><option value="">Selecione...</option><optgroup label="MCC 4"><option value="Molde|4">Molde Alta Performance</option><option value="Bender|4">Bender</option><option value="Bow|4">Curvo Bow</option><option value="Straightener R1|4">Straightener R1</option><option value="Straightener R2|4">Straightener R2</option><option value="Horizontal|4">Segmento Horizontal</option></optgroup><optgroup label="MCC 2 e 3"><option value="Molde|2/3">Molde Convencional</option><option value="Mesa Osciladora|2/3">Mesa Osciladora</option><option value="Segmento Zero|2/3">Segmento Zero</option><option value="Segmento|2/3">Segmento de Grupo</option><option value="Cadeira Superior|2/3">Cadeira Superior</option><option value="Cadeira Inferior|2/3">Cadeira Inferior</option></optgroup></select></div>
                             <div class="input-group"><label>Posição / Slot</label><select id="add-posicao"><option value="">Aguardando Tipo...</option></select></div>
                             <div class="input-group"><label>Veio</label><select id="add-veio"><option value="H">Veio H</option><option value="G">Veio G</option><option value="C">Veio C</option><option value="D">Veio D</option><option value="E">Veio E</option><option value="F">Veio F</option></select></div>
                             <div class="input-group"><label>Meta Limite (Ton)</label><input type="number" id="add-meta" placeholder="Ex: 1500000"></div>
@@ -752,602 +752,241 @@
         </div>
     </div>
 
-    <!-- ===== MODAL MCC4 (BENDER) - COMPLETO ===== -->
-<div id="modal-folhao-mcc4" class="modal-overlay hidden">
-    <div class="modal-content" style="max-width: 1400px; max-height: 90vh; overflow-y: auto;">
-        <div class="modal-header">
-            <h2>
-                <i class="fas fa-clipboard-check"></i> 
-                Liberação Oficial - <span id="mcc4-tipo-equip">BENDER</span> 
-                (<span id="mcc4-tag-name" style="font-weight:bold;color:#f59e0b;">TAG</span>)
-            </h2>
-            <button class="btn-close-modal" onclick="window.fecharFolhaoMCC4()">&times;</button>
-        </div>
-
-        <div class="modal-body">
-            <!-- ABAS -->
+    <!-- MODAL MOLDE MCC 4 -->
+    <div id="modal-folhao-molde4" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 1400px; max-height: 90vh; overflow-y: auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+                <h2 style="color:var(--text-heading);"><i class="fas fa-clipboard-check"></i> Liberação - Molde MCC 4</h2>
+                <button class="btn-close-emergency" onclick="window.fecharFolhaoMolde4()"><i class="fas fa-times"></i></button>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:12px; margin-bottom:15px; background:var(--bg-th); padding:12px; border-radius:8px;">
+                <div class="input-group"><label>TAG</label><input type="text" id="molde4-tag-name" readonly class="premium-input"></div>
+                <div class="input-group"><label>Nº MOLDE</label><input type="text" id="molde4-num-molde" placeholder="Ex: 4H-01" class="premium-input"></div>
+                <div class="input-group"><label>MOTIVO</label><input type="text" id="molde4-motivo" placeholder="Motivo da OS" class="premium-input"></div>
+                <div class="input-group"><label>TIPO EXECUÇÃO</label><select id="molde4-tipo-exec" class="premium-select"><option value="GERAL">GERAL</option><option value="PARCIAL">PARCIAL</option></select></div>
+                <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="molde4-data-inicio" class="premium-input"></div>
+                <div class="input-group"><label>DATA FIM</label><input type="date" id="molde4-data-fim" class="premium-input"></div>
+            </div>
+            
             <div class="folhao-tabs">
-                <button class="folhao-tab active" onclick="window.trocarAbaFolhao(event, 'mcc4-aba-ident')">1. Identificação</button>
-                <button class="folhao-tab" onclick="window.trocarAbaFolhao(event, 'mcc4-aba-chegada')">2. Chegada</button>
-                <button class="folhao-tab" onclick="window.trocarAbaFolhao(event, 'mcc4-aba-execucao')">3. Execução</button>
-                <button class="folhao-tab" onclick="window.trocarAbaFolhao(event, 'mcc4-aba-saida')">4. Saída</button>
-                <button class="folhao-tab" onclick="window.trocarAbaFolhao(event, 'mcc4-aba-materiais')">5. Materiais</button>
+                <button class="folhao-tab active" onclick="window.trocarAbaMolde4(event, 'm4-aba-ident')">1. Identificação</button>
+                <button class="folhao-tab" onclick="window.trocarAbaMolde4(event, 'm4-aba-receb')">2. Recebimento</button>
+                <button class="folhao-tab" onclick="window.trocarAbaMolde4(event, 'm4-aba-revisao')">3. Revisão & Final</button>
+                <button class="folhao-tab" onclick="window.trocarAbaMolde4(event, 'm4-aba-ajustes')">4. Ajustes/Hidráulica</button>
+                <button class="folhao-tab" onclick="window.trocarAbaMolde4(event, 'm4-aba-rolos')">5. Rolos</button>
+                <button class="folhao-tab" onclick="window.trocarAbaMolde4(event, 'm4-aba-sensor')">6. Sensor & Termopares</button>
+                <button class="folhao-tab" onclick="window.trocarAbaMolde4(event, 'm4-aba-peritagem-l')">7. Peritagem Largas</button>
+                <button class="folhao-tab" onclick="window.trocarAbaMolde4(event, 'm4-aba-peritagem-e')">8. Peritagem Estreitas</button>
+                <button class="folhao-tab" onclick="window.trocarAbaMolde4(event, 'm4-aba-chavetas')">9. Engrenagem/Aresta/Chavetas</button>
+                <button class="folhao-tab" onclick="window.trocarAbaMolde4(event, 'm4-aba-mecanica')">10. Excêntrico/Cardans</button>
+                <button class="folhao-tab" onclick="window.trocarAbaMolde4(event, 'm4-aba-materiais')">11. Materiais</button>
             </div>
-
+            
             <div class="folhao-body">
+                <div id="m4-aba-ident" class="folhao-content"><div id="container-m4-identificacao"></div></div>
+                <div id="m4-aba-receb" class="folhao-content hidden"><div id="container-m4-recebimento"></div><div id="container-m4-eletrica"></div></div>
+                <div id="m4-aba-revisao" class="folhao-content hidden"><div id="container-m4-revisao"></div><div id="container-m4-final"></div></div>
+                <div id="m4-aba-ajustes" class="folhao-content hidden"><div id="container-m4-ajustes"></div></div>
+                <div id="m4-aba-rolos" class="folhao-content hidden"><div id="container-m4-rolos"></div></div>
+                <div id="m4-aba-sensor" class="folhao-content hidden"><div id="container-m4-sensor"></div><div id="container-m4-resist"></div></div>
+                <div id="m4-aba-peritagem-l" class="folhao-content hidden"><div id="container-m4-peritagem-l"></div></div>
+                <div id="m4-aba-peritagem-e" class="folhao-content hidden"><div id="container-m4-peritagem-e"></div></div>
+                <div id="m4-aba-chavetas" class="folhao-content hidden"><div id="container-m4-chavetas"></div></div>
+                <div id="m4-aba-mecanica" class="folhao-content hidden"><div id="container-m4-mecanica"></div></div>
+                <div id="m4-aba-materiais" class="folhao-content hidden"><div id="container-m4-materiais"></div></div>
+            </div>
+            
+            <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end; flex-wrap:wrap;">
+                <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoMolde4()"><i class="fas fa-save"></i> Salvar e Imprimir</button>
+                <button class="btn-outline-danger" onclick="window.fecharFolhaoMolde4()">Fechar</button>
+            </div>
+        </div>
+    </div>
+    <!-- MODAL DESEMPENADEIRA (CADEIRA SUPERIOR/INFERIOR) -->
+<div id="modal-folhao-desempenadeira" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 1200px; max-height: 90vh; display: flex; flex-direction: column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-shrink:0;">
+            <h2><i class="fas fa-clipboard-check"></i> Liberação - Desempenadeira</h2>
+            <button class="btn-close-emergency" onclick="window.fecharFolhaoDesempenadeira()"><i class="fas fa-times"></i></button>
+        </div>
 
-                <!-- ========================================= -->
-                <!-- ABA 1: IDENTIFICAÇÃO                      -->
-                <!-- ========================================= -->
-                <div id="mcc4-aba-ident" class="folhao-content">
-                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:15px;">
-                        <div class="input-group">
-                            <label><i class="fas fa-tag"></i> Nº DO SEGMENTO</label>
-                            <input id="mcc4-num-segmento" placeholder="Ex: SEG-001" class="premium-input">
-                        </div>
-                        <div class="input-group">
-                            <label><i class="fas fa-arrows-left-right"></i> VEIO (SAÍDA)</label>
-                            <div style="display:flex; gap:10px;">
-                                <label><input type="radio" name="mcc4-veio-saida" value="G"> G</label>
-                                <label><input type="radio" name="mcc4-veio-saida" value="H"> H</label>
-                            </div>
-                        </div>
-                        <div class="input-group">
-                            <label><i class="fas fa-arrows-left-right"></i> VEIO (ENTRADA)</label>
-                            <div style="display:flex; gap:10px;">
-                                <label><input type="radio" name="mcc4-veio-entrada" value="G"> G</label>
-                                <label><input type="radio" name="mcc4-veio-entrada" value="H"> H</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:15px; margin-top:15px;">
-                        <div class="input-group">
-                            <label><i class="fas fa-calendar-alt"></i> DATA INÍCIO</label>
-                            <input id="mcc4-data-inicio" type="date" class="premium-input">
-                        </div>
-                        <div class="input-group">
-                            <label><i class="fas fa-calendar-check"></i> DATA FIM</label>
-                            <input id="mcc4-data-fim" type="date" class="premium-input">
-                        </div>
-                        <div class="input-group">
-                            <label><i class="fas fa-tools"></i> TIPO EXECUÇÃO</label>
-                            <div style="display:flex; gap:10px;">
-                                <label><input type="radio" name="mcc4-tipo-exec" value="PARCIAL"> PARCIAL</label>
-                                <label><input type="radio" name="mcc4-tipo-exec" value="GERAL" checked> GERAL</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="input-group" style="margin-top:15px;">
-                        <label><i class="fas fa-pen"></i> MOTIVO</label>
-                        <textarea id="mcc4-motivo" class="premium-textarea" rows="2" placeholder="Descreva o motivo..."></textarea>
-                    </div>
-                </div>
-
-                <!-- ========================================= -->
-                <!-- ABA 2: CHEGADA                            -->
-                <!-- ========================================= -->
-                <div id="mcc4-aba-chegada" class="folhao-content hidden">
-
-                    <!-- CHECK LIST GERAL DE INSPEÇÃO -->
-                    <h3 style="color:var(--text-title); margin:15px 0 10px;">INSPEÇÃO DE CHEGADA</h3>
-                    <div id="container-check-recebimento"></div>
-
-                    <!-- AFERIÇÃO DE GAP -->
-                    <h3 style="color:var(--text-title); margin:20px 0 10px;">AFERIÇÃO DE GAP (CHEGADA)</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="premium-table" style="font-size:12px;">
-                            <thead>
-                                <tr><th>Referência</th><th>CONJ. ROLO</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr>
-                            </thead>
-                            <tbody>
-                                <tr><td rowspan="3" style="text-align:center; font-weight:bold;">255,00 ±0,30</td><td style="text-align:center;font-weight:bold;">1</td><td><input id="gap-cheg-a-1" class="premium-input" style="width:70px;"></td><td><input id="gap-cheg-b-1" class="premium-input" style="width:70px;"></td><td><input id="gap-cheg-c-1" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">2</td><td><input id="gap-cheg-a-2" class="premium-input" style="width:70px;"></td><td><input id="gap-cheg-b-2" class="premium-input" style="width:70px;"></td><td><input id="gap-cheg-c-2" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">3</td><td><input id="gap-cheg-a-3" class="premium-input" style="width:70px;"></td><td><input id="gap-cheg-b-3" class="premium-input" style="width:70px;"></td><td><input id="gap-cheg-c-3" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td rowspan="3" style="text-align:center; font-weight:bold;">254,70 ±0,30</td><td style="text-align:center;font-weight:bold;">4</td><td><input id="gap-cheg-a-4" class="premium-input" style="width:70px;"></td><td><input id="gap-cheg-b-4" class="premium-input" style="width:70px;"></td><td><input id="gap-cheg-c-4" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">5</td><td><input id="gap-cheg-a-5" class="premium-input" style="width:70px;"></td><td><input id="gap-cheg-b-5" class="premium-input" style="width:70px;"></td><td><input id="gap-cheg-c-5" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">6</td><td><input id="gap-cheg-a-6" class="premium-input" style="width:70px;"></td><td><input id="gap-cheg-b-6" class="premium-input" style="width:70px;"></td><td><input id="gap-cheg-c-6" class="premium-input" style="width:70px;"></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- CHECK DE LUBRIFICAÇÃO - BASE INFERIOR -->
-                    <h3 style="color:var(--text-title); margin:20px 0 10px;">CHECK DE LUBRIFICAÇÃO (CHEGADA) - BASE INFERIOR</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="premium-table" style="font-size:11px;">
-                            <thead><tr><th>Posição</th><th>Status</th><th>Observação</th></tr></thead>
-                            <tbody id="lub-inf-cheg-body">
-                                <tr><td style="text-align:center;font-weight:bold;">1</td><td><select id="lub-inf-1" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-inf-obs-1" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">2</td><td><select id="lub-inf-2" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-inf-obs-2" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">3</td><td><select id="lub-inf-3" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-inf-obs-3" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">4</td><td><select id="lub-inf-4" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-inf-obs-4" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">5</td><td><select id="lub-inf-5" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-inf-obs-5" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">6</td><td><select id="lub-inf-6" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-inf-obs-6" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">7</td><td><select id="lub-inf-7" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-inf-obs-7" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">8</td><td><select id="lub-inf-8" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-inf-obs-8" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">9</td><td><select id="lub-inf-9" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-inf-obs-9" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">10</td><td><select id="lub-inf-10" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-inf-obs-10" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">11</td><td><select id="lub-inf-11" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-inf-obs-11" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">12</td><td><select id="lub-inf-12" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-inf-obs-12" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">13</td><td><select id="lub-inf-13" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-inf-obs-13" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">14</td><td><select id="lub-inf-14" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-inf-obs-14" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">15</td><td><select id="lub-inf-15" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-inf-obs-15" class="premium-input" style="width:100%;"></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- CHECK DE LUBRIFICAÇÃO - BASE SUPERIOR -->
-                    <h3 style="color:var(--text-title); margin:20px 0 10px;">CHECK DE LUBRIFICAÇÃO (CHEGADA) - BASE SUPERIOR</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="premium-table" style="font-size:11px;">
-                            <thead><tr><th>Posição</th><th>Status</th><th>Observação</th></tr></thead>
-                            <tbody id="lub-sup-cheg-body">
-                                <tr><td style="text-align:center;font-weight:bold;">1</td><td><select id="lub-sup-1" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-sup-obs-1" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">2</td><td><select id="lub-sup-2" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-sup-obs-2" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">3</td><td><select id="lub-sup-3" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-sup-obs-3" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">4</td><td><select id="lub-sup-4" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-sup-obs-4" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">5</td><td><select id="lub-sup-5" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-sup-obs-5" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">6</td><td><select id="lub-sup-6" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-sup-obs-6" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">7</td><td><select id="lub-sup-7" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-sup-obs-7" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">8</td><td><select id="lub-sup-8" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-sup-obs-8" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">9</td><td><select id="lub-sup-9" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-sup-obs-9" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">10</td><td><select id="lub-sup-10" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-sup-obs-10" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">11</td><td><select id="lub-sup-11" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-sup-obs-11" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">12</td><td><select id="lub-sup-12" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-sup-obs-12" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">13</td><td><select id="lub-sup-13" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-sup-obs-13" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">14</td><td><select id="lub-sup-14" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-sup-obs-14" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">15</td><td><select id="lub-sup-15" class="premium-select" style="width:100px;"><option></option><option>OK</option><option>NOK</option></select></td><td><input id="lub-sup-obs-15" class="premium-input" style="width:100%;"></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- PASS LINE - BASE INFERIOR -->
-                    <h3 style="color:var(--text-title); margin:20px 0 10px;">PASS LINE - BASE INFERIOR (CHEGADA) - Tolerância: 0,30</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="premium-table" style="font-size:11px;">
-                            <thead><tr><th>Conj. Rolo</th><th>Referência</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr></thead>
-                            <tbody>
-                                <tr><td style="text-align:center;font-weight:bold;">1°</td><td style="text-align:center;">149,97</td><td><input id="pl-inf-cheg-a-0" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-b-0" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-c-0" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">2°</td><td style="text-align:center;">149,95</td><td><input id="pl-inf-cheg-a-1" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-b-1" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-c-1" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">3°</td><td style="text-align:center;">149,92</td><td><input id="pl-inf-cheg-a-2" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-b-2" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-c-2" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">4°</td><td style="text-align:center;">149,90</td><td><input id="pl-inf-cheg-a-3" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-b-3" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-c-3" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">5°</td><td style="text-align:center;">149,89</td><td><input id="pl-inf-cheg-a-4" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-b-4" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-c-4" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">6°</td><td style="text-align:center;">149,86</td><td><input id="pl-inf-cheg-a-5" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-b-5" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-c-5" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">7°</td><td style="text-align:center;">149,63</td><td><input id="pl-inf-cheg-a-6" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-b-6" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-c-6" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">8°</td><td style="text-align:center;">148,73</td><td><input id="pl-inf-cheg-a-7" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-b-7" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-c-7" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">9°</td><td style="text-align:center;">146,53</td><td><input id="pl-inf-cheg-a-8" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-b-8" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-c-8" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">10°</td><td style="text-align:center;">142,41</td><td><input id="pl-inf-cheg-a-9" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-b-9" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-c-9" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">11°</td><td style="text-align:center;">135,74</td><td><input id="pl-inf-cheg-a-10" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-b-10" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-c-10" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">12°</td><td style="text-align:center;">125,92</td><td><input id="pl-inf-cheg-a-11" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-b-11" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-c-11" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">13°</td><td style="text-align:center;">112,46</td><td><input id="pl-inf-cheg-a-12" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-b-12" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-c-12" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">14°</td><td style="text-align:center;">95,06</td><td><input id="pl-inf-cheg-a-13" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-b-13" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-c-13" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">15°</td><td style="text-align:center;">73,66</td><td><input id="pl-inf-cheg-a-14" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-b-14" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-cheg-c-14" class="premium-input" style="width:70px;"></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- PASS LINE - BASE SUPERIOR -->
-                    <h3 style="color:var(--text-title); margin:20px 0 10px;">PASS LINE - BASE SUPERIOR (CHEGADA) - Tolerância: 0,30</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="premium-table" style="font-size:11px;">
-                            <thead><tr><th>Conj. Rolo</th><th>Referência</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr></thead>
-                            <tbody>
-                                <tr><td style="text-align:center;font-weight:bold;">1°</td><td style="text-align:center;">149,97</td><td><input id="pl-sup-cheg-a-0" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-b-0" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-c-0" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">2°</td><td style="text-align:center;">149,95</td><td><input id="pl-sup-cheg-a-1" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-b-1" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-c-1" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">3°</td><td style="text-align:center;">149,92</td><td><input id="pl-sup-cheg-a-2" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-b-2" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-c-2" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">4°</td><td style="text-align:center;">149,91</td><td><input id="pl-sup-cheg-a-3" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-b-3" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-c-3" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">5°</td><td style="text-align:center;">149,89</td><td><input id="pl-sup-cheg-a-4" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-b-4" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-c-4" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">6°</td><td style="text-align:center;">149,90</td><td><input id="pl-sup-cheg-a-5" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-b-5" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-c-5" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">7°</td><td style="text-align:center;">150,06</td><td><input id="pl-sup-cheg-a-6" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-b-6" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-c-6" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">8°</td><td style="text-align:center;">150,83</td><td><input id="pl-sup-cheg-a-7" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-b-7" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-c-7" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">9°</td><td style="text-align:center;">152,81</td><td><input id="pl-sup-cheg-a-8" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-b-8" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-c-8" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">10°</td><td style="text-align:center;">156,63</td><td><input id="pl-sup-cheg-a-9" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-b-9" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-c-9" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">11°</td><td style="text-align:center;">162,91</td><td><input id="pl-sup-cheg-a-10" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-b-10" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-c-10" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">12°</td><td style="text-align:center;">172,29</td><td><input id="pl-sup-cheg-a-11" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-b-11" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-c-11" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">13°</td><td style="text-align:center;">185,28</td><td><input id="pl-sup-cheg-a-12" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-b-12" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-c-12" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">14°</td><td style="text-align:center;">202,24</td><td><input id="pl-sup-cheg-a-13" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-b-13" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-c-13" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">15°</td><td style="text-align:center;">223,26</td><td><input id="pl-sup-cheg-a-14" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-b-14" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-cheg-c-14" class="premium-input" style="width:70px;"></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- DIÂMETRO DOS APOIOS -->
-                    <h3 style="color:var(--text-title); margin:20px 0 10px;">DIÂMETRO DOS APOIOS (Ø205 ±0,30)</h3>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-                        <div>
-                            <h4 style="color:var(--text-muted);">Base Inferior</h4>
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                                <div class="input-group"><label>A</label><input id="diam-inf-a" class="premium-input"></div>
-                                <div class="input-group"><label>B</label><input id="diam-inf-b" class="premium-input"></div>
-                                <div class="input-group"><label>C</label><input id="diam-inf-c" class="premium-input"></div>
-                                <div class="input-group"><label>D</label><input id="diam-inf-d" class="premium-input"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <h4 style="color:var(--text-muted);">Base Superior</h4>
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                                <div class="input-group"><label>A</label><input id="diam-sup-a" class="premium-input"></div>
-                                <div class="input-group"><label>B</label><input id="diam-sup-b" class="premium-input"></div>
-                                <div class="input-group"><label>C</label><input id="diam-sup-c" class="premium-input"></div>
-                                <div class="input-group"><label>D</label><input id="diam-sup-d" class="premium-input"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- INSPEÇÃO DE ROLOS - CHEGADA BASE INFERIOR -->
-                    <h3 style="color:var(--text-title); margin:20px 0 10px;">INSPEÇÃO DE ROLOS - CHEGADA BASE INFERIOR</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="premium-table" style="font-size:11px;">
-                            <thead><tr><th>Posição</th><th>OK 1</th><th>Ñ/OK 1</th><th>OK 2</th><th>Ñ/OK 2</th><th>OK 3</th><th>Ñ/OK 3</th><th>OK 4</th><th>Ñ/OK 4</th></tr></thead>
-                            <tbody id="rol-inspec-inf-cheg">
-                                <tr><td style="text-align:center;font-weight:bold;">1</td><td><input type="checkbox" id="rol-inf-1-1"></td><td><input type="checkbox" id="rol-inf-1-1n"></td><td><input type="checkbox" id="rol-inf-2-1"></td><td><input type="checkbox" id="rol-inf-2-1n"></td><td><input type="checkbox" id="rol-inf-3-1"></td><td><input type="checkbox" id="rol-inf-3-1n"></td><td><input type="checkbox" id="rol-inf-4-1"></td><td><input type="checkbox" id="rol-inf-4-1n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">2</td><td><input type="checkbox" id="rol-inf-1-2"></td><td><input type="checkbox" id="rol-inf-1-2n"></td><td><input type="checkbox" id="rol-inf-2-2"></td><td><input type="checkbox" id="rol-inf-2-2n"></td><td><input type="checkbox" id="rol-inf-3-2"></td><td><input type="checkbox" id="rol-inf-3-2n"></td><td><input type="checkbox" id="rol-inf-4-2"></td><td><input type="checkbox" id="rol-inf-4-2n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">3</td><td><input type="checkbox" id="rol-inf-1-3"></td><td><input type="checkbox" id="rol-inf-1-3n"></td><td><input type="checkbox" id="rol-inf-2-3"></td><td><input type="checkbox" id="rol-inf-2-3n"></td><td><input type="checkbox" id="rol-inf-3-3"></td><td><input type="checkbox" id="rol-inf-3-3n"></td><td><input type="checkbox" id="rol-inf-4-3"></td><td><input type="checkbox" id="rol-inf-4-3n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">4</td><td><input type="checkbox" id="rol-inf-1-4"></td><td><input type="checkbox" id="rol-inf-1-4n"></td><td><input type="checkbox" id="rol-inf-2-4"></td><td><input type="checkbox" id="rol-inf-2-4n"></td><td><input type="checkbox" id="rol-inf-3-4"></td><td><input type="checkbox" id="rol-inf-3-4n"></td><td><input type="checkbox" id="rol-inf-4-4"></td><td><input type="checkbox" id="rol-inf-4-4n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">5</td><td><input type="checkbox" id="rol-inf-1-5"></td><td><input type="checkbox" id="rol-inf-1-5n"></td><td><input type="checkbox" id="rol-inf-2-5"></td><td><input type="checkbox" id="rol-inf-2-5n"></td><td><input type="checkbox" id="rol-inf-3-5"></td><td><input type="checkbox" id="rol-inf-3-5n"></td><td><input type="checkbox" id="rol-inf-4-5"></td><td><input type="checkbox" id="rol-inf-4-5n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">6</td><td><input type="checkbox" id="rol-inf-1-6"></td><td><input type="checkbox" id="rol-inf-1-6n"></td><td><input type="checkbox" id="rol-inf-2-6"></td><td><input type="checkbox" id="rol-inf-2-6n"></td><td><input type="checkbox" id="rol-inf-3-6"></td><td><input type="checkbox" id="rol-inf-3-6n"></td><td><input type="checkbox" id="rol-inf-4-6"></td><td><input type="checkbox" id="rol-inf-4-6n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">7</td><td><input type="checkbox" id="rol-inf-1-7"></td><td><input type="checkbox" id="rol-inf-1-7n"></td><td><input type="checkbox" id="rol-inf-2-7"></td><td><input type="checkbox" id="rol-inf-2-7n"></td><td><input type="checkbox" id="rol-inf-3-7"></td><td><input type="checkbox" id="rol-inf-3-7n"></td><td><input type="checkbox" id="rol-inf-4-7"></td><td><input type="checkbox" id="rol-inf-4-7n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">8</td><td><input type="checkbox" id="rol-inf-1-8"></td><td><input type="checkbox" id="rol-inf-1-8n"></td><td><input type="checkbox" id="rol-inf-2-8"></td><td><input type="checkbox" id="rol-inf-2-8n"></td><td><input type="checkbox" id="rol-inf-3-8"></td><td><input type="checkbox" id="rol-inf-3-8n"></td><td><input type="checkbox" id="rol-inf-4-8"></td><td><input type="checkbox" id="rol-inf-4-8n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">9</td><td><input type="checkbox" id="rol-inf-1-9"></td><td><input type="checkbox" id="rol-inf-1-9n"></td><td><input type="checkbox" id="rol-inf-2-9"></td><td><input type="checkbox" id="rol-inf-2-9n"></td><td><input type="checkbox" id="rol-inf-3-9"></td><td><input type="checkbox" id="rol-inf-3-9n"></td><td><input type="checkbox" id="rol-inf-4-9"></td><td><input type="checkbox" id="rol-inf-4-9n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">10</td><td><input type="checkbox" id="rol-inf-1-10"></td><td><input type="checkbox" id="rol-inf-1-10n"></td><td><input type="checkbox" id="rol-inf-2-10"></td><td><input type="checkbox" id="rol-inf-2-10n"></td><td><input type="checkbox" id="rol-inf-3-10"></td><td><input type="checkbox" id="rol-inf-3-10n"></td><td><input type="checkbox" id="rol-inf-4-10"></td><td><input type="checkbox" id="rol-inf-4-10n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">11</td><td><input type="checkbox" id="rol-inf-1-11"></td><td><input type="checkbox" id="rol-inf-1-11n"></td><td><input type="checkbox" id="rol-inf-2-11"></td><td><input type="checkbox" id="rol-inf-2-11n"></td><td><input type="checkbox" id="rol-inf-3-11"></td><td><input type="checkbox" id="rol-inf-3-11n"></td><td><input type="checkbox" id="rol-inf-4-11"></td><td><input type="checkbox" id="rol-inf-4-11n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">12</td><td><input type="checkbox" id="rol-inf-1-12"></td><td><input type="checkbox" id="rol-inf-1-12n"></td><td><input type="checkbox" id="rol-inf-2-12"></td><td><input type="checkbox" id="rol-inf-2-12n"></td><td><input type="checkbox" id="rol-inf-3-12"></td><td><input type="checkbox" id="rol-inf-3-12n"></td><td><input type="checkbox" id="rol-inf-4-12"></td><td><input type="checkbox" id="rol-inf-4-12n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">13</td><td><input type="checkbox" id="rol-inf-1-13"></td><td><input type="checkbox" id="rol-inf-1-13n"></td><td><input type="checkbox" id="rol-inf-2-13"></td><td><input type="checkbox" id="rol-inf-2-13n"></td><td><input type="checkbox" id="rol-inf-3-13"></td><td><input type="checkbox" id="rol-inf-3-13n"></td><td><input type="checkbox" id="rol-inf-4-13"></td><td><input type="checkbox" id="rol-inf-4-13n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">14</td><td><input type="checkbox" id="rol-inf-1-14"></td><td><input type="checkbox" id="rol-inf-1-14n"></td><td><input type="checkbox" id="rol-inf-2-14"></td><td><input type="checkbox" id="rol-inf-2-14n"></td><td><input type="checkbox" id="rol-inf-3-14"></td><td><input type="checkbox" id="rol-inf-3-14n"></td><td><input type="checkbox" id="rol-inf-4-14"></td><td><input type="checkbox" id="rol-inf-4-14n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">15</td><td><input type="checkbox" id="rol-inf-1-15"></td><td><input type="checkbox" id="rol-inf-1-15n"></td><td><input type="checkbox" id="rol-inf-2-15"></td><td><input type="checkbox" id="rol-inf-2-15n"></td><td><input type="checkbox" id="rol-inf-3-15"></td><td><input type="checkbox" id="rol-inf-3-15n"></td><td><input type="checkbox" id="rol-inf-4-15"></td><td><input type="checkbox" id="rol-inf-4-15n"></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- MEDIDAS DOS ROLOS - CHEGADA BASE INFERIOR -->
-                    <h3 style="color:var(--text-title); margin:20px 0 10px;">MEDIDAS DOS ROLOS - CHEGADA BASE INFERIOR</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="premium-table" style="font-size:11px;">
-                            <thead><tr><th>Posição</th><th>Num 1</th><th>Medida 1</th><th>Num 2</th><th>Medida 2</th><th>Num 3</th><th>Medida 3</th><th>Classe</th></tr></thead>
-                            <tbody id="med-inf-cheg">
-                                <tr><td style="text-align:center;font-weight:bold;">1</td><td><input id="med-inf-n1-1" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m1-1" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n2-1" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m2-1" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n3-1" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m3-1" class="premium-input" style="width:60px;"></td><td><input id="med-inf-cls-1" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">2</td><td><input id="med-inf-n1-2" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m1-2" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n2-2" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m2-2" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n3-2" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m3-2" class="premium-input" style="width:60px;"></td><td><input id="med-inf-cls-2" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">3</td><td><input id="med-inf-n1-3" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m1-3" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n2-3" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m2-3" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n3-3" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m3-3" class="premium-input" style="width:60px;"></td><td><input id="med-inf-cls-3" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">4</td><td><input id="med-inf-n1-4" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m1-4" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n2-4" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m2-4" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n3-4" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m3-4" class="premium-input" style="width:60px;"></td><td><input id="med-inf-cls-4" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">5</td><td><input id="med-inf-n1-5" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m1-5" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n2-5" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m2-5" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n3-5" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m3-5" class="premium-input" style="width:60px;"></td><td><input id="med-inf-cls-5" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">6</td><td><input id="med-inf-n1-6" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m1-6" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n2-6" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m2-6" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n3-6" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m3-6" class="premium-input" style="width:60px;"></td><td><input id="med-inf-cls-6" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">7</td><td><input id="med-inf-n1-7" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m1-7" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n2-7" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m2-7" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n3-7" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m3-7" class="premium-input" style="width:60px;"></td><td><input id="med-inf-cls-7" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">8</td><td><input id="med-inf-n1-8" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m1-8" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n2-8" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m2-8" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n3-8" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m3-8" class="premium-input" style="width:60px;"></td><td><input id="med-inf-cls-8" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">9</td><td><input id="med-inf-n1-9" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m1-9" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n2-9" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m2-9" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n3-9" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m3-9" class="premium-input" style="width:60px;"></td><td><input id="med-inf-cls-9" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">10</td><td><input id="med-inf-n1-10" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m1-10" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n2-10" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m2-10" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n3-10" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m3-10" class="premium-input" style="width:60px;"></td><td><input id="med-inf-cls-10" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">11</td><td><input id="med-inf-n1-11" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m1-11" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n2-11" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m2-11" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n3-11" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m3-11" class="premium-input" style="width:60px;"></td><td><input id="med-inf-cls-11" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">12</td><td><input id="med-inf-n1-12" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m1-12" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n2-12" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m2-12" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n3-12" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m3-12" class="premium-input" style="width:60px;"></td><td><input id="med-inf-cls-12" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">13</td><td><input id="med-inf-n1-13" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m1-13" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n2-13" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m2-13" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n3-13" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m3-13" class="premium-input" style="width:60px;"></td><td><input id="med-inf-cls-13" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">14</td><td><input id="med-inf-n1-14" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m1-14" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n2-14" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m2-14" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n3-14" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m3-14" class="premium-input" style="width:60px;"></td><td><input id="med-inf-cls-14" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">15</td><td><input id="med-inf-n1-15" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m1-15" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n2-15" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m2-15" class="premium-input" style="width:60px;"></td><td><input id="med-inf-n3-15" class="premium-input" style="width:50px;"></td><td><input id="med-inf-m3-15" class="premium-input" style="width:60px;"></td><td><input id="med-inf-cls-15" class="premium-input" style="width:60px;"></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- INSPEÇÃO DE ROLOS - CHEGADA BASE SUPERIOR -->
-                    <h3 style="color:var(--text-title); margin:20px 0 10px;">INSPEÇÃO DE ROLOS - CHEGADA BASE SUPERIOR</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="premium-table" style="font-size:11px;">
-                            <thead><tr><th>Posição</th><th>OK 1</th><th>Ñ/OK 1</th><th>OK 2</th><th>Ñ/OK 2</th><th>OK 3</th><th>Ñ/OK 3</th><th>OK 4</th><th>Ñ/OK 4</th></tr></thead>
-                            <tbody id="rol-inspec-sup-cheg">
-                                <!-- Gerado via JS ou manual para 15 linhas -->
-                                <!-- Para economizar espaço, estou usando apenas 15 linhas com loop, mas no HTML real você pode gerar com JS -->
-                                <tr><td style="text-align:center;font-weight:bold;">1</td><td><input type="checkbox" id="rol-sup-1-1"></td><td><input type="checkbox" id="rol-sup-1-1n"></td><td><input type="checkbox" id="rol-sup-2-1"></td><td><input type="checkbox" id="rol-sup-2-1n"></td><td><input type="checkbox" id="rol-sup-3-1"></td><td><input type="checkbox" id="rol-sup-3-1n"></td><td><input type="checkbox" id="rol-sup-4-1"></td><td><input type="checkbox" id="rol-sup-4-1n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">2</td><td><input type="checkbox" id="rol-sup-1-2"></td><td><input type="checkbox" id="rol-sup-1-2n"></td><td><input type="checkbox" id="rol-sup-2-2"></td><td><input type="checkbox" id="rol-sup-2-2n"></td><td><input type="checkbox" id="rol-sup-3-2"></td><td><input type="checkbox" id="rol-sup-3-2n"></td><td><input type="checkbox" id="rol-sup-4-2"></td><td><input type="checkbox" id="rol-sup-4-2n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">3</td><td><input type="checkbox" id="rol-sup-1-3"></td><td><input type="checkbox" id="rol-sup-1-3n"></td><td><input type="checkbox" id="rol-sup-2-3"></td><td><input type="checkbox" id="rol-sup-2-3n"></td><td><input type="checkbox" id="rol-sup-3-3"></td><td><input type="checkbox" id="rol-sup-3-3n"></td><td><input type="checkbox" id="rol-sup-4-3"></td><td><input type="checkbox" id="rol-sup-4-3n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">4</td><td><input type="checkbox" id="rol-sup-1-4"></td><td><input type="checkbox" id="rol-sup-1-4n"></td><td><input type="checkbox" id="rol-sup-2-4"></td><td><input type="checkbox" id="rol-sup-2-4n"></td><td><input type="checkbox" id="rol-sup-3-4"></td><td><input type="checkbox" id="rol-sup-3-4n"></td><td><input type="checkbox" id="rol-sup-4-4"></td><td><input type="checkbox" id="rol-sup-4-4n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">5</td><td><input type="checkbox" id="rol-sup-1-5"></td><td><input type="checkbox" id="rol-sup-1-5n"></td><td><input type="checkbox" id="rol-sup-2-5"></td><td><input type="checkbox" id="rol-sup-2-5n"></td><td><input type="checkbox" id="rol-sup-3-5"></td><td><input type="checkbox" id="rol-sup-3-5n"></td><td><input type="checkbox" id="rol-sup-4-5"></td><td><input type="checkbox" id="rol-sup-4-5n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">6</td><td><input type="checkbox" id="rol-sup-1-6"></td><td><input type="checkbox" id="rol-sup-1-6n"></td><td><input type="checkbox" id="rol-sup-2-6"></td><td><input type="checkbox" id="rol-sup-2-6n"></td><td><input type="checkbox" id="rol-sup-3-6"></td><td><input type="checkbox" id="rol-sup-3-6n"></td><td><input type="checkbox" id="rol-sup-4-6"></td><td><input type="checkbox" id="rol-sup-4-6n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">7</td><td><input type="checkbox" id="rol-sup-1-7"></td><td><input type="checkbox" id="rol-sup-1-7n"></td><td><input type="checkbox" id="rol-sup-2-7"></td><td><input type="checkbox" id="rol-sup-2-7n"></td><td><input type="checkbox" id="rol-sup-3-7"></td><td><input type="checkbox" id="rol-sup-3-7n"></td><td><input type="checkbox" id="rol-sup-4-7"></td><td><input type="checkbox" id="rol-sup-4-7n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">8</td><td><input type="checkbox" id="rol-sup-1-8"></td><td><input type="checkbox" id="rol-sup-1-8n"></td><td><input type="checkbox" id="rol-sup-2-8"></td><td><input type="checkbox" id="rol-sup-2-8n"></td><td><input type="checkbox" id="rol-sup-3-8"></td><td><input type="checkbox" id="rol-sup-3-8n"></td><td><input type="checkbox" id="rol-sup-4-8"></td><td><input type="checkbox" id="rol-sup-4-8n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">9</td><td><input type="checkbox" id="rol-sup-1-9"></td><td><input type="checkbox" id="rol-sup-1-9n"></td><td><input type="checkbox" id="rol-sup-2-9"></td><td><input type="checkbox" id="rol-sup-2-9n"></td><td><input type="checkbox" id="rol-sup-3-9"></td><td><input type="checkbox" id="rol-sup-3-9n"></td><td><input type="checkbox" id="rol-sup-4-9"></td><td><input type="checkbox" id="rol-sup-4-9n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">10</td><td><input type="checkbox" id="rol-sup-1-10"></td><td><input type="checkbox" id="rol-sup-1-10n"></td><td><input type="checkbox" id="rol-sup-2-10"></td><td><input type="checkbox" id="rol-sup-2-10n"></td><td><input type="checkbox" id="rol-sup-3-10"></td><td><input type="checkbox" id="rol-sup-3-10n"></td><td><input type="checkbox" id="rol-sup-4-10"></td><td><input type="checkbox" id="rol-sup-4-10n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">11</td><td><input type="checkbox" id="rol-sup-1-11"></td><td><input type="checkbox" id="rol-sup-1-11n"></td><td><input type="checkbox" id="rol-sup-2-11"></td><td><input type="checkbox" id="rol-sup-2-11n"></td><td><input type="checkbox" id="rol-sup-3-11"></td><td><input type="checkbox" id="rol-sup-3-11n"></td><td><input type="checkbox" id="rol-sup-4-11"></td><td><input type="checkbox" id="rol-sup-4-11n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">12</td><td><input type="checkbox" id="rol-sup-1-12"></td><td><input type="checkbox" id="rol-sup-1-12n"></td><td><input type="checkbox" id="rol-sup-2-12"></td><td><input type="checkbox" id="rol-sup-2-12n"></td><td><input type="checkbox" id="rol-sup-3-12"></td><td><input type="checkbox" id="rol-sup-3-12n"></td><td><input type="checkbox" id="rol-sup-4-12"></td><td><input type="checkbox" id="rol-sup-4-12n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">13</td><td><input type="checkbox" id="rol-sup-1-13"></td><td><input type="checkbox" id="rol-sup-1-13n"></td><td><input type="checkbox" id="rol-sup-2-13"></td><td><input type="checkbox" id="rol-sup-2-13n"></td><td><input type="checkbox" id="rol-sup-3-13"></td><td><input type="checkbox" id="rol-sup-3-13n"></td><td><input type="checkbox" id="rol-sup-4-13"></td><td><input type="checkbox" id="rol-sup-4-13n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">14</td><td><input type="checkbox" id="rol-sup-1-14"></td><td><input type="checkbox" id="rol-sup-1-14n"></td><td><input type="checkbox" id="rol-sup-2-14"></td><td><input type="checkbox" id="rol-sup-2-14n"></td><td><input type="checkbox" id="rol-sup-3-14"></td><td><input type="checkbox" id="rol-sup-3-14n"></td><td><input type="checkbox" id="rol-sup-4-14"></td><td><input type="checkbox" id="rol-sup-4-14n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">15</td><td><input type="checkbox" id="rol-sup-1-15"></td><td><input type="checkbox" id="rol-sup-1-15n"></td><td><input type="checkbox" id="rol-sup-2-15"></td><td><input type="checkbox" id="rol-sup-2-15n"></td><td><input type="checkbox" id="rol-sup-3-15"></td><td><input type="checkbox" id="rol-sup-3-15n"></td><td><input type="checkbox" id="rol-sup-4-15"></td><td><input type="checkbox" id="rol-sup-4-15n"></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- MEDIDAS DOS ROLOS - CHEGADA BASE SUPERIOR -->
-                    <h3 style="color:var(--text-title); margin:20px 0 10px;">MEDIDAS DOS ROLOS - CHEGADA BASE SUPERIOR</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="premium-table" style="font-size:11px;">
-                            <thead><tr><th>Posição</th><th>Num 1</th><th>Medida 1</th><th>Num 2</th><th>Medida 2</th><th>Num 3</th><th>Medida 3</th><th>Classe</th></tr></thead>
-                            <tbody id="med-sup-cheg">
-                                <tr><td style="text-align:center;font-weight:bold;">1</td><td><input id="med-sup-n1-1" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m1-1" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n2-1" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m2-1" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n3-1" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m3-1" class="premium-input" style="width:60px;"></td><td><input id="med-sup-cls-1" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">2</td><td><input id="med-sup-n1-2" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m1-2" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n2-2" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m2-2" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n3-2" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m3-2" class="premium-input" style="width:60px;"></td><td><input id="med-sup-cls-2" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">3</td><td><input id="med-sup-n1-3" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m1-3" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n2-3" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m2-3" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n3-3" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m3-3" class="premium-input" style="width:60px;"></td><td><input id="med-sup-cls-3" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">4</td><td><input id="med-sup-n1-4" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m1-4" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n2-4" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m2-4" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n3-4" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m3-4" class="premium-input" style="width:60px;"></td><td><input id="med-sup-cls-4" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">5</td><td><input id="med-sup-n1-5" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m1-5" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n2-5" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m2-5" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n3-5" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m3-5" class="premium-input" style="width:60px;"></td><td><input id="med-sup-cls-5" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">6</td><td><input id="med-sup-n1-6" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m1-6" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n2-6" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m2-6" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n3-6" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m3-6" class="premium-input" style="width:60px;"></td><td><input id="med-sup-cls-6" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">7</td><td><input id="med-sup-n1-7" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m1-7" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n2-7" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m2-7" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n3-7" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m3-7" class="premium-input" style="width:60px;"></td><td><input id="med-sup-cls-7" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">8</td><td><input id="med-sup-n1-8" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m1-8" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n2-8" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m2-8" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n3-8" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m3-8" class="premium-input" style="width:60px;"></td><td><input id="med-sup-cls-8" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">9</td><td><input id="med-sup-n1-9" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m1-9" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n2-9" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m2-9" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n3-9" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m3-9" class="premium-input" style="width:60px;"></td><td><input id="med-sup-cls-9" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">10</td><td><input id="med-sup-n1-10" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m1-10" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n2-10" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m2-10" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n3-10" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m3-10" class="premium-input" style="width:60px;"></td><td><input id="med-sup-cls-10" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">11</td><td><input id="med-sup-n1-11" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m1-11" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n2-11" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m2-11" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n3-11" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m3-11" class="premium-input" style="width:60px;"></td><td><input id="med-sup-cls-11" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">12</td><td><input id="med-sup-n1-12" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m1-12" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n2-12" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m2-12" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n3-12" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m3-12" class="premium-input" style="width:60px;"></td><td><input id="med-sup-cls-12" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">13</td><td><input id="med-sup-n1-13" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m1-13" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n2-13" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m2-13" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n3-13" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m3-13" class="premium-input" style="width:60px;"></td><td><input id="med-sup-cls-13" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">14</td><td><input id="med-sup-n1-14" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m1-14" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n2-14" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m2-14" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n3-14" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m3-14" class="premium-input" style="width:60px;"></td><td><input id="med-sup-cls-14" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">15</td><td><input id="med-sup-n1-15" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m1-15" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n2-15" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m2-15" class="premium-input" style="width:60px;"></td><td><input id="med-sup-n3-15" class="premium-input" style="width:50px;"></td><td><input id="med-sup-m3-15" class="premium-input" style="width:60px;"></td><td><input id="med-sup-cls-15" class="premium-input" style="width:60px;"></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                </div>
-
-                <!-- ========================================= -->
-                <!-- ABA 3: EXECUÇÃO                          -->
-                <!-- ========================================= -->
-                <div id="mcc4-aba-execucao" class="folhao-content hidden">
-                    <h3 style="color:var(--text-title); margin-bottom:15px;">CHECKLIST DE MANUTENÇÃO - BENDER</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="premium-table" style="font-size:11px;">
-                            <thead>
-                                <tr><th style="width:5%;">Item</th><th style="width:40%;">Descrição da Atividade</th><th style="width:8%;">P</th><th style="width:8%;">G</th><th style="width:15%;">Executante</th><th style="width:12%;">Matrícula</th><th style="width:12%;">Data</th></tr>
-                            </thead>
-                            <tbody id="execucao-table-body">
-                                <!-- Gerado via JS, mas coloco aqui para referência -->
-                                <!-- 36 itens do PDF -->
-                                <tr><td>1</td><td>Limpeza e lavagem</td><td style="text-align:center;"><input type="checkbox" id="exe-p-0"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-0"></td><td><input id="exe-resp-0" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-0" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-0" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>2.1</td><td>Limpeza de Break Out</td><td style="text-align:center;"><input type="checkbox" id="exe-p-1"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-1"></td><td><input id="exe-resp-1" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-1" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-1" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>3.1</td><td>Soltar as uniões das cangalhas de refrigeração e tampar as uniões</td><td style="text-align:center;"><input type="checkbox" id="exe-p-2"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-2"></td><td><input id="exe-resp-2" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-2" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-2" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>3.2</td><td>Retirar chavetas das cangalhas</td><td style="text-align:center;"><input type="checkbox" id="exe-p-3"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-3"></td><td><input id="exe-resp-3" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-3" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-3" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>3.3</td><td>Remover as cangalhas</td><td style="text-align:center;"><input type="checkbox" id="exe-p-4"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-4"></td><td><input id="exe-resp-4" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-4" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-4" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>3.4</td><td>Isolar as pontas dos bicos spray</td><td style="text-align:center;"><input type="checkbox" id="exe-p-5"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-5"></td><td><input id="exe-resp-5" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-5" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-5" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>3.5</td><td>Retirar as proteções de madeira</td><td style="text-align:center;"><input type="checkbox" id="exe-p-6"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-6"></td><td><input id="exe-resp-6" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-6" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-6" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>3.6</td><td>Posicionar segmento na horizontal</td><td style="text-align:center;"><input type="checkbox" id="exe-p-7"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-7"></td><td><input id="exe-resp-7" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-7" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-7" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>3.7</td><td>Aferir medida do GAP de chegada</td><td style="text-align:center;"><input type="checkbox" id="exe-p-8"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-8"></td><td><input id="exe-resp-8" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-8" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-8" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>3.8</td><td>Soltar as 4 porcas de segurança que ajusta a base superior e base inferior</td><td style="text-align:center;"><input type="checkbox" id="exe-p-9"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-9"></td><td><input id="exe-resp-9" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-9" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-9" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>3.9</td><td>Içar e separar a base superior da base inferior</td><td style="text-align:center;"><input type="checkbox" id="exe-p-10"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-10"></td><td><input id="exe-resp-10" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-10" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-10" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>3.10</td><td>Posicionar base superior no cavalete</td><td style="text-align:center;"><input type="checkbox" id="exe-p-11"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-11"></td><td><input id="exe-resp-11" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-11" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-11" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>3.11</td><td>Retirar as proteções dos rolos</td><td style="text-align:center;"><input type="checkbox" id="exe-p-12"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-12"></td><td><input id="exe-resp-12" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-12" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-12" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>3.12</td><td>Desconectar toda tubulação de graxa e parafusos de fixação dos mancais</td><td style="text-align:center;"><input type="checkbox" id="exe-p-13"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-13"></td><td><input id="exe-resp-13" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-13" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-13" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>3.13</td><td>Retirar os conjuntos dos rolos</td><td style="text-align:center;"><input type="checkbox" id="exe-p-14"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-14"></td><td><input id="exe-resp-14" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-14" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-14" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>3.14</td><td>Guardar todos os calços de alinhamento dos conjuntos de rolos desmontados que estiverem em boas condições</td><td style="text-align:center;"><input type="checkbox" id="exe-p-15"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-15"></td><td><input id="exe-resp-15" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-15" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-15" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>3.15</td><td>Preparar a base superior para jateamento e pintura</td><td style="text-align:center;"><input type="checkbox" id="exe-p-16"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-16"></td><td><input id="exe-resp-16" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-16" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-16" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>3.16</td><td>Preparar a base inferior para jateamento e pintura</td><td style="text-align:center;"><input type="checkbox" id="exe-p-17"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-17"></td><td><input id="exe-resp-17" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-17" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-17" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>4.1</td><td>Preparação de refrigeração nas cangalhas</td><td style="text-align:center;"><input type="checkbox" id="exe-p-18"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-18"></td><td><input id="exe-resp-18" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-18" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-18" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>4.2</td><td>Testes de refrigeração nas cangalhas</td><td style="text-align:center;"><input type="checkbox" id="exe-p-19"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-19"></td><td><input id="exe-resp-19" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-19" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-19" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>5.1</td><td>Preparar a base inferior</td><td style="text-align:center;"><input type="checkbox" id="exe-p-20"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-20"></td><td><input id="exe-resp-20" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-20" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-20" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>5.2</td><td>Conferir o aperto dos calços nas bases de apoio dos mancais</td><td style="text-align:center;"><input type="checkbox" id="exe-p-21"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-21"></td><td><input id="exe-resp-21" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-21" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-21" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>5.3</td><td>Remover as válvulas de graxa e fazer teste de passagem interna. Montar as válvulas de graxa na base e efetuar o teste de lubrificação</td><td style="text-align:center;"><input type="checkbox" id="exe-p-22"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-22"></td><td><input id="exe-resp-22" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-22" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-22" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>5.4</td><td>Instalar os conjuntos de rolos na base, apertando os parafusos</td><td style="text-align:center;"><input type="checkbox" id="exe-p-23"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-23"></td><td><input id="exe-resp-23" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-23" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-23" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>5.5</td><td>Colocar os parafusos M16 (com graxa nas roscas) nos rolos</td><td style="text-align:center;"><input type="checkbox" id="exe-p-24"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-24"></td><td><input id="exe-resp-24" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-24" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-24" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>5.6</td><td>Aferir passline com auxílio da régua na base inferior do Bender conforme procedimento</td><td style="text-align:center;"><input type="checkbox" id="exe-p-25"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-25"></td><td><input id="exe-resp-25" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-25" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-25" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>5.7</td><td>Conectar os tubos de lubrificação e testar</td><td style="text-align:center;"><input type="checkbox" id="exe-p-26"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-26"></td><td><input id="exe-resp-26" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-26" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-26" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>5.8</td><td>Montar as proteções dos rolos e apertar</td><td style="text-align:center;"><input type="checkbox" id="exe-p-27"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-27"></td><td><input id="exe-resp-27" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-27" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-27" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>5.9</td><td>Passar graxa para alta temperatura nas hastes para proteção</td><td style="text-align:center;"><input type="checkbox" id="exe-p-28"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-28"></td><td><input id="exe-resp-28" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-28" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-28" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>5.10</td><td>Preparar a base superior</td><td style="text-align:center;"><input type="checkbox" id="exe-p-29"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-29"></td><td><input id="exe-resp-29" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-29" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-29" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>5.13</td><td>Instalar os conjuntos de rolos na base, apertando os parafusos</td><td style="text-align:center;"><input type="checkbox" id="exe-p-30"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-30"></td><td><input id="exe-resp-30" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-30" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-30" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>5.15</td><td>Aferir passline com auxílio da régua na base inferior do Bender conforme procedimento</td><td style="text-align:center;"><input type="checkbox" id="exe-p-31"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-31"></td><td><input id="exe-resp-31" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-31" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-31" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>5.19</td><td>Transportar a base superior e montar os calços de ajuste nas hastes da base inferior para fechar o segmento</td><td style="text-align:center;"><input type="checkbox" id="exe-p-32"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-32"></td><td><input id="exe-resp-32" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-32" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-32" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>5.21</td><td>Conferir o GAP e registrar</td><td style="text-align:center;"><input type="checkbox" id="exe-p-33"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-33"></td><td><input id="exe-resp-33" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-33" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-33" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>6.1</td><td>Efetuar teste de todos resfriadores</td><td style="text-align:center;"><input type="checkbox" id="exe-p-34"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-34"></td><td><input id="exe-resp-34" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-34" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-34" type="date" class="premium-input" style="width:100%;"></td></tr>
-                                <tr><td>6.2</td><td>Realizar teste de lubrificação</td><td style="text-align:center;"><input type="checkbox" id="exe-p-35"></td><td style="text-align:center;"><input type="checkbox" id="exe-g-35"></td><td><input id="exe-resp-35" class="premium-input" style="width:100%;"></td><td><input id="exe-mat-35" class="premium-input" style="width:100%;"></td><td><input id="exe-dat-35" type="date" class="premium-input" style="width:100%;"></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- ========================================= -->
-                <!-- ABA 4: SAÍDA                             -->
-                <!-- ========================================= -->
-                <div id="mcc4-aba-saida" class="folhao-content hidden">
-
-                    <!-- AFERIÇÃO DE GAP (SAÍDA) -->
-                    <h3 style="color:var(--text-title); margin:15px 0 10px;">AFERIÇÃO DE GAP (SAÍDA)</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="premium-table" style="font-size:12px;">
-                            <thead>
-                                <tr><th>Referência</th><th>CONJ. ROLO</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr>
-                            </thead>
-                            <tbody>
-                                <tr><td rowspan="3" style="text-align:center; font-weight:bold;">255,00 ±0,30</td><td style="text-align:center;font-weight:bold;">1</td><td><input id="gap-sai-a-1" class="premium-input" style="width:70px;"></td><td><input id="gap-sai-b-1" class="premium-input" style="width:70px;"></td><td><input id="gap-sai-c-1" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">2</td><td><input id="gap-sai-a-2" class="premium-input" style="width:70px;"></td><td><input id="gap-sai-b-2" class="premium-input" style="width:70px;"></td><td><input id="gap-sai-c-2" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">3</td><td><input id="gap-sai-a-3" class="premium-input" style="width:70px;"></td><td><input id="gap-sai-b-3" class="premium-input" style="width:70px;"></td><td><input id="gap-sai-c-3" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td rowspan="3" style="text-align:center; font-weight:bold;">254,70 ±0,30</td><td style="text-align:center;font-weight:bold;">4</td><td><input id="gap-sai-a-4" class="premium-input" style="width:70px;"></td><td><input id="gap-sai-b-4" class="premium-input" style="width:70px;"></td><td><input id="gap-sai-c-4" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">5</td><td><input id="gap-sai-a-5" class="premium-input" style="width:70px;"></td><td><input id="gap-sai-b-5" class="premium-input" style="width:70px;"></td><td><input id="gap-sai-c-5" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">6</td><td><input id="gap-sai-a-6" class="premium-input" style="width:70px;"></td><td><input id="gap-sai-b-6" class="premium-input" style="width:70px;"></td><td><input id="gap-sai-c-6" class="premium-input" style="width:70px;"></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- PASS LINE - BASE INFERIOR (SAÍDA) -->
-                    <h3 style="color:var(--text-title); margin:20px 0 10px;">PASS LINE - BASE INFERIOR (SAÍDA) - Tolerância: 0,30</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="premium-table" style="font-size:11px;">
-                            <thead><tr><th>Conj. Rolo</th><th>Referência</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr></thead>
-                            <tbody>
-                                <tr><td style="text-align:center;font-weight:bold;">1°</td><td style="text-align:center;">149,97</td><td><input id="pl-inf-sai-a-0" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-b-0" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-c-0" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">2°</td><td style="text-align:center;">149,95</td><td><input id="pl-inf-sai-a-1" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-b-1" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-c-1" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">3°</td><td style="text-align:center;">149,92</td><td><input id="pl-inf-sai-a-2" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-b-2" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-c-2" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">4°</td><td style="text-align:center;">149,90</td><td><input id="pl-inf-sai-a-3" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-b-3" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-c-3" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">5°</td><td style="text-align:center;">149,89</td><td><input id="pl-inf-sai-a-4" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-b-4" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-c-4" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">6°</td><td style="text-align:center;">149,86</td><td><input id="pl-inf-sai-a-5" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-b-5" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-c-5" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">7°</td><td style="text-align:center;">149,63</td><td><input id="pl-inf-sai-a-6" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-b-6" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-c-6" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">8°</td><td style="text-align:center;">148,73</td><td><input id="pl-inf-sai-a-7" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-b-7" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-c-7" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">9°</td><td style="text-align:center;">146,53</td><td><input id="pl-inf-sai-a-8" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-b-8" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-c-8" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">10°</td><td style="text-align:center;">142,41</td><td><input id="pl-inf-sai-a-9" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-b-9" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-c-9" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">11°</td><td style="text-align:center;">135,74</td><td><input id="pl-inf-sai-a-10" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-b-10" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-c-10" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">12°</td><td style="text-align:center;">125,92</td><td><input id="pl-inf-sai-a-11" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-b-11" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-c-11" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">13°</td><td style="text-align:center;">112,46</td><td><input id="pl-inf-sai-a-12" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-b-12" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-c-12" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">14°</td><td style="text-align:center;">95,06</td><td><input id="pl-inf-sai-a-13" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-b-13" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-c-13" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">15°</td><td style="text-align:center;">73,66</td><td><input id="pl-inf-sai-a-14" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-b-14" class="premium-input" style="width:70px;"></td><td><input id="pl-inf-sai-c-14" class="premium-input" style="width:70px;"></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- PASS LINE - BASE SUPERIOR (SAÍDA) -->
-                    <h3 style="color:var(--text-title); margin:20px 0 10px;">PASS LINE - BASE SUPERIOR (SAÍDA) - Tolerância: 0,30</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="premium-table" style="font-size:11px;">
-                            <thead><tr><th>Conj. Rolo</th><th>Referência</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr></thead>
-                            <tbody>
-                                <tr><td style="text-align:center;font-weight:bold;">1°</td><td style="text-align:center;">149,97</td><td><input id="pl-sup-sai-a-0" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-b-0" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-c-0" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">2°</td><td style="text-align:center;">149,95</td><td><input id="pl-sup-sai-a-1" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-b-1" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-c-1" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">3°</td><td style="text-align:center;">149,92</td><td><input id="pl-sup-sai-a-2" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-b-2" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-c-2" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">4°</td><td style="text-align:center;">149,91</td><td><input id="pl-sup-sai-a-3" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-b-3" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-c-3" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">5°</td><td style="text-align:center;">149,89</td><td><input id="pl-sup-sai-a-4" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-b-4" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-c-4" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">6°</td><td style="text-align:center;">149,90</td><td><input id="pl-sup-sai-a-5" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-b-5" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-c-5" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">7°</td><td style="text-align:center;">150,06</td><td><input id="pl-sup-sai-a-6" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-b-6" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-c-6" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">8°</td><td style="text-align:center;">150,83</td><td><input id="pl-sup-sai-a-7" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-b-7" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-c-7" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">9°</td><td style="text-align:center;">152,81</td><td><input id="pl-sup-sai-a-8" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-b-8" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-c-8" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">10°</td><td style="text-align:center;">156,63</td><td><input id="pl-sup-sai-a-9" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-b-9" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-c-9" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">11°</td><td style="text-align:center;">162,91</td><td><input id="pl-sup-sai-a-10" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-b-10" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-c-10" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">12°</td><td style="text-align:center;">172,29</td><td><input id="pl-sup-sai-a-11" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-b-11" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-c-11" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">13°</td><td style="text-align:center;">185,28</td><td><input id="pl-sup-sai-a-12" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-b-12" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-c-12" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">14°</td><td style="text-align:center;">202,24</td><td><input id="pl-sup-sai-a-13" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-b-13" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-c-13" class="premium-input" style="width:70px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">15°</td><td style="text-align:center;">223,26</td><td><input id="pl-sup-sai-a-14" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-b-14" class="premium-input" style="width:70px;"></td><td><input id="pl-sup-sai-c-14" class="premium-input" style="width:70px;"></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- INSPEÇÃO DE ROLOS - SAÍDA BASE INFERIOR -->
-                    <h3 style="color:var(--text-title); margin:20px 0 10px;">INSPEÇÃO DE ROLOS - SAÍDA BASE INFERIOR</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="premium-table" style="font-size:11px;">
-                            <thead><tr><th>Posição</th><th>OK 1</th><th>Ñ/OK 1</th><th>OK 2</th><th>Ñ/OK 2</th><th>OK 3</th><th>Ñ/OK 3</th><th>OK 4</th><th>Ñ/OK 4</th></tr></thead>
-                            <tbody id="rol-inspec-inf-sai">
-                                <tr><td style="text-align:center;font-weight:bold;">1</td><td><input type="checkbox" id="rol-sai-inf-1-1"></td><td><input type="checkbox" id="rol-sai-inf-1-1n"></td><td><input type="checkbox" id="rol-sai-inf-2-1"></td><td><input type="checkbox" id="rol-sai-inf-2-1n"></td><td><input type="checkbox" id="rol-sai-inf-3-1"></td><td><input type="checkbox" id="rol-sai-inf-3-1n"></td><td><input type="checkbox" id="rol-sai-inf-4-1"></td><td><input type="checkbox" id="rol-sai-inf-4-1n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">2</td><td><input type="checkbox" id="rol-sai-inf-1-2"></td><td><input type="checkbox" id="rol-sai-inf-1-2n"></td><td><input type="checkbox" id="rol-sai-inf-2-2"></td><td><input type="checkbox" id="rol-sai-inf-2-2n"></td><td><input type="checkbox" id="rol-sai-inf-3-2"></td><td><input type="checkbox" id="rol-sai-inf-3-2n"></td><td><input type="checkbox" id="rol-sai-inf-4-2"></td><td><input type="checkbox" id="rol-sai-inf-4-2n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">3</td><td><input type="checkbox" id="rol-sai-inf-1-3"></td><td><input type="checkbox" id="rol-sai-inf-1-3n"></td><td><input type="checkbox" id="rol-sai-inf-2-3"></td><td><input type="checkbox" id="rol-sai-inf-2-3n"></td><td><input type="checkbox" id="rol-sai-inf-3-3"></td><td><input type="checkbox" id="rol-sai-inf-3-3n"></td><td><input type="checkbox" id="rol-sai-inf-4-3"></td><td><input type="checkbox" id="rol-sai-inf-4-3n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">4</td><td><input type="checkbox" id="rol-sai-inf-1-4"></td><td><input type="checkbox" id="rol-sai-inf-1-4n"></td><td><input type="checkbox" id="rol-sai-inf-2-4"></td><td><input type="checkbox" id="rol-sai-inf-2-4n"></td><td><input type="checkbox" id="rol-sai-inf-3-4"></td><td><input type="checkbox" id="rol-sai-inf-3-4n"></td><td><input type="checkbox" id="rol-sai-inf-4-4"></td><td><input type="checkbox" id="rol-sai-inf-4-4n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">5</td><td><input type="checkbox" id="rol-sai-inf-1-5"></td><td><input type="checkbox" id="rol-sai-inf-1-5n"></td><td><input type="checkbox" id="rol-sai-inf-2-5"></td><td><input type="checkbox" id="rol-sai-inf-2-5n"></td><td><input type="checkbox" id="rol-sai-inf-3-5"></td><td><input type="checkbox" id="rol-sai-inf-3-5n"></td><td><input type="checkbox" id="rol-sai-inf-4-5"></td><td><input type="checkbox" id="rol-sai-inf-4-5n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">6</td><td><input type="checkbox" id="rol-sai-inf-1-6"></td><td><input type="checkbox" id="rol-sai-inf-1-6n"></td><td><input type="checkbox" id="rol-sai-inf-2-6"></td><td><input type="checkbox" id="rol-sai-inf-2-6n"></td><td><input type="checkbox" id="rol-sai-inf-3-6"></td><td><input type="checkbox" id="rol-sai-inf-3-6n"></td><td><input type="checkbox" id="rol-sai-inf-4-6"></td><td><input type="checkbox" id="rol-sai-inf-4-6n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">7</td><td><input type="checkbox" id="rol-sai-inf-1-7"></td><td><input type="checkbox" id="rol-sai-inf-1-7n"></td><td><input type="checkbox" id="rol-sai-inf-2-7"></td><td><input type="checkbox" id="rol-sai-inf-2-7n"></td><td><input type="checkbox" id="rol-sai-inf-3-7"></td><td><input type="checkbox" id="rol-sai-inf-3-7n"></td><td><input type="checkbox" id="rol-sai-inf-4-7"></td><td><input type="checkbox" id="rol-sai-inf-4-7n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">8</td><td><input type="checkbox" id="rol-sai-inf-1-8"></td><td><input type="checkbox" id="rol-sai-inf-1-8n"></td><td><input type="checkbox" id="rol-sai-inf-2-8"></td><td><input type="checkbox" id="rol-sai-inf-2-8n"></td><td><input type="checkbox" id="rol-sai-inf-3-8"></td><td><input type="checkbox" id="rol-sai-inf-3-8n"></td><td><input type="checkbox" id="rol-sai-inf-4-8"></td><td><input type="checkbox" id="rol-sai-inf-4-8n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">9</td><td><input type="checkbox" id="rol-sai-inf-1-9"></td><td><input type="checkbox" id="rol-sai-inf-1-9n"></td><td><input type="checkbox" id="rol-sai-inf-2-9"></td><td><input type="checkbox" id="rol-sai-inf-2-9n"></td><td><input type="checkbox" id="rol-sai-inf-3-9"></td><td><input type="checkbox" id="rol-sai-inf-3-9n"></td><td><input type="checkbox" id="rol-sai-inf-4-9"></td><td><input type="checkbox" id="rol-sai-inf-4-9n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">10</td><td><input type="checkbox" id="rol-sai-inf-1-10"></td><td><input type="checkbox" id="rol-sai-inf-1-10n"></td><td><input type="checkbox" id="rol-sai-inf-2-10"></td><td><input type="checkbox" id="rol-sai-inf-2-10n"></td><td><input type="checkbox" id="rol-sai-inf-3-10"></td><td><input type="checkbox" id="rol-sai-inf-3-10n"></td><td><input type="checkbox" id="rol-sai-inf-4-10"></td><td><input type="checkbox" id="rol-sai-inf-4-10n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">11</td><td><input type="checkbox" id="rol-sai-inf-1-11"></td><td><input type="checkbox" id="rol-sai-inf-1-11n"></td><td><input type="checkbox" id="rol-sai-inf-2-11"></td><td><input type="checkbox" id="rol-sai-inf-2-11n"></td><td><input type="checkbox" id="rol-sai-inf-3-11"></td><td><input type="checkbox" id="rol-sai-inf-3-11n"></td><td><input type="checkbox" id="rol-sai-inf-4-11"></td><td><input type="checkbox" id="rol-sai-inf-4-11n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">12</td><td><input type="checkbox" id="rol-sai-inf-1-12"></td><td><input type="checkbox" id="rol-sai-inf-1-12n"></td><td><input type="checkbox" id="rol-sai-inf-2-12"></td><td><input type="checkbox" id="rol-sai-inf-2-12n"></td><td><input type="checkbox" id="rol-sai-inf-3-12"></td><td><input type="checkbox" id="rol-sai-inf-3-12n"></td><td><input type="checkbox" id="rol-sai-inf-4-12"></td><td><input type="checkbox" id="rol-sai-inf-4-12n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">13</td><td><input type="checkbox" id="rol-sai-inf-1-13"></td><td><input type="checkbox" id="rol-sai-inf-1-13n"></td><td><input type="checkbox" id="rol-sai-inf-2-13"></td><td><input type="checkbox" id="rol-sai-inf-2-13n"></td><td><input type="checkbox" id="rol-sai-inf-3-13"></td><td><input type="checkbox" id="rol-sai-inf-3-13n"></td><td><input type="checkbox" id="rol-sai-inf-4-13"></td><td><input type="checkbox" id="rol-sai-inf-4-13n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">14</td><td><input type="checkbox" id="rol-sai-inf-1-14"></td><td><input type="checkbox" id="rol-sai-inf-1-14n"></td><td><input type="checkbox" id="rol-sai-inf-2-14"></td><td><input type="checkbox" id="rol-sai-inf-2-14n"></td><td><input type="checkbox" id="rol-sai-inf-3-14"></td><td><input type="checkbox" id="rol-sai-inf-3-14n"></td><td><input type="checkbox" id="rol-sai-inf-4-14"></td><td><input type="checkbox" id="rol-sai-inf-4-14n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">15</td><td><input type="checkbox" id="rol-sai-inf-1-15"></td><td><input type="checkbox" id="rol-sai-inf-1-15n"></td><td><input type="checkbox" id="rol-sai-inf-2-15"></td><td><input type="checkbox" id="rol-sai-inf-2-15n"></td><td><input type="checkbox" id="rol-sai-inf-3-15"></td><td><input type="checkbox" id="rol-sai-inf-3-15n"></td><td><input type="checkbox" id="rol-sai-inf-4-15"></td><td><input type="checkbox" id="rol-sai-inf-4-15n"></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- MEDIDAS DOS ROLOS - SAÍDA BASE INFERIOR -->
-                    <h3 style="color:var(--text-title); margin:20px 0 10px;">MEDIDAS DOS ROLOS - SAÍDA BASE INFERIOR</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="premium-table" style="font-size:11px;">
-                            <thead><tr><th>Posição</th><th>Num 1</th><th>Medida 1</th><th>Num 2</th><th>Medida 2</th><th>Num 3</th><th>Medida 3</th><th>Classe</th></tr></thead>
-                            <tbody id="med-inf-sai">
-                                <tr><td style="text-align:center;font-weight:bold;">1</td><td><input id="med-sai-inf-n1-1" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m1-1" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n2-1" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m2-1" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n3-1" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m3-1" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-cls-1" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">2</td><td><input id="med-sai-inf-n1-2" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m1-2" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n2-2" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m2-2" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n3-2" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m3-2" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-cls-2" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">3</td><td><input id="med-sai-inf-n1-3" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m1-3" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n2-3" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m2-3" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n3-3" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m3-3" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-cls-3" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">4</td><td><input id="med-sai-inf-n1-4" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m1-4" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n2-4" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m2-4" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n3-4" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m3-4" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-cls-4" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">5</td><td><input id="med-sai-inf-n1-5" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m1-5" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n2-5" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m2-5" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n3-5" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m3-5" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-cls-5" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">6</td><td><input id="med-sai-inf-n1-6" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m1-6" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n2-6" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m2-6" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n3-6" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m3-6" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-cls-6" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">7</td><td><input id="med-sai-inf-n1-7" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m1-7" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n2-7" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m2-7" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n3-7" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m3-7" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-cls-7" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">8</td><td><input id="med-sai-inf-n1-8" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m1-8" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n2-8" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m2-8" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n3-8" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m3-8" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-cls-8" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">9</td><td><input id="med-sai-inf-n1-9" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m1-9" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n2-9" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m2-9" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n3-9" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m3-9" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-cls-9" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">10</td><td><input id="med-sai-inf-n1-10" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m1-10" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n2-10" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m2-10" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n3-10" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m3-10" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-cls-10" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">11</td><td><input id="med-sai-inf-n1-11" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m1-11" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n2-11" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m2-11" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n3-11" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m3-11" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-cls-11" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">12</td><td><input id="med-sai-inf-n1-12" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m1-12" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n2-12" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m2-12" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n3-12" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m3-12" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-cls-12" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">13</td><td><input id="med-sai-inf-n1-13" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m1-13" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n2-13" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m2-13" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n3-13" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m3-13" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-cls-13" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">14</td><td><input id="med-sai-inf-n1-14" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m1-14" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n2-14" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m2-14" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n3-14" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m3-14" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-cls-14" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">15</td><td><input id="med-sai-inf-n1-15" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m1-15" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n2-15" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m2-15" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-n3-15" class="premium-input" style="width:50px;"></td><td><input id="med-sai-inf-m3-15" class="premium-input" style="width:60px;"></td><td><input id="med-sai-inf-cls-15" class="premium-input" style="width:60px;"></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- INSPEÇÃO DE ROLOS - SAÍDA BASE SUPERIOR -->
-                    <h3 style="color:var(--text-title); margin:20px 0 10px;">INSPEÇÃO DE ROLOS - SAÍDA BASE SUPERIOR</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="premium-table" style="font-size:11px;">
-                            <thead><tr><th>Posição</th><th>OK 1</th><th>Ñ/OK 1</th><th>OK 2</th><th>Ñ/OK 2</th><th>OK 3</th><th>Ñ/OK 3</th><th>OK 4</th><th>Ñ/OK 4</th></tr></thead>
-                            <tbody id="rol-inspec-sup-sai">
-                                <tr><td style="text-align:center;font-weight:bold;">1</td><td><input type="checkbox" id="rol-sai-sup-1-1"></td><td><input type="checkbox" id="rol-sai-sup-1-1n"></td><td><input type="checkbox" id="rol-sai-sup-2-1"></td><td><input type="checkbox" id="rol-sai-sup-2-1n"></td><td><input type="checkbox" id="rol-sai-sup-3-1"></td><td><input type="checkbox" id="rol-sai-sup-3-1n"></td><td><input type="checkbox" id="rol-sai-sup-4-1"></td><td><input type="checkbox" id="rol-sai-sup-4-1n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">2</td><td><input type="checkbox" id="rol-sai-sup-1-2"></td><td><input type="checkbox" id="rol-sai-sup-1-2n"></td><td><input type="checkbox" id="rol-sai-sup-2-2"></td><td><input type="checkbox" id="rol-sai-sup-2-2n"></td><td><input type="checkbox" id="rol-sai-sup-3-2"></td><td><input type="checkbox" id="rol-sai-sup-3-2n"></td><td><input type="checkbox" id="rol-sai-sup-4-2"></td><td><input type="checkbox" id="rol-sai-sup-4-2n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">3</td><td><input type="checkbox" id="rol-sai-sup-1-3"></td><td><input type="checkbox" id="rol-sai-sup-1-3n"></td><td><input type="checkbox" id="rol-sai-sup-2-3"></td><td><input type="checkbox" id="rol-sai-sup-2-3n"></td><td><input type="checkbox" id="rol-sai-sup-3-3"></td><td><input type="checkbox" id="rol-sai-sup-3-3n"></td><td><input type="checkbox" id="rol-sai-sup-4-3"></td><td><input type="checkbox" id="rol-sai-sup-4-3n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">4</td><td><input type="checkbox" id="rol-sai-sup-1-4"></td><td><input type="checkbox" id="rol-sai-sup-1-4n"></td><td><input type="checkbox" id="rol-sai-sup-2-4"></td><td><input type="checkbox" id="rol-sai-sup-2-4n"></td><td><input type="checkbox" id="rol-sai-sup-3-4"></td><td><input type="checkbox" id="rol-sai-sup-3-4n"></td><td><input type="checkbox" id="rol-sai-sup-4-4"></td><td><input type="checkbox" id="rol-sai-sup-4-4n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">5</td><td><input type="checkbox" id="rol-sai-sup-1-5"></td><td><input type="checkbox" id="rol-sai-sup-1-5n"></td><td><input type="checkbox" id="rol-sai-sup-2-5"></td><td><input type="checkbox" id="rol-sai-sup-2-5n"></td><td><input type="checkbox" id="rol-sai-sup-3-5"></td><td><input type="checkbox" id="rol-sai-sup-3-5n"></td><td><input type="checkbox" id="rol-sai-sup-4-5"></td><td><input type="checkbox" id="rol-sai-sup-4-5n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">6</td><td><input type="checkbox" id="rol-sai-sup-1-6"></td><td><input type="checkbox" id="rol-sai-sup-1-6n"></td><td><input type="checkbox" id="rol-sai-sup-2-6"></td><td><input type="checkbox" id="rol-sai-sup-2-6n"></td><td><input type="checkbox" id="rol-sai-sup-3-6"></td><td><input type="checkbox" id="rol-sai-sup-3-6n"></td><td><input type="checkbox" id="rol-sai-sup-4-6"></td><td><input type="checkbox" id="rol-sai-sup-4-6n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">7</td><td><input type="checkbox" id="rol-sai-sup-1-7"></td><td><input type="checkbox" id="rol-sai-sup-1-7n"></td><td><input type="checkbox" id="rol-sai-sup-2-7"></td><td><input type="checkbox" id="rol-sai-sup-2-7n"></td><td><input type="checkbox" id="rol-sai-sup-3-7"></td><td><input type="checkbox" id="rol-sai-sup-3-7n"></td><td><input type="checkbox" id="rol-sai-sup-4-7"></td><td><input type="checkbox" id="rol-sai-sup-4-7n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">8</td><td><input type="checkbox" id="rol-sai-sup-1-8"></td><td><input type="checkbox" id="rol-sai-sup-1-8n"></td><td><input type="checkbox" id="rol-sai-sup-2-8"></td><td><input type="checkbox" id="rol-sai-sup-2-8n"></td><td><input type="checkbox" id="rol-sai-sup-3-8"></td><td><input type="checkbox" id="rol-sai-sup-3-8n"></td><td><input type="checkbox" id="rol-sai-sup-4-8"></td><td><input type="checkbox" id="rol-sai-sup-4-8n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">9</td><td><input type="checkbox" id="rol-sai-sup-1-9"></td><td><input type="checkbox" id="rol-sai-sup-1-9n"></td><td><input type="checkbox" id="rol-sai-sup-2-9"></td><td><input type="checkbox" id="rol-sai-sup-2-9n"></td><td><input type="checkbox" id="rol-sai-sup-3-9"></td><td><input type="checkbox" id="rol-sai-sup-3-9n"></td><td><input type="checkbox" id="rol-sai-sup-4-9"></td><td><input type="checkbox" id="rol-sai-sup-4-9n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">10</td><td><input type="checkbox" id="rol-sai-sup-1-10"></td><td><input type="checkbox" id="rol-sai-sup-1-10n"></td><td><input type="checkbox" id="rol-sai-sup-2-10"></td><td><input type="checkbox" id="rol-sai-sup-2-10n"></td><td><input type="checkbox" id="rol-sai-sup-3-10"></td><td><input type="checkbox" id="rol-sai-sup-3-10n"></td><td><input type="checkbox" id="rol-sai-sup-4-10"></td><td><input type="checkbox" id="rol-sai-sup-4-10n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">11</td><td><input type="checkbox" id="rol-sai-sup-1-11"></td><td><input type="checkbox" id="rol-sai-sup-1-11n"></td><td><input type="checkbox" id="rol-sai-sup-2-11"></td><td><input type="checkbox" id="rol-sai-sup-2-11n"></td><td><input type="checkbox" id="rol-sai-sup-3-11"></td><td><input type="checkbox" id="rol-sai-sup-3-11n"></td><td><input type="checkbox" id="rol-sai-sup-4-11"></td><td><input type="checkbox" id="rol-sai-sup-4-11n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">12</td><td><input type="checkbox" id="rol-sai-sup-1-12"></td><td><input type="checkbox" id="rol-sai-sup-1-12n"></td><td><input type="checkbox" id="rol-sai-sup-2-12"></td><td><input type="checkbox" id="rol-sai-sup-2-12n"></td><td><input type="checkbox" id="rol-sai-sup-3-12"></td><td><input type="checkbox" id="rol-sai-sup-3-12n"></td><td><input type="checkbox" id="rol-sai-sup-4-12"></td><td><input type="checkbox" id="rol-sai-sup-4-12n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">13</td><td><input type="checkbox" id="rol-sai-sup-1-13"></td><td><input type="checkbox" id="rol-sai-sup-1-13n"></td><td><input type="checkbox" id="rol-sai-sup-2-13"></td><td><input type="checkbox" id="rol-sai-sup-2-13n"></td><td><input type="checkbox" id="rol-sai-sup-3-13"></td><td><input type="checkbox" id="rol-sai-sup-3-13n"></td><td><input type="checkbox" id="rol-sai-sup-4-13"></td><td><input type="checkbox" id="rol-sai-sup-4-13n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">14</td><td><input type="checkbox" id="rol-sai-sup-1-14"></td><td><input type="checkbox" id="rol-sai-sup-1-14n"></td><td><input type="checkbox" id="rol-sai-sup-2-14"></td><td><input type="checkbox" id="rol-sai-sup-2-14n"></td><td><input type="checkbox" id="rol-sai-sup-3-14"></td><td><input type="checkbox" id="rol-sai-sup-3-14n"></td><td><input type="checkbox" id="rol-sai-sup-4-14"></td><td><input type="checkbox" id="rol-sai-sup-4-14n"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">15</td><td><input type="checkbox" id="rol-sai-sup-1-15"></td><td><input type="checkbox" id="rol-sai-sup-1-15n"></td><td><input type="checkbox" id="rol-sai-sup-2-15"></td><td><input type="checkbox" id="rol-sai-sup-2-15n"></td><td><input type="checkbox" id="rol-sai-sup-3-15"></td><td><input type="checkbox" id="rol-sai-sup-3-15n"></td><td><input type="checkbox" id="rol-sai-sup-4-15"></td><td><input type="checkbox" id="rol-sai-sup-4-15n"></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- MEDIDAS DOS ROLOS - SAÍDA BASE SUPERIOR -->
-                    <h3 style="color:var(--text-title); margin:20px 0 10px;">MEDIDAS DOS ROLOS - SAÍDA BASE SUPERIOR</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="premium-table" style="font-size:11px;">
-                            <thead><tr><th>Posição</th><th>Num 1</th><th>Medida 1</th><th>Num 2</th><th>Medida 2</th><th>Num 3</th><th>Medida 3</th><th>Classe</th></tr></thead>
-                            <tbody id="med-sup-sai">
-                                <tr><td style="text-align:center;font-weight:bold;">1</td><td><input id="med-sai-sup-n1-1" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m1-1" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n2-1" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m2-1" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n3-1" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m3-1" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-cls-1" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">2</td><td><input id="med-sai-sup-n1-2" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m1-2" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n2-2" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m2-2" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n3-2" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m3-2" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-cls-2" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">3</td><td><input id="med-sai-sup-n1-3" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m1-3" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n2-3" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m2-3" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n3-3" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m3-3" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-cls-3" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">4</td><td><input id="med-sai-sup-n1-4" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m1-4" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n2-4" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m2-4" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n3-4" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m3-4" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-cls-4" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">5</td><td><input id="med-sai-sup-n1-5" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m1-5" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n2-5" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m2-5" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n3-5" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m3-5" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-cls-5" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">6</td><td><input id="med-sai-sup-n1-6" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m1-6" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n2-6" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m2-6" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n3-6" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m3-6" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-cls-6" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">7</td><td><input id="med-sai-sup-n1-7" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m1-7" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n2-7" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m2-7" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n3-7" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m3-7" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-cls-7" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">8</td><td><input id="med-sai-sup-n1-8" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m1-8" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n2-8" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m2-8" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n3-8" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m3-8" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-cls-8" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">9</td><td><input id="med-sai-sup-n1-9" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m1-9" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n2-9" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m2-9" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n3-9" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m3-9" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-cls-9" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">10</td><td><input id="med-sai-sup-n1-10" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m1-10" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n2-10" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m2-10" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n3-10" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m3-10" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-cls-10" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">11</td><td><input id="med-sai-sup-n1-11" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m1-11" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n2-11" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m2-11" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n3-11" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m3-11" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-cls-11" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">12</td><td><input id="med-sai-sup-n1-12" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m1-12" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n2-12" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m2-12" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n3-12" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m3-12" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-cls-12" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">13</td><td><input id="med-sai-sup-n1-13" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m1-13" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n2-13" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m2-13" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n3-13" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m3-13" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-cls-13" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">14</td><td><input id="med-sai-sup-n1-14" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m1-14" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n2-14" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m2-14" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n3-14" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m3-14" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-cls-14" class="premium-input" style="width:60px;"></td></tr>
-                                <tr><td style="text-align:center;font-weight:bold;">15</td><td><input id="med-sai-sup-n1-15" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m1-15" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n2-15" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m2-15" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-n3-15" class="premium-input" style="width:50px;"></td><td><input id="med-sai-sup-m3-15" class="premium-input" style="width:60px;"></td><td><input id="med-sai-sup-cls-15" class="premium-input" style="width:60px;"></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                </div>
-
-                <!-- ========================================= -->
-                <!-- ABA 5: MATERIAIS                         -->
-                <!-- ========================================= -->
-                <div id="mcc4-aba-materiais" class="folhao-content hidden">
-                    <h3 style="color:var(--text-title); margin-bottom:15px;">MATERIAIS APLICADOS NO REPARO</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="premium-table" style="font-size:11px;">
-                            <thead><tr><th style="width:70%;">Material</th><th style="width:30%;">Quantidade</th></tr></thead>
-                            <tbody>
-                                <tr><td><input id="mat-1" class="premium-input" placeholder="Descreva o material"></td><td><input id="mat-qtd-1" class="premium-input" placeholder="Qtd"></td></tr>
-                                <tr><td><input id="mat-2" class="premium-input" placeholder="Descreva o material"></td><td><input id="mat-qtd-2" class="premium-input" placeholder="Qtd"></td></tr>
-                                <tr><td><input id="mat-3" class="premium-input" placeholder="Descreva o material"></td><td><input id="mat-qtd-3" class="premium-input" placeholder="Qtd"></td></tr>
-                                <tr><td><input id="mat-4" class="premium-input" placeholder="Descreva o material"></td><td><input id="mat-qtd-4" class="premium-input" placeholder="Qtd"></td></tr>
-                                <tr><td><input id="mat-5" class="premium-input" placeholder="Descreva o material"></td><td><input id="mat-qtd-5" class="premium-input" placeholder="Qtd"></td></tr>
-                                <tr><td><input id="mat-6" class="premium-input" placeholder="Descreva o material"></td><td><input id="mat-qtd-6" class="premium-input" placeholder="Qtd"></td></tr>
-                                <tr><td><input id="mat-7" class="premium-input" placeholder="Descreva o material"></td><td><input id="mat-qtd-7" class="premium-input" placeholder="Qtd"></td></tr>
-                                <tr><td><input id="mat-8" class="premium-input" placeholder="Descreva o material"></td><td><input id="mat-qtd-8" class="premium-input" placeholder="Qtd"></td></tr>
-                                <tr><td><input id="mat-9" class="premium-input" placeholder="Descreva o material"></td><td><input id="mat-qtd-9" class="premium-input" placeholder="Qtd"></td></tr>
-                                <tr><td><input id="mat-10" class="premium-input" placeholder="Descreva o material"></td><td><input id="mat-qtd-10" class="premium-input" placeholder="Qtd"></td></tr>
-                                <tr><td><input id="mat-11" class="premium-input" placeholder="Descreva o material"></td><td><input id="mat-qtd-11" class="premium-input" placeholder="Qtd"></td></tr>
-                                <tr><td><input id="mat-12" class="premium-input" placeholder="Descreva o material"></td><td><input id="mat-qtd-12" class="premium-input" placeholder="Qtd"></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div style="margin-top:15px;">
-                        <h4 style="color:var(--text-muted);">Observações Gerais</h4>
-                        <textarea id="mcc4-observacoes" class="premium-textarea" rows="4" placeholder="Observações finais..."></textarea>
-                    </div>
-                </div>
-
+        <!-- Cabeçalho com campos -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:10px; margin-bottom:15px; background:var(--bg-th); padding:12px; border-radius:8px; flex-shrink:0;">
+            <div class="input-group"><label>TAG</label><input type="text" id="desemp-tag-ativo" readonly></div>
+            <div class="input-group"><label>DATA MONTAGEM</label><input type="date" id="desemp-data-montagem"></div>
+            <div class="input-group"><label>DATA TROCA</label><input type="date" id="desemp-data-troca"></div>
+            <div class="input-group"><label>MOTIVO</label><input type="text" id="desemp-motivo" placeholder="Motivo da OS"></div>
+            <div class="input-group"><label>Nº CADEIRA</label><input type="text" id="desemp-num-cadeira" placeholder="Ex: 43"></div>
+            <div class="input-group"><label>VEIO (ENTRADA)</label>
+                <select id="desemp-veio">
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                    <option value="E">E</option>
+                    <option value="F">F</option>
+                </select>
+            </div>
+            <div class="input-group"><label>TIPO</label>
+                <select id="desemp-tipo-cadeira">
+                    <option value="INFERIOR">Inferior</option>
+                    <option value="SUPERIOR">Superior</option>
+                </select>
+            </div>
+            <div class="input-group"><label>Nº ROLO</label><input type="text" id="desemp-num-rolo" placeholder="Nº do rolo"></div>
+            <div class="input-group"><label>TIPO EXECUÇÃO</label>
+                <select id="desemp-tipo-exec">
+                    <option value="GERAL">GERAL</option>
+                    <option value="PARCIAL">PARCIAL</option>
+                </select>
             </div>
         </div>
 
-        <div class="modal-footer">
-            <button class="btn-success" onclick="window.salvarLaudoInteligente()"><i class="fas fa-save"></i> Salvar e Liberar</button>
-            <button class="btn-secondary" onclick="window.fecharFolhaoMCC4()">Cancelar</button>
+        <!-- Abas -->
+        <div class="folhao-tabs" style="flex-shrink:0;">
+            <button class="folhao-tab active" onclick="window.trocarAbaDesemp(event, 'desemp-aba-dados')">1. Dados</button>
+            <button class="folhao-tab" onclick="window.trocarAbaDesemp(event, 'desemp-aba-inspecao')">2. Inspeção</button>
+            <button class="folhao-tab" onclick="window.trocarAbaDesemp(event, 'desemp-aba-motivo')">3. Motivo Saída</button>
+            <button class="folhao-tab" onclick="window.trocarAbaDesemp(event, 'desemp-aba-mancais')">4. Mancais</button>
+            <button class="folhao-tab" onclick="window.trocarAbaDesemp(event, 'desemp-aba-cilindros')">5. Cilindros</button>
+            <button class="folhao-tab" onclick="window.trocarAbaDesemp(event, 'desemp-aba-materiais')">6. Materiais</button>
+        </div>
+
+        <!-- Corpo rolável -->
+        <div class="folhao-body" style="flex:1; overflow-y: auto; padding: 10px 0;">
+
+            <!-- ABA 1 - DADOS (somente identificação) -->
+            <div id="desemp-aba-dados" class="folhao-content">
+                <h3>Dados da Cadeira</h3>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                    <div class="input-group"><label>Nº CADEIRA</label><input type="text" id="desemp-num-cadeira-dados" placeholder="Ex: 43"></div>
+                    <div class="input-group"><label>Nº ROLO</label><input type="text" id="desemp-num-rolo-dados" placeholder="Nº do rolo"></div>
+                    <div class="input-group"><label>VEIO (ENTRADA)</label>
+                        <select id="desemp-veio-dados">
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                            <option value="E">E</option>
+                            <option value="F">F</option>
+                        </select>
+                    </div>
+                    <div class="input-group"><label>TIPO</label>
+                        <select id="desemp-tipo-cadeira-dados">
+                            <option value="INFERIOR">Inferior</option>
+                            <option value="SUPERIOR">Superior</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA 2 - INSPEÇÃO DE SAÍDA -->
+            <div id="desemp-aba-inspecao" class="folhao-content hidden">
+                <h3>Inspeção de Saída</h3>
+                <table class="premium-table" id="tabela-desemp-inspecao">
+                    <thead><tr><th>Item</th><th>Descrição</th><th>SIM</th><th>NÃO</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <!-- ABA 3 - MOTIVO DE SAÍDA -->
+            <div id="desemp-aba-motivo" class="folhao-content hidden">
+                <h3>Motivo de Saída da MCC</h3>
+                <table class="premium-table" id="tabela-desemp-motivo">
+                    <thead><tr><th>Motivo</th><th>SIM</th><th>NÃO</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <div class="input-group" style="margin-top:10px;">
+                    <label>Outros (especificar)</label>
+                    <input type="text" id="desemp-motivo-outros" placeholder="Descreva outro motivo...">
+                </div>
+            </div>
+
+            <!-- ABA 4 - MANCAIS -->
+            <div id="desemp-aba-mancais" class="folhao-content hidden">
+                <h3>Inspeção dos Mancais</h3>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                    <div>
+                        <h4>Medidas (mm)</h4>
+                        <table class="premium-table">
+                            <thead><tr><th>Referência</th><th>Valor</th></tr></thead>
+                            <tbody>
+                                <tr><td>A</td><td><input type="number" id="desemp-mancal-a" step="0.01" style="width:100px;"></td></tr>
+                                <tr><td>B</td><td><input type="number" id="desemp-mancal-b" step="0.01" style="width:100px;"></td></tr>
+                                <tr><td>A'</td><td><input type="number" id="desemp-mancal-ap" step="0.01" style="width:100px;"></td></tr>
+                                <tr><td>B'</td><td><input type="number" id="desemp-mancal-bp" step="0.01" style="width:100px;"></td></tr>
+                                <tr><td>Fixo</td><td><input type="number" id="desemp-mancal-fixo" step="0.01" style="width:100px;"></td></tr>
+                                <tr><td>Móvel</td><td><input type="number" id="desemp-mancal-movel" step="0.01" style="width:100px;"></td></tr>
+                            </tbody>
+                        </table>
+                        <div style="margin-top:10px;">
+                            <p><strong>Máximo:</strong> 240,15 mm</p>
+                            <p><strong>Mínima:</strong> 240,05 mm</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h4>Sobressalentes de Montagem</h4>
+                        <table class="premium-table" id="tabela-desemp-sobressalentes">
+                            <thead><tr><th>Componente</th><th>Novo</th><th>Reutilizado</th></tr></thead>
+                            <tbody>
+                                <tr><td>Mancal fixo</td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-fixo-novo"></td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-fixo-reut"></td></tr>
+                                <tr><td>Mancal móvel</td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-movel-novo"></td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-movel-reut"></td></tr>
+                                <tr><td>Aranha</td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-aranha-novo"></td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-aranha-reut"></td></tr>
+                                <tr><td>Rolamento Nu 1032</td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-rol-nu-novo"></td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-rol-nu-reut"></td></tr>
+                                <tr><td>Rolamento 24032</td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-rol-24032-novo"></td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-rol-24032-reut"></td></tr>
+                                <tr><td>Junta rotativa</td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-junta-novo"></td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-junta-reut"></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA 5 - CILINDROS -->
+            <div id="desemp-aba-cilindros" class="folhao-content hidden">
+                <h3>Cilindros</h3>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                    <div>
+                        <h4>Faixa Amarela</h4>
+                        <table class="premium-table">
+                            <thead><tr><th>Posição</th><th>Valor</th></tr></thead>
+                            <tbody>
+                                <tr><td>Fixo</td><td><input type="text" id="desemp-cil-fixo" placeholder="mm"></td></tr>
+                                <tr><td>Móvel</td><td><input type="text" id="desemp-cil-movel" placeholder="mm"></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <h4>Status</h4>
+                        <table class="premium-table">
+                            <thead><tr><th>Componente</th><th>Reparado</th><th>Reutilizado</th></tr></thead>
+                            <tbody>
+                                <tr><td>Fixo</td><td style="text-align:center;"><input type="checkbox" id="desemp-cil-fixo-rep"></td><td style="text-align:center;"><input type="checkbox" id="desemp-cil-fixo-reut"></td></tr>
+                                <tr><td>Móvel</td><td style="text-align:center;"><input type="checkbox" id="desemp-cil-movel-rep"></td><td style="text-align:center;"><input type="checkbox" id="desemp-cil-movel-reut"></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA 6 - MATERIAIS -->
+            <div id="desemp-aba-materiais" class="folhao-content hidden">
+                <h3>Materiais Aplicados</h3>
+                <div style="display:flex; gap:10px; margin-bottom:10px;">
+                    <button class="btn-premium" onclick="window.carregarMateriaisDesemp('INFERIOR')"><i class="fas fa-arrow-down"></i> Carregar Inferior</button>
+                    <button class="btn-premium" onclick="window.carregarMateriaisDesemp('SUPERIOR')"><i class="fas fa-arrow-up"></i> Carregar Superior</button>
+                </div>
+                <table class="premium-table" id="tabela-desemp-materiais">
+                    <thead><tr><th>Código</th><th>Descrição</th><th>Qtd</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <button class="btn-xs-primary" onclick="window.adicionarLinhaMaterialDesemp()">+ Adicionar</button>
+            </div>
+
+        </div><!-- fim folhao-body -->
+
+        <!-- Rodapé -->
+        <div style="display:flex; gap:10px; margin-top:15px; justify-content:flex-end; flex-shrink:0; padding-top:10px; border-top:1px solid var(--border);">
+            <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoDesemp()"><i class="fas fa-save"></i> Salvar e Imprimir</button>
+            <button class="btn-outline-danger" onclick="window.fecharFolhaoDesempenadeira()">Fechar</button>
         </div>
     </div>
 </div>
-
-    <!-- DIV PARA IMPRESSÃO (PDF) -->
-    <div id="print-content" style="display: none;"></div>
 
     <!-- ========================================= -->
     <!-- SCRIPTS (consolidados)                   -->
@@ -1390,8 +1029,6 @@
             }
         }
 
-        // Força a exposição das funções do módulo principal
-        // O módulo folhaoMolde4.js já deve expor no window, mas garantimos:
         setTimeout(() => {
             if (typeof window.abrirFolhaoMCC4 !== 'function') {
                 console.warn("⚠️ abrirFolhaoMCC4 não está definida. Tentando importar novamente...");

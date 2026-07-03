@@ -1507,6 +1507,7 @@ function imprimirLaudoSalvo(tag, motivo) {
     window.print();
 }
 
+
 // ==========================================
 // CADASTRO DE NOVAS PEÇAS E ROLOS
 // ==========================================
@@ -1529,69 +1530,79 @@ function atualizarPosicoesCadastro() {
     const familia = tipo.split("|")[0] || "";
     const mcc = tipo.split("|")[1] || "";
 
-    if (familia === "Molde" && mcc === "4") {
-        selectPos.innerHTML = `<option value="MOLDE">Molde (Única posição)</option>`;
-    } 
-    else if (familia === "Bender" && mcc === "4") {
-        selectPos.innerHTML = `<option value="BENDER">Bender (Única posição)</option>`;
-    } 
-    else if (familia === "Bow" && mcc === "4") {
-        for (let i = 1; i <= 5; i++) {
-            selectPos.innerHTML += `<option value="${i}">Bow Posição #${i}</option>`;
+    // MCC 4
+    if (mcc === "4") {
+        if (familia === "Molde") {
+            selectPos.innerHTML = `<option value="MOLDE">Molde (Única posição)</option>`;
+        } else if (familia === "Bender") {
+            selectPos.innerHTML = `<option value="BENDER">Bender (Única posição)</option>`;
+        } else if (familia === "Bow") {
+            let opts = "";
+            for (let i = 1; i <= 5; i++) {
+                opts += `<option value="${i}">Bow Posição #${i}</option>`;
+            }
+            selectPos.innerHTML = opts;
+        } else if (familia === "Straightener R1") {
+            selectPos.innerHTML = `<option value="STR-1">Straightener R1 (Única)</option>`;
+        } else if (familia === "Straightener R2") {
+            selectPos.innerHTML = `<option value="STR-2">Straightener R2 (Única)</option>`;
+        } else if (familia === "Horizontal") {
+            let opts = "";
+            for (let i = 8; i <= 17; i++) {
+                opts += `<option value="${i}">Horizontal Posição #${i}</option>`;
+            }
+            selectPos.innerHTML = opts;
+        } else {
+            selectPos.innerHTML = `<option value="GERAL">Geral / Sem posição fixa</option>`;
         }
     } 
-    else if (familia === "Straightener R1" && mcc === "4") {
-        selectPos.innerHTML = `<option value="STR-1">Straightener R1 (Única)</option>`;
-    } 
-    else if (familia === "Straightener R2" && mcc === "4") {
-        selectPos.innerHTML = `<option value="STR-2">Straightener R2 (Única)</option>`;
-    } 
-    else if (familia === "Horizontal" && mcc === "4") {
-        for (let i = 8; i <= 17; i++) {
-            selectPos.innerHTML += `<option value="${i}">Horizontal Posição #${i}</option>`;
+    // MCC 2/3
+    else if (mcc === "2/3") {
+        if (familia === "Molde") {
+            selectPos.innerHTML = `<option value="MOLDE">Molde (Única posição)</option>`;
+        } else if (familia === "Mesa Osciladora") {
+            selectPos.innerHTML = `<option value="OSCILADORA">Mesa Osciladora (Única)</option>`;
+        } else if (familia === "Seguimento Zero" || familia === "Segmento Zero") {
+            selectPos.innerHTML = `<option value="SEG-ZERO">Segmento Zero (Única)</option>`;
+        } else if (familia === "Cadeira Superior") {
+            let opts = "";
+            for (let i = 43; i <= 79; i++) {
+                opts += `<option value="${i}">Cadeira Superior #${i}</option>`;
+            }
+            selectPos.innerHTML = opts;
+        } else if (familia === "Cadeira Inferior") {
+            let opts = "";
+            for (let i = 43; i <= 79; i++) {
+                opts += `<option value="${i}">Cadeira Inferior #${i}</option>`;
+            }
+            selectPos.innerHTML = opts;
+        } else if (familia.includes("Segmento") && !familia.includes("Zero")) {
+            let opts = "";
+            for (let i = 1; i <= 6; i++) {
+                opts += `<option value="${i}">Segmento #${i}</option>`;
+            }
+            selectPos.innerHTML = opts;
+        } else {
+            selectPos.innerHTML = `<option value="GERAL">Geral / Sem posição fixa</option>`;
         }
-    }
-    else if (familia === "Molde" && mcc === "2/3") {
-        selectPos.innerHTML = `<option value="MOLDE">Molde (Única posição)</option>`;
-    } 
-    else if (familia === "Mesa Osciladora" && mcc === "2/3") {
-        selectPos.innerHTML = `<option value="OSCILADORA">Mesa Osciladora (Única)</option>`;
-    } 
-    else if (familia === "Segmento Zero" && mcc === "2/3") {
-        selectPos.innerHTML = `<option value="SEG-ZERO">Segmento Zero (Única)</option>`;
-    } 
-    else if (familia === "Cadeira Superior" && mcc === "2/3") {
-        for (let i = 43; i <= 79; i++) {
-            selectPos.innerHTML += `<option value="${i}">Cadeira Superior #${i}</option>`;
-        }
-    } 
-    else if (familia === "Cadeira Inferior" && mcc === "2/3") {
-        for (let i = 43; i <= 79; i++) {
-            selectPos.innerHTML += `<option value="${i}">Cadeira Inferior #${i}</option>`;
-        }
-    } 
-    else if (familia.includes("Segmento") && mcc === "2/3") {
-        for (let i = 1; i <= 6; i++) {
-            selectPos.innerHTML += `<option value="${i}">Segmento #${i}</option>`;
-        }
-    } 
-    else {
+    } else {
         selectPos.innerHTML = `<option value="GERAL">Geral / Sem posição fixa</option>`;
     }
 }
 
 function processarCadastroPeca() {
-    const tag = document.getElementById("add-tag").value.trim() || `NOVA-PECA-${Math.floor(Math.random()*1000)}`;
+    const tag = document.getElementById("add-tag").value.trim() || `NOVA-PECA-${Math.floor(Math.random() * 1000)}`;
     const tipoValor = document.getElementById("add-tipo").value || "";
     const tipoSplit = tipoValor.split("|");
-    const familia = tipoSplit[0] || ""; 
-    const mccCompat = tipoSplit[1] || "4"; 
-    
+    const familia = tipoSplit[0] || "";
+    const mccCompat = tipoSplit[1] || "4";
+
     const limite = parseFloat(document.getElementById("add-meta").value) || 1000000;
     const veio = document.getElementById("add-veio").value || "";
     const posicao = document.getElementById("add-posicao").value || "";
     const instalarDireto = document.getElementById("add-instalar-direto").checked;
 
+    // --- Validações iniciais ---
     if (!familia) {
         alert("Selecione um tipo de peça.");
         return;
@@ -1602,17 +1613,14 @@ function processarCadastroPeca() {
         return;
     }
 
-    if (instalarDireto && !posicao) {
-        alert("Selecione a Posição de destino.");
-        return;
-    }
-
-    let statusFinal = instalarDireto ? "Instalado" : "Oficina / Reserva";
-    let localFinal = instalarDireto ? `MCC ${mccCompat} - Veio ${veio}` : "Oficina / Reserva";
-
-    const tipoUpper = (familia || "").toUpperCase();
+    // --- Determina o slot (posição fixa ou variável) ---
+    const tipoUpper = familia.toUpperCase();
     let slotChassi = "";
+    let posicaoObrigatoria = true; // por padrão, exige posição
 
+    // ==========================================
+    // MAPEAMENTO DE SLOTS (MCC 4)
+    // ==========================================
     if (mccCompat === "4") {
         if (tipoUpper.includes("BOW")) {
             slotChassi = `BOW-${posicao}`;
@@ -1620,35 +1628,66 @@ function processarCadastroPeca() {
             slotChassi = `HOR-${posicao}`;
         } else if (tipoUpper.includes("STRAIGHTENER R1") || tipoUpper.includes("R1")) {
             slotChassi = "STR-1";
+            posicaoObrigatoria = false;
         } else if (tipoUpper.includes("STRAIGHTENER R2") || tipoUpper.includes("R2")) {
             slotChassi = "STR-2";
+            posicaoObrigatoria = false;
         } else if (tipoUpper.includes("MOLDE")) {
             slotChassi = "MOLDE";
+            posicaoObrigatoria = false;
         } else if (tipoUpper.includes("BENDER")) {
             slotChassi = "BENDER";
+            posicaoObrigatoria = false;
         } else {
+            // Fallback: usa a posição digitada
             slotChassi = posicao;
         }
-    } else if (mccCompat === "2/3") {
+    }
+    // ==========================================
+    // MAPEAMENTO DE SLOTS (MCC 2/3)
+    // ==========================================
+    else if (mccCompat === "2/3") {
         if (tipoUpper.includes("CADEIRA SUPERIOR")) {
             slotChassi = `CAD-SUP-${posicao}`;
         } else if (tipoUpper.includes("CADEIRA INFERIOR")) {
             slotChassi = `CAD-INF-${posicao}`;
-        } else if (tipoUpper.includes("SEGMENTO ZERO") || tipoUpper.includes("SEGMENTO ZERO")) {
+        } else if (tipoUpper.includes("SEGMENTO ZERO") || tipoUpper.includes("SEGUIMENTO ZERO")) {
             slotChassi = "SEG-ZERO";
+            posicaoObrigatoria = false;
         } else if (tipoUpper.includes("MESA OSCILADORA")) {
             slotChassi = "OSCILADORA";
-        } else if (tipoUpper.includes("SEGMENTO") || tipoUpper.includes("SEG-")) {
+            posicaoObrigatoria = false;
+        } else if (tipoUpper.includes("SEGMENTO") && !tipoUpper.includes("ZERO")) {
             slotChassi = `SEG-${posicao}`;
         } else if (tipoUpper.includes("MOLDE")) {
             slotChassi = "MOLDE";
+            posicaoObrigatoria = false;
         } else {
+            // Fallback
             slotChassi = posicao;
         }
     } else {
+        // MCC desconhecido – usa posicao como fallback
         slotChassi = posicao;
     }
 
+    // --- Validação de posição (apenas se obrigatória e se for instalação direta) ---
+    if (instalarDireto && posicaoObrigatoria && !posicao) {
+        alert("⚠️ Selecione a Posição de destino para este tipo de equipamento.");
+        return;
+    }
+
+    // --- Se não for instalação direta, não exige posição ---
+    if (!instalarDireto) {
+        // Guarda como estoque, posição pode ficar vazia
+        slotChassi = ""; // ou mantém o que foi mapeado, mas não usaremos
+    }
+
+    // --- Define status e local ---
+    let statusFinal = instalarDireto ? "Instalado" : "Oficina / Reserva";
+    let localFinal = instalarDireto ? `MCC ${mccCompat} - Veio ${veio}` : "Oficina / Reserva";
+
+    // --- Se for instalação direta, faz a substituição da peça antiga ---
     if (instalarDireto && veio && slotChassi) {
         const config = getConfiguracaoPorVeio(veio);
         let pecaExpulsa = false;
@@ -1656,14 +1695,11 @@ function processarCadastroPeca() {
 
         for (let i = 0; i < BANCO_ATIVOS.length; i++) {
             const p = BANCO_ATIVOS[i];
-            
-            const taNoVeio = (p.veio === veio && p.status === "Instalado") || 
-                           (p.local && p.local.includes(`Veio ${veio}`) && !p.local.includes("Oficina"));
-            
+            const taNoVeio = (p.veio === veio && p.status === "Instalado") ||
+                             (p.local && p.local.includes(`Veio ${veio}`) && !p.local.includes("Oficina"));
             if (!taNoVeio) continue;
-            
+
             let ehVelha = false;
-            
             if (p.posicaoFixa && p.posicaoFixa === slotChassi) {
                 ehVelha = true;
             } else if (!p.posicaoFixa && config && config.mapearSlotLegado) {
@@ -1672,7 +1708,7 @@ function processarCadastroPeca() {
                     ehVelha = true;
                 }
             }
-            
+
             if (ehVelha) {
                 BANCO_ATIVOS[i].status = "Oficina / Reparo";
                 BANCO_ATIVOS[i].local = "Oficina / Reparo";
@@ -1681,22 +1717,23 @@ function processarCadastroPeca() {
                 BANCO_ATIVOS[i].pos = "";
                 BANCO_ATIVOS[i].dataReparo = Date.now();
                 BANCO_ATIVOS[i].dias = 0;
-                
+
                 pecaExpulsa = true;
                 pecaExpulsaId = p.id;
-                
+
                 if (window.registrarHistorico) {
                     window.registrarHistorico(p.id, `Sacado da gaveta ${slotChassi} do Veio ${veio} por substituição.`);
                 }
                 break;
             }
         }
-        
+
         if (pecaExpulsa) {
             alert(`⚠️ A peça velha [${pecaExpulsaId}] foi removida da gaveta ${slotChassi} e enviada para REPARO.`);
         }
     }
 
+    // --- Cria a nova peça ---
     const novaPeca = {
         id: tag,
         tipo: familia,
@@ -1715,24 +1752,26 @@ function processarCadastroPeca() {
 
     BANCO_ATIVOS.push(novaPeca);
     localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-    
+
     if (statusFinal === "Instalado") {
         alert(`✅ Sucesso! A nova peça [${tag}] assumiu o controle da gaveta ${slotChassi} do Veio ${veio}.`);
     } else {
         alert(`✅ Sucesso! Peça [${tag}] criada e guardada no Estoque Reserva.`);
     }
-    
+
+    // --- Limpa os campos do formulário ---
     document.getElementById("add-tag").value = "";
     document.getElementById("add-meta").value = "";
     document.getElementById("add-instalar-direto").checked = false;
 
+    // --- Atualiza as telas ---
     renderReservas();
     renderAtivos();
     renderReparos();
     renderPainelVeios();
     calcularKpisGlobais();
     atualizarPainelCompleto();
-    
+
     if (instalarDireto) mudarVeioVisualizado(veio);
 }
 
@@ -2298,7 +2337,7 @@ async function carregarOficina() {
 // FUNÇÃO PARA ABRIR O FOLHÃO CORRETO POR TIPO (CORRIGIDA)
 // ==========================================
 window.abrirFolhaoPorTipo = function(id) {
-    const item = BANCO_ATIVOS.find(a => a.id === id);
+    const item = window.BANCO_ATIVOS.find(a => a.id === id);
     if (!item) {
         alert('Equipamento não encontrado.');
         return;
@@ -2307,78 +2346,135 @@ window.abrirFolhaoPorTipo = function(id) {
     const tipo = item.tipo || '';
     const mcc = item.mcc_compat || '';
 
-    // 👇 ADICIONA O RECONHECIMENTO DO STRAIGHTENER R2
-    if (tipo === 'Straightener R2' || (tipo === 'Straightener' && item.id && item.id.includes('STR-2'))) {
-        if (typeof window.abrirFolhaoR2 === 'function') {
-            window.abrirFolhaoR2(item.id);
-            return;
-        } else {
-            alert('Função abrirFolhaoR2 não disponível.');
-            return;
-        }
-    }
+    // ==========================================
+    // 1. MAPEAMENTO COMPLETO DE FOLHÕES
+    // ==========================================
 
+    // ---- MOLDES ----
     if (tipo === 'Molde') {
         if (mcc === '2/3') {
             if (typeof window.abrirFolhaoMolde23 === 'function') {
                 window.abrirFolhaoMolde23(id);
-            } else {
-                alert('Função abrirFolhaoMolde23 não disponível.');
+                return;
             }
         } else {
             if (typeof window.abrirFolhaoMCC4 === 'function') {
                 window.abrirFolhaoMCC4(id);
-            } else {
-                alert('Função abrirFolhaoMCC4 não disponível.');
+                return;
             }
         }
-    } else if (tipo === 'Bender') {
+        // Fallback: se a função não existir, abre o folhão genérico
+        if (typeof window.abrirFolhaoGenerico === 'function') {
+            window.abrirFolhaoGenerico(id);
+            return;
+        }
+        console.warn(`Folhão para Molde (MCC ${mcc}) não implementado.`);
+        return;
+    }
+
+    // ---- BENDER ----
+    if (tipo === 'Bender') {
         if (typeof window.abrirFolhaoMCC4 === 'function') {
             window.abrirFolhaoMCC4(id);
-        } else {
-            alert('Função abrirFolhaoMCC4 não disponível.');
+            return;
         }
-    } else if (tipo === 'Bow') {
+        console.warn('Folhão Bender não implementado.');
+        return;
+    }
+
+    // ---- BOW ----
+    if (tipo === 'Bow') {
         if (typeof window.abrirFolhaoBow === 'function') {
             window.abrirFolhaoBow(id);
-        } else {
-            alert('Função abrirFolhaoBow não disponível.');
+            return;
         }
-    } else if (tipo === 'Horizontal') {
+        console.warn('Folhão Bow não implementado.');
+        return;
+    }
+
+    // ---- HORIZONTAL ----
+    if (tipo === 'Horizontal') {
         if (typeof window.abrirFolhaoHorizontal === 'function') {
             window.abrirFolhaoHorizontal(id);
-        } else {
-            alert('Função abrirFolhaoHorizontal não disponível.');
+            return;
         }
-    } else if (tipo === 'Straightener') {
-        if (id.includes('STR-1') || id.includes('R1')) {
+        console.warn('Folhão Horizontal não implementado.');
+        return;
+    }
+
+    // ---- STRAIGHTENER (R1 e R2) ----
+    if (tipo === 'Straightener' || tipo === 'Straightener R1' || tipo === 'Straightener R2') {
+        if (tipo === 'Straightener R1' || id.includes('STR-1') || id.includes('R1')) {
             if (typeof window.abrirFolhaoR1 === 'function') {
                 window.abrirFolhaoR1(id);
-            } else {
-                alert('Função abrirFolhaoR1 não disponível.');
+                return;
             }
-        } else if (id.includes('STR-2') || id.includes('R2')) {
+        } else if (tipo === 'Straightener R2' || id.includes('STR-2') || id.includes('R2')) {
             if (typeof window.abrirFolhaoR2 === 'function') {
                 window.abrirFolhaoR2(id);
-            } else {
-                alert('Função abrirFolhaoR2 não disponível.');
+                return;
             }
         } else {
+            // Fallback: se não identificar R1/R2, tenta o folhão MCC4
             if (typeof window.abrirFolhaoMCC4 === 'function') {
                 window.abrirFolhaoMCC4(id);
-            } else {
-                alert('Função abrirFolhaoMCC4 não disponível.');
+                return;
             }
         }
-    } else if (tipo === 'Segmento Zero' || tipo === 'Segmento Zero') {
+        console.warn('Folhão para Straightener não implementado.');
+        return;
+    }
+
+    // ---- CADEIRA SUPERIOR E INFERIOR (DESEMPENADEIRA) ----
+    if (tipo === 'Cadeira Superior' || tipo === 'Cadeira Inferior') {
+        if (typeof window.abrirFolhaoDesempenadeira === 'function') {
+            window.abrirFolhaoDesempenadeira(id);
+            return;
+        }
+        console.warn('Folhão Desempenadeira não implementado.');
+        return;
+    }
+
+    // ---- SEGMENTO ZERO ----
+    if (tipo === 'Seguimento Zero' || tipo === 'Segmento Zero') {
         if (typeof window.abrirFolhaoSegmentoZero === 'function') {
             window.abrirFolhaoSegmentoZero(id);
-        } else {
-            alert('Função abrirFolhaoSegmentoZero não disponível.');
+            return;
         }
-    } else {
-        alert('Tipo de equipamento sem folhão definido: ' + tipo);
+        console.warn('Folhão Segmento Zero não implementado.');
+        return;
     }
+
+    // ---- MESA OSCILADORA ----
+    if (tipo === 'Mesa Osciladora') {
+        // Se tiver um folhão específico, coloque aqui
+        // Senão, abre o genérico
+        if (typeof window.abrirFolhaoGenerico === 'function') {
+            window.abrirFolhaoGenerico(id);
+            return;
+        }
+        console.warn(`Folhão para ${tipo} não implementado.`);
+        return;
+    }
+
+    // ---- OUTROS TIPOS (FALLBACK) ----
+    // Se chegar aqui, tenta abrir o folhão genérico (se existir)
+    if (typeof window.abrirFolhaoGenerico === 'function') {
+        window.abrirFolhaoGenerico(id);
+        return;
+    }
+
+    // Último recurso: abre o folhão do Bender como fallback
+    if (typeof window.abrirFolhaoMCC4 === 'function') {
+        console.warn(`Tipo ${tipo} sem folhão específico. Usando MCC4 como fallback.`);
+        window.abrirFolhaoMCC4(id);
+        return;
+    }
+
+    // Se nada funcionar, exibe uma mensagem amigável (sem alert)
+    console.warn(`Nenhum folhão disponível para o tipo: ${tipo}`);
+    // Opcional: mostra um toast ou notificação silenciosa
+    // alert('Nenhum folhão disponível para este equipamento.'); // REMOVA ESSA LINHA
 };
 
 // ==========================================
@@ -2451,6 +2547,7 @@ window.toggleTheme = toggleTheme;
 window.processarAutenticacaoHome = processarAutenticacaoHome;
 window.fazerLogout = fazerLogout;
 window.verificarAcesso = verificarAcesso;
+window.processarAutenticacaoHome = processarAutenticacaoHome;
 
 // ===== FUNÇÕES DE HISTÓRICO =====
 window.registrarHistorico = registrarHistorico;
@@ -2503,30 +2600,159 @@ window.BANCO_ATIVOS = BANCO_ATIVOS;
 window.iniciarSwapAlocacao = function(idReserva) {
     if (!verificarAcesso()) return;
 
-    const novoLocal = document.getElementById(`alocar-veio-${idReserva}`)?.value;
-    let pecaReserva = BANCO_ATIVOS.find(a => a.id === idReserva);
+    const veioSelect = document.getElementById(`alocar-veio-${idReserva}`);
+    const posSelect = document.getElementById(`alocar-pos-${idReserva}`);
+    if (!veioSelect || !posSelect) {
+        alert('Erro: elementos de seleção não encontrados. Recarregue a página.');
+        return;
+    }
 
-    if (pecaReserva) {
-        let pecaAntiga = BANCO_ATIVOS.find(a => a.local === novoLocal && a.tipo === pecaReserva.tipo);
-        if (pecaAntiga) {
-            if (confirm(`A peça ${pecaAntiga.id} será SACADA do ${novoLocal} para dar lugar à ${pecaReserva.id}. Precisamos do relatório de retirada.`)) {
-                MODO_MODAL_RELATORIO = { tipoAcao: 'SWAP', idSacado: pecaAntiga.id, idReserva: pecaReserva.id, localDestino: novoLocal };
-                abrirModalRelatorio(pecaAntiga);
+    const veio = veioSelect.value;
+    const posicao = posSelect.value;
+
+    let pecaReserva = BANCO_ATIVOS.find(a => a.id === idReserva);
+    if (!pecaReserva) {
+        alert('Peça reserva não encontrada.');
+        return;
+    }
+
+    // ==========================================
+    // 1. DETERMINA SE O TIPO É DE POSIÇÃO FIXA
+    // ==========================================
+    const tipoUpper = (pecaReserva.tipo || '').toUpperCase();
+    const tiposFixos = ['MOLDE', 'BENDER', 'STR-1', 'STR-2', 'SEG-ZERO', 'OSCILADORA'];
+    const isFixo = tiposFixos.some(f => tipoUpper.includes(f) || tipoUpper === f);
+
+    // ==========================================
+    // 2. VALIDAÇÃO DE VEIO E POSIÇÃO
+    // ==========================================
+    if (!veio) {
+        alert('Selecione o Veio de destino.');
+        return;
+    }
+
+    if (!isFixo && !posicao) {
+        alert('Selecione a Posição de destino para este tipo de equipamento.');
+        return;
+    }
+
+    // ==========================================
+    // 3. MAPEAMENTO DO SLOT (POSIÇÃO FIXA OU VARIÁVEL)
+    // ==========================================
+    const mcc = pecaReserva.mcc_compat || '4';
+
+    function mapearSlot(tipo, mcc, pos) {
+        const t = tipo.toUpperCase();
+        if (mcc === '4') {
+            if (t.includes('BOW')) return `BOW-${pos}`;
+            if (t.includes('HORIZONTAL')) return `HOR-${pos}`;
+            if (t.includes('STRAIGHTENER R1') || t.includes('R1')) return 'STR-1';
+            if (t.includes('STRAIGHTENER R2') || t.includes('R2')) return 'STR-2';
+            if (t.includes('MOLDE')) return 'MOLDE';
+            if (t.includes('BENDER')) return 'BENDER';
+            return pos;
+        } else if (mcc === '2/3') {
+            if (t.includes('CADEIRA SUPERIOR')) return `CAD-SUP-${pos}`;
+            if (t.includes('CADEIRA INFERIOR')) return `CAD-INF-${pos}`;
+            if (t.includes('SEGMENTO ZERO') || t.includes('SEGUIMENTO ZERO')) return 'SEG-ZERO';
+            if (t.includes('MESA OSCILADORA')) return 'OSCILADORA';
+            if (t.includes('SEGMENTO') && !t.includes('ZERO')) return `SEG-${pos}`;
+            if (t.includes('MOLDE')) return 'MOLDE';
+            return pos;
+        }
+        return pos;
+    }
+
+    const slotChassi = mapearSlot(pecaReserva.tipo, mcc, posicao);
+
+    // ==========================================
+    // 4. BUSCA A PEÇA ANTIGA NA GAVETA
+    // ==========================================
+    const config = getConfiguracaoPorVeio(veio);
+    let pecaAntiga = null;
+
+    for (const p of BANCO_ATIVOS) {
+        const taNoVeio = (p.veio === veio && p.status === "Instalado") ||
+                         (p.local && p.local.includes(`Veio ${veio}`) && !p.local.includes("Oficina"));
+        if (!taNoVeio) continue;
+
+        if (p.posicaoFixa && p.posicaoFixa === slotChassi) {
+            pecaAntiga = p;
+            break;
+        }
+        if (!p.posicaoFixa && config && config.mapearSlotLegado) {
+            const slotMapeado = config.mapearSlotLegado(p);
+            if (slotMapeado === slotChassi) {
+                pecaAntiga = p;
+                break;
             }
-        } else {
-            if (confirm(`Instalar a reserva ${pecaReserva.id} no ${novoLocal}?`)) {
-                pecaReserva.local = novoLocal;
-                pecaReserva.pos = "Componente Instalado";
-                pecaReserva.ordem = getOrdemPadrao(pecaReserva.tipo);
-                localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-                registrarHistorico(pecaReserva.id, `Alocado no ${novoLocal}.`);
-                if (typeof renderReparos === 'function') renderReparos();
-                if (typeof renderReservas === 'function') renderReservas();
-                if (typeof renderAtivos === 'function') renderAtivos();
-                if (typeof renderPainelVeios === 'function') renderPainelVeios();
-                calcularKpisGlobais();
-                atualizarPainelCompleto();
+        }
+    }
+
+    // ==========================================
+    // 5. EXECUTA O SWAP
+    // ==========================================
+    if (pecaAntiga) {
+        if (confirm(`A peça ${pecaAntiga.id} será SACADA do slot ${slotChassi} (${veio}) para dar lugar à ${pecaReserva.id}.`)) {
+            // Remove a peça antiga
+            pecaAntiga.status = "Oficina / Reparo";
+            pecaAntiga.local = "Oficina / Reparo";
+            pecaAntiga.veio = "";
+            pecaAntiga.posicaoFixa = "";
+            pecaAntiga.pos = "";
+            pecaAntiga.dataReparo = Date.now();
+            pecaAntiga.dias = 0;
+
+            // Instala a nova
+            pecaReserva.local = `MCC ${mcc} - Veio ${veio}`;
+            pecaReserva.veio = veio;
+            pecaReserva.posicaoFixa = slotChassi;
+            pecaReserva.pos = posicao || slotChassi;
+            pecaReserva.status = "Instalado";
+            pecaReserva.ordem = getOrdemPadrao(pecaReserva.tipo);
+
+            localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+
+            if (window.registrarHistorico) {
+                window.registrarHistorico(pecaReserva.id, `Instalado no slot ${slotChassi} do Veio ${veio} (substituiu ${pecaAntiga.id}).`);
+                window.registrarHistorico(pecaAntiga.id, `Sacado do slot ${slotChassi} do Veio ${veio} para reparo.`);
             }
+
+            // Atualiza as telas
+            if (typeof renderReparos === 'function') renderReparos();
+            if (typeof renderReservas === 'function') renderReservas();
+            if (typeof renderAtivos === 'function') renderAtivos();
+            if (typeof renderPainelVeios === 'function') renderPainelVeios();
+            if (typeof calcularKpisGlobais === 'function') calcularKpisGlobais();
+            if (typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
+
+            alert(`✅ Swap realizado! ${pecaReserva.id} instalado no lugar de ${pecaAntiga.id}.`);
+        }
+    } else {
+        // Gaveta vazia – instala diretamente
+        if (confirm(`Instalar a reserva ${pecaReserva.id} no slot ${slotChassi} do Veio ${veio}?`)) {
+            pecaReserva.local = `MCC ${mcc} - Veio ${veio}`;
+            pecaReserva.veio = veio;
+            pecaReserva.posicaoFixa = slotChassi;
+            pecaReserva.pos = posicao || slotChassi;
+            pecaReserva.status = "Instalado";
+            pecaReserva.ordem = getOrdemPadrao(pecaReserva.tipo);
+
+            localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+
+            if (window.registrarHistorico) {
+                window.registrarHistorico(pecaReserva.id, `Instalado no slot ${slotChassi} do Veio ${veio} (gaveta vazia).`);
+            }
+
+            // Atualiza as telas
+            if (typeof renderReparos === 'function') renderReparos();
+            if (typeof renderReservas === 'function') renderReservas();
+            if (typeof renderAtivos === 'function') renderAtivos();
+            if (typeof renderPainelVeios === 'function') renderPainelVeios();
+            if (typeof calcularKpisGlobais === 'function') calcularKpisGlobais();
+            if (typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
+
+            alert(`✅ ${pecaReserva.id} instalado com sucesso!`);
         }
     }
 };
