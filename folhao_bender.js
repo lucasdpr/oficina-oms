@@ -534,3 +534,38 @@ window.adicionarLinhaMaterialBender = function() {
     tbody.appendChild(tr);
   }
 };
+// Função para abrir o modal do Bender
+window.abrirFolhaoBender = function(id) {
+  console.log("Abrindo Bender:", id);
+  // Pega o item do banco
+  let item = window.BANCO_ATIVOS.find(a => a.id === id);
+  if (!item) return alert('Bender não encontrado!');
+
+  // Preenche informações gerais
+  document.getElementById("mcc4-tag-name").innerText = id;
+  document.getElementById("mcc4-data-inicio").valueAsDate = new Date();
+  document.getElementById("mcc4-data-fim").valueAsDate = new Date();
+
+  // Injeta as abas do Bender no modal MCC4
+  const tabsContainer = document.querySelector('#modal-folhao-mcc4 .folhao-tabs');
+  const bodyContainer = document.querySelector('#modal-folhao-mcc4 .folhao-body');
+  // Remove abas e conteúdos antigos que não sejam do Bender (opcional)
+  // Aqui você pode limpar ou adicionar
+  // Como o modal pode ser reutilizado, é melhor limpar antes
+  document.querySelectorAll('#modal-folhao-mcc4 .tab-dinamica, #modal-folhao-mcc4 .content-dinamico').forEach(el => el.remove());
+
+  // Adiciona as abas
+  tabsContainer.innerHTML += `
+    <button class="folhao-tab tab-dinamica" onclick="trocarAbaFolhao(event, 'bender-chegada')">3. Chegada</button>
+    <button class="folhao-tab tab-dinamica" onclick="trocarAbaFolhao(event, 'bender-execucao')">4. Execução</button>
+    <button class="folhao-tab tab-dinamica" onclick="trocarAbaFolhao(event, 'bender-saida')">5. Saída</button>
+    <button class="folhao-tab tab-dinamica" onclick="trocarAbaFolhao(event, 'aba-materiais-geral')">6. Materiais</button>
+  `;
+  // Adiciona o conteúdo
+  bodyContainer.innerHTML += gerarTelasBenderHTML();
+
+  // Abre o modal
+  document.getElementById("modal-folhao-mcc4").classList.remove("hidden");
+  // Ativa a primeira aba
+  document.querySelector('#modal-folhao-mcc4 .folhao-tab').click();
+};

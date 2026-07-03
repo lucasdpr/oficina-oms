@@ -1,9 +1,16 @@
+// ==============================================================
+// folhaoMolde4.js - Módulo completo para BENDER e MOLDE MCC 4
+// ==============================================================
+
 import { BANCO_ATIVOS } from './banco.js';
 import { renderAtivos, renderReparos, renderReservas } from './ui.js';
 import { gerarTelasBenderHTML, imprimirPDFBender } from './folhao_bender.js';
 
 let ID_FOLHAO_ATUAL = null;
 
+// ==============================================================
+// FUNÇÕES AUXILIARES
+// ==============================================================
 export function getV(id) {
     let el = document.getElementById(id);
     return el ? el.value : '';
@@ -21,18 +28,22 @@ export function getCheckboxValue(id) {
 }
 
 export function fecharFolhaoMCC4() {
-    document.getElementById("modal-folhao-mcc4").classList.add("hidden");
+    const modal = document.getElementById("modal-folhao-mcc4");
+    if (modal) modal.classList.add("hidden");
     ID_FOLHAO_ATUAL = null;
 }
 
 export function fecharFolhaoMolde4() {
-    document.getElementById("modal-folhao-molde4").classList.add("hidden");
+    const modal = document.getElementById("modal-folhao-molde4");
+    if (modal) modal.classList.add("hidden");
     ID_FOLHAO_ATUAL = null;
 }
 
 export function trocarAbaFolhao(event, idAba) {
-    document.querySelectorAll('.folhao-content').forEach(c => c.classList.add('hidden'));
-    document.querySelectorAll('.folhao-tab').forEach(t => t.classList.remove('active'));
+    const modal = document.getElementById("modal-folhao-mcc4");
+    if (!modal) return;
+    modal.querySelectorAll('.folhao-content').forEach(c => c.classList.add('hidden'));
+    modal.querySelectorAll('.folhao-tab').forEach(t => t.classList.remove('active'));
     let aba = document.getElementById(idAba);
     if (aba) aba.classList.remove('hidden');
     if (event) event.currentTarget.classList.add('active');
@@ -64,20 +75,29 @@ export function renderizarChecklist(categoriasObj, containerId, prefix) {
     container.innerHTML = html;
 }
 
+// ==============================================================
+// PREPARAR ABAS DINÂMICAS PARA O BENDER
+// ==============================================================
 function prepararAbasDinamicamente(tipoUpper) {
-    let tabsContainer = document.querySelector('#modal-folhao-mcc4 .folhao-tabs');
-    let bodyContainer = document.querySelector('#modal-folhao-mcc4 .folhao-body');
-    if(!tabsContainer || !bodyContainer) return;
-    
-    document.querySelectorAll('#modal-folhao-mcc4 .tab-dinamica, #modal-folhao-mcc4 .content-dinamico').forEach(el => el.remove());
+    const modal = document.getElementById("modal-folhao-mcc4");
+    if (!modal) {
+        console.error("Modal MCC4 não encontrado para adicionar abas dinâmicas.");
+        return;
+    }
+    let tabsContainer = modal.querySelector('.folhao-tabs');
+    let bodyContainer = modal.querySelector('.folhao-body');
+    if (!tabsContainer || !bodyContainer) return;
+
+    // Remove abas e conteúdos antigos (para evitar duplicação)
+    modal.querySelectorAll('.tab-dinamica, .content-dinamico').forEach(el => el.remove());
 
     if (tipoUpper === "BENDER") {
         tabsContainer.innerHTML += `
-      <button class="folhao-tab tab-dinamica" onclick="trocarAbaFolhao(event, 'bender-chegada')">3. Chegada</button>
-      <button class="folhao-tab tab-dinamica" onclick="trocarAbaFolhao(event, 'bender-execucao')">4. Execução</button>
-      <button class="folhao-tab tab-dinamica" onclick="trocarAbaFolhao(event, 'bender-saida')">5. Saída</button>
-      <button class="folhao-tab tab-dinamica" onclick="trocarAbaFolhao(event, 'aba-materiais-geral')">6. Materiais</button>
-    `;
+            <button class="folhao-tab tab-dinamica" onclick="window.trocarAbaFolhao(event, 'bender-chegada')">3. Chegada</button>
+            <button class="folhao-tab tab-dinamica" onclick="window.trocarAbaFolhao(event, 'bender-execucao')">4. Execução</button>
+            <button class="folhao-tab tab-dinamica" onclick="window.trocarAbaFolhao(event, 'bender-saida')">5. Saída</button>
+            <button class="folhao-tab tab-dinamica" onclick="window.trocarAbaFolhao(event, 'aba-materiais-geral')">6. Materiais</button>
+        `;
         bodyContainer.innerHTML += gerarTelasBenderHTML();
     }
 }
@@ -494,7 +514,7 @@ function renderizarM4Materiais() {
 }
 
 // ==============================================================
-// FUNÇÃO PRINCIPAL - ABRIR FOLHÃO (DISPATCHER ATUALIZADO)
+// FUNÇÃO PRINCIPAL - ABRIR FOLHÃO (DISPATCHER)
 // ==============================================================
 export function abrirFolhaoMCC4(id) {
     ID_FOLHAO_ATUAL = id;
@@ -519,20 +539,52 @@ export function abrirFolhaoMCC4(id) {
     // ---- BENDER ----
     if (tipoPeca.toUpperCase() === 'BENDER') {
         console.log('Abrindo BENDER...');
-        document.getElementById("mcc4-tag-name").innerText = id;
-        document.getElementById("mcc4-data-inicio").valueAsDate = new Date();
-        document.getElementById("mcc4-data-fim").valueAsDate = new Date();
+        const modal = document.getElementById("modal-folhao-mcc4");
+        if (!modal) {
+            alert('Modal do Bender (modal-folhao-mcc4) não encontrado no HTML!');
+            return;
+        }
+
+        const tagInput = document.getElementById("mcc4-tag-name");
+        if (tagInput) tagInput.innerText = id;
+        const dataInicio = document.getElementById("mcc4-data-inicio");
+        if (dataInicio) dataInicio.valueAsDate = new Date();
+        const dataFim = document.getElementById("mcc4-data-fim");
+        if (dataFim) dataFim.valueAsDate = new Date();
+
         prepararAbasDinamicamente("BENDER");
         
         let objChecklistBender = {
-            "LUBRIFICAÇÃO": ["Sistema de lubrificação isento de vazamentos.", "Tubulação amassada.", "Distribuidores de graxa funcionando corretamente sem vazamentos.", "Flexíveis estão perfeitos, sem avarias", "Tubulações Inox ou Cobre danificadas"],
-            "REFRIGERAÇÃO": ["Resfriadores completos e alinhados.", "Bicos completos e obstruídos.", "Flexíveis isentos de vazamentos.", "Tubulações isentas de empenos.", "Tubulações furadas."],
-            "ESTRUTURA": ["Rolos Lubrificados, girando normalmente", "Proteções isentas de avarias.", "Estrutura com break-out.", "Rolamentos quebrados.", "Rolos travados", "Parafusos de fixação dos mancais todos apertados", "Conexões apertadas."]
+            "LUBRIFICAÇÃO": [
+                "Sistema de lubrificação isento de vazamentos.",
+                "Tubulação amassada.",
+                "Distribuidores de graxa funcionando corretamente sem vazamentos.",
+                "Flexíveis estão perfeitos, sem avarias",
+                "Tubulações Inox ou Cobre danificadas"
+            ],
+            "REFRIGERAÇÃO": [
+                "Resfriadores completos e alinhados.",
+                "Bicos completos e obstruídos.",
+                "Flexíveis isentos de vazamentos.",
+                "Tubulações isentas de empenos.",
+                "Tubulações furadas."
+            ],
+            "ESTRUTURA": [
+                "Rolos Lubrificados, girando normalmente",
+                "Proteções isentas de avarias.",
+                "Estrutura com break-out.",
+                "Rolamentos quebrados.",
+                "Rolos travados",
+                "Parafusos de fixação dos mancais todos apertados",
+                "Conexões apertadas."
+            ]
         };
         renderizarChecklist(objChecklistBender, "container-check-recebimento", "geral");
         
-        document.querySelectorAll('#modal-folhao-mcc4 .folhao-tab')[0].click();
-        document.getElementById("modal-folhao-mcc4").classList.remove("hidden");
+        const firstTab = modal.querySelector('.folhao-tab');
+        if (firstTab) firstTab.click();
+        
+        modal.classList.remove("hidden");
         return;
     }
 
@@ -541,17 +593,22 @@ export function abrirFolhaoMCC4(id) {
         console.log('Abrindo MOLDE MCC 4...');
         const modalM4 = document.getElementById("modal-folhao-molde4");
         if (!modalM4) {
-            alert("Modal do Molde 4 não encontrado no HTML!");
+            alert("Modal do Molde 4 (modal-folhao-molde4) não encontrado no HTML!");
             return;
         }
 
-        document.getElementById("molde4-tag-name").value = id;
-        document.getElementById("molde4-data-inicio").valueAsDate = new Date();
-        document.getElementById("molde4-data-fim").valueAsDate = new Date();
+        const tagInput = document.getElementById("molde4-tag-name");
+        if (tagInput) tagInput.value = id;
+        const dataInicio = document.getElementById("molde4-data-inicio");
+        if (dataInicio) dataInicio.valueAsDate = new Date();
+        const dataFim = document.getElementById("molde4-data-fim");
+        if (dataFim) dataFim.valueAsDate = new Date();
 
         // Limpa as divs vitais
-        document.getElementById('m4-aba-receb').innerHTML = '<div id="container-m4-recebimento"></div><div id="container-m4-eletrica"></div>';
-        document.getElementById('m4-aba-revisao').innerHTML = '<div id="container-m4-revisao"></div><div id="container-m4-final"></div>';
+        const recebDiv = document.getElementById('m4-aba-receb');
+        if (recebDiv) recebDiv.innerHTML = '<div id="container-m4-recebimento"></div><div id="container-m4-eletrica"></div>';
+        const revisaoDiv = document.getElementById('m4-aba-revisao');
+        if (revisaoDiv) revisaoDiv.innerHTML = '<div id="container-m4-revisao"></div><div id="container-m4-final"></div>';
 
         // Renderiza tudo
         renderizarM4Identificacao();
@@ -568,7 +625,8 @@ export function abrirFolhaoMCC4(id) {
         renderizarM4Mecanica();
         renderizarM4Materiais();
 
-        document.querySelectorAll('#modal-folhao-molde4 .folhao-tab')[0].click();
+        const firstTabM4 = modalM4.querySelector('.folhao-tab');
+        if (firstTabM4) firstTabM4.click();
         modalM4.classList.remove("hidden");
         return;
     }
@@ -838,7 +896,9 @@ export function salvarEImprimirFolhaoMolde4() {
     setTimeout(() => window.print(), 500);
 }
 
-// Exportando e amarrando globalmente
+// ==============================================================
+// SALVAR LAUDO INTELIGENTE (BENDER)
+// ==============================================================
 export function salvarLaudoInteligente() {
     if (!ID_FOLHAO_ATUAL) return;
     let tag = ID_FOLHAO_ATUAL;
@@ -860,6 +920,9 @@ export function salvarLaudoInteligente() {
     imprimirPDFBender(tag, motivo, getV);
 }
 
+// ==============================================================
+// EXPOSIÇÃO GLOBAL
+// ==============================================================
 window.abrirFolhaoMCC4 = abrirFolhaoMCC4;
 window.fecharFolhaoMCC4 = fecharFolhaoMCC4;
 window.fecharFolhaoMolde4 = fecharFolhaoMolde4;
@@ -869,3 +932,5 @@ window.salvarLaudoInteligente = salvarLaudoInteligente;
 window.salvarEImprimirFolhaoMolde4 = salvarEImprimirFolhaoMolde4;
 window.adicionarLinhaMaterialBender = window.adicionarLinhaMaterialBender || function() {};
 window.getV = getV;
+
+console.log("✅ folhaoMolde4.js carregado – com BENDER e MOLDE MCC4 corrigidos.");

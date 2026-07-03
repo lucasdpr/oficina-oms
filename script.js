@@ -56,6 +56,45 @@ function getOrdemPadrao(tipo) {
 }
 
 // ==========================================================================
+// FUNÇÕES AUXILIARES PARA POSIÇÕES E SLOTS (DEFINIDAS UMA ÚNICA VEZ)
+// ==========================================================================
+function mapearSlotFixo(tipo, mcc) {
+    const t = tipo.toUpperCase();
+    if (mcc === '4') {
+        if (t.includes('MOLDE')) return 'MOLDE';
+        if (t.includes('BENDER')) return 'BENDER';
+        if (t.includes('STRAIGHTENER R1')) return 'STR-1';
+        if (t.includes('STRAIGHTENER R2')) return 'STR-2';
+    } else if (mcc === '2/3') {
+        if (t.includes('SEGMENTO ZERO') || t.includes('SEGUIMENTO ZERO')) return 'SEG-ZERO';
+        if (t.includes('MESA OSCILADORA')) return 'OSCILADORA';
+        if (t.includes('MOLDE')) return 'MOLDE';
+    }
+    return '';
+}
+
+function gerarOpcoesPosicao(tipo, mcc) {
+    const t = tipo.toUpperCase();
+    let opcoes = '';
+    if (mcc === '4') {
+        if (t.includes('BOW')) {
+            for (let i = 1; i <= 5; i++) opcoes += `<option value="${i}">#${i}</option>`;
+        } else if (t.includes('HORIZONTAL')) {
+            for (let i = 8; i <= 17; i++) opcoes += `<option value="${i}">#${i}</option>`;
+        }
+    } else if (mcc === '2/3') {
+        if (t.includes('CADEIRA SUPERIOR')) {
+            for (let i = 43; i <= 79; i++) opcoes += `<option value="${i}">#${i}</option>`;
+        } else if (t.includes('CADEIRA INFERIOR')) {
+            for (let i = 43; i <= 79; i++) opcoes += `<option value="${i}">#${i}</option>`;
+        } else if (t.includes('SEGMENTO') && !t.includes('ZERO')) {
+            for (let i = 1; i <= 6; i++) opcoes += `<option value="${i}">#${i}</option>`;
+        }
+    }
+    return opcoes;
+}
+
+// ==========================================================================
 // INICIALIZAÇÃO DOS BANCOS (se não existirem)
 // ==========================================================================
 if (!BANCO_ROLOS) {
@@ -2547,7 +2586,11 @@ window.toggleTheme = toggleTheme;
 window.processarAutenticacaoHome = processarAutenticacaoHome;
 window.fazerLogout = fazerLogout;
 window.verificarAcesso = verificarAcesso;
-window.processarAutenticacaoHome = processarAutenticacaoHome;
+window.getOrdemPadrao = getOrdemPadrao;
+
+// ===== FUNÇÕES AUXILIARES PARA UI.JS =====
+window.mapearSlotFixo = mapearSlotFixo;
+window.gerarOpcoesPosicao = gerarOpcoesPosicao;
 
 // ===== FUNÇÕES DE HISTÓRICO =====
 window.registrarHistorico = registrarHistorico;
@@ -2596,52 +2639,57 @@ window.CONFIGURACOES_MAQUINAS = CONFIGURACOES_MAQUINAS;
 
 window.BANCO_ATIVOS = BANCO_ATIVOS;
 
-// ===== FUNÇÕES DE SWAP =====
+// ==========================================
+// FUNÇÃO DE SWAP (DEFINIDA DIRETAMENTE NO WINDOW)
+// ==========================================
 window.iniciarSwapAlocacao = function(idReserva) {
     if (!verificarAcesso()) return;
 
+    console.log('🔄 Iniciando swap para:', idReserva);
+
     const veioSelect = document.getElementById(`alocar-veio-${idReserva}`);
-    const posSelect = document.getElementById(`alocar-pos-${idReserva}`);
-    if (!veioSelect || !posSelect) {
-        alert('Erro: elementos de seleção não encontrados. Recarregue a página.');
+    const posElement = document.getElementById(`alocar-pos-${idReserva}`);
+    
+    if (!veioSelect) {
+        alert('Erro: campo de veio não encontrado.');
         return;
     }
 
     const veio = veioSelect.value;
-    const posicao = posSelect.value;
+    console.log('📍 Veio:', veio);
+
+    let posicao = '';
+    if (posElement) {
+        posicao = posElement.value;
+        console.log('📍 Posição:', posicao);
+    }
 
     let pecaReserva = BANCO_ATIVOS.find(a => a.id === idReserva);
     if (!pecaReserva) {
         alert('Peça reserva não encontrada.');
         return;
     }
+    console.log('📦 Peça:', pecaReserva.id, 'Tipo:', pecaReserva.tipo);
 
     // ==========================================
-    // 1. DETERMINA SE O TIPO É DE POSIÇÃO FIXA
+    // FUNÇÕES AUXILIARES EMBUTIDAS (LOCAIS)
     // ==========================================
-    const tipoUpper = (pecaReserva.tipo || '').toUpperCase();
-    const tiposFixos = ['MOLDE', 'BENDER', 'STR-1', 'STR-2', 'SEG-ZERO', 'OSCILADORA'];
-    const isFixo = tiposFixos.some(f => tipoUpper.includes(f) || tipoUpper === f);
-
-    // ==========================================
-    // 2. VALIDAÇÃO DE VEIO E POSIÇÃO
-    // ==========================================
-    if (!veio) {
-        alert('Selecione o Veio de destino.');
-        return;
+    function getSlotFixoLocal(tipo, mcc) {
+        const t = tipo.toUpperCase();
+        if (mcc === '4') {
+            if (t.includes('MOLDE')) return 'MOLDE';
+            if (t.includes('BENDER')) return 'BENDER';
+            if (t.includes('STRAIGHTENER R1')) return 'STR-1';
+            if (t.includes('STRAIGHTENER R2')) return 'STR-2';
+        } else if (mcc === '2/3') {
+            if (t.includes('SEGMENTO ZERO') || t.includes('SEGUIMENTO ZERO')) return 'SEG-ZERO';
+            if (t.includes('MESA OSCILADORA')) return 'OSCILADORA';
+            if (t.includes('MOLDE')) return 'MOLDE';
+        }
+        return '';
     }
 
-    if (!isFixo && !posicao) {
-        alert('Selecione a Posição de destino para este tipo de equipamento.');
-        return;
-    }
-
-    // ==========================================
-    // 3. MAPEAMENTO DO SLOT (POSIÇÃO FIXA OU VARIÁVEL)
-    // ==========================================
-    const mcc = pecaReserva.mcc_compat || '4';
-
-    function mapearSlot(tipo, mcc, pos) {
+    function getSlotLocal(tipo, mcc, pos) {
         const t = tipo.toUpperCase();
         if (mcc === '4') {
             if (t.includes('BOW')) return `BOW-${pos}`;
@@ -2663,12 +2711,105 @@ window.iniciarSwapAlocacao = function(idReserva) {
         return pos;
     }
 
-    const slotChassi = mapearSlot(pecaReserva.tipo, mcc, posicao);
+    function getConfigVeio(v) {
+        const configs = {
+            'C': { mapearSlotLegado: mapearSlotLegadoMCC23 },
+            'D': { mapearSlotLegado: mapearSlotLegadoMCC23 },
+            'E': { mapearSlotLegado: mapearSlotLegadoMCC23 },
+            'F': { mapearSlotLegado: mapearSlotLegadoMCC23 },
+            'G': { mapearSlotLegado: mapearSlotLegadoMCC4 },
+            'H': { mapearSlotLegado: mapearSlotLegadoMCC4 }
+        };
+        return configs[v] || null;
+    }
+
+    function mapearSlotLegadoMCC23(peca) {
+        const t = (peca.tipo || '').toUpperCase();
+        const id = (peca.id || '').toUpperCase();
+        if (t.includes('MOLDE')) return 'MOLDE';
+        if (t.includes('OSCILADORA')) return 'OSCILADORA';
+        if (t.includes('ZERO') || t.includes('SEG-0')) return 'SEG-ZERO';
+        if (t.includes('SEGMENTO')) {
+            const match = id.match(/SEG-?(\d+)/);
+            if (match) {
+                const num = parseInt(match[1]);
+                if (num >= 1 && num <= 6) return `SEG-${num}`;
+            }
+        }
+        if (t.includes('CADEIRA SUPERIOR') || t.includes('CAD-SUP')) {
+            const match = id.match(/(\d+)/);
+            if (match) {
+                const num = parseInt(match[1]);
+                if (num >= 43 && num <= 79) return `CAD-SUP-${num}`;
+            }
+        }
+        if (t.includes('CADEIRA INFERIOR') || t.includes('CAD-INF')) {
+            const match = id.match(/(\d+)/);
+            if (match) {
+                const num = parseInt(match[1]);
+                if (num >= 43 && num <= 79) return `CAD-INF-${num}`;
+            }
+        }
+        return null;
+    }
+
+    function mapearSlotLegadoMCC4(peca) {
+        const t = (peca.tipo || '').toUpperCase();
+        const id = (peca.id || '').toUpperCase();
+        if (t.includes('MOLDE')) return 'MOLDE';
+        if (t.includes('BENDER')) return 'BENDER';
+        if (t.includes('BOW')) {
+            const match = id.match(/BOW-(\d)/);
+            if (match) return `BOW-${match[1]}`;
+        }
+        if (t.includes('STRAIGHTENER')) {
+            if (id.includes('STR-6') || id.includes('R1')) return 'STR-1';
+            if (id.includes('STR-7') || id.includes('R2')) return 'STR-2';
+        }
+        if (t.includes('HORIZONTAL')) {
+            const match = id.match(/HOR-(\d+)/);
+            if (match) return `HOR-${match[1]}`;
+        }
+        return null;
+    }
 
     // ==========================================
-    // 4. BUSCA A PEÇA ANTIGA NA GAVETA
+    // LÓGICA PRINCIPAL
     // ==========================================
-    const config = getConfiguracaoPorVeio(veio);
+    const tipoUpper = (pecaReserva.tipo || '').toUpperCase();
+    const tiposFixos = ['MOLDE', 'BENDER', 'STR-1', 'STR-2', 'SEG-ZERO', 'OSCILADORA'];
+    const isFixo = tiposFixos.some(f => tipoUpper.includes(f) || tipoUpper === f);
+    console.log('🔒 É fixo?', isFixo);
+
+    if (!veio) {
+        alert('Selecione o Veio de destino.');
+        return;
+    }
+
+    const mcc = pecaReserva.mcc_compat || '4';
+    if (isFixo) {
+        posicao = getSlotFixoLocal(pecaReserva.tipo, mcc);
+        if (!posicao) {
+            alert('Não foi possível determinar a posição fixa para este equipamento.');
+            return;
+        }
+        console.log('🔒 Posição fixa:', posicao);
+    } else {
+        if (!posicao || posicao === '') {
+            alert('Selecione a Posição de destino para este tipo de equipamento.');
+            return;
+        }
+    }
+
+    const slotChassi = getSlotLocal(pecaReserva.tipo, mcc, posicao);
+    console.log('🏷️ Slot:', slotChassi);
+    if (!slotChassi) {
+        alert('Não foi possível mapear o slot para este equipamento.');
+        return;
+    }
+
+    // Busca peça antiga
+    const config = getConfigVeio(veio);
     let pecaAntiga = null;
 
     for (const p of BANCO_ATIVOS) {
@@ -2689,12 +2830,10 @@ window.iniciarSwapAlocacao = function(idReserva) {
         }
     }
 
-    // ==========================================
-    // 5. EXECUTA O SWAP
-    // ==========================================
+    console.log('🔎 Peça antiga:', pecaAntiga ? pecaAntiga.id : 'Nenhuma');
+
     if (pecaAntiga) {
-        if (confirm(`A peça ${pecaAntiga.id} será SACADA do slot ${slotChassi} (${veio}) para dar lugar à ${pecaReserva.id}.`)) {
-            // Remove a peça antiga
+        if (confirm(`A peça ${pecaAntiga.id} será SACADA do slot ${slotChassi} (Veio ${veio}) para dar lugar à ${pecaReserva.id}.`)) {
             pecaAntiga.status = "Oficina / Reparo";
             pecaAntiga.local = "Oficina / Reparo";
             pecaAntiga.veio = "";
@@ -2703,7 +2842,6 @@ window.iniciarSwapAlocacao = function(idReserva) {
             pecaAntiga.dataReparo = Date.now();
             pecaAntiga.dias = 0;
 
-            // Instala a nova
             pecaReserva.local = `MCC ${mcc} - Veio ${veio}`;
             pecaReserva.veio = veio;
             pecaReserva.posicaoFixa = slotChassi;
@@ -2718,7 +2856,6 @@ window.iniciarSwapAlocacao = function(idReserva) {
                 window.registrarHistorico(pecaAntiga.id, `Sacado do slot ${slotChassi} do Veio ${veio} para reparo.`);
             }
 
-            // Atualiza as telas
             if (typeof renderReparos === 'function') renderReparos();
             if (typeof renderReservas === 'function') renderReservas();
             if (typeof renderAtivos === 'function') renderAtivos();
@@ -2726,10 +2863,9 @@ window.iniciarSwapAlocacao = function(idReserva) {
             if (typeof calcularKpisGlobais === 'function') calcularKpisGlobais();
             if (typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
 
-            alert(`✅ Swap realizado! ${pecaReserva.id} instalado no lugar de ${pecaAntiga.id}.`);
+            alert(`✅ Swap realizado! ${pecaReserva.id} instalado.`);
         }
     } else {
-        // Gaveta vazia – instala diretamente
         if (confirm(`Instalar a reserva ${pecaReserva.id} no slot ${slotChassi} do Veio ${veio}?`)) {
             pecaReserva.local = `MCC ${mcc} - Veio ${veio}`;
             pecaReserva.veio = veio;
@@ -2744,7 +2880,6 @@ window.iniciarSwapAlocacao = function(idReserva) {
                 window.registrarHistorico(pecaReserva.id, `Instalado no slot ${slotChassi} do Veio ${veio} (gaveta vazia).`);
             }
 
-            // Atualiza as telas
             if (typeof renderReparos === 'function') renderReparos();
             if (typeof renderReservas === 'function') renderReservas();
             if (typeof renderAtivos === 'function') renderAtivos();
@@ -2757,6 +2892,9 @@ window.iniciarSwapAlocacao = function(idReserva) {
     }
 };
 
+// ==========================================
+// FORÇAR RENDERIZAÇÃO DE RESERVAS E CAMPOS
+// ==========================================
 window.forcarRenderReservas = function() {
     console.log("🔄 Forçando renderização de reservas...");
     if (typeof renderReservas === 'function') {
