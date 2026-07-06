@@ -441,6 +441,10 @@
                 <div class="input-group"><label>DATA FIM</label><input type="date" id="bow-data-fim"></div>
                 <div class="input-group"><label>MOTIVO</label><input type="text" id="bow-motivo" placeholder="Motivo da OS"></div>
                 <div class="input-group"><label>TIPO EXECUÇÃO</label><select id="bow-tipo-execucao" class="premium-select"><option value="GERAL">GERAL</option><option value="PARCIAL">PARCIAL</option></select></div>
+                
+                <!-- 🔥 CAMPO NOVA META ADICIONADO AQUI 🔥 -->
+                <div class="input-group"><label style="color: var(--success-color); font-weight: bold;">NOVA META (TON)</label><input type="number" id="bow-nova-meta" placeholder="Ex: 120000" style="border-color: var(--success-color);"></div>
+
             </div>
             <div class="folhao-tabs">
                 <button class="folhao-tab active" onclick="window.trocarAbaBow(event, 'bow-aba-dados')">1. Inspeção Chegada</button>
@@ -488,6 +492,10 @@
                 <div class="input-group"><label>DATA FIM</label><input type="date" id="horiz-data-fim"></div>
                 <div class="input-group"><label>MOTIVO</label><input type="text" id="horiz-motivo" placeholder="Motivo da OS"></div>
                 <div class="input-group"><label>TIPO EXECUÇÃO</label><select id="horiz-tipo-execucao" class="premium-select"><option value="GERAL">GERAL</option><option value="PARCIAL">PARCIAL</option></select></div>
+                
+                <!-- 🔥 CAMPO NOVA META ADICIONADO AQUI 🔥 -->
+                <div class="input-group"><label style="color: var(--success-color); font-weight: bold;">NOVA META (TON)</label><input type="number" id="horiz-nova-meta" placeholder="Ex: 120000" style="border-color: var(--success-color);"></div>
+
             </div>
             <div class="folhao-tabs">
                 <button class="folhao-tab active" onclick="window.trocarAbaHorizontal(event, 'horiz-aba-dados')">1. Inspeção Chegada</button>
@@ -523,12 +531,18 @@
     <!-- MODAL SEGMENTO ZERO -->
     <div id="modal-folhao-segmento-zero" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 1000px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;"><h2><i class="fas fa-clipboard-check"></i> Liberação - Segmento Zero</h2><button class="btn-close-emergency" onclick="window.fecharFolhaoSegmentoZero()"><i class="fas fa-times"></i></button></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+                <h2><i class="fas fa-clipboard-check"></i> Liberação - Segmento Zero</h2>
+                <button class="btn-close-emergency" onclick="window.fecharFolhaoSegmentoZero()"><i class="fas fa-times"></i></button>
+            </div>
             <div style="display:flex;gap:15px;flex-wrap:wrap;margin-bottom:15px;">
                 <div class="input-group"><label>TAG</label><input type="text" id="segzero-tag-ativo" readonly></div>
                 <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="segzero-data-inicio"></div>
                 <div class="input-group"><label>DATA FIM</label><input type="date" id="segzero-data-fim"></div>
                 <div class="input-group"><label>MOTIVO</label><input type="text" id="segzero-motivo" placeholder="Motivo da OS"></div>
+                
+                <!-- 🔥 CAMPO NOVA META ADICIONADO AQUI 🔥 -->
+                <div class="input-group"><label style="color: var(--success-color); font-weight: bold;">NOVA META (TON)</label><input type="number" id="segzero-nova-meta" placeholder="Ex: 120000" style="border-color: var(--success-color);"></div>
             </div>
             <div class="folhao-tabs">
                 <button class="folhao-tab active" onclick="window.trocarAbaSegZero(event, 'segzero-aba-dados')">1. Dados</button>
@@ -551,8 +565,8 @@
                 <div id="segzero-aba-materiais" class="folhao-content hidden"></div>
             </div>
             <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
-                <button class="btn-premium btn-success" onclick="window.salvarFolhaoSegmentoZero()"><i class="fas fa-save"></i> Salvar</button>
-                <button class="btn-premium" onclick="window.imprimirFolhaoSegmentoZero()"><i class="fas fa-print"></i> Imprimir</button>
+                <!-- Ajustado o botão para seguir o padrão Salvar e Imprimir -->
+                <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoSegmentoZero()"><i class="fas fa-save"></i> Salvar e Imprimir</button>
                 <button class="btn-outline-danger" onclick="window.fecharFolhaoSegmentoZero()">Fechar</button>
             </div>
         </div>
@@ -705,6 +719,10 @@
                 <div class="input-group"><label>Nº MOLDE</label><input type="text" id="molde23-num-molde" placeholder="Ex: 2C-01"></div>
                 <div class="input-group"><label>MOTIVO</label><input type="text" id="molde23-motivo" placeholder="Motivo da manutenção"></div>
                 <div class="input-group"><label>TIPO EXECUÇÃO</label><select id="molde23-tipo-exec" class="premium-select"><option value="GERAL">GERAL</option><option value="PARCIAL">PARCIAL</option></select></div>
+                
+                <!-- 🔥 CAMPO NOVA META ADICIONADO AQUI 🔥 -->
+                <div class="input-group"><label style="color: var(--success-color); font-weight: bold;">NOVA META (TON)</label><input type="number" id="molde23-nova-meta" placeholder="Ex: 120000" style="border-color: var(--success-color);"></div>
+
                 <div class="input-group"><label>LÍDER RESPONSÁVEL</label><input type="text" id="molde23-lider"></div>
                 <div class="input-group"><label>DESEMPENHO</label><input type="text" id="molde23-desempenho" placeholder="Ex: BOM, REGULAR"></div>
                 <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="molde23-data-inicio"></div>

@@ -527,30 +527,60 @@ window.trocarAbaBow = function(evt, abaId) {
 };
 
 // ==============================================================
-// 15. GERAR PDF COMPLETO
+// 15. GERAR PDF COMPLETO E SALVAR NO BANCO (NUVEM + PDF NATIVO)
 // ==============================================================
-window.salvarEImprimirFolhaoBow = function() {
+window.salvarEImprimirFolhaoBow = async function() {
     if (!window.verificarAcesso || !window.verificarAcesso()) { alert("Acesso negado."); return; }
     if (!ID_FOLHAO_BOW_ATUAL) { alert("Nenhuma TAG carregada."); return; }
 
     const tag = ID_FOLHAO_BOW_ATUAL;
-    const item = BANCO_ATIVOS.find(a => a.id === tag);
-    if (item) {
-        item.ton = 0;
-        item.dias = 0;
-        item.local = "Oficina / Reserva";
-        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-    }
 
-    // Coleta dados do cabeçalho
+    // 1. CAPTURA DOS DADOS DO CABEÇALHO
     const dtInicio = getV('bow-data-inicio') || new Date().toLocaleDateString('pt-BR');
     const dtFim = getV('bow-data-fim') || new Date().toLocaleDateString('pt-BR');
     const numSeg = getV('bow-num-segmento') || '______';
     const veio = document.getElementById('bow-veio')?.value || '';
     const motivo = getV('bow-motivo') || '_______________';
     const tipoExec = document.getElementById('bow-tipo-execucao')?.value || 'GERAL';
+    const novaMeta = getV('bow-nova-meta') || 'Manter Atual'; // 🔥 CAPTURA A NOVA META
 
-    // Função auxiliar para checklist de chegada
+    // 2. PREPARA OS DADOS PARA A NUVEM
+    const dadosFolhao = {
+        id_peca: tag,
+        tipo_equipamento: "Bow",
+        tecnico: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Técnico",
+        nova_meta: parseFloat(novaMeta) || 0,
+        tipo_manutencao: tipoExec,
+        dados_chegada: "{}", 
+        dados_saida: "{}",
+        status_reparo: "Concluido",
+        pdf_base64: "" 
+    };
+
+    // 3. 🔥 COMUNICAÇÃO COM O PYTHON (ESPERA O BANCO SALVAR) 🔥
+    try {
+        const resposta = await fetch("http://localhost:8000/api/salvar_folhao", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dadosFolhao)
+        });
+        
+        const resultado = await resposta.json();
+        
+        if (resultado.status === "erro") {
+            alert("❌ Erro no Banco de Dados: " + resultado.mensagem);
+            return; 
+        }
+        console.log("✅ Salvo com sucesso no SQLite!");
+    } catch(e) {
+        console.error("Erro na Nuvem:", e);
+        alert("❌ Erro de comunicação. O Python está rodando?");
+        return;
+    }
+
+    // ==========================================================
+    // FUNÇÕES AUXILIARES DO PDF (Mantidas do original)
+    // ==========================================================
     function gerarLinhasChegada() {
         let html = '';
         let categorias = {};
@@ -576,7 +606,6 @@ window.salvarEImprimirFolhaoBow = function() {
         return html;
     }
 
-    // Gera tabela de GAP
     function gerarGapPDF() {
         let html = '';
         for (let i = 1; i <= 7; i++) {
@@ -588,7 +617,6 @@ window.salvarEImprimirFolhaoBow = function() {
         return html;
     }
 
-    // Gera tabela de Cangalhas
     function gerarCangalhasPDF() {
         let html = '';
         const bases = ['sup', 'inf'];
@@ -614,7 +642,6 @@ window.salvarEImprimirFolhaoBow = function() {
         return html;
     }
 
-    // Gera Pass Line
     function gerarPassLinePDF(id, refs) {
         let html = '';
         refs.forEach((ref, i) => {
@@ -627,7 +654,6 @@ window.salvarEImprimirFolhaoBow = function() {
         return html;
     }
 
-    // Gera Cilindros Chegada
     function gerarCilindrosChegadaPDF() {
         let html = '';
         const tipos = [
@@ -653,7 +679,6 @@ window.salvarEImprimirFolhaoBow = function() {
         return html;
     }
 
-    // Gera Cilindros Saída
     function gerarCilindrosSaidaPDF() {
         let html = '';
         const tipos = [
@@ -680,7 +705,6 @@ window.salvarEImprimirFolhaoBow = function() {
         return html;
     }
 
-    // Gera Rolos
     function gerarRolosPDF(tipo, base) {
         const prefix = tipo === 'chegada' ? 'ch' : 'sa';
         const bPrefix = base === 'Inferior' ? 'inf' : 'sup';
@@ -746,7 +770,6 @@ window.salvarEImprimirFolhaoBow = function() {
         return html;
     }
 
-    // Gera Graxa
     function gerarGraxaPDF() {
         let html = '';
         const bases = ['sup', 'inf'];
@@ -768,7 +791,6 @@ window.salvarEImprimirFolhaoBow = function() {
         return html;
     }
 
-    // Gera Checklist de Manutenção
     function gerarManutencaoPDF() {
         let html = '';
         manutencaoBow.forEach((tarefa, index) => {
@@ -787,7 +809,7 @@ window.salvarEImprimirFolhaoBow = function() {
     }
 
     // ==============================================================
-    // MONTA HTML DO PDF
+    // 4. MONTA O HTML DO PDF
     // ==============================================================
     let htmlPDF = `
     <style>
@@ -812,13 +834,18 @@ window.salvarEImprimirFolhaoBow = function() {
             </div>
         </div>
 
-        <!-- Dados adicionais -->
-        <table>
-            <tr><td><strong>Nº SEGMENTO:</strong> ${numSeg}</td>
-                <td><strong>VEIO(SAIDA):</strong> ${veio}</td>
-                <td><strong>TIPO EXECUÇÃO:</strong> ${tipoExec}</td></tr>
-            <tr><td><strong>MOTIVO:</strong> ${motivo}</td>
-                <td colspan="2"><strong>VEIO(ENTRADA):</strong> ${veio}</td></tr>
+        <!-- 🔥 TABELA CORRIGIDA COM A NOVA META E EXECUÇÃO 🔥 -->
+        <table style="margin-bottom: 15px; border: 2px solid #000;">
+            <tr>
+                <td style="width: 25%;"><strong>Nº SEGMENTO:</strong> ${numSeg}</td>
+                <td style="width: 30%;"><strong>MOTIVO:</strong> ${motivo}</td>
+                <td style="width: 25%; color: #002b5e;"><strong>EXECUÇÃO:</strong> ${tipoExec}</td>
+                <td style="width: 20%; background-color: #f0f0f0; text-align: center;"><strong>NOVA META:</strong> ${novaMeta}</td>
+            </tr>
+            <tr>
+                <td colspan="2"><strong>VEIO (ENTRADA):</strong> ${veio}</td>
+                <td colspan="2"><strong>VEIO (SAÍDA):</strong> ${veio}</td>
+            </tr>
         </table>
 
         <!-- INSPEÇÃO DE CHEGADA -->
@@ -937,15 +964,11 @@ window.salvarEImprimirFolhaoBow = function() {
         </div>
     </div>`;
 
-    // ===== SALVA NO HISTÓRICO =====
-    if (typeof window.salvarLaudoNoHistorico === 'function') {
-        window.salvarLaudoNoHistorico(tag, "Bow MCC 4", htmlPDF);
-    }
-
-    // ===== IMPRIME =====
+    // 5. ATUALIZA A INTERFACE E IMPRIME SÓ DEPOIS DE TUDO CERTO
     const printDiv = document.getElementById('print-content');
     if (!printDiv) { alert("Div 'print-content' não encontrada!"); return; }
     printDiv.innerHTML = htmlPDF;
+    
     window.fecharFolhaoBow();
     if (typeof renderReparos === 'function') renderReparos();
     if (typeof renderReservas === 'function') renderReservas();
@@ -954,7 +977,6 @@ window.salvarEImprimirFolhaoBow = function() {
     if (typeof renderHistorico === 'function') renderHistorico();
     if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
     if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
+    
     setTimeout(() => window.print(), 500);
 };
-
-console.log("✅ folhaoBow.js carregado com todas as seções do documento oficial.");

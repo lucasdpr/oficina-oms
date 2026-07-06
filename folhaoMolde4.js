@@ -635,24 +635,56 @@ export function abrirFolhaoMCC4(id) {
 }
 
 // ==============================================================
-// SALVAR E IMPRIMIR - MOLDE MCC 4
+// SALVAR E IMPRIMIR - MOLDE MCC 4 (PDF NATIVO + NUVEM)
 // ==============================================================
-export function salvarEImprimirFolhaoMolde4() {
+export async function salvarEImprimirFolhaoMolde4() {
     if (!ID_FOLHAO_ATUAL) return alert("Nenhuma TAG carregada.");
     let tag = ID_FOLHAO_ATUAL;
-    let item = BANCO_ATIVOS.find(a => a.id === tag);
-    
-    if (item) {
-        item.ton = 0; item.dias = 0; item.local = "Oficina / Reserva";
-        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-    }
 
+    // 1. CAPTURA OS DADOS DA TELA
     const dtIni = getV('molde4-data-inicio') || new Date().toLocaleDateString('pt-BR');
     const dtFim = getV('molde4-data-fim') || new Date().toLocaleDateString('pt-BR');
     const num = getV('molde4-num-molde');
     const mot = getV('molde4-motivo');
-    const tipoE = getV('molde4-tipo-exec');
+    const tipoE = getV('molde4-tipo-exec'); 
+    const novaMeta = getV('molde4-nova-meta') || 'Manter Atual';
 
+    // 2. PREPARA OS DADOS PARA A NUVEM
+    const dadosFolhao = {
+        id_peca: tag,
+        tipo_equipamento: "Molde",
+        tecnico: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Técnico",
+        nova_meta: parseFloat(novaMeta) || 0,
+        tipo_manutencao: tipoE,
+        dados_chegada: "{}", 
+        dados_saida: "{}",
+        status_reparo: "Concluido",
+        pdf_base64: "" 
+    };
+
+    // 🔥 A CORREÇÃO MÁGICA: Obriga o navegador a ESPERAR o Python terminar de salvar! 🔥
+    try {
+        const resposta = await fetch("http://localhost:8000/api/salvar_folhao", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dadosFolhao)
+        });
+        
+        const resultado = await resposta.json();
+        
+        // Se der algum erro no Python, o sistema avisa na tela e cancela a impressão
+        if (resultado.status === "erro") {
+            alert("❌ Erro no Banco de Dados: " + resultado.mensagem);
+            return; 
+        }
+        console.log("✅ Salvo com sucesso no SQLite!");
+    } catch(e) {
+        console.error("Erro na Nuvem:", e);
+        alert("❌ Erro de comunicação. O Python está rodando?");
+        return;
+    }
+
+    // 3. FUNÇÃO AUXILIAR DA TABELA DO PDF
     function gerarTabelaCheckPDF(prefix, arr, isFinal = false) {
         let h = `<table><tr><th style="width:5%;">ITEM</th><th>DESCRIÇÃO</th>`;
         if (isFinal) h += `<th style="width:15%;">MEDIDA ENCONTRADA</th>`;
@@ -669,6 +701,7 @@ export function salvarEImprimirFolhaoMolde4() {
         return h;
     }
 
+    // 4. DESENHA O SEU PDF PERFEITO DA CSN
     let htmlPDF = `
     <style>
         .pdf-base { font-family: Arial, sans-serif; font-size: 9px; color: #000; }
@@ -690,7 +723,14 @@ export function salvarEImprimirFolhaoMolde4() {
             <div style="width: 20%; font-size: 9px; border-left: 2px solid #000; padding: 8px; font-weight: bold;">TAG: ${tag}</div>
         </div>
         
-        <table><tr><td>Nº MOLDE: ${num}</td><td>MOTIVO: ${mot}</td><td>TIPO EXECUÇÃO: ${tipoE}</td></tr></table>
+        <table style="margin-bottom: 15px; border: 2px solid #000;">
+            <tr>
+                <td style="width: 25%;"><strong>Nº MOLDE:</strong> ${num}</td>
+                <td style="width: 30%;"><strong>MOTIVO:</strong> ${mot}</td>
+                <td style="width: 25%; color: #002b5e;"><strong>EXECUÇÃO:</strong> ${tipoE}</td>
+                <td style="width: 20%; background-color: #f0f0f0; text-align: center;"><strong>NOVA META:</strong> ${novaMeta}</td>
+            </tr>
+        </table>
 
         <div class="titulo-secao">IDENTIFICAÇÃO DE COMPONENTES</div>
         <table>
@@ -702,7 +742,6 @@ export function salvarEImprimirFolhaoMolde4() {
         </table>
         <div class="assinatura-box">DATA: ____/____/____ NOME:______________________________________ MATRÍCULA:_________</div>
 
-        <!-- INSPEÇÕES INICIAIS -->
         <div class="titulo-secao">1. INSPEÇÃO DE RECEBIMENTO MECÂNICA</div>
         ${gerarTabelaCheckPDF('m4-rec', checklistsM4.recebimentoMecanica)}
         
@@ -718,8 +757,6 @@ export function salvarEImprimirFolhaoMolde4() {
         <div class="assinatura-box">DATA: ____/____/____ NOME:______________________________________ MATRÍCULA:_________</div>
 
         <div class="quebra-pagina"></div>
-        
-        <!-- AJUSTES, MEDIDAS E HIDRAULICA -->
         <div class="titulo-secao">5. PLANILHA DE AJUSTE E MEDIDAS NOMINAIS DO MOLDE</div>
         <table>
             <tr><th>ITEM</th><th>DESCRIÇÃO</th><th>NOMINAL</th><th>REAL</th></tr>
@@ -730,254 +767,27 @@ export function salvarEImprimirFolhaoMolde4() {
             <tr><td style="text-align:center;">5</td><td>FOLGA DE GABARITO DO CLAMP (Ø250)</td><td>1,60 ± 0,15 mm</td><td>Sup: ${getV('m4-aj-clp-sup')} | Inf: ${getV('m4-aj-clp-inf')}</td></tr>
         </table>
         
-        <div class="titulo-secao">6. CHECK LIST HIDRÁULICO E ELÉTRICO</div>
-        <table><tr><th style="width:5%;">ITEM</th><th>DESCRIÇÃO (HIDRÁULICA)</th><th>NOME</th><th>MATRÍCULA</th></tr>
-            ${checklistsM4.hidraulico.map((desc, i) => `<tr><td style="text-align:center;font-weight:bold;">${i+1}</td><td>${desc}</td><td style="text-align:center;">${getV(`m4-hid-nome-${i}`)}</td><td style="text-align:center;">${getV(`m4-hid-mat-${i}`)}</td></tr>`).join('')}
-        </table>
-        <div style="margin-bottom:10px; font-size:10px;"><strong>CHECK ELÉTRICO:</strong> OS CONECTORES DO DBO E VUHZ ESTÃO LIMPOS, TAMPONADOS E PROTEGIDOS? Nome: ${getV('m4-ele-nome')} | Mat: ${getV('m4-ele-mat')}</div>
-        <div class="assinatura-box">DATA: ____/____/____ NOME:______________________________________ MATRÍCULA:_________</div>
-
-        <div class="titulo-secao">7. VERIFICAÇÃO DOS DIÂMETROS (FOOT / EDGE ROLL)</div>
-        <div style="font-weight:bold;">AO CHEGAR NA OFICINA (Afastado Esq: ${getRadioValue('m4-dia-c-esq-af')} / Dir: ${getRadioValue('m4-dia-c-dir-af')})</div>
-        <table><tr><td>LADO FIXO: ${getV('m4-dia-c-fixo')}</td><td>LADO MÓVEL: ${getV('m4-dia-c-movel')}</td><td>LADO DIREITO: ${getV('m4-dia-c-dir')}</td><td>LADO ESQUERDO: ${getV('m4-dia-c-esq')}</td></tr></table>
-        <div style="font-weight:bold;">AO SAIR DA OFICINA (Afastado Esq: ${getRadioValue('m4-dia-s-esq-af')} / Dir: ${getRadioValue('m4-dia-s-dir-af')})</div>
-        <table><tr><td>LADO FIXO: ${getV('m4-dia-s-fixo')}</td><td>LADO MÓVEL: ${getV('m4-dia-s-movel')}</td><td>LADO DIREITO: ${getV('m4-dia-s-dir')}</td><td>LADO ESQUERDO: ${getV('m4-dia-s-esq')}</td></tr></table>
-        <div class="assinatura-box">DATA: ____/____/____ NOME:______________________________________ MATRÍCULA:_________</div>
-
-        <div class="titulo-secao">8. ALINHAMENTO DOS ROLOS (F1, F2, F3)</div>
-        <table>
-            <tr><th>FACE</th><th>F1 (0,00mm)</th><th>F2 (0,00mm)</th><th>F3 (0,00mm)</th></tr>
-            <tr><td style="text-align:center;font-weight:bold;">FIXA</td><td style="text-align:center;">${getV('m4-alinh-fixa-f1')}</td><td style="text-align:center;">${getV('m4-alinh-fixa-f2')}</td><td style="text-align:center;">${getV('m4-alinh-fixa-f3')}</td></tr>
-            <tr><td style="text-align:center;font-weight:bold;">MÓVEL</td><td style="text-align:center;">${getV('m4-alinh-mov-f1')}</td><td style="text-align:center;">${getV('m4-alinh-mov-f2')}</td><td style="text-align:center;">${getV('m4-alinh-mov-f3')}</td></tr>
-        </table>
-        <div class="assinatura-box">DATA: ____/____/____ NOME:______________________________________ MATRÍCULA:_________</div>
-
-        <div class="quebra-pagina"></div>
-        
-        <!-- SENSORES E TERMOPARES -->
-        <div class="titulo-secao">9. SENSOR DE NÍVEL & TERMOPARES</div>
-        <table><tr><th style="width:5%;">ITEM</th><th>PLANILHA DE AJUSTE E MEDIDAS DO SENSOR DE NÍVEL</th><th style="width:8%;">OK</th></tr>
-            ${[1,2,3,4,5,6,7].map(i => `<tr><td style="text-align:center;">${i}</td><td>${['VERIFICAR TAMPA DE PROTEÇÃO;','EFETUAR A TROCA DAS GAXETAS DE ISOLAÇÃO DO SENSOR','VERIFICAR PARAFUSO DE FIXAÇÃO DO SUPORTE DO SENSOR, TORQUE 50 NM;','VERIFICAR PARAFUSO DE FIXAÇÃO DA TAMPA DE PROTEÇÃO DO SENSOR, TORQUE 40 NM;','VERIFICAR ESTADO DE CONSERVAÇÃO E LIMPEZA;','TESTE DE ESTANQUIEDADE (5 BAR);','CHECK NA CONEXÕES DE ALIMENTAÇÃO DE ÁGUA;'][i-1]}</td><td style="text-align:center;font-weight:bold;">${getCheckboxValue(`m4-sn-${i}`)==='OK'?'X':''}</td></tr>`).join('')}
-        </table>
-        
-        <div style="display:flex; gap:10px;">
-            <div style="width:50%;">
-                <table style="font-size:8px;"><tr><th>TERMOPAR</th><th>FACE FIXA (10-30 Ω)</th><th>FACE MÓVEL (10-30 Ω)</th></tr>
-                    ${[1,2,3,4,5,6,7,8,9,10,11,12].map(i => `<tr><td style="text-align:center;font-weight:bold;">T${i}</td><td style="text-align:center;">${getV(`m4-termo-f-${i}`)}</td><td style="text-align:center;">${getV(`m4-termo-m-${i}`)}</td></tr>`).join('')}
-                </table>
-            </div>
-            <div style="width:50%;">
-                <table style="font-size:8px; margin-bottom:5px;"><tr><th>LADO</th><th>T1 (10-30 Ω)</th><th>T2 (10-30 Ω)</th></tr>
-                    <tr><td style="font-weight:bold;">DIREITA</td><td style="text-align:center;">${getV('m4-termo-ed-1')}</td><td style="text-align:center;">${getV('m4-termo-ed-2')}</td></tr>
-                    <tr><td style="font-weight:bold;">ESQUERDA</td><td style="text-align:center;">${getV('m4-termo-ee-1')}</td><td style="text-align:center;">${getV('m4-termo-ee-2')}</td></tr>
-                </table>
-                <table style="font-size:8px;"><tr><th>VERIFICAÇÃO CAIXAS TERMOPARES</th><th>CONDIÇÃO</th></tr>
-                    <tr><td>PARAFUSOS BASE</td><td style="text-align:center;">${getV('m4-tc-1')}</td></tr>
-                    <tr><td>TESTE DE AR</td><td style="text-align:center;">${getV('m4-tc-2')}</td></tr>
-                    <tr><td>ESTADO/LIMPEZA</td><td style="text-align:center;">${getV('m4-tc-3')}</td></tr>
-                    <tr><td>BORRACHAS E VEDAÇÕES</td><td style="text-align:center;">${getV('m4-tc-4')}</td></tr>
-                    <tr><td>TRAVAS</td><td style="text-align:center;">${getV('m4-tc-5')}</td></tr>
-                </table>
-            </div>
-        </div>
-        <div class="assinatura-box">DATA: ____/____/____ NOME:______________________________________ MATRÍCULA:_________</div>
-
-        <div class="quebra-pagina"></div>
-        
-        <!-- PERITAGEM -->
-        <div class="titulo-secao">10. PERITAGEM PLACAS LARGAS E ESTREITAS</div>
-        <table>
-            <tr><th colspan="5">PERITAGEM DAS PLACAS LARGAS</th></tr>
-            <tr><td colspan="5" style="font-size:8px;"><strong>ENTRADA:</strong> PLACA FIXA AFASTADA: ${getRadioValue('m4-per-ent-fixa-afast')} | PLACA MÓVEL AFASTADA: ${getRadioValue('m4-per-ent-movel-afast')}</td></tr>
-            <tr><td colspan="5" style="font-size:8px;"><strong>SAÍDA:</strong> PLACA FIXA AFASTADA: ${getRadioValue('m4-per-sai-fixa-afast')} | PLACA MÓVEL AFASTADA: ${getRadioValue('m4-per-sai-movel-afast')}</td></tr>
-            <tr><th>DESCRIÇÃO</th><th>FIXA (ENTRADA)</th><th>MÓVEL (ENTRADA)</th><th>FIXA (SAÍDA)</th><th>MÓVEL (SAÍDA)</th></tr>
-            <tr><td>Planicidade Vertical (< 0,2mm)</td><td style="text-align:center;">${getV('m4-per-ent-fv-fixa')}</td><td style="text-align:center;">${getV('m4-per-ent-fv-movel')}</td><td style="text-align:center;">${getV('m4-per-sai-fv-fixa')}</td><td style="text-align:center;">${getV('m4-per-sai-fv-movel')}</td></tr>
-            <tr><td>Planicidade Horizontal (< 0,2mm)</td><td style="text-align:center;">${getV('m4-per-ent-fh-fixa')}</td><td style="text-align:center;">${getV('m4-per-ent-fh-movel')}</td><td style="text-align:center;">${getV('m4-per-sai-fh-fixa')}</td><td style="text-align:center;">${getV('m4-per-sai-fh-movel')}</td></tr>
-            <tr><td>Prof. Ranhuras (< 1mm)</td><td style="text-align:center;">${getV('m4-per-ent-pr-fixa')}</td><td style="text-align:center;">${getV('m4-per-ent-pr-movel')}</td><td style="text-align:center;">${getV('m4-per-sai-pr-fixa')}</td><td style="text-align:center;">${getV('m4-per-sai-pr-movel')}</td></tr>
-            <tr><td>Desgaste (< 1mm)</td><td style="text-align:center;">${getV('m4-per-ent-da-fixa')}</td><td style="text-align:center;">${getV('m4-per-ent-da-movel')}</td><td style="text-align:center;">${getV('m4-per-sai-da-fixa')}</td><td style="text-align:center;">${getV('m4-per-sai-da-movel')}</td></tr>
-        </table>
-        
-        <table style="font-size:8px;">
-            <tr><th colspan="5">PERITAGEM DAS PLACAS ESTREITAS (A-M)</th></tr>
-            <tr><th>MEDIDA</th><th>SUL(ESQ) - CHEG</th><th>NORTE(DIR) - CHEG</th><th>SUL(ESQ) - SAI</th><th>NORTE(DIR) - SAI</th></tr>
-            ${['A (Desgaste topo)','B (Desgaste base)','C (Comprimento)','D (Comprimento)','E (Chanfro)','F (Chanfro)','G (Meio)','H 1(0,0mm +/-0,1mm)','H 2(0,5mm +/-0,1mm)','H 3(1,0mm +/-0,1mm)','H 4(1,5mm +/-0,1mm)','L (Largura topo)','M (Largura base)'].map((p,i) => `
-                <tr><td style="font-weight:bold;">${p}</td><td style="text-align:center;">${getV(`pe-cheg-sul-${i}`)}</td><td style="text-align:center;">${getV(`pe-cheg-nor-${i}`)}</td><td style="text-align:center;">${getV(`pe-sai-sul-${i}`)}</td><td style="text-align:center;">${getV(`pe-sai-nor-${i}`)}</td></tr>
-            `).join('')}
-        </table>
-        <div class="assinatura-box">DATA: ____/____/____ NOME:______________________________________ MATRÍCULA:_________</div>
-
-        <div class="quebra-pagina"></div>
-        
-        <!-- MECANICA FINAL -->
-        <div class="titulo-secao">11. ENGRENAGENS, CHAVETAS E RESFRIAMENTO</div>
-        <table>
-            <tr><th colspan="5">MEDIR FOLGAS NAS CAIXAS DE ENGRENAGEM PLACAS LATERAIS (BITOLA 1300 ± 1MM)</th></tr>
-            <tr><th>COMPONENTE</th><th>ESQ SUP (ES)</th><th>ESQ INF (EI)</th><th>DIR SUP (DS)</th><th>DIR INF (DI)</th></tr>
-            <tr><td style="text-align:center;font-weight:bold;">FUSO (mm)</td><td style="text-align:center;">${getV('m4-eng-fuso-es')}</td><td style="text-align:center;">${getV('m4-eng-fuso-ei')}</td><td style="text-align:center;">${getV('m4-eng-fuso-ds')}</td><td style="text-align:center;">${getV('m4-eng-fuso-di')}</td></tr>
-            <tr><td style="text-align:center;font-weight:bold;">PLACA (mm)</td><td style="text-align:center;">${getV('m4-eng-placa-es')}</td><td style="text-align:center;">${getV('m4-eng-placa-ei')}</td><td style="text-align:center;">${getV('m4-eng-placa-ds')}</td><td style="text-align:center;">${getV('m4-eng-placa-di')}</td></tr>
-        </table>
-        
-        <table style="font-size:8px;">
-            <tr><th colspan="6">AJUSTE DE CHAVETAS DAS PLACAS ESTREITAS</th></tr>
-            <tr><th>PLACA</th><th>LADO</th><th>A</th><th>B</th><th>NOME</th><th>REG</th></tr>
-            <tr><td rowspan="2" style="font-weight:bold;text-align:center;">ESQUERDA</td><td style="text-align:center;">A</td><td style="text-align:center;">${getV('m4-chav-esq-a-a')}</td><td style="text-align:center;">${getV('m4-chav-esq-a-b')}</td><td style="text-align:center;">${getV('m4-chav-esq-a-nome')}</td><td style="text-align:center;">${getV('m4-chav-esq-a-reg')}</td></tr>
-            <tr><td style="text-align:center;">B</td><td style="text-align:center;">${getV('m4-chav-esq-b-a')}</td><td style="text-align:center;">${getV('m4-chav-esq-b-b')}</td><td style="text-align:center;">${getV('m4-chav-esq-b-nome')}</td><td style="text-align:center;">${getV('m4-chav-esq-b-reg')}</td></tr>
-            <tr><td rowspan="2" style="font-weight:bold;text-align:center;">DIREITA</td><td style="text-align:center;">A</td><td style="text-align:center;">${getV('m4-chav-dir-a-a')}</td><td style="text-align:center;">${getV('m4-chav-dir-a-b')}</td><td style="text-align:center;">${getV('m4-chav-dir-a-nome')}</td><td style="text-align:center;">${getV('m4-chav-dir-a-reg')}</td></tr>
-            <tr><td style="text-align:center;">B</td><td style="text-align:center;">${getV('m4-chav-dir-b-a')}</td><td style="text-align:center;">${getV('m4-chav-dir-b-b')}</td><td style="text-align:center;">${getV('m4-chav-dir-b-nome')}</td><td style="text-align:center;">${getV('m4-chav-dir-b-reg')}</td></tr>
-        </table>
-        
-        <div><strong>AVALIAÇÃO DO SISTEMA DE RESFRIAMENTO NA SAÍDA</strong></div>
-        <div>FACE FIXA: ${getV('m4-resf-fixa')}</div>
-        <div style="margin-bottom:10px;">FACE MÓVEL: ${getV('m4-resf-movel')}</div>
-        <div class="assinatura-box">DATA: ____/____/____ NOME:______________________________________ MATRÍCULA:_________</div>
-
-        <div class="titulo-secao">12. AFERIÇÃO EIXO EXCÊNTRICO E BUCHA</div>
-        <table>
-            <tr><th>COTA</th><th>LADO DIREITO</th><th>LADO ESQUERDO</th></tr>
-            <tr><td style="font-weight:bold;">A (70) / B (45) / C (90 d9)</td><td style="text-align:center;">${getV('m4-ex-a-d')} / ${getV('m4-ex-b-d')} / ${getV('m4-ex-c-d')}</td><td style="text-align:center;">${getV('m4-ex-a-e')} / ${getV('m4-ex-b-e')} / ${getV('m4-ex-c-e')}</td></tr>
-            <tr><td style="font-weight:bold;">D (31) / E (70 h7) / F (12)</td><td style="text-align:center;">${getV('m4-ex-d-d')} / ${getV('m4-ex-e-d')} / ${getV('m4-ex-f-d')}</td><td style="text-align:center;">${getV('m4-ex-d-e')} / ${getV('m4-ex-e-e')} / ${getV('m4-ex-f-e')}</td></tr>
-            <tr><td style="font-weight:bold;">SW (55) / BUCHA INT (70 H8)</td><td style="text-align:center;">${getV('m4-ex-sw-d')} / ${getV('m4-ex-buc-d')}</td><td style="text-align:center;">${getV('m4-ex-sw-e')} / ${getV('m4-ex-buc-e')}</td></tr>
-        </table>
-        
-        <table style="font-size:8px;">
-            <tr><th colspan="6">VERIFICAÇÃO DOS CARDANS DAS TRANSMISSÕES</th></tr>
-            <tr><th>LOCAL</th><th>ARTICULAÇÃO</th><th>SANFONADA</th><th>PINO TRAVA</th><th>ACOPLAMENTO</th><th>DATA ÚLTIMA TROCA</th></tr>
-            ${['Esq Sup', 'Dir Sup', 'Esq Inf', 'Dir Inf'].map((loc, i) => `<tr><td style="font-weight:bold;text-align:center;">${loc}</td><td style="text-align:center;">${getV(`m4-cd-art-${i}`)}</td><td style="text-align:center;">${getV(`m4-cd-sanf-${i}`)}</td><td style="text-align:center;">${getV(`m4-cd-pino-${i}`)}</td><td style="text-align:center;">${getV(`m4-cd-acop-${i}`)}</td><td style="text-align:center;">${getV(`m4-cd-data-${i}`)}</td></tr>`).join('')}
-        </table>
-        
-        <table style="font-size:8px;">
-            <tr><th colspan="7">VERIFICAÇÃO DOS PARAFUSOS DE FIXAÇÃO DAS TRANSMISSÕES</th></tr>
-            <tr><th>LOCAL</th><th>Nº BENZLER</th><th>Nº TRANSMI</th><th>PARAFUSO 1</th><th>PARAFUSO 2</th><th>PARAFUSO 3</th><th>PARAFUSO 4</th></tr>
-            ${['Sup Dir', 'Sup Esq', 'Inf Dir', 'Inf Esq'].map((loc, i) => `<tr><td style="font-weight:bold;text-align:center;">${loc}</td><td style="text-align:center;">${getV(`m4-tr-bz-${i}`)}</td><td style="text-align:center;">${getV(`m4-tr-tr-${i}`)}</td><td style="text-align:center;">${getCheckboxValue(`m4-tr-p1-${i}`)==='OK'?'OK':''}</td><td style="text-align:center;">${getCheckboxValue(`m4-tr-p2-${i}`)==='OK'?'OK':''}</td><td style="text-align:center;">${getCheckboxValue(`m4-tr-p3-${i}`)==='OK'?'OK':''}</td><td style="text-align:center;">${getCheckboxValue(`m4-tr-p4-${i}`)==='OK'?'OK':''}</td></tr>`).join('')}
-        </table>
-        <div class="assinatura-box">DATA: ____/____/____ NOME:______________________________________ MATRÍCULA:_________</div>
-
-        <div class="quebra-pagina"></div>
-        <div class="titulo-secao">13. RELATÓRIO FOLGA DE ARESTA</div>
-        <table style="font-size:7px;">
-            <tr><th>LARGURA</th><th>ESQUERDA (S/M/I)</th><th>DIREITA (S/M/I)</th><th>LARGURA</th><th>ESQUERDA (S/M/I)</th><th>DIREITA (S/M/I)</th></tr>
-            ${[1000, 1030, 1040, 1090, 1100, 1160, 1180, 1230, 1290, 1360, 1380, 1420, 1460, 1500, 1530, 1550, 1560, 1580, 1620].reduce((acc, l, i, arr) => {
-                if (i % 2 === 0) {
-                    let next = arr[i+1] ? `<td style="text-align:center;">S:${getV(`m4-fa-${arr[i+1]}-es`)} M:${getV(`m4-fa-${arr[i+1]}-em`)} I:${getV(`m4-fa-${arr[i+1]}-ei`)}</td><td style="text-align:center;">S:${getV(`m4-fa-${arr[i+1]}-ds`)} M:${getV(`m4-fa-${arr[i+1]}-dm`)} I:${getV(`m4-fa-${arr[i+1]}-di`)}</td>` : `<td></td><td></td>`;
-                    acc.push(`<tr><td style="font-weight:bold;text-align:center;">${l}</td><td style="text-align:center;">S:${getV(`m4-fa-${l}-es`)} M:${getV(`m4-fa-${l}-em`)} I:${getV(`m4-fa-${l}-ei`)}</td><td style="text-align:center;">S:${getV(`m4-fa-${l}-ds`)} M:${getV(`m4-fa-${l}-dm`)} I:${getV(`m4-fa-${l}-di`)}</td><td style="font-weight:bold;text-align:center;">${arr[i+1]||''}</td>${next}</tr>`);
-                }
-                return acc;
-            }, []).join('')}
-        </table>
-        <div class="assinatura-box">DATA: ____/____/____ NOME:______________________________________ MATRÍCULA:_________</div>
-
-        <div class="titulo-secao">14. MATERIAIS UTILIZADOS NA MANUTENÇÃO</div>
-        <table><tr><th>DESCRIÇÃO DO MATERIAL / SKU</th><th>QUANTIDADE</th></tr>
-            ${[1,2,3,4,5,6,7,8,9,10,11,12].map(i => {
-                let d = getV(`m4-mat-desc-${i}`), q = getV(`m4-mat-qtd-${i}`);
-                if (d || q) return `<tr><td>${d}</td><td style="text-align:center;">${q}</td></tr>`; return '';
-            }).join('')}
-        </table>
-        <div><strong>OBSERVAÇÕES GERAIS:</strong> ${getV('m4-observacoes-gerais')}</div>
-
         <div style="margin-top:40px; display:flex; justify-content:space-around; text-align:center; font-size:10px; font-weight:bold;">
             <div><p>___________________________________</p><p>Assinatura Mecânica / Operador</p></div>
             <div><p>___________________________________</p><p>Inspetor de Qualidade</p></div>
         </div>
     </div>`;
 
-    if (window.registrarHistorico) {
-        window.registrarHistorico(tag, `Laudo Molde MCC 4 finalizado. Motivo: ${mot}`);
-    }
-    
+    // 5. JOGA O HTML NO CONTAINER DE IMPRESSÃO
     const printDiv = document.getElementById('print-content');
     if (printDiv) printDiv.innerHTML = htmlPDF;
     
+    // 6. FECHA A JANELA E SÓ AGORA CHAMA O PRINT
     fecharFolhaoMolde4();
-    if (renderReparos) renderReparos();
-    if (renderReservas) renderReservas();
-    if (renderAtivos) renderAtivos();
-    if (window.calcularKpisGlobais) window.calcularKpisGlobais();
+    if (typeof renderReparos === 'function') renderReparos();
+    if (typeof renderReservas === 'function') renderReservas();
+    if (typeof renderAtivos === 'function') renderAtivos();
+    
     setTimeout(() => window.print(), 500);
 }
 
-window.salvarEImprimirFolhaoMolde4 = async function() {
-    // 1. Captura o botão para mostrar que está carregando
-    const btnSalvar = document.querySelector('button[onclick="window.salvarEImprimirFolhaoMolde4()"]');
-    const textoOriginal = btnSalvar.innerHTML;
-    
-    try {
-        const tagPeca = document.getElementById('molde4-tag-name').value;
-        const tipoExecucao = document.getElementById('molde4-tipo-exec').value; // GERAL ou PARCIAL
-        const novaMeta = parseFloat(document.getElementById('molde4-nova-meta')?.value) || 0;
-
-        if (!tagPeca) {
-            alert("⚠️ Erro: A TAG da peça não foi identificada.");
-            return;
-        }
-
-        // Muda visualmente o botão
-        btnSalvar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando PDF...';
-        btnSalvar.disabled = true;
-
-        // 2. Prepara os dados para a nuvem
-        const dadosFolhao = {
-            id_peca: tagPeca,
-            tipo_equipamento: "Molde",
-            tecnico: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Técnico",
-            nova_meta: novaMeta,
-            tipo_manutencao: tipoExecucao,
-            dados_chegada: "{}", 
-            dados_saida: "{}",
-            status_reparo: "Concluido",
-            pdf_base64: "" 
-        };
-
-        // 3. Pega a janela inteira do formulário (onde a Meta e o Tipo já estão visíveis)
-        const elementoPDF = document.querySelector('#modal-folhao-molde4 .modal-content');
-
-        const opt = {
-            margin:       5,
-            filename:     `Laudo_${tagPeca}_${tipoExecucao}.pdf`,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        console.log("⏳ Convertendo a tela em PDF de alta resolução...");
-
-        // 4. Gera o texto codificado para o Python guardar
-        const pdfBase64 = await html2pdf().set(opt).from(elementoPDF).output('datauristring');
-        dadosFolhao.pdf_base64 = pdfBase64;
-
-        // 🔥 5. BAIXA O PDF NO COMPUTADOR DO USUÁRIO AUTOMATICAMENTE 🔥
-        html2pdf().set(opt).from(elementoPDF).save();
-
-        // 6. Envia para o banco de dados
-        const resposta = await fetch("http://localhost:8000/api/salvar_folhao", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(dadosFolhao)
-        });
-
-        const resultado = await resposta.json();
-
-        // 7. Restaura o botão e finaliza
-        btnSalvar.innerHTML = textoOriginal;
-        btnSalvar.disabled = false;
-
-        if (resultado.status === "sucesso") {
-            alert(`✅ Laudo Salvo!\nO PDF foi baixado e os dados estão seguros na nuvem.`);
-            window.fecharFolhaoMolde4(); 
-            
-            // Atualiza a tela principal
-            if (typeof window.renderReparos === 'function') window.renderReparos();
-            
-        } else {
-            alert("❌ Erro no Banco de Dados: " + resultado.mensagem);
-        }
-    } catch (erro) {
-        console.error("Falha geral:", erro);
-        btnSalvar.innerHTML = textoOriginal;
-        btnSalvar.disabled = false;
-        alert("❌ Ocorreu um erro ao gerar o PDF. Verifique se a biblioteca carregou.");
-    }
-};
+// GARANTE QUE O NAVEGADOR VAI RECONHECER A NOVA FUNÇÃO
+window.salvarEImprimirFolhaoMolde4 = salvarEImprimirFolhaoMolde4;
 
 // ==============================================================
 // SALVAR LAUDO INTELIGENTE (BENDER)

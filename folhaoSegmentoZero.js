@@ -373,25 +373,53 @@ window.trocarAbaSegZero = function(evt, abaId) {
 };
 
 // ==============================================================
-// 4. SALVAR E IMPRIMIR PDF
+// 4. SALVAR E IMPRIMIR PDF (NUVEM + PDF NATIVO)
 // ==============================================================
-window.salvarFolhaoSegmentoZero = function() {
+window.salvarFolhaoSegmentoZero = async function() {
     if (!ID_FOLHAO_SEGZERO_ATUAL) return alert("Nenhuma TAG carregada.");
     const tag = ID_FOLHAO_SEGZERO_ATUAL;
-    
-    let item = BANCO_ATIVOS.find(a => a.id === tag);
-    if (item) {
-        item.ton = 0; item.dias = 0; item.local = "Oficina / Reserva";
-        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-    }
 
     const dtIni = getV('sz-dt-ini') || new Date().toLocaleDateString('pt-BR');
     const dtFim = getV('sz-dt-fim') || new Date().toLocaleDateString('pt-BR');
     const seg = getV('sz-num-seg') || '____';
-    const veio = getV('sz-veio') || '';
+    const veio = getV('segzero-veio') || ''; 
     const desemp = getV('sz-desemp') || '';
-    const mot = getV('sz-motivo') || '';
-    const tipo = getV('sz-tipo-exec') || '';
+    const mot = getV('segzero-motivo') || '';
+    const tipo = getV('segzero-tipo-execucao') || '';
+    const novaMeta = getV('segzero-nova-meta') || 'Manter Atual'; // 🔥 CAPTURA A NOVA META
+
+    // PREPARA OS DADOS PARA A NUVEM
+    const dadosFolhao = {
+        id_peca: tag,
+        tipo_equipamento: "Segmento Zero",
+        tecnico: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Técnico",
+        nova_meta: parseFloat(novaMeta) || 0,
+        tipo_manutencao: tipo,
+        dados_chegada: "{}", 
+        dados_saida: "{}",
+        status_reparo: "Concluido",
+        pdf_base64: "" 
+    };
+
+    // 🔥 COMUNICAÇÃO COM O PYTHON 🔥
+    try {
+        const resposta = await fetch("http://localhost:8000/api/salvar_folhao", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dadosFolhao)
+        });
+        
+        const resultado = await resposta.json();
+        if (resultado.status === "erro") {
+            alert("❌ Erro no Banco de Dados: " + resultado.mensagem);
+            return; 
+        }
+        console.log("✅ Salvo com sucesso no SQLite!");
+    } catch(e) {
+        console.error("Erro na Nuvem:", e);
+        alert("❌ Erro de comunicação. O Python está rodando?");
+        return;
+    }
 
     // Helpers de Geração do PDF
     const genCheck = (arr, prefix) => {
@@ -447,9 +475,18 @@ window.salvarFolhaoSegmentoZero = function() {
             <div style="width: 20%; font-size: 10px; border-left: 2px solid #000; padding: 8px; font-weight: bold;">TAG: ${tag}</div>
         </div>
         
-        <table>
-            <tr><td>Nº SEGMENTO: ${seg}</td><td>VEIO: ${veio}</td><td>DESEMPENHO: ${desemp}</td></tr>
-            <tr><td colspan="2">MOTIVO: ${mot}</td><td>TIPO EXECUÇÃO: ${tipo}</td></tr>
+        <!-- 🔥 TABELA ATUALIZADA COM NOVA META 🔥 -->
+        <table style="margin-bottom: 15px; border: 2px solid #000;">
+            <tr>
+                <td style="width: 25%;"><strong>Nº SEGMENTO:</strong> ${seg}</td>
+                <td style="width: 30%;"><strong>MOTIVO:</strong> ${mot}</td>
+                <td style="width: 25%; color: #002b5e;"><strong>EXECUÇÃO:</strong> ${tipo}</td>
+                <td style="width: 20%; background-color: #f0f0f0; text-align: center;"><strong>NOVA META:</strong> ${novaMeta}</td>
+            </tr>
+            <tr>
+                <td colspan="2"><strong>VEIO:</strong> ${veio}</td>
+                <td colspan="2"><strong>DESEMPENHO:</strong> ${desemp}</td>
+            </tr>
         </table>
         <div style="margin-bottom:10px;"><strong>OBSERVAÇÕES INICIAIS:</strong> ${getV('sz-obs-ident')}</div>
 
@@ -530,5 +567,7 @@ window.salvarFolhaoSegmentoZero = function() {
     if (typeof renderReparos === 'function') renderReparos();
     if (typeof renderReservas === 'function') renderReservas();
     if (typeof renderAtivos === 'function') renderAtivos();
+    if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
+    if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
     setTimeout(() => window.print(), 500);
 };
