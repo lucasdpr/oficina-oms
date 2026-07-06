@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="style.css?v=4" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏭</text></svg>">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         /* ===== RESET E VARIÁVEIS (identidade CSN) ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -216,6 +218,9 @@
                     <div style="display:flex;gap:10px;flex-wrap:wrap;">
                         <button class="btn-premium" onclick="window.toggleTheme()" id="btn-theme-toggle"><i class="fas fa-sun" id="theme-icon"></i> <span id="theme-text">Modo Claro</span></button>
                         <button class="btn-premium btn-success" onclick="window.abrirAba(null,'aba-reservas')"><i class="fas fa-boxes"></i> Estoque</button>
+                        <button class="btn-premium" onclick="window.abrirModalProducao()" style="background-color: #3b82f6; border-color: #3b82f6; color: white;">
+            <i class="fas fa-calculator"></i> Lançar Produção Diária
+        </button>
                         <button class="btn-premium" onclick="window.testarModalMCC4()" style="margin-top:10px;"><i class="fas fa-flask"></i> Testar Modal MCC4</button>
                     </div>
                 </div>
@@ -755,19 +760,31 @@
     <!-- MODAL MOLDE MCC 4 -->
     <div id="modal-folhao-molde4" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 1400px; max-height: 90vh; overflow-y: auto;">
+            
+            <!-- 1. CABEÇALHO -->
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
-                <h2 style="color:var(--text-heading);"><i class="fas fa-clipboard-check"></i> Liberação - Molde MCC 4</h2>
-                <button class="btn-close-emergency" onclick="window.fecharFolhaoMolde4()"><i class="fas fa-times"></i></button>
+                <h2 style="color:var(--text-title);"><i class="fas fa-clipboard-check"></i> Liberação - Molde MCC 4</h2>
+                <button class="btn-close-modal" onclick="window.fecharFolhaoMolde4()"><i class="fas fa-times"></i></button>
             </div>
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:12px; margin-bottom:15px; background:var(--bg-th); padding:12px; border-radius:8px;">
+
+            <!-- 2. GRID DE INPUTS SUPERIORES -->
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:12px; margin-bottom:15px; background:rgba(20,30,50,0.5); padding:12px; border-radius:8px; border: 1px solid var(--border);">
                 <div class="input-group"><label>TAG</label><input type="text" id="molde4-tag-name" readonly class="premium-input"></div>
                 <div class="input-group"><label>Nº MOLDE</label><input type="text" id="molde4-num-molde" placeholder="Ex: 4H-01" class="premium-input"></div>
                 <div class="input-group"><label>MOTIVO</label><input type="text" id="molde4-motivo" placeholder="Motivo da OS" class="premium-input"></div>
                 <div class="input-group"><label>TIPO EXECUÇÃO</label><select id="molde4-tipo-exec" class="premium-select"><option value="GERAL">GERAL</option><option value="PARCIAL">PARCIAL</option></select></div>
                 <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="molde4-data-inicio" class="premium-input"></div>
                 <div class="input-group"><label>DATA FIM</label><input type="date" id="molde4-data-fim" class="premium-input"></div>
-            </div>
+                
+                <!-- 🔥 NOVO CAMPO DA META ALINHADO CORRETAMENTE 🔥 -->
+                <div class="input-group">
+                    <label style="color: #10b981;">NOVA META (TON)</label>
+                    <input type="number" id="molde4-nova-meta" placeholder="Ex: 1200000" class="premium-input" style="border-color: #10b981; color: #10b981;">
+                </div>
+            </div> 
+            <!-- FIM DO GRID (esta é a div que estava faltando/bugada) -->
             
+            <!-- 3. ABAS DE NAVEGAÇÃO -->
             <div class="folhao-tabs">
                 <button class="folhao-tab active" onclick="window.trocarAbaMolde4(event, 'm4-aba-ident')">1. Identificação</button>
                 <button class="folhao-tab" onclick="window.trocarAbaMolde4(event, 'm4-aba-receb')">2. Recebimento</button>
@@ -782,6 +799,7 @@
                 <button class="folhao-tab" onclick="window.trocarAbaMolde4(event, 'm4-aba-materiais')">11. Materiais</button>
             </div>
             
+            <!-- 4. CORPO DAS ABAS -->
             <div class="folhao-body">
                 <div id="m4-aba-ident" class="folhao-content"><div id="container-m4-identificacao"></div></div>
                 <div id="m4-aba-receb" class="folhao-content hidden"><div id="container-m4-recebimento"></div><div id="container-m4-eletrica"></div></div>
@@ -796,197 +814,13 @@
                 <div id="m4-aba-materiais" class="folhao-content hidden"><div id="container-m4-materiais"></div></div>
             </div>
             
-            <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end; flex-wrap:wrap;">
+            <!-- 5. RODAPÉ DE BOTÕES -->
+            <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end; padding-top: 15px; border-top: 1px solid var(--border);">
                 <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoMolde4()"><i class="fas fa-save"></i> Salvar e Imprimir</button>
                 <button class="btn-outline-danger" onclick="window.fecharFolhaoMolde4()">Fechar</button>
             </div>
         </div>
     </div>
-    <!-- MODAL DESEMPENADEIRA (CADEIRA SUPERIOR/INFERIOR) -->
-<div id="modal-folhao-desempenadeira" class="modal-overlay hidden">
-    <div class="modal-content" style="max-width: 1200px; max-height: 90vh; display: flex; flex-direction: column;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-shrink:0;">
-            <h2><i class="fas fa-clipboard-check"></i> Liberação - Desempenadeira</h2>
-            <button class="btn-close-emergency" onclick="window.fecharFolhaoDesempenadeira()"><i class="fas fa-times"></i></button>
-        </div>
-
-        <!-- Cabeçalho com campos -->
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:10px; margin-bottom:15px; background:var(--bg-th); padding:12px; border-radius:8px; flex-shrink:0;">
-            <div class="input-group"><label>TAG</label><input type="text" id="desemp-tag-ativo" readonly></div>
-            <div class="input-group"><label>DATA MONTAGEM</label><input type="date" id="desemp-data-montagem"></div>
-            <div class="input-group"><label>DATA TROCA</label><input type="date" id="desemp-data-troca"></div>
-            <div class="input-group"><label>MOTIVO</label><input type="text" id="desemp-motivo" placeholder="Motivo da OS"></div>
-            <div class="input-group"><label>Nº CADEIRA</label><input type="text" id="desemp-num-cadeira" placeholder="Ex: 43"></div>
-            <div class="input-group"><label>VEIO (ENTRADA)</label>
-                <select id="desemp-veio">
-                    <option value="C">C</option>
-                    <option value="D">D</option>
-                    <option value="E">E</option>
-                    <option value="F">F</option>
-                </select>
-            </div>
-            <div class="input-group"><label>TIPO</label>
-                <select id="desemp-tipo-cadeira">
-                    <option value="INFERIOR">Inferior</option>
-                    <option value="SUPERIOR">Superior</option>
-                </select>
-            </div>
-            <div class="input-group"><label>Nº ROLO</label><input type="text" id="desemp-num-rolo" placeholder="Nº do rolo"></div>
-            <div class="input-group"><label>TIPO EXECUÇÃO</label>
-                <select id="desemp-tipo-exec">
-                    <option value="GERAL">GERAL</option>
-                    <option value="PARCIAL">PARCIAL</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- Abas -->
-        <div class="folhao-tabs" style="flex-shrink:0;">
-            <button class="folhao-tab active" onclick="window.trocarAbaDesemp(event, 'desemp-aba-dados')">1. Dados</button>
-            <button class="folhao-tab" onclick="window.trocarAbaDesemp(event, 'desemp-aba-inspecao')">2. Inspeção</button>
-            <button class="folhao-tab" onclick="window.trocarAbaDesemp(event, 'desemp-aba-motivo')">3. Motivo Saída</button>
-            <button class="folhao-tab" onclick="window.trocarAbaDesemp(event, 'desemp-aba-mancais')">4. Mancais</button>
-            <button class="folhao-tab" onclick="window.trocarAbaDesemp(event, 'desemp-aba-cilindros')">5. Cilindros</button>
-            <button class="folhao-tab" onclick="window.trocarAbaDesemp(event, 'desemp-aba-materiais')">6. Materiais</button>
-        </div>
-
-        <!-- Corpo rolável -->
-        <div class="folhao-body" style="flex:1; overflow-y: auto; padding: 10px 0;">
-
-            <!-- ABA 1 - DADOS (somente identificação) -->
-            <div id="desemp-aba-dados" class="folhao-content">
-                <h3>Dados da Cadeira</h3>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
-                    <div class="input-group"><label>Nº CADEIRA</label><input type="text" id="desemp-num-cadeira-dados" placeholder="Ex: 43"></div>
-                    <div class="input-group"><label>Nº ROLO</label><input type="text" id="desemp-num-rolo-dados" placeholder="Nº do rolo"></div>
-                    <div class="input-group"><label>VEIO (ENTRADA)</label>
-                        <select id="desemp-veio-dados">
-                            <option value="C">C</option>
-                            <option value="D">D</option>
-                            <option value="E">E</option>
-                            <option value="F">F</option>
-                        </select>
-                    </div>
-                    <div class="input-group"><label>TIPO</label>
-                        <select id="desemp-tipo-cadeira-dados">
-                            <option value="INFERIOR">Inferior</option>
-                            <option value="SUPERIOR">Superior</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ABA 2 - INSPEÇÃO DE SAÍDA -->
-            <div id="desemp-aba-inspecao" class="folhao-content hidden">
-                <h3>Inspeção de Saída</h3>
-                <table class="premium-table" id="tabela-desemp-inspecao">
-                    <thead><tr><th>Item</th><th>Descrição</th><th>SIM</th><th>NÃO</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-
-            <!-- ABA 3 - MOTIVO DE SAÍDA -->
-            <div id="desemp-aba-motivo" class="folhao-content hidden">
-                <h3>Motivo de Saída da MCC</h3>
-                <table class="premium-table" id="tabela-desemp-motivo">
-                    <thead><tr><th>Motivo</th><th>SIM</th><th>NÃO</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-                <div class="input-group" style="margin-top:10px;">
-                    <label>Outros (especificar)</label>
-                    <input type="text" id="desemp-motivo-outros" placeholder="Descreva outro motivo...">
-                </div>
-            </div>
-
-            <!-- ABA 4 - MANCAIS -->
-            <div id="desemp-aba-mancais" class="folhao-content hidden">
-                <h3>Inspeção dos Mancais</h3>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-                    <div>
-                        <h4>Medidas (mm)</h4>
-                        <table class="premium-table">
-                            <thead><tr><th>Referência</th><th>Valor</th></tr></thead>
-                            <tbody>
-                                <tr><td>A</td><td><input type="number" id="desemp-mancal-a" step="0.01" style="width:100px;"></td></tr>
-                                <tr><td>B</td><td><input type="number" id="desemp-mancal-b" step="0.01" style="width:100px;"></td></tr>
-                                <tr><td>A'</td><td><input type="number" id="desemp-mancal-ap" step="0.01" style="width:100px;"></td></tr>
-                                <tr><td>B'</td><td><input type="number" id="desemp-mancal-bp" step="0.01" style="width:100px;"></td></tr>
-                                <tr><td>Fixo</td><td><input type="number" id="desemp-mancal-fixo" step="0.01" style="width:100px;"></td></tr>
-                                <tr><td>Móvel</td><td><input type="number" id="desemp-mancal-movel" step="0.01" style="width:100px;"></td></tr>
-                            </tbody>
-                        </table>
-                        <div style="margin-top:10px;">
-                            <p><strong>Máximo:</strong> 240,15 mm</p>
-                            <p><strong>Mínima:</strong> 240,05 mm</p>
-                        </div>
-                    </div>
-                    <div>
-                        <h4>Sobressalentes de Montagem</h4>
-                        <table class="premium-table" id="tabela-desemp-sobressalentes">
-                            <thead><tr><th>Componente</th><th>Novo</th><th>Reutilizado</th></tr></thead>
-                            <tbody>
-                                <tr><td>Mancal fixo</td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-fixo-novo"></td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-fixo-reut"></td></tr>
-                                <tr><td>Mancal móvel</td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-movel-novo"></td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-movel-reut"></td></tr>
-                                <tr><td>Aranha</td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-aranha-novo"></td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-aranha-reut"></td></tr>
-                                <tr><td>Rolamento Nu 1032</td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-rol-nu-novo"></td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-rol-nu-reut"></td></tr>
-                                <tr><td>Rolamento 24032</td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-rol-24032-novo"></td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-rol-24032-reut"></td></tr>
-                                <tr><td>Junta rotativa</td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-junta-novo"></td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-junta-reut"></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ABA 5 - CILINDROS -->
-            <div id="desemp-aba-cilindros" class="folhao-content hidden">
-                <h3>Cilindros</h3>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-                    <div>
-                        <h4>Faixa Amarela</h4>
-                        <table class="premium-table">
-                            <thead><tr><th>Posição</th><th>Valor</th></tr></thead>
-                            <tbody>
-                                <tr><td>Fixo</td><td><input type="text" id="desemp-cil-fixo" placeholder="mm"></td></tr>
-                                <tr><td>Móvel</td><td><input type="text" id="desemp-cil-movel" placeholder="mm"></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div>
-                        <h4>Status</h4>
-                        <table class="premium-table">
-                            <thead><tr><th>Componente</th><th>Reparado</th><th>Reutilizado</th></tr></thead>
-                            <tbody>
-                                <tr><td>Fixo</td><td style="text-align:center;"><input type="checkbox" id="desemp-cil-fixo-rep"></td><td style="text-align:center;"><input type="checkbox" id="desemp-cil-fixo-reut"></td></tr>
-                                <tr><td>Móvel</td><td style="text-align:center;"><input type="checkbox" id="desemp-cil-movel-rep"></td><td style="text-align:center;"><input type="checkbox" id="desemp-cil-movel-reut"></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ABA 6 - MATERIAIS -->
-            <div id="desemp-aba-materiais" class="folhao-content hidden">
-                <h3>Materiais Aplicados</h3>
-                <div style="display:flex; gap:10px; margin-bottom:10px;">
-                    <button class="btn-premium" onclick="window.carregarMateriaisDesemp('INFERIOR')"><i class="fas fa-arrow-down"></i> Carregar Inferior</button>
-                    <button class="btn-premium" onclick="window.carregarMateriaisDesemp('SUPERIOR')"><i class="fas fa-arrow-up"></i> Carregar Superior</button>
-                </div>
-                <table class="premium-table" id="tabela-desemp-materiais">
-                    <thead><tr><th>Código</th><th>Descrição</th><th>Qtd</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-                <button class="btn-xs-primary" onclick="window.adicionarLinhaMaterialDesemp()">+ Adicionar</button>
-            </div>
-
-        </div><!-- fim folhao-body -->
-
-        <!-- Rodapé -->
-        <div style="display:flex; gap:10px; margin-top:15px; justify-content:flex-end; flex-shrink:0; padding-top:10px; border-top:1px solid var(--border);">
-            <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoDesemp()"><i class="fas fa-save"></i> Salvar e Imprimir</button>
-            <button class="btn-outline-danger" onclick="window.fecharFolhaoDesempenadeira()">Fechar</button>
-        </div>
-    </div>
-</div>
         <!-- ===== MODAL BENDER (MCC4) ===== -->
 <div id="modal-folhao-mcc4" class="modal-overlay hidden">
     <div class="modal-content" style="max-width: 1400px; max-height: 90vh; display: flex; flex-direction: column;">
@@ -1031,6 +865,40 @@
         </div>
     </div>
 </div>
+<!-- MODAL DE APONTAMENTO DE PRODUÇÃO DIÁRIA -->
+<div id="modal-producao-diaria" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 400px; border-top: 4px solid var(--success);">
+        <div class="modal-header">
+            <h2><i class="fas fa-calculator"></i> Apontamento Diário</h2>
+            <button class="btn-close" onclick="fecharModalProducao()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">
+                Digite a tonelagem produzida ontem por cada máquina. O sistema irá calcular e descontar a vida útil de todas as peças instaladas automaticamente.
+            </p>
+
+            <div class="input-group" style="margin-bottom: 15px;">
+                <label style="color: #3b82f6; font-weight: bold;">PRODUÇÃO MCC #2 (Ton)</label>
+                <input type="number" id="prod-mcc2" placeholder="Ex: 3131" class="premium-input" style="font-size: 18px; font-weight: bold;">
+            </div>
+
+            <div class="input-group" style="margin-bottom: 15px;">
+                <label style="color: #8b5cf6; font-weight: bold;">PRODUÇÃO MCC #3 (Ton)</label>
+                <input type="number" id="prod-mcc3" placeholder="Ex: 3705" class="premium-input" style="font-size: 18px; font-weight: bold;">
+            </div>
+
+            <div class="input-group" style="margin-bottom: 25px;">
+                <label style="color: #ec4899; font-weight: bold;">PRODUÇÃO MCC #4 (Ton)</label>
+                <input type="number" id="prod-mcc4" placeholder="Ex: 2830" class="premium-input" style="font-size: 18px; font-weight: bold;">
+            </div>
+
+            <button class="btn-premium btn-success" onclick="processarProducaoDiaria()" style="width: 100%; font-size: 16px; padding: 12px;">
+                <i class="fas fa-check-double"></i> Atualizar Desgastes da Fábrica
+            </button>
+        </div>
+    </div>
+</div>
+
 
     <!-- ========================================= -->
     <!-- SCRIPTS (consolidados)                   -->

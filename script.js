@@ -1,5 +1,5 @@
 // ==========================================
-// SCRIPT.JS - COMPLETO E CORRIGIDO (SINTAXE E R2)
+// SCRIPT.JS - COMPLETO E CORRIGIDO 
 // ==========================================
 
 import { 
@@ -11,8 +11,7 @@ import {
     BIBLIOTECA_CHECKLISTS 
 } from './dados.js';
 
-import { BANCO_ATIVOS, sincronizarAtivosReaisMCC4 } from './banco.js';
-
+import { BANCO_ATIVOS, sincronizarAtivosReaisMCC4, salvarPecaNoPython } from './banco.js';
 // ==========================================================================
 // BANCO DE DADOS CORE - SISTEMA OMS
 // ==========================================================================
@@ -2515,6 +2514,88 @@ window.abrirFolhaoPorTipo = function(id) {
     // Opcional: mostra um toast ou notificação silenciosa
     // alert('Nenhum folhão disponível para este equipamento.'); // REMOVA ESSA LINHA
 };
+// ==========================================================================
+// MÓDULO INTELIGENTE: APONTAMENTO DIÁRIO E DESCONTO DE VIDA ÚTIL EM LOTE
+// ==========================================================================
+
+window.abrirModalProducao = function() {
+    // Zera os campos toda vez que abre a janela
+    document.getElementById("prod-mcc2").value = "";
+    document.getElementById("prod-mcc3").value = "";
+    document.getElementById("prod-mcc4").value = "";
+    document.getElementById("modal-producao-diaria").classList.remove("hidden");
+};
+
+window.fecharModalProducao = function() {
+    document.getElementById("modal-producao-diaria").classList.add("hidden");
+};
+
+window.processarProducaoDiaria = async function() {
+    if (!verificarAcesso()) return;
+
+    // Pega os números digitados (se estiver vazio, considera ZERO)
+    const prodMcc2 = parseFloat(document.getElementById("prod-mcc2").value) || 0;
+    const prodMcc3 = parseFloat(document.getElementById("prod-mcc3").value) || 0;
+    const prodMcc4 = parseFloat(document.getElementById("prod-mcc4").value) || 0;
+
+    if (prodMcc2 === 0 && prodMcc3 === 0 && prodMcc4 === 0) {
+        alert("⚠️ Digite a produção de pelo menos uma máquina para continuar.");
+        return;
+    }
+
+    let pecasAtualizadas = 0;
+
+    // A MÁGICA ACONTECE AQUI: O sistema varre todas as peças da fábrica
+    for (let i = 0; i < BANCO_ATIVOS.length; i++) {
+        let peca = BANCO_ATIVOS[i];
+
+        // Regra de Ouro: Só desconta a vida de quem está INSTALADO na máquina (ignora peças na Oficina)
+        if (peca.local && !peca.local.includes("Oficina")) {
+            
+            let sofreuDesgaste = false;
+
+            // Se a peça está na MCC 2 e teve produção na MCC 2
+            if (peca.local.includes("MCC 2") && prodMcc2 > 0) {
+                peca.ton += prodMcc2;
+                sofreuDesgaste = true;
+            } 
+            // Se a peça está na MCC 3 e teve produção na MCC 3
+            else if (peca.local.includes("MCC 3") && prodMcc3 > 0) {
+                peca.ton += prodMcc3;
+                sofreuDesgaste = true;
+            } 
+            // Se a peça está na MCC 4 e teve produção na MCC 4
+            else if (peca.local.includes("MCC 4") && prodMcc4 > 0) {
+                peca.ton += prodMcc4;
+                sofreuDesgaste = true;
+            }
+
+            // Se a peça trabalhou e sofreu desgaste, avisa o Python para salvar no Banco de Dados SQLite!
+            if (sofreuDesgaste) {
+                pecasAtualizadas++;
+                if (typeof salvarPecaNoPython === 'function') {
+                    await salvarPecaNoPython(peca); // Mão Dupla em ação!
+                }
+            }
+        }
+    }
+
+    // Salva na memória rápida do navegador
+    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    
+    // Registra a auditoria
+    registrarHistorico("PRODUÇÃO", `Apontamento em Lote: MCC2 (+${prodMcc2}t), MCC3 (+${prodMcc3}t), MCC4 (+${prodMcc4}t)`);
+    
+    // Fecha a janela e atualiza todos os gráficos da tela
+    fecharModalProducao();
+    atualizarPainelCompleto();
+    
+    // Força o desenho das peças novamente para a barra de % crescer
+    if (typeof renderPainelVeios === 'function') renderPainelVeios();
+    if (typeof renderAtivos === 'function') renderAtivos();
+    
+    alert(`✅ Sucesso Absoluto!\nO desgaste de ${pecasAtualizadas} peças ativas na fábrica foi atualizado simultaneamente.`);
+};
 
 // ==========================================
 // HISTÓRICO DE LAUDOS SALVOS (PDF)
@@ -2630,6 +2711,7 @@ window.abrirCriticos = abrirCriticos;
 window.renderizarTopCriticos = renderizarTopCriticos;
 window.atualizarNovosKPIs = atualizarNovosKPIs;
 window.atualizarPainelCompleto = atualizarPainelCompleto;
+window.salvarPecaNoPython = salvarPecaNoPython;
 
 // ===== FUNÇÕES DE CONFIGURAÇÃO DOS VEIOS =====
 window.mudarVeioVisualizado = mudarVeioVisualizado;

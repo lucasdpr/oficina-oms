@@ -9,11 +9,7 @@ export let OPERADOR_LOGADO = JSON.parse(localStorage.getItem("oms_operador_v32_l
 export let VEIO_SELECIONADO_PAINEL = "C";
 
 export const CADASTRO_MATRICULAS = {
-    "40090430": "Filipe (Líder)",
-    "40075827": "Denilson (Líder)",
-    "40080751": "Valmir (Líder)",
-    "40090851": "Samuel (Líder)",
-    "1011": "Supervisor"
+    "1011": "Desenvoldedor"
 };
 
 
@@ -126,48 +122,57 @@ export function setOperador(novoOperador) { OPERADOR_LOGADO = novoOperador; }
 export function setEmergencia(status) { EM_EMERGENCIA = status; }
 export function setVeioSelecionado(veio) { VEIO_SELECIONADO_PAINEL = veio; }
 
-/**
- * Busca os ativos reais da MCC#4 na planilha (via Apps Script)
- * e atualiza o BANCO_ATIVOS local, substituindo os valores reais.
- */
+
 export async function sincronizarAtivosReaisMCC4() {
     try {
-        const resposta = await fetch(`${URL_API_MCC}?acao=getAtivosMCC4`);
+        const resposta = await fetch("http://localhost:8000/api/pecas");
 
         if (!resposta.ok) {
             throw new Error(`API respondeu com status ${resposta.status}`);
         }
 
-        const ativosReais = await resposta.json();
+        const dadosLimposPython = await resposta.json();
 
-        if (!Array.isArray(ativosReais) || ativosReais.length === 0) {
-            console.warn("⚠️ API retornou vazio ou em formato inesperado. Mantendo dados locais.");
+        if (!Array.isArray(dadosLimposPython) || dadosLimposPython.length === 0) {
+            console.warn("⚠️ Python retornou vazio.");
             return false;
         }
 
-        console.log(`✅ Recebidos ${ativosReais.length} ativos reais da planilha.`);
+        let pecasAtualizadas = 0;
 
-        ativosReais.forEach(ativoReal => {
-            const itemLocal = encontrarAtivoCorrespondente(ativoReal);
+        // O código agora é direto e reto, porque o banco de dados é limpo!
+        dadosLimposPython.forEach(pecaBanco => {
+            
+            // 1. Procura a peça no sistema pelo ID exato da planilha nova
+            let itemLocal = BANCO_ATIVOS.find(a => a.id === pecaBanco.ID);
+            
+            // 2. Se não achar pelo ID, usa a função de inteligência do sistema para buscar por Veio/Posição
+            if (!itemLocal) {
+                const ativoBusca = {
+                    veio: pecaBanco.VEIO,
+                    posicao: pecaBanco.POSICAO,
+                    tipo: pecaBanco.TIPO
+                };
+                itemLocal = encontrarAtivoCorrespondente(ativoBusca);
+            }
 
+            // 3. Atualiza os dados de forma limpa!
             if (itemLocal) {
-                itemLocal.ton = ativoReal.tonelagem;
-                itemLocal.meta = ativoReal.meta || itemLocal.meta;
-                itemLocal.dias = ativoReal.diasOperando;
-                itemLocal.numeroReal = ativoReal.numero;
-                itemLocal.dataEntrada = ativoReal.dataEntrada;
-                itemLocal.motivoUltimaTroca = ativoReal.motivo;
-            } else {
-                console.warn(`⚠️ Não encontrei correspondência local para:`, ativoReal);
+                itemLocal.ton = parseFloat(pecaBanco.TONELAGEM) || 0;
+                itemLocal.meta = parseFloat(pecaBanco.META) || itemLocal.meta;
+                itemLocal.dias = parseInt(pecaBanco.DIAS) || itemLocal.dias || 0;
+                pecasAtualizadas++;
             }
         });
 
-        // Salva a versão atualizada no localStorage
+        console.log(`✅ MARCO ZERO ESTABELECIDO: ${pecasAtualizadas} ativos atualizados com dados 100% limpos.`);
+
+        // Salva a versão atualizada
         localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
         return true;
 
     } catch (erro) {
-        console.error("❌ Falha ao buscar dados reais da API. Usando dados locais.", erro);
+        console.error("❌ Falha ao buscar dados do Python. O servidor (uvicorn) está ligado?", erro);
         return false;
     }
 }
@@ -208,6 +213,37 @@ function encontrarAtivoCorrespondente(ativoReal) {
 
     return candidatos[0]; // Retorna o primeiro caso não ache a posição exata
 }
+// ==========================================================================
+// MÃO DUPLA: Enviando atualizações para o Python (SQLite)
+// ==========================================================================
+export async function salvarPecaNoPython(peca) {
+    try {
+        const resposta = await fetch("http://localhost:8000/api/atualizar_peca", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                id: peca.id || peca.ID, 
+                tonelagem: peca.ton || 0,
+                dias: peca.dias || 0,
+                local: peca.local || "",
+                status: peca.status || ""
+            })
+        });
+
+        const resultado = await resposta.json();
+        
+        if (resultado.status === "sucesso") {
+            console.log(`✅ [Banco de Dados] Peça ${peca.id} atualizada com sucesso!`);
+        } else {
+            console.error("❌ Erro no Python:", resultado.mensagem);
+        }
+
+    } catch (erro) {
+        console.error("❌ Erro de comunicação com o servidor:", erro);
+    }
+}
 
 // ==========================================================================
 // EXPORTAÇÃO PADRÃO
@@ -225,5 +261,6 @@ export default {
     setOperador,
     setEmergencia,
     setVeioSelecionado,
-    sincronizarAtivosReaisMCC4
+    sincronizarAtivosReaisMCC4,
+    salvarPecaNoPython
 };

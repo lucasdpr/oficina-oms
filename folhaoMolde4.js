@@ -896,6 +896,89 @@ export function salvarEImprimirFolhaoMolde4() {
     setTimeout(() => window.print(), 500);
 }
 
+window.salvarEImprimirFolhaoMolde4 = async function() {
+    // 1. Captura o botão para mostrar que está carregando
+    const btnSalvar = document.querySelector('button[onclick="window.salvarEImprimirFolhaoMolde4()"]');
+    const textoOriginal = btnSalvar.innerHTML;
+    
+    try {
+        const tagPeca = document.getElementById('molde4-tag-name').value;
+        const tipoExecucao = document.getElementById('molde4-tipo-exec').value; // GERAL ou PARCIAL
+        const novaMeta = parseFloat(document.getElementById('molde4-nova-meta')?.value) || 0;
+
+        if (!tagPeca) {
+            alert("⚠️ Erro: A TAG da peça não foi identificada.");
+            return;
+        }
+
+        // Muda visualmente o botão
+        btnSalvar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando PDF...';
+        btnSalvar.disabled = true;
+
+        // 2. Prepara os dados para a nuvem
+        const dadosFolhao = {
+            id_peca: tagPeca,
+            tipo_equipamento: "Molde",
+            tecnico: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Técnico",
+            nova_meta: novaMeta,
+            tipo_manutencao: tipoExecucao,
+            dados_chegada: "{}", 
+            dados_saida: "{}",
+            status_reparo: "Concluido",
+            pdf_base64: "" 
+        };
+
+        // 3. Pega a janela inteira do formulário (onde a Meta e o Tipo já estão visíveis)
+        const elementoPDF = document.querySelector('#modal-folhao-molde4 .modal-content');
+
+        const opt = {
+            margin:       5,
+            filename:     `Laudo_${tagPeca}_${tipoExecucao}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        console.log("⏳ Convertendo a tela em PDF de alta resolução...");
+
+        // 4. Gera o texto codificado para o Python guardar
+        const pdfBase64 = await html2pdf().set(opt).from(elementoPDF).output('datauristring');
+        dadosFolhao.pdf_base64 = pdfBase64;
+
+        // 🔥 5. BAIXA O PDF NO COMPUTADOR DO USUÁRIO AUTOMATICAMENTE 🔥
+        html2pdf().set(opt).from(elementoPDF).save();
+
+        // 6. Envia para o banco de dados
+        const resposta = await fetch("http://localhost:8000/api/salvar_folhao", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dadosFolhao)
+        });
+
+        const resultado = await resposta.json();
+
+        // 7. Restaura o botão e finaliza
+        btnSalvar.innerHTML = textoOriginal;
+        btnSalvar.disabled = false;
+
+        if (resultado.status === "sucesso") {
+            alert(`✅ Laudo Salvo!\nO PDF foi baixado e os dados estão seguros na nuvem.`);
+            window.fecharFolhaoMolde4(); 
+            
+            // Atualiza a tela principal
+            if (typeof window.renderReparos === 'function') window.renderReparos();
+            
+        } else {
+            alert("❌ Erro no Banco de Dados: " + resultado.mensagem);
+        }
+    } catch (erro) {
+        console.error("Falha geral:", erro);
+        btnSalvar.innerHTML = textoOriginal;
+        btnSalvar.disabled = false;
+        alert("❌ Ocorreu um erro ao gerar o PDF. Verifique se a biblioteca carregou.");
+    }
+};
+
 // ==============================================================
 // SALVAR LAUDO INTELIGENTE (BENDER)
 // ==============================================================
