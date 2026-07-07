@@ -180,7 +180,9 @@
             <nav class="sidebar-nav">
                 <a href="#" id="nav-painel" class="nav-link active" onclick="window.abrirAba(event,'aba-painel')"><i class="fas fa-chart-pie"></i> Painel Geral OMS</a>
                 <a href="#" id="nav-fluxo" class="nav-link" onclick="window.abrirAba(event,'aba-fluxo')"><i class="fas fa-stream"></i> Sequenciamento Veios</a>
-                <a href="#" id="nav-ativos" class="nav-link" onclick="window.abrirAba(event,'aba-ativos')"><i class="fas fa-tools"></i> Matriz de Componentes</a>
+                
+                <a href="#" id="nav-producao" class="nav-link" style="color: #3b82f6;" onclick="window.abrirAba(event,'aba-producao')"><i class="fas fa-calculator"></i> Lançamento de Produção</a>
+                
                 <div class="nav-divider">Oficina &amp; Log</div>
                 <a href="#" id="nav-reparos" class="nav-link highlight-warning" onclick="window.abrirAba(event,'aba-reparos')"><i class="fas fa-wrench"></i> Peças em Reparo</a>
                 <a href="#" id="nav-reservas" class="nav-link highlight-success" onclick="window.abrirAba(event,'aba-reservas')"><i class="fas fa-boxes"></i> Estoque Reserva</a>
@@ -188,17 +190,10 @@
                 <a href="#" id="nav-almoxarifado" class="nav-link highlight-almoxarifado" onclick="window.abrirAba(event,'aba-almoxarifado')"><i class="fas fa-pallet"></i> Almoxarifado Central</a>
                 <a href="#" id="nav-oficina" class="nav-link" onclick="window.abrirAba(event,'aba-oficina')"><i class="fas fa-clipboard-list"></i> Oficina</a>
                 <a href="#" id="nav-historico" class="nav-link" onclick="window.abrirAba(event,'aba-historico')"><i class="fas fa-history"></i> Auditoria</a>
-                <div class="nav-divider">Análise Gráfica</div>
-                <a href="#" id="nav-mcc2" class="nav-link" onclick="window.abrirAba(event,'aba-mcc2')"><i class="fas fa-chart-bar"></i> Gráficos MCC 2</a>
-                <a href="#" id="nav-mcc3" class="nav-link" onclick="window.abrirAba(event,'aba-mcc3')"><i class="fas fa-chart-bar"></i> Gráficos MCC 3</a>
-                <a href="#" id="nav-mcc4" class="nav-link" onclick="window.abrirAba(event,'aba-mcc4')"><i class="fas fa-chart-line"></i> Gráficos MCC 4</a>
             </nav>
-            <button class="btn-panic" onclick="window.dispararEmergencia()"><i class="fas fa-exclamation-triangle"></i> PÂNICO</button>
         </aside>
 
-        <!-- MAIN CONTENT -->
         <main class="main-content">
-            <!-- SELETOR DE VEIOS -->
             <section id="seletor-veios-container" class="veios-selector-section glass-panel hidden">
                 <h3><i class="fas fa-compress-alt"></i> Filtragem Rápida de Veio</h3>
                 <div class="veios-grid-buttons">
@@ -211,98 +206,94 @@
                 </div>
             </section>
 
-            <!-- ===== ABA PAINEL ===== -->
             <section id="aba-painel" class="tab-content active">
                 <div class="welcome-box">
                     <div><h1>Plataforma OMS - Gestão Avançada de Aciaria</h1><p>Visão computacional e desgaste preditivo de componentes do lingotamento.</p></div>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;">
                         <button class="btn-premium" onclick="window.toggleTheme()" id="btn-theme-toggle"><i class="fas fa-sun" id="theme-icon"></i> <span id="theme-text">Modo Claro</span></button>
                         <button class="btn-premium btn-success" onclick="window.abrirAba(null,'aba-reservas')"><i class="fas fa-boxes"></i> Estoque</button>
-                        <button class="btn-premium" onclick="window.abrirModalProducao()" style="background-color: #3b82f6; border-color: #3b82f6; color: white;">
-            <i class="fas fa-calculator"></i> Lançar Produção Diária
-        </button>
-                        <button class="btn-premium" onclick="window.testarModalMCC4()" style="margin-top:10px;"><i class="fas fa-flask"></i> Testar Modal MCC4</button>
                     </div>
                 </div>
-                <!-- KPI LINHA 1 -->
                 <div class="kpi-container">
                     <div class="kpi-card danger" style="cursor:pointer;" onclick="window.abrirCriticos()"><div class="kpi-icon glow-danger"><i class="fas fa-radiation"></i></div><div class="kpi-data"><h4 id="kpi-criticos">0</h4><p>Críticos (&gt;= 80%)</p></div></div>
                     <div class="kpi-card warning" style="cursor:pointer;" onclick="window.abrirAba(null,'aba-reparos')"><div class="kpi-icon glow-warning"><i class="fas fa-wrench"></i></div><div class="kpi-data"><h4 id="kpi-reparo">0</h4><p>Em Reparo</p></div></div>
                     <div class="kpi-card success" style="cursor:pointer;" onclick="window.abrirAba(null,'aba-reservas')"><div class="kpi-icon glow-success"><i class="fas fa-boxes"></i></div><div class="kpi-data"><h4 id="kpi-reserva">0</h4><p>Reserva Pronta</p></div></div>
                     <div class="kpi-card" style="border-left-color:var(--text-accent);"><div class="kpi-icon" style="color:var(--text-accent);border-color:var(--text-accent);"><i class="fas fa-cubes"></i></div><div class="kpi-data"><h4 id="kpi-total">0</h4><p>Total de Ativos</p></div></div>
                 </div>
-                <!-- KPI LINHA 2 -->
                 <div class="kpi-container" style="grid-template-columns:repeat(3,1fr);margin-top:16px;">
                     <div class="kpi-card" style="border-left-color:#8b5cf6;"><div class="kpi-icon" style="color:#8b5cf6;border-color:#8b5cf6;"><i class="fas fa-industry"></i></div><div class="kpi-data"><h4 id="kpi-moldes-reparo">0</h4><p>Moldes em Reparo</p></div></div>
                     <div class="kpi-card" style="border-left-color:#ec4899;"><div class="kpi-icon" style="color:#ec4899;border-color:#ec4899;"><i class="fas fa-cogs"></i></div><div class="kpi-data"><h4 id="kpi-segmentos-reparo">0</h4><p>Segmentos em Reparo</p></div></div>
                     <div class="kpi-card" style="border-left-color:#f59e0b;"><div class="kpi-icon" style="color:#f59e0b;border-color:#f59e0b;"><i class="fas fa-rolling"></i></div><div class="kpi-data"><h4 id="kpi-total-rolos">0</h4><p>Total de Rolos em Estoque</p></div></div>
                 </div>
-                <!-- TOP 5 CRÍTICOS -->
                 <div class="glass-panel" style="padding:20px;margin-top:24px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><h3 style="color:var(--text-title);font-size:16px;"><i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i> Top 5 Críticos</h3><button class="btn-xs-primary" onclick="window.abrirCriticos()" style="color:var(--text-accent);">Ver todos</button></div>
                     <div id="top-criticos-container" style="max-height:220px;overflow-y:auto;padding-right:4px;"><div class="text-muted" style="text-align:center;padding:30px 0;">Carregando...</div></div>
                 </div>
             </section>
 
-            <!-- ===== ABA FLUXO ===== -->
             <section id="aba-fluxo" class="tab-content">
                 <div class="glass-panel" style="padding:24px;"><div class="panel-card-header"><h1 id="titulo-veio-focado">Sequenciamento Síncrono</h1></div><div id="container-fluxo-horizontal-scroll" class="graficos-container"></div></div>
             </section>
 
-            <!-- ===== ABA ATIVOS ===== -->
-            <section id="aba-ativos" class="tab-content">
-                <div class="glass-panel" style="padding:24px;">
-                    <div class="panel-card-header flex-between" style="flex-wrap:wrap;gap:15px;">
-                        <h1><i class="fas fa-cubes"></i> Matriz Operacional Geral</h1>
-                        <div class="custom-select-wrapper w-mobile-100"><select id="filtro-tipo-ativo" onchange="window.renderAtivos()" class="premium-select w-100"><option value="TODOS">Visão Geral (Todos)</option><option value="Molde">Apenas Moldes</option><option value="Cadeira Superior">Cadeiras Superiores</option><option value="Cadeira Inferior">Cadeiras Inferiores</option><option value="Bender">Bender</option><option value="Bow">Bow</option><option value="Straightener">Straightener</option><option value="Horizontal">Segmentos Horizontais</option><option value="Oficina / Reparo">Status: Em Reparo</option><option value="Oficina / Reserva">Status: Em Estoque</option></select></div>
-                    </div>
-                    <div class="table-responsive"><table class="premium-table"><thead><tr><th>TAG ID</th><th>Tipo e Família</th><th>Localização</th><th>Dias</th><th>Ton</th><th>Limite</th><th>Saúde / Desgaste</th><th>Ações</th></tr></thead><tbody id="ativos-table-body"></tbody></table></div>
-                </div>
-            </section>
+            <section id="aba-producao" class="tab-content">
+                <div class="glass-panel" style="padding:24px; margin-bottom: 24px;">
+                    <h1 style="color: var(--text-title); margin-bottom: 8px;"><i class="fas fa-calculator" style="color:#3b82f6;"></i> Central de Apontamento Diário</h1>
+                    <p class="text-muted" style="margin-bottom: 24px;">Lançamentos de produção para cálculo de desgaste e vida útil da máquina.</p>
 
-            <!-- ===== ABA MCC2 ===== -->
-            <section id="aba-mcc2" class="tab-content">
-                <div class="glass-panel" style="padding:24px;">
-                    <div class="panel-card-header flex-between" style="flex-wrap:wrap;gap:15px;">
-                        <h1>Análise MCC 2</h1>
-                        <div class="mcc-filters-wrapper">
-                            <div class="mcc-filter-group" id="filtros-veio-mcc2"><button class="btn-filter-mcc active" data-valor="TODOS" onclick="window.aplicarFiltrosMCC(2,this)">Todos</button><button class="btn-filter-mcc" data-valor="C" onclick="window.aplicarFiltrosMCC(2,this)">Veio C</button><button class="btn-filter-mcc" data-valor="D" onclick="window.aplicarFiltrosMCC(2,this)">Veio D</button></div>
-                            <div class="mcc-filter-group" id="filtros-status-mcc2"><button class="btn-filter-mcc active" data-valor="TODOS" onclick="window.aplicarFiltrosMCC(2,this)"><i class="fas fa-filter"></i> Tudo</button><button class="btn-filter-mcc" style="color:#10b981;" data-valor="VERDE" onclick="window.aplicarFiltrosMCC(2,this)">🟢 0-49%</button><button class="btn-filter-mcc" style="color:#f59e0b;" data-valor="AMARELO" onclick="window.aplicarFiltrosMCC(2,this)">🟡 50-79%</button><button class="btn-filter-mcc" style="color:#ef4444;" data-valor="VERMELHO" onclick="window.aplicarFiltrosMCC(2,this)">🔴 +80%</button></div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                        
+                        <div style="background: rgba(0,0,0,0.2); border: 1px solid #3b82f6; border-radius: 12px; padding: 20px;">
+                            <h3 style="color: #3b82f6; margin-bottom: 15px;"><i class="fas fa-industry"></i> Tonelagem (Equipamentos Gerais)</h3>
+                            <p style="color: var(--text-muted); font-size: 11px; margin-bottom: 15px;">Atualiza o desgaste de Bows, Horizontais, Benders, etc.</p>
+                            <div class="input-group" style="margin-bottom: 12px;">
+                                <label style="color: #3b82f6;">MCC #2 (Ton)</label>
+                                <input type="number" id="prod-mcc2" class="premium-input" placeholder="Ex: 3131" style="font-size: 16px; font-weight: bold;">
+                            </div>
+                            <div class="input-group" style="margin-bottom: 12px;">
+                                <label style="color: #8b5cf6;">MCC #3 (Ton)</label>
+                                <input type="number" id="prod-mcc3" class="premium-input" placeholder="Ex: 3705" style="font-size: 16px; font-weight: bold;">
+                            </div>
+                            <div class="input-group" style="margin-bottom: 20px;">
+                                <label style="color: #ec4899;">MCC #4 (Ton)</label>
+                                <input type="number" id="prod-mcc4" class="premium-input" placeholder="Ex: 2830" style="font-size: 16px; font-weight: bold;">
+                            </div>
+                            <button class="btn-premium btn-success w-100" onclick="window.processarProducaoDiaria()"><i class="fas fa-check-double"></i> Atualizar Fábrica Inteira</button>
                         </div>
-                    </div>
-                    <div id="graficos-mcc2" class="graficos-container"></div>
-                </div>
-            </section>
 
-            <!-- ===== ABA MCC3 ===== -->
-            <section id="aba-mcc3" class="tab-content">
-                <div class="glass-panel" style="padding:24px;">
-                    <div class="panel-card-header flex-between" style="flex-wrap:wrap;gap:15px;">
-                        <h1>Análise MCC 3</h1>
-                        <div class="mcc-filters-wrapper">
-                            <div class="mcc-filter-group" id="filtros-veio-mcc3"><button class="btn-filter-mcc active" data-valor="TODOS" onclick="window.aplicarFiltrosMCC(3,this)">Todos</button><button class="btn-filter-mcc" data-valor="E" onclick="window.aplicarFiltrosMCC(3,this)">Veio E</button><button class="btn-filter-mcc" data-valor="F" onclick="window.aplicarFiltrosMCC(3,this)">Veio F</button></div>
-                            <div class="mcc-filter-group" id="filtros-status-mcc3"><button class="btn-filter-mcc active" data-valor="TODOS" onclick="window.aplicarFiltrosMCC(3,this)"><i class="fas fa-filter"></i> Tudo</button><button class="btn-filter-mcc" style="color:#10b981;" data-valor="VERDE" onclick="window.aplicarFiltrosMCC(3,this)">🟢 0-49%</button><button class="btn-filter-mcc" style="color:#f59e0b;" data-valor="AMARELO" onclick="window.aplicarFiltrosMCC(3,this)">🟡 50-79%</button><button class="btn-filter-mcc" style="color:#ef4444;" data-valor="VERMELHO" onclick="window.aplicarFiltrosMCC(3,this)">🔴 +80%</button></div>
+                        <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--warning); border-radius: 12px; padding: 20px;">
+                            <h3 style="color: var(--warning); margin-bottom: 15px;"><i class="fas fa-fire"></i> Apontamento de Moldes</h3>
+                            <p style="color: var(--text-muted); font-size: 11px; margin-bottom: 15px;">Exclusivo para vida útil de Moldes (Contagem em Corridas).</p>
+                            <div class="input-group" style="margin-bottom: 12px;">
+                                <label style="color: #3b82f6;">MCC #2 (Panelas)</label>
+                                <input type="number" id="molde-prod-mcc2" class="premium-input" placeholder="Ex: 2" style="font-size: 16px; font-weight: bold;">
+                            </div>
+                            <div class="input-group" style="margin-bottom: 12px;">
+                                <label style="color: #8b5cf6;">MCC #3 (Panelas)</label>
+                                <input type="number" id="molde-prod-mcc3" class="premium-input" placeholder="Ex: 5" style="font-size: 16px; font-weight: bold;">
+                            </div>
+                            <div class="input-group" style="margin-bottom: 20px;">
+                                <label style="color: #ec4899;">MCC #4 (Panelas)</label>
+                                <input type="number" id="molde-prod-mcc4" class="premium-input" placeholder="Ex: 8" style="font-size: 16px; font-weight: bold;">
+                            </div>
+                            <button class="btn-premium btn-warning w-100" onclick="window.salvarApontamentoMoldes(event)"><i class="fas fa-check"></i> Salvar Corridas (Moldes)</button>
                         </div>
-                    </div>
-                    <div id="graficos-mcc3" class="graficos-container"></div>
-                </div>
-            </section>
 
-            <!-- ===== ABA MCC4 ===== -->
-            <section id="aba-mcc4" class="tab-content">
+                    </div>
+                </div>
+
                 <div class="glass-panel" style="padding:24px;">
-                    <div class="panel-card-header flex-between" style="flex-wrap:wrap;gap:15px;">
-                        <h1>Análise MCC 4 (Alta Perf.)</h1>
-                        <div class="mcc-filters-wrapper">
-                            <div class="mcc-filter-group" id="filtros-veio-mcc4"><button class="btn-filter-mcc active" data-valor="TODOS" onclick="window.aplicarFiltrosMCC(4,this)">Todos</button><button class="btn-filter-mcc" data-valor="H" onclick="window.aplicarFiltrosMCC(4,this)">Veio H</button><button class="btn-filter-mcc" data-valor="G" onclick="window.aplicarFiltrosMCC(4,this)">Veio G</button></div>
-                            <div class="mcc-filter-group" id="filtros-status-mcc4"><button class="btn-filter-mcc active" data-valor="TODOS" onclick="window.aplicarFiltrosMCC(4,this)"><i class="fas fa-filter"></i> Tudo</button><button class="btn-filter-mcc" style="color:#10b981;" data-valor="VERDE" onclick="window.aplicarFiltrosMCC(4,this)">🟢 0-49%</button><button class="btn-filter-mcc" style="color:#f59e0b;" data-valor="AMARELO" onclick="window.aplicarFiltrosMCC(4,this)">🟡 50-79%</button><button class="btn-filter-mcc" style="color:#ef4444;" data-valor="VERMELHO" onclick="window.aplicarFiltrosMCC(4,this)">🔴 +80%</button></div>
-                        </div>
+                    <h3 style="color:var(--text-heading); font-size: 16px; margin-bottom: 16px;"><i class="fas fa-history"></i> Auditoria de Lançamento de Moldes</h3>
+                    <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                        <table class="premium-table" style="font-size: 12px; text-align:center;">
+                            <thead>
+                                <tr><th>Data / Hora</th><th>Responsável</th><th>MCC 2</th><th>MCC 3</th><th>MCC 4</th><th>Desfazer</th></tr>
+                            </thead>
+                            <tbody id="tabela-historico-moldes"></tbody>
+                        </table>
                     </div>
-                    <div id="graficos-mcc4" class="graficos-container"></div>
                 </div>
             </section>
 
-            <!-- ===== ABA REPAROS ===== -->
             <section id="aba-reparos" class="tab-content">
                 <div class="glass-panel" style="border-top:4px solid #f59e0b;padding:24px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
@@ -313,29 +304,21 @@
                 </div>
             </section>
 
-            <!-- ===== ABA RESERVAS ===== -->
             <section id="aba-reservas" class="tab-content">
                 <div class="glass-panel" style="border-top:4px solid #10b981;padding:24px;margin-bottom:24px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;margin-bottom:16px;">
                         <div><h2 style="color:#10b981;"><i class="fas fa-boxes"></i> Estoque Disponível (Reserva)</h2><p class="text-muted" style="font-size:13px;">Peças prontas para alocação via Swap Automático.</p></div>
                         <button class="btn-premium" onclick="window.toggleFormAdicionar()"><i class="fas fa-plus"></i> Cadastrar Peça Nova</button>
                     </div>
-                    <div id="form-novo-equipamento" class="cadastrar-box hidden" style="margin-top:16px;padding:20px;border-radius:var(--radius);background:rgba(0,0,0,0.2);border:1px dashed var(--primary);">
-                        <h3><i class="fas fa-box-open"></i> Especificar e Cadastrar Peça de Estoque</h3>
-                        <div class="form-grid-4" style="margin-top:12px;">
-                            <div class="input-group"><label>TAG</label><input type="text" id="add-tag" placeholder="Ex: MLD-NOVO-01"></div>
-                            <div class="input-group"><label>Família e Tipo</label><select id="add-tipo" onchange="window.atualizarPosicoesCadastro()"><option value="">Selecione...</option><optgroup label="MCC 4"><option value="Molde|4">Molde Alta Performance</option><option value="Bender|4">Bender</option><option value="Bow|4">Curvo Bow</option><option value="Straightener R1|4">Straightener R1</option><option value="Straightener R2|4">Straightener R2</option><option value="Horizontal|4">Segmento Horizontal</option></optgroup><optgroup label="MCC 2 e 3"><option value="Molde|2/3">Molde Convencional</option><option value="Mesa Osciladora|2/3">Mesa Osciladora</option><option value="Segmento Zero|2/3">Segmento Zero</option><option value="Segmento|2/3">Segmento de Grupo</option><option value="Cadeira Superior|2/3">Cadeira Superior</option><option value="Cadeira Inferior|2/3">Cadeira Inferior</option></optgroup></select></div>
-                            <div class="input-group"><label>Posição / Slot</label><select id="add-posicao"><option value="">Aguardando Tipo...</option></select></div>
-                            <div class="input-group"><label>Veio</label><select id="add-veio"><option value="H">Veio H</option><option value="G">Veio G</option><option value="C">Veio C</option><option value="D">Veio D</option><option value="E">Veio E</option><option value="F">Veio F</option></select></div>
-                            <div class="input-group"><label>Meta Limite (Ton)</label><input type="number" id="add-meta" placeholder="Ex: 1500000"></div>
-                            <div class="input-group" style="grid-column:span 2;display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:10px;border-radius:8px;border:1px solid #10b981;background:rgba(16,185,129,0.08);"><input type="checkbox" id="add-instalar-direto"> Instalar direto na Máquina</label><button class="btn-premium btn-success" onclick="window.processarCadastroPeca()"><i class="fas fa-save"></i> Salvar</button></div>
-                        </div>
+                    <div class="table-responsive" style="margin-top:16px;">
+                        <table class="premium-table">
+                            <thead><tr><th>TAG</th><th>Família e Tipo</th><th>Status</th><th>Veio</th><th>Posição</th><th>Ações</th></tr></thead>
+                            <tbody id="estoque-table-body"></tbody>
+                        </table>
                     </div>
-                    <div class="table-responsive" style="margin-top:16px;"><table class="premium-table"><thead><tr><th>TAG</th><th>Família e Tipo</th><th>Status</th><th>Veio</th><th>Posição</th><th>Ações</th></tr></thead><tbody id="estoque-table-body"></tbody></table></div>
                 </div>
             </section>
 
-            <!-- ===== ABA ROLOS ===== -->
             <section id="aba-rolos" class="tab-content">
                 <div class="glass-panel" style="border-top:4px solid var(--text-accent);padding:24px;">
                     <h2 style="color:var(--text-accent);"><i class="fas fa-scroll"></i> Estoque de Rolos</h2>
@@ -344,7 +327,6 @@
                 </div>
             </section>
 
-            <!-- ===== ABA ALMOXARIFADO ===== -->
             <section id="aba-almoxarifado" class="tab-content">
                 <div class="glass-panel" style="border-top:4px solid #a855f7;padding:24px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;margin-bottom:16px;">
@@ -360,26 +342,18 @@
                 </div>
             </section>
 
-            <!-- ===== ABA OFICINA ===== -->
             <section id="aba-oficina" class="tab-content">
                 <div class="glass-panel" style="padding:24px;"><h2><i class="fas fa-clipboard-list"></i> Atividades da Oficina</h2><div id="oficina-container" style="margin-top:20px;"><div class="text-muted" style="text-align:center;padding:40px 0;"><i class="fas fa-spinner fa-pulse"></i> Carregando...</div></div></div>
             </section>
 
-            <!-- ===== ABA HISTÓRICO ===== -->
             <section id="aba-historico" class="tab-content">
                 <div class="glass-panel" style="padding:24px;"><h2><i class="fas fa-history"></i> Auditoria Global</h2><p class="text-muted" style="font-size:13px;margin-bottom:16px;">Rastreabilidade completa de todas as operações e laudos.</p><div class="table-responsive"><table class="premium-table"><thead><tr><th>Horário</th><th>TAG / Módulo</th><th>Descrição da Ação</th><th>Responsável</th></tr></thead><tbody id="historico-table-body"></tbody></table></div></div>
             </section>
         </main>
     </div>
 
-    <!-- ===== DIV PARA IMPRESSÃO (PDF) ===== -->
     <div id="print-content" class="print-only"></div>
 
-    <!-- ========================================= -->
-    <!-- MODAIS (todos os folhões)               -->
-    <!-- ========================================= -->
-
-    <!-- MODAL STRAIGHTENER R1 -->
     <div id="modal-folhao-r1" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 1100px; max-height: 90vh; overflow-y: auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
@@ -426,7 +400,6 @@
         </div>
     </div>
 
-    <!-- MODAL BOW -->
     <div id="modal-folhao-bow" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 1100px; max-height: 90vh; overflow-y: auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
@@ -441,10 +414,6 @@
                 <div class="input-group"><label>DATA FIM</label><input type="date" id="bow-data-fim"></div>
                 <div class="input-group"><label>MOTIVO</label><input type="text" id="bow-motivo" placeholder="Motivo da OS"></div>
                 <div class="input-group"><label>TIPO EXECUÇÃO</label><select id="bow-tipo-execucao" class="premium-select"><option value="GERAL">GERAL</option><option value="PARCIAL">PARCIAL</option></select></div>
-                
-                <!-- 🔥 CAMPO NOVA META ADICIONADO AQUI 🔥 -->
-                <div class="input-group"><label style="color: var(--success-color); font-weight: bold;">NOVA META (TON)</label><input type="number" id="bow-nova-meta" placeholder="Ex: 120000" style="border-color: var(--success-color);"></div>
-
             </div>
             <div class="folhao-tabs">
                 <button class="folhao-tab active" onclick="window.trocarAbaBow(event, 'bow-aba-dados')">1. Inspeção Chegada</button>
@@ -477,7 +446,6 @@
         </div>
     </div>
 
-    <!-- MODAL HORIZONTAL -->
     <div id="modal-folhao-horizontal" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 1100px; max-height: 90vh; overflow-y: auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
@@ -492,10 +460,6 @@
                 <div class="input-group"><label>DATA FIM</label><input type="date" id="horiz-data-fim"></div>
                 <div class="input-group"><label>MOTIVO</label><input type="text" id="horiz-motivo" placeholder="Motivo da OS"></div>
                 <div class="input-group"><label>TIPO EXECUÇÃO</label><select id="horiz-tipo-execucao" class="premium-select"><option value="GERAL">GERAL</option><option value="PARCIAL">PARCIAL</option></select></div>
-                
-                <!-- 🔥 CAMPO NOVA META ADICIONADO AQUI 🔥 -->
-                <div class="input-group"><label style="color: var(--success-color); font-weight: bold;">NOVA META (TON)</label><input type="number" id="horiz-nova-meta" placeholder="Ex: 120000" style="border-color: var(--success-color);"></div>
-
             </div>
             <div class="folhao-tabs">
                 <button class="folhao-tab active" onclick="window.trocarAbaHorizontal(event, 'horiz-aba-dados')">1. Inspeção Chegada</button>
@@ -528,7 +492,6 @@
         </div>
     </div>
 
-    <!-- MODAL SEGMENTO ZERO -->
     <div id="modal-folhao-segmento-zero" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 1000px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
@@ -540,9 +503,6 @@
                 <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="segzero-data-inicio"></div>
                 <div class="input-group"><label>DATA FIM</label><input type="date" id="segzero-data-fim"></div>
                 <div class="input-group"><label>MOTIVO</label><input type="text" id="segzero-motivo" placeholder="Motivo da OS"></div>
-                
-                <!-- 🔥 CAMPO NOVA META ADICIONADO AQUI 🔥 -->
-                <div class="input-group"><label style="color: var(--success-color); font-weight: bold;">NOVA META (TON)</label><input type="number" id="segzero-nova-meta" placeholder="Ex: 120000" style="border-color: var(--success-color);"></div>
             </div>
             <div class="folhao-tabs">
                 <button class="folhao-tab active" onclick="window.trocarAbaSegZero(event, 'segzero-aba-dados')">1. Dados</button>
@@ -565,150 +525,139 @@
                 <div id="segzero-aba-materiais" class="folhao-content hidden"></div>
             </div>
             <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
-                <!-- Ajustado o botão para seguir o padrão Salvar e Imprimir -->
                 <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoSegmentoZero()"><i class="fas fa-save"></i> Salvar e Imprimir</button>
                 <button class="btn-outline-danger" onclick="window.fecharFolhaoSegmentoZero()">Fechar</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL R2 (Straightener R2) - COMPLETO -->
-<div id="modal-folhao-r2" class="modal-overlay hidden">
-    <div class="modal-content" style="max-width: 1200px; max-height: 90vh; display: flex; flex-direction: column;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px; flex-shrink:0;">
-            <h2><i class="fas fa-clipboard-check"></i> Liberação - Straightener R2</h2>
-            <button class="btn-close-emergency" onclick="window.fecharFolhaoR2()"><i class="fas fa-times"></i></button>
-        </div>
-        <div style="display:flex;gap:15px;flex-wrap:wrap;margin-bottom:15px; flex-shrink:0;">
-            <div class="input-group"><label>TAG</label><input type="text" id="mcc4-tag-name" readonly></div>
-            <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="mcc4-data-inicio"></div>
-            <div class="input-group"><label>DATA FIM</label><input type="date" id="mcc4-data-fim"></div>
-            <div class="input-group"><label>MOTIVO</label><input type="text" id="mcc4-motivo" placeholder="Motivo da OS"></div>
-            <div class="input-group"><label>Nº SEGMENTO</label><input type="text" id="mcc4-num-segmento" placeholder="Nº"></div>
-            <div class="input-group"><label>TIPO EXECUÇÃO</label>
-                <select id="mcc4-tipo-exec">
-                    <option value="GERAL">GERAL</option>
-                    <option value="PARCIAL">PARCIAL</option>
-                </select>
+    <div id="modal-folhao-r2" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 1200px; max-height: 90vh; display: flex; flex-direction: column;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px; flex-shrink:0;">
+                <h2><i class="fas fa-clipboard-check"></i> Liberação - Straightener R2</h2>
+                <button class="btn-close-emergency" onclick="window.fecharFolhaoR2()"><i class="fas fa-times"></i></button>
             </div>
-        </div>
-
-        <!-- Abas -->
-        <div class="folhao-tabs" style="flex-shrink:0;">
-            <button class="folhao-tab active" onclick="window.trocarAbaR2(event, 'r2-chegada')">1. Inspeção Chegada</button>
-            <button class="folhao-tab" onclick="window.trocarAbaR2(event, 'r2-manutencao')">2. Execução</button>
-            <button class="folhao-tab" onclick="window.trocarAbaR2(event, 'r2-saida')">3. Saída</button>
-        </div>
-
-        <!-- Corpo rolável -->
-        <div class="folhao-body" style="flex:1; overflow-y: auto; padding: 10px 0;">
-
-            <!-- ========== ABA 1 - CHEGADA ========== -->
-            <div id="r2-chegada" class="folhao-content">
-                <h3>1.1 Inspeção de Chegada</h3>
-                <table class="premium-table" id="tabela-r2-chegada">
-                    <thead><tr><th>Item</th><th>Descrição</th><th>SIM</th><th>NÃO</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-
-                <h3>1.2 Aferição de Gap (255+0,3/-0,3)</h3>
-                <table class="premium-table" id="gap-r2-cheg-tbody">
-                    <thead><tr><th>Conj. Rolo</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-
-                <h3>1.3 Pass Line - Chegada</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-                    <div><h4>Base Inferior</h4><table class="premium-table" id="pl-r2-inf-cheg-tbody"><thead><tr><th>Rolo</th><th>Ref</th><th>A</th><th>B</th><th>C</th></tr></thead><tbody></tbody></table></div>
-                    <div><h4>Base Superior</h4><table class="premium-table" id="pl-r2-sup-cheg-tbody"><thead><tr><th>Rolo</th><th>Ref</th><th>A</th><th>B</th><th>C</th></tr></thead><tbody></tbody></table></div>
-                </div>
-
-                <h3>1.4 Inspeção de Cangalhas</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-                    <div><h4>Base Superior</h4><table class="premium-table" id="cangalha-r2-sup-tbody"><thead><tr><th>Pos</th><th>Bico A</th><th>Bico B</th></tr></thead><tbody></tbody></table></div>
-                    <div><h4>Base Inferior</h4><table class="premium-table" id="cangalha-r2-inf-tbody"><thead><tr><th>Pos</th><th>Bico A</th><th>Bico B</th></tr></thead><tbody></tbody></table></div>
-                </div>
-
-                <h3>1.5 Cilindros Hidráulicos</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-                    <div><h4>Elevação</h4><table class="premium-table" id="cil-r2-elevacao-tbody"><thead><tr><th>Pos</th><th>Nº</th><th>Prod</th><th>OK</th><th>NOK</th><th>Obs</th></tr></thead><tbody></tbody></table></div>
-                    <div><h4>Clamp</h4><table class="premium-table" id="cil-r2-clamp-tbody"><thead><tr><th>Pos</th><th>Nº</th><th>Prod</th><th>OK</th><th>NOK</th><th>Obs</th></tr></thead><tbody></tbody></table></div>
-                    <div><h4>Motriz</h4><table class="premium-table" id="cil-r2-motriz-tbody"><thead><tr><th>Pos</th><th>Nº</th><th>Prod</th><th>OK</th><th>NOK</th><th>Obs</th></tr></thead><tbody></tbody></table></div>
-                </div>
-
-                <h3>1.6 Check de Lubrificação</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-                    <div><h4>Base Inferior</h4><table class="premium-table" id="lub-r2-inf-tbody"><thead><tr><th>Rolo</th><th>Status</th><th>Obs</th></tr></thead><tbody></tbody></table></div>
-                    <div><h4>Base Superior</h4><table class="premium-table" id="lub-r2-sup-tbody"><thead><tr><th>Rolo</th><th>Status</th><th>Obs</th></tr></thead><tbody></tbody></table></div>
-                </div>
-
-                <h3>1.7 Inspeção de Rolos - Chegada</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-                    <div><h4>Base Inferior</h4><table class="premium-table" id="rol-r2-inf-cheg-tbody"><thead><tr><th>Pos</th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead><tbody></tbody></table></div>
-                    <div><h4>Base Superior</h4><table class="premium-table" id="rol-r2-sup-cheg-tbody"><thead><tr><th>Pos</th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead><tbody></tbody></table></div>
-                </div>
-
-                <h3>1.8 Medidas dos Rolos - Chegada</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-                    <div><h4>Base Inferior</h4><table class="premium-table" id="med-r2-inf-cheg-tbody"><thead><tr><th>R</th><th>N1</th><th>M1</th><th>N2</th><th>M2</th><th>N3</th><th>M3</th><th>Classe</th></tr></thead><tbody></tbody></table></div>
-                    <div><h4>Base Superior</h4><table class="premium-table" id="med-r2-sup-cheg-tbody"><thead><tr><th>R</th><th>N1</th><th>M1</th><th>N2</th><th>M2</th><th>N3</th><th>M3</th><th>Classe</th></tr></thead><tbody></tbody></table></div>
+            <div style="display:flex;gap:15px;flex-wrap:wrap;margin-bottom:15px; flex-shrink:0;">
+                <div class="input-group"><label>TAG</label><input type="text" id="mcc4-tag-name" readonly></div>
+                <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="mcc4-data-inicio"></div>
+                <div class="input-group"><label>DATA FIM</label><input type="date" id="mcc4-data-fim"></div>
+                <div class="input-group"><label>MOTIVO</label><input type="text" id="mcc4-motivo" placeholder="Motivo da OS"></div>
+                <div class="input-group"><label>Nº SEGMENTO</label><input type="text" id="mcc4-num-segmento" placeholder="Nº"></div>
+                <div class="input-group"><label>TIPO EXECUÇÃO</label>
+                    <select id="mcc4-tipo-exec">
+                        <option value="GERAL">GERAL</option>
+                        <option value="PARCIAL">PARCIAL</option>
+                    </select>
                 </div>
             </div>
 
-            <!-- ========== ABA 2 - EXECUÇÃO ========== -->
-            <div id="r2-manutencao" class="folhao-content hidden">
-                <h3>2. Checklist de Manutenção</h3>
-                <table class="premium-table" id="tabela-r2-manutencao">
-                    <thead><tr><th>Item</th><th>Descrição</th><th>P</th><th>G</th><th>Responsável</th><th>Matrícula</th><th>Data</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+            <div class="folhao-tabs" style="flex-shrink:0;">
+                <button class="folhao-tab active" onclick="window.trocarAbaR2(event, 'r2-chegada')">1. Inspeção Chegada</button>
+                <button class="folhao-tab" onclick="window.trocarAbaR2(event, 'r2-manutencao')">2. Execução</button>
+                <button class="folhao-tab" onclick="window.trocarAbaR2(event, 'r2-saida')">3. Saída</button>
             </div>
 
-            <!-- ========== ABA 3 - SAÍDA ========== -->
-            <div id="r2-saida" class="folhao-content hidden">
-                <h3>3.1 Aferição de Gap - Saída</h3>
-                <table class="premium-table" id="gap-r2-sai-tbody">
-                    <thead><tr><th>Conj. Rolo</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+            <div class="folhao-body" style="flex:1; overflow-y: auto; padding: 10px 0;">
 
-                <h3>3.2 Pass Line - Saída</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-                    <div><h4>Base Inferior</h4><table class="premium-table" id="pl-r2-inf-sai-tbody"><thead><tr><th>Rolo</th><th>Ref</th><th>A</th><th>B</th><th>C</th></tr></thead><tbody></tbody></table></div>
-                    <div><h4>Base Superior</h4><table class="premium-table" id="pl-r2-sup-sai-tbody"><thead><tr><th>Rolo</th><th>Ref</th><th>A</th><th>B</th><th>C</th></tr></thead><tbody></tbody></table></div>
+                <div id="r2-chegada" class="folhao-content">
+                    <h3>1.1 Inspeção de Chegada</h3>
+                    <table class="premium-table" id="tabela-r2-chegada">
+                        <thead><tr><th>Item</th><th>Descrição</th><th>SIM</th><th>NÃO</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+
+                    <h3>1.2 Aferição de Gap (255+0,3/-0,3)</h3>
+                    <table class="premium-table" id="gap-r2-cheg-tbody">
+                        <thead><tr><th>Conj. Rolo</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+
+                    <h3>1.3 Pass Line - Chegada</h3>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                        <div><h4>Base Inferior</h4><table class="premium-table" id="pl-r2-inf-cheg-tbody"><thead><tr><th>Rolo</th><th>Ref</th><th>A</th><th>B</th><th>C</th></tr></thead><tbody></tbody></table></div>
+                        <div><h4>Base Superior</h4><table class="premium-table" id="pl-r2-sup-cheg-tbody"><thead><tr><th>Rolo</th><th>Ref</th><th>A</th><th>B</th><th>C</th></tr></thead><tbody></tbody></table></div>
+                    </div>
+
+                    <h3>1.4 Inspeção de Cangalhas</h3>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                        <div><h4>Base Superior</h4><table class="premium-table" id="cangalha-r2-sup-tbody"><thead><tr><th>Pos</th><th>Bico A</th><th>Bico B</th></tr></thead><tbody></tbody></table></div>
+                        <div><h4>Base Inferior</h4><table class="premium-table" id="cangalha-r2-inf-tbody"><thead><tr><th>Pos</th><th>Bico A</th><th>Bico B</th></tr></thead><tbody></tbody></table></div>
+                    </div>
+
+                    <h3>1.5 Cilindros Hidráulicos</h3>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+                        <div><h4>Elevação</h4><table class="premium-table" id="cil-r2-elevacao-tbody"><thead><tr><th>Pos</th><th>Nº</th><th>Prod</th><th>OK</th><th>NOK</th><th>Obs</th></tr></thead><tbody></tbody></table></div>
+                        <div><h4>Clamp</h4><table class="premium-table" id="cil-r2-clamp-tbody"><thead><tr><th>Pos</th><th>Nº</th><th>Prod</th><th>OK</th><th>NOK</th><th>Obs</th></tr></thead><tbody></tbody></table></div>
+                        <div><h4>Motriz</h4><table class="premium-table" id="cil-r2-motriz-tbody"><thead><tr><th>Pos</th><th>Nº</th><th>Prod</th><th>OK</th><th>NOK</th><th>Obs</th></tr></thead><tbody></tbody></table></div>
+                    </div>
+
+                    <h3>1.6 Check de Lubrificação</h3>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                        <div><h4>Base Inferior</h4><table class="premium-table" id="lub-r2-inf-tbody"><thead><tr><th>Rolo</th><th>Status</th><th>Obs</th></tr></thead><tbody></tbody></table></div>
+                        <div><h4>Base Superior</h4><table class="premium-table" id="lub-r2-sup-tbody"><thead><tr><th>Rolo</th><th>Status</th><th>Obs</th></tr></thead><tbody></tbody></table></div>
+                    </div>
+
+                    <h3>1.7 Inspeção de Rolos - Chegada</h3>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                        <div><h4>Base Inferior</h4><table class="premium-table" id="rol-r2-inf-cheg-tbody"><thead><tr><th>Pos</th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead><tbody></tbody></table></div>
+                        <div><h4>Base Superior</h4><table class="premium-table" id="rol-r2-sup-cheg-tbody"><thead><tr><th>Pos</th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead><tbody></tbody></table></div>
+                    </div>
+
+                    <h3>1.8 Medidas dos Rolos - Chegada</h3>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                        <div><h4>Base Inferior</h4><table class="premium-table" id="med-r2-inf-cheg-tbody"><thead><tr><th>R</th><th>N1</th><th>M1</th><th>N2</th><th>M2</th><th>N3</th><th>M3</th><th>Classe</th></tr></thead><tbody></tbody></table></div>
+                        <div><h4>Base Superior</h4><table class="premium-table" id="med-r2-sup-cheg-tbody"><thead><tr><th>R</th><th>N1</th><th>M1</th><th>N2</th><th>M2</th><th>N3</th><th>M3</th><th>Classe</th></tr></thead><tbody></tbody></table></div>
+                    </div>
                 </div>
 
-                <h3>3.3 Inspeção de Rolos - Saída</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-                    <div><h4>Base Inferior</h4><table class="premium-table" id="rol-r2-inf-sai-tbody"><thead><tr><th>Pos</th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead><tbody></tbody></table></div>
-                    <div><h4>Base Superior</h4><table class="premium-table" id="rol-r2-sup-sai-tbody"><thead><tr><th>Pos</th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead><tbody></tbody></table></div>
+                <div id="r2-manutencao" class="folhao-content hidden">
+                    <h3>2. Checklist de Manutenção</h3>
+                    <table class="premium-table" id="tabela-r2-manutencao">
+                        <thead><tr><th>Item</th><th>Descrição</th><th>P</th><th>G</th><th>Responsável</th><th>Matrícula</th><th>Data</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
 
-                <h3>3.4 Medidas dos Rolos - Saída</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-                    <div><h4>Base Inferior</h4><table class="premium-table" id="med-r2-inf-sai-tbody"><thead><tr><th>R</th><th>N1</th><th>M1</th><th>N2</th><th>M2</th><th>N3</th><th>M3</th><th>Classe</th></tr></thead><tbody></tbody></table></div>
-                    <div><h4>Base Superior</h4><table class="premium-table" id="med-r2-sup-sai-tbody"><thead><tr><th>R</th><th>N1</th><th>M1</th><th>N2</th><th>M2</th><th>N3</th><th>M3</th><th>Classe</th></tr></thead><tbody></tbody></table></div>
+                <div id="r2-saida" class="folhao-content hidden">
+                    <h3>3.1 Aferição de Gap - Saída</h3>
+                    <table class="premium-table" id="gap-r2-sai-tbody">
+                        <thead><tr><th>Conj. Rolo</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+
+                    <h3>3.2 Pass Line - Saída</h3>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                        <div><h4>Base Inferior</h4><table class="premium-table" id="pl-r2-inf-sai-tbody"><thead><tr><th>Rolo</th><th>Ref</th><th>A</th><th>B</th><th>C</th></tr></thead><tbody></tbody></table></div>
+                        <div><h4>Base Superior</h4><table class="premium-table" id="pl-r2-sup-sai-tbody"><thead><tr><th>Rolo</th><th>Ref</th><th>A</th><th>B</th><th>C</th></tr></thead><tbody></tbody></table></div>
+                    </div>
+
+                    <h3>3.3 Inspeção de Rolos - Saída</h3>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                        <div><h4>Base Inferior</h4><table class="premium-table" id="rol-r2-inf-sai-tbody"><thead><tr><th>Pos</th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead><tbody></tbody></table></div>
+                        <div><h4>Base Superior</h4><table class="premium-table" id="rol-r2-sup-sai-tbody"><thead><tr><th>Pos</th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead><tbody></tbody></table></div>
+                    </div>
+
+                    <h3>3.4 Medidas dos Rolos - Saída</h3>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                        <div><h4>Base Inferior</h4><table class="premium-table" id="med-r2-inf-sai-tbody"><thead><tr><th>R</th><th>N1</th><th>M1</th><th>N2</th><th>M2</th><th>N3</th><th>M3</th><th>Classe</th></tr></thead><tbody></tbody></table></div>
+                        <div><h4>Base Superior</h4><table class="premium-table" id="med-r2-sup-sai-tbody"><thead><tr><th>R</th><th>N1</th><th>M1</th><th>N2</th><th>M2</th><th>N3</th><th>M3</th><th>Classe</th></tr></thead><tbody></tbody></table></div>
+                    </div>
+
+                    <h3>3.5 Materiais Aplicados</h3>
+                    <table class="premium-table" id="tabela-r2-materiais">
+                        <thead><tr><th>Material</th><th>Quantidade</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                    <button class="btn-xs-primary" onclick="window.adicionarLinhaMaterialR2()">+ Adicionar</button>
                 </div>
 
-                <h3>3.5 Materiais Aplicados</h3>
-                <table class="premium-table" id="tabela-r2-materiais">
-                    <thead><tr><th>Material</th><th>Quantidade</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-                <button class="btn-xs-primary" onclick="window.adicionarLinhaMaterialR2()">+ Adicionar</button>
+            </div><div style="display:flex;gap:10px;margin-top:15px;justify-content:flex-end; flex-shrink:0; padding-top:10px; border-top:1px solid var(--border);">
+                <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoR2()"><i class="fas fa-save"></i> Salvar e Imprimir</button>
+                <button class="btn-outline-danger" onclick="window.fecharFolhaoR2()">Fechar</button>
             </div>
-
-        </div><!-- fim folhao-body -->
-
-        <!-- Rodapé fixo -->
-        <div style="display:flex;gap:10px;margin-top:15px;justify-content:flex-end; flex-shrink:0; padding-top:10px; border-top:1px solid var(--border);">
-            <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoR2()"><i class="fas fa-save"></i> Salvar e Imprimir</button>
-            <button class="btn-outline-danger" onclick="window.fecharFolhaoR2()">Fechar</button>
         </div>
     </div>
-</div>
 
-    <!-- MODAL MOLDE 2/3 -->
     <div id="modal-folhao-molde23" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 1100px; max-height: 90vh; overflow-y: auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
@@ -720,8 +669,7 @@
                 <div class="input-group"><label>MOTIVO</label><input type="text" id="molde23-motivo" placeholder="Motivo da manutenção"></div>
                 <div class="input-group"><label>TIPO EXECUÇÃO</label><select id="molde23-tipo-exec" class="premium-select"><option value="GERAL">GERAL</option><option value="PARCIAL">PARCIAL</option></select></div>
                 
-                <!-- 🔥 CAMPO NOVA META ADICIONADO AQUI 🔥 -->
-                <div class="input-group"><label style="color: var(--success-color); font-weight: bold;">NOVA META (TON)</label><input type="number" id="molde23-nova-meta" placeholder="Ex: 120000" style="border-color: var(--success-color);"></div>
+                <div class="input-group"><label style="color: var(--success-color); font-weight: bold;">AJUSTE DE VIDA (Se Parcial)</label><input type="number" id="molde23-nova-meta" placeholder="Ex: 120000" style="border-color: var(--success-color);"></div>
 
                 <div class="input-group"><label>LÍDER RESPONSÁVEL</label><input type="text" id="molde23-lider"></div>
                 <div class="input-group"><label>DESEMPENHO</label><input type="text" id="molde23-desempenho" placeholder="Ex: BOM, REGULAR"></div>
@@ -775,17 +723,14 @@
         </div>
     </div>
 
-    <!-- MODAL MOLDE MCC 4 -->
     <div id="modal-folhao-molde4" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 1400px; max-height: 90vh; overflow-y: auto;">
             
-            <!-- 1. CABEÇALHO -->
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
                 <h2 style="color:var(--text-title);"><i class="fas fa-clipboard-check"></i> Liberação - Molde MCC 4</h2>
                 <button class="btn-close-modal" onclick="window.fecharFolhaoMolde4()"><i class="fas fa-times"></i></button>
             </div>
 
-            <!-- 2. GRID DE INPUTS SUPERIORES -->
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:12px; margin-bottom:15px; background:rgba(20,30,50,0.5); padding:12px; border-radius:8px; border: 1px solid var(--border);">
                 <div class="input-group"><label>TAG</label><input type="text" id="molde4-tag-name" readonly class="premium-input"></div>
                 <div class="input-group"><label>Nº MOLDE</label><input type="text" id="molde4-num-molde" placeholder="Ex: 4H-01" class="premium-input"></div>
@@ -794,15 +739,12 @@
                 <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="molde4-data-inicio" class="premium-input"></div>
                 <div class="input-group"><label>DATA FIM</label><input type="date" id="molde4-data-fim" class="premium-input"></div>
                 
-                <!-- 🔥 NOVO CAMPO DA META ALINHADO CORRETAMENTE 🔥 -->
                 <div class="input-group">
                     <label style="color: #10b981;">NOVA META (TON)</label>
                     <input type="number" id="molde4-nova-meta" placeholder="Ex: 1200000" class="premium-input" style="border-color: #10b981; color: #10b981;">
                 </div>
             </div> 
-            <!-- FIM DO GRID (esta é a div que estava faltando/bugada) -->
             
-            <!-- 3. ABAS DE NAVEGAÇÃO -->
             <div class="folhao-tabs">
                 <button class="folhao-tab active" onclick="window.trocarAbaMolde4(event, 'm4-aba-ident')">1. Identificação</button>
                 <button class="folhao-tab" onclick="window.trocarAbaMolde4(event, 'm4-aba-receb')">2. Recebimento</button>
@@ -817,7 +759,6 @@
                 <button class="folhao-tab" onclick="window.trocarAbaMolde4(event, 'm4-aba-materiais')">11. Materiais</button>
             </div>
             
-            <!-- 4. CORPO DAS ABAS -->
             <div class="folhao-body">
                 <div id="m4-aba-ident" class="folhao-content"><div id="container-m4-identificacao"></div></div>
                 <div id="m4-aba-receb" class="folhao-content hidden"><div id="container-m4-recebimento"></div><div id="container-m4-eletrica"></div></div>
@@ -832,98 +773,59 @@
                 <div id="m4-aba-materiais" class="folhao-content hidden"><div id="container-m4-materiais"></div></div>
             </div>
             
-            <!-- 5. RODAPÉ DE BOTÕES -->
             <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end; padding-top: 15px; border-top: 1px solid var(--border);">
                 <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoMolde4()"><i class="fas fa-save"></i> Salvar e Imprimir</button>
                 <button class="btn-outline-danger" onclick="window.fecharFolhaoMolde4()">Fechar</button>
             </div>
         </div>
     </div>
-        <!-- ===== MODAL BENDER (MCC4) ===== -->
-<div id="modal-folhao-mcc4" class="modal-overlay hidden">
-    <div class="modal-content" style="max-width: 1400px; max-height: 90vh; display: flex; flex-direction: column;">
-        <!-- Cabeçalho -->
-        <div style="display:flex; justify-content:space-between; align-items:center; padding: 12px 20px; border-bottom: 2px solid #002b5e; flex-shrink:0;">
-            <h2 style="color:var(--text-heading); margin:0;">
-                <i class="fas fa-clipboard-check"></i> Liberação - BENDER
-                <span id="mcc4-tag-name" style="color:#f59e0b; font-size:0.9em;"></span>
-            </h2>
-            <button class="btn-close-emergency" onclick="window.fecharFolhaoMCC4()"><i class="fas fa-times"></i></button>
-        </div>
 
-        <!-- Campos de cabeçalho (fixos) -->
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap:10px; padding:12px 20px; background:var(--bg-th); border-bottom:1px solid var(--border); flex-shrink:0;">
-            <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="mcc4-data-inicio" class="premium-input"></div>
-            <div class="input-group"><label>DATA FIM</label><input type="date" id="mcc4-data-fim" class="premium-input"></div>
-            <div class="input-group"><label>MOTIVO</label><input type="text" id="mcc4-motivo" placeholder="Motivo da OS" class="premium-input"></div>
-            <div class="input-group" style="grid-column: span 2;">
-                <label>TIPO EXECUÇÃO</label>
-                <div style="display:flex; gap:15px;">
-                    <label><input type="radio" name="mcc4-tipo-exec" value="PARCIAL"> PARCIAL</label>
-                    <label><input type="radio" name="mcc4-tipo-exec" value="GERAL" checked> GERAL</label>
+    <div id="modal-folhao-mcc4" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 1400px; max-height: 90vh; display: flex; flex-direction: column;">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding: 12px 20px; border-bottom: 2px solid #002b5e; flex-shrink:0;">
+                <h2 style="color:var(--text-heading); margin:0;">
+                    <i class="fas fa-clipboard-check"></i> Liberação - BENDER
+                    <span id="mcc4-tag-name" style="color:#f59e0b; font-size:0.9em;"></span>
+                </h2>
+                <button class="btn-close-emergency" onclick="window.fecharFolhaoMCC4()"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap:10px; padding:12px 20px; background:var(--bg-th); border-bottom:1px solid var(--border); flex-shrink:0;">
+                <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="mcc4-data-inicio" class="premium-input"></div>
+                <div class="input-group"><label>DATA FIM</label><input type="date" id="mcc4-data-fim" class="premium-input"></div>
+                <div class="input-group"><label>MOTIVO</label><input type="text" id="mcc4-motivo" placeholder="Motivo da OS" class="premium-input"></div>
+                <div class="input-group" style="grid-column: span 2;">
+                    <label>TIPO EXECUÇÃO</label>
+                    <div style="display:flex; gap:15px;">
+                        <label><input type="radio" name="mcc4-tipo-exec" value="PARCIAL"> PARCIAL</label>
+                        <label><input type="radio" name="mcc4-tipo-exec" value="GERAL" checked> GERAL</label>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Abas (dinâmicas) -->
-        <div class="folhao-tabs" style="flex-shrink:0; padding:0 20px; border-bottom: 2px solid #002b5e;">
-            <!-- As abas do Bender serão injetadas aqui via JS -->
-        </div>
+            <div class="folhao-tabs" style="flex-shrink:0; padding:0 20px; border-bottom: 2px solid #002b5e;">
+                </div>
 
-        <!-- Corpo rolável -->
-        <div class="folhao-body" style="flex:1; overflow-y:auto; padding: 10px 20px 20px 20px;">
-            <!-- O conteúdo do Bender será injetado aqui via JS -->
-            <div id="container-check-recebimento"></div>
-        </div>
+            <div class="folhao-body" style="flex:1; overflow-y:auto; padding: 10px 20px 20px 20px;">
+                <div id="container-check-recebimento"></div>
+            </div>
 
-        <!-- Rodapé (fixo) -->
-        <div style="display:flex; gap:12px; justify-content:flex-end; padding:12px 20px; border-top:1px solid var(--border); background:var(--bg-th); flex-shrink:0;">
-            <button class="btn-premium btn-success" onclick="window.salvarLaudoInteligente()"><i class="fas fa-save"></i> Salvar e Liberar</button>
-            <button class="btn-outline-danger" onclick="window.fecharFolhaoMCC4()">Cancelar</button>
+            <div style="display:flex; gap:12px; justify-content:flex-end; padding:12px 20px; border-top:1px solid var(--border); background:var(--bg-th); flex-shrink:0;">
+                <button class="btn-premium btn-success" onclick="window.salvarLaudoInteligente()"><i class="fas fa-save"></i> Salvar e Liberar</button>
+                <button class="btn-outline-danger" onclick="window.fecharFolhaoMCC4()">Cancelar</button>
+            </div>
         </div>
     </div>
-</div>
-<!-- MODAL DE APONTAMENTO DE PRODUÇÃO DIÁRIA -->
-<div id="modal-producao-diaria" class="modal-overlay hidden">
-    <div class="modal-content" style="max-width: 400px; border-top: 4px solid var(--success);">
-        <div class="modal-header">
-            <h2><i class="fas fa-calculator"></i> Apontamento Diário</h2>
-            <button class="btn-close" onclick="fecharModalProducao()"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="modal-body">
-            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">
-                Digite a tonelagem produzida ontem por cada máquina. O sistema irá calcular e descontar a vida útil de todas as peças instaladas automaticamente.
-            </p>
 
-            <div class="input-group" style="margin-bottom: 15px;">
-                <label style="color: #3b82f6; font-weight: bold;">PRODUÇÃO MCC #2 (Ton)</label>
-                <input type="number" id="prod-mcc2" placeholder="Ex: 3131" class="premium-input" style="font-size: 18px; font-weight: bold;">
-            </div>
-
-            <div class="input-group" style="margin-bottom: 15px;">
-                <label style="color: #8b5cf6; font-weight: bold;">PRODUÇÃO MCC #3 (Ton)</label>
-                <input type="number" id="prod-mcc3" placeholder="Ex: 3705" class="premium-input" style="font-size: 18px; font-weight: bold;">
-            </div>
-
-            <div class="input-group" style="margin-bottom: 25px;">
-                <label style="color: #ec4899; font-weight: bold;">PRODUÇÃO MCC #4 (Ton)</label>
-                <input type="number" id="prod-mcc4" placeholder="Ex: 2830" class="premium-input" style="font-size: 18px; font-weight: bold;">
-            </div>
-
-            <button class="btn-premium btn-success" onclick="processarProducaoDiaria()" style="width: 100%; font-size: 16px; padding: 12px;">
-                <i class="fas fa-check-double"></i> Atualizar Desgastes da Fábrica
-            </button>
-        </div>
-    </div>
-</div>
+   
 
 
     <!-- ========================================= -->
     <!-- SCRIPTS (consolidados)                   -->
     <!-- ========================================= -->
     <script type="module">
-        import './script.js?v=2';
-        import './ui.js?v=8';
+        import './script.js?v=4';
+        import './ui.js?v=9';
         import './folhaoMolde4.js?v=2';
         import './folhao_bender.js?v=2';
         import './folhaoR2.js?v=2';

@@ -217,7 +217,7 @@ function verificarAcesso() {
 }
 
 // ==========================================
-// ABRIR ABA - CORRIGIDA
+// ABRIR ABA - CORRIGIDA E BLINDADA
 // ==========================================
 function abrirAba(event, idAba) {
     if (event) event.preventDefault();
@@ -241,14 +241,16 @@ function abrirAba(event, idAba) {
     if (idAba === "aba-painel") {
         if (typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
     }
-    if (idAba === "aba-ativos") {
-        renderAtivos();
-    }
-    if (idAba === "aba-fluxo") {
-        renderPainelVeios();
-    }
+    if (idAba === "aba-ativos") renderAtivos();
+    if (idAba === "aba-fluxo") renderPainelVeios();
     if (idAba === "aba-oficina") {
         if (typeof carregarOficina === 'function') carregarOficina();
+    }
+    
+    // 🔥 AQUI ESTÁ A MÁGICA QUE PREENCHE AS TABELAS NOVAS! 🔥
+    if (idAba === "aba-producao") {
+        if (typeof window.carregarHistoricoApontamentoGeral === 'function') window.carregarHistoricoApontamentoGeral();
+        if (typeof window.carregarHistoricoApontamentoMoldes === 'function') window.carregarHistoricoApontamentoMoldes();
     }
 
     const selVeios = document.getElementById("seletor-veios-container");
@@ -1554,81 +1556,85 @@ function toggleFormAdicionar() {
     if (form) form.classList.toggle("hidden");
 }
 
-function atualizarPosicoesCadastro() {
+window.atualizarPosicoesCadastro = function() {
     const tipo = document.getElementById("add-tipo").value;
     const selectPos = document.getElementById("add-posicao");
-    if (!selectPos) return;
+    const inputMeta = document.getElementById("add-meta");
+    
+    if (!selectPos || !inputMeta) return;
     selectPos.innerHTML = "";
 
     if (!tipo) {
         selectPos.innerHTML = `<option value="">Selecione um tipo primeiro...</option>`;
+        inputMeta.value = "";
         return;
     }
 
     const familia = tipo.split("|")[0] || "";
     const mcc = tipo.split("|")[1] || "";
 
-    // MCC 4
+    // 1. AUTO-PREENCHER A META
+    const metas = {
+        "Bender": 1100000,
+        "Bow": 1900000,
+        "Straightener R1": 1700000,
+        "Straightener R2": 1700000,
+        "Horizontal": 3300000,
+        "Segmento Zero": 450000,
+        "Segmento Grupo 1": 1100000,
+        "Segmento Grupo 2": 1650000,
+        "Segmento Grupo 3": 1900000,
+        "Cadeira Superior": 2000000,
+        "Cadeira Inferior": 2500000
+    };
+
+    if (familia.includes("Molde")) {
+        // 🔥 AQUI ESTÁ A MÁGICA DOS MOLDES AUTOMÁTICOS 🔥
+        inputMeta.value = (mcc === "4") ? 1100 : 900; 
+        inputMeta.readOnly = false;
+    } else {
+        inputMeta.value = metas[familia] || 1000000;
+    }
+
+    
+
+    // 2. TRAVAR AS POSIÇÕES CORRETAS
     if (mcc === "4") {
-        if (familia === "Molde") {
-            selectPos.innerHTML = `<option value="MOLDE">Molde (Única posição)</option>`;
-        } else if (familia === "Bender") {
-            selectPos.innerHTML = `<option value="BENDER">Bender (Única posição)</option>`;
-        } else if (familia === "Bow") {
-            let opts = "";
-            for (let i = 1; i <= 5; i++) {
-                opts += `<option value="${i}">Bow Posição #${i}</option>`;
-            }
-            selectPos.innerHTML = opts;
-        } else if (familia === "Straightener R1") {
-            selectPos.innerHTML = `<option value="STR-1">Straightener R1 (Única)</option>`;
-        } else if (familia === "Straightener R2") {
-            selectPos.innerHTML = `<option value="STR-2">Straightener R2 (Única)</option>`;
-        } else if (familia === "Horizontal") {
-            let opts = "";
-            for (let i = 8; i <= 17; i++) {
-                opts += `<option value="${i}">Horizontal Posição #${i}</option>`;
-            }
-            selectPos.innerHTML = opts;
-        } else {
-            selectPos.innerHTML = `<option value="GERAL">Geral / Sem posição fixa</option>`;
-        }
+        if (familia === "Molde") selectPos.innerHTML = `<option value="MOLDE">Molde (Única posição)</option>`;
+        else if (familia === "Bender") selectPos.innerHTML = `<option value="BENDER">Bender (Única posição)</option>`;
+        else if (familia === "Bow") {
+            for (let i = 1; i <= 5; i++) selectPos.innerHTML += `<option value="${i}">Bow Posição #${i}</option>`;
+        } else if (familia === "Straightener R1") selectPos.innerHTML = `<option value="STR-1">Straightener R1 (Única)</option>`;
+        else if (familia === "Straightener R2") selectPos.innerHTML = `<option value="STR-2">Straightener R2 (Única)</option>`;
+        else if (familia === "Horizontal") {
+            for (let i = 8; i <= 17; i++) selectPos.innerHTML += `<option value="${i}">Horizontal Posição #${i}</option>`;
+        } else selectPos.innerHTML = `<option value="GERAL">Geral / Sem posição fixa</option>`;
     } 
-    // MCC 2/3
     else if (mcc === "2/3") {
-        if (familia === "Molde") {
-            selectPos.innerHTML = `<option value="MOLDE">Molde (Única posição)</option>`;
-        } else if (familia === "Mesa Osciladora") {
-            selectPos.innerHTML = `<option value="OSCILADORA">Mesa Osciladora (Única)</option>`;
-        } else if (familia === "Seguimento Zero" || familia === "Segmento Zero") {
-            selectPos.innerHTML = `<option value="SEG-ZERO">Segmento Zero (Única)</option>`;
-        } else if (familia === "Cadeira Superior") {
-            let opts = "";
-            for (let i = 43; i <= 79; i++) {
-                opts += `<option value="${i}">Cadeira Superior #${i}</option>`;
-            }
-            selectPos.innerHTML = opts;
-        } else if (familia === "Cadeira Inferior") {
-            let opts = "";
-            for (let i = 43; i <= 79; i++) {
-                opts += `<option value="${i}">Cadeira Inferior #${i}</option>`;
-            }
-            selectPos.innerHTML = opts;
-        } else if (familia.includes("Segmento") && !familia.includes("Zero")) {
-            let opts = "";
-            for (let i = 1; i <= 6; i++) {
-                opts += `<option value="${i}">Segmento #${i}</option>`;
-            }
-            selectPos.innerHTML = opts;
-        } else {
-            selectPos.innerHTML = `<option value="GERAL">Geral / Sem posição fixa</option>`;
+        if (familia === "Molde") selectPos.innerHTML = `<option value="MOLDE">Molde (Única posição)</option>`;
+        else if (familia === "Segmento Zero") selectPos.innerHTML = `<option value="SEG-ZERO">Segmento Zero (Única)</option>`;
+        
+        // 🔥 AQUI ESTÃO OS GRUPOS 1, 2 E 3 TRAVADOS NAS POSIÇÕES CORRETAS 🔥
+        else if (familia === "Segmento Grupo 1") selectPos.innerHTML = `<option value="1">Segmento #1</option>`;
+        else if (familia === "Segmento Grupo 2") {
+            selectPos.innerHTML = `<option value="2">Segmento #2</option><option value="3">Segmento #3</option>`;
         }
+        else if (familia === "Segmento Grupo 3") {
+            selectPos.innerHTML = `<option value="4">Segmento #4</option><option value="5">Segmento #5</option><option value="6">Segmento #6</option>`;
+        }
+        
+        else if (familia === "Cadeira Superior") {
+            for (let i = 43; i <= 79; i++) selectPos.innerHTML += `<option value="${i}">Cadeira Superior #${i}</option>`;
+        } else if (familia === "Cadeira Inferior") {
+            for (let i = 43; i <= 79; i++) selectPos.innerHTML += `<option value="${i}">Cadeira Inferior #${i}</option>`;
+        } else selectPos.innerHTML = `<option value="GERAL">Geral / Sem posição fixa</option>`;
     } else {
         selectPos.innerHTML = `<option value="GERAL">Geral / Sem posição fixa</option>`;
     }
-}
+};
+async function processarCadastroPeca() {
+    if (typeof window.verificarAcesso === 'function' && !window.verificarAcesso()) return;
 
-function processarCadastroPeca() {
     const tag = document.getElementById("add-tag").value.trim() || `NOVA-PECA-${Math.floor(Math.random() * 1000)}`;
     const tipoValor = document.getElementById("add-tipo").value || "";
     const tipoSplit = tipoValor.split("|");
@@ -1640,7 +1646,6 @@ function processarCadastroPeca() {
     const posicao = document.getElementById("add-posicao").value || "";
     const instalarDireto = document.getElementById("add-instalar-direto").checked;
 
-    // --- Validações iniciais ---
     if (!familia) {
         alert("Selecione um tipo de peça.");
         return;
@@ -1651,14 +1656,11 @@ function processarCadastroPeca() {
         return;
     }
 
-    // --- Determina o slot (posição fixa ou variável) ---
     const tipoUpper = familia.toUpperCase();
     let slotChassi = "";
-    let posicaoObrigatoria = true; // por padrão, exige posição
+    let posicaoObrigatoria = true; 
 
-    // ==========================================
-    // MAPEAMENTO DE SLOTS (MCC 4)
-    // ==========================================
+    // MCC 4
     if (mccCompat === "4") {
         if (tipoUpper.includes("BOW")) {
             slotChassi = `BOW-${posicao}`;
@@ -1677,13 +1679,10 @@ function processarCadastroPeca() {
             slotChassi = "BENDER";
             posicaoObrigatoria = false;
         } else {
-            // Fallback: usa a posição digitada
             slotChassi = posicao;
         }
-    }
-    // ==========================================
-    // MAPEAMENTO DE SLOTS (MCC 2/3)
-    // ==========================================
+    } 
+    // MCC 2/3
     else if (mccCompat === "2/3") {
         if (tipoUpper.includes("CADEIRA SUPERIOR")) {
             slotChassi = `CAD-SUP-${posicao}`;
@@ -1701,33 +1700,24 @@ function processarCadastroPeca() {
             slotChassi = "MOLDE";
             posicaoObrigatoria = false;
         } else {
-            // Fallback
             slotChassi = posicao;
         }
     } else {
-        // MCC desconhecido – usa posicao como fallback
         slotChassi = posicao;
     }
 
-    // --- Validação de posição (apenas se obrigatória e se for instalação direta) ---
     if (instalarDireto && posicaoObrigatoria && !posicao) {
         alert("⚠️ Selecione a Posição de destino para este tipo de equipamento.");
         return;
     }
 
-    // --- Se não for instalação direta, não exige posição ---
-    if (!instalarDireto) {
-        // Guarda como estoque, posição pode ficar vazia
-        slotChassi = ""; // ou mantém o que foi mapeado, mas não usaremos
-    }
+    if (!instalarDireto) slotChassi = ""; 
 
-    // --- Define status e local ---
     let statusFinal = instalarDireto ? "Instalado" : "Oficina / Reserva";
     let localFinal = instalarDireto ? `MCC ${mccCompat} - Veio ${veio}` : "Oficina / Reserva";
 
-    // --- Se for instalação direta, faz a substituição da peça antiga ---
     if (instalarDireto && veio && slotChassi) {
-        const config = getConfiguracaoPorVeio(veio);
+        const config = typeof getConfiguracaoPorVeio === 'function' ? getConfiguracaoPorVeio(veio) : null;
         let pecaExpulsa = false;
         let pecaExpulsaId = "";
 
@@ -1759,8 +1749,13 @@ function processarCadastroPeca() {
                 pecaExpulsa = true;
                 pecaExpulsaId = p.id;
 
-                if (window.registrarHistorico) {
+                if (typeof window.registrarHistorico === 'function') {
                     window.registrarHistorico(p.id, `Sacado da gaveta ${slotChassi} do Veio ${veio} por substituição.`);
+                }
+                
+                // 🔥 MAGIA: SALVA A PEÇA VELHA (EXPULSA) NO PYTHON 🔥
+                if (typeof salvarPecaNoPython === 'function') {
+                    await salvarPecaNoPython(BANCO_ATIVOS[i]);
                 }
                 break;
             }
@@ -1771,7 +1766,6 @@ function processarCadastroPeca() {
         }
     }
 
-    // --- Cria a nova peça ---
     const novaPeca = {
         id: tag,
         tipo: familia,
@@ -1784,12 +1778,17 @@ function processarCadastroPeca() {
         dias: 0,
         meta: limite,
         mcc_compat: mccCompat,
-        ordem: getOrdemPadrao(familia),
+        ordem: typeof getOrdemPadrao === 'function' ? getOrdemPadrao(familia) : 999,
         dataReparo: null
     };
 
     BANCO_ATIVOS.push(novaPeca);
     localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+
+    // 🔥 MAGIA: SALVA A PEÇA NOVA CRIADA NO PYTHON 🔥
+    if (typeof salvarPecaNoPython === 'function') {
+        await salvarPecaNoPython(novaPeca);
+    }
 
     if (statusFinal === "Instalado") {
         alert(`✅ Sucesso! A nova peça [${tag}] assumiu o controle da gaveta ${slotChassi} do Veio ${veio}.`);
@@ -1797,20 +1796,18 @@ function processarCadastroPeca() {
         alert(`✅ Sucesso! Peça [${tag}] criada e guardada no Estoque Reserva.`);
     }
 
-    // --- Limpa os campos do formulário ---
     document.getElementById("add-tag").value = "";
     document.getElementById("add-meta").value = "";
     document.getElementById("add-instalar-direto").checked = false;
 
-    // --- Atualiza as telas ---
-    renderReservas();
-    renderAtivos();
-    renderReparos();
-    renderPainelVeios();
-    calcularKpisGlobais();
-    atualizarPainelCompleto();
+    if (typeof window.renderReservas === 'function') window.renderReservas();
+    if (typeof window.renderAtivos === 'function') window.renderAtivos();
+    if (typeof window.renderReparos === 'function') window.renderReparos();
+    if (typeof window.renderPainelVeios === 'function') window.renderPainelVeios();
+    if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
+    if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
 
-    if (instalarDireto) mudarVeioVisualizado(veio);
+    if (instalarDireto && typeof window.mudarVeioVisualizado === 'function') window.mudarVeioVisualizado(veio);
 }
 
 function renderRolos() {
@@ -2297,79 +2294,23 @@ function atualizarPainelCompleto() {
 }
 
 // ==========================================
-// CARREGAR DADOS DA OFICINA VIA API
+// CARREGAR DADOS DA OFICINA (MARCO ZERO)
 // ==========================================
-async function carregarOficina() {
+window.carregarOficina = async function() {
     const container = document.getElementById('oficina-container');
     if (!container) return;
     
-    container.innerHTML = `<div class="text-muted" style="text-align:center;padding:40px 0;">
-        <i class="fas fa-spinner fa-pulse" style="font-size:24px;"></i> Carregando dados...
-    </div>`;
-    
-    try {
-        const resposta = await fetch(`${API_PLANILHA_URL}?acao=getOficina`);
-        const dados = await resposta.json();
-        
-        if (dados.erro) {
-            container.innerHTML = `<div class="text-danger" style="text-align:center;padding:40px 0;">
-                <i class="fas fa-exclamation-triangle" style="font-size:24px;"></i> ${dados.erro}
-            </div>`;
-            return;
-        }
-        
-        if (dados.length === 0) {
-            container.innerHTML = `<div class="text-muted" style="text-align:center;padding:40px 0;">
-                Nenhuma atividade registrada na oficina.
-            </div>`;
-            return;
-        }
-        
-        const areas = {};
-        dados.forEach(item => {
-            const area = item.ÁREA || 'Geral';
-            if (!areas[area]) areas[area] = [];
-            areas[area].push(item);
-        });
-        
-        let html = '';
-        Object.keys(areas).forEach(nomeArea => {
-            const atividades = areas[nomeArea];
-            html += `
-                <div class="glass-panel" style="padding:16px;margin-bottom:16px;border-left:4px solid var(--text-accent);">
-                    <h3 style="color:var(--text-heading);margin-bottom:10px;"><i class="fas fa-people-group"></i> ${nomeArea}</h3>
-                    <div style="display:grid;grid-template-columns:1fr;gap:8px;">
-            `;
-            atividades.forEach(a => {
-                const pct = parseFloat(a['% CONCLUSÃO']) || 0;
-                const cor = pct >= 80 ? 'var(--success)' : (pct >= 50 ? 'var(--warning)' : 'var(--danger)');
-                html += `
-                    <div style="background:var(--bg-td);padding:12px 16px;border-radius:8px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;">
-                        <div>
-                            <strong style="color:var(--text-heading);">${a.ATIVIDADE || 'Atividade'}</strong>
-                            <span style="font-size:12px;color:var(--text-muted);margin-left:8px;">${a.EQUIPAMENTO || ''}</span>
-                        </div>
-                        <div style="display:flex;align-items:center;gap:12px;">
-                            <span style="color:${cor};font-weight:bold;">${pct}%</span>
-                            <div style="width:100px;height:6px;background:var(--bg-input);border-radius:10px;overflow:hidden;">
-                                <div style="width:${Math.min(pct,100)}%;height:100%;background:${cor};border-radius:10px;"></div>
-                            </div>
-                            <span style="font-size:11px;color:var(--text-muted);">${a.DATA || ''}</span>
-                            <span style="font-size:11px;color:var(--text-muted);">${a.RESPONSÁVEL || ''}</span>
-                        </div>
-                    </div>
-                `;
-            });
-            html += `</div></div>`;
-        });
-        container.innerHTML = html;
-        
-    } catch (erro) {
-        container.innerHTML = `<div class="text-danger" style="text-align:center;padding:40px 0;">
-            <i class="fas fa-exclamation-triangle"></i> Erro ao carregar dados: ${erro.message}
-        </div>`;
-    }
-}
+    container.innerHTML = `
+        <div style="text-align:center; padding: 60px 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px dashed var(--text-muted);">
+            <i class="fas fa-clipboard-list" style="font-size: 48px; color: var(--text-muted); margin-bottom: 15px; opacity: 0.5;"></i>
+            <h3 style="color: var(--text-heading); margin-bottom: 10px;">Oficina Zerada (Marco Zero)</h3>
+            <p style="color: var(--text-muted); font-size: 14px; max-width: 400px; margin: 0 auto;">
+                Os dados antigos do Google Sheets foram desconectados.<br><br>
+                Em breve, você poderá adicionar os serviços de manutenção manualmente aqui, e a porcentagem subirá de forma inteligente de acordo com as atividades concluídas!
+            </p>
+        </div>
+    `;
+};
 
 // ==========================================
 // FUNÇÃO PARA ABRIR O FOLHÃO CORRETO POR TIPO (CORRIGIDA)
@@ -2519,7 +2460,6 @@ window.abrirFolhaoPorTipo = function(id) {
 // ==========================================================================
 
 window.abrirModalProducao = function() {
-    // Zera os campos toda vez que abre a janela
     document.getElementById("prod-mcc2").value = "";
     document.getElementById("prod-mcc3").value = "";
     document.getElementById("prod-mcc4").value = "";
@@ -2530,538 +2470,423 @@ window.fecharModalProducao = function() {
     document.getElementById("modal-producao-diaria").classList.add("hidden");
 };
 
-window.processarProducaoDiaria = async function() {
-    if (!verificarAcesso()) return;
+// ==============================================================
+// 1. FUNÇÕES VISUAIS E NAVEGAÇÃO DA INTERFACE
+// ==============================================================
+window.toggleSidebar = function() {
+    const sidebar = document.getElementById('sidebar-menu');
+    if (sidebar) sidebar.classList.toggle('open');
+};
 
-    // Pega os números digitados (se estiver vazio, considera ZERO)
+window.toggleTheme = function() {
+    document.body.classList.toggle('light-theme');
+    const isLight = document.body.classList.contains('light-theme');
+    const icon = document.getElementById('theme-icon');
+    const text = document.getElementById('theme-text');
+    if (icon && text) {
+        icon.className = isLight ? 'fas fa-moon' : 'fas fa-sun';
+        text.innerText = isLight ? 'Modo Escuro' : 'Modo Claro';
+    }
+};
+
+window.fazerLogout = function() {
+    if (confirm("Tem certeza que deseja encerrar o turno?")) {
+        localStorage.removeItem("oms_operador_v32_local");
+        window.location.reload();
+    }
+};
+
+window.abrirAba = function(event, idAba) {
+    if (event) event.preventDefault();
+
+    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+    document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
+
+    if (event && event.currentTarget) {
+        document.getElementById(event.currentTarget.id).classList.add("active");
+    }
+    
+    const abaDestino = document.getElementById(idAba);
+    if (abaDestino) abaDestino.classList.add("active");
+
+    if (idAba === "aba-mcc2" && typeof renderizarGraficosMCC === 'function') renderizarGraficosMCC(2);
+    if (idAba === "aba-mcc3" && typeof renderizarGraficosMCC === 'function') renderizarGraficosMCC(3);
+    if (idAba === "aba-mcc4" && typeof renderizarGraficosMCC === 'function') renderizarGraficosMCC(4);
+    if (idAba === "aba-reparos" && typeof renderReparos === 'function') renderReparos();
+    if (idAba === "aba-reservas" && typeof renderReservas === 'function') renderReservas();
+    if (idAba === "aba-rolos" && typeof renderRolos === 'function') renderRolos();
+    if (idAba === "aba-almoxarifado" && typeof renderMateriais === 'function') renderMateriais();
+    if (idAba === "aba-historico" && typeof renderHistorico === 'function') renderHistorico();
+    if (idAba === "aba-painel" && typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
+    if (idAba === "aba-ativos" && typeof renderAtivos === 'function') renderAtivos();
+    if (idAba === "aba-fluxo" && typeof renderPainelVeios === 'function') renderPainelVeios();
+    if (idAba === "aba-oficina" && typeof carregarOficina === 'function') carregarOficina();
+    
+    if (idAba === "aba-producao") {
+        if (typeof window.carregarHistoricoApontamentoGeral === 'function') window.carregarHistoricoApontamentoGeral();
+        if (typeof window.carregarHistoricoApontamentoMoldes === 'function') window.carregarHistoricoApontamentoMoldes();
+    }
+
+    const selVeios = document.getElementById("seletor-veios-container");
+    if (selVeios) {
+        if (idAba === "aba-fluxo" || idAba === "aba-ativos") selVeios.classList.remove("hidden");
+        else selVeios.classList.add("hidden");
+    }
+
+    if (window.innerWidth <= 992) {
+        const sidebar = document.getElementById('sidebar-menu');
+        if(sidebar) sidebar.classList.remove('open');
+    }
+};
+
+// ==============================================================
+// 2. CONEXÃO COM O PYTHON (ADEUS GOOGLE SHEETS)
+// ==============================================================
+window.carregarAtivosDoPython = async function() {
+    try {
+        console.log("🔄 Conectando ao Banco de Dados Python...");
+        
+        // A OPÇÃO NUCLEAR: Esse 'Math.random' impede o navegador de usar a memória velha!
+        const url_fura_cache = "http://127.0.0.1:8000/api/pecas?v=" + Math.random();
+        
+        const res = await fetch(url_fura_cache);
+        const dados = await res.json();
+        
+        if (dados && Array.isArray(dados)) {
+            BANCO_ATIVOS.length = 0;
+            Array.prototype.push.apply(BANCO_ATIVOS, dados);
+            localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+            console.log(`✨ Tela atualizada! ${BANCO_ATIVOS.length} peças carregadas.`);
+            return true;
+        }
+        return false;
+    } catch (e) {
+        console.warn("⚠️ Python Offline. Usando dados locais.");
+        return false;
+    }
+};
+
+// ==============================================================
+// 3. APONTAMENTO DE PRODUÇÃO GERAL E MOLDES
+// ==============================================================
+window.processarProducaoDiaria = async function() {
+    if (!window.verificarAcesso()) return;
+
     const prodMcc2 = parseFloat(document.getElementById("prod-mcc2").value) || 0;
     const prodMcc3 = parseFloat(document.getElementById("prod-mcc3").value) || 0;
     const prodMcc4 = parseFloat(document.getElementById("prod-mcc4").value) || 0;
 
-    if (prodMcc2 === 0 && prodMcc3 === 0 && prodMcc4 === 0) {
-        alert("⚠️ Digite a produção de pelo menos uma máquina para continuar.");
-        return;
-    }
+    if (prodMcc2 === 0 && prodMcc3 === 0 && prodMcc4 === 0) return alert("⚠️ Digite a produção de pelo menos uma máquina.");
+
+    const btn = document.querySelector("#aba-producao .btn-success");
+    const textoOriginal = btn.innerHTML;
+    btn.disabled = true; btn.innerHTML = "<i class='fas fa-spinner fa-pulse'></i> ATUALIZANDO...";
 
     let pecasAtualizadas = 0;
-
-    // A MÁGICA ACONTECE AQUI: O sistema varre todas as peças da fábrica
     for (let i = 0; i < BANCO_ATIVOS.length; i++) {
-        let peca = BANCO_ATIVOS[i];
-
-        // Regra de Ouro: Só desconta a vida de quem está INSTALADO na máquina (ignora peças na Oficina)
-        if (peca.local && !peca.local.includes("Oficina")) {
-            
+        let p = BANCO_ATIVOS[i];
+        if (p.status === "Instalado" && p.tipo && !p.tipo.toUpperCase().includes("MOLDE")) {
             let sofreuDesgaste = false;
-
-            // Se a peça está na MCC 2 e teve produção na MCC 2
-            if (peca.local.includes("MCC 2") && prodMcc2 > 0) {
-                peca.ton += prodMcc2;
-                sofreuDesgaste = true;
-            } 
-            // Se a peça está na MCC 3 e teve produção na MCC 3
-            else if (peca.local.includes("MCC 3") && prodMcc3 > 0) {
-                peca.ton += prodMcc3;
-                sofreuDesgaste = true;
-            } 
-            // Se a peça está na MCC 4 e teve produção na MCC 4
-            else if (peca.local.includes("MCC 4") && prodMcc4 > 0) {
-                peca.ton += prodMcc4;
-                sofreuDesgaste = true;
-            }
-
-            // Se a peça trabalhou e sofreu desgaste, avisa o Python para salvar no Banco de Dados SQLite!
-            if (sofreuDesgaste) {
-                pecasAtualizadas++;
-                if (typeof salvarPecaNoPython === 'function') {
-                    await salvarPecaNoPython(peca); // Mão Dupla em ação!
-                }
-            }
+            if ((p.local.includes("Veio C") || p.local.includes("Veio D")) && prodMcc2 > 0) { p.ton = (p.ton || 0) + prodMcc2; sofreuDesgaste = true; }
+            else if ((p.local.includes("Veio E") || p.local.includes("Veio F")) && prodMcc3 > 0) { p.ton = (p.ton || 0) + prodMcc3; sofreuDesgaste = true; }
+            else if ((p.local.includes("Veio H") || p.local.includes("Veio G") || p.local.includes("MCC 4")) && prodMcc4 > 0) { p.ton = (p.ton || 0) + prodMcc4; sofreuDesgaste = true; }
+            if (sofreuDesgaste) pecasAtualizadas++;
         }
     }
-
-    // Salva na memória rápida do navegador
     localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-    
-    // Registra a auditoria
-    registrarHistorico("PRODUÇÃO", `Apontamento em Lote: MCC2 (+${prodMcc2}t), MCC3 (+${prodMcc3}t), MCC4 (+${prodMcc4}t)`);
-    
-    // Fecha a janela e atualiza todos os gráficos da tela
-    fecharModalProducao();
-    atualizarPainelCompleto();
-    
-    // Força o desenho das peças novamente para a barra de % crescer
-    if (typeof renderPainelVeios === 'function') renderPainelVeios();
-    if (typeof renderAtivos === 'function') renderAtivos();
-    
-    alert(`✅ Sucesso Absoluto!\nO desgaste de ${pecasAtualizadas} peças ativas na fábrica foi atualizado simultaneamente.`);
+
+    try {
+        const resposta = await fetch("http://127.0.0.1:8000/api/apontar_producao_geral", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mcc2: prodMcc2, mcc3: prodMcc3, mcc4: prodMcc4, operador: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Sistema" })
+        });
+        const resultado = await resposta.json();
+        
+        if (resultado.status === "sucesso") {
+            if (window.registrarHistorico) window.registrarHistorico("PRODUÇÃO", `Apontamento Geral: MCC2 (+${prodMcc2}t), MCC3 (+${prodMcc3}t), MCC4 (+${prodMcc4}t)`);
+            document.getElementById("prod-mcc2").value = ""; document.getElementById("prod-mcc3").value = ""; document.getElementById("prod-mcc4").value = "";
+            
+            if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
+            if (typeof window.carregarHistoricoApontamentoGeral === 'function') window.carregarHistoricoApontamentoGeral();
+            if (typeof window.renderAtivos === 'function') window.renderAtivos();
+            if (typeof window.renderPainelVeios === 'function') window.renderPainelVeios();
+            alert(`✅ Sucesso Absoluto!\n${pecasAtualizadas} equipamentos gerais foram atualizados.`);
+        } else { alert("❌ Erro no Banco: " + resultado.mensagem); }
+    } catch (e) { alert("❌ Erro de conexão com a API."); }
+
+    btn.disabled = false; btn.innerHTML = textoOriginal;
 };
 
-// ==========================================
-// HISTÓRICO DE LAUDOS SALVOS (PDF)
-// ==========================================
-function salvarLaudoNoHistorico(tag, tipo, htmlPDF) {
+window.salvarApontamentoMoldes = async function(event) {
+    if (!window.verificarAcesso()) return;
+
+    const m2 = parseInt(document.getElementById("molde-prod-mcc2").value) || 0;
+    const m3 = parseInt(document.getElementById("molde-prod-mcc3").value) || 0;
+    const m4 = parseInt(document.getElementById("molde-prod-mcc4").value) || 0;
+
+    if (m2 === 0 && m3 === 0 && m4 === 0) return alert("Digite a quantidade de panelas.");
+
+    const btn = event.currentTarget;
+    const txtOriginal = btn.innerHTML;
+    btn.disabled = true; btn.innerHTML = "<i class='fas fa-spinner fa-pulse'></i> Processando...";
+
+    let moldesAtualizados = 0;
+    for (let i = 0; i < BANCO_ATIVOS.length; i++) {
+        let p = BANCO_ATIVOS[i];
+        if (p.status === "Instalado" && p.tipo && p.tipo.toUpperCase().includes("MOLDE")) {
+            let sofreuDesgaste = false;
+            if ((p.local.includes("Veio C") || p.local.includes("Veio D")) && m2 > 0) { p.ton = (p.ton || 0) + m2; sofreuDesgaste = true; }
+            else if ((p.local.includes("Veio E") || p.local.includes("Veio F")) && m3 > 0) { p.ton = (p.ton || 0) + m3; sofreuDesgaste = true; }
+            else if ((p.local.includes("Veio H") || p.local.includes("Veio G") || p.local.includes("MCC 4")) && m4 > 0) { p.ton = (p.ton || 0) + m4; sofreuDesgaste = true; }
+            if (sofreuDesgaste) moldesAtualizados++;
+        }
+    }
+    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+
+    try {
+        const resposta = await fetch("http://127.0.0.1:8000/api/apontar_moldes", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ qtd_mcc2: m2, qtd_mcc3: m3, qtd_mcc4: m4, operador: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Desconhecido" })
+        });
+        const resultado = await resposta.json();
+        
+        if (resultado.status === "sucesso") {
+            document.getElementById("molde-prod-mcc2").value = ""; document.getElementById("molde-prod-mcc3").value = ""; document.getElementById("molde-prod-mcc4").value = "";
+            
+            if (typeof window.carregarHistoricoApontamentoMoldes === 'function') window.carregarHistoricoApontamentoMoldes();
+            if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
+            if (typeof window.renderAtivos === 'function') window.renderAtivos();
+            if (typeof window.renderPainelVeios === 'function') window.renderPainelVeios();
+            alert(`✅ ${moldesAtualizados} Moldes foram atualizados com sucesso!`);
+        } else { alert("❌ Erro no Banco: " + resultado.mensagem); }
+    } catch (e) { alert("❌ Erro de conexão com o Python."); }
+    
+    btn.disabled = false; btn.innerHTML = txtOriginal;
+};
+
+window.carregarHistoricoApontamentoGeral = async function() {
+    try {
+        const res = await fetch("http://127.0.0.1:8000/api/historico_apontamentos_geral");
+        const json = await res.json();
+        const tbody = document.getElementById("tabela-historico-geral");
+        if (!tbody) return;
+        if (json.status === "sucesso" && json.dados.length > 0) {
+            tbody.innerHTML = json.dados.map(log => {
+                let btnAcao = log.desfeito === 1 
+                    ? `<span style="color:var(--danger); font-weight:bold; font-size:10px;"><i class="fas fa-ban"></i> DESFEITO</span>` 
+                    : `<button class="btn-outline-danger" style="padding: 2px 6px; font-size: 10px;" onclick="window.desfazerApontamentoGeral(${log.id})"><i class="fas fa-undo"></i></button>`;
+                return `<tr><td>${log.data_hora}</td><td style="text-align:left;">${log.operador}</td><td style="color:#3b82f6; font-weight:bold;">${log.qtd_mcc2 > 0 ? '+'+log.qtd_mcc2 : '-'}</td><td style="color:#3b82f6; font-weight:bold;">${log.qtd_mcc3 > 0 ? '+'+log.qtd_mcc3 : '-'}</td><td style="color:#3b82f6; font-weight:bold;">${log.qtd_mcc4 > 0 ? '+'+log.qtd_mcc4 : '-'}</td><td>${btnAcao}</td></tr>`;
+            }).join("");
+        } else { tbody.innerHTML = "<tr><td colspan='6'>Nenhum lançamento.</td></tr>"; }
+    } catch (e) { console.log(e); }
+};
+
+window.carregarHistoricoApontamentoMoldes = async function() {
+    try {
+        const res = await fetch("http://127.0.0.1:8000/api/historico_apontamentos_moldes");
+        const json = await res.json();
+        const tbody = document.getElementById("tabela-historico-moldes");
+        if (!tbody) return;
+        if (json.status === "sucesso" && json.dados.length > 0) {
+            tbody.innerHTML = json.dados.map(log => {
+                let btnAcao = log.desfeito === 1 
+                    ? `<span style="color:var(--danger); font-weight:bold; font-size:10px;"><i class="fas fa-ban"></i> DESFEITO</span>` 
+                    : `<button class="btn-outline-danger" style="padding: 2px 6px; font-size: 10px;" onclick="window.desfazerApontamentoMolde(${log.id})"><i class="fas fa-undo"></i></button>`;
+                return `<tr><td>${log.data_hora}</td><td style="text-align:left;">${log.operador}</td><td style="color:var(--warning); font-weight:bold;">${log.qtd_mcc2 > 0 ? '+'+log.qtd_mcc2 : '-'}</td><td style="color:var(--warning); font-weight:bold;">${log.qtd_mcc3 > 0 ? '+'+log.qtd_mcc3 : '-'}</td><td style="color:var(--warning); font-weight:bold;">${log.qtd_mcc4 > 0 ? '+'+log.qtd_mcc4 : '-'}</td><td>${btnAcao}</td></tr>`;
+            }).join("");
+        } else { tbody.innerHTML = "<tr><td colspan='6'>Nenhum lançamento.</td></tr>"; }
+    } catch (e) { console.log(e); }
+};
+
+window.desfazerApontamentoGeral = async function(id_log) {
+    if (prompt("AÇÃO RESTRITA: Digite a senha master:") !== "dev123") return alert("❌ Senha incorreta!");
+    if (!confirm("Tem certeza? A tonelagem será RETIRADA de todas as peças instaladas.")) return;
+    try {
+        const res = await fetch("http://127.0.0.1:8000/api/desfazer_apontamento_geral", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ log_id: id_log, operador: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Desconhecido" })
+        });
+        const json = await res.json();
+        
+        if (json.status === "sucesso") {
+            alert("✅ Lançamento desfeito com sucesso!");
+            await window.carregarAtivosDoPython();
+            if (typeof window.carregarHistoricoApontamentoGeral === 'function') window.carregarHistoricoApontamentoGeral();
+            if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
+            if (typeof window.renderAtivos === 'function') window.renderAtivos();
+            if (typeof window.renderPainelVeios === 'function') window.renderPainelVeios();
+        } else { alert("❌ Erro: " + json.mensagem); }
+    } catch (e) { alert("❌ Erro de conexão."); }
+};
+
+window.desfazerApontamentoMolde = async function(id_log) {
+    if (prompt("AÇÃO RESTRITA: Digite a senha master:") !== "dev123") return alert("❌ Senha incorreta!");
+    if (!confirm("Tem certeza? As corridas serão RETIRADAS dos moldes na linha.")) return;
+    try {
+        const res = await fetch("http://127.0.0.1:8000/api/desfazer_apontamento_moldes", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ log_id: id_log, operador: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Desconhecido" })
+        });
+        const json = await res.json();
+        
+        if (json.status === "sucesso") {
+            alert("✅ Lançamento desfeito com sucesso!");
+            await window.carregarAtivosDoPython();
+            if (typeof window.carregarHistoricoApontamentoMoldes === 'function') window.carregarHistoricoApontamentoMoldes();
+            if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
+            if (typeof window.renderAtivos === 'function') window.renderAtivos();
+            if (typeof window.renderPainelVeios === 'function') window.renderPainelVeios();
+        } else { alert("❌ Erro: " + json.mensagem); }
+    } catch (e) { alert("❌ Erro de conexão."); }
+};
+
+// ==============================================================
+// 4. HISTÓRICO DE LAUDOS E SWAP (PRESERVADOS)
+// ==============================================================
+window.salvarLaudoNoHistorico = function(tag, tipo, htmlPDF) {
     const laudos = JSON.parse(localStorage.getItem("oms_laudos_salvos")) || [];
     const agora = new Date();
-    const dataStr = agora.toLocaleDateString('pt-BR') + " " + agora.toLocaleTimeString('pt-BR');
     const id = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-    
-    laudos.unshift({
-        id: id,
-        tag: tag,
-        tipo: tipo,
-        data: dataStr,
-        timestamp: agora.getTime(),
-        html: htmlPDF
-    });
-    
+    laudos.unshift({ id: id, tag: tag, tipo: tipo, data: agora.toLocaleDateString('pt-BR') + " " + agora.toLocaleTimeString('pt-BR'), timestamp: agora.getTime(), html: htmlPDF });
     if (laudos.length > 200) laudos.pop();
     localStorage.setItem("oms_laudos_salvos", JSON.stringify(laudos));
-    renderHistorico();
+    if (typeof window.renderHistorico === 'function') window.renderHistorico();
     return id;
-}
-
-function getLaudosSalvos() {
-    return JSON.parse(localStorage.getItem("oms_laudos_salvos")) || [];
-}
-
-function excluirLaudo(id) {
-    let laudos = getLaudosSalvos();
-    laudos = laudos.filter(l => l.id !== id);
-    localStorage.setItem("oms_laudos_salvos", JSON.stringify(laudos));
-    renderHistorico();
-}
-
-window.visualizarLaudo = function(id) {
-    const laudos = getLaudosSalvos();
-    const laudo = laudos.find(l => l.id === id);
-    if (!laudo) {
-        alert("Laudo não encontrado.");
-        return;
-    }
-    const win = window.open('', '_blank', 'width=1100,height=800');
-    if (win) {
-        win.document.write(laudo.html);
-        win.document.close();
-    } else {
-        const printDiv = document.getElementById('print-content');
-        if (printDiv) {
-            printDiv.innerHTML = laudo.html;
-            window.print();
-        }
-    }
 };
 
-window.salvarLaudoNoHistorico = salvarLaudoNoHistorico;
-window.getLaudosSalvos = getLaudosSalvos;
-window.excluirLaudo = excluirLaudo;
+window.excluirLaudo = function(id) {
+    let laudos = JSON.parse(localStorage.getItem("oms_laudos_salvos")) || [];
+    laudos = laudos.filter(l => l.id !== id);
+    localStorage.setItem("oms_laudos_salvos", JSON.stringify(laudos));
+    if (typeof window.renderHistorico === 'function') window.renderHistorico();
+};
 
-// ==========================================
-// EXPOSIÇÃO GLOBAL - APENAS FUNÇÕES DO SCRIPT.JS
-// ==========================================
+window.visualizarLaudo = function(id) {
+    const laudos = JSON.parse(localStorage.getItem("oms_laudos_salvos")) || [];
+    const laudo = laudos.find(l => l.id === id);
+    if (!laudo) return alert("Laudo não encontrado.");
+    const win = window.open('', '_blank', 'width=1100,height=800');
+    if (win) { win.document.write(laudo.html); win.document.close(); } 
+    else { const p = document.getElementById('print-content'); if (p) { p.innerHTML = laudo.html; window.print(); } }
+};
 
-// ===== FUNÇÕES DE NAVEGAÇÃO E UI =====
-window.abrirAba = abrirAba;
-window.toggleSidebar = toggleSidebar;
-window.toggleTheme = toggleTheme;
-window.processarAutenticacaoHome = processarAutenticacaoHome;
-window.fazerLogout = fazerLogout;
-window.verificarAcesso = verificarAcesso;
-window.getOrdemPadrao = getOrdemPadrao;
-
-// ===== FUNÇÕES AUXILIARES PARA UI.JS =====
-window.mapearSlotFixo = mapearSlotFixo;
-window.gerarOpcoesPosicao = gerarOpcoesPosicao;
-
-// ===== FUNÇÕES DE HISTÓRICO =====
-window.registrarHistorico = registrarHistorico;
-window.abrirHistoricoIndividual = abrirHistoricoIndividual;
-window.fecharModalHistorico = fecharModalHistorico;
-window.salvarRegistroManual = salvarRegistroManual;
-
-// ===== FUNÇÕES DE MANUTENÇÃO =====
-window.iniciarSaque = iniciarSaque;
-window.confirmarRelatorio = confirmarRelatorio;
-window.fecharModalRelatorio = fecharModalRelatorio;
-window.abrirModalConcluirReparo = abrirModalConcluirReparo;
-window.fecharModalConcluirReparo = fecharModalConcluirReparo;
-window.confirmarConclusaoReparo = confirmarConclusaoReparo;
-window.toggleCamposReparoParcial = toggleCamposReparoParcial;
-window.abrirFolhaoPorTipo = window.abrirFolhaoPorTipo;
-
-// ===== FUNÇÕES DE CADASTRO =====
-window.toggleFormAdicionar = toggleFormAdicionar;
-window.atualizarPosicoesCadastro = atualizarPosicoesCadastro;
-window.processarCadastroPeca = processarCadastroPeca;
-window.toggleFormMaterial = toggleFormMaterial;
-window.salvarEntradaMaterial = salvarEntradaMaterial;
-window.ajustarSaldoMaterial = ajustarSaldoMaterial;
-window.removerMaterial = removerMaterial;
-window.alterarSaldoRolo = alterarSaldoRolo;
-
-// ===== FUNÇÕES DE EDIÇÃO E UTILITÁRIOS =====
-window.fazerCelulaEditavel = fazerCelulaEditavel;
-window.dispararEmergencia = dispararEmergencia;
-window.encerrarEmergencia = encerrarEmergencia;
-
-// ===== FUNÇÕES DO PAINEL =====
-window.calcularKpisGlobais = calcularKpisGlobais;
-window.atualizarInterfaceUsuario = atualizarInterfaceUsuario;
-window.abrirCriticos = abrirCriticos;
-window.renderizarTopCriticos = renderizarTopCriticos;
-window.atualizarNovosKPIs = atualizarNovosKPIs;
-window.atualizarPainelCompleto = atualizarPainelCompleto;
-window.salvarPecaNoPython = salvarPecaNoPython;
-
-// ===== FUNÇÕES DE CONFIGURAÇÃO DOS VEIOS =====
-window.mudarVeioVisualizado = mudarVeioVisualizado;
-window.getConfiguracaoPorVeio = getConfiguracaoPorVeio;
-window.getSlotsPorVeio = getSlotsPorVeio;
-window.CONFIGURACOES_MAQUINAS = CONFIGURACOES_MAQUINAS;
-
-window.BANCO_ATIVOS = BANCO_ATIVOS;
-
-// ==========================================
-// FUNÇÃO DE SWAP (DEFINIDA DIRETAMENTE NO WINDOW)
-// ==========================================
 window.iniciarSwapAlocacao = function(idReserva) {
-    if (!verificarAcesso()) return;
-
-    console.log('🔄 Iniciando swap para:', idReserva);
-
+    if (!window.verificarAcesso()) return;
     const veioSelect = document.getElementById(`alocar-veio-${idReserva}`);
     const posElement = document.getElementById(`alocar-pos-${idReserva}`);
-    
-    if (!veioSelect) {
-        alert('Erro: campo de veio não encontrado.');
-        return;
-    }
+    if (!veioSelect) return alert('Erro: campo de veio não encontrado.');
 
     const veio = veioSelect.value;
-    console.log('📍 Veio:', veio);
-
-    let posicao = '';
-    if (posElement) {
-        posicao = posElement.value;
-        console.log('📍 Posição:', posicao);
-    }
-
+    let posicao = posElement ? posElement.value : '';
     let pecaReserva = BANCO_ATIVOS.find(a => a.id === idReserva);
-    if (!pecaReserva) {
-        alert('Peça reserva não encontrada.');
-        return;
-    }
-    console.log('📦 Peça:', pecaReserva.id, 'Tipo:', pecaReserva.tipo);
+    
+    if (!pecaReserva) return alert('Peça reserva não encontrada.');
+    if (!veio) return alert('Selecione o Veio de destino.');
 
-    // ==========================================
-    // FUNÇÕES AUXILIARES EMBUTIDAS (LOCAIS)
-    // ==========================================
-    function getSlotFixoLocal(tipo, mcc) {
-        const t = tipo.toUpperCase();
-        if (mcc === '4') {
-            if (t.includes('MOLDE')) return 'MOLDE';
-            if (t.includes('BENDER')) return 'BENDER';
-            if (t.includes('STRAIGHTENER R1')) return 'STR-1';
-            if (t.includes('STRAIGHTENER R2')) return 'STR-2';
-        } else if (mcc === '2/3') {
-            if (t.includes('SEGMENTO ZERO') || t.includes('SEGUIMENTO ZERO')) return 'SEG-ZERO';
-            if (t.includes('MESA OSCILADORA')) return 'OSCILADORA';
-            if (t.includes('MOLDE')) return 'MOLDE';
-        }
-        return '';
-    }
-
-    function getSlotLocal(tipo, mcc, pos) {
-        const t = tipo.toUpperCase();
-        if (mcc === '4') {
-            if (t.includes('BOW')) return `BOW-${pos}`;
-            if (t.includes('HORIZONTAL')) return `HOR-${pos}`;
-            if (t.includes('STRAIGHTENER R1') || t.includes('R1')) return 'STR-1';
-            if (t.includes('STRAIGHTENER R2') || t.includes('R2')) return 'STR-2';
-            if (t.includes('MOLDE')) return 'MOLDE';
-            if (t.includes('BENDER')) return 'BENDER';
-            return pos;
-        } else if (mcc === '2/3') {
-            if (t.includes('CADEIRA SUPERIOR')) return `CAD-SUP-${pos}`;
-            if (t.includes('CADEIRA INFERIOR')) return `CAD-INF-${pos}`;
-            if (t.includes('SEGMENTO ZERO') || t.includes('SEGUIMENTO ZERO')) return 'SEG-ZERO';
-            if (t.includes('MESA OSCILADORA')) return 'OSCILADORA';
-            if (t.includes('SEGMENTO') && !t.includes('ZERO')) return `SEG-${pos}`;
-            if (t.includes('MOLDE')) return 'MOLDE';
-            return pos;
-        }
-        return pos;
-    }
-
-    function getConfigVeio(v) {
-        const configs = {
-            'C': { mapearSlotLegado: mapearSlotLegadoMCC23 },
-            'D': { mapearSlotLegado: mapearSlotLegadoMCC23 },
-            'E': { mapearSlotLegado: mapearSlotLegadoMCC23 },
-            'F': { mapearSlotLegado: mapearSlotLegadoMCC23 },
-            'G': { mapearSlotLegado: mapearSlotLegadoMCC4 },
-            'H': { mapearSlotLegado: mapearSlotLegadoMCC4 }
-        };
-        return configs[v] || null;
-    }
-
-    function mapearSlotLegadoMCC23(peca) {
-        const t = (peca.tipo || '').toUpperCase();
-        const id = (peca.id || '').toUpperCase();
-        if (t.includes('MOLDE')) return 'MOLDE';
-        if (t.includes('OSCILADORA')) return 'OSCILADORA';
-        if (t.includes('ZERO') || t.includes('SEG-0')) return 'SEG-ZERO';
-        if (t.includes('SEGMENTO')) {
-            const match = id.match(/SEG-?(\d+)/);
-            if (match) {
-                const num = parseInt(match[1]);
-                if (num >= 1 && num <= 6) return `SEG-${num}`;
-            }
-        }
-        if (t.includes('CADEIRA SUPERIOR') || t.includes('CAD-SUP')) {
-            const match = id.match(/(\d+)/);
-            if (match) {
-                const num = parseInt(match[1]);
-                if (num >= 43 && num <= 79) return `CAD-SUP-${num}`;
-            }
-        }
-        if (t.includes('CADEIRA INFERIOR') || t.includes('CAD-INF')) {
-            const match = id.match(/(\d+)/);
-            if (match) {
-                const num = parseInt(match[1]);
-                if (num >= 43 && num <= 79) return `CAD-INF-${num}`;
-            }
-        }
-        return null;
-    }
-
-    function mapearSlotLegadoMCC4(peca) {
-        const t = (peca.tipo || '').toUpperCase();
-        const id = (peca.id || '').toUpperCase();
-        if (t.includes('MOLDE')) return 'MOLDE';
-        if (t.includes('BENDER')) return 'BENDER';
-        if (t.includes('BOW')) {
-            const match = id.match(/BOW-(\d)/);
-            if (match) return `BOW-${match[1]}`;
-        }
-        if (t.includes('STRAIGHTENER')) {
-            if (id.includes('STR-6') || id.includes('R1')) return 'STR-1';
-            if (id.includes('STR-7') || id.includes('R2')) return 'STR-2';
-        }
-        if (t.includes('HORIZONTAL')) {
-            const match = id.match(/HOR-(\d+)/);
-            if (match) return `HOR-${match[1]}`;
-        }
-        return null;
-    }
-
-    // ==========================================
-    // LÓGICA PRINCIPAL
-    // ==========================================
     const tipoUpper = (pecaReserva.tipo || '').toUpperCase();
-    const tiposFixos = ['MOLDE', 'BENDER', 'STR-1', 'STR-2', 'SEG-ZERO', 'OSCILADORA'];
-    const isFixo = tiposFixos.some(f => tipoUpper.includes(f) || tipoUpper === f);
-    console.log('🔒 É fixo?', isFixo);
-
-    if (!veio) {
-        alert('Selecione o Veio de destino.');
-        return;
-    }
-
     const mcc = pecaReserva.mcc_compat || '4';
-    if (isFixo) {
-        posicao = getSlotFixoLocal(pecaReserva.tipo, mcc);
-        if (!posicao) {
-            alert('Não foi possível determinar a posição fixa para este equipamento.');
-            return;
-        }
-        console.log('🔒 Posição fixa:', posicao);
-    } else {
-        if (!posicao || posicao === '') {
-            alert('Selecione a Posição de destino para este tipo de equipamento.');
-            return;
-        }
+    
+    let slotChassi = posicao;
+    if (mcc === '4') {
+        if (tipoUpper.includes('MOLDE')) slotChassi = 'MOLDE';
+        else if (tipoUpper.includes('BENDER')) slotChassi = 'BENDER';
+        else if (tipoUpper.includes('STR-1') || tipoUpper.includes('STRAIGHTENER R1')) slotChassi = 'STR-1';
+        else if (tipoUpper.includes('STR-2') || tipoUpper.includes('STRAIGHTENER R2')) slotChassi = 'STR-2';
+        else if (tipoUpper.includes('BOW')) slotChassi = `BOW-${posicao}`;
+        else if (tipoUpper.includes('HORIZONTAL')) slotChassi = `HOR-${posicao}`;
+    } else if (mcc === '2/3') {
+        if (tipoUpper.includes('MOLDE')) slotChassi = 'MOLDE';
+        else if (tipoUpper.includes('ZERO') || tipoUpper.includes('SEGMENTO ZERO')) slotChassi = 'SEG-ZERO';
+        else if (tipoUpper.includes('OSCILADORA')) slotChassi = 'OSCILADORA';
+        else if (tipoUpper.includes('CADEIRA SUPERIOR')) slotChassi = `CAD-SUP-${posicao}`;
+        else if (tipoUpper.includes('CADEIRA INFERIOR')) slotChassi = `CAD-INF-${posicao}`;
+        else if (tipoUpper.includes('SEGMENTO')) slotChassi = `SEG-${posicao}`;
     }
 
-    const slotChassi = getSlotLocal(pecaReserva.tipo, mcc, posicao);
-    console.log('🏷️ Slot:', slotChassi);
-    if (!slotChassi) {
-        alert('Não foi possível mapear o slot para este equipamento.');
-        return;
-    }
+    if (!slotChassi || slotChassi === "") return alert('Selecione a Posição de destino para este equipamento.');
 
-    // Busca peça antiga
-    const config = getConfigVeio(veio);
     let pecaAntiga = null;
-
     for (const p of BANCO_ATIVOS) {
-        const taNoVeio = (p.veio === veio && p.status === "Instalado") ||
-                         (p.local && p.local.includes(`Veio ${veio}`) && !p.local.includes("Oficina"));
-        if (!taNoVeio) continue;
-
-        if (p.posicaoFixa && p.posicaoFixa === slotChassi) {
-            pecaAntiga = p;
-            break;
-        }
-        if (!p.posicaoFixa && config && config.mapearSlotLegado) {
-            const slotMapeado = config.mapearSlotLegado(p);
-            if (slotMapeado === slotChassi) {
-                pecaAntiga = p;
-                break;
-            }
+        if ((p.veio === veio && p.status === "Instalado") || (p.local && p.local.includes(`Veio ${veio}`) && !p.local.includes("Oficina"))) {
+            if (p.posicaoFixa === slotChassi || p.id.includes(slotChassi)) { pecaAntiga = p; break; }
         }
     }
-
-    console.log('🔎 Peça antiga:', pecaAntiga ? pecaAntiga.id : 'Nenhuma');
 
     if (pecaAntiga) {
         if (confirm(`A peça ${pecaAntiga.id} será SACADA do slot ${slotChassi} (Veio ${veio}) para dar lugar à ${pecaReserva.id}.`)) {
-            pecaAntiga.status = "Oficina / Reparo";
-            pecaAntiga.local = "Oficina / Reparo";
-            pecaAntiga.veio = "";
-            pecaAntiga.posicaoFixa = "";
-            pecaAntiga.pos = "";
-            pecaAntiga.dataReparo = Date.now();
-            pecaAntiga.dias = 0;
-
-            pecaReserva.local = `MCC ${mcc} - Veio ${veio}`;
-            pecaReserva.veio = veio;
-            pecaReserva.posicaoFixa = slotChassi;
-            pecaReserva.pos = posicao || slotChassi;
-            pecaReserva.status = "Instalado";
-            pecaReserva.ordem = getOrdemPadrao(pecaReserva.tipo);
-
+            pecaAntiga.status = "Oficina / Reparo"; pecaAntiga.local = "Oficina / Reparo";
+            pecaAntiga.veio = ""; pecaAntiga.posicaoFixa = ""; pecaAntiga.pos = ""; pecaAntiga.dataReparo = Date.now(); pecaAntiga.dias = 0;
+            
+            pecaReserva.local = `MCC ${mcc} - Veio ${veio}`; pecaReserva.veio = veio; pecaReserva.posicaoFixa = slotChassi; pecaReserva.pos = slotChassi; pecaReserva.status = "Instalado";
             localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-
+            
             if (window.registrarHistorico) {
                 window.registrarHistorico(pecaReserva.id, `Instalado no slot ${slotChassi} do Veio ${veio} (substituiu ${pecaAntiga.id}).`);
                 window.registrarHistorico(pecaAntiga.id, `Sacado do slot ${slotChassi} do Veio ${veio} para reparo.`);
             }
-
-            if (typeof renderReparos === 'function') renderReparos();
-            if (typeof renderReservas === 'function') renderReservas();
-            if (typeof renderAtivos === 'function') renderAtivos();
-            if (typeof renderPainelVeios === 'function') renderPainelVeios();
-            if (typeof calcularKpisGlobais === 'function') calcularKpisGlobais();
-            if (typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
-
+            if (typeof renderReparos === 'function') renderReparos(); if (typeof renderReservas === 'function') renderReservas();
+            if (typeof renderAtivos === 'function') renderAtivos(); if (typeof renderPainelVeios === 'function') renderPainelVeios();
             alert(`✅ Swap realizado! ${pecaReserva.id} instalado.`);
         }
     } else {
         if (confirm(`Instalar a reserva ${pecaReserva.id} no slot ${slotChassi} do Veio ${veio}?`)) {
-            pecaReserva.local = `MCC ${mcc} - Veio ${veio}`;
-            pecaReserva.veio = veio;
-            pecaReserva.posicaoFixa = slotChassi;
-            pecaReserva.pos = posicao || slotChassi;
-            pecaReserva.status = "Instalado";
-            pecaReserva.ordem = getOrdemPadrao(pecaReserva.tipo);
-
+            pecaReserva.local = `MCC ${mcc} - Veio ${veio}`; pecaReserva.veio = veio; pecaReserva.posicaoFixa = slotChassi; pecaReserva.pos = slotChassi; pecaReserva.status = "Instalado";
             localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-
-            if (window.registrarHistorico) {
-                window.registrarHistorico(pecaReserva.id, `Instalado no slot ${slotChassi} do Veio ${veio} (gaveta vazia).`);
-            }
-
-            if (typeof renderReparos === 'function') renderReparos();
-            if (typeof renderReservas === 'function') renderReservas();
-            if (typeof renderAtivos === 'function') renderAtivos();
-            if (typeof renderPainelVeios === 'function') renderPainelVeios();
-            if (typeof calcularKpisGlobais === 'function') calcularKpisGlobais();
-            if (typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
-
+            if (window.registrarHistorico) window.registrarHistorico(pecaReserva.id, `Instalado no slot ${slotChassi} do Veio ${veio} (gaveta vazia).`);
+            
+            if (typeof renderReparos === 'function') renderReparos(); if (typeof renderReservas === 'function') renderReservas();
+            if (typeof renderAtivos === 'function') renderAtivos(); if (typeof renderPainelVeios === 'function') renderPainelVeios();
             alert(`✅ ${pecaReserva.id} instalado com sucesso!`);
         }
     }
 };
 
-// ==========================================
-// FORÇAR RENDERIZAÇÃO DE RESERVAS E CAMPOS
-// ==========================================
-window.forcarRenderReservas = function() {
-    console.log("🔄 Forçando renderização de reservas...");
-    if (typeof renderReservas === 'function') {
-        renderReservas();
-        console.log("✅ renderReservas() chamada manualmente!");
-    } else {
-        console.error("❌ renderReservas não está disponível!");
-    }
-};
-
 window.forcarCamposPosicao = function() {
-    console.log("🔄 FORÇANDO CRIAÇÃO DOS CAMPOS DE POSIÇÃO (fallback)...");
-    
     const rows = document.querySelectorAll('#estoque-table-body tr');
-    let count = 0;
-    
     rows.forEach(row => {
         const cells = row.querySelectorAll('td');
         if (cells.length >= 6) {
-            const posCell = cells[4];
-            const tagId = cells[0]?.textContent?.trim();
-            
+            const posCell = cells[4]; const tagId = cells[0]?.textContent?.trim();
             if (tagId && !posCell.querySelector('input') && !posCell.querySelector('select')) {
-                const input = document.createElement('input');
-                input.type = 'number';
-                input.id = `pos-${tagId}`;
-                input.placeholder = 'Pos';
-                input.min = 1;
-                input.max = 99;
-                input.step = 1;
+                const input = document.createElement('input'); input.type = 'number'; input.id = `pos-${tagId}`; input.placeholder = 'Pos'; input.min = 1; input.max = 99;
                 input.style.cssText = 'width:55px; padding:4px 6px; font-size:12px; border-radius:4px; border:2px solid #10b981; background:#1a1a2e; color:#fff; text-align:center;';
-                posCell.innerHTML = '';
-                posCell.appendChild(input);
-                count++;
-                console.log(`✅ Campo criado para: ${tagId}`);
+                posCell.innerHTML = ''; posCell.appendChild(input);
             }
         }
     });
-    
-    if (count > 0) {
-        console.log(`✅ ${count} campos de posição foram criados!`);
-    } else {
-        console.log("ℹ️ Nenhum campo novo criado (já existem ou tabela vazia).");
-    }
 };
 
-console.log("✅ Script.js carregado - todas as funções expostas globalmente");
+// ==============================================================
+// 5. LAUDOS EM PDF E PONTES GLOBAIS (Conecta o HTML ao JS)
+// ==============================================================
+function getLaudosSalvos() {
+    return JSON.parse(localStorage.getItem("oms_laudos_salvos")) || [];
+}
+window.getLaudosSalvos = getLaudosSalvos;
 
-// ==========================================
-// INICIALIZAÇÃO E SINCRONIZAÇÃO COM A PLANILHA
-// ==========================================
+// Reconectando as funções principais da tela (A Ponte)
+if (typeof mudarVeioVisualizado !== 'undefined') window.mudarVeioVisualizado = mudarVeioVisualizado;
+if (typeof renderHistorico !== 'undefined') window.renderHistorico = renderHistorico;
+if (typeof carregarOficina !== 'undefined') window.carregarOficina = carregarOficina;
+if (typeof renderizarGraficosMCC !== 'undefined') window.renderizarGraficosMCC = renderizarGraficosMCC;
+if (typeof atualizarPainelCompleto !== 'undefined') window.atualizarPainelCompleto = atualizarPainelCompleto;
+
+// ==============================================================
+// 5. INICIALIZAÇÃO DA PÁGINA (START - LIVRE DE GOOGLE SHEETS)
+// ==============================================================
 document.addEventListener('DOMContentLoaded', async () => {
-    carregarTema();
+    if (typeof carregarTema === 'function') carregarTema();
+    console.log("🚀 Iniciando Sistema...");
     
-    console.log("🔄 Buscando dados reais da Planilha Google...");
-    
-    const atualizou = await sincronizarAtivosReaisMCC4();
+    const atualizou = await window.carregarAtivosDoPython();
     
     if (atualizou) {
-        const jaRecarregou = sessionStorage.getItem('oms_sincronizado_hoje');
-        
-        if (!jaRecarregou) {
-            console.log("✨ Dados novos salvos no cache! Recarregando a tela para aplicar em todos os arquivos...");
-            sessionStorage.setItem('oms_sincronizado_hoje', 'true');
-            window.location.reload();
-        } else {
-            console.log("✨ Tela atualizada com os dados 100% reais da planilha!");
-            sessionStorage.removeItem('oms_sincronizado_hoje');
-           
-            const dadosCache = JSON.parse(localStorage.getItem("oms_ativos_v32_local"));
-
-            if (dadosCache && Array.isArray(dadosCache)) {
-                BANCO_ATIVOS.length = 0;
-                Array.prototype.push.apply(BANCO_ATIVOS, dadosCache);
-            }
-
-            window.BANCO_ATIVOS = BANCO_ATIVOS;
-            
-            if (typeof renderPainelVeios === 'function') renderPainelVeios();
-            if (typeof renderAtivos === 'function') renderAtivos();
-            if (typeof renderReparos === 'function') renderReparos();
-            if (typeof renderReservas === 'function') renderReservas();
-            if (typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
-        }
+        if (typeof renderPainelVeios === 'function') renderPainelVeios();
+        if (typeof renderAtivos === 'function') renderAtivos();
+        if (typeof renderReparos === 'function') renderReparos();
+        if (typeof renderReservas === 'function') renderReservas();
+        if (typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
     } else {
-        console.log("⚠️ Usando os dados em cache (offline ou sem dados novos).");
+        console.warn("⚠️ Python Offline ou Sem Dados. As abas podem estar vazias.");
     }
 });
