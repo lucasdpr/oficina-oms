@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sinótico Visual 3D — MCC4</title>
+<style>
+    :root {
+        --bg-deep: #0a0e14;
+        --bg-panel: #10151f;
+        --bg-panel-2: #161d2b;
+        --border: #232b3d;
+        --text-heading: #e8ecf4;
+        --text-muted: #7c8aa5;
+        --accent: #38bdf8;
+        --ok: #22c55e;
+        --warn: #eab308;
+        --limit: #f97316;
+        --danger: #ef4444;
+        --vaga: #6b7280;
+        --mono: 'JetBrains Mono', 'Courier New', monospace;
+        --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+        margin: 0; padding: 0;
+        width: 100%; height: 100%;
+        background: radial-gradient(ellipse at 50% 0%, #131a28 0%, var(--bg-deep) 65%);
+        font-family: var(--sans);
+        color: var(--text-heading);
+        overflow: hidden;
+    }
+
+    #app { position: relative; width: 100vw; height: 100vh; }
+    #canvas-container { position: absolute; inset: 0; cursor: grab; }
+    #canvas-container.hover-piece { cursor: pointer; }
+    #canvas-container:active { cursor: grabbing; }
+
+    /* ===== TOPBAR ===== */
+    #topbar {
+        position: absolute; top: 0; left: 0; right: 0;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 16px 22px;
+        background: linear-gradient(180deg, rgba(10,14,20,0.92) 0%, rgba(10,14,20,0.0) 100%);
+        pointer-events: none;
+        z-index: 10;
+    }
+    #topbar .brand { display: flex; flex-direction: column; gap: 2px; pointer-events: auto; }
+    #topbar .brand .eyebrow {
+        font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.14em;
+        color: var(--accent); text-transform: uppercase;
+    }
+    #topbar .brand h1 { margin: 0; font-size: 18px; font-weight: 650; letter-spacing: -0.01em; }
+
+    #veio-tabs { display: flex; gap: 6px; pointer-events: auto; }
+    .veio-tab {
+        font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
+        padding: 8px 16px; border-radius: 8px;
+        background: var(--bg-panel); border: 1px solid var(--border);
+        color: var(--text-muted); cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .veio-tab:hover { border-color: var(--accent); color: var(--text-heading); }
+    .veio-tab.active { background: var(--accent); border-color: var(--accent); color: #04121c; }
+    .veio-tab.btn-exportar { margin-left: 8px; border-color: #2a3652; }
+    .veio-tab.btn-exportar:hover { border-color: var(--ok); color: var(--ok); }
+
+    /* ===== LEGENDA ===== */
+    #legenda {
+        position: absolute; left: 22px; bottom: 22px;
+        display: flex; flex-direction: column; gap: 8px;
+        background: var(--bg-panel); border: 1px solid var(--border);
+        border-radius: 10px; padding: 14px 16px;
+        z-index: 10; min-width: 190px;
+    }
+    #legenda .titulo {
+        font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+        text-transform: uppercase; color: var(--text-muted); margin-bottom: 2px;
+    }
+    .legenda-item { display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--text-heading); }
+    .legenda-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+    /* ===== STATUS DA API ===== */
+    #status-api {
+        position: absolute; right: 22px; bottom: 22px;
+        display: flex; align-items: center; gap: 8px;
+        font-family: var(--mono); font-size: 11px; color: var(--text-muted);
+        background: var(--bg-panel); border: 1px solid var(--border);
+        border-radius: 8px; padding: 8px 12px;
+        z-index: 10;
+    }
+    #status-api .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--vaga); }
+    #status-api .dot.on { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+    #status-api .dot.off { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+
+    /* ===== LOADING ===== */
+    #loading {
+        position: absolute; inset: 0; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 16px;
+        background: var(--bg-deep); z-index: 50;
+        transition: opacity 0.35s ease;
+    }
+    #loading.hidden { opacity: 0; pointer-events: none; }
+    .spinner {
+        width: 42px; height: 42px; border-radius: 50%;
+        border: 3px solid var(--border); border-top-color: var(--accent);
+        animation: spin 0.85s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loading .msg { font-family: var(--mono); font-size: 12.5px; color: var(--text-muted); letter-spacing: 0.02em; }
+
+    /* ===== ERRO ===== */
+    #erro-box {
+        position: absolute; inset: 0; display: none; flex-direction: column;
+        align-items: center; justify-content: center; gap: 14px;
+        background: var(--bg-deep); z-index: 51; text-align: center; padding: 24px;
+    }
+    #erro-box.show { display: flex; }
+    #erro-box .icone { font-size: 34px; }
+    #erro-box h2 { margin: 0; font-size: 16px; }
+    #erro-box p { margin: 0; max-width: 380px; color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+    #erro-box button {
+        font-family: var(--sans); font-size: 13px; font-weight: 600;
+        background: var(--accent); color: #04121c; border: none;
+        padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-top: 4px;
+    }
+
+    /* ===== MODAL DE DETALHE ===== */
+    #overlay {
+        position: absolute; inset: 0; background: rgba(5,7,12,0.55);
+        display: none; align-items: center; justify-content: center; z-index: 40;
+        backdrop-filter: blur(2px);
+    }
+    #overlay.show { display: flex; }
+
+    #modal {
+        width: 340px; background: var(--bg-panel); border: 1px solid var(--border);
+        border-radius: 14px; padding: 22px; box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    }
+    #modal .modal-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 4px; }
+    #modal .posicao-label {
+        font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
+        color: var(--accent); text-transform: uppercase;
+    }
+    #modal .close-btn {
+        background: none; border: none; color: var(--text-muted); font-size: 18px;
+        cursor: pointer; line-height: 1; padding: 2px;
+    }
+    #modal .close-btn:hover { color: var(--text-heading); }
+    #modal .tag {
+        font-family: var(--mono); font-size: 20px; font-weight: 700;
+        color: var(--text-heading); margin: 2px 0 14px 0;
+    }
+    #modal .campo { display: flex; justify-content: space-between; font-size: 13px; padding: 7px 0; border-top: 1px solid var(--border); }
+    #modal .campo .k { color: var(--text-muted); }
+    #modal .campo .v { font-family: var(--mono); font-weight: 600; }
+
+    #modal .barra-wrap { margin: 14px 0 6px 0; }
+    #modal .barra-topo { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-muted); margin-bottom: 6px; }
+    #modal .barra-pct { font-family: var(--mono); font-weight: 700; }
+    #modal .barra-bg { height: 7px; border-radius: 4px; background: #06090f; overflow: hidden; }
+    #modal .barra-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+
+    #modal .acoes { display: flex; gap: 8px; margin-top: 18px; }
+    #modal .acoes button {
+        flex: 1; font-family: var(--sans); font-size: 12.5px; font-weight: 600;
+        padding: 10px 8px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border);
+        transition: all 0.15s ease;
+    }
+    #modal .btn-prontuario { background: var(--bg-panel-2); color: var(--text-heading); }
+    #modal .btn-prontuario:hover { border-color: var(--accent); }
+    #modal .btn-oficina { background: rgba(239,68,68,0.12); color: #fca5a5; border-color: rgba(239,68,68,0.35); }
+    #modal .btn-oficina:hover { background: rgba(239,68,68,0.2); }
+
+    #modal .vaga-msg { font-size: 13px; color: var(--text-muted); line-height: 1.5; padding: 10px 0 4px 0; }
+
+    /* ===== TOOLTIP DE HOVER ===== */
+    #tooltip {
+        position: fixed; z-index: 60; pointer-events: none;
+        background: var(--bg-panel); border: 1px solid var(--border);
+        border-radius: 9px; padding: 9px 13px;
+        box-shadow: 0 10px 28px rgba(0,0,0,0.45);
+        display: none; transform: translate(16px, 16px);
+        min-width: 150px;
+    }
+    #tooltip.show { display: block; }
+    #tooltip .tt-tag { font-family: var(--mono); font-weight: 700; font-size: 13.5px; color: var(--text-heading); }
+    #tooltip .tt-row {
+        display: flex; justify-content: space-between; gap: 14px;
+        font-size: 11.5px; color: var(--text-muted); margin-top: 4px;
+    }
+    #tooltip .tt-row b { font-family: var(--mono); color: var(--text-heading); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div id="app">
+    <div id="canvas-container"></div>
+
+    <div id="topbar">
+        <div class="brand">
+            <span class="eyebrow">Painel OMS · CSN</span>
+            <h1>Sinótico Visual 3D — MCC4</h1>
+        </div>
+        <div id="veio-tabs">
+            <button class="veio-tab active" data-veio="H">VEIO H</button>
+            <button class="veio-tab" data-veio="G">VEIO G</button>
+            <button id="btn-exportar" class="veio-tab btn-exportar">🖨️ Exportar Print 3D</button>
+        </div>
+    </div>
+
+    <div id="legenda">
+        <div class="titulo">Desgaste (tonelagem / meta)</div>
+        <div class="legenda-item"><span class="legenda-dot" style="background:#22c55e"></span> Normal (&lt; 80%)</div>
+        <div class="legenda-item"><span class="legenda-dot" style="background:#eab308"></span> Alerta (80% – 99%)</div>
+        <div class="legenda-item"><span class="legenda-dot" style="background:#f97316"></span> Limite atingido (≥ 100%)</div>
+        <div class="legenda-item"><span class="legenda-dot" style="background:#ef4444"></span> Manutenção / falha</div>
+        <div class="legenda-item"><span class="legenda-dot" style="background:#6b7280"></span> Posição vaga</div>
+        <div class="legenda-item" style="margin-top:2px; padding-top:8px; border-top:1px solid var(--border);">
+            <span class="legenda-dot" style="background:#ff5522; box-shadow:0 0 6px #ff5522;"></span> Fluxo simulado (Molde → H17)
+        </div>
+    </div>
+
+    <div id="status-api">
+        <span class="dot" id="status-dot"></span>
+        <span id="status-texto">conectando...</span>
+    </div>
+
+    <div id="loading">
+        <div class="spinner"></div>
+        <div class="msg">Consultando dados da API…</div>
+    </div>
+
+    <div id="erro-box">
+        <div class="icone">⚠️</div>
+        <h2>Não consegui carregar os dados</h2>
+        <p id="erro-detalhe">A API não respondeu. Confira se o backend está no ar.</p>
+        <button id="btn-retry">Tentar de novo</button>
+    </div>
+
+    <div id="tooltip"></div>
+
+    <div id="overlay">
+        <div id="modal"></div>
+    </div>
+</div>
+
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ==========================================================================
+// CONFIGURAÇÃO DA API — mesma lógica usada no banco.js: detecta local vs
+// publicado e escolhe a URL certa sozinho.
+// ==========================================================================
+const URL_LOCAL = "http://localhost:8000";
+const URL_RENDER = "https://api-oms-csn.onrender.com";
+
+function fetchComTimeout(url, opts = {}, ms = 1500) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), ms);
+    return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
+// Descobre sozinho se o servidor local (uvicorn) está no ar; se não estiver
+// (ou o arquivo foi aberto direto com duplo-clique, sem servidor nenhum),
+// usa o backend publicado no Render. Resolvido uma vez e reaproveitado.
+let apiBaseResolvida = null;
+let apiBaseResolvendo = null;
+
+async function resolverApiBase() {
+    if (apiBaseResolvida) return apiBaseResolvida;
+    if (apiBaseResolvendo) return apiBaseResolvendo;
+
+    apiBaseResolvendo = (async () => {
+        try {
+            const resp = await fetchComTimeout(`${URL_LOCAL}/`, {}, 1500);
+            if (resp.ok) { apiBaseResolvida = URL_LOCAL; return URL_LOCAL; }
+        } catch (e) { /* servidor local indisponível, segue pro Render */ }
+        apiBaseResolvida = URL_RENDER;
+        return URL_RENDER;
+    })();
+
+    return apiBaseResolvendo;
+}
+
+// Cores por status de desgaste (exatamente como especificado)
+const CORES = {
+    normal: 0x22c55e,
+    alerta: 0xeab308,
+    limite: 0xf97316,
+    falha: 0xef4444,
+    vaga: 0x6b7280
+};
+
+// ==========================================================================
+// ESTRUTURA DA LINHA MCC4 (Cabeceira -> Curva -> Mesa Horizontal)
+// IDs seguem exatamente o padrão gerado pelo importar_excel.py / banco.js
+// ==========================================================================
+function construirLayoutSlots(veio) {
+    const slots = [];
+    slots.push({ id: `MLD-4${veio}`, label: 'MOLDE', grupo: 'cabeceira' });
+    slots.push({ id: `BND-4${veio}`, label: 'BENDER', grupo: 'cabeceira' });
+    for (let n = 1; n <= 5; n++) slots.push({ id: `BOW-${n}-4${veio}`, label: `B${n}`, grupo: 'curva' });
+    slots.push({ id: `STR-1-4${veio}`, label: 'R1', grupo: 'curva' });
+    slots.push({ id: `STR-2-4${veio}`, label: 'R2', grupo: 'curva' });
+    for (let n = 8; n <= 17; n++) slots.push({ id: `HOR-${n}-4${veio}`, label: `H${n}`, grupo: 'horizontal' });
+    return slots;
+}
+
+// ==========================================================================
+// GEOMETRIA: posição e rotação de cada bloco ao longo da curva
+// A curva vai de "reto para baixo" (saída do molde) até "reto na horizontal"
+// (mesa de saída), como um quarto de círculo. Depois disso, a mesa
+// horizontal continua em linha reta.
+// ==========================================================================
+const RAIO_CURVA = 5.6;
+const TOPO_Y = 7.5;
+const ESPACO_CABECEIRA = 1.08; // encostados: a altura real do bloco após girar -90° vem do parâmetro de largura (1.1) da geometria
+const ESPACO_HORIZONTAL = 1.55;
+
+function calcularTransformacoes(slots) {
+    const centro = new THREE.Vector3(RAIO_CURVA, TOPO_Y, 0);
+    const nCurva = slots.filter(s => s.grupo === 'curva').length;
+
+    let cabIdx = 0, curvaIdx = 0, horIdx = 0;
+    let fimCurvaPos = null, fimCurvaAngulo = 0;
+
+    slots.forEach(slot => {
+        if (slot.grupo === 'cabeceira') {
+            // Empilhados verticalmente acima do início da curva (Molde em cima, Bender embaixo)
+            const nCab = slots.filter(s => s.grupo === 'cabeceira').length;
+            const y = TOPO_Y + (nCab - cabIdx) * ESPACO_CABECEIRA;
+            slot.pos = new THREE.Vector3(0, y, 0);
+            slot.rotZ = -Math.PI / 2; // vertical, alimentando pra baixo
+            cabIdx++;
+        } else if (slot.grupo === 'curva') {
+            const t = (curvaIdx + 0.5) / nCurva;
+            const phi = Math.PI + t * (Math.PI / 2); // 180° -> 270°
+            const pos = new THREE.Vector3(
+                centro.x + RAIO_CURVA * Math.cos(phi),
+                centro.y + RAIO_CURVA * Math.sin(phi),
+                0
+            );
+            const tangente = new THREE.Vector2(-Math.sin(phi), Math.cos(phi));
+            const rotZ = Math.atan2(tangente.y, tangente.x);
+            slot.pos = pos;
+            slot.rotZ = rotZ;
+            if (curvaIdx === nCurva - 1) {
+                fimCurvaPos = pos.clone();
+                fimCurvaAngulo = rotZ;
+            }
+            curvaIdx++;
+        } else if (slot.grupo === 'horizontal') {
+            if (!fimCurvaPos) {
+                // fallback caso não haja segmentos de curva
+                fimCurvaPos = new THREE.Vector3(centro.x + RAIO_CURVA, centro.y, 0);
+                fimCurvaAngulo = 0;
+            }
+            const x = fimCurvaPos.x + (horIdx + 1) * ESPACO_HORIZONTAL;
+            slot.pos = new THREE.Vector3(x, fimCurvaPos.y, 0);
+            slot.rotZ = 0;
+            horIdx++;
+        }
+    });
+
+    return slots;
+}
+
+// ==========================================================================
+// THREE.JS — CENA, CÂMERA, LUZES
+// ==========================================================================
+const container = document.getElementById('canvas-container');
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x0a0e14, 0.028);
+
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 200);
+camera.position.set(14, 13, 16);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+container.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(9, 4, 0);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 6;
+controls.maxDistance = 45;
+controls.maxPolarAngle = Math.PI * 0.49;
+controls.update();
+
+// Luzes
+scene.add(new THREE.AmbientLight(0x8899bb, 0.55));
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.15);
+keyLight.position.set(12, 20, 10);
+keyLight.castShadow = true;
+keyLight.shadow.mapSize.set(2048, 2048);
+keyLight.shadow.camera.left = -20; keyLight.shadow.camera.right = 20;
+keyLight.shadow.camera.top = 20; keyLight.shadow.camera.bottom = -20;
+scene.add(keyLight);
+const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.4);
+rimLight.position.set(-10, 8, -12);
+scene.add(rimLight);
+
+// Piso de referência
+const chao = new THREE.Mesh(
+    new THREE.PlaneGeometry(80, 80),
+    new THREE.MeshStandardMaterial({ color: 0x0d1220, roughness: 1, metalness: 0 })
+);
+chao.rotation.x = -Math.PI / 2;
+chao.position.y = -0.02;
+chao.receiveShadow = true;
+scene.add(chao);
+
+const gridHelper = new THREE.GridHelper(80, 80, 0x1b2436, 0x141b29);
+gridHelper.position.y = -0.01;
+scene.add(gridHelper);
+
+// ==========================================================================
+// CONSTRUÇÃO DOS BLOCOS
+// ==========================================================================
+const grupoLinha = new THREE.Group();
+scene.add(grupoLinha);
+
+const blocoGeoCabeceira = new THREE.BoxGeometry(1.1, 1.55, 1.55);
+const blocoGeoPadrao = new THREE.BoxGeometry(1.28, 0.62, 1.35);
+
+let piecesById = {};      // dados vindos da API, por id
+let meshesBySlot = [];    // { slot, mesh, material }
+let hoveredMesh = null;
+let veioAtual = 'H';
+
+function corPorPeca(peca) {
+    if (!peca) return CORES.vaga;
+    const status = (peca.status || '').toLowerCase();
+    if (status.includes('reparo') || status.includes('falha')) return CORES.falha;
+    const meta = parseFloat(peca.meta) || 0;
+    const ton = parseFloat(peca.tonelagem) || 0;
+    if (meta <= 0) return CORES.vaga;
+    const pct = (ton / meta) * 100;
+    if (pct >= 100) return CORES.limite;
+    if (pct >= 80) return CORES.alerta;
+    return CORES.normal;
+}
+
+// Desenha o texto de uma etiqueta numa textura de canvas e aplica num
+// Sprite (sempre vira pra câmera). Diferente do CSS2DObject de antes,
+// isso é um objeto 3D de verdade dentro da cena — por isso aparece
+// corretamente na foto exportada pelo renderer.domElement.toDataURL().
+function criarSpriteTexto(texto, corHex) {
+    const escala = 4; // resolução mais alta pra ficar nítido de perto
+    const largura = 168 * escala, altura = 58 * escala;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = largura;
+    canvas.height = altura;
+    const ctx = canvas.getContext('2d');
+
+    const raio = 15 * escala;
+    ctx.fillStyle = 'rgba(8,11,18,0.82)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+    ctx.lineWidth = 2 * escala;
+    ctx.beginPath();
+    ctx.roundRect(4 * escala, 4 * escala, largura - 8 * escala, altura - 8 * escala, raio);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = corHex;
+    ctx.beginPath();
+    ctx.arc(24 * escala, altura / 2, 7 * escala, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#f4f7ff';
+    ctx.font = `700 ${27 * escala}px 'Courier New', monospace`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(texto, 40 * escala, altura / 2 + 2 * escala);
+
+    const textura = new THREE.CanvasTexture(canvas);
+    textura.needsUpdate = true;
+    textura.minFilter = THREE.LinearFilter;
+
+    const material = new THREE.SpriteMaterial({ map: textura, transparent: true, depthTest: true, depthWrite: false });
+    const sprite = new THREE.Sprite(material);
+
+    const escalaMundo = 0.0016; // controla o tamanho final da etiqueta no mundo 3D
+    sprite.scale.set(largura * escalaMundo, altura * escalaMundo, 1);
+    return sprite;
+}
+
+let labelObjects = [];
+
+function construirCena(veio) {
+    // limpa blocos e etiquetas anteriores
+    meshesBySlot.forEach(m => grupoLinha.remove(m.mesh));
+    meshesBySlot = [];
+    labelObjects.forEach(l => grupoLinha.remove(l));
+    labelObjects = [];
+
+    const slots = calcularTransformacoes(construirLayoutSlots(veio));
+
+    slots.forEach(slot => {
+        const peca = piecesById[slot.id] || null;
+        const cor = corPorPeca(peca);
+        const geo = slot.grupo === 'cabeceira' ? blocoGeoCabeceira : blocoGeoPadrao;
+
+        const material = new THREE.MeshStandardMaterial({
+            color: cor, roughness: 0.42, metalness: 0.55,
+            emissive: 0x000000, emissiveIntensity: 0
+        });
+
+        const mesh = new THREE.Mesh(geo, material);
+        mesh.position.copy(slot.pos);
+        mesh.rotation.z = slot.rotZ;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        mesh.userData = { slot, peca };
+
+        // borda destacada (aresta)
+        const edges = new THREE.EdgesGeometry(geo);
+        const linha = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x0a0e14, linewidth: 1, transparent: true, opacity: 0.55 }));
+        mesh.add(linha);
+
+        grupoLinha.add(mesh);
+        meshesBySlot.push({ slot, mesh, material });
+
+        // Etiqueta fixa (sempre visível, não só no hover), agora como sprite 3D.
+        // O cálculo com seno e cosseno cria um vetor que aponta para o lado de fora (extradorso)
+        // do arco, garantindo que as etiquetas abram em leque na curva e não se sobreponham.
+        const sprite = criarSpriteTexto(slot.label, corHexParaCss(cor));
+        
+        const distancia = slot.grupo === 'cabeceira' ? 1.4 : 0.9; 
+        const dirX = Math.sin(slot.rotZ); 
+        const dirY = Math.cos(slot.rotZ);
+
+        sprite.position.set(
+            slot.pos.x + (dirX * distancia),
+            slot.pos.y + (dirY * distancia),
+            slot.pos.z
+        );
+        
+        grupoLinha.add(sprite);
+        labelObjects.push(sprite);
+    });
+}
+
+// ==========================================================================
+// PLACA DE AÇO INCANDESCENTE — percorre Molde -> H17 em loop contínuo.
+// O caminho geométrico (posição de cada vaga) é o mesmo pra qualquer veio,
+// então a curva é construída uma única vez, fora do construirCena.
+// ==========================================================================
+const slotsGeometricos = calcularTransformacoes(construirLayoutSlots('H'));
+const pontosCaminho = slotsGeometricos.map(s => s.pos.clone());
+const curvaAco = new THREE.CatmullRomCurve3(pontosCaminho, false, 'catmullrom', 0.25);
+
+const acoGeo = new THREE.BoxGeometry(0.95, 0.22, 0.62); // placa: larga, fina, comprida no sentido do fluxo
+const acoMat = new THREE.MeshStandardMaterial({
+    color: 0xff5522,
+    emissive: 0xff3300,
+    emissiveIntensity: 2.4,
+    roughness: 0.35,
+    metalness: 0.05,
+    transparent: true,
+    opacity: 1
+});
+const acoMesh = new THREE.Mesh(acoGeo, acoMat);
+const acoLuz = new THREE.PointLight(0xff5522, 3, 4.5, 2);
+acoMesh.add(acoLuz);
+scene.add(acoMesh);
+
+const DURACAO_LOOP_ACO = 7; // segundos pra percorrer o caminho inteiro
+let tempoAcoAtual = 0;
+const relogioAco = new THREE.Clock();
+
+function atualizarAco() {
+    const delta = relogioAco.getDelta();
+    tempoAcoAtual = (tempoAcoAtual + delta) % DURACAO_LOOP_ACO;
+    const t = Math.min(tempoAcoAtual / DURACAO_LOOP_ACO, 0.999);
+
+    const pos = curvaAco.getPointAt(t);
+    acoMesh.position.copy(pos);
+
+    // gira a placa pra acompanhar a direção da curva (senão ela atravessaria
+    // a curva sempre "reta", o que não faz sentido pra uma placa de aço real)
+    const tangente = curvaAco.getTangentAt(t);
+    acoMesh.rotation.z = Math.atan2(tangente.y, tangente.x);
+
+    // fade suave no início/fim do loop, pra disfarçar o "salto" de volta ao Molde
+    const faixaFade = 0.045;
+    let opacidade = 1;
+    if (t < faixaFade) opacidade = t / faixaFade;
+    else if (t > 1 - faixaFade) opacidade = (1 - t) / faixaFade;
+
+    acoMat.opacity = Math.max(opacidade, 0.05);
+    acoMat.emissiveIntensity = 2.4 * Math.max(opacidade, 0.05);
+    acoLuz.intensity = 3 * Math.max(opacidade, 0.05);
+}
+
+// ==========================================================================
+// RAYCASTING — HOVER (com tooltip) E CLIQUE (com zoom animado de câmera)
+// ==========================================================================
+const raycaster = new THREE.Raycaster();
+const mouseNDC = new THREE.Vector2();
+const elTooltip = document.getElementById('tooltip');
+
+function textoTooltip(slot, peca) {
+    if (!peca) {
+        return `<div class="tt-tag">${slot.label}</div><div class="tt-row">Posição vaga</div>`;
+    }
+    const ton = parseFloat(peca.tonelagem) || 0;
+    return `
+        <div class="tt-tag">${peca.tag_patrimonio || peca.id}</div>
+        <div class="tt-row"><span>Posição</span><b>${slot.label}</b></div>
+        <div class="tt-row"><span>Tonelagem</span><b>${ton.toLocaleString('pt-BR')}</b></div>
+    `;
+}
+
+function onMouseMove(evt) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouseNDC.x = ((evt.clientX - rect.left) / rect.width) * 2 - 1;
+    mouseNDC.y = -((evt.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouseNDC, camera);
+    const alvos = meshesBySlot.map(m => m.mesh);
+    const hits = animandoCamera ? [] : raycaster.intersectObjects(alvos, false);
+
+    if (hoveredMesh && (hits.length === 0 || hits[0].object !== hoveredMesh)) {
+        hoveredMesh.material.emissive.setHex(0x000000);
+        hoveredMesh.material.emissiveIntensity = 0;
+        hoveredMesh = null;
+        container.classList.remove('hover-piece');
+        elTooltip.classList.remove('show');
+    }
+
+    if (hits.length > 0) {
+        const obj = hits[0].object;
+        if (obj !== hoveredMesh) {
+            hoveredMesh = obj;
+            hoveredMesh.material.emissive.setHex(0xffffff);
+            hoveredMesh.material.emissiveIntensity = 0.28;
+            container.classList.add('hover-piece');
+        }
+        const { slot, peca } = obj.userData;
+        elTooltip.innerHTML = textoTooltip(slot, peca);
+        elTooltip.classList.add('show');
+    }
+
+    if (elTooltip.classList.contains('show')) {
+        elTooltip.style.left = evt.clientX + 'px';
+        elTooltip.style.top = evt.clientY + 'px';
+    }
+}
+
+function onClick(evt) {
+    if (!hoveredMesh || animandoCamera) return;
+    const { slot, peca } = hoveredMesh.userData;
+    const worldPos = new THREE.Vector3();
+    hoveredMesh.getWorldPosition(worldPos);
+
+    voarCameraPara(worldPos);
+    abrirModalPeca(slot, peca);
+    elTooltip.classList.remove('show');
+}
+
+renderer.domElement.addEventListener('mousemove', onMouseMove);
+renderer.domElement.addEventListener('click', onClick);
+
+// ==========================================================================
+// CÂMERA — ZOOM SUAVE ATÉ A PEÇA CLICADA
+// ==========================================================================
+let animandoCamera = false;
+
+function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function voarCameraPara(worldPos, duracaoMs = 750) {
+    animandoCamera = true;
+    controls.enabled = false;
+
+    // Mantém o mesmo ângulo de visão atual, só aproxima até a peça clicada
+    const direcaoAtual = camera.position.clone().sub(controls.target);
+    if (direcaoAtual.lengthSq() < 0.0001) direcaoAtual.set(6, 5, 7);
+    direcaoAtual.normalize();
+
+    const distanciaZoom = 5.2;
+    const destinoPos = worldPos.clone().add(direcaoAtual.multiplyScalar(distanciaZoom));
+    const destinoTarget = worldPos.clone();
+
+    const origemPos = camera.position.clone();
+    const origemTarget = controls.target.clone();
+    const inicio = performance.now();
+
+    function passo(agora) {
+        const t = Math.min((agora - inicio) / duracaoMs, 1);
+        const te = easeInOutCubic(t);
+        camera.position.lerpVectors(origemPos, destinoPos, te);
+        controls.target.lerpVectors(origemTarget, destinoTarget, te);
+        controls.update();
+
+        if (t < 1) {
+            requestAnimationFrame(passo);
+        } else {
+            animandoCamera = false;
+            controls.enabled = true;
+        }
+    }
+    requestAnimationFrame(passo);
+}
+
+// ==========================================================================
+// MODAL DE DETALHES
+// ==========================================================================
+const overlay = document.getElementById('overlay');
+const modal = document.getElementById('modal');
+
+function fecharModal() { overlay.classList.remove('show'); }
+overlay.addEventListener('click', (e) => { if (e.target === overlay) fecharModal(); });
+
+function corHexParaCss(hex) { return '#' + hex.toString(16).padStart(6, '0'); }
+
+function abrirModalPeca(slot, peca) {
+    if (!peca) {
+        modal.innerHTML = `
+            <div class="modal-top">
+                <span class="posicao-label">${slot.label}</span>
+                <button class="close-btn" id="modal-close">✕</button>
+            </div>
+            <div class="tag">Posição vaga</div>
+            <div class="vaga-msg">Não há equipamento vinculado a esta posição no momento.</div>
+        `;
+    } else {
+        const meta = parseFloat(peca.meta) || 0;
+        const ton = parseFloat(peca.tonelagem) || 0;
+        const pct = meta > 0 ? (ton / meta) * 100 : 0;
+        const corBarra = corHexParaCss(corPorPeca(peca));
+
+        modal.innerHTML = `
+            <div class="modal-top">
+                <span class="posicao-label">${slot.label}</span>
+                <button class="close-btn" id="modal-close">✕</button>
+            </div>
+            <div class="tag">${peca.tag_patrimonio || peca.id}</div>
+
+            <div class="campo"><span class="k">ID de sistema</span><span class="v">${peca.id}</span></div>
+            <div class="campo"><span class="k">Status</span><span class="v">${peca.status || '—'}</span></div>
+            <div class="campo"><span class="k">Tonelagem atual</span><span class="v">${ton.toLocaleString('pt-BR')}</span></div>
+            <div class="campo"><span class="k">Meta de vida útil</span><span class="v">${meta.toLocaleString('pt-BR')}</span></div>
+            <div class="campo"><span class="k">Data de Entrada</span><span class="v">${peca.data_entrada || '—'}</span></div>
+            <div class="campo"><span class="k">Dias em operação</span><span class="v">${peca.dias ?? '—'}</span></div>
+
+            <div class="barra-wrap">
+                <div class="barra-topo"><span>Desgaste</span><span class="barra-pct" style="color:${corBarra}">${pct.toFixed(1)}%</span></div>
+                <div class="barra-bg"><div class="barra-fill" style="width:${Math.min(pct,100)}%; background:${corBarra};"></div></div>
+            </div>
+
+            <div class="acoes">
+                <button class="btn-prontuario" id="btn-prontuario">📖 Abrir Prontuário</button>
+                <button class="btn-oficina" id="btn-oficina">🔧 Encaminhar p/ Oficina</button>
+            </div>
+        `;
+
+        modal.querySelector('#btn-prontuario').addEventListener('click', () => {
+            if (typeof window.abrirHistoricoIndividual === 'function') {
+                window.abrirHistoricoIndividual(peca.id);
+            } else {
+                alert('Este módulo 3D está aberto de forma independente.\nPara abrir o prontuário real, integre este arquivo dentro do app.html (onde banco.js e script.js já estão carregados).');
+            }
+        });
+
+        modal.querySelector('#btn-oficina').addEventListener('click', () => {
+            if (typeof window.iniciarSaque === 'function') {
+                window.iniciarSaque(peca.id);
+                fecharModal();
+            } else {
+                alert('Este módulo 3D está aberto de forma independente.\nPara encaminhar a peça pra oficina de verdade, integre este arquivo dentro do app.html (onde banco.js e script.js já estão carregados).');
+            }
+        });
+    }
+
+    modal.querySelector('#modal-close').addEventListener('click', fecharModal);
+    overlay.classList.add('show');
+}
+
+// ==========================================================================
+// CARREGAMENTO DE DADOS DA API
+// ==========================================================================
+const elLoading = document.getElementById('loading');
+const elErro = document.getElementById('erro-box');
+const elErroDetalhe = document.getElementById('erro-detalhe');
+const elStatusDot = document.getElementById('status-dot');
+const elStatusTexto = document.getElementById('status-texto');
+
+async function carregarDados() {
+    elLoading.classList.remove('hidden');
+    elErro.classList.remove('show');
+    elStatusDot.className = 'dot';
+    elStatusTexto.textContent = 'conectando...';
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resposta = await fetch(`${apiBase}/api/pecas`);
+        if (!resposta.ok) throw new Error(`API respondeu ${resposta.status}`);
+        const dados = await resposta.json();
+
+        piecesById = {};
+        dados.forEach(p => { piecesById[p.id] = p; });
+
+        elStatusDot.className = 'dot on';
+        const origemLabel = apiBase === URL_LOCAL ? 'local' : 'Render';
+        elStatusTexto.textContent = `${dados.length} peças · ${origemLabel}`;
+
+        construirCena(veioAtual);
+        elLoading.classList.add('hidden');
+    } catch (erro) {
+        console.error('Erro ao carregar dados da API:', erro);
+        elStatusDot.className = 'dot off';
+        elStatusTexto.textContent = 'offline';
+        elErroDetalhe.textContent = `${erro.message}. Nem o servidor local nem o Render (${URL_RENDER}) responderam.`;
+        elLoading.classList.add('hidden');
+        elErro.classList.add('show');
+    }
+}
+
+document.getElementById('btn-retry').addEventListener('click', carregarDados);
+
+// ==========================================================================
+// EXPORTAR PRINT 3D — captura o canvas + monta relatório imprimível
+// ==========================================================================
+function pecasEmAlerta() {
+    const slots = construirLayoutSlots(veioAtual);
+    const linhas = [];
+
+    slots.forEach(slot => {
+        const peca = piecesById[slot.id];
+        if (!peca) return;
+
+        const meta = parseFloat(peca.meta) || 0;
+        const ton = parseFloat(peca.tonelagem) || 0;
+        const status = (peca.status || '').toLowerCase();
+        const pct = meta > 0 ? (ton / meta) * 100 : 0;
+        const emFalha = status.includes('reparo') || status.includes('falha');
+
+        if (emFalha || pct >= 80) {
+            const nivel = emFalha ? 'Manutenção / Falha' : (pct >= 100 ? 'Limite atingido' : 'Alerta');
+            linhas.push({ posicao: slot.label, tag: peca.tag_patrimonio || peca.id, dataEntrada: peca.data_entrada || null, ton, meta, pct, nivel });
+        }
+    });
+
+    linhas.sort((a, b) => b.pct - a.pct);
+    return linhas;
+}
+
+// Reposiciona a câmera temporariamente pra um enquadramento panorâmico
+// que engloba a linha inteira (Molde até H17), captura a imagem, e
+// devolve a câmera exatamente pra onde o usuário estava. Tudo roda de
+// forma síncrona (sem await/setTimeout no meio), então o navegador só
+// repinta a tela depois que a câmera já foi restaurada — o usuário nunca
+// chega a ver o "pulo" pro ângulo panorâmico.
+function capturarImagemPanoramica() {
+    const posOriginal = camera.position.clone();
+    const targetOriginal = controls.target.clone();
+
+    const box = new THREE.Box3();
+    slotsGeometricos.forEach(s => box.expandByPoint(s.pos));
+    const centro = new THREE.Vector3();
+    box.getCenter(centro);
+    const tamanho = new THREE.Vector3();
+    box.getSize(tamanho);
+    const diagonal = tamanho.length();
+
+    const direcao = new THREE.Vector3(0.5, 0.42, 0.6).normalize();
+    const distancia = diagonal * 1.3 + 3;
+
+    camera.position.copy(centro.clone().add(direcao.multiplyScalar(distancia)));
+    camera.lookAt(centro);
+
+    renderer.render(scene, camera);
+    const imagemDataUrl = renderer.domElement.toDataURL('image/png');
+
+    camera.position.copy(posOriginal);
+    controls.target.copy(targetOriginal);
+    controls.update();
+    renderer.render(scene, camera);
+
+    return imagemDataUrl;
+}
+
+function exportarPrint3D() {
+    const imagemDataUrl = capturarImagemPanoramica();
+
+    const dataHora = new Date().toLocaleString('pt-BR');
+    const linhasAlerta = pecasEmAlerta();
+
+    const linhasHtml = linhasAlerta.length > 0
+        ? linhasAlerta.map(l => `
+            <tr>
+                <td data-th="Posição">${l.posicao}</td>
+                <td data-th="Tag">${l.tag}</td>
+                <td data-th="Data de Entrada">${l.dataEntrada || '—'}</td>
+                <td data-th="Tonelagem">${l.ton.toLocaleString('pt-BR')}</td>
+                <td data-th="Meta">${l.meta.toLocaleString('pt-BR')}</td>
+                <td data-th="Desgaste" class="${l.pct >= 100 ? 'pct-limite' : 'pct-alerta'}">${l.pct.toFixed(1)}%</td>
+                <td data-th="Situação">${l.nivel}</td>
+            </tr>`).join('')
+        : `<tr><td colspan="7" style="text-align:center; color:#889;">Nenhuma peça em alerta neste veio no momento.</td></tr>`;
+
+    const janela = window.open('', '_blank', 'width=900,height=1000');
+    if (!janela) {
+        alert('O navegador bloqueou a janela de impressão. Permita pop-ups pra este site e tente de novo.');
+        return;
+    }
+
+    janela.document.write(`
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relatório Sinótico 3D — Veio ${veioAtual}</title>
+<style>
+    @page { size: A4; margin: 14mm; }
+    * { box-sizing: border-box; }
+    html, body { max-width: 100%; overflow-x: hidden; }
+    body { font-family: -apple-system, 'Segoe UI', Arial, sans-serif; color: #16202e; margin: 0 auto; padding: 28px; max-width: 900px; }
+    header { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #16202e; padding-bottom: 14px; margin-bottom: 20px; }
+    header h1 { font-size: 19px; margin: 0 0 4px 0; }
+    header .sub { font-size: 12px; color: #667; }
+    header .data { font-size: 12px; color: #667; text-align: right; }
+    .imagem-3d { width: 100%; height: auto; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 24px; display: block; page-break-inside: avoid; break-inside: avoid; }
+    h2 { font-size: 14px; margin: 0 0 10px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 11.5px; table-layout: fixed; }
+    th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; word-break: break-word; }
+    th { background: #eef1f6; font-weight: 700; }
+    tr { page-break-inside: avoid; break-inside: avoid; }
+    .pct-alerta { color: #a16207; font-weight: 700; }
+    .pct-limite { color: #c2410c; font-weight: 700; }
+    .acoes { margin-top: 26px; text-align: center; }
+    .acoes button { font-size: 13px; padding: 9px 20px; border-radius: 6px; border: 1px solid #16202e; background: #16202e; color: #fff; cursor: pointer; }
+    @media print {
+        .acoes { display: none; }
+        body { padding: 0; max-width: 100%; }
+    }
+    @media (max-width: 600px) {
+        header { flex-direction: column; }
+        header .data { text-align: left; }
+        table, thead, tbody, th, td, tr { display: block; }
+        th { position: sticky; top: 0; }
+        td { border-top: none; }
+        tr { border: 1px solid #ccc; margin-bottom: 8px; border-radius: 6px; overflow: hidden; }
+        td::before { content: attr(data-th) ": "; font-weight: 700; color: #445; }
+    }
+</style>
+</head>
+<body>
+    <header>
+        <div>
+            <h1>Relatório — Sinótico Visual 3D (MCC4)</h1>
+            <div class="sub">Painel OMS · CSN — Veio ${veioAtual}</div>
+        </div>
+        <div class="data">Gerado em<br><strong>${dataHora}</strong></div>
+    </header>
+
+    <img class="imagem-3d" src="${imagemDataUrl}" alt="Captura do sinótico 3D">
+
+    <h2>Peças em estado de alerta (Veio ${veioAtual})</h2>
+    <table>
+        <thead>
+            <tr><th>Posição</th><th>Tag</th><th>Data de Entrada</th><th>Tonelagem</th><th>Meta</th><th>Desgaste</th><th>Situação</th></tr>
+        </thead>
+        <tbody>${linhasHtml}</tbody>
+    </table>
+
+    <div class="acoes">
+        <button onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+    </div>
+</body>
+</html>
+    `);
+    janela.document.close();
+}
+
+document.getElementById('btn-exportar').addEventListener('click', exportarPrint3D);
+
+// ==========================================================================
+// SELETOR DE VEIO
+// ==========================================================================
+document.querySelectorAll('.veio-tab[data-veio]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.veio-tab[data-veio]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        veioAtual = btn.dataset.veio;
+        construirCena(veioAtual);
+    });
+});
+
+// ==========================================================================
+// RESIZE
+// ==========================================================================
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ==========================================================================
+// LOOP DE RENDER
+// ==========================================================================
+function animar() {
+    requestAnimationFrame(animar);
+    controls.update();
+    atualizarAco();
+    renderer.render(scene, camera);
+}
+animar();
+
+carregarDados();
+</script>
+</body>
+</html>

@@ -43,8 +43,10 @@ let ID_HISTORICO_ATUAL = null;
 // ==========================================
 function getOrdemPadrao(tipo) {
     if (tipo === "Molde") return 10;
-    if (tipo === "Mesa Osciladora") return 20;
     if (tipo === "Segmento Zero") return 30;
+    if (tipo === "Grupo 1") return 31;
+    if (tipo === "Grupo 2") return 32;
+    if (tipo === "Grupo 3") return 33;
     if (tipo === "Bender") return 40;
     if (tipo === "Cadeira Superior") return 100;
     if (tipo === "Cadeira Inferior") return 200;
@@ -66,7 +68,6 @@ function mapearSlotFixo(tipo, mcc) {
         if (t.includes('STRAIGHTENER R2')) return 'STR-2';
     } else if (mcc === '2/3') {
         if (t.includes('SEGMENTO ZERO') || t.includes('SEGUIMENTO ZERO')) return 'SEG-ZERO';
-        if (t.includes('MESA OSCILADORA')) return 'OSCILADORA';
         if (t.includes('MOLDE')) return 'MOLDE';
     }
     return '';
@@ -401,7 +402,6 @@ function calcularKpisGlobais() {
 function gerarSlotsMCC23() {
     const slots = [
         { id: "MOLDE", nome: "Molde Convencional", tipo: "Molde" },
-        { id: "OSCILADORA", nome: "Mesa Osciladora", tipo: "Mesa Osciladora" },
         { id: "SEG-ZERO", nome: "Segmento Zero", tipo: "Segmento Zero" }
     ];
     for (let i = 1; i <= 6; i++) {
@@ -422,7 +422,6 @@ function mapearSlotLegadoMCC23(peca) {
     const id = (peca.id || "").toUpperCase();
     
     if (tipo.includes("MOLDE")) return "MOLDE";
-    if (tipo.includes("OSCILADORA")) return "OSCILADORA";
     if (tipo.includes("ZERO") || tipo.includes("SEG-0")) return "SEG-ZERO";
     
     if (tipo.includes("SEGMENTO") || tipo.includes("SEGMENTO")) {
@@ -1033,16 +1032,24 @@ function confirmarRelatorio() {
     fecharModalRelatorio();
 }
 
-function executarSaqueFinal(id, laudo) {
+async function executarSaqueFinal(id, laudo) {
     let item = BANCO_ATIVOS.find(a => a.id === id);
     if (item) {
         let loc = item.local;
         item.local = "Oficina / Reparo";
+        item.status = "Oficina / Reparo";
         item.dataReparo = Date.now();
         item.dias = 0;
         localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
         registrarHistorico(id, `Sacado da linha (${loc}) p/ Reparo. ${laudo}`);
-        
+
+        // Persiste no banco Postgres — sem isso, o saque some assim que a
+        // tela sincronizar de novo com o servidor (sincronizarAtivosReaisMCC4
+        // reconstrói tudo a partir do banco, que nunca teria recebido a mudança).
+        if (typeof salvarPecaNoPython === 'function') {
+            await salvarPecaNoPython(item);
+        }
+
         renderAtivos();
         renderPainelVeios();
         calcularKpisGlobais();
@@ -1690,9 +1697,6 @@ async function processarCadastroPeca() {
             slotChassi = `CAD-INF-${posicao}`;
         } else if (tipoUpper.includes("SEGMENTO ZERO") || tipoUpper.includes("SEGUIMENTO ZERO")) {
             slotChassi = "SEG-ZERO";
-            posicaoObrigatoria = false;
-        } else if (tipoUpper.includes("MESA OSCILADORA")) {
-            slotChassi = "OSCILADORA";
             posicaoObrigatoria = false;
         } else if (tipoUpper.includes("SEGMENTO") && !tipoUpper.includes("ZERO")) {
             slotChassi = `SEG-${posicao}`;
@@ -2424,18 +2428,6 @@ window.abrirFolhaoPorTipo = function(id) {
         return;
     }
 
-    // ---- MESA OSCILADORA ----
-    if (tipo === 'Mesa Osciladora') {
-        // Se tiver um folhão específico, coloque aqui
-        // Senão, abre o genérico
-        if (typeof window.abrirFolhaoGenerico === 'function') {
-            window.abrirFolhaoGenerico(id);
-            return;
-        }
-        console.warn(`Folhão para ${tipo} não implementado.`);
-        return;
-    }
-
     // ---- OUTROS TIPOS (FALLBACK) ----
     // Se chegar aqui, tenta abrir o folhão genérico (se existir)
     if (typeof window.abrirFolhaoGenerico === 'function') {
@@ -2763,7 +2755,7 @@ window.visualizarLaudo = function(id) {
     else { const p = document.getElementById('print-content'); if (p) { p.innerHTML = laudo.html; window.print(); } }
 };
 
-window.iniciarSwapAlocacao = function(idReserva) {
+window.iniciarSwapAlocacao = async function(idReserva) {
     if (!window.verificarAcesso()) return;
     const veioSelect = document.getElementById(`alocar-veio-${idReserva}`);
     const posElement = document.getElementById(`alocar-pos-${idReserva}`);
@@ -2790,7 +2782,6 @@ window.iniciarSwapAlocacao = function(idReserva) {
     } else if (mcc === '2/3') {
         if (tipoUpper.includes('MOLDE')) slotChassi = 'MOLDE';
         else if (tipoUpper.includes('ZERO') || tipoUpper.includes('SEGMENTO ZERO')) slotChassi = 'SEG-ZERO';
-        else if (tipoUpper.includes('OSCILADORA')) slotChassi = 'OSCILADORA';
         else if (tipoUpper.includes('CADEIRA SUPERIOR')) slotChassi = `CAD-SUP-${posicao}`;
         else if (tipoUpper.includes('CADEIRA INFERIOR')) slotChassi = `CAD-INF-${posicao}`;
         else if (tipoUpper.includes('SEGMENTO')) slotChassi = `SEG-${posicao}`;
@@ -2812,6 +2803,12 @@ window.iniciarSwapAlocacao = function(idReserva) {
             
             pecaReserva.local = `MCC ${mcc} - Veio ${veio}`; pecaReserva.veio = veio; pecaReserva.posicaoFixa = slotChassi; pecaReserva.pos = slotChassi; pecaReserva.status = "Instalado";
             localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+
+            // Persiste as duas peças no banco Postgres (a que saiu e a que entrou)
+            if (typeof salvarPecaNoPython === 'function') {
+                await salvarPecaNoPython(pecaAntiga);
+                await salvarPecaNoPython(pecaReserva);
+            }
             
             if (window.registrarHistorico) {
                 window.registrarHistorico(pecaReserva.id, `Instalado no slot ${slotChassi} do Veio ${veio} (substituiu ${pecaAntiga.id}).`);
@@ -2825,6 +2822,11 @@ window.iniciarSwapAlocacao = function(idReserva) {
         if (confirm(`Instalar a reserva ${pecaReserva.id} no slot ${slotChassi} do Veio ${veio}?`)) {
             pecaReserva.local = `MCC ${mcc} - Veio ${veio}`; pecaReserva.veio = veio; pecaReserva.posicaoFixa = slotChassi; pecaReserva.pos = slotChassi; pecaReserva.status = "Instalado";
             localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+
+            if (typeof salvarPecaNoPython === 'function') {
+                await salvarPecaNoPython(pecaReserva);
+            }
+
             if (window.registrarHistorico) window.registrarHistorico(pecaReserva.id, `Instalado no slot ${slotChassi} do Veio ${veio} (gaveta vazia).`);
             
             if (typeof renderReparos === 'function') renderReparos(); if (typeof renderReservas === 'function') renderReservas();

@@ -8,7 +8,6 @@ export const MOTIVOS_RETIRO = {
     "Segmento Zero": ["Blackout", "Fim de vida", "Vazamento de graxa", "Placa na linha", "Transpordo", "Vazão", "Rolo travado", "Outros"],
     "Cadeira Superior": ["Empeno", "Desgaste", "Rolo quebrado", "Vazamento de cilindro", "Vazamento de graxa", "Refrigeração", "Trinca", "Fim de vida", "Outros"],
     "Cadeira Inferior": ["Empeno", "Desgaste", "Rolo quebrado", "Vazamento de cilindro", "Vazamento de graxa", "Refrigeração", "Trinca", "Fim de vida", "Outros"],
-    "Mesa Osciladora": ["Desgaste", "Falha mecânica", "Fim de vida", "Outros"],
     "Outros": ["Fim de vida", "Quebra", "Manutenção Preventiva", "Outros"]
 };
 

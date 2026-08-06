@@ -14,11 +14,46 @@ export const CADASTRO_MATRICULAS = {
 
 
 const API_PLANILHA_URL = "https://script.google.com/macros/s/AKfycby_XSR5hrrvOgDEqlWhbKC2l7iPjthe6ht5YrabNliXsFlkNhzYGFU2BR8JUhzv8yY2/exec";
+
+// ==========================================================================
+// URL DA API PYTHON — resolvida sozinha em tempo real: tenta o servidor
+// local (uvicorn) primeiro; se não responder em 1,5s (ou o arquivo foi
+// aberto direto com duplo-clique, sem servidor nenhum), usa o backend
+// publicado no Render. Resolvido uma vez e reaproveitado nas chamadas
+// seguintes, pra não ficar testando toda hora.
+// ==========================================================================
+const URL_LOCAL = "http://localhost:8000";
+const URL_RENDER = "https://api-oms-csn.onrender.com";
+
+function fetchComTimeout(url, opts = {}, ms = 1500) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), ms);
+    return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
+let apiBaseResolvida = null;
+let apiBaseResolvendo = null;
+
+async function resolverApiBase() {
+    if (apiBaseResolvida) return apiBaseResolvida;
+    if (apiBaseResolvendo) return apiBaseResolvendo;
+
+    apiBaseResolvendo = (async () => {
+        try {
+            const resp = await fetchComTimeout(`${URL_LOCAL}/`, {}, 1500);
+            if (resp.ok) { apiBaseResolvida = URL_LOCAL; return URL_LOCAL; }
+        } catch (e) { /* servidor local indisponível, segue pro Render */ }
+        apiBaseResolvida = URL_RENDER;
+        return URL_RENDER;
+    })();
+
+    return apiBaseResolvendo;
+}
+
 // FUNÇÃO AUXILIAR EXPORTADA PARA ORDEM PADRÃO
 // ==========================================================================
 export function getOrdemPadrao(tipo) {
     if (tipo === "Molde") return 10;
-    if (tipo === "Mesa Osciladora") return 20;
     if (tipo === "Segmento Zero") return 30;
     if (tipo === "Grupo 1") return 31;
     if (tipo === "Grupo 2") return 32;
@@ -90,7 +125,6 @@ if (!BANCO_ATIVOS || BANCO_ATIVOS.length === 0) {
     veiosMcc23.forEach(m => {
         const vNome = `MCC ${m.mcc} - Veio ${m.veio}`;
         BANCO_ATIVOS.push({ id: `MLD-2${m.veio}`, tipo: "Molde", local: vNome, pos: `Molde Veio ${m.veio}`, dias: 14, ton: 1000000, meta: 1200000, ordem: 10, mcc_compat: "2/3" });
-        BANCO_ATIVOS.push({ id: `OSC-2${m.veio}`, tipo: "Mesa Osciladora", local: vNome, pos: `Osciladora ${m.veio}`, dias: 65, ton: 610000, meta: 1800000, ordem: 20, mcc_compat: "2/3" });
         BANCO_ATIVOS.push({ id: `SEG-0-2${m.veio}`, tipo: "Segmento Zero", local: vNome, pos: "Segmento Zero", dias: 38, ton: 142100, meta: 450000, ordem: 30, mcc_compat: "2/3" });
 
         for (let c = 43; c <= 79; c++) {
@@ -202,7 +236,8 @@ function gerarPosicaoFixa(idSistema, tipoCanonico, contadorGrupoPorVeio, veio) {
 
 export async function sincronizarAtivosReaisMCC4() {
     try {
-        const resposta = await fetch("http://localhost:8000/api/pecas");
+        const apiBase = await resolverApiBase();
+        const resposta = await fetch(`${apiBase}/api/pecas`);
 
         if (!resposta.ok) {
             throw new Error(`API respondeu com status ${resposta.status}`);
@@ -246,6 +281,7 @@ export async function sincronizarAtivosReaisMCC4() {
                 ordem: getOrdemPadrao(tipoCanonico),
                 mcc_compat: (peca.local && peca.local.includes("MCC 4")) ? "4" : "2/3",
                 tag_patrimonio: peca.tag_patrimonio || null,
+                data_entrada: peca.data_entrada || null,
                 status: peca.status || "Instalado"
             };
         });
@@ -269,7 +305,8 @@ export async function sincronizarAtivosReaisMCC4() {
 // ==========================================================================
 export async function salvarPecaNoPython(peca) {
     try {
-        const resposta = await fetch("http://localhost:8000/api/atualizar_peca", {
+        const apiBase = await resolverApiBase();
+        const resposta = await fetch(`${apiBase}/api/atualizar_peca`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -297,6 +334,36 @@ export async function salvarPecaNoPython(peca) {
 }
 
 // ==========================================================================
+// AUDITORIA: salva cada evento do histórico (quem fez, o quê, quando) no
+// banco Postgres. registrarHistorico() (em script.js) chama essa função
+// toda vez que grava uma linha no histórico local, então isso cobre saque,
+// swap, apontamentos e notas manuais automaticamente, sem precisar mexer
+// em cada função separadamente.
+// ==========================================================================
+export async function salvarHistoricoNoPython(evento) {
+    try {
+        const apiBase = await resolverApiBase();
+        const resposta = await fetch(`${apiBase}/api/registrar_evento`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                peca_id: evento.tag || "",
+                acao: evento.acao || "",
+                operador: evento.responsavel || "Sistema"
+            })
+        });
+
+        const resultado = await resposta.json();
+
+        if (!resultado.sucesso) {
+            console.error("❌ Erro ao registrar evento no banco:", resultado.detail || resultado);
+        }
+    } catch (erro) {
+        console.error("❌ Erro de comunicação ao registrar evento:", erro);
+    }
+}
+
+// ==========================================================================
 // EXPORTAÇÃO PADRÃO
 // ==========================================================================
 export default {
@@ -314,5 +381,6 @@ export default {
     setEmergencia,
     setVeioSelecionado,
     sincronizarAtivosReaisMCC4,
-    salvarPecaNoPython
+    salvarPecaNoPython,
+    salvarHistoricoNoPython
 };

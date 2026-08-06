@@ -59,7 +59,6 @@ function renderReservas() {
         // MCC 2/3
         else if (mcc === '2/3') {
             if (t.includes('SEGMENTO ZERO') || t.includes('SEGUIMENTO ZERO')) return 'SEG-ZERO';
-            if (t.includes('MESA OSCILADORA')) return 'OSCILADORA';
             if (t.includes('MOLDE')) return 'MOLDE';
         }
         return '';
@@ -283,4 +282,3 @@ export {
     renderizarGraficosMCC
 };
 
-console.log("✅ ui.js carregado – R1/R2 corrigidos, botão excluir e funções finais.");
