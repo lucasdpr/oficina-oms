@@ -2543,27 +2543,21 @@ window.abrirAba = function(event, idAba) {
 // 2. CONEXÃO COM O PYTHON (ADEUS GOOGLE SHEETS)
 // ==============================================================
 window.carregarAtivosDoPython = async function() {
-    try {
-        console.log("🔄 Conectando ao Banco de Dados Python...");
-        
-        // A OPÇÃO NUCLEAR: Esse 'Math.random' impede o navegador de usar a memória velha!
-        const url_fura_cache = "http://127.0.0.1:8000/api/pecas?v=" + Math.random();
-        
-        const res = await fetch(url_fura_cache);
-        const dados = await res.json();
-        
-        if (dados && Array.isArray(dados)) {
-            BANCO_ATIVOS.length = 0;
-            Array.prototype.push.apply(BANCO_ATIVOS, dados);
-            localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-            console.log(`✨ Tela atualizada! ${BANCO_ATIVOS.length} peças carregadas.`);
-            return true;
-        }
-        return false;
-    } catch (e) {
+    // Antes, essa função buscava os dados da API e jogava os objetos crus
+    // direto no BANCO_ATIVOS, sem traduzir nomes de campo (tonelagem->ton,
+    // posicao->pos) nem o vocabulário dos tipos (CADEIRA SUP->Cadeira
+    // Superior). Isso causava "NaN%" nas barras e gavetas vazias mesmo com
+    // peça cadastrada. A sincronizarAtivosReaisMCC4 (banco.js) já faz essa
+    // tradução corretamente, então usamos ela aqui em vez de duplicar a
+    // lógica.
+    console.log("🔄 Conectando ao Banco de Dados Python...");
+    const atualizou = await sincronizarAtivosReaisMCC4();
+    if (atualizou) {
+        console.log(`✨ Tela atualizada! ${BANCO_ATIVOS.length} peças carregadas.`);
+    } else {
         console.warn("⚠️ Python Offline. Usando dados locais.");
-        return false;
     }
+    return atualizou;
 };
 
 // ==============================================================
@@ -2602,8 +2596,7 @@ window.processarProducaoDiaria = async function() {
         });
         const resultado = await resposta.json();
         
-        if (resultado.status === "sucesso") {
-            if (window.registrarHistorico) window.registrarHistorico("PRODUÇÃO", `Apontamento Geral: MCC2 (+${prodMcc2}t), MCC3 (+${prodMcc3}t), MCC4 (+${prodMcc4}t)`);
+        if (resultado.sucesso) {
             document.getElementById("prod-mcc2").value = ""; document.getElementById("prod-mcc3").value = ""; document.getElementById("prod-mcc4").value = "";
             
             if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
@@ -2611,7 +2604,7 @@ window.processarProducaoDiaria = async function() {
             if (typeof window.renderAtivos === 'function') window.renderAtivos();
             if (typeof window.renderPainelVeios === 'function') window.renderPainelVeios();
             alert(`✅ Sucesso Absoluto!\n${pecasAtualizadas} equipamentos gerais foram atualizados.`);
-        } else { alert("❌ Erro no Banco: " + resultado.mensagem); }
+        } else { alert("❌ Erro no Banco: " + (resultado.detail || "desconhecido")); }
     } catch (e) { alert("❌ Erro de conexão com a API."); }
 
     btn.disabled = false; btn.innerHTML = textoOriginal;
@@ -2650,7 +2643,7 @@ window.salvarApontamentoMoldes = async function(event) {
         });
         const resultado = await resposta.json();
         
-        if (resultado.status === "sucesso") {
+        if (resultado.sucesso) {
             document.getElementById("molde-prod-mcc2").value = ""; document.getElementById("molde-prod-mcc3").value = ""; document.getElementById("molde-prod-mcc4").value = "";
             
             if (typeof window.carregarHistoricoApontamentoMoldes === 'function') window.carregarHistoricoApontamentoMoldes();
@@ -2658,7 +2651,7 @@ window.salvarApontamentoMoldes = async function(event) {
             if (typeof window.renderAtivos === 'function') window.renderAtivos();
             if (typeof window.renderPainelVeios === 'function') window.renderPainelVeios();
             alert(`✅ ${moldesAtualizados} Moldes foram atualizados com sucesso!`);
-        } else { alert("❌ Erro no Banco: " + resultado.mensagem); }
+        } else { alert("❌ Erro no Banco: " + (resultado.detail || "desconhecido")); }
     } catch (e) { alert("❌ Erro de conexão com o Python."); }
     
     btn.disabled = false; btn.innerHTML = txtOriginal;
@@ -2670,8 +2663,8 @@ window.carregarHistoricoApontamentoGeral = async function() {
         const json = await res.json();
         const tbody = document.getElementById("tabela-historico-geral");
         if (!tbody) return;
-        if (json.status === "sucesso" && json.dados.length > 0) {
-            tbody.innerHTML = json.dados.map(log => {
+        if (Array.isArray(json) && json.length > 0) {
+            tbody.innerHTML = json.map(log => {
                 let btnAcao = log.desfeito === 1 
                     ? `<span style="color:var(--danger); font-weight:bold; font-size:10px;"><i class="fas fa-ban"></i> DESFEITO</span>` 
                     : `<button class="btn-outline-danger" style="padding: 2px 6px; font-size: 10px;" onclick="window.desfazerApontamentoGeral(${log.id})"><i class="fas fa-undo"></i></button>`;
@@ -2687,8 +2680,8 @@ window.carregarHistoricoApontamentoMoldes = async function() {
         const json = await res.json();
         const tbody = document.getElementById("tabela-historico-moldes");
         if (!tbody) return;
-        if (json.status === "sucesso" && json.dados.length > 0) {
-            tbody.innerHTML = json.dados.map(log => {
+        if (Array.isArray(json) && json.length > 0) {
+            tbody.innerHTML = json.map(log => {
                 let btnAcao = log.desfeito === 1 
                     ? `<span style="color:var(--danger); font-weight:bold; font-size:10px;"><i class="fas fa-ban"></i> DESFEITO</span>` 
                     : `<button class="btn-outline-danger" style="padding: 2px 6px; font-size: 10px;" onclick="window.desfazerApontamentoMolde(${log.id})"><i class="fas fa-undo"></i></button>`;
@@ -2708,14 +2701,14 @@ window.desfazerApontamentoGeral = async function(id_log) {
         });
         const json = await res.json();
         
-        if (json.status === "sucesso") {
+        if (json.sucesso) {
             alert("✅ Lançamento desfeito com sucesso!");
             await window.carregarAtivosDoPython();
             if (typeof window.carregarHistoricoApontamentoGeral === 'function') window.carregarHistoricoApontamentoGeral();
             if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
             if (typeof window.renderAtivos === 'function') window.renderAtivos();
             if (typeof window.renderPainelVeios === 'function') window.renderPainelVeios();
-        } else { alert("❌ Erro: " + json.mensagem); }
+        } else { alert("❌ Erro: " + (json.detail || "desconhecido")); }
     } catch (e) { alert("❌ Erro de conexão."); }
 };
 
@@ -2729,14 +2722,14 @@ window.desfazerApontamentoMolde = async function(id_log) {
         });
         const json = await res.json();
         
-        if (json.status === "sucesso") {
+        if (json.sucesso) {
             alert("✅ Lançamento desfeito com sucesso!");
             await window.carregarAtivosDoPython();
             if (typeof window.carregarHistoricoApontamentoMoldes === 'function') window.carregarHistoricoApontamentoMoldes();
             if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
             if (typeof window.renderAtivos === 'function') window.renderAtivos();
             if (typeof window.renderPainelVeios === 'function') window.renderPainelVeios();
-        } else { alert("❌ Erro: " + json.mensagem); }
+        } else { alert("❌ Erro: " + (json.detail || "desconhecido")); }
     } catch (e) { alert("❌ Erro de conexão."); }
 };
 
