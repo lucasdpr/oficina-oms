@@ -66,6 +66,10 @@
     .veio-tab.active { background: var(--accent); border-color: var(--accent); color: #04121c; }
     .veio-tab.btn-exportar { margin-left: 8px; border-color: #2a3652; }
     .veio-tab.btn-exportar:hover { border-color: var(--ok); color: var(--ok); }
+    .grupo-maquina {
+        font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase;
+        color: var(--text-muted); display: flex; align-items: center; padding: 0 2px;
+    }
 
     /* ===== LEGENDA ===== */
     #legenda {
@@ -202,11 +206,18 @@
     <div id="topbar">
         <div class="brand">
             <span class="eyebrow">Painel OMS · CSN</span>
-            <h1>Sinótico Visual 3D — MCC4</h1>
+            <h1 id="titulo-maquina">Sinótico Visual 3D — MCC4</h1>
         </div>
         <div id="veio-tabs">
+            <span class="grupo-maquina">MCC 2/3</span>
+            <button class="veio-tab" data-veio="C">VEIO C</button>
+            <button class="veio-tab" data-veio="D">VEIO D</button>
+            <button class="veio-tab" data-veio="E">VEIO E</button>
+            <button class="veio-tab" data-veio="F">VEIO F</button>
+            <span class="grupo-maquina" style="margin-left:10px;">MCC 4</span>
             <button class="veio-tab active" data-veio="H">VEIO H</button>
             <button class="veio-tab" data-veio="G">VEIO G</button>
+            <button id="btn-resetar-vista" class="veio-tab btn-exportar" title="Volta a câmera pro enquadramento padrão">🔄 Resetar Vista</button>
             <button id="btn-exportar" class="veio-tab btn-exportar">🖨️ Exportar Print 3D</button>
         </div>
     </div>
@@ -305,10 +316,29 @@ const CORES = {
 };
 
 // ==========================================================================
+// DESPACHANTE — decide MCC4 (G, H) ou MCC2/3 (C, D, E, F) automaticamente.
+// Todo o resto do código chama construirLayoutSlots()/calcularTransformacoes()
+// sem se importar com qual máquina é — a estrutura dos slots (grupo 'sup'/
+// 'inf' só existe na MCC2/3) já entrega essa informação sozinha.
+// ==========================================================================
+function ehMCC4(veio) {
+    return veio === 'G' || veio === 'H';
+}
+
+function construirLayoutSlots(veio) {
+    return ehMCC4(veio) ? construirLayoutSlotsMCC4(veio) : construirLayoutSlotsMCC23(veio);
+}
+
+function calcularTransformacoes(slots) {
+    const eMCC23 = slots.some(s => s.grupo === 'sup' || s.grupo === 'inf');
+    return eMCC23 ? calcularTransformacoesMCC23(slots) : calcularTransformacoesMCC4(slots);
+}
+
+// ==========================================================================
 // ESTRUTURA DA LINHA MCC4 (Cabeceira -> Curva -> Mesa Horizontal)
 // IDs seguem exatamente o padrão gerado pelo importar_excel.py / banco.js
 // ==========================================================================
-function construirLayoutSlots(veio) {
+function construirLayoutSlotsMCC4(veio) {
     const slots = [];
     slots.push({ id: `MLD-4${veio}`, label: 'MOLDE', grupo: 'cabeceira' });
     slots.push({ id: `BND-4${veio}`, label: 'BENDER', grupo: 'cabeceira' });
@@ -320,7 +350,7 @@ function construirLayoutSlots(veio) {
 }
 
 // ==========================================================================
-// GEOMETRIA: posição e rotação de cada bloco ao longo da curva
+// GEOMETRIA MCC4: posição e rotação de cada bloco ao longo da curva
 // A curva vai de "reto para baixo" (saída do molde) até "reto na horizontal"
 // (mesa de saída), como um quarto de círculo. Depois disso, a mesa
 // horizontal continua em linha reta.
@@ -330,7 +360,7 @@ const TOPO_Y = 7.5;
 const ESPACO_CABECEIRA = 1.08; // encostados: a altura real do bloco após girar -90° vem do parâmetro de largura (1.1) da geometria
 const ESPACO_HORIZONTAL = 1.55;
 
-function calcularTransformacoes(slots) {
+function calcularTransformacoesMCC4(slots) {
     const centro = new THREE.Vector3(RAIO_CURVA, TOPO_Y, 0);
     const nCurva = slots.filter(s => s.grupo === 'curva').length;
 
@@ -379,11 +409,85 @@ function calcularTransformacoes(slots) {
 }
 
 // ==========================================================================
+// ESTRUTURA DA LINHA MCC2/3
+// A curva vai só até o Molde/Zero/Grupos (igual à MCC4: Molde+Bender na
+// curva). Depois disso a linha fica RETA, e é aí que ficam as 37 cadeiras
+// Superior/Inferior — empilhadas uma em cima da outra (rolo de cima e
+// rolo de baixo segurando a placa), não lado a lado.
+// ==========================================================================
+function construirLayoutSlotsMCC23(veio) {
+    const slots = [];
+    slots.push({ id: `MLD-2${veio}`, label: 'MOLDE', grupo: 'cabeceira' });
+    slots.push({ id: `SEG-0-2${veio}`, label: 'ZERO', grupo: 'cabeceira' });
+    slots.push({ id: `GRP1-2${veio}`, label: 'G1', grupo: 'cabeceira' });
+    slots.push({ id: `GRP2-1-2${veio}`, label: 'G2-1', grupo: 'cabeceira' });
+    slots.push({ id: `GRP2-2-2${veio}`, label: 'G2-2', grupo: 'cabeceira' });
+    slots.push({ id: `GRP3-1-2${veio}`, label: 'G3-1', grupo: 'cabeceira' });
+    slots.push({ id: `GRP3-2-2${veio}`, label: 'G3-2', grupo: 'cabeceira' });
+    slots.push({ id: `GRP3-3-2${veio}`, label: 'G3-3', grupo: 'cabeceira' });
+    for (let n = 43; n <= 79; n++) slots.push({ id: `CAD-SUP-${n}-2${veio}`, label: `${n} SUP`, grupo: 'sup' });
+    for (let n = 43; n <= 79; n++) slots.push({ id: `CAD-INF-${n}-2${veio}`, label: `${n} INF`, grupo: 'inf' });
+    return slots;
+}
+
+// ==========================================================================
+// GEOMETRIA MCC2/3: curva (Molde -> Grupo 3-3, mesma lógica da MCC4) e
+// depois fileira reta com os pares Superior (em cima) / Inferior (embaixo).
+// ==========================================================================
+const RAIO_CABECEIRA_23 = 6.2;
+const TOPO_Y_23 = 9;
+const ESPACO_CADEIRA_23 = 0.48;
+const OFFSET_PAR_23 = 0.32; // distância vertical entre Superior e Inferior empilhados
+
+function calcularTransformacoesMCC23(slots) {
+    const centro = new THREE.Vector3(RAIO_CABECEIRA_23, TOPO_Y_23, 0);
+    const cabeceira = slots.filter(s => s.grupo === 'cabeceira');
+    const nCab = cabeceira.length;
+
+    let cabIdx = 0;
+    let fimCurvaPos = null;
+
+    cabeceira.forEach(slot => {
+        const t = (cabIdx + 0.5) / nCab;
+        const phi = Math.PI + t * (Math.PI / 2); // 180° -> 270°, igual à MCC4
+        const pos = new THREE.Vector3(
+            centro.x + RAIO_CABECEIRA_23 * Math.cos(phi),
+            centro.y + RAIO_CABECEIRA_23 * Math.sin(phi),
+            0
+        );
+        const tangente = new THREE.Vector2(-Math.sin(phi), Math.cos(phi));
+        slot.pos = pos;
+        slot.rotZ = Math.atan2(tangente.y, tangente.x);
+        if (cabIdx === nCab - 1) fimCurvaPos = pos.clone();
+        cabIdx++;
+    });
+
+    if (!fimCurvaPos) fimCurvaPos = new THREE.Vector3(centro.x + RAIO_CABECEIRA_23, centro.y, 0);
+
+    const nSup = slots.filter(s => s.grupo === 'sup').length;
+    let idxSup = 0, idxInf = 0;
+
+    slots.forEach(slot => {
+        if (slot.grupo === 'sup' || slot.grupo === 'inf') {
+            const idx = slot.grupo === 'sup' ? idxSup : idxInf;
+            const x = fimCurvaPos.x + (idx + 1) * ESPACO_CADEIRA_23;
+            const sinalOffset = slot.grupo === 'sup' ? 1 : -1;
+            slot.pos = new THREE.Vector3(x, fimCurvaPos.y + sinalOffset * OFFSET_PAR_23, 0);
+            slot.rotZ = 0; // reto, alinhado com a fileira
+            if (slot.grupo === 'sup') idxSup++; else idxInf++;
+        }
+    });
+
+    return slots;
+}
+
+// ==========================================================================
 // THREE.JS — CENA, CÂMERA, LUZES
 // ==========================================================================
 const container = document.getElementById('canvas-container');
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x0a0e14, 0.028);
+scene.background = new THREE.Color(0x0b0f19); // Dark Premium
+scene.fog = new THREE.FogExp2(0x0b0f19, 0.026);
 
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 200);
 camera.position.set(14, 13, 16);
@@ -393,6 +497,8 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
 container.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -404,22 +510,35 @@ controls.maxDistance = 45;
 controls.maxPolarAngle = Math.PI * 0.49;
 controls.update();
 
-// Luzes
-scene.add(new THREE.AmbientLight(0x8899bb, 0.55));
-const keyLight = new THREE.DirectionalLight(0xffffff, 1.15);
-keyLight.position.set(12, 20, 10);
+// Luzes — simulando um galpão industrial: luz ambiente suave e neutra,
+// uma luz principal forte vinda de cima (como um refletor de teto) com
+// sombra, e duas luzes de preenchimento (uma fria, uma quente) pra dar
+// profundidade sem estourar o contraste.
+scene.add(new THREE.AmbientLight(0x9aa4b8, 0.5));
+
+const keyLight = new THREE.DirectionalLight(0xfff4e0, 1.3);
+keyLight.position.set(12, 22, 10);
 keyLight.castShadow = true;
 keyLight.shadow.mapSize.set(2048, 2048);
 keyLight.shadow.camera.left = -20; keyLight.shadow.camera.right = 20;
 keyLight.shadow.camera.top = 20; keyLight.shadow.camera.bottom = -20;
 scene.add(keyLight);
-const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.4);
+
+const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.45);
 rimLight.position.set(-10, 8, -12);
 scene.add(rimLight);
 
-// Piso de referência
+const fillQuente = new THREE.DirectionalLight(0xff8a4c, 0.22);
+fillQuente.position.set(6, 4, -14);
+scene.add(fillQuente);
+
+// ==========================================================================
+// AMBIENTAÇÃO — simplificada de volta, só o chão de referência e a
+// fumaça perto do Molde. A ponte rolante segurando a panela está mais
+// abaixo, junto com o resto da decoração animada.
+// ==========================================================================
 const chao = new THREE.Mesh(
-    new THREE.PlaneGeometry(80, 80),
+    new THREE.PlaneGeometry(60, 60),
     new THREE.MeshStandardMaterial({ color: 0x0d1220, roughness: 1, metalness: 0 })
 );
 chao.rotation.x = -Math.PI / 2;
@@ -427,9 +546,56 @@ chao.position.y = -0.02;
 chao.receiveShadow = true;
 scene.add(chao);
 
-const gridHelper = new THREE.GridHelper(80, 80, 0x1b2436, 0x141b29);
+const gridHelper = new THREE.GridHelper(60, 60, 0x1b2436, 0x141b29);
 gridHelper.position.y = -0.01;
 scene.add(gridHelper);
+
+// --- Vapor subindo perto do Molde (água de resfriamento encontrando o
+// aço quente) ---
+function criarTexturaVapor() {
+    const tam = 128;
+    const canvas = document.createElement('canvas');
+    canvas.width = tam; canvas.height = tam;
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createRadialGradient(tam / 2, tam / 2, 0, tam / 2, tam / 2, tam / 2);
+    grad.addColorStop(0, 'rgba(255,255,255,0.55)');
+    grad.addColorStop(0.5, 'rgba(200,210,225,0.22)');
+    grad.addColorStop(1, 'rgba(200,210,225,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, tam, tam);
+    return new THREE.CanvasTexture(canvas);
+}
+
+const texturaVapor = criarTexturaVapor();
+const vaporSprites = [];
+for (let i = 0; i < 8; i++) {
+    const mat = new THREE.SpriteMaterial({ map: texturaVapor, transparent: true, opacity: 0, depthWrite: false });
+    const sp = new THREE.Sprite(mat);
+    sp.scale.set(1.2, 1.2, 1);
+    scene.add(sp);
+    vaporSprites.push({ sprite: sp, fase: Math.random() * 3, vel: 0.45 + Math.random() * 0.3, deriva: (Math.random() - 0.5) * 0.35 });
+}
+
+const origemVapor = new THREE.Vector3();
+function reposicionarVapor() {
+    const moldeSlot = slotsGeometricos.find(s => s.label === 'MOLDE');
+    if (moldeSlot) origemVapor.set(moldeSlot.pos.x, moldeSlot.pos.y + 0.4, moldeSlot.pos.z);
+}
+
+function atualizarVapor(delta) {
+    vaporSprites.forEach(v => {
+        v.fase += delta * v.vel;
+        const t = (v.fase % 3) / 3;
+        v.sprite.position.set(
+            origemVapor.x + v.deriva * t * 2,
+            origemVapor.y + t * 3.2,
+            origemVapor.z + v.deriva
+        );
+        const escala = 1 + t * 1.8;
+        v.sprite.scale.set(escala, escala, 1);
+        v.sprite.material.opacity = Math.sin(t * Math.PI) * 0.32;
+    });
+}
 
 // ==========================================================================
 // CONSTRUÇÃO DOS BLOCOS
@@ -439,6 +605,16 @@ scene.add(grupoLinha);
 
 const blocoGeoCabeceira = new THREE.BoxGeometry(1.1, 1.55, 1.55);
 const blocoGeoPadrao = new THREE.BoxGeometry(1.28, 0.62, 1.35);
+
+// MCC2/3: peças bem menores e mais numerosas (82 por veio, contra 19 da MCC4)
+// MCC2/3: curva (Molde..Grupo3-3) usa o mesmo bloco "padrão" da MCC4 —
+// o raio novo (6.2) deixa o espaçamento bem parecido, então não precisa
+// de uma geometria própria pra isso.
+// As cadeiras (Superior/Inferior) agora são cilindros deitados — são
+// rolos de verdade, não blocos — com o mesmo comprimento (na largura)
+// que os blocos da curva, só que bem mais finos.
+const cilindroCadeiraGeo = new THREE.CylinderGeometry(0.15, 0.15, 1.35, 18);
+cilindroCadeiraGeo.rotateX(Math.PI / 2); // deita o cilindro: eixo passa a ficar ao longo de Z (largura da linha)
 
 let piecesById = {};      // dados vindos da API, por id
 let meshesBySlot = [];    // { slot, mesh, material }
@@ -458,11 +634,26 @@ function corPorPeca(peca) {
     return CORES.normal;
 }
 
+// Brilho próprio (emissive) proporcional à gravidade — assim uma peça
+// crítica salta aos olhos mesmo sem passar o mouse em cima. O hover
+// (onMouseMove) usa esses valores como "base" pra voltar depois de sair.
+function emissivoPorPeca(peca) {
+    if (!peca) return { cor: 0x000000, intensidade: 0 };
+    const status = (peca.status || '').toLowerCase();
+    if (status.includes('reparo') || status.includes('falha')) return { cor: 0xff1a1a, intensidade: 0.55 };
+    const meta = parseFloat(peca.meta) || 0;
+    const ton = parseFloat(peca.tonelagem) || 0;
+    const pct = meta > 0 ? (ton / meta) * 100 : 0;
+    if (pct >= 100) return { cor: 0xff5500, intensidade: 0.45 };
+    if (pct >= 80) return { cor: 0xd6a300, intensidade: 0.22 };
+    return { cor: 0x000000, intensidade: 0 };
+}
+
 // Desenha o texto de uma etiqueta numa textura de canvas e aplica num
 // Sprite (sempre vira pra câmera). Diferente do CSS2DObject de antes,
 // isso é um objeto 3D de verdade dentro da cena — por isso aparece
 // corretamente na foto exportada pelo renderer.domElement.toDataURL().
-function criarSpriteTexto(texto, corHex) {
+function criarSpriteTexto(texto, corHex, escalaMundoOverride) {
     const escala = 4; // resolução mais alta pra ficar nítido de perto
     const largura = 168 * escala, altura = 58 * escala;
 
@@ -495,15 +686,49 @@ function criarSpriteTexto(texto, corHex) {
     textura.needsUpdate = true;
     textura.minFilter = THREE.LinearFilter;
 
-    const material = new THREE.SpriteMaterial({ map: textura, transparent: true, depthTest: true, depthWrite: false });
+    const material = new THREE.SpriteMaterial({ map: textura, transparent: true, depthTest: false, depthWrite: false });
     const sprite = new THREE.Sprite(material);
+    sprite.renderOrder = 999; // sempre desenhada por cima, nunca escondida atrás de um bloco inclinado
 
-    const escalaMundo = 0.0016; // controla o tamanho final da etiqueta no mundo 3D
+    const escalaMundo = escalaMundoOverride || 0.0016; // controla o tamanho final da etiqueta no mundo 3D
     sprite.scale.set(largura * escalaMundo, altura * escalaMundo, 1);
     return sprite;
 }
 
 let labelObjects = [];
+let vigasChassi = [];
+
+// Vigas decorativas acompanhando a fileira reta de cadeiras (MCC2/3) —
+// "amarra" visualmente os cilindros, que senão parecem flutuar soltos no
+// ar. Puramente decorativo, nunca entra em meshesBySlot (não interfere
+// com clique/hover).
+function construirChassiMCC23(slots) {
+    const sup = slots.filter(s => s.grupo === 'sup');
+    const inf = slots.filter(s => s.grupo === 'inf');
+    if (sup.length === 0) return;
+
+    const margem = 0.3;
+    const xIni = sup[0].pos.x - margem;
+    const xFim = sup[sup.length - 1].pos.x + margem;
+    const comprimento = xFim - xIni;
+    const centroX = (xIni + xFim) / 2;
+
+    const vigaMat = new THREE.MeshStandardMaterial({ color: 0x333b4a, metalness: 0.75, roughness: 0.3 });
+    const vigaGeo = new THREE.BoxGeometry(comprimento, 0.07, 0.1);
+
+    const vigaSup = new THREE.Mesh(vigaGeo, vigaMat);
+    vigaSup.position.set(centroX, sup[0].pos.y + 0.22, sup[0].pos.z);
+    vigaSup.castShadow = true;
+    grupoLinha.add(vigaSup);
+    vigasChassi.push(vigaSup);
+
+    const vigaInf = new THREE.Mesh(vigaGeo, vigaMat);
+    vigaInf.position.set(centroX, inf[0].pos.y - 0.22, inf[0].pos.z);
+    vigaInf.castShadow = true;
+    grupoLinha.add(vigaInf);
+    vigasChassi.push(vigaInf);
+}
+
 
 function construirCena(veio) {
     // limpa blocos e etiquetas anteriores
@@ -511,17 +736,32 @@ function construirCena(veio) {
     meshesBySlot = [];
     labelObjects.forEach(l => grupoLinha.remove(l));
     labelObjects = [];
+    vigasChassi.forEach(v => grupoLinha.remove(v));
+    vigasChassi = [];
 
+    reconstruirCaminhoAco(veio);
+    reposicionarPanela();
+    reposicionarVapor();
+
+    const mcc4 = ehMCC4(veio);
     const slots = calcularTransformacoes(construirLayoutSlots(veio));
+
+    if (!mcc4) construirChassiMCC23(slots);
 
     slots.forEach(slot => {
         const peca = piecesById[slot.id] || null;
         const cor = corPorPeca(peca);
-        const geo = slot.grupo === 'cabeceira' ? blocoGeoCabeceira : blocoGeoPadrao;
+        const glow = emissivoPorPeca(peca);
+        let geo;
+        if (mcc4) {
+            geo = slot.grupo === 'cabeceira' ? blocoGeoCabeceira : blocoGeoPadrao;
+        } else {
+            geo = slot.grupo === 'cabeceira' ? blocoGeoPadrao : cilindroCadeiraGeo;
+        }
 
         const material = new THREE.MeshStandardMaterial({
             color: cor, roughness: 0.42, metalness: 0.55,
-            emissive: 0x000000, emissiveIntensity: 0
+            emissive: glow.cor, emissiveIntensity: glow.intensidade
         });
 
         const mesh = new THREE.Mesh(geo, material);
@@ -529,7 +769,7 @@ function construirCena(veio) {
         mesh.rotation.z = slot.rotZ;
         mesh.castShadow = true;
         mesh.receiveShadow = true;
-        mesh.userData = { slot, peca };
+        mesh.userData = { slot, peca, emissiveBase: glow.cor, emissiveIntensityBase: glow.intensidade };
 
         // borda destacada (aresta)
         const edges = new THREE.EdgesGeometry(geo);
@@ -539,36 +779,60 @@ function construirCena(veio) {
         grupoLinha.add(mesh);
         meshesBySlot.push({ slot, mesh, material });
 
-        // Etiqueta fixa (sempre visível, não só no hover), agora como sprite 3D.
-        // O cálculo com seno e cosseno cria um vetor que aponta para o lado de fora (extradorso)
-        // do arco, garantindo que as etiquetas abram em leque na curva e não se sobreponham.
-        const sprite = criarSpriteTexto(slot.label, corHexParaCss(cor));
-        
-        const distancia = slot.grupo === 'cabeceira' ? 1.4 : 0.9; 
-        const dirX = Math.sin(slot.rotZ); 
-        const dirY = Math.cos(slot.rotZ);
-
-        sprite.position.set(
-            slot.pos.x + (dirX * distancia),
-            slot.pos.y + (dirY * distancia),
-            slot.pos.z
-        );
-        
-        grupoLinha.add(sprite);
-        labelObjects.push(sprite);
+        // Etiqueta fixa (sempre visível), agora como sprite 3D. As 74
+        // cadeiras (MCC2/3) NÃO ganham etiqueta fixa — numa fileira com
+        // tanta repetição, mesmo pequena, vira poluição visual ilegível
+        // (confirmado no print). A identificação delas continua disponível
+        // no hover (tooltip) e no clique (modal), sempre.
+        const ehCadeira = slot.grupo === 'sup' || slot.grupo === 'inf';
+        if (!ehCadeira) {
+            const sprite = criarSpriteTexto(slot.label, corHexParaCss(cor));
+            const offsetY = mcc4 ? (slot.grupo === 'cabeceira' ? 0.85 : 0.55) : 0.75;
+            sprite.position.set(slot.pos.x, slot.pos.y + offsetY, slot.pos.z);
+            grupoLinha.add(sprite);
+            labelObjects.push(sprite);
+        }
     });
 }
 
 // ==========================================================================
-// PLACA DE AÇO INCANDESCENTE — percorre Molde -> H17 em loop contínuo.
-// O caminho geométrico (posição de cada vaga) é o mesmo pra qualquer veio,
-// então a curva é construída uma única vez, fora do construirCena.
+// PLACA DE AÇO INCANDESCENTE — percorre o caminho de produção em loop
+// contínuo. Como agora existem duas geometrias bem diferentes (MCC4 em
+// fila única / MCC2/3 com pares Superior+Inferior), o caminho é
+// reconstruído toda vez que troca de veio, em vez de fixo.
 // ==========================================================================
-const slotsGeometricos = calcularTransformacoes(construirLayoutSlots('H'));
-const pontosCaminho = slotsGeometricos.map(s => s.pos.clone());
-const curvaAco = new THREE.CatmullRomCurve3(pontosCaminho, false, 'catmullrom', 0.25);
+let slotsGeometricos = [];  // slots com posição já calculada do veio atual (usado no enquadramento panorâmico)
+let curvaAco = null;
 
-const acoGeo = new THREE.BoxGeometry(0.95, 0.22, 0.62); // placa: larga, fina, comprida no sentido do fluxo
+function pontosCaminhoAco(veio) {
+    const slots = calcularTransformacoes(construirLayoutSlots(veio));
+    if (ehMCC4(veio)) {
+        return slots.map(s => s.pos.clone());
+    }
+    // MCC2/3: toda a curva da cabeceira (Molde -> Grupo 3-3, os 8 pontos,
+    // não só Molde e Zero) e depois a linha de centro entre cada par
+    // Superior/Inferior (a placa passa ENTRE os dois rolos, não
+    // ziguezagueando de um pro outro)
+    const cabeceira = slots.filter(s => s.grupo === 'cabeceira');
+    const sup = slots.filter(s => s.grupo === 'sup');
+    const inf = slots.filter(s => s.grupo === 'inf');
+    const centro = sup.map((s, i) => s.pos.clone().lerp(inf[i].pos, 0.5));
+    return [...cabeceira.map(s => s.pos.clone()), ...centro];
+}
+
+function reconstruirCaminhoAco(veio) {
+    slotsGeometricos = calcularTransformacoes(construirLayoutSlots(veio));
+    const pontos = pontosCaminhoAco(veio);
+    curvaAco = new THREE.CatmullRomCurve3(pontos, false, 'catmullrom', 0.25);
+    tempoAcoAtual = 0; // reinicia o loop, consistente com o caminho novo
+
+    // A placa precisa ser proporcional ao tamanho da máquina — do jeito
+    // que ficou (dobro do tamanho original), ela fica enorme perto das
+    // cadeiras bem menores da MCC2/3, meio "atravessando" os cilindros.
+    acoMesh.scale.setScalar(ehMCC4(veio) ? 1 : 0.42);
+}
+
+const acoGeo = new THREE.BoxGeometry(1.9, 0.44, 1.24); // placa: dobro do tamanho original
 const acoMat = new THREE.MeshStandardMaterial({
     color: 0xff5522,
     emissive: 0xff3300,
@@ -576,19 +840,118 @@ const acoMat = new THREE.MeshStandardMaterial({
     roughness: 0.35,
     metalness: 0.05,
     transparent: true,
-    opacity: 1
+    opacity: 1,
+    depthTest: false // igual às etiquetas: nunca fica escondida atrás de um bloco
 });
 const acoMesh = new THREE.Mesh(acoGeo, acoMat);
-const acoLuz = new THREE.PointLight(0xff5522, 3, 4.5, 2);
+acoMesh.renderOrder = 998; // desenhada por cima de tudo, sempre visível ao passar pelos veios
+const acoLuz = new THREE.PointLight(0xff5522, 3, 6, 2);
 acoMesh.add(acoLuz);
 scene.add(acoMesh);
+
+// ==========================================================================
+// PONTE ROLANTE (amarela) SEGURANDO A PANELA — igual à ilustração de
+// treinamento que você mandou: a ponte fica parada acima do Molde, com
+// um cabo descendo até a panela, que fica inclinada despejando o aço.
+// Tudo isso é decoração pura: nunca entra em meshesBySlot, então o
+// raycaster (hover/clique) ignora completamente — não atrapalha o
+// clique nos equipamentos reais, não importa a posição visual.
+// ==========================================================================
+const AMARELO_PONTE = 0xE8B024;
+const ponteMat = new THREE.MeshStandardMaterial({ color: AMARELO_PONTE, metalness: 0.5, roughness: 0.4 });
+const estruturaMat = new THREE.MeshStandardMaterial({ color: 0x2a2f3a, metalness: 0.6, roughness: 0.35 });
+const caboMat = new THREE.MeshStandardMaterial({ color: 0x14161c, metalness: 0.3, roughness: 0.6 });
+const panelaMat = new THREE.MeshStandardMaterial({ color: 0x2a2f3a, metalness: 0.8, roughness: 0.3 });
+
+// -- Estrutura da ponte: viga + duas pernas curtas + trolley --
+const grupoPonte = new THREE.Group();
+
+const vigaPonte = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.3, 0.55), ponteMat);
+grupoPonte.add(vigaPonte);
+
+[-2.05, 2.05].forEach(x => {
+    const perna = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.0, 0.5), ponteMat);
+    perna.position.set(x, 0.65, 0);
+    grupoPonte.add(perna);
+});
+
+const trolley = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.2, 0.45), estruturaMat);
+trolley.position.set(0, -0.25, 0);
+grupoPonte.add(trolley);
+
+scene.add(grupoPonte);
+
+// -- Cabo que desce da ponte até a panela --
+const cabo = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1, 6), caboMat);
+scene.add(cabo);
+
+// -- Panela pendurada no cabo, inclinada despejando --
+const grupoPanela = new THREE.Group();
+const corpoPanela = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.36, 0.7, 20, 1, true), panelaMat);
+corpoPanela.material.side = THREE.DoubleSide;
+grupoPanela.add(corpoPanela);
+const fundoPanela = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.06, 20), panelaMat);
+fundoPanela.position.y = -0.35;
+grupoPanela.add(fundoPanela);
+grupoPanela.rotation.z = -0.6; // inclinada, despejando
+scene.add(grupoPanela);
+
+const jatoMat = new THREE.MeshStandardMaterial({
+    color: 0xff5522, emissive: 0xff4400, emissiveIntensity: 2.2,
+    transparent: true, opacity: 0.92, depthTest: false
+});
+const jatoMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.1, 1, 12), jatoMat);
+jatoMesh.renderOrder = 997;
+const jatoLuz = new THREE.PointLight(0xff5522, 2, 4, 2);
+jatoMesh.add(jatoLuz);
+scene.add(jatoMesh);
+
+function reposicionarPanela() {
+    const moldeSlot = slotsGeometricos.find(s => s.label === 'MOLDE');
+    if (!moldeSlot) {
+        grupoPonte.visible = false; cabo.visible = false;
+        grupoPanela.visible = false; jatoMesh.visible = false;
+        return;
+    }
+    grupoPonte.visible = true; cabo.visible = true;
+    grupoPanela.visible = true; jatoMesh.visible = true;
+
+    const p = moldeSlot.pos;
+    const xCentro = p.x - 1.0;
+    const zCentro = p.z + 0.35;
+    const yPonte = p.y + 3.4;   // altura da viga da ponte
+    const yGancho = p.y + 2.15; // altura onde a panela fica pendurada
+
+    grupoPonte.position.set(xCentro, yPonte, zCentro);
+
+    const topoCabo = yPonte - 0.35;
+    cabo.position.set(xCentro, (topoCabo + yGancho) / 2, zCentro);
+    cabo.scale.set(1, topoCabo - yGancho, 1);
+
+    grupoPanela.position.set(xCentro, yGancho, zCentro);
+
+    jatoMesh.position.set(p.x - 0.55, p.y + 1.25, p.z + 0.25);
+    jatoMesh.rotation.z = 0.18;
+    jatoMesh.scale.set(1, 1.7, 1);
+}
+
+let tempoJato = 0;
+function atualizarJato(delta) {
+    tempoJato += delta;
+    const pulso = 0.82 + 0.18 * Math.sin(tempoJato * 9);
+    jatoMat.emissiveIntensity = 2.2 * pulso;
+    jatoLuz.intensity = 2 * pulso;
+}
 
 const DURACAO_LOOP_ACO = 7; // segundos pra percorrer o caminho inteiro
 let tempoAcoAtual = 0;
 const relogioAco = new THREE.Clock();
 
 function atualizarAco() {
+    if (!curvaAco) return;
     const delta = relogioAco.getDelta();
+    atualizarJato(delta);
+    atualizarVapor(delta);
     tempoAcoAtual = (tempoAcoAtual + delta) % DURACAO_LOOP_ACO;
     const t = Math.min(tempoAcoAtual / DURACAO_LOOP_ACO, 0.999);
 
@@ -640,8 +1003,8 @@ function onMouseMove(evt) {
     const hits = animandoCamera ? [] : raycaster.intersectObjects(alvos, false);
 
     if (hoveredMesh && (hits.length === 0 || hits[0].object !== hoveredMesh)) {
-        hoveredMesh.material.emissive.setHex(0x000000);
-        hoveredMesh.material.emissiveIntensity = 0;
+        hoveredMesh.material.emissive.setHex(hoveredMesh.userData.emissiveBase);
+        hoveredMesh.material.emissiveIntensity = hoveredMesh.userData.emissiveIntensityBase;
         hoveredMesh = null;
         container.classList.remove('hover-piece');
         elTooltip.classList.remove('show');
@@ -652,7 +1015,7 @@ function onMouseMove(evt) {
         if (obj !== hoveredMesh) {
             hoveredMesh = obj;
             hoveredMesh.material.emissive.setHex(0xffffff);
-            hoveredMesh.material.emissiveIntensity = 0.28;
+            hoveredMesh.material.emissiveIntensity = Math.max(0.28, hoveredMesh.userData.emissiveIntensityBase + 0.15);
             container.classList.add('hover-piece');
         }
         const { slot, peca } = obj.userData;
@@ -672,6 +1035,13 @@ function onClick(evt) {
     const worldPos = new THREE.Vector3();
     hoveredMesh.getWorldPosition(worldPos);
 
+    // Guarda de onde a câmera estava ANTES de dar zoom, pra poder voltar
+    // exatamente pra lá quando o modal for fechado.
+    if (!cameraAntesDoZoom) {
+        cameraAntesDoZoom = camera.position.clone();
+        targetAntesDoZoom = controls.target.clone();
+    }
+
     voarCameraPara(worldPos);
     abrirModalPeca(slot, peca);
     elTooltip.classList.remove('show');
@@ -684,22 +1054,28 @@ renderer.domElement.addEventListener('click', onClick);
 // CÂMERA — ZOOM SUAVE ATÉ A PEÇA CLICADA
 // ==========================================================================
 let animandoCamera = false;
+let cameraAntesDoZoom = null;
+let targetAntesDoZoom = null;
 
 function easeInOutCubic(t) {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
-function voarCameraPara(worldPos, duracaoMs = 750) {
+function voarCameraPara(worldPos, duracaoMs = 750, posicaoCameraExplicita = null) {
     animandoCamera = true;
     controls.enabled = false;
 
-    // Mantém o mesmo ângulo de visão atual, só aproxima até a peça clicada
-    const direcaoAtual = camera.position.clone().sub(controls.target);
-    if (direcaoAtual.lengthSq() < 0.0001) direcaoAtual.set(6, 5, 7);
-    direcaoAtual.normalize();
-
-    const distanciaZoom = 5.2;
-    const destinoPos = worldPos.clone().add(direcaoAtual.multiplyScalar(distanciaZoom));
+    let destinoPos;
+    if (posicaoCameraExplicita) {
+        destinoPos = posicaoCameraExplicita.clone();
+    } else {
+        // Mantém o mesmo ângulo de visão atual, só aproxima até a peça clicada
+        const direcaoAtual = camera.position.clone().sub(controls.target);
+        if (direcaoAtual.lengthSq() < 0.0001) direcaoAtual.set(6, 5, 7);
+        direcaoAtual.normalize();
+        const distanciaZoom = 5.2;
+        destinoPos = worldPos.clone().add(direcaoAtual.multiplyScalar(distanciaZoom));
+    }
     const destinoTarget = worldPos.clone();
 
     const origemPos = camera.position.clone();
@@ -729,7 +1105,14 @@ function voarCameraPara(worldPos, duracaoMs = 750) {
 const overlay = document.getElementById('overlay');
 const modal = document.getElementById('modal');
 
-function fecharModal() { overlay.classList.remove('show'); }
+function fecharModal() {
+    overlay.classList.remove('show');
+    if (cameraAntesDoZoom && !animandoCamera) {
+        voarCameraPara(targetAntesDoZoom, 700, cameraAntesDoZoom);
+        cameraAntesDoZoom = null;
+        targetAntesDoZoom = null;
+    }
+}
 overlay.addEventListener('click', (e) => { if (e.target === overlay) fecharModal(); });
 
 function corHexParaCss(hex) { return '#' + hex.toString(16).padStart(6, '0'); }
@@ -872,10 +1255,9 @@ function pecasEmAlerta() {
 // forma síncrona (sem await/setTimeout no meio), então o navegador só
 // repinta a tela depois que a câmera já foi restaurada — o usuário nunca
 // chega a ver o "pulo" pro ângulo panorâmico.
-function capturarImagemPanoramica() {
-    const posOriginal = camera.position.clone();
-    const targetOriginal = controls.target.clone();
-
+// Calcula uma posição de câmera que enquadra toda a cena atual (usa
+// slotsGeometricos, que já reflete o veio selecionado no momento).
+function calcularEnquadramentoGeral() {
     const box = new THREE.Box3();
     slotsGeometricos.forEach(s => box.expandByPoint(s.pos));
     const centro = new THREE.Vector3();
@@ -887,7 +1269,15 @@ function capturarImagemPanoramica() {
     const direcao = new THREE.Vector3(0.5, 0.42, 0.6).normalize();
     const distancia = diagonal * 1.3 + 3;
 
-    camera.position.copy(centro.clone().add(direcao.multiplyScalar(distancia)));
+    return { posicaoCamera: centro.clone().add(direcao.multiplyScalar(distancia)), centro };
+}
+
+function capturarImagemPanoramica() {
+    const posOriginal = camera.position.clone();
+    const targetOriginal = controls.target.clone();
+
+    const { posicaoCamera, centro } = calcularEnquadramentoGeral();
+    camera.position.copy(posicaoCamera);
     camera.lookAt(centro);
 
     renderer.render(scene, camera);
@@ -997,6 +1387,14 @@ function exportarPrint3D() {
 
 document.getElementById('btn-exportar').addEventListener('click', exportarPrint3D);
 
+document.getElementById('btn-resetar-vista').addEventListener('click', () => {
+    if (animandoCamera) return;
+    cameraAntesDoZoom = null;
+    targetAntesDoZoom = null;
+    const { posicaoCamera, centro } = calcularEnquadramentoGeral();
+    voarCameraPara(centro, 800, posicaoCamera);
+});
+
 // ==========================================================================
 // SELETOR DE VEIO
 // ==========================================================================
@@ -1004,8 +1402,20 @@ document.querySelectorAll('.veio-tab[data-veio]').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.veio-tab[data-veio]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
+
+        const veioAnterior = veioAtual;
         veioAtual = btn.dataset.veio;
+        const trocouDeMaquina = ehMCC4(veioAnterior) !== ehMCC4(veioAtual);
+
         construirCena(veioAtual);
+
+        document.getElementById('titulo-maquina').textContent =
+            `Sinótico Visual 3D — ${ehMCC4(veioAtual) ? 'MCC4' : 'MCC2/3'}`;
+
+        if (trocouDeMaquina && !animandoCamera) {
+            const { posicaoCamera, centro } = calcularEnquadramentoGeral();
+            voarCameraPara(centro, 900, posicaoCamera);
+        }
     });
 });
 
