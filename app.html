@@ -144,21 +144,69 @@
 </head>
 <body>
 
-    <!-- TELA DE LOGIN -->
-    <div id="tela-login-home" class="login-home-container no-print">
-        <a href="index.html" class="btn-voltar" title="Voltar para a página inicial"><i class="fas fa-arrow-left"></i> Voltar</a>
-        <div class="login-bg-imagem"></div>
-        <div class="login-bg-overlay"></div>
-        <div class="login-card-central glass-panel">
-            <div class="login-logo-factory glow-effect"><svg viewBox="0 0 24 24"><path d="M4,18V11.42L8.27,4H14V11H18V14H20V18H4M2,22V20H22V22H2M12,13H10V15H12V13M16,13H14V15H16V13M12,16H10V18H12V16M16,16H14V18H16V16Z"/></svg></div>
-            <div class="login-card-header"><h1>SISTEMA OMS</h1><p>Aciaria - Lingotamento Contínuo</p></div>
-            <div class="login-industrial-form">
-                <div class="login-form-group"><label>Operador / Líder</label><div class="login-input-wrapper"><input type="text" id="login-nome" placeholder="Nome do Líder de Turno"><i class="fas fa-user login-input-icon"></i></div></div>
-                <div class="login-form-group"><label>Matrícula</label><div class="login-input-wrapper"><input type="password" id="login-matricula" placeholder="Matrícula Operacional"><i class="fas fa-key login-input-icon"></i></div></div>
-                <button type="button" class="btn-premium login-btn-submit" onclick="window.processarAutenticacaoHome()">Autenticar Terminal</button>
+    <!-- TELA DE LOGIN AVANÇADA -->
+<div id="tela-login-home" class="login-home-container no-print">
+    
+    <!-- Controles de Canto -->
+    <a href="index.html" class="btn-voltar-login" title="Voltar para o Dashboard 3D">
+        <i class="fas fa-arrow-left"></i> Voltar
+    </a>
+    
+    <div class="login-status-badge">
+        <div class="login-status-dot"></div> Conexão Segura
+    </div>
+
+    <!-- Selo de Conexão Segura -->
+    <div class="login-status-badge">
+        <div class="login-status-dot"></div> Conexão Segura
+    </div>
+
+    <!-- NOVO: Botão de Acesso Visitante -->
+    <button type="button" class="btn-visitante-top" onclick="window.entrarComoVisitante()">
+        <i class="fas fa-eye"></i> Modo Visitante
+    </button>
+
+    <!-- Fundo de Lingotamento Contínuo -->
+    <div class="login-bg-imagem"></div>
+    <div class="login-bg-overlay"></div>
+    
+    <!-- Painel Central -->
+    <div class="login-card-central">
+        <div class="login-logo-factory">
+            <svg viewBox="0 0 24 24"><path d="M4,18V11.42L8.27,4H14V11H18V14H20V18H4M2,22V20H22V22H2M12,13H10V15H12V13M16,13H14V15H16V13M12,16H10V18H12V16M16,16H14V18H16V16Z"/></svg>
+        </div>
+        
+        <div class="login-card-header">
+            <h1>SISTEMA OMS</h1>
+            <p>Aciaria - Lingotamento Contínuo</p>
+        </div>
+        
+        <div class="login-industrial-form">
+            <!-- Campo 1: Matrícula (Login) -->
+            <div class="login-form-group">
+                <label>Credencial de Acesso (Matrícula)</label>
+                <div class="login-input-wrapper">
+                    <input type="text" id="login-nome" placeholder="Ex: CS55584">
+                    <i class="fas fa-id-badge login-input-icon"></i>
+                </div>
             </div>
+            
+            <!-- Campo 2: Senha -->
+            <div class="login-form-group">
+                <label>Código de Segurança (Senha)</label>
+                <div class="login-input-wrapper">
+                    <input type="password" id="login-matricula" placeholder="••••••••">
+                    <i class="fas fa-lock login-input-icon"></i>
+                </div>
+            </div>
+            
+            <!-- Botão Entrar -->
+            <button type="button" class="login-btn-submit" onclick="window.processarAutenticacaoHome()">
+                <i class="fas fa-power-off"></i> Autenticar Terminal
+            </button>
         </div>
     </div>
+</div>
 
     <!-- ===== CONTAINER PRINCIPAL ===== -->
     <div id="container-sistema-oms" class="app-container no-print" style="display: none;">
@@ -207,29 +255,180 @@
             </section>
 
             <section id="aba-painel" class="tab-content active">
-                <div class="welcome-box">
-                    <div><h1>Plataforma OMS - Gestão Avançada de Aciaria</h1><p>Visão computacional e desgaste preditivo de componentes do lingotamento.</p></div>
-                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                        <button class="btn-premium" onclick="window.toggleTheme()" id="btn-theme-toggle"><i class="fas fa-sun" id="theme-icon"></i> <span id="theme-text">Modo Claro</span></button>
-                        <button class="btn-premium btn-success" onclick="window.abrirAba(null,'aba-reservas')"><i class="fas fa-boxes"></i> Estoque</button>
-                    </div>
+    
+    <!-- 1. HEADER & STATUS DA PLANTA -->
+    <div class="welcome-box">
+        <div>
+            <h1>Plataforma OMS - Gestão Avançada de Aciaria</h1>
+            <p>Visão computacional e desgaste preditivo de componentes do lingotamento.</p>
+            <div class="plant-status-badge">
+                <i class="fas fa-circle"></i> Sistema Online & Monitorando
+            </div>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items: flex-start;">
+            <button class="btn-premium" onclick="window.toggleTheme()" id="btn-theme-toggle">
+                <i class="fas fa-sun" id="theme-icon"></i> <span id="theme-text">Modo Claro</span>
+            </button>
+            <button class="btn-premium btn-success" onclick="window.abrirAba(null,'aba-reservas')">
+                <i class="fas fa-boxes"></i> Estoque Central
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. KPIs MACRO (Visão Geral de Alto Nível) -->
+    <div class="kpi-container">
+        <div class="kpi-card danger" style="cursor:pointer;" onclick="window.abrirCriticos()">
+            <div class="kpi-icon glow-danger"><i class="fas fa-radiation"></i></div>
+            <div class="kpi-data">
+                <h4 id="kpi-criticos">0</h4>
+                <p>Ativos Críticos (&gt;= 80%)</p>
+                <div class="kpi-trend trend-up"><i class="fas fa-arrow-trend-up"></i> Requer Atenção Imediata</div>
+            </div>
+        </div>
+        
+        <div class="kpi-card warning" style="cursor:pointer;" onclick="window.abrirAba(null,'aba-reparos')">
+            <div class="kpi-icon glow-warning"><i class="fas fa-wrench"></i></div>
+            <div class="kpi-data">
+                <h4 id="kpi-reparo">0</h4>
+                <p>Oficina / Reparo</p>
+                <div class="kpi-trend trend-neutral"><i class="fas fa-minus"></i> Volume Estável</div>
+            </div>
+        </div>
+        
+        <div class="kpi-card success" style="cursor:pointer;" onclick="window.abrirAba(null,'aba-reservas')">
+            <div class="kpi-icon glow-success"><i class="fas fa-boxes"></i></div>
+            <div class="kpi-data">
+                <h4 id="kpi-reserva">0</h4>
+                <p>Reserva Pronta (Swap)</p>
+                <div class="kpi-trend trend-down"><i class="fas fa-arrow-trend-up" style="color:#10b981;"></i> Abastecimento em dia</div>
+            </div>
+        </div>
+        
+        <div class="kpi-card" style="border-left-color:var(--text-accent);">
+            <div class="kpi-icon" style="color:var(--text-accent); border-color:rgba(59,130,246,0.2);">
+                <i class="fas fa-microchip"></i>
+            </div>
+            <div class="kpi-data">
+                <h4 id="kpi-total">0</h4>
+                <p>Ativos Monitorados</p>
+                <div class="kpi-trend trend-neutral"><i class="fas fa-check-circle"></i> Sincronizado</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. GRID PRINCIPAL (Módulos de Controle) -->
+    <div class="dashboard-main-grid">
+        
+        <!-- COLUNA ESQUERDA: Fila de Críticos e Gargalos -->
+        <div class="glass-panel" style="padding: 24px; display: flex; flex-direction: column;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                <div>
+                    <h3 style="color:var(--text-title); font-size:1.1rem;">
+                        <i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i> Fila de Inspeção Prioritária
+                    </h3>
+                    <p class="text-muted" style="font-size: 0.8rem;">Ativos com maior índice de desgaste registrado.</p>
                 </div>
-                <div class="kpi-container">
-                    <div class="kpi-card danger" style="cursor:pointer;" onclick="window.abrirCriticos()"><div class="kpi-icon glow-danger"><i class="fas fa-radiation"></i></div><div class="kpi-data"><h4 id="kpi-criticos">0</h4><p>Críticos (&gt;= 80%)</p></div></div>
-                    <div class="kpi-card warning" style="cursor:pointer;" onclick="window.abrirAba(null,'aba-reparos')"><div class="kpi-icon glow-warning"><i class="fas fa-wrench"></i></div><div class="kpi-data"><h4 id="kpi-reparo">0</h4><p>Em Reparo</p></div></div>
-                    <div class="kpi-card success" style="cursor:pointer;" onclick="window.abrirAba(null,'aba-reservas')"><div class="kpi-icon glow-success"><i class="fas fa-boxes"></i></div><div class="kpi-data"><h4 id="kpi-reserva">0</h4><p>Reserva Pronta</p></div></div>
-                    <div class="kpi-card" style="border-left-color:var(--text-accent);"><div class="kpi-icon" style="color:var(--text-accent);border-color:var(--text-accent);"><i class="fas fa-cubes"></i></div><div class="kpi-data"><h4 id="kpi-total">0</h4><p>Total de Ativos</p></div></div>
+                <button class="btn-xs-primary" onclick="window.abrirCriticos()" style="color:var(--text-accent); padding: 8px 12px; background: rgba(59,130,246,0.1);">
+                    Ver Relatório Completo <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+            
+            <!-- O Container original que o JS popula -->
+            <div id="top-criticos-container" style="flex: 1; max-height: 400px; overflow-y: auto; padding-right: 8px;">
+                <!-- Fallback enquanto o JS não carrega -->
+                <div class="text-muted" style="text-align:center; padding: 40px 0; border: 1px dashed var(--border); border-radius: var(--radius);">
+                    <i class="fas fa-satellite-dish fa-spin" style="font-size: 2rem; margin-bottom: 10px; color: var(--primary);"></i>
+                    <p>Coletando telemetria dos veios...</p>
                 </div>
-                <div class="kpi-container" style="grid-template-columns:repeat(3,1fr);margin-top:16px;">
-                    <div class="kpi-card" style="border-left-color:#8b5cf6;"><div class="kpi-icon" style="color:#8b5cf6;border-color:#8b5cf6;"><i class="fas fa-industry"></i></div><div class="kpi-data"><h4 id="kpi-moldes-reparo">0</h4><p>Moldes em Reparo</p></div></div>
-                    <div class="kpi-card" style="border-left-color:#ec4899;"><div class="kpi-icon" style="color:#ec4899;border-color:#ec4899;"><i class="fas fa-cogs"></i></div><div class="kpi-data"><h4 id="kpi-segmentos-reparo">0</h4><p>Segmentos em Reparo</p></div></div>
-                    <div class="kpi-card" style="border-left-color:#f59e0b;"><div class="kpi-icon" style="color:#f59e0b;border-color:#f59e0b;"><i class="fas fa-rolling"></i></div><div class="kpi-data"><h4 id="kpi-total-rolos">0</h4><p>Total de Rolos em Estoque</p></div></div>
-                </div>
-                <div class="glass-panel" style="padding:20px;margin-top:24px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><h3 style="color:var(--text-title);font-size:16px;"><i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i> Top 5 Críticos</h3><button class="btn-xs-primary" onclick="window.abrirCriticos()" style="color:var(--text-accent);">Ver todos</button></div>
-                    <div id="top-criticos-container" style="max-height:220px;overflow-y:auto;padding-right:4px;"><div class="text-muted" style="text-align:center;padding:30px 0;">Carregando...</div></div>
-                </div>
-            </section>
+            </div>
+        </div>
+
+        <!-- COLUNA DIREITA: Comando & Controle -->
+        <div class="glass-panel" style="padding: 24px;">
+            <h3 style="color:var(--text-title); font-size:1.1rem; margin-bottom: 8px;">
+                <i class="fas fa-gamepad" style="color:var(--primary);"></i> Painel de Comando
+            </h3>
+            <p class="text-muted" style="font-size: 0.8rem;">Acessos rápidos às operações de turno.</p>
+
+            <div class="quick-actions-grid">
+                <button class="btn-quick-action action-success" onclick="window.abrirAba(event,'aba-producao')">
+                    <i class="fas fa-calculator"></i>
+                    Lançar Produção
+                </button>
+                <button class="btn-quick-action" onclick="window.abrirAba(event,'aba-fluxo')">
+                    <i class="fas fa-stream"></i>
+                    Ver Sequenciamento
+                </button>
+                <button class="btn-quick-action action-danger" onclick="window.toggleFormAdicionar()">
+                    <i class="fas fa-tools"></i>
+                    Nova Manutenção
+                </button>
+                <button class="btn-quick-action" onclick="window.abrirAba(event,'aba-almoxarifado')">
+                    <i class="fas fa-pallet"></i>
+                    Almoxarifado
+                </button>
+            </div>
+
+            <!-- Feed de Monitoramento Simulado -->
+            <div class="timeline-widget">
+                <h3 style="color:var(--text-title); font-size:0.95rem; margin-bottom: 12px;">
+                    <i class="fas fa-history" style="color:var(--text-muted);"></i> Atividade Recente
+                </h3>
+                <ul class="timeline-feed" id="home-timeline-feed">
+                    <li class="success">
+                        <span class="timeline-time">HOJE, 09:30</span>
+                        <strong>Lançamento Concluído:</strong> Produção do turno atualizada no MCC 3 (3.705 Ton).
+                    </li>
+                    <li class="alert">
+                        <span class="timeline-time">HOJE, 08:15</span>
+                        <strong>Alerta de Desgaste:</strong> Molde 4H-01 atingiu 82% da vida útil projetada.
+                    </li>
+                    <li>
+                        <span class="timeline-time">ONTEM, 23:40</span>
+                        <strong>Movimentação:</strong> Segmento HOR-08 liberado para Estoque Reserva.
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. KPIs MICRO (Detalhamento por Família de Ativos) -->
+    <h3 style="color:var(--text-title); font-size:1.1rem; margin: 32px 0 16px 0;">
+        <i class="fas fa-layer-group" style="color:var(--text-muted);"></i> Distribuição por Família
+    </h3>
+    <div class="kpi-container" style="grid-template-columns:repeat(3,1fr);">
+        <div class="kpi-card" style="border-left-color:#8b5cf6; background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), transparent);">
+            <div class="kpi-icon" style="color:#8b5cf6; border-color:rgba(139, 92, 246, 0.2);">
+                <i class="fas fa-industry"></i>
+            </div>
+            <div class="kpi-data">
+                <h4 id="kpi-moldes-reparo">0</h4>
+                <p>Moldes em Reparo</p>
+            </div>
+        </div>
+        
+        <div class="kpi-card" style="border-left-color:#ec4899; background: linear-gradient(135deg, rgba(236, 72, 153, 0.05), transparent);">
+            <div class="kpi-icon" style="color:#ec4899; border-color:rgba(236, 72, 153, 0.2);">
+                <i class="fas fa-cogs"></i>
+            </div>
+            <div class="kpi-data">
+                <h4 id="kpi-segmentos-reparo">0</h4>
+                <p>Segmentos em Reparo</p>
+            </div>
+        </div>
+        
+        <div class="kpi-card" style="border-left-color:#f59e0b; background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), transparent);">
+            <div class="kpi-icon" style="color:#f59e0b; border-color:rgba(245, 158, 11, 0.2);">
+                <i class="fas fa-rolling"></i>
+            </div>
+            <div class="kpi-data">
+                <h4 id="kpi-total-rolos">0</h4>
+                <p>Rolos em Estoque</p>
+            </div>
+        </div>
+    </div>
+
+</section>
 
             <section id="aba-fluxo" class="tab-content">
                 <div class="glass-panel" style="padding:24px;"><div class="panel-card-header"><h1 id="titulo-veio-focado">Sequenciamento Síncrono</h1></div><div id="container-fluxo-horizontal-scroll" class="graficos-container"></div></div>
@@ -298,7 +497,7 @@
                 <div class="glass-panel" style="border-top:4px solid #f59e0b;padding:24px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
                         <div><h2 style="color:#f59e0b;"><i class="fas fa-tools"></i> Setor de Manutenção (Reparo)</h2><p class="text-muted" style="font-size:13px;">Equipamentos que precisam de intervenção mecânica.</p></div>
-                        <button class="btn-premium btn-danger" onclick="window.resetarDiasReparo()" style="padding:6px 16px;font-size:12px;"><i class="fas fa-sync"></i> Resetar Dias</button>
+                       
                     </div>
                     <div class="table-responsive"><table class="premium-table"><thead><tr><th>TAG</th><th>Tipo</th><th>Desgaste</th><th>Dias em Reparo</th><th>Ações</th></tr></thead><tbody id="reparos-table-body"></tbody></table></div>
                 </div>
@@ -309,6 +508,69 @@
                     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;margin-bottom:16px;">
                         <div><h2 style="color:#10b981;"><i class="fas fa-boxes"></i> Estoque Disponível (Reserva)</h2><p class="text-muted" style="font-size:13px;">Peças prontas para alocação via Swap Automático.</p></div>
                         <button class="btn-premium" onclick="window.toggleFormAdicionar()"><i class="fas fa-plus"></i> Cadastrar Peça Nova</button>
+                        <!-- FORMULÁRIO DE CADASTRO DE NOVA PEÇA -->
+<div id="form-novo-equipamento" class="cadastrar-box hidden" style="margin-top: 20px; background: rgba(0,0,0,0.2); border: 1px dashed var(--primary); padding: 20px; border-radius: var(--radius);">
+    <h3 style="color: var(--primary); margin-bottom: 15px;"><i class="fas fa-plus-circle"></i> Cadastrar Nova Peça</h3>
+    <div class="form-grid-4">
+        <div class="input-group">
+            <label>TAG (ID do equipamento)</label>
+            <input type="text" id="add-tag" class="premium-input" placeholder="Ex: BND-4G">
+        </div>
+        <div class="input-group">
+            <label>Tipo de Família</label>
+            <select id="add-tipo" class="premium-select" onchange="window.atualizarPosicoesCadastro()">
+                <option value="">Selecione...</option>
+                <option value="Molde|2/3">Molde (MCC 2/3)</option>
+                <option value="Molde|4">Molde (MCC 4)</option>
+                <option value="Segmento Zero|2/3">Segmento Zero (MCC 2/3)</option>
+                <option value="Segmento Grupo 1|2/3">Segmento Grupo 1 (MCC 2/3)</option>
+                <option value="Segmento Grupo 2|2/3">Segmento Grupo 2 (MCC 2/3)</option>
+                <option value="Segmento Grupo 3|2/3">Segmento Grupo 3 (MCC 2/3)</option>
+                <option value="Cadeira Superior|2/3">Cadeira Superior (MCC 2/3)</option>
+                <option value="Cadeira Inferior|2/3">Cadeira Inferior (MCC 2/3)</option>
+                <option value="Bender|4">Bender (MCC 4)</option>
+                <option value="Bow|4">Bow (MCC 4)</option>
+                <option value="Straightener R1|4">Straightener R1 (MCC 4)</option>
+                <option value="Straightener R2|4">Straightener R2 (MCC 4)</option>
+                <option value="Horizontal|4">Horizontal (MCC 4)</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>Meta (Vida Útil em Toneladas/Corridas)</label>
+            <input type="number" id="add-meta" class="premium-input" placeholder="Ex: 1200000">
+        </div>
+        <div class="input-group">
+            <label>Instalar Direto?</label>
+            <select id="add-instalar-direto" class="premium-select">
+                <option value="false">Não (Mandar p/ Reserva)</option>
+                <option value="true">Sim (Instalar na Máquina)</option>
+            </select>
+        </div>
+        <div class="input-group" style="grid-column: span 2;">
+            <label>Veio de Destino (se instalar direto)</label>
+            <select id="add-veio" class="premium-select">
+                <option value="">Selecione...</option>
+                <option value="C">Veio C (MCC 2)</option>
+                <option value="D">Veio D (MCC 2)</option>
+                <option value="E">Veio E (MCC 3)</option>
+                <option value="F">Veio F (MCC 3)</option>
+                <option value="H">Veio H (MCC 4)</option>
+                <option value="G">Veio G (MCC 4)</option>
+            </select>
+        </div>
+        <div class="input-group" style="grid-column: span 2;">
+            <label>Posição Específica (Gaveta)</label>
+            <select id="add-posicao" class="premium-select">
+                <option value="">Selecionar posição...</option>
+            </select>
+        </div>
+        <div style="grid-column: span 4; display: flex; justify-content: flex-end; margin-top: 10px;">
+            <button class="btn-premium btn-success" onclick="window.processarCadastroPeca()">
+                <i class="fas fa-check"></i> Confirmar Cadastro
+            </button>
+        </div>
+    </div>
+</div>
                     </div>
                     <div class="table-responsive" style="margin-top:16px;">
                         <table class="premium-table">
@@ -399,6 +661,55 @@
             </div>
         </div>
     </div>
+
+    <!-- MODAL FOLHÃO DESEMPENADEIRA (CADEIRAS) -->
+<div id="modal-folhao-desempenadeira" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 1000px; max-height: 90vh; overflow-y: auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+            <h2 style="color:var(--text-heading);"><i class="fas fa-clipboard-check"></i> Liberação - Cadeira (Desempenadeira)</h2>
+            <button class="btn-close-emergency" onclick="window.fecharFolhaoDesemp()"><i class="fas fa-times"></i></button>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:10px; margin-bottom:15px; background:var(--bg-th); padding:12px; border-radius:8px;">
+            <div class="input-group"><label>TAG</label><input type="text" id="desemp-tag-name" readonly class="premium-input"></div>
+            <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="desemp-data-inicio" class="premium-input"></div>
+            <div class="input-group"><label>DATA FIM</label><input type="date" id="desemp-data-fim" class="premium-input"></div>
+            <div class="input-group"><label>MOTIVO</label><input type="text" id="desemp-motivo" placeholder="Motivo da OS" class="premium-input"></div>
+            <div class="input-group"><label>TIPO EXECUÇÃO</label>
+                <select id="desemp-tipo-execucao" class="premium-select">
+                    <option value="GERAL">GERAL</option>
+                    <option value="PARCIAL">PARCIAL</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="folhao-tabs">
+            <button class="folhao-tab active" onclick="window.trocarAbaDesemp(event, 'desemp-aba-inspecao')">1. Inspeção e Gap</button>
+            <button class="folhao-tab" onclick="window.trocarAbaDesemp(event, 'desemp-aba-rolos')">2. Medidas de Rolos</button>
+            <button class="folhao-tab" onclick="window.trocarAbaDesemp(event, 'desemp-aba-saida')">3. Saída e Materiais</button>
+        </div>
+        
+        <div class="folhao-body">
+            <div id="desemp-aba-inspecao" class="folhao-content">
+                <div id="container-desemp-inspecao"></div>
+                <hr style="margin:15px 0; border-color:var(--border);">
+                <div id="container-desemp-gap"></div>
+            </div>
+            <div id="desemp-aba-rolos" class="folhao-content hidden">
+                <div id="container-desemp-rolos"></div>
+            </div>
+            <div id="desemp-aba-saida" class="folhao-content hidden">
+                <div id="container-desemp-saida"></div>
+                <hr style="margin:15px 0; border-color:var(--border);">
+                <div id="container-desemp-materiais"></div>
+            </div>
+        </div>
+        
+        <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end;">
+            <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoDesemp()"><i class="fas fa-save"></i> Salvar e Imprimir</button>
+            <button class="btn-outline-danger" onclick="window.fecharFolhaoDesemp()">Fechar</button>
+        </div>
+    </div>
+</div>
 
     <div id="modal-folhao-bow" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 1100px; max-height: 90vh; overflow-y: auto;">

@@ -11,7 +11,7 @@ import {
     BIBLIOTECA_CHECKLISTS 
 } from './dados.js';
 
-import { BANCO_ATIVOS, sincronizarAtivosReaisMCC4, salvarPecaNoPython } from './banco.js';
+import { BANCO_ATIVOS, sincronizarAtivosReaisMCC4, salvarPecaNoPython, resolverApiBase } from './banco.js';
 // ==========================================================================
 // BANCO DE DADOS CORE - SISTEMA OMS
 // ==========================================================================
@@ -55,6 +55,19 @@ function getOrdemPadrao(tipo) {
     if (tipo === "Horizontal") return 500;
     return 999;
 }
+
+// ==============================================================
+// FUNÇÃO GLOBAL DE CÁLCULO DE DIAS EM REPARO
+// ==============================================================
+window.calcularDias = function(item) {
+    if (item.local === "Oficina / Reparo" && item.dataReparo) {
+        const agora = Date.now();
+        const diffMs = agora - item.dataReparo;
+        const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        return diffDias;
+    }
+    return item.dias || 0;
+};
 
 // ==========================================================================
 // FUNÇÕES AUXILIARES PARA POSIÇÕES E SLOTS (DEFINIDAS UMA ÚNICA VEZ)
@@ -248,7 +261,6 @@ function abrirAba(event, idAba) {
         if (typeof carregarOficina === 'function') carregarOficina();
     }
     
-    // 🔥 AQUI ESTÁ A MÁGICA QUE PREENCHE AS TABELAS NOVAS! 🔥
     if (idAba === "aba-producao") {
         if (typeof window.carregarHistoricoApontamentoGeral === 'function') window.carregarHistoricoApontamentoGeral();
         if (typeof window.carregarHistoricoApontamentoMoldes === 'function') window.carregarHistoricoApontamentoMoldes();
@@ -489,8 +501,8 @@ function mapearSlotLegadoMCC4(peca) {
     }
     
     if (tipoUpper.includes("STRAIGHTENER")) {
-        if (idUpper.includes("STR-6") || idUpper.includes("R1")) return "STR-1";
-        if (idUpper.includes("STR-7") || idUpper.includes("R2")) return "STR-2";
+        if (idUpper.includes("STR-1") || idUpper.includes("R1")) return "STR-1";
+        if (idUpper.includes("STR-2") || idUpper.includes("R2")) return "STR-2";
     }
     
     if (tipoUpper.includes("HORIZONTAL")) {
@@ -1026,7 +1038,11 @@ function confirmarRelatorio() {
     if (MODO_MODAL_RELATORIO.tipoAcao === 'SAQUE') {
         executarSaqueFinal(MODO_MODAL_RELATORIO.idSacado, textoLaudo);
     } else if (MODO_MODAL_RELATORIO.tipoAcao === 'SWAP') {
-        executarSwapFinal(MODO_MODAL_RELATORIO.idReserva, MODO_MODAL_RELATORIO.idSacado, MODO_MODAL_RELATORIO.localDestino, textoLaudo);
+        if (typeof executarSwapFinal === 'function') {
+            executarSwapFinal(MODO_MODAL_RELATORIO.idReserva, MODO_MODAL_RELATORIO.idSacado, MODO_MODAL_RELATORIO.localDestino, textoLaudo);
+        } else {
+            console.warn("⚠️ executarSwapFinal não está definida — esse fluxo (tipoAcao SWAP) está incompleto.");
+        }
     }
 
     fecharModalRelatorio();
@@ -2076,42 +2092,114 @@ function trocarAbaSegZero(event, idAba) {
     event.currentTarget.classList.add('active');
 }
 
-// ==========================================
-// CONEXÃO COM O GOOGLE SHEETS (API)
-// ==========================================
-const API_PLANILHA_URL = "https://script.google.com/macros/s/AKfycby_XSR5hrrvOgDEqlWhbKC2l7iPjthe6ht5YrabNliXsFlkNhzYGFU2BR8JUhzv8yY2/exec";
+// ==============================================================
+// PROCESSAR CADASTRO DE NOVA PEÇA
+// ==============================================================
+window.processarCadastroPeca = async function() {
+    // Validação de acesso (modo visitante)
+    if (typeof window.verificarAcesso === 'function' && !window.verificarAcesso()) return;
 
-async function registrarSwapNaPlanilha(maquina, veio, slotId, pecaNova, pecaAntiga, nomeOperador) {
-    const dadosSwap = {
-        maquina: maquina,
-        veio: veio,
-        slotId: slotId,
-        pecaInstalada: pecaNova,
-        pecaRemovida: pecaAntiga || "Nenhuma (gaveta vazia)",
-        operador: nomeOperador || "Operador Padrão",
-        dataHora: new Date().toLocaleString('pt-BR')
+    const tagInput = document.getElementById('add-tag');
+    const tipoSelect = document.getElementById('add-tipo');
+    const metaInput = document.getElementById('add-meta');
+    const instalarDiretoSelect = document.getElementById('add-instalar-direto');
+    const veioSelect = document.getElementById('add-veio');
+    const posicaoSelect = document.getElementById('add-posicao');
+
+    if (!tagInput || !tipoSelect || !metaInput) {
+        alert("Erro: Elementos do formulário não encontrados no HTML.");
+        return;
+    }
+
+    const id = tagInput.value.trim().toUpperCase();
+    const tipoCompleto = tipoSelect.value; // Ex: "Molde|2/3"
+    const meta = parseFloat(metaInput.value) || 0;
+    const instalarDireto = instalarDiretoSelect ? instalarDiretoSelect.value === "true" : false;
+    const veio = veioSelect ? veioSelect.value : "";
+    const posicao = posicaoSelect ? posicaoSelect.value : "";
+
+    if (!id || !tipoCompleto) {
+        alert("Por favor, preencha a TAG e selecione o Tipo de Família.");
+        return;
+    }
+
+    // Separa o tipo da compatibilidade de MCC (ex: "Molde|2/3" -> tipo: "Molde", mcc: "2/3")
+    let tipo = tipoCompleto;
+    let mcc_compat = "2/3";
+    if (tipoCompleto.includes('|')) {
+        const partes = tipoCompleto.split('|');
+        tipo = partes[0];
+        mcc_compat = partes[1];
+    }
+
+    // Valida se a TAG já existe
+    if (typeof BANCO_ATIVOS !== 'undefined') {
+        const existente = BANCO_ATIVOS.find(a => a.id === id);
+        if (existente) {
+            alert(`⚠️ Já existe um equipamento cadastrado com a TAG [${id}]!`);
+            return;
+        }
+    }
+
+    let local = "Oficina / Reserva";
+    let veioAtribuido = "";
+    let posAtribuida = "";
+
+    if (instalarDireto) {
+        if (!veio) {
+            alert("Selecione o Veio de destino para a instalação direta.");
+            return;
+        }
+        local = `MCC ${mcc_compat} - Veio ${veio}`;
+        veioAtribuido = veio;
+        posAtribuida = posicao;
+    }
+
+    const novoItem = {
+        id: id,
+        tipo: tipo,
+        mcc_compat: mcc_compat,
+        meta: meta,
+        ton: 0,
+        local: local,
+        veio: veioAtribuido,
+        posicao: posAtribuida,
+        dias: 0,
+        dataReparo: null
     };
 
-    console.log("⏳ Enviando dados para a planilha...", dadosSwap);
-
-    try {
-        const resposta = await fetch(API_PLANILHA_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(dadosSwap)
-        });
-
-        console.log("✅ Dados enviados para a planilha (no-cors). Verifique a planilha!");
-
-    } catch (erro) {
-        console.error("❌ Erro ao enviar para a planilha:", erro);
+    // Adiciona ao array global de ativos
+    if (typeof BANCO_ATIVOS !== 'undefined') {
+        BANCO_ATIVOS.push(novoItem);
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
     }
-}
 
-window.registrarSwapNaPlanilha = registrarSwapNaPlanilha;
+    // Sincroniza com o backend Python (se a função existir)
+    if (typeof window.salvarPecaNoPython === 'function') {
+        await window.salvarPecaNoPython(novoItem);
+    }
+
+    // Atualiza as telas do sistema
+    if (typeof window.renderAtivos === 'function') window.renderAtivos();
+    if (typeof window.renderReservas === 'function') window.renderReservas();
+    if (typeof window.renderPainelVeios === 'function') window.renderPainelVeios();
+    if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
+
+    // Limpa os campos e fecha o formulário
+    tagInput.value = '';
+    metaInput.value = '';
+    tipoSelect.value = '';
+    if (typeof window.toggleFormAdicionar === 'function') {
+        window.toggleFormAdicionar();
+    }
+
+    alert(`✅ Equipamento [${id}] cadastrado com sucesso!`);
+};
+
+// Função auxiliar opcional para dinâmica de posições no cadastro
+window.atualizarPosicoesCadastro = function() {
+    // Mantém compatibilidade caso o select de posições seja acionado
+};
 
 // ==========================================
 // FUNÇÕES PARA O PAINEL TURBINADO (NOVAS)
@@ -2444,8 +2532,6 @@ window.abrirFolhaoPorTipo = function(id) {
 
     // Se nada funcionar, exibe uma mensagem amigável (sem alert)
     console.warn(`Nenhum folhão disponível para o tipo: ${tipo}`);
-    // Opcional: mostra um toast ou notificação silenciosa
-    // alert('Nenhum folhão disponível para este equipamento.'); // REMOVA ESSA LINHA
 };
 // ==========================================================================
 // MÓDULO INTELIGENTE: APONTAMENTO DIÁRIO E DESCONTO DE VIDA ÚTIL EM LOTE
@@ -2532,16 +2618,10 @@ window.abrirAba = function(event, idAba) {
 };
 
 // ==============================================================
-// 2. CONEXÃO COM O PYTHON (ADEUS GOOGLE SHEETS)
+// 2. CONEXÃO COM O PYTHON 
 // ==============================================================
 window.carregarAtivosDoPython = async function() {
-    // Antes, essa função buscava os dados da API e jogava os objetos crus
-    // direto no BANCO_ATIVOS, sem traduzir nomes de campo (tonelagem->ton,
-    // posicao->pos) nem o vocabulário dos tipos (CADEIRA SUP->Cadeira
-    // Superior). Isso causava "NaN%" nas barras e gavetas vazias mesmo com
-    // peça cadastrada. A sincronizarAtivosReaisMCC4 (banco.js) já faz essa
-    // tradução corretamente, então usamos ela aqui em vez de duplicar a
-    // lógica.
+ 
     console.log("🔄 Conectando ao Banco de Dados Python...");
     const atualizou = await sincronizarAtivosReaisMCC4();
     if (atualizou) {
@@ -2582,7 +2662,8 @@ window.processarProducaoDiaria = async function() {
     localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
 
     try {
-        const resposta = await fetch("http://127.0.0.1:8000/api/apontar_producao_geral", {
+        const apiBase = await resolverApiBase();
+        const resposta = await fetch(`${apiBase}/api/apontar_producao_geral`, {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ mcc2: prodMcc2, mcc3: prodMcc3, mcc4: prodMcc4, operador: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Sistema" })
         });
@@ -2629,7 +2710,8 @@ window.salvarApontamentoMoldes = async function(event) {
     localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
 
     try {
-        const resposta = await fetch("http://127.0.0.1:8000/api/apontar_moldes", {
+        const apiBase = await resolverApiBase();
+        const resposta = await fetch(`${apiBase}/api/apontar_moldes`, {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ qtd_mcc2: m2, qtd_mcc3: m3, qtd_mcc4: m4, operador: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Desconhecido" })
         });
@@ -2651,33 +2733,44 @@ window.salvarApontamentoMoldes = async function(event) {
 
 window.carregarHistoricoApontamentoGeral = async function() {
     try {
-        const res = await fetch("http://127.0.0.1:8000/api/historico_apontamentos_geral");
+        const apiBase = await resolverApiBase();
+        const res = await fetch(`${apiBase}/api/historico_apontamentos_geral`);
         const json = await res.json();
         const tbody = document.getElementById("tabela-historico-geral");
         if (!tbody) return;
         if (Array.isArray(json) && json.length > 0) {
             tbody.innerHTML = json.map(log => {
+                // 🔥 Conversão de UTC para Horário Local (Brasília)
+                const dataHoraLocal = new Date(log.data_hora.replace(' ', 'T') + 'Z')
+                                         .toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+
                 let btnAcao = log.desfeito === 1 
                     ? `<span style="color:var(--danger); font-weight:bold; font-size:10px;"><i class="fas fa-ban"></i> DESFEITO</span>` 
                     : `<button class="btn-outline-danger" style="padding: 2px 6px; font-size: 10px;" onclick="window.desfazerApontamentoGeral(${log.id})"><i class="fas fa-undo"></i></button>`;
-                return `<tr><td>${log.data_hora}</td><td style="text-align:left;">${log.operador}</td><td style="color:#3b82f6; font-weight:bold;">${log.qtd_mcc2 > 0 ? '+'+log.qtd_mcc2 : '-'}</td><td style="color:#3b82f6; font-weight:bold;">${log.qtd_mcc3 > 0 ? '+'+log.qtd_mcc3 : '-'}</td><td style="color:#3b82f6; font-weight:bold;">${log.qtd_mcc4 > 0 ? '+'+log.qtd_mcc4 : '-'}</td><td>${btnAcao}</td></tr>`;
+                return `<tr><td>${dataHoraLocal}</td><td style="text-align:left;">${log.operador}</td><td style="color:#3b82f6; font-weight:bold;">${log.qtd_mcc2 > 0 ? '+'+log.qtd_mcc2 : '-'}</td><td style="color:#3b82f6; font-weight:bold;">${log.qtd_mcc3 > 0 ? '+'+log.qtd_mcc3 : '-'}</td><td style="color:#3b82f6; font-weight:bold;">${log.qtd_mcc4 > 0 ? '+'+log.qtd_mcc4 : '-'}</td><td>${btnAcao}</td></tr>`;
             }).join("");
         } else { tbody.innerHTML = "<tr><td colspan='6'>Nenhum lançamento.</td></tr>"; }
     } catch (e) { console.log(e); }
 };
 
+
 window.carregarHistoricoApontamentoMoldes = async function() {
     try {
-        const res = await fetch("http://127.0.0.1:8000/api/historico_apontamentos_moldes");
+        const apiBase = await resolverApiBase();
+        const res = await fetch(`${apiBase}/api/historico_apontamentos_moldes`);
         const json = await res.json();
         const tbody = document.getElementById("tabela-historico-moldes");
         if (!tbody) return;
         if (Array.isArray(json) && json.length > 0) {
             tbody.innerHTML = json.map(log => {
+                // 🔥 Conversão de UTC para Horário Local (Brasília)
+                const dataHoraLocal = new Date(log.data_hora.replace(' ', 'T') + 'Z')
+                                         .toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+
                 let btnAcao = log.desfeito === 1 
                     ? `<span style="color:var(--danger); font-weight:bold; font-size:10px;"><i class="fas fa-ban"></i> DESFEITO</span>` 
                     : `<button class="btn-outline-danger" style="padding: 2px 6px; font-size: 10px;" onclick="window.desfazerApontamentoMolde(${log.id})"><i class="fas fa-undo"></i></button>`;
-                return `<tr><td>${log.data_hora}</td><td style="text-align:left;">${log.operador}</td><td style="color:var(--warning); font-weight:bold;">${log.qtd_mcc2 > 0 ? '+'+log.qtd_mcc2 : '-'}</td><td style="color:var(--warning); font-weight:bold;">${log.qtd_mcc3 > 0 ? '+'+log.qtd_mcc3 : '-'}</td><td style="color:var(--warning); font-weight:bold;">${log.qtd_mcc4 > 0 ? '+'+log.qtd_mcc4 : '-'}</td><td>${btnAcao}</td></tr>`;
+                return `<tr><td>${dataHoraLocal}</td><td style="text-align:left;">${log.operador}</td><td style="color:var(--warning); font-weight:bold;">${log.qtd_mcc2 > 0 ? '+'+log.qtd_mcc2 : '-'}</td><td style="color:var(--warning); font-weight:bold;">${log.qtd_mcc3 > 0 ? '+'+log.qtd_mcc3 : '-'}</td><td style="color:var(--warning); font-weight:bold;">${log.qtd_mcc4 > 0 ? '+'+log.qtd_mcc4 : '-'}</td><td>${btnAcao}</td></tr>`;
             }).join("");
         } else { tbody.innerHTML = "<tr><td colspan='6'>Nenhum lançamento.</td></tr>"; }
     } catch (e) { console.log(e); }
@@ -2687,7 +2780,8 @@ window.desfazerApontamentoGeral = async function(id_log) {
     if (prompt("AÇÃO RESTRITA: Digite a senha master:") !== "dev123") return alert("❌ Senha incorreta!");
     if (!confirm("Tem certeza? A tonelagem será RETIRADA de todas as peças instaladas.")) return;
     try {
-        const res = await fetch("http://127.0.0.1:8000/api/desfazer_apontamento_geral", {
+        const apiBase = await resolverApiBase();
+        const res = await fetch(`${apiBase}/api/desfazer_apontamento_geral`, {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ log_id: id_log, operador: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Desconhecido" })
         });
@@ -2708,7 +2802,8 @@ window.desfazerApontamentoMolde = async function(id_log) {
     if (prompt("AÇÃO RESTRITA: Digite a senha master:") !== "dev123") return alert("❌ Senha incorreta!");
     if (!confirm("Tem certeza? As corridas serão RETIRADAS dos moldes na linha.")) return;
     try {
-        const res = await fetch("http://127.0.0.1:8000/api/desfazer_apontamento_moldes", {
+        const apiBase = await resolverApiBase();
+        const res = await fetch(`${apiBase}/api/desfazer_apontamento_moldes`, {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ log_id: id_log, operador: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Desconhecido" })
         });
@@ -2724,6 +2819,8 @@ window.desfazerApontamentoMolde = async function(id_log) {
         } else { alert("❌ Erro: " + (json.detail || "desconhecido")); }
     } catch (e) { alert("❌ Erro de conexão."); }
 };
+
+
 
 // ==============================================================
 // 4. HISTÓRICO DE LAUDOS E SWAP (PRESERVADOS)
@@ -2865,6 +2962,7 @@ if (typeof renderHistorico !== 'undefined') window.renderHistorico = renderHisto
 if (typeof carregarOficina !== 'undefined') window.carregarOficina = carregarOficina;
 if (typeof renderizarGraficosMCC !== 'undefined') window.renderizarGraficosMCC = renderizarGraficosMCC;
 if (typeof atualizarPainelCompleto !== 'undefined') window.atualizarPainelCompleto = atualizarPainelCompleto;
+if (typeof verificarAcesso !== 'undefined') window.verificarAcesso = verificarAcesso;
 
 // ==============================================================
 // 5. INICIALIZAÇÃO DA PÁGINA (START - LIVRE DE GOOGLE SHEETS)
@@ -2885,3 +2983,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.warn("⚠️ Python Offline ou Sem Dados. As abas podem estar vazias.");
     }
 });
+// ==============================================================
+// CONTROLE DO FORMULÁRIO DE CADASTRO DE PEÇAS
+// ==============================================================
+window.toggleFormAdicionar = function() {
+    // Busca o formulário que acabamos de criar no app.html
+    const form = document.getElementById('form-novo-equipamento');
+    
+    if (form) {
+        // Alterna entre mostrar e esconder (tira ou coloca a classe 'hidden')
+        form.classList.toggle('hidden');
+    } else {
+        console.error("Formulário 'form-novo-equipamento' não encontrado no HTML!");
+    }
+};

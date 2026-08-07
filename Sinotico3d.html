@@ -487,7 +487,7 @@ function calcularTransformacoesMCC23(slots) {
 const container = document.getElementById('canvas-container');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b0f19); // Dark Premium
-scene.fog = new THREE.FogExp2(0x0b0f19, 0.026);
+scene.fog = new THREE.FogExp2(0x0b0f19, 0.018);
 
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 200);
 camera.position.set(14, 13, 16);
@@ -498,7 +498,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
+renderer.toneMappingExposure = 1.4;
 container.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -510,13 +510,13 @@ controls.maxDistance = 45;
 controls.maxPolarAngle = Math.PI * 0.49;
 controls.update();
 
-// Luzes — simulando um galpão industrial: luz ambiente suave e neutra,
-// uma luz principal forte vinda de cima (como um refletor de teto) com
-// sombra, e duas luzes de preenchimento (uma fria, uma quente) pra dar
-// profundidade sem estourar o contraste.
-scene.add(new THREE.AmbientLight(0x9aa4b8, 0.5));
+// Luzes — bem mais claras que antes (estava difícil de enxergar).
+// Ambiente forte pra iluminar tudo por igual, luz principal bem intensa
+// de cima, e duas luzes de preenchimento reforçadas pra não sobrar
+// sombra escura em nenhum ângulo.
+scene.add(new THREE.AmbientLight(0xaab4c8, 1.05));
 
-const keyLight = new THREE.DirectionalLight(0xfff4e0, 1.3);
+const keyLight = new THREE.DirectionalLight(0xffffff, 2.1);
 keyLight.position.set(12, 22, 10);
 keyLight.castShadow = true;
 keyLight.shadow.mapSize.set(2048, 2048);
@@ -524,13 +524,17 @@ keyLight.shadow.camera.left = -20; keyLight.shadow.camera.right = 20;
 keyLight.shadow.camera.top = 20; keyLight.shadow.camera.bottom = -20;
 scene.add(keyLight);
 
-const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.45);
+const rimLight = new THREE.DirectionalLight(0x5ec8ff, 0.75);
 rimLight.position.set(-10, 8, -12);
 scene.add(rimLight);
 
-const fillQuente = new THREE.DirectionalLight(0xff8a4c, 0.22);
+const fillQuente = new THREE.DirectionalLight(0xff9d5c, 0.5);
 fillQuente.position.set(6, 4, -14);
 scene.add(fillQuente);
+
+const fillFrontal = new THREE.DirectionalLight(0xffffff, 0.6);
+fillFrontal.position.set(10, 6, 18);
+scene.add(fillFrontal);
 
 // ==========================================================================
 // AMBIENTAÇÃO — simplificada de volta, só o chão de referência e a
@@ -760,7 +764,7 @@ function construirCena(veio) {
         }
 
         const material = new THREE.MeshStandardMaterial({
-            color: cor, roughness: 0.42, metalness: 0.55,
+            color: cor, roughness: 0.38, metalness: 0.28,
             emissive: glow.cor, emissiveIntensity: glow.intensidade
         });
 

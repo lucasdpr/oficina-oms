@@ -2317,3 +2317,323 @@ h1, h2, h3, h4, h5, h6 {
 .folhao-content {
     display: block; /* Garante que o conteúdo ocupe espaço */
 }
+
+
+
+
+
+
+
+/*==============================================================================================
+
+/* ===== DASHBOARD HOME - ESTILOS EXCLUSIVOS ===== */
+.dashboard-main-grid {
+    display: grid;
+    grid-template-columns: 2fr 1.2fr;
+    gap: 24px;
+    margin-top: 24px;
+}
+
+/* Painel de Ações Rápidas */
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+}
+.btn-quick-action {
+    background: rgba(20, 30, 50, 0.4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-body);
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all var(--transition);
+    cursor: pointer;
+    text-align: center;
+}
+.btn-quick-action i {
+    font-size: 1.6rem;
+    color: var(--primary);
+    transition: transform var(--transition);
+}
+.btn-quick-action:hover {
+    background: rgba(245, 158, 11, 0.1);
+    border-color: var(--primary);
+    color: var(--text-title);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
+}
+.btn-quick-action:hover i {
+    transform: scale(1.1);
+}
+.btn-quick-action.action-danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: #ef4444;
+    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15);
+}
+.btn-quick-action.action-danger i { color: #ef4444; }
+
+.btn-quick-action.action-success:hover {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: #10b981;
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
+}
+.btn-quick-action.action-success i { color: #10b981; }
+
+/* Timeline de Monitoramento (Auditoria Rápida) */
+.timeline-widget {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+}
+.timeline-feed {
+    list-style: none;
+    padding: 0;
+    margin-top: 16px;
+}
+.timeline-feed li {
+    position: relative;
+    padding-left: 32px;
+    margin-bottom: 18px;
+    font-size: 0.85rem;
+    color: var(--text-body);
+}
+.timeline-feed li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 4px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--primary);
+    box-shadow: 0 0 8px var(--primary);
+}
+.timeline-feed li::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 20px;
+    width: 2px;
+    height: calc(100% + 5px);
+    background: var(--border);
+}
+.timeline-feed li:last-child::after { display: none; }
+.timeline-feed li:last-child { margin-bottom: 0; }
+.timeline-time {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 4px;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.timeline-feed li.alert::before { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+.timeline-feed li.success::before { background: #10b981; box-shadow: 0 0 8px #10b981; }
+
+/* Badges e Status da Planta */
+.plant-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid #10b981;
+    color: #10b981;
+    padding: 6px 14px;
+    border-radius: 30px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 12px;
+    animation: pulse-green 2s infinite;
+}
+@keyframes pulse-green {
+    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+    70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+/* Indicadores de Tendência nos KPIs */
+.kpi-trend {
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    font-weight: 600;
+}
+.trend-up { color: #ef4444; }
+.trend-down { color: #10b981; }
+.trend-neutral { color: var(--text-muted); }
+
+/* Responsividade Avançada da Home */
+@media (max-width: 1200px) {
+    .dashboard-main-grid { grid-template-columns: 1fr; }
+}
+
+
+/* ==========================================================================
+   TELA DE LOGIN - DESIGN INDUSTRIAL AVANÇADO
+   ========================================================================== */
+.login-home-container {
+    position: fixed; inset: 0; z-index: 10000;
+    display: flex; justify-content: center; align-items: center;
+    overflow: hidden;
+    background-color: #0a0e17; /* Fallback */
+}
+
+/* Imagem de Fundo (Aço Quente) */
+.login-bg-imagem {
+    position: absolute; inset: -20px; /* Margem negativa para o blur não vazar na borda */
+    /* Substitua o nome do arquivo abaixo se colocar na sua pasta! */
+    background: url('WhatsApp Image 2026-06-08 at 14.06.56.jpeg') center/cover no-repeat;
+    filter: blur(4px); /* Desfoque suave para não ofuscar o texto */
+    z-index: 1;
+}
+
+/* Máscara escura sobre a imagem para dar contraste */
+.login-bg-overlay {
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at center, rgba(10, 14, 23, 0.4) 0%, rgba(10, 14, 23, 0.95) 100%);
+    z-index: 2;
+}
+
+/* Card de Vidro (Glassmorphism) */
+.login-card-central {
+    position: relative; z-index: 3;
+    width: 100%; max-width: 420px;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 3px solid #f59e0b; /* Borda laranja ligando com a cor do aço */
+    border-radius: 16px;
+    padding: 40px 32px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 30px rgba(245, 158, 11, 0.15);
+    animation: form-appear 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes form-appear {
+    from { opacity: 0; transform: translateY(30px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Ícone da Indústria */
+.login-logo-factory {
+    width: 64px; height: 64px;
+    margin: 0 auto 20px;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.05));
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    border-radius: 16px;
+    display: flex; justify-content: center; align-items: center;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
+}
+.login-logo-factory svg { width: 32px; height: 32px; fill: #f59e0b; }
+
+/* Textos do Cabeçalho */
+.login-card-header { text-align: center; margin-bottom: 32px; }
+.login-card-header h1 { font-size: 1.8rem; font-weight: 800; color: #ffffff; letter-spacing: 1px; margin: 0 0 4px 0; }
+.login-card-header p { font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; margin: 0; }
+
+/* Campos de Input Escuros */
+.login-form-group { margin-bottom: 20px; text-align: left; }
+.login-form-group label { display: block; font-size: 0.75rem; font-weight: 600; color: #cbd5e1; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.login-input-wrapper { position: relative; }
+.login-input-wrapper input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    font-size: 0.95rem;
+    padding: 14px 14px 14px 44px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+.login-input-wrapper input::placeholder { color: #475569; }
+.login-input-wrapper input:focus {
+    outline: none;
+    border-color: #f59e0b;
+    background: rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15);
+}
+
+/* Ícones dentro dos Inputs */
+.login-input-icon {
+    position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+    color: #64748b; font-size: 1.1rem; transition: color 0.3s ease;
+}
+.login-input-wrapper input:focus + .login-input-icon { color: #f59e0b; }
+
+/* Botão de Autenticar (Destaque Quente) */
+.login-btn-submit {
+    width: 100%;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #111827; /* Texto escuro para dar leitura no laranja */
+    border: none;
+    padding: 16px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+    display: flex; justify-content: center; align-items: center; gap: 10px;
+}
+.login-btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(245, 158, 11, 0.5);
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+}
+
+/* Badge Superior (Status Servidor) */
+.login-status-badge {
+    position: absolute; top: 24px; right: 24px; z-index: 4;
+    background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #10b981; padding: 6px 14px; border-radius: 20px;
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    display: flex; align-items: center; gap: 8px; backdrop-filter: blur(10px);
+}
+.login-status-dot {
+    width: 8px; height: 8px; background: #10b981; border-radius: 50%;
+    box-shadow: 0 0 8px #10b981;
+    animation: blink 2s infinite;
+}
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* Botão Voltar Transparente */
+.btn-voltar-login {
+    position: absolute; top: 24px; left: 24px; z-index: 4;
+    background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #cbd5e1; padding: 8px 16px; border-radius: 8px;
+    font-size: 0.8rem; font-weight: 600; text-decoration: none;
+    display: flex; align-items: center; gap: 8px; backdrop-filter: blur(10px);
+    transition: all 0.3s;
+}
+.btn-voltar-login:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
+
+/* Botão de Acesso Visitante (Canto Superior Direito) */
+.btn-visitante-top {
+    position: absolute; top: 68px; right: 24px; z-index: 4;
+    background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #f59e0b; padding: 6px 14px; border-radius: 20px;
+    font-size: 0.75rem; font-weight: 700; text-decoration: none; text-transform: uppercase;
+    letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;
+    backdrop-filter: blur(10px); cursor: pointer; transition: all 0.3s ease;
+}
+.btn-visitante-top:hover {
+    background: #f59e0b; color: #0a0e17;
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+    transform: translateY(-1px);
+}
+

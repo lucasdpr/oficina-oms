@@ -199,23 +199,6 @@ function renderReservas() {
 }
 
 // ==============================================================
-// RESETAR DIAS EM REPARO
-// ==============================================================
-function resetarDiasReparo() {
-    if (!confirm("⚠️ Isso vai zerar a contagem de dias de TODOS os equipamentos em reparo. Deseja continuar?")) return;
-
-    BANCO_ATIVOS.forEach(a => {
-        if (a.local === "Oficina / Reparo") {
-            a.dias = 0;
-            a.dataReparo = Date.now();
-        }
-    });
-    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-    if (typeof window.renderReparos === 'function') window.renderReparos();
-    alert("✅ Contagem de dias resetada para todos os equipamentos em reparo!");
-}
-
-// ==============================================================
 // EXCLUIR EQUIPAMENTO (definido globalmente)
 // ==============================================================
 window.excluirEquipamento = function(id) {
@@ -246,13 +229,7 @@ window.excluirEquipamento = function(id) {
     }
 };
 
-// ==============================================================
-// EXPOSIÇÃO GLOBAL
-// ==============================================================
-window.renderReservas = renderReservas;
-window.resetarDiasReparo = resetarDiasReparo;
-window.calcularDias = calcularDias;
-window.excluirEquipamento = window.excluirEquipamento; // já definido acima
+
 
 // ==============================================================
 // REEXPORTAÇÕES PARA COMPATIBILIDADE COM OS FOLHÕES
@@ -270,7 +247,6 @@ const renderizarGraficosMCC = window.renderizarGraficosMCC;
 export {
     calcularDias,
     renderReservas,
-    resetarDiasReparo,
     renderAtivos,
     renderPainelVeios,
     renderReparos,

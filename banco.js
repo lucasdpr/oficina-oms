@@ -34,7 +34,7 @@ function fetchComTimeout(url, opts = {}, ms = 1500) {
 let apiBaseResolvida = null;
 let apiBaseResolvendo = null;
 
-async function resolverApiBase() {
+export async function resolverApiBase() {
     if (apiBaseResolvida) return apiBaseResolvida;
     if (apiBaseResolvendo) return apiBaseResolvendo;
 
@@ -382,5 +382,6 @@ export default {
     setVeioSelecionado,
     sincronizarAtivosReaisMCC4,
     salvarPecaNoPython,
-    salvarHistoricoNoPython
+    salvarHistoricoNoPython,
+    resolverApiBase
 };
