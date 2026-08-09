@@ -4,30 +4,32 @@
    VARIÁVEIS GLOBAIS - MODO ESCURO (PADRÃO INDUSTRIAL)
 ========================================== */
 :root {
-  /* Cores Base - Fundo Escuro Slate/Navy */
-  --bg-main: #0a0f1a;
-  --bg-card: rgba(20, 30, 50, 0.75);
-  --bg-sidebar: rgba(10, 15, 26, 0.97);
-  --bg-input: rgba(20, 30, 50, 0.9);
+  /* Cores Base - Grafite/Navy profundo, igual ao Sinótico 3D */
+  --bg-main: #0a0e14;
+  --bg-card: rgba(16, 21, 31, 0.82);
+  --bg-sidebar: rgba(9, 12, 18, 0.97);
+  --bg-input: rgba(22, 29, 43, 0.9);
   --bg-hover: rgba(56, 189, 248, 0.08);
   
-  --bg-th: rgba(0, 0, 0, 0.4);
-  --bg-td: rgba(20, 30, 50, 0.4);
-  --welcome-bg: linear-gradient(145deg, rgba(20, 30, 50, 0.95) 0%, rgba(10, 15, 26, 0.95) 100%);
-  --body-radial: radial-gradient(ellipse at 50% 0%, #1a2744 0%, #0a0f1a 70%);
+  --bg-th: rgba(0, 0, 0, 0.35);
+  --bg-td: rgba(22, 29, 43, 0.45);
+  --welcome-bg: linear-gradient(145deg, rgba(22, 29, 43, 0.95) 0%, rgba(9, 12, 18, 0.95) 100%);
+  --body-radial: radial-gradient(ellipse at 50% 0%, #131a28 0%, #0a0e14 65%);
   
   /* Cores de Texto */
-  --text-main: #c8d6e5;
-  --text-muted: #7a8ba5;
-  --text-heading: #f0f4f8;
+  --text-main: #c8d2e0;
+  --text-muted: #7c8aa5;
+  --text-heading: #e8ecf4;
   --text-accent: #38bdf8;
-  --text-on-primary: #ffffff;
+  --text-on-primary: #04121c;
   
-  /* Cores de Status - Vibrantes */
-  --success: #10b981;
-  --success-bg: rgba(16, 185, 129, 0.15);
-  --warning: #f59e0b;
-  --warning-bg: rgba(245, 158, 11, 0.15);
+  /* Cores de Status - mesma paleta do Sinótico 3D (CORES = {normal, alerta, limite, falha}) */
+  --success: #22c55e;
+  --success-bg: rgba(34, 197, 94, 0.15);
+  --warning: #eab308;
+  --warning-bg: rgba(234, 179, 8, 0.15);
+  --limit: #f97316;
+  --limit-bg: rgba(249, 115, 22, 0.15);
   --danger: #ef4444;
   --danger-bg: rgba(239, 68, 68, 0.15);
   --info: #38bdf8;
@@ -36,10 +38,10 @@
   --purple-bg: rgba(168, 85, 247, 0.12);
   
   /* Bordas e Sombras */
-  --border-color: rgba(255, 255, 255, 0.08);
+  --border-color: rgba(255, 255, 255, 0.07);
   --border-glow: rgba(56, 189, 248, 0.3);
-  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3);
-  --shadow-hover: 0 8px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.05);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.35);
+  --shadow-hover: 0 10px 32px rgba(0, 0, 0, 0.45), 0 0 24px rgba(56, 189, 248, 0.08);
   
   /* Tipografia */
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -86,10 +88,12 @@ body.light-mode {
   --text-accent: #0284c7;
   --text-on-primary: #ffffff;
   
-  --success: #059669;
-  --success-bg: rgba(5, 150, 105, 0.10);
-  --warning: #d97706;
-  --warning-bg: rgba(217, 119, 6, 0.10);
+  --success: #16a34a;
+  --success-bg: rgba(22, 163, 74, 0.10);
+  --warning: #ca8a04;
+  --warning-bg: rgba(202, 138, 4, 0.10);
+  --limit: #ea580c;
+  --limit-bg: rgba(234, 88, 12, 0.10);
   --danger: #dc2626;
   --danger-bg: rgba(220, 38, 38, 0.10);
   --info: #0284c7;
@@ -1814,6 +1818,77 @@ h1, h2, h3, h4, h5, h6 {
    MEDIA QUERIES - RESPONSIVO
 ========================================== */
 @media (max-width: 992px) {
+  /* ==========================================
+     🆕 POLIMENTO MOBILE — a maior parte do uso é no celular, então
+     esses detalhes importam mais aqui do que no desktop.
+  ========================================== */
+
+  /* Área segura pra iPhones com notch/Dynamic Island e a barra de gestos
+     de baixo — sem isso, o cabeçalho fixo e os botões no rodapé de
+     modais podem ficar embaixo desses elementos do sistema. */
+  .mobile-header {
+    padding-top: max(10px, env(safe-area-inset-top));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+  .main-content {
+    padding-top: calc(80px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+  .sidebar {
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+  }
+
+  /* Alvos de toque maiores — 6px/8px de padding é fino demais pra
+     dedo. Manter a aparência, só engordar a área clicável. */
+  .btn-outline-danger,
+  .btn-xs-primary,
+  .btn-premium,
+  .folhao-tab,
+  .btn-filter-mcc,
+  .nav-link {
+    min-height: 40px;
+  }
+  .btn-outline-danger,
+  .btn-xs-primary {
+    padding: 9px 16px;
+  }
+  .nav-link {
+    padding: 12px 14px;
+  }
+  /* Botões de ação dentro de tabela (swap, excluir etc.) — normalmente
+     minúsculos, ficam lado a lado sem espaço de sobra pro dedo. */
+  .premium-table .btn-premium,
+  .premium-table .btn-outline-danger,
+  .industrial-table .btn-premium,
+  .industrial-table .btn-outline-danger {
+    padding: 8px 12px !important;
+    min-height: 38px;
+  }
+
+  /* Indicação visual de que a tabela rola pros lados — uma sombra sutil
+     na borda direita, sempre visível, em vez do usuário ter que
+     descobrir sozinho que dá pra arrastar. */
+  .table-responsive {
+    position: relative;
+  }
+  .table-responsive::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 28px;
+    pointer-events: none;
+    background: linear-gradient(to right, transparent, rgba(0,0,0,0.35));
+  }
+
+  /* Selects e inputs de formulário — altura mínima confortável pro dedo */
+  .premium-input, .premium-select, .premium-textarea {
+    min-height: 44px;
+  }
+
   .mobile-header {
     display: flex;
     justify-content: space-between;
@@ -1875,6 +1950,30 @@ h1, h2, h3, h4, h5, h6 {
 
   .sidebar.open {
     left: 0;
+  }
+
+  /* Fundo escurecido atrás do menu aberto — sem isso, dava pra confundir
+     o conteúdo real da página com o menu sobreposto, e não tinha como
+     fechar tocando fora. */
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(4, 6, 10, 0.6);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    z-index: 4500; /* abaixo da sidebar (5000), acima do resto do conteúdo */
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  .sidebar-backdrop.show {
+    display: block;
+    opacity: 1;
+  }
+
+  /* Trava o scroll da página por trás enquanto o menu está aberto */
+  body.menu-aberto-mobile {
+    overflow: hidden;
   }
 
   .kpi-container {
@@ -2042,95 +2141,42 @@ h1, h2, h3, h4, h5, h6 {
     min-width: 80px;
   }
 }
-/* Força a exibição dos selects na tabela de reservas */
+/* 🔧 CONSOLIDADO: aqui existiam 3 blocos quase idênticos empilhados
+   (cada um sobrescrevendo o anterior com mais !important), com cores
+   totalmente hardcoded e desconectadas do resto do tema, e fonte de
+   12px — que no iPhone faz o Safari dar zoom automático toda vez que
+   o campo é tocado. Uma regra só, usando os tokens do tema. */
 #estoque-table-body select,
 #estoque-table-body .premium-select {
     display: inline-block !important;
     opacity: 1 !important;
     visibility: visible !important;
-    min-width: 60px !important;
-    height: 30px !important;
-    padding: 4px 8px !important;
-    font-size: 0.75rem !important;
+    min-width: 64px !important;
+    height: 38px !important;
+    padding: 6px 10px !important;
+    font-size: 1rem !important;
     background: var(--bg-input) !important;
     color: var(--text-heading) !important;
     border: 1px solid var(--border-color) !important;
-    border-radius: 4px !important;
+    border-radius: var(--radius-sm) !important;
     appearance: auto !important;
     -webkit-appearance: auto !important;
+    pointer-events: auto !important;
+    cursor: pointer;
 }
 
 #estoque-table-body select option {
     background: var(--bg-main) !important;
     color: var(--text-heading) !important;
-    padding: 4px !important;
-}
-/* FORÇA A EXIBIÇÃO DOS SELECTS NA TABELA DE RESERVAS */
-#estoque-table-body select {
-    display: inline-block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    min-width: 50px !important;
-    height: auto !important;
-    padding: 4px 6px !important;
-    font-size: 12px !important;
-    background: #1a1a2e !important;
-    color: #e0e0e0 !important;
-    border: 1px solid #444 !important;
-    border-radius: 4px !important;
-    appearance: auto !important;
-    -webkit-appearance: auto !important;
-    pointer-events: auto !important;
-    z-index: 100 !important;
-}
-
-#estoque-table-body select option {
-    background: #1a1a2e !important;
-    color: #e0e0e0 !important;
     padding: 4px 8px !important;
 }
 
 #estoque-table-body select:hover {
-    border-color: #38bdf8 !important;
+    border-color: var(--text-accent) !important;
 }
 
 #estoque-table-body select:focus {
-    outline: 2px solid #38bdf8 !important;
-    outline-offset: 1px !important;
-}
-/* FORÇA A EXIBIÇÃO DOS SELECTS NA TABELA DE RESERVAS */
-#estoque-table-body select {
-    display: inline-block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    min-width: 60px !important;
-    height: 30px !important;
-    padding: 4px 8px !important;
-    font-size: 12px !important;
-    background: #1a1a2e !important;
-    color: #e0e0e0 !important;
-    border: 1px solid #38bdf8 !important;
-    border-radius: 4px !important;
-    appearance: auto !important;
-    -webkit-appearance: auto !important;
-    pointer-events: auto !important;
-    z-index: 999 !important;
-    position: relative !important;
-}
-
-#estoque-table-body select option {
-    background: #1a1a2e !important;
-    color: #e0e0e0 !important;
-    padding: 4px 8px !important;
-}
-
-#estoque-table-body select:hover {
-    border-color: #10b981 !important;
-    cursor: pointer !important;
-}
-
-#estoque-table-body select:focus {
-    outline: 2px solid #38bdf8 !important;
+    outline: 2px solid var(--text-accent) !important;
     outline-offset: 1px !important;
 }
 /* ===== BOTÃO VOLTAR (estilo CSN) ===== */
@@ -2637,4 +2683,3 @@ h1, h2, h3, h4, h5, h6 {
     box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
     transform: translateY(-1px);
 }
-
