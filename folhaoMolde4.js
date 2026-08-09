@@ -675,13 +675,16 @@ export async function salvarEImprimirFolhaoMolde4() {
         });
         
         const resultado = await resposta.json();
-        
-        // Se der algum erro no Python, o sistema avisa na tela e cancela a impressão
-        if (resultado.status === "erro") {
-            alert("❌ Erro no Banco de Dados: " + resultado.mensagem);
-            return; 
+
+        // 🔧 CORREÇÃO: checa também o status HTTP, não só o campo
+        // resultado.status — um 404/500 não tem esse campo e passava
+        // batido como se tivesse dado certo.
+        if (!resposta.ok || resultado.status === "erro") {
+            const msg = resultado.detail || resultado.mensagem || `Erro HTTP ${resposta.status}`;
+            alert("❌ Erro no Banco de Dados: " + msg);
+            return;
         }
-        console.log("✅ Salvo com sucesso no SQLite!");
+        console.log("✅ Salvo com sucesso no banco!");
     } catch(e) {
         console.error("Erro na Nuvem:", e);
         alert("❌ Erro de comunicação. O Python está rodando?");

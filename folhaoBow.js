@@ -570,12 +570,18 @@ window.salvarEImprimirFolhaoBow = async function() {
         });
         
         const resultado = await resposta.json();
-        
-        if (resultado.status === "erro") {
-            alert("❌ Erro no Banco de Dados: " + resultado.mensagem);
-            return; 
+
+        // 🔧 CORREÇÃO: antes só checava resultado.status === "erro", que só
+        // existe numa resposta bem-formada do endpoint certo. Um 404 (rota
+        // não existe) ou 500 (erro interno) devolve outro formato de JSON,
+        // sem esse campo — e o código seguia em frente como se tivesse dado
+        // certo (o "✅ Salvo com sucesso" aparecia mesmo com erro real).
+        if (!resposta.ok || resultado.status === "erro") {
+            const msg = resultado.detail || resultado.mensagem || `Erro HTTP ${resposta.status}`;
+            alert("❌ Erro no Banco de Dados: " + msg);
+            return;
         }
-        console.log("✅ Salvo com sucesso no SQLite!");
+        console.log("✅ Salvo com sucesso no banco!");
     } catch(e) {
         console.error("Erro na Nuvem:", e);
         alert("❌ Erro de comunicação. O Python está rodando?");
