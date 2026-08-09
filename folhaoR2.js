@@ -431,6 +431,14 @@ window.salvarEImprimirFolhaoR2 = function() {
     item.local = "Oficina / Reserva";
     localStorage.setItem("oms_ativos_v32_local", JSON.stringify(window.BANCO_ATIVOS));
 
+    // 🔧 CORREÇÃO: faltava avisar o Postgres dessa conclusão. Sem essa
+    // linha, a mudança só existia no navegador — na próxima sincronização
+    // (F5, ou outro usuário abrindo o sistema), o banco real (que nunca
+    // soube dessa conclusão) sobrescrevia tudo de volta pro estado antigo.
+    if (typeof window.salvarPecaNoPython === 'function') {
+        window.salvarPecaNoPython(item);
+    }
+
     let btnPDF = `<button onclick="window.abrirFolhaoR2('${tag}')" class="btn-outline-danger" style="padding: 2px 8px; font-size: 10px; margin-left: 10px; cursor: pointer;"><i class="fas fa-file-pdf"></i> Visualizar Folhão</button>`;
 
     if (window.registrarHistorico) {

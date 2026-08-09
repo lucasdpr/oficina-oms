@@ -478,6 +478,12 @@ window.salvarEImprimirFolhaoDesemp = function() {
     item.local = "Oficina / Reserva";
     localStorage.setItem("oms_ativos_v32_local", JSON.stringify(window.BANCO_ATIVOS));
 
+    // 🔧 CORREÇÃO: faltava avisar o Postgres dessa conclusão — sem isso,
+    // a mudança só existia no navegador e sumia no próximo F5.
+    if (typeof window.salvarPecaNoPython === 'function') {
+        window.salvarPecaNoPython(item);
+    }
+
     if (window.registrarHistorico) {
         window.registrarHistorico(tag, `Laudo Desempenadeira (${tipoCadeira}) concluído.`);
     }

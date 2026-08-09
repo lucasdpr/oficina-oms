@@ -2,7 +2,7 @@
 // folhaoMolde4.js - Módulo completo para BENDER e MOLDE MCC 4
 // ==============================================================
 
-import { BANCO_ATIVOS } from './banco.js';
+import { BANCO_ATIVOS, resolverApiBase } from './banco.js?v=2';
 import { renderAtivos, renderReparos, renderReservas } from './ui.js';
 import { gerarTelasBenderHTML, imprimirPDFBender } from './folhao_bender.js';
 
@@ -664,7 +664,11 @@ export async function salvarEImprimirFolhaoMolde4() {
 
     // 🔥 A CORREÇÃO MÁGICA: Obriga o navegador a ESPERAR o Python terminar de salvar! 🔥
     try {
-        const resposta = await fetch("http://localhost:8000/api/salvar_folhao", {
+        // 🔧 CORREÇÃO: antes era um localhost:8000 fixo (só funcionava com
+        // servidor local rodando). Agora usa a mesma resolução de API do
+        // resto do sistema (local se existir, senão o Render).
+        const apiBase = await resolverApiBase();
+        const resposta = await fetch(`${apiBase}/api/salvar_folhao`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(dadosFolhao)

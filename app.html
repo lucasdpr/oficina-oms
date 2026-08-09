@@ -105,7 +105,7 @@
         @media (max-width: 992px) { .kpi-container { grid-template-columns: 1fr 1fr; } .graficos-container { grid-template-columns: 1fr; } .welcome-box { flex-direction: column; align-items: flex-start; } }
         @media (max-width: 600px) { .kpi-container { grid-template-columns: 1fr; } .kpi-data h4 { font-size: 1.5rem; } .btn-premium { font-size: 0.75rem; padding: 8px 14px; } }
         /* ===== MODAL ===== */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 9999; padding: 20px; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 9999; padding: 20px; }
         .modal-overlay:not(.hidden) { display: flex; }
         .modal-content { background: var(--bg-surface); border-radius: var(--radius-lg); max-width: 1400px; width: 95%; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--border); box-shadow: var(--shadow); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 2px solid #002b5e; background: rgba(0,0,0,0.3); }
@@ -228,6 +228,7 @@
             <nav class="sidebar-nav">
                 <a href="#" id="nav-painel" class="nav-link active" onclick="window.abrirAba(event,'aba-painel')"><i class="fas fa-chart-pie"></i> Painel Geral OMS</a>
                 <a href="#" id="nav-fluxo" class="nav-link" onclick="window.abrirAba(event,'aba-fluxo')"><i class="fas fa-stream"></i> Sequenciamento Veios</a>
+                <a href="Sinotico3d.html" id="nav-sinotico" class="nav-link" style="color:#22d3ee;" target="_blank" title="Abre em uma nova aba"><i class="fas fa-cube"></i> Sinótico 3D</a>
                 
                 <a href="#" id="nav-producao" class="nav-link" style="color: #3b82f6;" onclick="window.abrirAba(event,'aba-producao')"><i class="fas fa-calculator"></i> Lançamento de Produção</a>
                 
@@ -1135,17 +1136,17 @@
     <!-- SCRIPTS (consolidados)                   -->
     <!-- ========================================= -->
     <script type="module">
-        import './script.js?v=4';
+        import './script.js?v=5';
         import './ui.js?v=9';
-        import './folhaoMolde4.js?v=2';
+        import './folhaoMolde4.js?v=3';
         import './folhao_bender.js?v=2';
-        import './folhaoR2.js?v=2';
-        import './folhaoHorizontal.js?v=2';
-        import './folhaoBow.js?v=2';
-        import './folhaoDesempenadeira.js?v=2';
-        import './folhaoSegmentoZero.js?v=2';
-        import './folhaoMolde23.js?v=2';
-        import './folhaoStraightenerR1.js?v=2';
+        import './folhaoR2.js?v=3';
+        import './folhaoHorizontal.js?v=3';
+        import './folhaoBow.js?v=3';
+        import './folhaoDesempenadeira.js?v=3';
+        import './folhaoSegmentoZero.js?v=3';
+        import './folhaoMolde23.js?v=3';
+        import './folhaoStraightenerR1.js?v=3';
 
         console.log("✅ Sistema OMS inicializado!");
 

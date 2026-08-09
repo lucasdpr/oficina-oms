@@ -1477,6 +1477,7 @@ h1, h2, h3, h4, h5, h6 {
   width: 100%;
   height: 100%;
   background: rgba(10, 15, 26, 0.7);
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
 
@@ -2602,7 +2603,7 @@ h1, h2, h3, h4, h5, h6 {
     background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3);
     color: #10b981; padding: 6px 14px; border-radius: 20px;
     font-size: 0.7rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
-    display: flex; align-items: center; gap: 8px; backdrop-filter: blur(10px);
+    display: flex; align-items: center; gap: 8px; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
 }
 .login-status-dot {
     width: 8px; height: 8px; background: #10b981; border-radius: 50%;
@@ -2617,7 +2618,7 @@ h1, h2, h3, h4, h5, h6 {
     background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
     color: #cbd5e1; padding: 8px 16px; border-radius: 8px;
     font-size: 0.8rem; font-weight: 600; text-decoration: none;
-    display: flex; align-items: center; gap: 8px; backdrop-filter: blur(10px);
+    display: flex; align-items: center; gap: 8px; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
     transition: all 0.3s;
 }
 .btn-voltar-login:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
@@ -2629,7 +2630,7 @@ h1, h2, h3, h4, h5, h6 {
     color: #f59e0b; padding: 6px 14px; border-radius: 20px;
     font-size: 0.75rem; font-weight: 700; text-decoration: none; text-transform: uppercase;
     letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;
-    backdrop-filter: blur(10px); cursor: pointer; transition: all 0.3s ease;
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); cursor: pointer; transition: all 0.3s ease;
 }
 .btn-visitante-top:hover {
     background: #f59e0b; color: #0a0e17;

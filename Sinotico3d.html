@@ -135,6 +135,7 @@
     #overlay {
         position: absolute; inset: 0; background: rgba(5,7,12,0.55);
         display: none; align-items: center; justify-content: center; z-index: 40;
+        -webkit-backdrop-filter: blur(2px);
         backdrop-filter: blur(2px);
     }
     #overlay.show { display: flex; }
@@ -179,6 +180,30 @@
     #modal .btn-oficina:hover { background: rgba(239,68,68,0.2); }
 
     #modal .vaga-msg { font-size: 13px; color: var(--text-muted); line-height: 1.5; padding: 10px 0 4px 0; }
+
+    /* ===== 🆕 OBSERVAÇÃO EDITÁVEL (salva direto no Postgres) ===== */
+    #modal .obs-wrap { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 14px; }
+    #modal .obs-label {
+        font-size: 11px; color: var(--text-muted); text-transform: uppercase;
+        letter-spacing: 0.08em; margin-bottom: 6px; display: block;
+    }
+    #modal .obs-textarea {
+        width: 100%; min-height: 60px; resize: vertical; font-family: var(--sans);
+        font-size: 13px; color: var(--text-heading); background: var(--bg-panel-2);
+        border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; line-height: 1.4;
+    }
+    #modal .obs-textarea:focus { outline: none; border-color: var(--accent); }
+    #modal .obs-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
+    #modal .obs-status { font-size: 11px; color: var(--text-muted); }
+    #modal .obs-status.ok { color: #4ade80; }
+    #modal .obs-status.err { color: #fca5a5; }
+    #modal .btn-salvar-obs {
+        font-family: var(--sans); font-size: 12px; font-weight: 600; white-space: nowrap;
+        padding: 8px 14px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border);
+        background: var(--accent); color: #04121c; transition: opacity 0.15s ease;
+    }
+    #modal .btn-salvar-obs:hover { opacity: 0.88; }
+    #modal .btn-salvar-obs:disabled { opacity: 0.5; cursor: default; }
 
     /* ===== TOOLTIP DE HOVER ===== */
     #tooltip {
@@ -1121,6 +1146,47 @@ overlay.addEventListener('click', (e) => { if (e.target === overlay) fecharModal
 
 function corHexParaCss(hex) { return '#' + hex.toString(16).padStart(6, '0'); }
 
+// Evita que o texto da observação quebre o HTML do modal (ex: se alguém
+// digitar "</textarea>" ou "<script>" dentro da anotação).
+function escaparHtml(texto) {
+    return String(texto)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+// 🆕 OBSERVAÇÃO EDITÁVEL — salva direto no Postgres pela mesma API que
+// alimenta o resto do sistema (rota /api/atualizar_peca, que agora sabe
+// criar a linha também, não só atualizar). Atualiza o cache local
+// (piecesById) em caso de sucesso, pra não sumir se o modal reabrir.
+async function salvarObservacaoPeca(id, valor, botaoEl, statusEl) {
+    botaoEl.disabled = true;
+    statusEl.textContent = 'Salvando...';
+    statusEl.className = 'obs-status';
+    try {
+        const apiBase = await resolverApiBase();
+        const resposta = await fetch(`${apiBase}/api/atualizar_peca`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, observacao: valor })
+        });
+        const resultado = await resposta.json();
+        if (resposta.ok && resultado.sucesso) {
+            if (piecesById[id]) piecesById[id].observacao = valor;
+            statusEl.textContent = '✅ Salvo no banco.';
+            statusEl.className = 'obs-status ok';
+        } else {
+            throw new Error(resultado.detail || 'A API não confirmou o salvamento.');
+        }
+    } catch (erro) {
+        console.error('❌ Erro ao salvar observação:', erro);
+        statusEl.textContent = '❌ Não salvou — confira a conexão com a API.';
+        statusEl.className = 'obs-status err';
+    } finally {
+        botaoEl.disabled = false;
+    }
+}
+
 function abrirModalPeca(slot, peca) {
     if (!peca) {
         modal.innerHTML = `
@@ -1160,7 +1226,31 @@ function abrirModalPeca(slot, peca) {
                 <button class="btn-prontuario" id="btn-prontuario">📖 Abrir Prontuário</button>
                 <button class="btn-oficina" id="btn-oficina">🔧 Encaminhar p/ Oficina</button>
             </div>
+
+            <div class="obs-wrap">
+                <label class="obs-label" for="obs-textarea">Observação</label>
+                <textarea id="obs-textarea" class="obs-textarea" placeholder="Anotações sobre esta peça (situação, pendências, avarias)...">${escaparHtml(peca.observacao || '')}</textarea>
+                <div class="obs-footer">
+                    <span id="obs-status" class="obs-status"></span>
+                    <button class="btn-salvar-obs" id="btn-salvar-obs">💾 Salvar Observação</button>
+                </div>
+            </div>
         `;
+
+        // 🆕 Observação: edita aqui e salva direto no Postgres via
+        // /api/atualizar_peca (a mesma rota que agora sabe fazer upsert).
+        const obsTextarea = modal.querySelector('#obs-textarea');
+        const obsStatus = modal.querySelector('#obs-status');
+        const btnSalvarObs = modal.querySelector('#btn-salvar-obs');
+        if (obsTextarea && obsStatus && btnSalvarObs) {
+            obsTextarea.addEventListener('input', () => {
+                obsStatus.textContent = '';
+                obsStatus.className = 'obs-status';
+            });
+            btnSalvarObs.addEventListener('click', () => {
+                salvarObservacaoPeca(peca.id, obsTextarea.value, btnSalvarObs, obsStatus);
+            });
+        }
 
         modal.querySelector('#btn-prontuario').addEventListener('click', () => {
             if (typeof window.abrirHistoricoIndividual === 'function') {

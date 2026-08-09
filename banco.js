@@ -202,6 +202,35 @@ if (BANCO_ROLOS) {
     }
 }
 
+// ==========================================================================
+// 🔧 CORREÇÃO CRÍTICA: expõe o BANCO_ATIVOS também em window.BANCO_ATIVOS.
+//
+// Vários arquivos (script.js na função abrirFolhaoPorTipo — chamada pelo
+// botão "Concluir" —, além de folhaoR2.js, folhaoDesempenadeira.js e
+// folhao_bender.js) leem `window.BANCO_ATIVOS` em vez de importar
+// `BANCO_ATIVOS` deste módulo. Como nada nunca atribuía esse global, essas
+// chamadas quebravam com "Cannot read properties of undefined (reading
+// 'find')" assim que o botão "Concluir" era clicado — o folhão nem chegava
+// a abrir. A linha abaixo aponta window.BANCO_ATIVOS para o MESMO array
+// usado internamente aqui; como todo o resto do código só faz mutação in
+// place nesse array (push, splice, length = 0 seguido de push — nunca
+// reatribuição), essa referência continua válida e sincronizada mesmo
+// depois de sincronizarAtivosReaisMCC4() trocar o conteúdo.
+// ==========================================================================
+window.BANCO_ATIVOS = BANCO_ATIVOS;
+
+// 🔧 MESMA CORREÇÃO, PARA A MESMA CLASSE DE BUG: window.salvarPecaNoPython
+// e window.resolverApiBase também nunca eram atribuídos. script.js (na
+// função REAL de cadastro, window.processarCadastroPeca) e os folhões
+// R2, Straightener R1 e Desempenadeira (que não importam banco.js, só
+// usam window.*) chamavam window.salvarPecaNoPython(...) esperando que
+// existisse — e como nunca existiu, a chamada era sempre pulada em
+// silêncio (nenhum erro no console, só nada acontecia). Isso significa
+// que peça nova cadastrada pelo formulário, e o "Concluir" desses 3
+// folhões, pareciam funcionar na tela mas NUNCA chegavam no Postgres.
+window.salvarPecaNoPython = salvarPecaNoPython;
+window.resolverApiBase = resolverApiBase;
+
 // Funções de acesso para alterar variáveis blindadas
 export function setOperador(novoOperador) { OPERADOR_LOGADO = novoOperador; }
 export function setEmergencia(status) { EM_EMERGENCIA = status; }
@@ -282,12 +311,29 @@ export async function sincronizarAtivosReaisMCC4() {
                 mcc_compat: (peca.local && peca.local.includes("MCC 4")) ? "4" : "2/3",
                 tag_patrimonio: peca.tag_patrimonio || null,
                 data_entrada: peca.data_entrada || null,
+                observacao: peca.observacao || "",
                 status: peca.status || "Instalado"
             };
         });
 
+        // 🔧 CORREÇÃO: blindagem contra duplicatas (ex: "MLD-2C" aparecendo
+        // várias vezes na tela de Reparo). Antes, reservasLocais entrava
+        // aqui do jeito que estava no localStorage, sem checar se: (a) o
+        // mesmo id já veio fresquinho da API em novosAtivos, ou (b) o
+        // próprio localStorage já estava com esse id repetido de alguma
+        // sincronização anterior. As duas situações agora são descartadas
+        // — sempre fica só 1 cópia de cada id, a mais confiável.
+        const idsNovos = new Set(novosAtivos.map(a => a.id));
+        const idsVistos = new Set();
+        const reservasLocaisUnicas = reservasLocais.filter(a => {
+            if (idsNovos.has(a.id)) return false;   // já existe uma versão fresca vinda da API
+            if (idsVistos.has(a.id)) return false;  // duplicata dentro do próprio localStorage
+            idsVistos.add(a.id);
+            return true;
+        });
+
         BANCO_ATIVOS.length = 0;
-        BANCO_ATIVOS.push(...novosAtivos, ...reservasLocais);
+        BANCO_ATIVOS.push(...novosAtivos, ...reservasLocaisUnicas);
 
         console.log(`✅ MARCO ZERO ESTABELECIDO: ${novosAtivos.length} ativos sincronizados com o banco real.`);
 
@@ -311,19 +357,33 @@ export async function salvarPecaNoPython(peca) {
             headers: {
                 "Content-Type": "application/json"
             },
+            // 🔧 CORREÇÃO: além de tonelagem/dias/local/status, agora também
+            // envia tipo, meta e posicao. Isso é o que faz a API (main.py)
+            // conseguir CRIAR a linha no Postgres com dados completos quando
+            // o id ainda não existe (peça nova) — antes, só esses 4 campos
+            // eram enviados, então uma peça nova, mesmo se a API soubesse
+            // inserir, ficaria com tipo/meta/posição em branco no banco.
             body: JSON.stringify({
-                id: peca.id || peca.ID, 
+                id: peca.id || peca.ID,
+                tipo: peca.tipo || "",
                 tonelagem: peca.ton || 0,
                 dias: peca.dias || 0,
                 local: peca.local || "",
-                status: peca.status || ""
+                status: peca.status || "",
+                meta: peca.meta || 0,
+                posicao: peca.posicaoFixa || peca.pos || peca.posicao || "",
+                tag_patrimonio: peca.tag_patrimonio || null,
+                data_entrada: peca.data_entrada || null,
+                observacao: peca.observacao ?? null
             })
         });
 
         const resultado = await resposta.json();
 
         if (resultado.sucesso) {
-            console.log(`✅ [Banco de Dados] Peça ${peca.id} atualizada com sucesso!`);
+            console.log(resultado.criada
+                ? `✅ [Banco de Dados] Peça ${peca.id} CRIADA no Postgres com sucesso!`
+                : `✅ [Banco de Dados] Peça ${peca.id} atualizada com sucesso!`);
         } else {
             console.error("❌ Erro no Python:", resultado.detail || resultado);
         }

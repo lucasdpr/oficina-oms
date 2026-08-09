@@ -1,5 +1,8 @@
 // folhaoHorizontal.js - VERSÃO COMPLETA COM TODAS AS SEÇÕES DO DOCUMENTO OFICIAL
 
+// 🔧 Import novo: precisa de resolverApiBase() pra achar a API certa
+// (local ou Render) em vez de bater fixo em localhost:8000.
+import { resolverApiBase } from './banco.js?v=2';
 
 let ID_FOLHAO_HORIZ_ATUAL = null;
 
@@ -557,7 +560,11 @@ window.salvarEImprimirFolhaoHorizontal = async function() {
 
     // 3. 🔥 COMUNICAÇÃO COM O PYTHON (ESPERA O BANCO SALVAR) 🔥
     try {
-        const resposta = await fetch("http://localhost:8000/api/salvar_folhao", {
+        // 🔧 CORREÇÃO: antes era um localhost:8000 fixo (só funcionava com
+        // servidor local rodando). Agora usa a mesma resolução de API do
+        // resto do sistema (local se existir, senão o Render).
+        const apiBase = await resolverApiBase();
+        const resposta = await fetch(`${apiBase}/api/salvar_folhao`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(dadosFolhao)

@@ -11,7 +11,7 @@ import {
     BIBLIOTECA_CHECKLISTS 
 } from './dados.js';
 
-import { BANCO_ATIVOS, sincronizarAtivosReaisMCC4, salvarPecaNoPython, resolverApiBase } from './banco.js';
+import { BANCO_ATIVOS, sincronizarAtivosReaisMCC4, salvarPecaNoPython, resolverApiBase } from './banco.js?v=2';
 // ==========================================================================
 // BANCO DE DADOS CORE - SISTEMA OMS
 // ==========================================================================
@@ -1583,6 +1583,7 @@ window.atualizarPosicoesCadastro = function() {
     const tipo = document.getElementById("add-tipo").value;
     const selectPos = document.getElementById("add-posicao");
     const inputMeta = document.getElementById("add-meta");
+    const selectVeio = document.getElementById("add-veio");
     
     if (!selectPos || !inputMeta) return;
     selectPos.innerHTML = "";
@@ -1590,6 +1591,9 @@ window.atualizarPosicoesCadastro = function() {
     if (!tipo) {
         selectPos.innerHTML = `<option value="">Selecione um tipo primeiro...</option>`;
         inputMeta.value = "";
+        // 🔧 Sem tipo selecionado ainda, deixa o Veio num estado neutro
+        // (nenhuma opção pré-selecionada de um MCC errado).
+        if (selectVeio) selectVeio.innerHTML = `<option value="">Selecione um tipo primeiro...</option>`;
         return;
     }
 
@@ -1613,13 +1617,42 @@ window.atualizarPosicoesCadastro = function() {
 
     if (familia.includes("Molde")) {
         // 🔥 AQUI ESTÁ A MÁGICA DOS MOLDES AUTOMÁTICOS 🔥
-        inputMeta.value = (mcc === "4") ? 1100 : 900; 
+        // 🔧 CORREÇÃO: estava 1100 / 900 (3 zeros a menos que todo o resto
+        // da tabela `metas` acima e do que o próprio banco.js usa pros
+        // Moldes já existentes — ver BANCO_ATIVOS). Uma peça criada com
+        // meta=1100 chegava a 100% de desgaste quase instantaneamente,
+        // porque a tonelagem (tipicamente centenas de milhares) dividida
+        // por 1100 estoura a porcentagem em qualquer apontamento.
+        inputMeta.value = (mcc === "4") ? 1100000 : 900000;
         inputMeta.readOnly = false;
     } else {
         inputMeta.value = metas[familia] || 1000000;
     }
 
-    
+    // 1.5. 🔧 TRAVAR O VEIO DE DESTINO NO MCC CORRETO
+    // Antes, o select #add-veio sempre mostrava as 6 opções (C, D, E, F,
+    // G, H) não importa qual família/MCC estava selecionado — dava pra
+    // cadastrar um "Molde (MCC 4)" e instalar ele no Veio C, que é da
+    // MCC 2. Agora a lista é reconstruída de acordo com o MCC da família
+    // escolhida, do mesmo jeito que já acontece com a Posição logo abaixo.
+    if (selectVeio) {
+        const veioAtualSelecionado = selectVeio.value;
+        let opcoesVeio = '<option value="">Selecione...</option>';
+        if (mcc === "4") {
+            opcoesVeio += '<option value="G">Veio G (MCC 4)</option>';
+            opcoesVeio += '<option value="H">Veio H (MCC 4)</option>';
+        } else if (mcc === "2/3") {
+            opcoesVeio += '<option value="C">Veio C (MCC 2)</option>';
+            opcoesVeio += '<option value="D">Veio D (MCC 2)</option>';
+            opcoesVeio += '<option value="E">Veio E (MCC 3)</option>';
+            opcoesVeio += '<option value="F">Veio F (MCC 3)</option>';
+        }
+        selectVeio.innerHTML = opcoesVeio;
+        // Se o veio que já estava marcado continua válido pro novo MCC, mantém.
+        if ([...selectVeio.options].some(o => o.value === veioAtualSelecionado)) {
+            selectVeio.value = veioAtualSelecionado;
+        }
+    }
 
     // 2. TRAVAR AS POSIÇÕES CORRETAS
     if (mcc === "4") {
@@ -1677,6 +1710,20 @@ async function processarCadastroPeca() {
     if (instalarDireto && !veio) {
         alert("Selecione o Veio de destino.");
         return;
+    }
+
+    // 🔧 TRAVA DE SEGURANÇA: confirma no back-end do formulário (não só
+    // visualmente no <select>) que o veio escolhido realmente pertence ao
+    // MCC do tipo selecionado. Isso é reforço pra correção feita em
+    // atualizarPosicoesCadastro() — mesmo que o <select> de veio fique
+    // desatualizado por algum motivo, o cadastro não deixa passar uma
+    // combinação inválida (ex: Molde MCC 4 indo pro Veio C, que é MCC 2).
+    if (instalarDireto && veio) {
+        const veiosValidos = (mccCompat === "4") ? ["G", "H"] : ["C", "D", "E", "F"];
+        if (!veiosValidos.includes(veio)) {
+            alert(`⚠️ O Veio ${veio} não é compatível com este tipo de equipamento (MCC ${mccCompat}). Selecione um veio válido.`);
+            return;
+        }
     }
 
     const tipoUpper = familia.toUpperCase();
@@ -2150,6 +2197,14 @@ window.processarCadastroPeca = async function() {
             alert("Selecione o Veio de destino para a instalação direta.");
             return;
         }
+        // 🔧 TRAVA DE SEGURANÇA: impede instalar um tipo de MCC 4
+        // (Molde, Bender, Bow, Straightener, Horizontal) num veio C/D/E/F
+        // (que são da MCC 2/3), ou vice-versa.
+        const veiosValidos = (mcc_compat === "4") ? ["G", "H"] : ["C", "D", "E", "F"];
+        if (!veiosValidos.includes(veio)) {
+            alert(`⚠️ O Veio ${veio} não é compatível com este tipo de equipamento (MCC ${mcc_compat}). Selecione um veio válido.`);
+            return;
+        }
         local = `MCC ${mcc_compat} - Veio ${veio}`;
         veioAtribuido = veio;
         posAtribuida = posicao;
@@ -2196,10 +2251,14 @@ window.processarCadastroPeca = async function() {
     alert(`✅ Equipamento [${id}] cadastrado com sucesso!`);
 };
 
-// Função auxiliar opcional para dinâmica de posições no cadastro
-window.atualizarPosicoesCadastro = function() {
-    // Mantém compatibilidade caso o select de posições seja acionado
-};
+// 🔧 CORREÇÃO CRÍTICA: aqui embaixo existia uma SEGUNDA definição de
+// `window.atualizarPosicoesCadastro`, vazia (só um comentário, sem
+// código nenhum). Como esse arquivo carrega de cima pra baixo, essa
+// segunda definição SOBRESCREVIA a de verdade (lá em cima, perto da
+// linha 1582), que é a que auto-preenche a Meta e trava o Veio/Posição
+// certos pro tipo escolhido. Na prática, isso zerava TODAS as correções
+// feitas ali — o formulário de cadastro nunca rodava essa lógica,
+// porque a versão vazia sempre ganhava. Removida.
 
 // ==========================================
 // FUNÇÕES PARA O PAINEL TURBINADO (NOVAS)

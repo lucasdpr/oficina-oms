@@ -542,6 +542,11 @@ window.salvarEImprimirFolhaoR1 = function() {
         item.dias = 0;
         item.local = "Oficina / Reserva";
         localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+        // 🔧 CORREÇÃO: faltava avisar o Postgres dessa conclusão — sem
+        // isso, a mudança só existia no navegador e sumia no próximo F5.
+        if (typeof window.salvarPecaNoPython === 'function') {
+            window.salvarPecaNoPython(item);
+        }
     }
 
     // Coleta dados do cabeçalho

@@ -1,5 +1,8 @@
 // folhaoMolde23.js - VERSÃO FINAL COM TODOS OS CAMPOS E FALLBACK DE CONTAINERS
 
+// 🔧 Import novo: precisa de resolverApiBase() pra achar a API certa
+// (local ou Render) em vez de bater fixo em localhost:8000.
+import { resolverApiBase } from './banco.js?v=2';
 
 let ID_FOLHAO_MOLDE23_ATUAL = null;
 
@@ -660,19 +663,29 @@ window.salvarEImprimirFolhaoMolde23 = async function() {
 
     // 3. 🔥 OBRIGA O NAVEGADOR A ESPERAR O BANCO DE DADOS 🔥
     try {
-        const resposta = await fetch("http://localhost:8000/api/salvar_folhao", {
+        // 🔧 CORREÇÃO: antes era um localhost:8000 fixo (só funcionava com
+        // servidor local rodando). Agora usa a mesma resolução de API do
+        // resto do sistema (local se existir, senão o Render).
+        const apiBase = await resolverApiBase();
+        const resposta = await fetch(`${apiBase}/api/salvar_folhao`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(dadosFolhao)
         });
         
         const resultado = await resposta.json();
-        
-        if (resultado.status === "erro") {
-            alert("❌ Erro no Banco de Dados: " + resultado.mensagem);
-            return; 
+
+        // 🔧 CORREÇÃO: antes só checava resultado.status === "erro", que só
+        // existe numa resposta bem-formada do endpoint certo. Um 404 (rota
+        // não existe) ou 500 (erro interno) devolve outro formato de JSON,
+        // sem esse campo — e o código seguia em frente como se tivesse dado
+        // certo (o "✅ Salvo com sucesso" aparecia mesmo com erro real).
+        if (!resposta.ok || resultado.status === "erro") {
+            const msg = resultado.detail || resultado.mensagem || `Erro HTTP ${resposta.status}`;
+            alert("❌ Erro no Banco de Dados: " + msg);
+            return;
         }
-        console.log("✅ Salvo com sucesso no SQLite!");
+        console.log("✅ Salvo com sucesso no banco!");
     } catch(e) {
         console.error("Erro na Nuvem:", e);
         alert("❌ Erro de comunicação. O Python está rodando?");
