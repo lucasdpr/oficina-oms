@@ -2,6 +2,8 @@
 // FOLHÃO DESEMPENADEIRA (CADEIRA SUPERIOR/INFERIOR)
 // ==========================================
 
+import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
+
 let ID_DESEMP_ATUAL = null;
 
 // 1. INSPEÇÃO DE SAÍDA (15 itens)
@@ -258,6 +260,11 @@ window.abrirFolhaoDesempenadeira = function(id) {
     const hoje = new Date().toISOString().split('T')[0];
     document.getElementById('desemp-data-montagem').value = hoje;
     document.getElementById('desemp-data-troca').value = hoje;
+
+    // Restaura progresso salvo (ex: chegada já feita, aguardando saída)
+    // e liga o auto-salvamento pra nada mais se perder.
+    restaurarRascunhoNoModal('modal-folhao-desempenadeira', id);
+    ativarAutoSalvamentoFolhao('modal-folhao-desempenadeira', id, 'Desempenadeira');
 };
 
 // 7. Fechar Folhão
@@ -483,6 +490,9 @@ window.salvarEImprimirFolhaoDesemp = function() {
     if (typeof window.salvarPecaNoPython === 'function') {
         window.salvarPecaNoPython(item);
     }
+
+    // Folhão concluído: apaga o rascunho salvo dessa TAG.
+    finalizarRascunhoFolhao(tag);
 
     if (window.registrarHistorico) {
         window.registrarHistorico(tag, `Laudo Desempenadeira (${tipoCadeira}) concluído.`);

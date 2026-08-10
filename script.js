@@ -300,6 +300,7 @@ function fazerLogout() {
         localStorage.removeItem("oms_operador_v32_local");
         document.getElementById("container-sistema-oms").style.display = "none";
         document.getElementById("tela-login-home").style.display = "flex";
+        if (typeof ativarPainelDevSeAutorizado === 'function') ativarPainelDevSeAutorizado();
     }
 }
 
@@ -489,6 +490,63 @@ function renderHistorico() {
     }).join("");
 }
 
+// ==========================================
+// PAINEL DE TESTE DE FOLHÕES — só CBK3574 e CSP1869 podem ver
+// ==========================================
+// 🔒 Restrição fica no JS, não só escondendo com CSS: a tabela de
+// equipamentos só é montada (innerHTML preenchido) se a matrícula
+// logada bater com uma das autorizadas. Pra qualquer outro colaborador,
+// o link do menu nem aparece e a aba fica vazia mesmo se a pessoa tentar
+// abrir na unha pelo console.
+const MATRICULAS_TESTE_FOLHOES = ["CBK3574", "CSP1869"];
+
+function ativarPainelDevSeAutorizado() {
+    const link = document.getElementById("nav-dev-teste");
+    if (!link) return;
+
+    const matricula = (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula || "").toUpperCase();
+    const autorizado = MATRICULAS_TESTE_FOLHOES.includes(matricula);
+
+    if (autorizado) {
+        link.classList.remove("hidden");
+        renderPainelDevTeste();
+    } else {
+        link.classList.add("hidden");
+        const corpo = document.getElementById("dev-teste-table-body");
+        if (corpo) corpo.innerHTML = ""; // garante que não sobra nada renderizado de uma sessão anterior
+    }
+}
+
+function renderPainelDevTeste() {
+    const tbody = document.getElementById("dev-teste-table-body");
+    if (!tbody) return;
+
+    if (!BANCO_ATIVOS || BANCO_ATIVOS.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Nenhum equipamento cadastrado.</td></tr>`;
+        return;
+    }
+
+    const linhas = [...BANCO_ATIVOS]
+        .sort((a, b) => (a.tipo || "").localeCompare(b.tipo || "") || (a.id || "").localeCompare(b.id || ""))
+        .map(item => `
+            <tr>
+                <td class="font-code">${item.id}</td>
+                <td>${item.tipo || "-"}</td>
+                <td>${item.local || "-"}</td>
+                <td>
+                    <button class="btn-premium" style="padding:4px 12px; font-size:12px;" onclick="window.abrirFolhaoPorTipo('${item.id}')">
+                        <i class="fas fa-file-alt"></i> Abrir Folhão
+                    </button>
+                </td>
+            </tr>
+        `).join("");
+
+    tbody.innerHTML = linhas;
+}
+
+window.ativarPainelDevSeAutorizado = ativarPainelDevSeAutorizado;
+window.renderPainelDevTeste = renderPainelDevTeste;
+
 function atualizarInterfaceUsuario() {
     const nomeEl = document.getElementById("nome-operador-logado");
     const badgeEl = document.getElementById("badge-cargo-operador");
@@ -497,6 +555,7 @@ function atualizarInterfaceUsuario() {
         if (nomeEl) nomeEl.innerText = "Não identificado";
         if (badgeEl) badgeEl.style.display = "none";
         renderHistorico();
+        ativarPainelDevSeAutorizado();
         return;
     }
 
@@ -508,6 +567,7 @@ function atualizarInterfaceUsuario() {
             badgeEl.style.display = "inline-block";
         }
         renderHistorico();
+        ativarPainelDevSeAutorizado();
         return;
     }
 
@@ -523,6 +583,7 @@ function atualizarInterfaceUsuario() {
         badgeEl.style.display = "inline-block";
     }
     renderHistorico();
+    ativarPainelDevSeAutorizado();
 }
 
 function calcularKpisGlobais() {
@@ -2793,6 +2854,20 @@ window.abrirFolhaoPorTipo = function(id) {
             return;
         }
         console.warn('Folhão Desempenadeira não implementado.');
+        return;
+    }
+
+    // ---- SEGMENTO GRUPO 1, 2 E 3 (MCC 2/3) ----
+    // 🔧 CORREÇÃO: antes esses tipos caíam no fallback genérico e abriam
+    // o folhão MCC4 (Molde/Bender) por engano — checklist errado. Os 3
+    // grupos usam o mesmo checklist entre si (documento oficial), só
+    // muda a tolerância de GAP e a lista de materiais.
+    if (tipo === 'Grupo 1' || tipo === 'Grupo 2' || tipo === 'Grupo 3') {
+        if (typeof window.abrirFolhaoSegmentoGrupo === 'function') {
+            window.abrirFolhaoSegmentoGrupo(id);
+            return;
+        }
+        console.warn('Folhão Segmento Grupo não implementado.');
         return;
     }
 

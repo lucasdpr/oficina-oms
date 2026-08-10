@@ -266,6 +266,7 @@
                 <a href="#" id="nav-almoxarifado" class="nav-link highlight-almoxarifado" onclick="window.abrirAba(event,'aba-almoxarifado')"><i class="fas fa-pallet"></i> Almoxarifado Central</a>
                 <a href="#" id="nav-oficina" class="nav-link" onclick="window.abrirAba(event,'aba-oficina')"><i class="fas fa-clipboard-list"></i> Oficina</a>
                 <a href="#" id="nav-historico" class="nav-link" onclick="window.abrirAba(event,'aba-historico')"><i class="fas fa-history"></i> Auditoria</a>
+                <a href="#" id="nav-dev-teste" class="nav-link hidden" onclick="window.abrirAba(event,'aba-dev-teste')"><i class="fas fa-flask"></i> Teste de Folhões</a>
             </nav>
         </aside>
 
@@ -661,6 +662,30 @@
             <section id="aba-historico" class="tab-content">
                 <div class="glass-panel" style="padding:24px;"><h2><i class="fas fa-history"></i> Auditoria Global</h2><p class="text-muted" style="font-size:13px;margin-bottom:16px;">Rastreabilidade completa de todas as operações e laudos.</p><div class="table-responsive"><table class="premium-table"><thead><tr><th>Horário</th><th>TAG / Módulo</th><th>Descrição da Ação</th><th>Responsável</th></tr></thead><tbody id="historico-table-body"></tbody></table></div></div>
             </section>
+
+            <!--
+                Painel de testes de folhão. Só aparece pra CBK3574 e CSP1869
+                (ver ativarPainelDevSeAutorizado em script.js) — não fica
+                escondido só via CSS, o próprio HTML dos equipamentos só é
+                montado se a matrícula bater, então não dá pra ver o
+                conteúdo nem inspecionando o HTML.
+            -->
+            <section id="aba-dev-teste" class="tab-content">
+                <div class="glass-panel" style="padding:24px;">
+                    <h2><i class="fas fa-flask"></i> Teste de Folhões (uso interno)</h2>
+                    <p class="text-muted" style="font-size:13px;margin-bottom:16px;">
+                        Lista TODOS os equipamentos, independente do local/status atual — permite abrir e testar
+                        qualquer folhão sem precisar trocar o equipamento pra "Oficina / Reparo" antes.
+                        Visível apenas para as matrículas autorizadas.
+                    </p>
+                    <div class="table-responsive">
+                        <table class="premium-table">
+                            <thead><tr><th>TAG</th><th>Tipo</th><th>Local Atual</th><th>Ação</th></tr></thead>
+                            <tbody id="dev-teste-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 
@@ -717,46 +742,101 @@
     <div class="modal-content" style="max-width: 1000px; max-height: 90vh; overflow-y: auto;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
             <h2 style="color:var(--text-heading);"><i class="fas fa-clipboard-check"></i> Liberação - Cadeira (Desempenadeira)</h2>
-            <button class="btn-close-emergency" onclick="window.fecharFolhaoDesemp()"><i class="fas fa-times"></i></button>
+            <button class="btn-close-emergency" onclick="window.fecharFolhaoDesempenadeira()"><i class="fas fa-times"></i></button>
         </div>
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:10px; margin-bottom:15px; background:var(--bg-th); padding:12px; border-radius:8px;">
-            <div class="input-group"><label>TAG</label><input type="text" id="desemp-tag-name" readonly class="premium-input"></div>
-            <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="desemp-data-inicio" class="premium-input"></div>
-            <div class="input-group"><label>DATA FIM</label><input type="date" id="desemp-data-fim" class="premium-input"></div>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap:10px; margin-bottom:15px; background:var(--bg-th); padding:12px; border-radius:8px;">
+            <div class="input-group"><label>TAG</label><input type="text" id="desemp-tag-ativo" readonly class="premium-input"></div>
+            <div class="input-group"><label>TIPO CADEIRA</label>
+                <select id="desemp-tipo-cadeira" class="premium-select" onchange="document.getElementById('desemp-tipo-cadeira-dados').value=this.value; window.carregarMateriaisDesemp(this.value, true);">
+                    <option value="SUPERIOR">SUPERIOR</option>
+                    <option value="INFERIOR">INFERIOR</option>
+                </select>
+            </div>
+            <div class="input-group"><label>Nº CADEIRA</label><input type="text" id="desemp-num-cadeira" class="premium-input"></div>
+            <div class="input-group"><label>VEIO</label><input type="text" id="desemp-veio" class="premium-input" placeholder="Ex: C, D, E..."></div>
+            <div class="input-group"><label>Nº ROLO</label><input type="text" id="desemp-num-rolo" class="premium-input"></div>
+            <div class="input-group"><label>DATA MONTAGEM</label><input type="date" id="desemp-data-montagem" class="premium-input"></div>
+            <div class="input-group"><label>DATA TROCA</label><input type="date" id="desemp-data-troca" class="premium-input"></div>
             <div class="input-group"><label>MOTIVO</label><input type="text" id="desemp-motivo" placeholder="Motivo da OS" class="premium-input"></div>
             <div class="input-group"><label>TIPO EXECUÇÃO</label>
-                <select id="desemp-tipo-execucao" class="premium-select">
+                <select id="desemp-tipo-exec" class="premium-select">
                     <option value="GERAL">GERAL</option>
                     <option value="PARCIAL">PARCIAL</option>
                 </select>
             </div>
+            <!-- Campo espelho, usado internamente pra sincronizar com o select de tipo acima -->
+            <input type="hidden" id="desemp-tipo-cadeira-dados" value="SUPERIOR">
         </div>
-        
+
         <div class="folhao-tabs">
-            <button class="folhao-tab active" onclick="window.trocarAbaDesemp(event, 'desemp-aba-inspecao')">1. Inspeção e Gap</button>
-            <button class="folhao-tab" onclick="window.trocarAbaDesemp(event, 'desemp-aba-rolos')">2. Medidas de Rolos</button>
-            <button class="folhao-tab" onclick="window.trocarAbaDesemp(event, 'desemp-aba-saida')">3. Saída e Materiais</button>
+            <button class="folhao-tab active" onclick="window.trocarAbaDesemp(event, 'desemp-aba-inspecao')">1. Inspeção e Motivo</button>
+            <button class="folhao-tab" onclick="window.trocarAbaDesemp(event, 'desemp-aba-mancais')">2. Mancais, Cilindros e Sobressalentes</button>
+            <button class="folhao-tab" onclick="window.trocarAbaDesemp(event, 'desemp-aba-materiais')">3. Materiais e Observações</button>
         </div>
-        
+
         <div class="folhao-body">
             <div id="desemp-aba-inspecao" class="folhao-content">
-                <div id="container-desemp-inspecao"></div>
-                <hr style="margin:15px 0; border-color:var(--border);">
-                <div id="container-desemp-gap"></div>
+                <h4 style="margin:10px 0; color:var(--text-accent);">1. INSPEÇÃO DE SAÍDA</h4>
+                <table id="tabela-desemp-inspecao" class="premium-table" style="font-size:11px;">
+                    <thead><tr><th style="width:6%;">ITEM</th><th>DESCRIÇÃO</th><th style="width:10%;">SIM</th><th style="width:10%;">NÃO</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <h4 style="margin:20px 0 10px; color:var(--text-accent);">2. MOTIVO DE SAÍDA DA MCC</h4>
+                <table id="tabela-desemp-motivo" class="premium-table" style="font-size:11px;">
+                    <thead><tr><th>MOTIVO</th><th style="width:10%;">SIM</th><th style="width:10%;">NÃO</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <div class="input-group" style="margin-top:10px;"><label>OUTROS (especifique)</label><input type="text" id="desemp-motivo-outros" class="premium-input"></div>
             </div>
-            <div id="desemp-aba-rolos" class="folhao-content hidden">
-                <div id="container-desemp-rolos"></div>
+
+            <div id="desemp-aba-mancais" class="folhao-content hidden">
+                <h4 style="margin:10px 0; color:var(--text-accent);">3. INSPEÇÃO DOS MANCAIS (mm)</h4>
+                <p style="font-size:11px; color:var(--text-muted);">Máximo: 240,15 mm | Mínimo: 240,05 mm</p>
+                <table class="premium-table" style="font-size:11px; max-width:400px;">
+                    <tr><th>Referência</th><th>Valor</th></tr>
+                    <tr><td>A</td><td><input id="desemp-mancal-a" class="premium-input"></td></tr>
+                    <tr><td>B</td><td><input id="desemp-mancal-b" class="premium-input"></td></tr>
+                    <tr><td>A'</td><td><input id="desemp-mancal-ap" class="premium-input"></td></tr>
+                    <tr><td>B'</td><td><input id="desemp-mancal-bp" class="premium-input"></td></tr>
+                    <tr><td>Fixo</td><td><input id="desemp-mancal-fixo" class="premium-input"></td></tr>
+                    <tr><td>Móvel</td><td><input id="desemp-mancal-movel" class="premium-input"></td></tr>
+                </table>
+
+                <h4 style="margin:20px 0 10px; color:var(--text-accent);">4. SOBRESSALENTES DE MONTAGEM</h4>
+                <table class="premium-table" style="font-size:11px;">
+                    <tr><th>Componente</th><th style="width:12%;">Novo</th><th style="width:12%;">Reutilizado</th></tr>
+                    <tr><td>Mancal fixo</td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-fixo-novo"></td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-fixo-reut"></td></tr>
+                    <tr><td>Mancal móvel</td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-movel-novo"></td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-movel-reut"></td></tr>
+                    <tr><td>Aranha</td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-aranha-novo"></td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-aranha-reut"></td></tr>
+                    <tr><td>Rolamento Nu 1032</td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-rol-nu-novo"></td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-rol-nu-reut"></td></tr>
+                    <tr><td>Rolamento 24032</td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-rol-24032-novo"></td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-rol-24032-reut"></td></tr>
+                    <tr><td>Junta rotativa</td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-junta-novo"></td><td style="text-align:center;"><input type="checkbox" id="desemp-sob-junta-reut"></td></tr>
+                </table>
+
+                <h4 style="margin:20px 0 10px; color:var(--text-accent);">5. CILINDROS</h4>
+                <table class="premium-table" style="font-size:11px;">
+                    <tr><th>Posição</th><th>Faixa Amarela (mm)</th><th style="width:12%;">Reparado</th><th style="width:12%;">Reutilizado</th></tr>
+                    <tr><td>Fixo</td><td><input id="desemp-cil-fixo" class="premium-input"></td><td style="text-align:center;"><input type="checkbox" id="desemp-cil-fixo-rep"></td><td style="text-align:center;"><input type="checkbox" id="desemp-cil-fixo-reut"></td></tr>
+                    <tr><td>Móvel</td><td><input id="desemp-cil-movel" class="premium-input"></td><td style="text-align:center;"><input type="checkbox" id="desemp-cil-movel-rep"></td><td style="text-align:center;"><input type="checkbox" id="desemp-cil-movel-reut"></td></tr>
+                </table>
             </div>
-            <div id="desemp-aba-saida" class="folhao-content hidden">
-                <div id="container-desemp-saida"></div>
-                <hr style="margin:15px 0; border-color:var(--border);">
-                <div id="container-desemp-materiais"></div>
+
+            <div id="desemp-aba-materiais" class="folhao-content hidden">
+                <h4 style="margin:10px 0; color:var(--text-accent);">6. MATERIAIS APLICADOS</h4>
+                <table id="tabela-desemp-materiais" class="premium-table" style="font-size:11px;">
+                    <thead><tr><th>Código</th><th>Descrição</th><th style="width:15%;">Quantidade</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <button class="btn-outline-info" style="margin-top:8px; padding:4px 12px; font-size:12px;" onclick="window.adicionarLinhaMaterialDesemp()"><i class="fas fa-plus"></i> Adicionar linha</button>
+
+                <h4 style="margin:20px 0 10px; color:var(--text-accent);">7. OBSERVAÇÕES</h4>
+                <textarea id="desemp-observacoes" class="premium-input" style="width:100%; min-height:80px;"></textarea>
             </div>
         </div>
-        
+
         <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end;">
             <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoDesemp()"><i class="fas fa-save"></i> Salvar e Imprimir</button>
-            <button class="btn-outline-danger" onclick="window.fecharFolhaoDesemp()">Fechar</button>
+            <button class="btn-outline-danger" onclick="window.fecharFolhaoDesempenadeira()">Fechar</button>
         </div>
     </div>
 </div>
@@ -849,6 +929,75 @@
             <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end; flex-wrap:wrap;">
                 <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoHorizontal()"><i class="fas fa-save"></i> Salvar e Imprimir</button>
                 <button class="btn-outline-danger" onclick="window.fecharFolhaoHorizontal()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-folhao-seg-grupo" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 1000px; max-height: 90vh; overflow-y: auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+                <h2 style="color:var(--text-heading);"><i class="fas fa-clipboard-check"></i> Liberação - Segmento <span id="segg-grupo-label">Grupo</span> (MCC 2/3)</h2>
+                <button class="btn-close-emergency" onclick="window.fecharFolhaoSegmentoGrupo()"><i class="fas fa-times"></i></button>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap:10px; margin-bottom:15px; background:var(--bg-th); padding:12px; border-radius:8px;">
+                <div class="input-group"><label>TAG</label><input type="text" id="segg-tag-name" readonly class="premium-input"></div>
+                <div class="input-group"><label>Nº SEGMENTO</label><input type="text" id="segg-num-segmento" class="premium-input" placeholder="Ex: 01"></div>
+                <div class="input-group"><label>VEIO (SAÍDA)</label>
+                    <select id="segg-veio" class="premium-select">
+                        <option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option>
+                    </select>
+                </div>
+                <div class="input-group"><label>DESEMPENHO</label><input type="text" id="segg-desempenho" class="premium-input"></div>
+                <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="segg-data-inicio" class="premium-input"></div>
+                <div class="input-group"><label>DATA FIM</label><input type="date" id="segg-data-fim" class="premium-input"></div>
+                <div class="input-group"><label>MOTIVO</label><input type="text" id="segg-motivo" class="premium-input" placeholder="Motivo da OS"></div>
+                <div class="input-group"><label>TIPO EXECUÇÃO</label>
+                    <select id="segg-tipo-execucao" class="premium-select">
+                        <option value="GERAL">GERAL</option>
+                        <option value="PARCIAL">PARCIAL</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="folhao-tabs">
+                <button class="folhao-tab active" onclick="window.trocarAbaSegGrupo(event, 'segg-aba-chegada')">1. Chegada</button>
+                <button class="folhao-tab" onclick="window.trocarAbaSegGrupo(event, 'segg-aba-saida')">2. Saída</button>
+                <button class="folhao-tab" onclick="window.trocarAbaSegGrupo(event, 'segg-aba-cilindros')">3. Cilindros Hidráulicos</button>
+                <button class="folhao-tab" onclick="window.trocarAbaSegGrupo(event, 'segg-aba-materiais')">4. Materiais</button>
+            </div>
+
+            <div class="folhao-body">
+                <div id="segg-aba-chegada" class="folhao-content">
+                    <h4 style="margin:10px 0; color:var(--text-accent);">Inspeção de Chegada</h4>
+                    <div id="segg-container-chegada"></div>
+                    <h4 style="margin:20px 0 10px; color:var(--text-accent);">Afastamento entre Rolos (GAP) — Chegada</h4>
+                    <div id="segg-container-gap-chegada"></div>
+                    <h4 style="margin:20px 0 10px; color:var(--text-accent);">Diâmetro dos Rolos — Chegada</h4>
+                    <div id="segg-container-diametro-chegada"></div>
+                    <h4 style="margin:20px 0 10px; color:var(--text-accent);">Rolamentos Quebrados — Chegada</h4>
+                    <div id="segg-container-rolquebrado-chegada"></div>
+                </div>
+                <div id="segg-aba-saida" class="folhao-content hidden">
+                    <h4 style="margin:10px 0; color:var(--text-accent);">Inspeção de Saída</h4>
+                    <div id="segg-container-saida"></div>
+                    <h4 style="margin:20px 0 10px; color:var(--text-accent);">Afastamento entre Rolos (GAP) — Saída</h4>
+                    <div id="segg-container-gap-saida"></div>
+                    <h4 style="margin:20px 0 10px; color:var(--text-accent);">Diâmetro dos Rolos — Saída</h4>
+                    <div id="segg-container-diametro-saida"></div>
+                    <h4 style="margin:20px 0 10px; color:var(--text-accent);">Rolamentos Montados — Saída</h4>
+                    <div id="segg-container-rolmontado-saida"></div>
+                </div>
+                <div id="segg-aba-cilindros" class="folhao-content hidden">
+                    <div id="segg-container-cilindros"></div>
+                </div>
+                <div id="segg-aba-materiais" class="folhao-content hidden">
+                    <div id="segg-container-materiais"></div>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end;">
+                <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoSegmentoGrupo()"><i class="fas fa-save"></i> Salvar e Imprimir</button>
+                <button class="btn-outline-danger" onclick="window.fecharFolhaoSegmentoGrupo()">Fechar</button>
             </div>
         </div>
     </div>
@@ -1196,6 +1345,7 @@
         import './folhaoSegmentoZero.js?v=3';
         import './folhaoMolde23.js?v=3';
         import './folhaoStraightenerR1.js?v=3';
+        import './folhaoSegmentoGrupo.js?v=1';
 
         console.log("✅ Sistema OMS inicializado!");
 
