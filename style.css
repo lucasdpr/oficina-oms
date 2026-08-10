@@ -2620,9 +2620,43 @@ h1, h2, h3, h4, h5, h6 {
 .login-logo-factory svg { width: 32px; height: 32px; fill: #f59e0b; }
 
 /* Textos do Cabeçalho */
-.login-card-header { text-align: center; margin-bottom: 32px; }
+.login-card-header { text-align: center; margin-bottom: 24px; }
 .login-card-header h1 { font-size: 1.8rem; font-weight: 800; color: #ffffff; letter-spacing: 1px; margin: 0 0 4px 0; }
 .login-card-header p { font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; margin: 0; }
+
+/* Quadro explicativo do fluxo de acesso (primeiro acesso / troca de senha) */
+.login-explicativo {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(245, 158, 11, 0.02));
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 24px;
+    text-align: left;
+}
+.login-explicativo-passo {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.78rem;
+    color: #cbd5e1;
+    line-height: 1.4;
+}
+.login-explicativo-passo:not(:last-child) { margin-bottom: 10px; }
+.login-explicativo-passo strong { color: #f59e0b; font-weight: 700; }
+.login-explicativo-numero {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+    font-size: 0.7rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+}
 
 /* Campos de Input Escuros */
 .login-form-group { margin-bottom: 20px; text-align: left; }

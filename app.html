@@ -181,23 +181,39 @@
             <h1>SISTEMA OMS</h1>
             <p>Aciaria - Lingotamento Contínuo</p>
         </div>
+
+        <div class="login-explicativo">
+            <div class="login-explicativo-passo">
+                <span class="login-explicativo-numero">1</span>
+                <span><strong>1º acesso:</strong> digite sua matrícula nos dois campos (matrícula = senha temporária).</span>
+            </div>
+            <div class="login-explicativo-passo">
+                <span class="login-explicativo-numero">2</span>
+                <span>O sistema vai pedir pra você criar uma <strong>senha definitiva</strong> na hora.</span>
+            </div>
+            <div class="login-explicativo-passo">
+                <span class="login-explicativo-numero">3</span>
+                <span>Nos próximos acessos, use matrícula + a <strong>senha nova</strong> que você criou.</span>
+            </div>
+        </div>
         
         <div class="login-industrial-form">
             <!-- Campo 1: Matrícula (Login) -->
             <div class="login-form-group">
-                <label>Credencial de Acesso (Matrícula)</label>
+                <label>Matrícula (ex: CBK3574)</label>
                 <div class="login-input-wrapper">
-                    <input type="text" id="login-nome" placeholder="Ex: CS55584">
+                    <input type="text" id="login-nome" placeholder="Digite sua matrícula" autocapitalize="characters" autocomplete="off" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()" onblur="this.value=this.value.toUpperCase()">
                     <i class="fas fa-id-badge login-input-icon"></i>
                 </div>
             </div>
             
             <!-- Campo 2: Senha -->
             <div class="login-form-group">
-                <label>Código de Segurança (Senha)</label>
+                <label>Senha (1º acesso = sua própria matrícula)</label>
                 <div class="login-input-wrapper">
-                    <input type="password" id="login-matricula" placeholder="Senha (ou matrícula no 1º acesso)">
+                    <input type="password" id="login-matricula" placeholder="Senha (ou matrícula no 1º acesso)" autocapitalize="characters" autocomplete="off" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()" onblur="this.value=this.value.toUpperCase()">
                     <i class="fas fa-lock login-input-icon"></i>
+                    <i class="fas fa-eye login-input-icon-toggle" id="toggle-senha-icon" onclick="window.alternarVisibilidadeSenha()" style="cursor:pointer; pointer-events:auto;"></i>
                 </div>
             </div>
             
