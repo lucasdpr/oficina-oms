@@ -3253,3 +3253,6 @@ window.toggleFormAdicionar = function() {
         console.error("Formulário 'form-novo-equipamento' não encontrado no HTML!");
     }
 };
+
+
+document.querySelector('script[type="module"]').textContent.length

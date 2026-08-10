@@ -66,6 +66,32 @@
     .veio-tab.active { background: var(--accent); border-color: var(--accent); color: #04121c; }
     .veio-tab.btn-exportar { margin-left: 8px; border-color: #2a3652; }
     .veio-tab.btn-exportar:hover { border-color: var(--ok); color: var(--ok); }
+
+    /* ===== RESPONSIVO (celular) ===== */
+    @media (max-width: 768px) {
+        #topbar {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 12px;
+        }
+        #veio-tabs {
+            width: 100%;
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 6px;
+            scrollbar-width: thin;
+        }
+        #veio-tabs::-webkit-scrollbar { height: 4px; }
+        #veio-tabs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        .veio-tab {
+            flex-shrink: 0;
+            padding: 8px 12px;
+            font-size: 11px;
+            white-space: nowrap;
+        }
+    }
     .grupo-maquina {
         font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase;
         color: var(--text-muted); display: flex; align-items: center; padding: 0 2px;
@@ -1465,8 +1491,8 @@ function exportarPrint3D() {
     <div class="acoes">
         <button onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
     </div>
-</body>
-</html>
+<\/body>
+<\/html>
     `);
     janela.document.close();
 }
