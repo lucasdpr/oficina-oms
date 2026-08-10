@@ -17,7 +17,7 @@ import { BANCO_ATIVOS, sincronizarAtivosReaisMCC4, salvarPecaNoPython, resolverA
 // ==========================================================================
 let HISTORICO_ACOES = JSON.parse(localStorage.getItem("oms_historico_v32_local")) || [];
 let BANCO_ROLOS = JSON.parse(localStorage.getItem("oms_rolos_v32_local"));
-let BANCO_MATERIAIS = JSON.parse(localStorage.getItem("oms_materiais_v32_local"));
+let BANCO_MATERIAIS = []; // carregado do Neon via carregarMateriaisDoBackend() — não é mais localStorage
 let ID_FOLHAO_ATUAL = null;
 let DADOS_FOLGA_ARESTA = {};
 
@@ -117,19 +117,6 @@ if (!BANCO_ROLOS) {
         { id: "R-FR23", nome: "Foot Roll", conjunto: "Molde", mcc_compat: "2/3", qtd: 4 }
     ];
     localStorage.setItem("oms_rolos_v32_local", JSON.stringify(BANCO_ROLOS));
-}
-
-if (!BANCO_MATERIAIS) {
-    BANCO_MATERIAIS = [
-        { codigo: "1660669", descricao: "ABRACADEIRA BIPARTIDA PP 12,MM", qtd: 50 },
-        { codigo: "1641056", descricao: "ABRACADEIRA BIPARTIDA PP 16,0MM", qtd: 25 },
-        { codigo: "8008878", descricao: "ACOPLAMENTO DESENHO CSN DM-028275", qtd: 5 },
-        { codigo: "1205526", descricao: "ARRUELA DE PRESSÃO M10", qtd: 2097 },
-        { codigo: "8497231", descricao: "PARAF .CAB. SEXT. M12 X 30MM CL 8.8", qtd: 150 },
-        { codigo: "1195469", descricao: "ARAME SOLDA ACO ER70S-6 1,20MM", qtd: 24 },
-        { codigo: "8004825", descricao: "CADEADO DE LATAO 35MM PAPAIZ", qtd: 10 }
-    ];
-    localStorage.setItem("oms_materiais_v32_local", JSON.stringify(BANCO_MATERIAIS));
 }
 
 // ==========================================
@@ -302,7 +289,7 @@ function finalizarLogin(nome, cargo, matricula) {
     if (typeof renderReparos === 'function') renderReparos();
     if (typeof renderReservas === 'function') renderReservas();
     if (typeof renderRolos === 'function') renderRolos();
-    if (typeof renderMateriais === 'function') renderMateriais();
+    if (typeof carregarMateriaisDoBackend === 'function') carregarMateriaisDoBackend();
     if (typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
 }
 
@@ -334,7 +321,7 @@ function entrarComoVisitante() {
     if (typeof renderReparos === 'function') renderReparos();
     if (typeof renderReservas === 'function') renderReservas();
     if (typeof renderRolos === 'function') renderRolos();
-    if (typeof renderMateriais === 'function') renderMateriais();
+    if (typeof carregarMateriaisDoBackend === 'function') carregarMateriaisDoBackend();
     if (typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
 }
 
@@ -371,7 +358,7 @@ function abrirAba(event, idAba) {
     if (idAba === "aba-reparos") renderReparos();
     if (idAba === "aba-reservas") renderReservas();
     if (idAba === "aba-rolos") renderRolos();
-    if (idAba === "aba-almoxarifado") renderMateriais();
+    if (idAba === "aba-almoxarifado") carregarMateriaisDoBackend();
     if (idAba === "aba-historico") renderHistorico();
     if (idAba === "aba-painel") {
         if (typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
@@ -2117,7 +2104,22 @@ function toggleFormMaterial() {
     if (form) form.classList.toggle("hidden");
 }
 
-function salvarEntradaMaterial() {
+// ==========================================
+// CARREGA O ALMOXARIFADO DO NEON (compartilhado entre todos)
+// ==========================================
+async function carregarMateriaisDoBackend() {
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/materiais`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        BANCO_MATERIAIS = await resp.json();
+        renderMateriais();
+    } catch (e) {
+        console.error('❌ Não foi possível carregar o almoxarifado do Neon:', e);
+    }
+}
+
+async function salvarEntradaMaterial() {
     if (!verificarAcesso()) return;
     const codigo = document.getElementById("mat-codigo").value.trim().toUpperCase();
     const descricao = document.getElementById("mat-descricao").value.trim().toUpperCase();
@@ -2127,44 +2129,82 @@ function salvarEntradaMaterial() {
         return alert("Por favor, preencha o código, a descrição correta e uma quantidade maior que zero.");
     }
 
-    let materialExistente = BANCO_MATERIAIS.find(m => m.codigo === codigo);
-    if (materialExistente) {
-        materialExistente.qtd += qtd;
-        registrarHistorico("ALMOXARIFADO", `Adição no material [${codigo}]. +${qtd} UN. Saldo atual: ${materialExistente.qtd} UN.`);
-        alert(`SUCESSO!\nO código ${codigo} já existe no sistema.\nSomamos a quantidade de ${qtd} UN ao saldo atual.`);
-    } else {
-        BANCO_MATERIAIS.unshift({ codigo: codigo, descricao: descricao, qtd: qtd });
-        registrarHistorico("ALMOXARIFADO", `Material [${codigo}] cadastrado. Entrada: ${qtd} UN.`);
-        alert(`NOVO MATERIAL CADASTRADO!\nCódigo ${codigo} adicionado com saldo de ${qtd} UN.`);
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/materiais/cadastrar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ codigo, descricao, qtd })
+        });
+        const resultado = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+            alert(resultado.detail || 'Não foi possível salvar. Tente novamente.');
+            return;
+        }
+
+        if (resultado.ja_existia) {
+            registrarHistorico("ALMOXARIFADO", `Adição no material [${codigo}]. +${qtd} UN. Saldo atual: ${resultado.material.qtd} UN.`);
+            alert(`SUCESSO!\nO código ${codigo} já existe no sistema.\nSomamos a quantidade de ${qtd} UN ao saldo atual.`);
+        } else {
+            registrarHistorico("ALMOXARIFADO", `Material [${codigo}] cadastrado. Entrada: ${qtd} UN.`);
+            alert(`NOVO MATERIAL CADASTRADO!\nCódigo ${codigo} adicionado com saldo de ${qtd} UN.`);
+        }
+
+        document.getElementById("mat-codigo").value = "";
+        document.getElementById("mat-descricao").value = "";
+        document.getElementById("mat-qtd").value = "";
+        toggleFormMaterial();
+        await carregarMateriaisDoBackend();
+    } catch (e) {
+        console.error('❌ Erro ao salvar material:', e);
+        alert('Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.');
     }
-    localStorage.setItem("oms_materiais_v32_local", JSON.stringify(BANCO_MATERIAIS));
-    document.getElementById("mat-codigo").value = "";
-    document.getElementById("mat-descricao").value = "";
-    document.getElementById("mat-qtd").value = "";
-    toggleFormMaterial();
-    renderMateriais();
 }
 
-function ajustarSaldoMaterial(codigo, fator) {
+async function ajustarSaldoMaterial(codigo, fator) {
     if (!verificarAcesso()) return;
-    let material = BANCO_MATERIAIS.find(m => m.codigo === codigo);
-    if (material) {
-        if (material.qtd + fator < 0) { return alert("O estoque não pode ficar negativo."); }
-        material.qtd += fator;
-        localStorage.setItem("oms_materiais_v32_local", JSON.stringify(BANCO_MATERIAIS));
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/materiais/ajustar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ codigo, fator })
+        });
+        const resultado = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+            alert(resultado.detail || 'Não foi possível ajustar o estoque.');
+            return;
+        }
         let acao = fator > 0 ? "Entrada" : "Saída";
-        registrarHistorico("ALMOXARIFADO", `Ajuste manual (${acao}) no material [${codigo}]. Novo saldo: ${material.qtd} UN.`);
-        renderMateriais();
+        registrarHistorico("ALMOXARIFADO", `Ajuste manual (${acao}) no material [${codigo}]. Novo saldo: ${resultado.material.qtd} UN.`);
+        await carregarMateriaisDoBackend();
+    } catch (e) {
+        console.error('❌ Erro ao ajustar material:', e);
+        alert('Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.');
     }
 }
 
-function removerMaterial(codigo) {
+async function removerMaterial(codigo) {
     if (!verificarAcesso()) return;
-    if (confirm(`Atenção!\nTem certeza que deseja apagar o registro do material [${codigo}] do sistema?`)) {
-        BANCO_MATERIAIS = BANCO_MATERIAIS.filter(m => m.codigo !== codigo);
-        localStorage.setItem("oms_materiais_v32_local", JSON.stringify(BANCO_MATERIAIS));
+    if (!confirm(`Atenção!\nTem certeza que deseja apagar o registro do material [${codigo}] do sistema?`)) return;
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/materiais/remover`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ codigo })
+        });
+        const resultado = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+            alert(resultado.detail || 'Não foi possível excluir o material.');
+            return;
+        }
         registrarHistorico("ALMOXARIFADO", `O material [${codigo}] foi deletado do cadastro.`);
-        renderMateriais();
+        await carregarMateriaisDoBackend();
+    } catch (e) {
+        console.error('❌ Erro ao remover material:', e);
+        alert('Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.');
     }
 }
 
@@ -2844,7 +2884,7 @@ window.abrirAba = function(event, idAba) {
     if (idAba === "aba-reparos" && typeof renderReparos === 'function') renderReparos();
     if (idAba === "aba-reservas" && typeof renderReservas === 'function') renderReservas();
     if (idAba === "aba-rolos" && typeof renderRolos === 'function') renderRolos();
-    if (idAba === "aba-almoxarifado" && typeof renderMateriais === 'function') renderMateriais();
+    if (idAba === "aba-almoxarifado" && typeof carregarMateriaisDoBackend === 'function') carregarMateriaisDoBackend();
     if (idAba === "aba-historico" && typeof renderHistorico === 'function') renderHistorico();
     if (idAba === "aba-painel" && typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
     if (idAba === "aba-ativos" && typeof renderAtivos === 'function') renderAtivos();
@@ -3219,6 +3259,16 @@ if (typeof processarAutenticacaoHome !== 'undefined') window.processarAutenticac
 window.setOperadorLogado = function(op) { OPERADOR_LOGADO = op; };
 window.getOperadorLogado = function() { return OPERADOR_LOGADO; };
 if (typeof abrirCriticos !== 'undefined') window.abrirCriticos = abrirCriticos;
+if (typeof abrirHistoricoIndividual !== 'undefined') window.abrirHistoricoIndividual = abrirHistoricoIndividual;
+if (typeof iniciarSaque !== 'undefined') window.iniciarSaque = iniciarSaque;
+if (typeof fazerCelulaEditavel !== 'undefined') window.fazerCelulaEditavel = fazerCelulaEditavel;
+if (typeof alterarSaldoRolo !== 'undefined') window.alterarSaldoRolo = alterarSaldoRolo;
+if (typeof ajustarSaldoMaterial !== 'undefined') window.ajustarSaldoMaterial = ajustarSaldoMaterial;
+if (typeof removerMaterial !== 'undefined') window.removerMaterial = removerMaterial;
+if (typeof toggleFormMaterial !== 'undefined') window.toggleFormMaterial = toggleFormMaterial;
+if (typeof salvarEntradaMaterial !== 'undefined') window.salvarEntradaMaterial = salvarEntradaMaterial;
+if (typeof renderMateriais !== 'undefined') window.renderMateriais = renderMateriais;
+if (typeof carregarMateriaisDoBackend !== 'undefined') window.carregarMateriaisDoBackend = carregarMateriaisDoBackend;
 
 // ==============================================================
 // 5. INICIALIZAÇÃO DA PÁGINA (START - LIVRE DE GOOGLE SHEETS)
@@ -3228,6 +3278,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log("🚀 Iniciando Sistema...");
 
     const atualizou = await window.carregarAtivosDoPython();
+    if (typeof carregarMateriaisDoBackend === 'function') carregarMateriaisDoBackend();
     
     if (atualizou) {
         if (typeof renderPainelVeios === 'function') renderPainelVeios();
@@ -3253,6 +3304,3 @@ window.toggleFormAdicionar = function() {
         console.error("Formulário 'form-novo-equipamento' não encontrado no HTML!");
     }
 };
-
-
-document.querySelector('script[type="module"]').textContent.length
