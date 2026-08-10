@@ -1343,14 +1343,6 @@ function pecasEmAlerta() {
     return linhas;
 }
 
-// Reposiciona a câmera temporariamente pra um enquadramento panorâmico
-// que engloba a linha inteira (Molde até H17), captura a imagem, e
-// devolve a câmera exatamente pra onde o usuário estava. Tudo roda de
-// forma síncrona (sem await/setTimeout no meio), então o navegador só
-// repinta a tela depois que a câmera já foi restaurada — o usuário nunca
-// chega a ver o "pulo" pro ângulo panorâmico.
-// Calcula uma posição de câmera que enquadra toda a cena atual (usa
-// slotsGeometricos, que já reflete o veio selecionado no momento).
 function calcularEnquadramentoGeral() {
     const box = new THREE.Box3();
     slotsGeometricos.forEach(s => box.expandByPoint(s.pos));
@@ -1503,8 +1495,8 @@ document.querySelectorAll('.veio-tab[data-veio]').forEach(btn => {
 
         construirCena(veioAtual);
 
-        document.getElementById('titulo-maquina').textContent =
-            `Sinótico Visual 3D — ${ehMCC4(veioAtual) ? 'MCC4' : 'MCC2/3'}`;
+        const nomeMaquina = ehMCC4(veioAtual) ? 'MCC4' : 'MCC2/3';
+        document.getElementById('titulo-maquina').textContent = 'Sinótico Visual 3D — ' + nomeMaquina;
 
         if (trocouDeMaquina && !animandoCamera) {
             const { posicaoCamera, centro } = calcularEnquadramentoGeral();

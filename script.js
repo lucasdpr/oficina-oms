@@ -27,11 +27,7 @@ let VEIO_SELECIONADO_PAINEL = "C";
 let FILTRO_CRITICOS = false;
 
 const CADASTRO_MATRICULAS = {
-    "40090430": "Filipe (Líder)",
-    "40075827": "Denilson (Líder)",
-    "40080751": "Valmir (Líder)",
-    "40090851": "Samuel (Líder)",
-    "1011": "Supervisor"
+    "061012": "Lucas (Desenvolvedor)"
 };
 
 let MODO_MODAL_RELATORIO = {};
@@ -181,34 +177,118 @@ function toggleSidebar() {
 // ==========================================
 // AUTENTICAÇÃO E NAVEGAÇÃO
 // ==========================================
-function processarAutenticacaoHome() {
-    const nomeInput = document.getElementById("login-nome").value.trim();
-    const matriculaInput = document.getElementById("login-matricula").value.trim();
+async function processarAutenticacaoHome() {
+    // Apesar dos ids (legado), o campo #login-nome guarda a MATRÍCULA
+    // e o #login-matricula guarda a SENHA (é o que os labels na tela mostram).
+    const matriculaInput = document.getElementById("login-nome").value.trim();
+    const senhaInput = document.getElementById("login-matricula").value.trim();
 
-    if (!nomeInput || !matriculaInput) {
+    if (!matriculaInput || !senhaInput) {
         return alert("Preencha todos os campos.");
     }
 
-    if (CADASTRO_MATRICULAS[matriculaInput]) {
-        OPERADOR_LOGADO = { matricula: matriculaInput, nome: `${nomeInput} [${CADASTRO_MATRICULAS[matriculaInput]}]` };
-        localStorage.setItem("oms_operador_v32_local", JSON.stringify(OPERADOR_LOGADO));
-        
-        document.getElementById("tela-login-home").style.display = "none";
-        document.getElementById("container-sistema-oms").style.display = "flex";
+    const matriculaUpper = matriculaInput.toUpperCase();
+    const btnEntrar = document.querySelector(".login-btn-submit");
+    if (btnEntrar) { btnEntrar.disabled = true; btnEntrar.innerText = "Verificando..."; }
 
-        if (typeof atualizarInterfaceUsuario === 'function') atualizarInterfaceUsuario();
-        if (typeof registrarHistorico === 'function') registrarHistorico("AUTENTICAÇÃO", `Login executado com sucesso.`);
-        if (typeof calcularKpisGlobais === 'function') calcularKpisGlobais();
-        if (typeof renderPainelVeios === 'function') renderPainelVeios();
-        if (typeof renderAtivos === 'function') renderAtivos();
-        if (typeof renderReparos === 'function') renderReparos();
-        if (typeof renderReservas === 'function') renderReservas();
-        if (typeof renderRolos === 'function') renderRolos();
-        if (typeof renderMateriais === 'function') renderMateriais();
-        if (typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
-    } else {
-        alert("Falha: Matrícula não localizada.");
+    try {
+        // Acesso local de desenvolvedor (não depende do Neon estar no ar).
+        if (CADASTRO_MATRICULAS[matriculaInput] && senhaInput.toUpperCase() === matriculaInput.toUpperCase()) {
+            finalizarLogin("Lucas", CADASTRO_MATRICULAS[matriculaInput], matriculaInput);
+            return;
+        }
+
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/colaboradores/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ matricula: matriculaUpper, senha: senhaInput })
+        });
+
+        const resultado = await resp.json().catch(() => ({}));
+
+        if (!resp.ok) {
+            alert(resultado.detail || "Falha ao autenticar. Tente novamente.");
+            return;
+        }
+
+        if (resultado.precisa_definir_senha) {
+            await fluxoDefinirNovaSenha(matriculaUpper, senhaInput, resultado.nome, resultado.cargo);
+            return;
+        }
+
+        finalizarLogin(resultado.nome, resultado.cargo, matriculaUpper);
+    } catch (e) {
+        console.error("Erro no login:", e);
+        alert("Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.");
+    } finally {
+        if (btnEntrar) { btnEntrar.disabled = false; btnEntrar.innerText = "Autenticar Terminal"; }
     }
+}
+
+// ==========================================
+// PRIMEIRO ACESSO: obriga a cadastrar uma senha definitiva
+// ==========================================
+async function fluxoDefinirNovaSenha(matricula, senhaAtual, nome, cargo) {
+    alert(`Bem-vindo(a), ${nome}!\nEste é seu primeiro acesso. Você precisa cadastrar uma senha definitiva (mínimo 4 caracteres).`);
+
+    while (true) {
+        const novaSenha = prompt("Digite sua nova senha:");
+        if (novaSenha === null) return; // cancelou
+        if (novaSenha.trim().length < 4) {
+            alert("A senha precisa ter pelo menos 4 caracteres.");
+            continue;
+        }
+        const confirmacao = prompt("Confirme a nova senha:");
+        if (confirmacao === null) return;
+        if (novaSenha.trim() !== confirmacao.trim()) {
+            alert("As senhas não coincidem. Tente de novo.");
+            continue;
+        }
+
+        try {
+            const apiBase = await resolverApiBase();
+            const resp = await fetch(`${apiBase}/api/colaboradores/definir_senha`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ matricula, senha_atual: senhaAtual, nova_senha: novaSenha.trim() })
+            });
+            const resultado = await resp.json().catch(() => ({}));
+            if (!resp.ok) {
+                alert(resultado.detail || "Não foi possível cadastrar a senha. Tente novamente.");
+                continue;
+            }
+            alert("✅ Senha cadastrada! A partir de agora, use ela pra entrar.");
+            finalizarLogin(nome, cargo, matricula);
+            return;
+        } catch (e) {
+            console.error("Erro ao definir senha:", e);
+            alert("Não foi possível conectar ao servidor. Tente novamente.");
+            return;
+        }
+    }
+}
+
+// ==========================================
+// FINALIZA O LOGIN (comum a dev, colaborador e primeiro acesso)
+// ==========================================
+function finalizarLogin(nome, cargo, matricula) {
+    OPERADOR_LOGADO = { matricula: matricula, nome: `${nome} [${cargo}]` };
+    localStorage.setItem("oms_operador_v32_local", JSON.stringify(OPERADOR_LOGADO));
+
+    document.getElementById("tela-login-home").style.display = "none";
+    document.getElementById("container-sistema-oms").style.display = "flex";
+
+    if (typeof atualizarInterfaceUsuario === 'function') atualizarInterfaceUsuario();
+    if (typeof registrarHistorico === 'function') registrarHistorico("AUTENTICAÇÃO", `Login executado com sucesso.`);
+    if (typeof calcularKpisGlobais === 'function') calcularKpisGlobais();
+    if (typeof renderPainelVeios === 'function') renderPainelVeios();
+    if (typeof renderAtivos === 'function') renderAtivos();
+    if (typeof renderReparos === 'function') renderReparos();
+    if (typeof renderReservas === 'function') renderReservas();
+    if (typeof renderRolos === 'function') renderRolos();
+    if (typeof renderMateriais === 'function') renderMateriais();
+    if (typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
 }
 
 function fazerLogout() {
@@ -221,10 +301,36 @@ function fazerLogout() {
     }
 }
 
+// ==========================================
+// MODO VISITANTE (somente leitura)
+// ==========================================
+function entrarComoVisitante() {
+    OPERADOR_LOGADO = { matricula: null, nome: "Visitante", visitante: true };
+    localStorage.setItem("oms_operador_v32_local", JSON.stringify(OPERADOR_LOGADO));
+
+    document.getElementById("tela-login-home").style.display = "none";
+    document.getElementById("container-sistema-oms").style.display = "flex";
+
+    if (typeof atualizarInterfaceUsuario === 'function') atualizarInterfaceUsuario();
+    if (typeof registrarHistorico === 'function') registrarHistorico("AUTENTICAÇÃO", "Acesso em Modo Visitante (somente leitura).");
+    if (typeof calcularKpisGlobais === 'function') calcularKpisGlobais();
+    if (typeof renderPainelVeios === 'function') renderPainelVeios();
+    if (typeof renderAtivos === 'function') renderAtivos();
+    if (typeof renderReparos === 'function') renderReparos();
+    if (typeof renderReservas === 'function') renderReservas();
+    if (typeof renderRolos === 'function') renderRolos();
+    if (typeof renderMateriais === 'function') renderMateriais();
+    if (typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
+}
+
 function verificarAcesso() {
     if (!OPERADOR_LOGADO) {
         document.getElementById("container-sistema-oms").style.display = "none";
         document.getElementById("tela-login-home").style.display = "flex";
+        return false;
+    }
+    if (OPERADOR_LOGADO.visitante) {
+        alert("🔒 Modo Visitante: apenas visualização.\nFaça login com sua matrícula para criar, editar ou excluir.");
         return false;
     }
     return true;
@@ -298,6 +404,7 @@ function registrarHistorico(tag, acao) {
 
     localStorage.setItem("oms_historico_v32_local", JSON.stringify(HISTORICO_ACOES));
     renderHistorico();
+    if (typeof renderizarFeedAtividadeRecente === 'function') renderizarFeedAtividadeRecente();
 }
 
 function renderHistorico() {
@@ -381,7 +488,38 @@ function renderHistorico() {
 }
 
 function atualizarInterfaceUsuario() {
-    document.getElementById("nome-operador-logado").innerText = OPERADOR_LOGADO ? OPERADOR_LOGADO.nome : "Não identificado";
+    const nomeEl = document.getElementById("nome-operador-logado");
+    const badgeEl = document.getElementById("badge-cargo-operador");
+
+    if (!OPERADOR_LOGADO) {
+        if (nomeEl) nomeEl.innerText = "Não identificado";
+        if (badgeEl) badgeEl.style.display = "none";
+        renderHistorico();
+        return;
+    }
+
+    if (OPERADOR_LOGADO.visitante) {
+        if (nomeEl) nomeEl.innerText = "👁️ Visitante";
+        if (badgeEl) {
+            badgeEl.innerText = "Somente leitura";
+            badgeEl.className = "operator-role-badge role-visitante";
+            badgeEl.style.display = "inline-block";
+        }
+        renderHistorico();
+        return;
+    }
+
+    // Extrai o cargo entre colchetes do nome cadastrado, ex: "Filipe [Líder]"
+    const match = (OPERADOR_LOGADO.nome || "").match(/\[(.+?)\]/);
+    const cargo = match ? match[1] : "Operador";
+    const nomeLimpo = (OPERADOR_LOGADO.nome || "").replace(/\s*\[.+?\]/, "");
+
+    if (nomeEl) nomeEl.innerText = nomeLimpo || "Não identificado";
+    if (badgeEl) {
+        badgeEl.innerText = cargo;
+        badgeEl.className = "operator-role-badge";
+        badgeEl.style.display = "inline-block";
+    }
     renderHistorico();
 }
 
@@ -2393,6 +2531,7 @@ function atualizarKPIsAvancados() {
         if (mediaEl) mediaEl.innerText = '0%';
     }
     
+    const mediaReparoEl = document.getElementById('kpi-media-reparo');
     const emReparo = BANCO_ATIVOS.filter(a => a.local === 'Oficina / Reparo');
     if (emReparo.length > 0) {
         const somaDias = emReparo.reduce((acc, a) => {
@@ -2400,15 +2539,18 @@ function atualizarKPIsAvancados() {
             return acc + dias;
         }, 0);
         const mediaDias = Math.round(somaDias / emReparo.length);
-        const mediaReparoEl = document.getElementById('kpi-media-reparo');
         if (mediaReparoEl) mediaReparoEl.innerText = mediaDias + ' dias';
     } else {
-        const mediaReparoEl = document.getElementById('kpi-media-reparo');
         if (mediaReparoEl) mediaReparoEl.innerText = '0 dias';
     }
-    
-    const mulheresEl = document.getElementById('kpi-mulheres');
-    if (mulheresEl) mulheresEl.innerText = '+30%';
+
+    const dispEl = document.getElementById('kpi-disponibilidade');
+    if (dispEl) {
+        const totalAtivos = BANCO_ATIVOS.length;
+        const emReparoCount = BANCO_ATIVOS.filter(a => a.local === 'Oficina / Reparo').length;
+        const disponibilidade = totalAtivos > 0 ? ((totalAtivos - emReparoCount) / totalAtivos) * 100 : 0;
+        dispEl.innerText = disponibilidade.toFixed(1) + '%';
+    }
 }
 
 function abrirCriticos() {
@@ -2441,7 +2583,41 @@ function atualizarPainelCompleto() {
         calcularKpisGlobais();
     }
     atualizarNovosKPIs();
+    atualizarKPIsAvancados();
     renderizarTopCriticos();
+    renderizarFeedAtividadeRecente();
+}
+
+// ==========================================
+// FEED DE ATIVIDADE RECENTE (dados reais do histórico)
+// ==========================================
+function renderizarFeedAtividadeRecente() {
+    const container = document.getElementById('home-timeline-feed');
+    if (!container) return;
+
+    const itens = (HISTORICO_ACOES || []).slice(0, 6);
+
+    if (itens.length === 0) {
+        container.innerHTML = `<li class="text-muted" style="text-align:center; padding: 10px 0;">Nenhuma atividade registrada ainda.</li>`;
+        return;
+    }
+
+    container.innerHTML = itens.map(h => {
+        const tagUpper = (h.tag || '').toUpperCase();
+        let classe = '';
+        if (tagUpper.includes('EXCLU') || tagUpper.includes('ALERTA') || tagUpper.includes('CRÍTIC')) {
+            classe = 'alert';
+        } else if (tagUpper.includes('CONCLU') || tagUpper.includes('AUTENTIC') || tagUpper.includes('SUCESSO')) {
+            classe = 'success';
+        }
+        return `
+            <li class="${classe}">
+                <span class="timeline-time">${h.data || '--'}</span>
+                <strong>${h.tag || 'Sistema'}:</strong> ${h.acao || ''}
+                ${h.responsavel ? `<br><small class="text-muted">${h.responsavel}</small>` : ''}
+            </li>
+        `;
+    }).join('');
 }
 
 // ==========================================
@@ -2616,10 +2792,11 @@ window.toggleSidebar = function() {
 };
 
 window.toggleTheme = function() {
-    document.body.classList.toggle('light-theme');
-    const isLight = document.body.classList.contains('light-theme');
+    document.body.classList.toggle('light-mode');
+    const isLight = document.body.classList.contains('light-mode');
     const icon = document.getElementById('theme-icon');
     const text = document.getElementById('theme-text');
+    localStorage.setItem('oms_theme_local', isLight ? 'light' : 'dark');
     if (icon && text) {
         icon.className = isLight ? 'fas fa-moon' : 'fas fa-sun';
         text.innerText = isLight ? 'Modo Escuro' : 'Modo Claro';
@@ -3022,6 +3199,11 @@ if (typeof carregarOficina !== 'undefined') window.carregarOficina = carregarOfi
 if (typeof renderizarGraficosMCC !== 'undefined') window.renderizarGraficosMCC = renderizarGraficosMCC;
 if (typeof atualizarPainelCompleto !== 'undefined') window.atualizarPainelCompleto = atualizarPainelCompleto;
 if (typeof verificarAcesso !== 'undefined') window.verificarAcesso = verificarAcesso;
+if (typeof entrarComoVisitante !== 'undefined') window.entrarComoVisitante = entrarComoVisitante;
+if (typeof processarAutenticacaoHome !== 'undefined') window.processarAutenticacaoHome = processarAutenticacaoHome;
+window.setOperadorLogado = function(op) { OPERADOR_LOGADO = op; };
+window.getOperadorLogado = function() { return OPERADOR_LOGADO; };
+if (typeof abrirCriticos !== 'undefined') window.abrirCriticos = abrirCriticos;
 
 // ==============================================================
 // 5. INICIALIZAÇÃO DA PÁGINA (START - LIVRE DE GOOGLE SHEETS)
@@ -3029,7 +3211,7 @@ if (typeof verificarAcesso !== 'undefined') window.verificarAcesso = verificarAc
 document.addEventListener('DOMContentLoaded', async () => {
     if (typeof carregarTema === 'function') carregarTema();
     console.log("🚀 Iniciando Sistema...");
-    
+
     const atualizou = await window.carregarAtivosDoPython();
     
     if (atualizou) {

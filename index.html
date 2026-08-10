@@ -329,15 +329,11 @@
             border-radius: var(--radius-lg);
             padding: 16px;
             box-shadow: var(--shadow);
-            transform: perspective(1000px) rotateY(-3deg) rotateX(2deg);
-            transition: transform 0.6s ease;
-        }
-        .dashboard-mockup:hover {
-            transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
         }
 
         .mockup-header {
             display: flex;
+            align-items: center;
             gap: 8px;
             padding-bottom: 12px;
             border-bottom: 1px solid var(--border);
@@ -352,6 +348,12 @@
         .mockup-dot:nth-child(1) { background: #ef4444; }
         .mockup-dot:nth-child(2) { background: #f59e0b; }
         .mockup-dot:nth-child(3) { background: #10b981; }
+        .mockup-header span {
+            margin-left: 8px;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
 
         .mockup-body {
             display: grid;
@@ -362,10 +364,25 @@
         .mockup-sidebar {
             background: #1a2332;
             border-radius: 8px;
+            padding: 14px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .mockup-sidebar span {
+            display: block;
+            height: 8px;
+            border-radius: 4px;
+            background: #2a3548;
+        }
+        .mockup-sidebar span:first-child {
+            width: 60%;
+            background: var(--primary);
+            opacity: 0.8;
         }
         .mockup-main {
             display: grid;
-            grid-template-rows: 1fr 2fr;
+            grid-template-rows: auto 1fr;
             gap: 12px;
         }
         .mockup-kpi {
@@ -376,11 +393,32 @@
         .mockup-kpi > div {
             background: #1a2332;
             border-radius: 8px;
-            height: 100%;
+            padding: 10px 12px;
+        }
+        .mockup-kpi strong {
+            display: block;
+            font-size: 18px;
+            color: #fff;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+        .mockup-kpi small {
+            font-size: 10px;
+            color: var(--text-muted);
         }
         .mockup-chart {
             background: #1a2332;
             border-radius: 8px;
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            padding: 16px;
+        }
+        .mockup-chart i {
+            display: block;
+            flex: 1;
+            border-radius: 4px 4px 0 0;
+            background: linear-gradient(180deg, var(--primary), rgba(245,158,11,0.25));
         }
 
         /* ===== SEÇÃO: PROPÓSITO (frase institucional) ===== */
@@ -1087,14 +1125,27 @@
                     <div class="mockup-dot"></div>
                     <div class="mockup-dot"></div>
                     <div class="mockup-dot"></div>
+                    <span>oms.csn.com.br</span>
                 </div>
                 <div class="mockup-body">
-                    <div class="mockup-sidebar"></div>
+                    <div class="mockup-sidebar">
+                        <span></span><span></span><span></span><span></span><span></span>
+                    </div>
                     <div class="mockup-main">
                         <div class="mockup-kpi">
-                            <div></div><div></div><div></div>
+                            <div><strong>128</strong><small>Ativos</small></div>
+                            <div><strong>14</strong><small>Em Reparo</small></div>
+                            <div><strong>96%</strong><small>Disponível</small></div>
                         </div>
-                        <div class="mockup-chart"></div>
+                        <div class="mockup-chart">
+                            <i style="height:35%"></i>
+                            <i style="height:60%"></i>
+                            <i style="height:45%"></i>
+                            <i style="height:80%"></i>
+                            <i style="height:55%"></i>
+                            <i style="height:70%"></i>
+                            <i style="height:40%"></i>
+                        </div>
                     </div>
                 </div>
             </div>

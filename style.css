@@ -574,6 +574,26 @@ h1, h2, h3, h4, h5, h6 {
   margin-top: 2px;
 }
 
+.operator-role-badge {
+  display: none;
+  margin-top: 6px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--text-accent);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.operator-role-badge.role-visitante {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
 .sidebar-nav {
   display: flex;
   flex-direction: column;
@@ -835,6 +855,20 @@ h1, h2, h3, h4, h5, h6 {
   grid-template-columns: repeat(3, 1fr);
   gap: 18px;
   margin-top: 12px;
+}
+
+.kpi-container-familia {
+  grid-template-columns: repeat(3, 1fr);
+}
+@media (max-width: 992px) {
+  .kpi-container-familia {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .kpi-container-familia {
+    grid-template-columns: 1fr;
+  }
 }
 
 .kpi-card {

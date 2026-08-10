@@ -196,7 +196,7 @@
             <div class="login-form-group">
                 <label>Código de Segurança (Senha)</label>
                 <div class="login-input-wrapper">
-                    <input type="password" id="login-matricula" placeholder="••••••••">
+                    <input type="password" id="login-matricula" placeholder="Senha (ou matrícula no 1º acesso)">
                     <i class="fas fa-lock login-input-icon"></i>
                 </div>
             </div>
@@ -225,7 +225,17 @@
         <!-- SIDEBAR -->
         <aside id="sidebar-menu" class="sidebar glass-panel">
             <div class="sidebar-header flex-between"><h2><i class="fas fa-industry text-accent"></i> Painel OMS</h2><button class="btn-close-sidebar hidden-desktop" onclick="window.toggleSidebar()"><i class="fas fa-times"></i></button></div>
-            <div class="operator-box"><div class="operator-info"><i class="fas fa-user-shield"></i><div><small>Líder Logado</small><p id="nome-operador-logado">...</p></div></div><button class="btn-auth" onclick="window.fazerLogout()">Encerrar Turno</button></div>
+            <div class="operator-box">
+                <div class="operator-info">
+                    <i class="fas fa-user-shield"></i>
+                    <div>
+                        <small>Colaborador</small>
+                        <p id="nome-operador-logado">...</p>
+                        <span id="badge-cargo-operador" class="operator-role-badge"></span>
+                    </div>
+                </div>
+                <button class="btn-auth" onclick="window.fazerLogout()">Encerrar Turno</button>
+            </div>
             <nav class="sidebar-nav">
                 <a href="#" id="nav-painel" class="nav-link active" onclick="window.abrirAba(event,'aba-painel')"><i class="fas fa-chart-pie"></i> Painel Geral OMS</a>
                 <a href="#" id="nav-fluxo" class="nav-link" onclick="window.abrirAba(event,'aba-fluxo')"><i class="fas fa-stream"></i> Sequenciamento Veios</a>
@@ -270,9 +280,6 @@
         <div style="display:flex; gap:10px; flex-wrap:wrap; align-items: flex-start;">
             <button class="btn-premium" onclick="window.toggleTheme()" id="btn-theme-toggle">
                 <i class="fas fa-sun" id="theme-icon"></i> <span id="theme-text">Modo Claro</span>
-            </button>
-            <button class="btn-premium btn-success" onclick="window.abrirAba(null,'aba-reservas')">
-                <i class="fas fa-boxes"></i> Estoque Central
             </button>
         </div>
     </div>
@@ -377,18 +384,7 @@
                     <i class="fas fa-history" style="color:var(--text-muted);"></i> Atividade Recente
                 </h3>
                 <ul class="timeline-feed" id="home-timeline-feed">
-                    <li class="success">
-                        <span class="timeline-time">HOJE, 09:30</span>
-                        <strong>Lançamento Concluído:</strong> Produção do turno atualizada no MCC 3 (3.705 Ton).
-                    </li>
-                    <li class="alert">
-                        <span class="timeline-time">HOJE, 08:15</span>
-                        <strong>Alerta de Desgaste:</strong> Molde 4H-01 atingiu 82% da vida útil projetada.
-                    </li>
-                    <li>
-                        <span class="timeline-time">ONTEM, 23:40</span>
-                        <strong>Movimentação:</strong> Segmento HOR-08 liberado para Estoque Reserva.
-                    </li>
+                    <li class="text-muted" style="text-align:center; padding: 10px 0;">Carregando atividades...</li>
                 </ul>
             </div>
         </div>
@@ -398,7 +394,7 @@
     <h3 style="color:var(--text-title); font-size:1.1rem; margin: 32px 0 16px 0;">
         <i class="fas fa-layer-group" style="color:var(--text-muted);"></i> Distribuição por Família
     </h3>
-    <div class="kpi-container" style="grid-template-columns:repeat(3,1fr);">
+    <div class="kpi-container kpi-container-familia">
         <div class="kpi-card" style="border-top:3px solid #8b5cf6; background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), transparent);">
             <div class="kpi-icon" style="color:#8b5cf6; border-color:rgba(139, 92, 246, 0.2);">
                 <i class="fas fa-industry"></i>
@@ -421,11 +417,47 @@
         
         <div class="kpi-card" style="border-top:3px solid #f59e0b; background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), transparent);">
             <div class="kpi-icon" style="color:#f59e0b; border-color:rgba(245, 158, 11, 0.2);">
-                <i class="fas fa-rolling"></i>
+                <i class="fas fa-scroll"></i>
             </div>
             <div class="kpi-data">
                 <h4 id="kpi-total-rolos">0</h4>
                 <p>Rolos em Estoque</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. INDICADORES DE DESEMPENHO (dados reais calculados) -->
+    <h3 style="color:var(--text-title); font-size:1.1rem; margin: 32px 0 16px 0;">
+        <i class="fas fa-chart-line" style="color:var(--text-muted);"></i> Indicadores de Desempenho
+    </h3>
+    <div class="kpi-container kpi-container-familia">
+        <div class="kpi-card" style="border-top:3px solid #22d3ee; background: linear-gradient(135deg, rgba(34, 211, 238, 0.05), transparent);">
+            <div class="kpi-icon" style="color:#22d3ee; border-color:rgba(34, 211, 238, 0.2);">
+                <i class="fas fa-gauge-high"></i>
+            </div>
+            <div class="kpi-data">
+                <h4 id="kpi-media-desgaste">0%</h4>
+                <p>Desgaste Médio (Ativos Instalados)</p>
+            </div>
+        </div>
+
+        <div class="kpi-card" style="border-top:3px solid #f97316; background: linear-gradient(135deg, rgba(249, 115, 22, 0.05), transparent);">
+            <div class="kpi-icon" style="color:#f97316; border-color:rgba(249, 115, 22, 0.2);">
+                <i class="fas fa-clock-rotate-left"></i>
+            </div>
+            <div class="kpi-data">
+                <h4 id="kpi-media-reparo">0 dias</h4>
+                <p>Tempo Médio em Reparo</p>
+            </div>
+        </div>
+
+        <div class="kpi-card" style="border-top:3px solid #10b981; background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), transparent);">
+            <div class="kpi-icon" style="color:#10b981; border-color:rgba(16, 185, 129, 0.2);">
+                <i class="fas fa-check-double"></i>
+            </div>
+            <div class="kpi-data">
+                <h4 id="kpi-disponibilidade">0%</h4>
+                <p>Disponibilidade da Frota</p>
             </div>
         </div>
     </div>
@@ -1156,7 +1188,7 @@
         if (operadorSalvo) {
             try {
                 const operador = JSON.parse(operadorSalvo);
-                window.OPERADOR_LOGADO = operador;
+                if (window.setOperadorLogado) window.setOperadorLogado(operador);
                 document.getElementById("tela-login-home").style.display = "none";
                 document.getElementById("container-sistema-oms").style.display = "flex";
                 if (window.atualizarInterfaceUsuario) window.atualizarInterfaceUsuario();
@@ -1168,6 +1200,7 @@
                 if (window.renderRolos) window.renderRolos();
                 if (window.renderMateriais) window.renderMateriais();
                 if (window.renderHistorico) window.renderHistorico();
+                if (window.atualizarPainelCompleto) window.atualizarPainelCompleto();
                 console.log("✅ Usuário logado:", operador.nome);
             } catch(e) {
                 console.warn("Erro ao restaurar sessão:", e);
@@ -1185,31 +1218,6 @@
                 console.log("✅ Funções do folhaoMolde4 já expostas.");
             }
         }, 100);
-
-        // Define a função de autenticação (caso não exista)
-        window.processarAutenticacaoHome = function() {
-            const nome = document.getElementById('login-nome')?.value?.trim();
-            const matricula = document.getElementById('login-matricula')?.value?.trim();
-            if (!nome || !matricula) {
-                alert('Preencha todos os campos.');
-                return;
-            }
-            const operador = { nome, matricula, login: new Date().toISOString() };
-            localStorage.setItem('oms_operador_v32_local', JSON.stringify(operador));
-            window.OPERADOR_LOGADO = operador;
-            document.getElementById('tela-login-home').style.display = 'none';
-            document.getElementById('container-sistema-oms').style.display = 'flex';
-            if (window.atualizarInterfaceUsuario) window.atualizarInterfaceUsuario();
-            if (window.calcularKpisGlobais) window.calcularKpisGlobais();
-            if (window.renderPainelVeios) window.renderPainelVeios();
-            if (window.renderAtivos) window.renderAtivos();
-            if (window.renderReparos) window.renderReparos();
-            if (window.renderReservas) window.renderReservas();
-            if (window.renderRolos) window.renderRolos();
-            if (window.renderMateriais) window.renderMateriais();
-            if (window.renderHistorico) window.renderHistorico();
-            console.log("✅ Usuário autenticado:", operador.nome);
-        };
     </script>
 
         <script>
