@@ -2653,6 +2653,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 .login-input-wrapper input:focus + .login-input-icon { color: #f59e0b; }
 
+/* Botão de mostrar/ocultar senha (fica à direita do campo) */
+.login-input-icon-toggle {
+    position: absolute; right: 16px; left: auto; top: 50%; transform: translateY(-50%);
+    color: #64748b; font-size: 1rem; transition: color 0.2s ease;
+}
+.login-input-icon-toggle:hover { color: #f59e0b; }
+#login-matricula { padding-right: 44px; }
+
 /* Botão de Autenticar (Destaque Quente) */
 .login-btn-submit {
     width: 100%;

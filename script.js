@@ -175,13 +175,26 @@ function toggleSidebar() {
 }
 
 // ==========================================
+// MOSTRAR/OCULTAR SENHA NO LOGIN
+// ==========================================
+window.alternarVisibilidadeSenha = function() {
+    const campo = document.getElementById('login-matricula');
+    const icone = document.getElementById('toggle-senha-icon');
+    if (!campo || !icone) return;
+    const oculto = campo.type === 'password';
+    campo.type = oculto ? 'text' : 'password';
+    icone.className = oculto ? 'fas fa-eye-slash login-input-icon-toggle' : 'fas fa-eye login-input-icon-toggle';
+};
+
+// ==========================================
 // AUTENTICAÇÃO E NAVEGAÇÃO
 // ==========================================
 async function processarAutenticacaoHome() {
     // Apesar dos ids (legado), o campo #login-nome guarda a MATRÍCULA
     // e o #login-matricula guarda a SENHA (é o que os labels na tela mostram).
-    const matriculaInput = document.getElementById("login-nome").value.trim();
-    const senhaInput = document.getElementById("login-matricula").value.trim();
+    // Os campos já forçam maiúsculas ao digitar, mas garantimos aqui também.
+    const matriculaInput = document.getElementById("login-nome").value.trim().toUpperCase();
+    const senhaInput = document.getElementById("login-matricula").value.trim().toUpperCase();
 
     if (!matriculaInput || !senhaInput) {
         return alert("Preencha todos os campos.");
@@ -233,15 +246,17 @@ async function fluxoDefinirNovaSenha(matricula, senhaAtual, nome, cargo) {
     alert(`Bem-vindo(a), ${nome}!\nEste é seu primeiro acesso. Você precisa cadastrar uma senha definitiva (mínimo 4 caracteres).`);
 
     while (true) {
-        const novaSenha = prompt("Digite sua nova senha:");
+        let novaSenha = prompt("Digite sua nova senha:");
         if (novaSenha === null) return; // cancelou
-        if (novaSenha.trim().length < 4) {
+        novaSenha = novaSenha.trim().toUpperCase();
+        if (novaSenha.length < 4) {
             alert("A senha precisa ter pelo menos 4 caracteres.");
             continue;
         }
-        const confirmacao = prompt("Confirme a nova senha:");
+        let confirmacao = prompt("Confirme a nova senha:");
         if (confirmacao === null) return;
-        if (novaSenha.trim() !== confirmacao.trim()) {
+        confirmacao = confirmacao.trim().toUpperCase();
+        if (novaSenha !== confirmacao) {
             alert("As senhas não coincidem. Tente de novo.");
             continue;
         }
@@ -251,7 +266,7 @@ async function fluxoDefinirNovaSenha(matricula, senhaAtual, nome, cargo) {
             const resp = await fetch(`${apiBase}/api/colaboradores/definir_senha`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ matricula, senha_atual: senhaAtual, nova_senha: novaSenha.trim() })
+                body: JSON.stringify({ matricula, senha_atual: senhaAtual, nova_senha: novaSenha })
             });
             const resultado = await resp.json().catch(() => ({}));
             if (!resp.ok) {
