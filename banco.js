@@ -385,6 +385,10 @@ export async function sincronizarAtivosReaisMCC4() {
 
     } catch (erro) {
         console.error("❌ Falha ao buscar dados do Python. O servidor (uvicorn) está ligado?", erro);
+        // Guarda o erro técnico num lugar acessível globalmente, pra
+        // poder ser mostrado na tela (sem precisar abrir o console do
+        // navegador) por quem chamar essa função.
+        window.ULTIMO_ERRO_SYNC = `${erro.name || "Erro"}: ${erro.message || "sem detalhes"}`;
         return false;
     }
 }
