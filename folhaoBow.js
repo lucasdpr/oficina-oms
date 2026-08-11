@@ -2,6 +2,7 @@
 
 import { BANCO_ATIVOS, resolverApiBase } from './banco.js?v=2';
 import { renderAtivos, renderReparos, renderReservas } from './ui.js';
+import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
 
 let ID_FOLHAO_BOW_ATUAL = null;
 
@@ -505,6 +506,11 @@ window.abrirFolhaoBow = function(id) {
     modal.classList.remove('hidden');
     // Ativa a primeira aba
     window.trocarAbaBow({ currentTarget: document.querySelector('#modal-folhao-bow .folhao-tab') }, 'bow-aba-dados');
+
+    // Restaura progresso salvo (ex: chegada já feita, aguardando saída)
+    // e liga o auto-salvamento pra nada mais se perder.
+    restaurarRascunhoNoModal('modal-folhao-bow', id);
+    ativarAutoSalvamentoFolhao('modal-folhao-bow', id, 'Bow');
 };
 
 // ==============================================================
@@ -544,49 +550,32 @@ window.salvarEImprimirFolhaoBow = async function() {
     const tipoExec = document.getElementById('bow-tipo-execucao')?.value || 'GERAL';
     const novaMeta = getV('bow-nova-meta') || 'Manter Atual'; // 🔥 CAPTURA A NOVA META
 
-    // 2. PREPARA OS DADOS PARA A NUVEM
-    const dadosFolhao = {
-        id_peca: tag,
-        tipo_equipamento: "Bow",
-        tecnico: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Técnico",
-        nova_meta: parseFloat(novaMeta) || 0,
-        tipo_manutencao: tipoExec,
-        dados_chegada: "{}", 
-        dados_saida: "{}",
-        status_reparo: "Concluido",
-        pdf_base64: "" 
-    };
-
-    // 3. 🔥 COMUNICAÇÃO COM O PYTHON (ESPERA O BANCO SALVAR) 🔥
+    // 2. ATUALIZA O EQUIPAMENTO NO BANCO (rota real que já existe na API)
+    // 🔧 CORREÇÃO: antes chamava POST /api/salvar_folhao, rota que nunca
+    // existiu no backend — travava aqui com "Erro no Banco de Dados"
+    // antes de imprimir. Trocado pela rota real /api/atualizar_peca.
+    let item = BANCO_ATIVOS.find(a => a.id === tag);
+    if (item) {
+        item.local = "Oficina / Reserva";
+        item.ton = 0;
+        item.dias = 0;
+        if (novaMeta && !isNaN(parseFloat(novaMeta))) item.meta = parseFloat(novaMeta);
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    }
     try {
-        // 🔧 CORREÇÃO: antes era um localhost:8000 fixo (só funcionava com
-        // servidor local rodando). Agora usa a mesma resolução de API do
-        // resto do sistema (local se existir, senão o Render).
         const apiBase = await resolverApiBase();
-        const resposta = await fetch(`${apiBase}/api/salvar_folhao`, {
+        await fetch(`${apiBase}/api/atualizar_peca`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(dadosFolhao)
+            body: JSON.stringify({ id: tag, local: "Oficina / Reserva", tonelagem: 0, dias: 0, status: "Reserva" })
         });
-        
-        const resultado = await resposta.json();
-
-        // 🔧 CORREÇÃO: antes só checava resultado.status === "erro", que só
-        // existe numa resposta bem-formada do endpoint certo. Um 404 (rota
-        // não existe) ou 500 (erro interno) devolve outro formato de JSON,
-        // sem esse campo — e o código seguia em frente como se tivesse dado
-        // certo (o "✅ Salvo com sucesso" aparecia mesmo com erro real).
-        if (!resposta.ok || resultado.status === "erro") {
-            const msg = resultado.detail || resultado.mensagem || `Erro HTTP ${resposta.status}`;
-            alert("❌ Erro no Banco de Dados: " + msg);
-            return;
-        }
-        console.log("✅ Salvo com sucesso no banco!");
-    } catch(e) {
-        console.error("Erro na Nuvem:", e);
-        alert("❌ Erro de comunicação. O Python está rodando?");
-        return;
+        console.log("✅ Peça atualizada no banco!");
+    } catch (e) {
+        console.error("Erro ao atualizar peça na nuvem:", e);
     }
+
+    // Folhão concluído: apaga o rascunho salvo dessa TAG.
+    finalizarRascunhoFolhao(tag);
 
     // ==========================================================
     // FUNÇÕES AUXILIARES DO PDF (Mantidas do original)

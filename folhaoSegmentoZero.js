@@ -1,369 +1,532 @@
-import { BANCO_ATIVOS, resolverApiBase } from './banco.js?v=2';
-import { renderAtivos, renderReparos, renderReservas } from './ui.js';
+// folhaoStraightenerR1.js - VERSÃO COMPLETA PARA STRAIGHTENER R1
 
-let ID_FOLHAO_SEGZERO_ATUAL = null;
+import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
 
-export function getV(id) {
+let ID_FOLHAO_R1_ATUAL = null;
+
+// ==============================================================
+// 1. DADOS DAS TABELAS (transcritos do documento oficial R1)
+// ==============================================================
+
+const itensChegadaR1 = [
+    { grupo: "LUBRIFICAÇÃO", desc: "Sistema de lubrificação isento de vazamentos." },
+    { grupo: "", desc: "Tubulação amassada." },
+    { grupo: "", desc: "Distribuidores de graxa funcionando corretamente sem vazamentos." },
+    { grupo: "REFRIGERAÇÃO", desc: "Resfriadores completos e alinhados." },
+    { grupo: "", desc: "Bicos obstruídos." },
+    { grupo: "", desc: "Flexíveis isentos de vazamentos." },
+    { grupo: "", desc: "Tubulações isentas de empenos." },
+    { grupo: "", desc: "Tubulações furadas." },
+    { grupo: "CILINDROS", desc: "Isento de vazamento." },
+    { grupo: "", desc: "Conexões completas e apertadas." },
+    { grupo: "", desc: "Flexíveis isentos de vazamentos." },
+    { grupo: "", desc: "Tubulações isentas de empenos." },
+    { grupo: "PORCA HIDRÁULICA", desc: "Isento de vazamento." },
+    { grupo: "", desc: "Conexões completas e apertadas." },
+    { grupo: "", desc: "Proteções danificadas." },
+    { grupo: "", desc: "Tubulações isentas de vazamentos." },
+    { grupo: "ESTRUTURA", desc: "Tubulações isentas de amassados." },
+    { grupo: "", desc: "Proteções isentas de avarias." },
+    { grupo: "", desc: "Estrutura com break-out." },
+    { grupo: "", desc: "Rolamentos quebrados." },
+    { grupo: "", desc: "Rolos travados" },
+    { grupo: "", desc: "Mancais furados." },
+    { grupo: "", desc: "Estrias do rolo puxador danificada." },
+    { grupo: "", desc: "Conexões apertadas." }
+];
+
+const refPassLineInfR1 = ["12,46", "41,22", "56,80", "60,15", "52,68", "36,07", "12,11"];
+const refPassLineSupR1 = ["79,75", "52,18", "37,61", "35,00", "42,83", "59,38", "82,89"];
+
+// Mesmos refs de saída (Bow) conforme documento
+const refsInfSaiR1 = ["68,66", "91,34", "105,13", "110,00", "105,13", "91,34", "68,66"];
+const refsSupSaiR1 = ["124,13", "102,66", "89,61", "85,00", "89,61", "102,66", "124,13"];
+
+const manutencaoR1 = [
+    { item: "1", desc: "Lavagem e/ou Limpeza Mecânica" },
+    { item: "2.1", desc: "Teste Hidrostático" },
+    { item: "2.2", desc: "Teste Hidráulico" },
+    { item: "2.3", desc: "Teste de Refrigeração" },
+    { item: "2.4", desc: "Aferição de Gap (255mm)" },
+    { item: "2.5", desc: "Abrir Segmento" },
+    { item: "3.1", desc: "Desmontagem de proteções" },
+    { item: "3.2", desc: "Retirar chavetas" },
+    { item: "3.3", desc: "Desconectar pinos dos cilindros de elevação" },
+    { item: "3.4", desc: "Retirada da Barra Transversal" },
+    { item: "3.5", desc: "Desconectar flexíveis principais" },
+    { item: "3.6", desc: "Retirar parafusos de fixação das buchas" },
+    { item: "3.7", desc: "Transferir base para stand" },
+    { item: "3.8", desc: "Aferir pass-line Inf. e Sup." },
+    { item: "3.9", desc: "Retirar cangalhas (Inf. e Sup.)" },
+    { item: "3.10", desc: "Desconectar flexíveis das juntas rotativas" },
+    { item: "3.11", desc: "Retirar proteções de mancal" },
+    { item: "3.12", desc: "Desmontagem dos rolos (Destorquear e soltá-los) inferior" },
+    { item: "3.13", desc: "Desmontagem dos rolos (Destorquear e soltá-los) superior" },
+    { item: "3.14", desc: "Desmontagem da estrutura do rolo acionado" },
+    { item: "3.15", desc: "Retirada dos cilindros motriz" },
+    { item: "3.16", desc: "Desmontagem de buchas e conjuntos na base" },
+    { item: "3.17", desc: "Desmontagem de buchas e conjuntos" },
+    { item: "3.18", desc: "Preparar bases e barra para jateamento e pintura" },
+    { item: "4.1", desc: "Desmontagem de proteções e preparação dos calços e base Inferior" },
+    { item: "4.2", desc: "Troca de oring’s" },
+    { item: "4.3", desc: "Montagem de distribuidores" },
+    { item: "4.4", desc: "Fixação dos distribuidores na base" },
+    { item: "4.5", desc: "Desobstrução das tubulações de graxa e de refrigeração" },
+    { item: "4.6", desc: "Preparação dos Rolos" },
+    { item: "4.7", desc: "Montagem de flexíveis na base" },
+    { item: "4.8", desc: "Preparação de pés e tulipas" },
+    { item: "4.9", desc: "Montagem de rolos na base" },
+    { item: "4.10", desc: "Torque dos parafusos dos mancais" },
+    { item: "4.11", desc: "Regulagem dos distribuidores" },
+    { item: "4.12", desc: "Teste de Lubrificação" },
+    { item: "4.13", desc: "Fixação dos distribuidores na base" },
+    { item: "4.14", desc: "Preparar hastes" },
+    { item: "4.15", desc: "Preparar e montar conjuntos de ajustes e buchas" },
+    { item: "4.16", desc: "Montagem das buchas e conjuntos na base" },
+    { item: "4.17", desc: "Montagem dos flexíveis principais" },
+    { item: "4.18", desc: "Conectar flexíveis de juntas nos rolos" },
+    { item: "4.19", desc: "Teste hidrostático juntas rotativas" },
+    { item: "4.20", desc: "Teste hidrostático Mancal" },
+    { item: "4.21", desc: "Aferir Pass-Line e Ajustar" },
+    { item: "4.22", desc: "Montagem e alinhamento das cangalhas" },
+    { item: "5.1", desc: "Desmontar todos os bicos" },
+    { item: "5.2", desc: "Realizar Limpeza das tubulações" },
+    { item: "5.3", desc: "Montar os bicos e flexíveis" },
+    { item: "5.4", desc: "Realizar teste" },
+    { item: "6.1", desc: "Preparação de Lines ou troca" },
+    { item: "6.2", desc: "Preparação dos calços e apoios" },
+    { item: "6.3", desc: "Troca de oring’s" },
+    { item: "6.4", desc: "Desobstrução de tubulações de graxa e de refrigeração" },
+    { item: "6.5", desc: "Montagem de proteções das tubulações e de stauff" },
+    { item: "6.6", desc: "Verificar roscas dos parafusos M30" },
+    { item: "6.7", desc: "Montagem do rolo motriz" },
+    { item: "7.1", desc: "Preparação para receber estrutura e cilindros (Lines e mancais)" },
+    { item: "7.2", desc: "Montagem de Cilindros Motriz" },
+    { item: "7.3", desc: "Desmontagem de proteções e preparação dos calços e base Superior" },
+    { item: "7.4", desc: "Troca de oring’s" },
+    { item: "7.5", desc: "Desobstruição das tubulações de graxa e de refrigeração" },
+    { item: "7.6", desc: "Preparação dos Rolos" },
+    { item: "7.7", desc: "Troca de parafusos dos calços de alinhamento pass-line" },
+    { item: "7.8", desc: "Montagem de rolos na base" },
+    { item: "7.9", desc: "Aperto de parafusos nos mancais" },
+    { item: "7.10", desc: "Montagem da estrutura" },
+    { item: "7.11", desc: "Montagem de distribuidores" },
+    { item: "7.12", desc: "Regulagem dos distribuidores" },
+    { item: "7.13", desc: "Teste de Lubrificação" },
+    { item: "7.14", desc: "Fixação dos distribuidores na base" },
+    { item: "7.15", desc: "Montagem de proteções dos mancais" },
+    { item: "7.16", desc: "Realização do teste hidrostático da base" },
+    { item: "7.17", desc: "Virar a base" },
+    { item: "7.18", desc: "Torque dos parafusos dos mancais" },
+    { item: "7.19", desc: "Montagem de flexíveis de junta rotativa" },
+    { item: "7.20", desc: "Aferir e ajustar pass-line" },
+    { item: "7.21", desc: "Troca das válvulas dos cilindros" },
+    { item: "7.22", desc: "Troca dos mangotes hidráulicos dos cilindros" },
+    { item: "7.23", desc: "Montagem de proteções sanfonadas" },
+    { item: "7.24", desc: "Substituição dos engates rápidos (hidráulicos)" },
+    { item: "7.25", desc: "Substituição dos engates rápidos (refrigeração)" },
+    { item: "7.26", desc: "Montagem de cangalhas na base" },
+    { item: "8.1", desc: "Troca de cilindros de elevação" },
+    { item: "8.2", desc: "Troca de cilindros clamp" },
+    { item: "8.3", desc: "Montagem de blocos nos cilindros clamp" },
+    { item: "8.4", desc: "Troca de oring’s (completo)" },
+    { item: "8.5", desc: "Aperto de tubulações (Conferir)" },
+    { item: "8.6", desc: "Montagem de mangotes dos cilindros de elevação" },
+    { item: "8.7", desc: "Teste hidráulico da barra" },
+    { item: "9.1", desc: "Movimentar base sup para inf" },
+    { item: "9.2", desc: "Conectar flexíveis principais (graxa e água)" },
+    { item: "9.3", desc: "Montar parafusos das buchas" },
+    { item: "9.4", desc: "Preparação das hastes para receber a barra" },
+    { item: "9.5", desc: "Alinhamento de cangalha superior" },
+    { item: "9.6", desc: "Teste geral de juntas" },
+    { item: "9.7", desc: "Montagem da barra transversal no segmento" },
+    { item: "9.8", desc: "Aperto de parafusos dos cilindros clamp" },
+    { item: "9.9", desc: "Montagem de pinos e chavetas" },
+    { item: "9.10", desc: "Montagem de proteções" },
+    { item: "9.11", desc: "Conexão da hidráulica" },
+    { item: "9.12", desc: "Equalização dos cilindros motriz" },
+    { item: "9.13", desc: "Aferir e Ajustar Gap (255mm)" },
+    { item: "10.1", desc: "Teste e Liberação hidráulica" },
+    { item: "10.2", desc: "Teste e Liberação hidrostática" },
+    { item: "10.3", desc: "Retirar Segmento do Stand" },
+    { item: "10.4", desc: "Montagem de Acoplamentos" },
+    { item: "10.5", desc: "Teste de lubrificação geral" }
+];
+
+// ==============================================================
+// 2. FUNÇÕES AUXILIARES
+// ==============================================================
+function getV(id) {
     const el = document.getElementById(id);
     return el ? el.value : '';
 }
 
-export function getRadioValue(name) {
+function getRadioValue(name) {
     const radios = document.getElementsByName(name);
     for (let r of radios) if (r.checked) return r.value;
-    return '';
+    return 'NÃO';
 }
 
-// ==============================================================
-// 1. DADOS DAS TABELAS (Transcritos do Documento Oficial)
-// ==============================================================
-const itensChegadaSegZero = [
-    { grupo: "LUBRIFICAÇÃO", desc: "Distribuidores de graxa com vazamentos" },
-    { grupo: "", desc: "Distribuidores de graxa com agarramentos" },
-    { grupo: "", desc: "Tubulações de graxa amassadas ou danificadas" },
-    { grupo: "", desc: "Flexíveis com vazamentos e/ou avarias" },
-    { grupo: "", desc: "Tubulações de graxa (inox), com avarias" },
-    { grupo: "REFRIGERAÇÃO", desc: "Resfriadores com vazamento" },
-    { grupo: "", desc: "Resfriadores com empeno" },
-    { grupo: "", desc: "Bicos de spray obstruídos" },
-    { grupo: "", desc: "Tubulação com avarias" },
-    { grupo: "", desc: "Uniões com avarias" },
-    { grupo: "ESTRUTURA", desc: "Proteções dos parafusos em perfeito estado, sem avarias" },
-    { grupo: "", desc: "Rolamentos quebrados" },
-    { grupo: "", desc: "Mancais soltos e avariados" },
-    { grupo: "", desc: "Rolos girando normalmente sem restrições" },
-    { grupo: "", desc: "Estrutura com break-out" }
-];
+function getCheckboxValue(id) {
+    const el = document.getElementById(id);
+    return el && el.checked ? 'X' : '';
+}
 
-const itensSaidaSegZero = [
-    { grupo: "LUBRIFICAÇÃO", desc: "Distribuidores de graxa sem vazamentos, isentos de agarramento" },
-    { grupo: "", desc: "Mancais lubrificados" },
-    { grupo: "", desc: "Flexíveis apertados e distorcidos" },
-    { grupo: "", desc: "Pressão de teste entre 90 a 110 kgf/cm2 (pressão de referência)." },
-    { grupo: "", desc: "Tubulações em inox, sem avarias" },
-    { grupo: "REFRIGERAÇÃO", desc: "Flexíveis isentos de vazamentos" },
-    { grupo: "", desc: "Resfriadores isentos de empenos" },
-    { grupo: "", desc: "Bicos de spray alinhados e isentos de obstruções" },
-    { grupo: "", desc: "Tubulação apertada sem avaria" },
-    { grupo: "", desc: "Teste de pressão lateral com 5kg/cm² (Pressão referência)" },
-    { grupo: "", desc: "Uniões apertadas isentas de vazamento e avarias" },
-    { grupo: "", desc: "Uniões montadas na tubulação 2'' da cangalha inferior" },
-    { grupo: "ESTRUTURA", desc: "Proteções dos parafusos fixadas" },
-    { grupo: "", desc: "Estrutura jateada e pintada" },
-    { grupo: "", desc: "Gap em conformidade com o desenho" },
-    { grupo: "", desc: "Rolos girando normalmente sem restrições" },
-    { grupo: "", desc: "Chapa de proteção soldada." }
-];
-
-const materiaisSegZero = [
-    { cod: "1205772", desc: "ARRUELA DE PRESSÃO M16" },
-    { cod: "1203902", desc: "ARRUELA DE PRESSAO M24 DIN 127" },
-    { cod: "1205307", desc: "ARRUELA DE PRESSÃO M36" },
-    { cod: "1203775", desc: "ARRUELA LISA M64 X 66MM X 115MM" },
-    { cod: "1777550", desc: "BASE DESENHO HITACHI 0294000 MC.1 - PÉ" },
-    { cod: "1660305", desc: "CARCAÇA DESENHO HITACHI 0144798 MC1 INFERIOR" },
-    { cod: "1660305", desc: "CARCAÇA DESENHO HITACHI 0294079 MC1" },
-    { cod: "1660303", desc: "CARCAÇA HITACHI 2245098 SUPERIOR" },
-    { cod: "1672147", desc: "CARCAÇA LATERAL HITACHI 2253621 MC.1" },
-    { cod: "1672146", desc: "CARCAÇA LATERAL HITACHI 2253621 MC.2" },
-    { cod: "8288919", desc: "CONEXÃO 1/4\" COMPRESSÃO 188D-E-1" },
-    { cod: "9140946", desc: "CORPO CSN DM613216 1" },
-    { cod: "1691878", desc: "COTOVELO 1.1/4\" X 90º ROSCA BSP" },
-    { cod: "1064442", desc: "COTOVELO 1/4\" X 90º" },
-    { cod: "8097039", desc: "DISTRIBUIDOR GRAXA 3/8 X1/4\" NPTF 2 SAID" },
-    { cod: "1211859", desc: "ENGATE RAPIDO 1.1/4\"" },
-    { cod: "1211500", desc: "ENGATE RAPIDO 2\"" },
-    { cod: "1268070", desc: "ENGATE RÁPIDO 3/8\" - GRAXA" },
-    { cod: "1195298", desc: "FITA DE ARAMIDA 1\" X 1,7MM X 30 METROS" },
-    { cod: "1624645", desc: "MANGUEIRA 3/8\" X 1400MM (GRAXA)" },
-    { cod: "1204966", desc: "PARAF CB SEXT M16X140MM" },
-    { cod: "1204620", desc: "PARAFUSO CABEÇA SEXT.M12 X 45MM - INOX" },
-    { cod: "8003560", desc: "PARAFUSO CABEÇA SEXT.M16 X 70MM-INOX" },
-    { cod: "1628930", desc: "PARAFUSO CABEÇA SEXT.M16 X 90MM-INOX" },
-    { cod: "1204624", desc: "PARAFUSO CABEÇA SEXTAVADA M12 X 30MM" },
-    { cod: "8010789", desc: "PARAFUSO CABEÇA SEXTAVADA M16 X 115MM" },
-    { cod: "1221020", desc: "PARAFUSO CABEÇA SEXTAVADA M16 X 150MM" },
-    { cod: "1615479", desc: "PARAFUSO CABEÇA SEXTAVADA M16 X 160MM" },
-    { cod: "1615369", desc: "PARAFUSO CABEÇA SEXTAVADA M16 X 175MM" },
-    { cod: "1204967", desc: "PARAFUSO CABEÇA SEXTAVADA M16 X 180MM" },
-    { cod: "1205571", desc: "PARAFUSO CABEÇA SEXTAVADA M16 X 190MM" },
-    { cod: "1205334", desc: "PARAFUSO CABEÇA SEXTAVADA M16 X 200MM" },
-    { cod: "1205193", desc: "PARAFUSO CABEÇA SEXTAVADA M16 X 210MM" },
-    { cod: "1219654", desc: "PARAFUSO CABEÇA SEXTAVADA M16 X 90MM" },
-    { cod: "1203880", desc: "PARAFUSO CABEÇA SEXTAVADA M36 X 150MM" },
-    { cod: "1620873", desc: "PARAFUSO CABEÇA SEXTAVADA M36 X 440MM" },
-    { cod: "1205431", desc: "PARAFUSO CABEÇA SEXTAVADA M64 X 170MM" },
-    { cod: "1204965", desc: "PARAFUSO CABEÇA SEXTAVADO M16 X 120MM" },
-    { cod: "1205144", desc: "PARAFUSO CIL CL10.9 M16X 150MM" },
-    { cod: "1752138", desc: "PINO HITACHI 0294015 2" },
-    { cod: "8500175", desc: "PLACA HITACHI 0293493 1" },
-    { cod: "8500174", desc: "PLACA HITACHI 0293493 2" },
-    { cod: "9272310", desc: "PONTA UNIJET TP1285L - 12,3 L/MIN" },
-    { cod: "9140945", desc: "PORCA FIX. INOX PONTA UNIJET" },
-    { cod: "1205361", desc: "PORCA SEXTAVADA M12" },
-    { cod: "1204312", desc: "PORCA SEXTAVADA M16" },
-    { cod: "1228240", desc: "PORCA SEXTAVADA M24" },
-    { cod: "1206197", desc: "PORCA SEXTAVADA M64" },
-    { cod: "1642482", desc: "RESFRIADOR DESENHO HITACHI 0295300 MC.1" },
-    { cod: "1642484", desc: "RESFRIADOR DESENHO HITACHI 0295300 MC.31" },
-    { cod: "1642483", desc: "RESFRIADOR DESENHO HITACHI 0295301MC.12" },
-    { cod: "1642481", desc: "RESFRIADOR DESENHO HITACHI 0295302 MC.25" },
-    { cod: "8287526", desc: "TUBO DE COBRE 6,35MM X 0,79MM X 30M" },
-    { cod: "9182710", desc: "TUBO FLEX SANF AISI304 1.1/4 \" 2600MM" },
-    { cod: "1220355", desc: "TUBO Ø 1.1/4 X 42,16 X 6M - AÇO INOX" },
-    { cod: "1726447", desc: "UNIÃO 3/8\" INOX PARA SOLDA" },
-    { cod: "1220503", desc: "UNIÃO DE 1.1/4\" - INOX - ROSCA NPT" },
-    { cod: "1064438", desc: "UNIÃO PARA TUBO 1/4\"" },
-    { cod: "1779160", desc: "VALVULA BM-7 (Distributor)" }
-];
-
-// ==============================================================
-// 2. FUNÇÕES DE CRIAÇÃO DA INTERFACE DO MODAL
-// ==============================================================
-function renderizarModalSegZeroUI() {
-    const modal = document.getElementById('modal-folhao-segmento-zero');
-    if (!modal) return;
-    
-    // Configurando HTML das abas dinâmicas
-    let htmlAbas = `
-        <button class="folhao-tab active" onclick="window.trocarAbaSegZero(event, 'sz-aba-ident')">1. Identificação</button>
-        <button class="folhao-tab" onclick="window.trocarAbaSegZero(event, 'sz-aba-chegada')">2. Chegada & Gap</button>
-        <button class="folhao-tab" onclick="window.trocarAbaSegZero(event, 'sz-aba-dimensional')">3. Dimensional</button>
-        <button class="folhao-tab" onclick="window.trocarAbaSegZero(event, 'sz-aba-mancais')">4. Mancais</button>
-        <button class="folhao-tab" onclick="window.trocarAbaSegZero(event, 'sz-aba-rolos')">5. Rolos Saída & Pass Line</button>
-        <button class="folhao-tab" onclick="window.trocarAbaSegZero(event, 'sz-aba-saida')">6. Saída Final & Materiais</button>
-    `;
-
-    // Função auxiliar de checklist Sim/Não
-    const funcTabelaSimNao = (arr, prefix) => {
-        let h = `<table class="premium-table" style="font-size:10px;"><thead><tr><th style="width:5%;">ITEM</th><th>DESCRIÇÃO</th><th style="width:10%;">SIM</th><th style="width:10%;">NÃO</th></tr></thead><tbody>`;
-        arr.forEach((it, i) => {
-            h += `<tr><td style="text-align:center;font-weight:bold;">${String(i+1).padStart(2, '0')}</td>
-                  <td>${it.grupo ? `<strong style="color:var(--primary);">${it.grupo}</strong><br>` : ''}${it.desc}</td>
-                  <td style="text-align:center;"><input type="radio" name="${prefix}-${i}" value="SIM" checked></td>
-                  <td style="text-align:center;"><input type="radio" name="${prefix}-${i}" value="NÃO"></td></tr>`;
-        });
-        return h + `</tbody></table>`;
-    };
-
-    // Função auxiliar para GRID 1 a 10 (Rolos/Mancais) (1 a 4 tem 3 colunas, 5 a 10 tem 2 colunas)
-    const funcGrid10 = (prefix) => {
-        let h = `<table class="premium-table" style="font-size:10px; text-align:center;">
-                 <thead><tr><th>Pos</th><th colspan="2">1</th><th colspan="2">2</th><th colspan="2">3</th></tr>
-                 <tr><th></th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th></tr></thead><tbody>`;
-        for(let i=1; i<=10; i++) {
-            let cols = (i <= 4) ? 3 : 2;
-            h += `<tr><td style="font-weight:bold;">${i}</td>`;
-            for(let j=1; j<=3; j++) {
-                if(j <= cols) {
-                    h += `<td><input type="radio" name="${prefix}-${i}-${j}" value="OK" checked></td>
-                          <td><input type="radio" name="${prefix}-${i}-${j}" value="NOK"></td>`;
-                } else {
-                    h += `<td style="background:rgba(255,255,255,0.05);">-</td><td style="background:rgba(255,255,255,0.05);">-</td>`;
-                }
-            }
-            h += `</tr>`;
+function garantirContainer(id) {
+    let container = document.getElementById(id);
+    if (!container) {
+        const body = document.querySelector('.folhao-body');
+        if (body) {
+            container = document.createElement('div');
+            container.id = id;
+            body.appendChild(container);
         }
-        return h + `</tbody></table>`;
-    };
-
-    // Montando o Body
-    let htmlBody = `
-        <!-- ABA 1: IDENTIFICAÇÃO -->
-        <div id="sz-aba-ident" class="folhao-content">
-            <div style="display:flex;gap:15px;flex-wrap:wrap; background:var(--bg-th); padding:12px; border-radius:8px;">
-                <div class="input-group"><label>TAG</label><input type="text" id="sz-tag" readonly class="premium-input"></div>
-                <div class="input-group"><label>Nº SEGMENTO</label><input type="text" id="sz-num-seg" class="premium-input"></div>
-                <div class="input-group"><label>VEIO(SAÍDA)</label><select id="sz-veio" class="premium-select"><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option></select></div>
-                <div class="input-group"><label>DESEMPENHO</label><input type="text" id="sz-desemp" class="premium-input"></div>
-                <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="sz-dt-ini" class="premium-input"></div>
-                <div class="input-group"><label>DATA FIM</label><input type="date" id="sz-dt-fim" class="premium-input"></div>
-                <div class="input-group"><label>MOTIVO</label><input type="text" id="sz-motivo" class="premium-input"></div>
-                <div class="input-group"><label>TIPO EXECUÇÃO</label><select id="sz-tipo-exec" class="premium-select"><option>GERAL</option><option>PARCIAL</option></select></div>
-            </div>
-            <div style="margin-top:15px;">
-                <label style="font-size:11px; color:var(--text-muted); font-weight:bold;">OBSERVAÇÕES DA INSPEÇÃO (Identificação)</label>
-                <textarea id="sz-obs-ident" class="premium-textarea" rows="2"></textarea>
-            </div>
-        </div>
-
-        <!-- ABA 2: CHEGADA & GAP -->
-        <div id="sz-aba-chegada" class="folhao-content hidden">
-            <h3 style="color:var(--text-heading);">INSPEÇÃO DE CHEGADA</h3>
-            ${funcTabelaSimNao(itensChegadaSegZero, 'sz-chg')}
-            
-            <h3 style="color:var(--text-heading); margin-top:20px;">AFERIÇÃO DE GAP (CHEGADA E SAÍDA)</h3>
-            <p style="font-size:10px; color:var(--text-muted); font-weight:bold;">Espessura A/B = 261,5 (-0,1) mm | Máximo: 261,50 | Mínimo: 261,40</p>
-            <table class="premium-table" style="font-size:10px; text-align:center;">
-                <thead><tr><th>CONJ ROLO</th><th colspan="3">CHEGADA (Pos 1 / 2 / 3)</th><th colspan="3">SAÍDA (Pos 1 / 2 / 3)</th></tr></thead>
-                <tbody>
-                    ${[1,2,3,4,5,6,7,8,9,10].map(i => `<tr><td style="font-weight:bold;">${i}º</td>
-                        <td><input id="sz-gap-ca-${i}" class="premium-input" style="width:50px;"></td><td><input id="sz-gap-cb-${i}" class="premium-input" style="width:50px;"></td><td>${i<=4?`<input id="sz-gap-cc-${i}" class="premium-input" style="width:50px;">`:'-'}</td>
-                        <td><input id="sz-gap-sa-${i}" class="premium-input" style="width:50px;"></td><td><input id="sz-gap-sb-${i}" class="premium-input" style="width:50px;"></td><td>${i<=4?`<input id="sz-gap-sc-${i}" class="premium-input" style="width:50px;">`:'-'}</td>
-                    </tr>`).join('')}
-                </tbody>
-            </table>
-        </div>
-
-        <!-- ABA 3: DIMENSIONAL -->
-        <div id="sz-aba-dimensional" class="folhao-content hidden">
-            <h3 style="color:var(--text-heading);">INSPEÇÃO DIMENSIONAL DOS ROLOS (DIÂMETRO)</h3>
-            <div style="display:flex; gap:15px; flex-wrap:wrap;">
-                <div style="flex:1; min-width:300px;">
-                    <h4 style="color:var(--text-accent);">Base Inferior</h4>
-                    <table class="premium-table" style="font-size:10px; text-align:center;">
-                        <tr><th>POSIÇÃO</th><th>Diâmetro</th></tr>
-                        ${[1,2,3,4,5,6,7,8,9,10].map(i => `<tr><td style="font-weight:bold;">${i}º</td><td><input id="sz-dim-inf-${i}" class="premium-input w-100"></td></tr>`).join('')}
-                    </table>
-                </div>
-                <div style="flex:1; min-width:300px;">
-                    <h4 style="color:var(--text-accent);">Base Superior</h4>
-                    <table class="premium-table" style="font-size:10px; text-align:center;">
-                        <tr><th>POSIÇÃO</th><th>Diâmetro</th></tr>
-                        ${[1,2,3,4,5,6,7,8,9,10].map(i => `<tr><td style="font-weight:bold;">${i}º</td><td><input id="sz-dim-sup-${i}" class="premium-input w-100"></td></tr>`).join('')}
-                    </table>
-                </div>
-            </div>
-            <h3 style="color:var(--text-heading); margin-top:20px;">INSPEÇÃO DE EMPENO (MÁX 0,5mm)</h3>
-            <div style="display:flex; gap:15px; flex-wrap:wrap;">
-                <div style="flex:1; min-width:300px;">
-                    <h4 style="color:var(--text-accent);">Base Inferior</h4>
-                    <table class="premium-table" style="font-size:10px; text-align:center;">
-                        <tr><th>POSIÇÃO</th><th>Empeno</th></tr>
-                        ${[1,2,3,4,5,6,7,8,9,10].map(i => `<tr><td style="font-weight:bold;">${i}º</td><td><input id="sz-emp-inf-${i}" class="premium-input w-100"></td></tr>`).join('')}
-                    </table>
-                </div>
-                <div style="flex:1; min-width:300px;">
-                    <h4 style="color:var(--text-accent);">Base Superior</h4>
-                    <table class="premium-table" style="font-size:10px; text-align:center;">
-                        <tr><th>POSIÇÃO</th><th>Empeno</th></tr>
-                        ${[1,2,3,4,5,6,7,8,9,10].map(i => `<tr><td style="font-weight:bold;">${i}º</td><td><input id="sz-emp-sup-${i}" class="premium-input w-100"></td></tr>`).join('')}
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- ABA 4: MANCAIS -->
-        <div id="sz-aba-mancais" class="folhao-content hidden">
-            <h3 style="color:var(--text-heading);">INSPEÇÃO DE MANCAIS (CHEGADA)</h3>
-            <div style="display:flex; gap:15px; flex-wrap:wrap;">
-                <div style="flex:1; min-width:300px;">
-                    <h4 style="color:var(--text-accent);">Base Inferior</h4>
-                    ${funcGrid10('sz-manc-inf')}
-                </div>
-                <div style="flex:1; min-width:300px;">
-                    <h4 style="color:var(--text-accent);">Base Superior</h4>
-                    ${funcGrid10('sz-manc-sup')}
-                </div>
-            </div>
-        </div>
-
-        <!-- ABA 5: ROLOS SAÍDA E PASS LINE -->
-        <div id="sz-aba-rolos" class="folhao-content hidden">
-            <h3 style="color:var(--text-heading);">INSPEÇÃO DE ROLOS (SAÍDA)</h3>
-            <div style="display:flex; gap:15px; flex-wrap:wrap;">
-                <div style="flex:1; min-width:300px;">
-                    <h4 style="color:var(--text-accent);">Base Inferior</h4>
-                    ${funcGrid10('sz-rol-inf')}
-                </div>
-                <div style="flex:1; min-width:300px;">
-                    <h4 style="color:var(--text-accent);">Base Superior</h4>
-                    ${funcGrid10('sz-rol-sup')}
-                </div>
-            </div>
-
-            <h3 style="color:var(--text-heading); margin-top:20px;">MEDIDAS DOS ROLOS</h3>
-            <table class="premium-table" style="font-size:10px; text-align:center;">
-                <thead><tr><th>Posição</th><th>Nº 1</th><th>Medida 1</th><th>Nº 2</th><th>Medida 2</th><th>Classe</th></tr></thead>
-                <tbody>
-                    ${[1,2,3,4,5,6,7,8,9,10].map(i => `<tr><td style="font-weight:bold;">${i}º</td>
-                        <td><input id="sz-mr-n1-${i}" class="premium-input w-100"></td><td><input id="sz-mr-m1-${i}" class="premium-input w-100"></td>
-                        <td><input id="sz-mr-n2-${i}" class="premium-input w-100"></td><td><input id="sz-mr-m2-${i}" class="premium-input w-100"></td>
-                        <td><input id="sz-mr-cls-${i}" class="premium-input w-100"></td>
-                    </tr>`).join('')}
-                </tbody>
-            </table>
-
-            <h3 style="color:var(--text-heading); margin-top:20px;">PASS LINE - BASE INFERIOR (1 ± 0,05mm)</h3>
-            <table class="premium-table" style="font-size:10px; text-align:center;">
-                <thead><tr><th>Conj. Rolo</th><th>Posição 1</th><th>Posição 2</th><th>Posição 3</th></tr></thead>
-                <tbody>
-                    ${[1,2,3,4,5,6,7,8,9,10].map(i => `<tr><td style="font-weight:bold;">${i}º</td>
-                        <td><input id="sz-pl-1-${i}" class="premium-input w-100"></td><td><input id="sz-pl-2-${i}" class="premium-input w-100"></td>
-                        <td>${i<=4?`<input id="sz-pl-3-${i}" class="premium-input w-100">`:'-'}</td>
-                    </tr>`).join('')}
-                </tbody>
-            </table>
-        </div>
-
-        <!-- ABA 6: SAÍDA FINAL & MATERIAIS -->
-        <div id="sz-aba-saida" class="folhao-content hidden">
-            <h3 style="color:var(--text-heading);">INSPEÇÃO DE SAÍDA</h3>
-            ${funcTabelaSimNao(itensSaidaSegZero, 'sz-sai')}
-            
-            <h3 style="color:var(--text-heading); margin-top:20px;">MATERIAIS APLICADOS</h3>
-            <table class="premium-table" style="font-size:10px;">
-                <thead><tr><th style="width:70%;">MATERIAL / CÓDIGO SKU</th><th>QUANTIDADE</th></tr></thead>
-                <tbody>
-                    ${materiaisSegZero.map((m, i) => `<tr><td style="font-size:9px;"><strong>${m.desc}</strong> <span style="color:var(--text-muted);">(${m.cod})</span><input type="hidden" id="sz-mat-desc-${i}" value="${m.desc} (${m.cod})"></td><td><input id="sz-mat-qtd-${i}" class="premium-input w-100"></td></tr>`).join('')}
-                </tbody>
-            </table>
-            
-            <div style="margin-top:15px;">
-                <label style="font-size:11px; font-weight:bold; color:var(--text-muted);">OBSERVAÇÕES GERAIS (FIM DA MONTAGEM)</label>
-                <textarea id="sz-observacoes-finais" class="premium-textarea" rows="3"></textarea>
-            </div>
-
-            <div style="display:flex; gap:15px; margin-top:15px;">
-                <div class="input-group" style="flex:1;"><label>Operador / Nome</label><input id="sz-assin-op-nome" class="premium-input"></div>
-                <div class="input-group" style="flex:1;"><label>Matrícula (Op)</label><input id="sz-assin-op-mat" class="premium-input"></div>
-                <div class="input-group" style="flex:1;"><label>Inspetor / Nome</label><input id="sz-assin-insp-nome" class="premium-input"></div>
-                <div class="input-group" style="flex:1;"><label>Matrícula (Insp)</label><input id="sz-assin-insp-mat" class="premium-input"></div>
-            </div>
-        </div>
-    `;
-
-    // Atualiza a estrutura do modal injetando as abas e o body
-    modal.querySelector('.modal-content').innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;padding: 16px 24px; border-bottom: 2px solid #002b5e; background: rgba(0,0,0,0.3);">
-            <h2 style="margin: 0; font-size: 20px; color: var(--text-title);"><i class="fas fa-clipboard-check"></i> Laudo de Liberação - Segmento Zero</h2>
-            <button class="btn-close-modal" onclick="window.fecharFolhaoSegmentoZero()">&times;</button>
-        </div>
-        <div class="folhao-tabs" style="padding: 0 20px;">${htmlAbas}</div>
-        <div class="folhao-body" style="padding: 20px; flex: 1; overflow-y: auto;">${htmlBody}</div>
-        <div class="modal-footer" style="padding: 12px 24px;">
-            <button class="btn-success" onclick="window.salvarFolhaoSegmentoZero()"><i class="fas fa-save"></i> Salvar e Imprimir</button>
-            <button class="btn-secondary" onclick="window.fecharFolhaoSegmentoZero()">Fechar</button>
-        </div>
-    `;
+    }
+    return container;
 }
 
 // ==============================================================
-// 3. FUNÇÕES PRINCIPAIS (ABRIR, FECHAR, TROCAR ABA)
+// 3. RENDERIZAR CHECKLIST DE CHEGADA (com categorias)
 // ==============================================================
-window.abrirFolhaoSegmentoZero = function(idAtivo) {
-    ID_FOLHAO_SEGZERO_ATUAL = idAtivo;
-    const modal = document.getElementById('modal-folhao-segmento-zero');
-    if (!modal) return alert("Modal do Segmento Zero não encontrado!");
+function renderizarInspecaoChegadaR1() {
+    const container = garantirContainer('container-check-recebimento-r1');
+    if (!container) return;
 
-    // Recria o modal limpo para garantir integridade dos dados na abertura
-    renderizarModalSegZeroUI();
+    let categorias = {};
+    let currentGroup = "GERAL";
+    itensChegadaR1.forEach(item => {
+        if (item.grupo && item.grupo.trim() !== "") currentGroup = item.grupo;
+        if (!categorias[currentGroup]) categorias[currentGroup] = [];
+        categorias[currentGroup].push(item.desc);
+    });
 
-    document.getElementById("sz-tag").value = idAtivo;
-    document.getElementById("sz-dt-ini").valueAsDate = new Date();
-    document.getElementById("sz-dt-fim").valueAsDate = new Date();
+    let html = "";
+    let groupIndex = 0;
+    for (const [nomeCategoria, perguntas] of Object.entries(categorias)) {
+        html += `<h4 style="margin: 20px 0 10px 0; color: var(--text-accent); border-bottom: 1px dashed var(--border-color); padding-bottom: 5px;"><i class="fas fa-tasks"></i> ${nomeCategoria}</h4><div class="checklist-container">`;
+        perguntas.forEach((pergunta, index) => {
+            const name = `r1-g${groupIndex}-q${index}`;
+            html += `<div class="check-item"><p>${index + 1}. ${pergunta}</p><div class="check-options"><label><input type="radio" name="${name}" value="SIM" checked> SIM</label><label><input type="radio" name="${name}" value="NÃO"> NÃO</label></div></div>`;
+        });
+        html += `</div>`;
+        groupIndex++;
+    }
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 4. GAP (7 conjuntos)
+// ==============================================================
+function renderizarGapR1() {
+    const container = garantirContainer('r1-gap');
+    if (!container) return;
+    let html = `<h3 style="color:var(--text-heading);">AFERIÇÃO DE GAP (255+0,3/-0,3)</h3>
+        <table class="premium-table" style="font-size:10px;">
+            <tr><th>CONJ. ROLO</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr>`;
+    for (let i = 1; i <= 7; i++) {
+        html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>
+            <td><input id="r1gap-${i}-a"></td>
+            <td><input id="r1gap-${i}-b"></td>
+            <td><input id="r1gap-${i}-c"></td></tr>`;
+    }
+    html += `</table>`;
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 5. CANGALHAS (Superior e Inferior)
+// ==============================================================
+function renderizarCangalhasR1() {
+    const container = garantirContainer('r1-cangalhas');
+    if (!container) return;
+    const bases = ['Sup', 'Inf'];
+    let html = `<h3 style="color:var(--text-heading);">INSPEÇÃO DE CANGALHAS</h3>`;
+    bases.forEach(base => {
+        const prefix = base === 'Sup' ? 'sup' : 'inf';
+        html += `<h4>Base ${base}</h4>
+            <table class="premium-table" style="font-size:9px;">
+                <tr><th>Posição</th><th colspan="2">Posição Bico A</th><th colspan="2">Posição Bico B</th></tr>
+                <tr><th></th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th></tr>`;
+        for (let i = 1; i <= 7; i++) {
+            html += `<tr><td>${i}ª</td>
+                <td style="text-align:center;"><input type="radio" name="r1cang-${prefix}-${i}-a" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="r1cang-${prefix}-${i}-a" value="NOK"></td>
+                <td style="text-align:center;"><input type="radio" name="r1cang-${prefix}-${i}-b" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="r1cang-${prefix}-${i}-b" value="NOK"></td></tr>`;
+        }
+        html += `</table>`;
+    });
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 6. PASS LINE (Chegada e Saída)
+// ==============================================================
+function renderizarPassLinesR1() {
+    const renderTable = (id, refs, titulo) => {
+        const container = garantirContainer(id);
+        if (!container) return;
+        let html = `<h3 style="color:var(--text-heading);">${titulo}</h3>
+            <table class="premium-table" style="font-size:9px;">
+                <tr><th>Conj. Rolo</th><th>Referência</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr>`;
+        refs.forEach((ref, i) => {
+            html += `<tr><td style="text-align:center;font-weight:bold;">${i+1}°</td>
+                <td style="text-align:center;font-weight:bold;">${ref}</td>
+                <td><input id="${id}-a-${i}"></td>
+                <td><input id="${id}-b-${i}"></td>
+                <td><input id="${id}-c-${i}"></td></tr>`;
+        });
+        html += `</table>`;
+        container.innerHTML = html;
+    };
+    renderTable('r1-passline-inf-chegada', refPassLineInfR1, 'PASS LINE - BASE INFERIOR (CHEGADA)');
+    renderTable('r1-passline-sup-chegada', refPassLineSupR1, 'PASS LINE - BASE SUPERIOR (CHEGADA)');
+    renderTable('r1-passline-inf-saida', refsInfSaiR1, 'PASS LINE - BASE INFERIOR (SAÍDA)');
+    renderTable('r1-passline-sup-saida', refsSupSaiR1, 'PASS LINE - BASE SUPERIOR (SAÍDA)');
+}
+
+// ==============================================================
+// 7. CILINDROS HIDRÁULICOS (Chegada)
+// ==============================================================
+function renderizarCilindrosChegadaR1() {
+    const container = garantirContainer('r1-cilindros-chegada');
+    if (!container) return;
+    const tipos = [
+        { nome: 'Cilindro de Elevação', prefix: 'ce', pos: ['A','B','C','D'] },
+        { nome: 'Cilindro Clamp (Porcas Hidráulicas)', prefix: 'cc', pos: ['A','B','C','D'] },
+        { nome: 'Cilindros Motriz', prefix: 'cm', pos: ['A','B'] }
+    ];
+    let html = `<h3 style="color:var(--text-heading);">CILINDROS HIDRÁULICOS (CHEGADA)</h3>`;
+    tipos.forEach(t => {
+        html += `<h4>${t.nome}</h4>
+            <table class="premium-table" style="font-size:9px;">
+                <tr><th>Posição</th><th>Número</th><th>Produção</th><th>OK</th><th>NOK</th><th>Observação</th></tr>`;
+        t.pos.forEach(p => {
+            html += `<tr><td style="text-align:center;font-weight:bold;">${p}</td>
+                <td><input id="r1cil-${t.prefix}-num-${p}"></td>
+                <td><input id="r1cil-${t.prefix}-prod-${p}"></td>
+                <td style="text-align:center;"><input type="radio" name="r1cil-${t.prefix}-${p}" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="r1cil-${t.prefix}-${p}" value="NOK"></td>
+                <td><input id="r1cil-${t.prefix}-obs-${p}"></td></tr>`;
+        });
+        html += `</table>`;
+    });
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 8. CILINDROS HIDRÁULICOS (Saída)
+// ==============================================================
+function renderizarCilindrosSaidaR1() {
+    const container = garantirContainer('r1-cilindros-saida');
+    if (!container) return;
+    const tipos = [
+        { nome: 'Cilindro de Elevação', prefix: 'se', pos: ['A','B','C','D'] },
+        { nome: 'Cilindro Clamp (Porcas Hidráulicas)', prefix: 'sc', pos: ['A','B','C','D'] },
+        { nome: 'Cilindros Motriz', prefix: 'sm', pos: ['A','B'] }
+    ];
+    let html = `<h3 style="color:var(--text-heading);">CILINDROS HIDRÁULICOS (SAÍDA)</h3>`;
+    tipos.forEach(t => {
+        html += `<h4>${t.nome}</h4>
+            <table class="premium-table" style="font-size:9px;">
+                <tr><th>Posição</th><th>Número</th><th>Produção</th><th>Reparado</th><th>Reutilizado</th><th>Novo</th><th>Observação</th></tr>`;
+        t.pos.forEach(p => {
+            html += `<tr><td style="text-align:center;font-weight:bold;">${p}</td>
+                <td><input id="r1cils-${t.prefix}-num-${p}"></td>
+                <td><input id="r1cils-${t.prefix}-prod-${p}"></td>
+                <td style="text-align:center;"><input type="checkbox" id="r1cils-${t.prefix}-rep-${p}"></td>
+                <td style="text-align:center;"><input type="checkbox" id="r1cils-${t.prefix}-reu-${p}"></td>
+                <td style="text-align:center;"><input type="checkbox" id="r1cils-${t.prefix}-nov-${p}"></td>
+                <td><input id="r1cils-${t.prefix}-obs-${p}"></td></tr>`;
+        });
+        html += `</table>`;
+    });
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 9. INSPEÇÃO DE ROLOS (Chegada e Saída)
+// ==============================================================
+function renderizarInspecaoRolosR1(tipo) {
+    const idContainer = `r1-rolos-${tipo}`;
+    const container = garantirContainer(idContainer);
+    if (!container) return;
+    const titulo = tipo === 'chegada' ? 'CHEGADA' : 'SAÍDA';
+    const prefix = tipo === 'chegada' ? 'ch' : 'sa';
+    const bases = ['Inferior', 'Superior'];
+    let html = `<h3 style="color:var(--text-heading);">INSPEÇÃO DE ROLOS (${titulo})</h3>`;
+    bases.forEach(base => {
+        const bPrefix = base === 'Inferior' ? 'inf' : 'sup';
+        html += `<h4>Base ${base}</h4>
+            <h5>Rolamento</h5>
+            <table class="premium-table" style="font-size:8px;">
+                <tr><th>Posição</th><th colspan="2">1</th><th colspan="2">2</th><th colspan="2">3</th><th colspan="2">4</th></tr>
+                <tr><th></th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th></tr>`;
+        for (let i = 1; i <= 7; i++) {
+            html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>`;
+            for (let j = 1; j <= 4; j++) {
+                html += `<td style="text-align:center;"><input type="radio" name="r1rol-${prefix}-${bPrefix}-${i}-${j}" value="OK" checked></td>
+                         <td style="text-align:center;"><input type="radio" name="r1rol-${prefix}-${bPrefix}-${i}-${j}" value="NOK"></td>`;
+            }
+            html += `</tr>`;
+        }
+        html += `</table>
+            <h5>Teste Hidrostático</h5>
+            <table class="premium-table" style="font-size:8px;">
+                <tr><th>Posição</th><th colspan="2">1</th><th colspan="2">2</th><th colspan="2">3</th><th colspan="2">4</th></tr>
+                <tr><th></th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th></tr>`;
+        for (let i = 1; i <= 7; i++) {
+            html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>`;
+            for (let j = 1; j <= 4; j++) {
+                html += `<td style="text-align:center;"><input type="radio" name="r1hid-${prefix}-${bPrefix}-${i}-${j}" value="OK" checked></td>
+                         <td style="text-align:center;"><input type="radio" name="r1hid-${prefix}-${bPrefix}-${i}-${j}" value="NOK"></td>`;
+            }
+            html += `</tr>`;
+        }
+        html += `</table>
+            <h5>Medidas dos Rolos</h5>
+            <table class="premium-table" style="font-size:8px;">
+                <tr><th>Posição</th><th colspan="2">1</th><th colspan="2">2</th><th colspan="2">3</th></tr>
+                <tr><th></th><th>Num</th><th>Medida</th><th>Num</th><th>Medida</th><th>Num</th><th>Medida</th></tr>`;
+        for (let i = 1; i <= 7; i++) {
+            html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>
+                <td><input id="r1med-${prefix}-${bPrefix}-${i}-n1"></td>
+                <td><input id="r1med-${prefix}-${bPrefix}-${i}-m1"></td>
+                <td><input id="r1med-${prefix}-${bPrefix}-${i}-n2"></td>
+                <td><input id="r1med-${prefix}-${bPrefix}-${i}-m2"></td>
+                <td><input id="r1med-${prefix}-${bPrefix}-${i}-n3"></td>
+                <td><input id="r1med-${prefix}-${bPrefix}-${i}-m3"></td></tr>`;
+        }
+        html += `</table>
+            <p style="font-size:8px;color:var(--text-muted);">*Nota: Diâmetros nominais: Bow: 230,00mm louco; Bow 250,00mm acionado; H e R: 300,00mm.</p>`;
+    });
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 10. DISTRIBUIÇÃO DE GRAXA
+// ==============================================================
+function renderizarGraxaR1() {
+    const container = garantirContainer('r1-graxa');
+    if (!container) return;
+    const bases = ['Superior', 'Inferior'];
+    let html = `<h3 style="color:var(--text-heading);">INSPEÇÃO DE DISTRIBUIÇÃO DE GRAXA</h3>
+        <p style="font-size:9px;color:var(--text-muted);">*Nota: Checklist de vazamento (Tubulações e distribuidores)</p>`;
+    bases.forEach(base => {
+        const prefix = base === 'Superior' ? 'sup' : 'inf';
+        html += `<h4>Base ${base}</h4>
+            <table class="premium-table" style="font-size:9px;">
+                <tr><th>Esquerda</th><th colspan="4">Status</th><th>Direita</th></tr>
+                <tr><th></th><th>OK</th><th>VT</th><th>SA</th><th></th><th></th></tr>`;
+        for (let i = 7; i >= 1; i--) {
+            html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>
+                <td style="text-align:center;"><input type="radio" name="r1grx-${prefix}-${i}" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="r1grx-${prefix}-${i}" value="VT"></td>
+                <td style="text-align:center;"><input type="radio" name="r1grx-${prefix}-${i}" value="SA"></td>
+                <td></td>
+                <td style="text-align:center;font-weight:bold;">${i}</td></tr>`;
+        }
+        html += `</table>`;
+    });
+    html += `<p style="font-size:9px;color:var(--text-muted);">*Nota: VT – Vazamento em tubulação; SA – Sem alimentação;</p>`;
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 11. CHECKLIST DE MANUTENÇÃO (com P, G, Executante, Matrícula, Data)
+// ==============================================================
+function renderizarChecklistManutencaoR1() {
+    const container = garantirContainer('r1-checklist-manutencao');
+    if (!container) return;
+    let html = `<h3 style="color:var(--text-heading);">CHECKLIST DE MANUTENÇÃO</h3>
+        <table class="premium-table" style="font-size:9px;">
+            <tr><th>Item</th><th>Descrição da Atividade</th><th style="width:30px;">P</th><th style="width:30px;">G</th><th>Executante</th><th>Matrícula</th><th>Data</th></tr>`;
+    manutencaoR1.forEach((tarefa, index) => {
+        html += `<tr><td style="text-align:center;font-weight:bold;">${tarefa.item}</td>
+            <td style="font-size:9px;">${tarefa.desc}</td>
+            <td style="text-align:center;"><input type="checkbox" id="r1-p-${index}"></td>
+            <td style="text-align:center;"><input type="checkbox" id="r1-g-${index}"></td>
+            <td><input id="r1-resp-${index}"></td>
+            <td><input id="r1-mat-${index}"></td>
+            <td><input type="date" id="r1-dat-${index}"></td></tr>`;
+    });
+    html += `</table>`;
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 12. MATERIAIS APLICADOS
+// ==============================================================
+function renderizarMateriaisR1() {
+    const container = garantirContainer('r1-materiais');
+    if (!container) return;
+    let rows = '';
+    for (let i = 1; i <= 30; i++) {
+        rows += `<tr><td><input id="r1mat-desc-${i}" style="width:100%;"></td><td><input id="r1mat-qtd-${i}" style="width:60px;"></td></tr>`;
+    }
+    const html = `<h3 style="color:var(--text-heading);">MATERIAIS APLICADOS</h3>
+        <table class="premium-table" style="font-size:9px;">
+            <tr><th style="width:80%;">MATERIAIS</th><th style="width:20%;">QUANTIDADE</th></tr>
+            ${rows}
+        </table>`;
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 13. FUNÇÃO PRINCIPAL DE ABRIR
+// ==============================================================
+window.abrirFolhaoR1 = function(id) {
+    ID_FOLHAO_R1_ATUAL = id;
+    const modal = document.getElementById('modal-folhao-r1');
+    if (!modal) {
+        console.error("Modal #modal-folhao-r1 não encontrado!");
+        return;
+    }
+
+    // Preenche cabeçalho
+    const tagNameEl = document.getElementById('r1-tag-name');
+    if (tagNameEl) tagNameEl.innerText = id;
+    const dataInicio = document.getElementById('r1-data-inicio');
+    const dataFim = document.getElementById('r1-data-fim');
+    if (dataInicio) dataInicio.valueAsDate = new Date();
+    if (dataFim) dataFim.valueAsDate = new Date();
+    const motivoEl = document.getElementById('r1-motivo');
+    if (motivoEl) motivoEl.value = '';
+
+    // Renderiza todas as abas
+    renderizarInspecaoChegadaR1();
+    renderizarGapR1();
+    renderizarCangalhasR1();
+    renderizarPassLinesR1();
+    renderizarCilindrosChegadaR1();
+    renderizarCilindrosSaidaR1();
+    renderizarInspecaoRolosR1('chegada');
+    renderizarInspecaoRolosR1('saida');
+    renderizarGraxaR1();
+    renderizarChecklistManutencaoR1();
+    renderizarMateriaisR1();
 
     modal.classList.remove('hidden');
+    // Ativa a primeira aba
+    window.trocarAbaR1({ currentTarget: document.querySelector('#modal-folhao-r1 .folhao-tab') }, 'r1-aba-dados');
+
+    // Restaura progresso salvo (ex: chegada já feita, aguardando saída)
+    // e liga o auto-salvamento pra nada mais se perder.
+    restaurarRascunhoNoModal('modal-folhao-r1', id);
+    ativarAutoSalvamentoFolhao('modal-folhao-r1', id, 'Straightener R1');
 };
 
-window.fecharFolhaoSegmentoZero = function() {
-    const modal = document.getElementById('modal-folhao-segmento-zero');
+// ==============================================================
+// 14. FECHAR E TROCAR ABA
+// ==============================================================
+window.fecharFolhaoR1 = function() {
+    const modal = document.getElementById('modal-folhao-r1');
     if (modal) modal.classList.add('hidden');
-    ID_FOLHAO_SEGZERO_ATUAL = null;
+    ID_FOLHAO_R1_ATUAL = null;
 };
 
-window.trocarAbaSegZero = function(evt, abaId) {
-    const modal = document.getElementById('modal-folhao-segmento-zero');
+window.trocarAbaR1 = function(evt, abaId) {
+    const modal = document.getElementById('modal-folhao-r1');
     if (!modal) return;
     modal.querySelectorAll('.folhao-content').forEach(c => c.classList.add('hidden'));
     modal.querySelectorAll('.folhao-tab').forEach(b => b.classList.remove('active'));
@@ -373,210 +536,442 @@ window.trocarAbaSegZero = function(evt, abaId) {
 };
 
 // ==============================================================
-// 4. SALVAR E IMPRIMIR PDF (NUVEM + PDF NATIVO)
+// 15. GERAR PDF COMPLETO
 // ==============================================================
-window.salvarFolhaoSegmentoZero = async function() {
-    if (!ID_FOLHAO_SEGZERO_ATUAL) return alert("Nenhuma TAG carregada.");
-    const tag = ID_FOLHAO_SEGZERO_ATUAL;
+window.salvarEImprimirFolhaoR1 = function() {
+    if (!window.verificarAcesso || !window.verificarAcesso()) { alert("Acesso negado."); return; }
+    if (!ID_FOLHAO_R1_ATUAL) { alert("Nenhuma TAG carregada."); return; }
 
-    const dtIni = getV('sz-dt-ini') || new Date().toLocaleDateString('pt-BR');
-    const dtFim = getV('sz-dt-fim') || new Date().toLocaleDateString('pt-BR');
-    const seg = getV('sz-num-seg') || '____';
-    const veio = getV('segzero-veio') || ''; 
-    const desemp = getV('sz-desemp') || '';
-    const mot = getV('segzero-motivo') || '';
-    const tipo = getV('segzero-tipo-execucao') || '';
-    const novaMeta = getV('segzero-nova-meta') || 'Manter Atual'; // 🔥 CAPTURA A NOVA META
-
-    // PREPARA OS DADOS PARA A NUVEM
-    const dadosFolhao = {
-        id_peca: tag,
-        tipo_equipamento: "Segmento Zero",
-        tecnico: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Técnico",
-        nova_meta: parseFloat(novaMeta) || 0,
-        tipo_manutencao: tipo,
-        dados_chegada: "{}", 
-        dados_saida: "{}",
-        status_reparo: "Concluido",
-        pdf_base64: "" 
-    };
-
-    // 🔥 COMUNICAÇÃO COM O PYTHON 🔥
-    try {
-        // 🔧 CORREÇÃO: antes era um localhost:8000 fixo (só funcionava com
-        // servidor local rodando). Agora usa a mesma resolução de API do
-        // resto do sistema (local se existir, senão o Render).
-        const apiBase = await resolverApiBase();
-        const resposta = await fetch(`${apiBase}/api/salvar_folhao`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(dadosFolhao)
-        });
-        
-        const resultado = await resposta.json();
-
-        // 🔧 CORREÇÃO: checa também o status HTTP, não só o campo
-        // resultado.status — um 404/500 não tem esse campo e passava
-        // batido como se tivesse dado certo.
-        if (!resposta.ok || resultado.status === "erro") {
-            const msg = resultado.detail || resultado.mensagem || `Erro HTTP ${resposta.status}`;
-            alert("❌ Erro no Banco de Dados: " + msg);
-            return;
+    const tag = ID_FOLHAO_R1_ATUAL;
+    const item = BANCO_ATIVOS.find(a => a.id === tag);
+    if (item) {
+        item.ton = 0;
+        item.dias = 0;
+        item.local = "Oficina / Reserva";
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+        // 🔧 CORREÇÃO: faltava avisar o Postgres dessa conclusão — sem
+        // isso, a mudança só existia no navegador e sumia no próximo F5.
+        if (typeof window.salvarPecaNoPython === 'function') {
+            window.salvarPecaNoPython(item);
         }
-        console.log("✅ Salvo com sucesso no banco!");
-    } catch(e) {
-        console.error("Erro na Nuvem:", e);
-        alert("❌ Erro de comunicação. O Python está rodando?");
-        return;
     }
 
-    // Helpers de Geração do PDF
-    const genCheck = (arr, prefix) => {
-        let h = `<table><tr><th style="width:5%;">ITEM</th><th>DESCRIÇÃO DOS ITENS</th><th style="width:10%;">SIM</th><th style="width:10%;">NÃO</th></tr>`;
-        arr.forEach((it, i) => {
-            let val = getRadioValue(`${prefix}-${i}`);
-            h += `<tr><td style="text-align:center;font-weight:bold;">${String(i+1).padStart(2, '0')}</td>
-                  <td>${it.grupo ? `<b>${it.grupo}</b><br>` : ''}${it.desc}</td>
-                  <td style="text-align:center;font-weight:bold;">${val==='SIM'?'X':''}</td>
-                  <td style="text-align:center;font-weight:bold;">${val==='NÃO'?'X':''}</td></tr>`;
+    // Coleta dados do cabeçalho
+    const dtInicio = getV('r1-data-inicio') || new Date().toLocaleDateString('pt-BR');
+    const dtFim = getV('r1-data-fim') || new Date().toLocaleDateString('pt-BR');
+    const numSeg = getV('r1-num-segmento') || '______';
+    const veio = document.getElementById('r1-veio')?.value || '';
+    const motivo = getV('r1-motivo') || '_______________';
+    const tipoExec = document.getElementById('r1-tipo-execucao')?.value || 'GERAL';
+
+    // Função auxiliar para checklist de chegada
+    function gerarLinhasChegada() {
+        let html = '';
+        let categorias = {};
+        let currentGroup = "GERAL";
+        itensChegadaR1.forEach(it => {
+            if (it.grupo && it.grupo.trim() !== "") currentGroup = it.grupo;
+            if (!categorias[currentGroup]) categorias[currentGroup] = [];
+            categorias[currentGroup].push(it.desc);
         });
-        return h + `</table>`;
-    };
-
-    const genGrid = (titulo, prefix) => {
-        let h = `<table><tr><th colspan="7" style="background:#ddd;">${titulo}</th></tr>
-                 <tr><th>POS</th><th colspan="2">1</th><th colspan="2">2</th><th colspan="2">3</th></tr>
-                 <tr><th></th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th></tr>`;
-        for(let i=1; i<=10; i++) {
-            let cols = (i <= 4) ? 3 : 2;
-            h += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>`;
-            for(let j=1; j<=3; j++) {
-                if(j <= cols) {
-                    let v = getRadioValue(`${prefix}-${i}-${j}`);
-                    h += `<td style="text-align:center;">${v==='OK'?'X':''}</td><td style="text-align:center;">${v==='NOK'?'X':''}</td>`;
-                } else {
-                    h += `<td style="background:#eee;">-</td><td style="background:#eee;">-</td>`;
-                }
-            }
-            h += `</tr>`;
+        let groupIndex = 0;
+        for (const [nomeCategoria, perguntas] of Object.entries(categorias)) {
+            html += `<tr><th colspan="3" style="background:#002b5e; color:#fff; font-size:10px; text-align:left; padding:4px; border:1px solid #000;">${nomeCategoria}</th></tr>`;
+            html += `<tr><th style="border:1px solid #000; padding:3px; width:5%;">Item</th><th style="border:1px solid #000; padding:3px;">Descrição</th><th style="border:1px solid #000; padding:3px; width:12%;">Status</th></tr>`;
+            perguntas.forEach((pergunta, index) => {
+                const name = `r1-g${groupIndex}-q${index}`;
+                const val = getRadioValue(name);
+                html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px;">${index+1}</td>
+                    <td style="border:1px solid #000; padding:3px;">${pergunta}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${val}</td></tr>`;
+            });
+            groupIndex++;
         }
-        return h + `</table>`;
-    };
+        return html;
+    }
 
+    // Gera tabela de GAP
+    function gerarGapPDF() {
+        let html = '';
+        for (let i = 1; i <= 7; i++) {
+            html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1gap-${i}-a`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1gap-${i}-b`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1gap-${i}-c`)}</td></tr>`;
+        }
+        return html;
+    }
+
+    // Gera tabela de Cangalhas
+    function gerarCangalhasPDF() {
+        let html = '';
+        const bases = ['sup', 'inf'];
+        const labels = ['Superior', 'Inferior'];
+        bases.forEach((b, idx) => {
+            html += `<tr><th colspan="5" style="background:#ddd; border:1px solid #000; padding:3px;">Base ${labels[idx]}</th></tr>
+                <tr><th style="border:1px solid #000; padding:3px;">Posição</th>
+                    <th colspan="2" style="border:1px solid #000; padding:3px;">Bico A</th>
+                    <th colspan="2" style="border:1px solid #000; padding:3px;">Bico B</th></tr>
+                <tr><th style="border:1px solid #000; padding:3px;"></th>
+                    <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th>
+                    <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th></tr>`;
+            for (let i = 1; i <= 7; i++) {
+                const a = getRadioValue(`r1cang-${b}-${i}-a`);
+                const bVal = getRadioValue(`r1cang-${b}-${i}-b`);
+                html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px;">${i}ª</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${a === 'OK' ? 'X' : ''}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${a === 'NOK' ? 'X' : ''}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${bVal === 'OK' ? 'X' : ''}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${bVal === 'NOK' ? 'X' : ''}</td></tr>`;
+            }
+        });
+        return html;
+    }
+
+    // Gera Pass Line
+    function gerarPassLinePDF(id, refs) {
+        let html = '';
+        refs.forEach((ref, i) => {
+            html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i+1}°</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${ref}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${id}-a-${i}`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${id}-b-${i}`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${id}-c-${i}`)}</td></tr>`;
+        });
+        return html;
+    }
+
+    // Gera Cilindros Chegada
+    function gerarCilindrosChegadaPDF() {
+        let html = '';
+        const tipos = [
+            { nome: 'Cilindro de Elevação', prefix: 'ce', pos: ['A','B','C','D'] },
+            { nome: 'Cilindro Clamp (Porcas Hidráulicas)', prefix: 'cc', pos: ['A','B','C','D'] },
+            { nome: 'Cilindros Motriz', prefix: 'cm', pos: ['A','B'] }
+        ];
+        tipos.forEach(t => {
+            html += `<tr><th colspan="6" style="background:#ddd; border:1px solid #000; padding:3px;">${t.nome}</th></tr>
+                <tr><th style="border:1px solid #000; padding:3px;">Pos</th><th style="border:1px solid #000; padding:3px;">Número</th>
+                    <th style="border:1px solid #000; padding:3px;">Produção</th><th style="border:1px solid #000; padding:3px;">OK</th>
+                    <th style="border:1px solid #000; padding:3px;">NOK</th><th style="border:1px solid #000; padding:3px;">Obs</th></tr>`;
+            t.pos.forEach(p => {
+                const ok = getRadioValue(`r1cil-${t.prefix}-${p}`);
+                html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cil-${t.prefix}-num-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cil-${t.prefix}-prod-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${ok === 'OK' ? 'X' : ''}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${ok === 'NOK' ? 'X' : ''}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cil-${t.prefix}-obs-${p}`)}</td></tr>`;
+            });
+        });
+        return html;
+    }
+
+    // Gera Cilindros Saída
+    function gerarCilindrosSaidaPDF() {
+        let html = '';
+        const tipos = [
+            { nome: 'Cilindro de Elevação', prefix: 'se', pos: ['A','B','C','D'] },
+            { nome: 'Cilindro Clamp (Porcas Hidráulicas)', prefix: 'sc', pos: ['A','B','C','D'] },
+            { nome: 'Cilindros Motriz', prefix: 'sm', pos: ['A','B'] }
+        ];
+        tipos.forEach(t => {
+            html += `<tr><th colspan="7" style="background:#ddd; border:1px solid #000; padding:3px;">${t.nome}</th></tr>
+                <tr><th style="border:1px solid #000; padding:3px;">Pos</th><th style="border:1px solid #000; padding:3px;">Número</th>
+                    <th style="border:1px solid #000; padding:3px;">Produção</th><th style="border:1px solid #000; padding:3px;">Rep</th>
+                    <th style="border:1px solid #000; padding:3px;">Reu</th><th style="border:1px solid #000; padding:3px;">Novo</th>
+                    <th style="border:1px solid #000; padding:3px;">Obs</th></tr>`;
+            t.pos.forEach(p => {
+                html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cils-${t.prefix}-num-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cils-${t.prefix}-prod-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`r1cils-${t.prefix}-rep-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`r1cils-${t.prefix}-reu-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`r1cils-${t.prefix}-nov-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cils-${t.prefix}-obs-${p}`)}</td></tr>`;
+            });
+        });
+        return html;
+    }
+
+    // Gera Rolos
+    function gerarRolosPDF(tipo, base) {
+        const prefix = tipo === 'chegada' ? 'ch' : 'sa';
+        const bPrefix = base === 'Inferior' ? 'inf' : 'sup';
+        let html = '';
+        html += `<tr><th colspan="9" style="background:#ddd; border:1px solid #000; padding:3px;">Rolamento - Base ${base}</th></tr>
+            <tr><th style="border:1px solid #000; padding:3px;">Pos</th>
+                <th colspan="2" style="border:1px solid #000; padding:3px;">1</th>
+                <th colspan="2" style="border:1px solid #000; padding:3px;">2</th>
+                <th colspan="2" style="border:1px solid #000; padding:3px;">3</th>
+                <th colspan="2" style="border:1px solid #000; padding:3px;">4</th></tr>
+            <tr><th style="border:1px solid #000; padding:3px;"></th>
+                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th>
+                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th>
+                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th>
+                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th></tr>`;
+        for (let i = 1; i <= 7; i++) {
+            html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>`;
+            for (let j = 1; j <= 4; j++) {
+                const val = getRadioValue(`r1rol-${prefix}-${bPrefix}-${i}-${j}`);
+                html += `<td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'OK' ? 'X' : ''}</td>
+                         <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'NOK' ? 'X' : ''}</td>`;
+            }
+            html += `</tr>`;
+        }
+        html += `<tr><th colspan="9" style="background:#ddd; border:1px solid #000; padding:3px;">Teste Hidrostático - Base ${base}</th></tr>
+            <tr><th style="border:1px solid #000; padding:3px;">Pos</th>
+                <th colspan="2" style="border:1px solid #000; padding:3px;">1</th>
+                <th colspan="2" style="border:1px solid #000; padding:3px;">2</th>
+                <th colspan="2" style="border:1px solid #000; padding:3px;">3</th>
+                <th colspan="2" style="border:1px solid #000; padding:3px;">4</th></tr>
+            <tr><th style="border:1px solid #000; padding:3px;"></th>
+                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th>
+                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th>
+                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th>
+                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th></tr>`;
+        for (let i = 1; i <= 7; i++) {
+            html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>`;
+            for (let j = 1; j <= 4; j++) {
+                const val = getRadioValue(`r1hid-${prefix}-${bPrefix}-${i}-${j}`);
+                html += `<td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'OK' ? 'X' : ''}</td>
+                         <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'NOK' ? 'X' : ''}</td>`;
+            }
+            html += `</tr>`;
+        }
+        html += `<tr><th colspan="7" style="background:#ddd; border:1px solid #000; padding:3px;">Medidas dos Rolos - Base ${base}</th></tr>
+            <tr><th style="border:1px solid #000; padding:3px;">Pos</th>
+                <th colspan="2" style="border:1px solid #000; padding:3px;">1</th>
+                <th colspan="2" style="border:1px solid #000; padding:3px;">2</th>
+                <th colspan="2" style="border:1px solid #000; padding:3px;">3</th></tr>
+            <tr><th style="border:1px solid #000; padding:3px;"></th>
+                <th style="border:1px solid #000; padding:3px;">Num</th><th style="border:1px solid #000; padding:3px;">Medida</th>
+                <th style="border:1px solid #000; padding:3px;">Num</th><th style="border:1px solid #000; padding:3px;">Medida</th>
+                <th style="border:1px solid #000; padding:3px;">Num</th><th style="border:1px solid #000; padding:3px;">Medida</th></tr>`;
+        for (let i = 1; i <= 7; i++) {
+            html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-n1`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-m1`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-n2`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-m2`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-n3`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-m3`)}</td></tr>`;
+        }
+        return html;
+    }
+
+    // Gera Graxa
+    function gerarGraxaPDF() {
+        let html = '';
+        const bases = ['sup', 'inf'];
+        const labels = ['Superior', 'Inferior'];
+        bases.forEach((b, idx) => {
+            html += `<tr><th colspan="5" style="background:#ddd; border:1px solid #000; padding:3px;">Base ${labels[idx]}</th></tr>
+                <tr><th style="border:1px solid #000; padding:3px;">Esq</th>
+                    <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">VT</th>
+                    <th style="border:1px solid #000; padding:3px;">SA</th><th style="border:1px solid #000; padding:3px;">Dir</th></tr>`;
+            for (let i = 7; i >= 1; i--) {
+                const val = getRadioValue(`r1grx-${b}-${i}`);
+                html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'OK' ? 'X' : ''}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'VT' ? 'X' : ''}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'SA' ? 'X' : ''}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td></tr>`;
+            }
+        });
+        return html;
+    }
+
+    // Gera Checklist de Manutenção
+    function gerarManutencaoPDF() {
+        let html = '';
+        manutencaoR1.forEach((tarefa, index) => {
+            const p = document.getElementById(`r1-p-${index}`)?.checked ? 'X' : '';
+            const g = document.getElementById(`r1-g-${index}`)?.checked ? 'X' : '';
+            const mat = getV(`r1-mat-${index}`);
+            const data = getV(`r1-dat-${index}`);
+            html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${tarefa.item}</td>
+                <td style="border:1px solid #000; padding:3px; font-size:9px;">${tarefa.desc}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${g}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${mat}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${data}</td></tr>`;
+        });
+        return html;
+    }
+
+    // ==============================================================
+    // MONTA HTML DO PDF
+    // ==============================================================
     let htmlPDF = `
     <style>
         .pdf-base { font-family: Arial, sans-serif; font-size: 9px; color: #000; }
-        .pdf-base table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+        .pdf-base table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
         .pdf-base th, .pdf-base td { border: 1px solid #000; padding: 3px; }
         .pdf-base th { background: #e0e0e0; text-align: center; font-weight: bold; font-size: 9px; }
-        .pdf-base .titulo-secao { background: #002b5e; color: #fff; font-weight: bold; padding: 4px; text-align: left; margin: 10px 0 4px; border: 1px solid #000; font-size: 10px; text-transform: uppercase; }
-        .pdf-base .assinatura-box { margin-top:2px; font-size:8px; font-weight:bold; }
+        .pdf-base .titulo-secao { background: #002b5e; color: #fff; font-weight: bold; padding: 4px; text-align: left; margin: 10px 0 4px 0; border: 1px solid #000; font-size: 10px; text-transform: uppercase; }
+        .pdf-base .subtitulo { background: #d0d0d0; font-weight: bold; text-align: center; padding: 3px; font-size: 9px; }
         @media print { .quebra-pagina { break-before: page; page-break-before: always; margin-top: 10px; } }
     </style>
     <div class="pdf-base">
-        <!-- HEADER -->
-        <div style="display: flex; border: 2px solid #000; border-bottom: 5px solid #002b5e; margin-bottom: 10px; align-items: center;">
-            <div style="width: 20%; text-align: center; border-right: 2px solid #000; padding: 8px;"><span style="font-weight: 900; font-size: 28px; color: #002b5e;">CSN</span></div>
+        <!-- Cabeçalho -->
+        <div style="display: flex; border: 2px solid #000; border-bottom: 5px solid #002b5e; margin-bottom: 8px; align-items: center; background: #fff;">
+            <div style="width: 20%; text-align: center; border-right: 2px solid #000; padding: 8px;"><span style="font-weight: 900; font-size: 28px; color: #002b5e; letter-spacing: -2px;">CSN</span></div>
             <div style="width: 60%; text-align: center; padding: 8px;">
-                <h2 style="margin: 0; font-size: 13px; color: #000;">LAUDO DE LIBERAÇÃO - SEGMENTO ZERO</h2>
-                <p style="margin: 4px 0 0 0; font-size: 8px; font-weight: bold;">DATA INÍCIO: ${dtIni} | DATA FIM: ${dtFim}</p>
+                <h2 style="margin: 0; font-size: 12px; color: #000;">CHECK LIST GERAL SEGMENTOS STRAIGHTENER R-I MCC#4</h2>
+                <p style="margin: 4px 0 0 0; font-size: 8px; color: #333; font-weight: bold;">DATA INÍCIO: ${dtInicio} | DATA FIM: ${dtFim}</p>
             </div>
-            <div style="width: 20%; font-size: 10px; border-left: 2px solid #000; padding: 8px; font-weight: bold;">TAG: ${tag}</div>
+            <div style="width: 20%; font-size: 9px; border-left: 2px solid #000; padding: 8px; line-height: 1.4; font-weight: bold;">
+                <div style="color: #002b5e;">TAG: <span style="color:#000;">${tag}</span></div>
+            </div>
         </div>
-        
-        <!-- 🔥 TABELA ATUALIZADA COM NOVA META 🔥 -->
-        <table style="margin-bottom: 15px; border: 2px solid #000;">
-            <tr>
-                <td style="width: 25%;"><strong>Nº SEGMENTO:</strong> ${seg}</td>
-                <td style="width: 30%;"><strong>MOTIVO:</strong> ${mot}</td>
-                <td style="width: 25%; color: #002b5e;"><strong>EXECUÇÃO:</strong> ${tipo}</td>
-                <td style="width: 20%; background-color: #f0f0f0; text-align: center;"><strong>NOVA META:</strong> ${novaMeta}</td>
-            </tr>
-            <tr>
-                <td colspan="2"><strong>VEIO:</strong> ${veio}</td>
-                <td colspan="2"><strong>DESEMPENHO:</strong> ${desemp}</td>
-            </tr>
-        </table>
-        <div style="margin-bottom:10px;"><strong>OBSERVAÇÕES INICIAIS:</strong> ${getV('sz-obs-ident')}</div>
 
+        <!-- Dados adicionais -->
+        <table>
+            <tr><td><strong>Nº SEGMENTO:</strong> ${numSeg}</td>
+                <td><strong>VEIO(SAIDA):</strong> ${veio}</td>
+                <td><strong>TIPO EXECUÇÃO:</strong> ${tipoExec}</td></tr>
+            <tr><td><strong>MOTIVO:</strong> ${motivo}</td>
+                <td colspan="2"><strong>VEIO(ENTRADA):</strong> ${veio}</td></tr>
+        </table>
+
+        <!-- INSPEÇÃO DE CHEGADA -->
         <div class="titulo-secao">1. INSPEÇÃO DE CHEGADA</div>
-        ${genCheck(itensChegadaSegZero, 'sz-chg')}
+        <table>${gerarLinhasChegada()}</table>
 
         <div class="quebra-pagina"></div>
-        <div class="titulo-secao">2. AFERIÇÃO DE GAP (261,5 -0,1 mm)</div>
+
+        <!-- AFERIÇÃO DE GAP -->
+        <div class="titulo-secao">2. AFERIÇÃO DE GAP (255+0,3/-0,3)</div>
         <table>
-            <tr><th>CONJ ROLO</th><th colspan="3">CHEGADA (Pos 1 / 2 / 3)</th><th colspan="3">SAÍDA (Pos 1 / 2 / 3)</th></tr>
-            ${[1,2,3,4,5,6,7,8,9,10].map(i => `<tr>
-                <td style="text-align:center;font-weight:bold;">${i}º</td>
-                <td style="text-align:center;">${getV(`sz-gap-ca-${i}`)}</td><td style="text-align:center;">${getV(`sz-gap-cb-${i}`)}</td><td style="text-align:center;background:${i>4?'#eee':''}">${i<=4?getV(`sz-gap-cc-${i}`):'-'}</td>
-                <td style="text-align:center;">${getV(`sz-gap-sa-${i}`)}</td><td style="text-align:center;">${getV(`sz-gap-sb-${i}`)}</td><td style="text-align:center;background:${i>4?'#eee':''}">${i<=4?getV(`sz-gap-sc-${i}`):'-'}</td>
-            </tr>`).join('')}
+            <tr><th style="width:15%;">CONJ. ROLO</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr>
+            ${gerarGapPDF()}
         </table>
 
-        <div class="titulo-secao">3. INSPEÇÃO DIMENSIONAL DOS ROLOS E EMPENO</div>
-        <div style="display:flex; gap:10px;">
-            <div style="width:50%;">
-                <table><tr><th colspan="3" style="background:#ddd;">BASE INFERIOR</th></tr><tr><th>POS</th><th>DIÂMETRO</th><th>EMPENO</th></tr>
-                ${[1,2,3,4,5,6,7,8,9,10].map(i => `<tr><td style="text-align:center;font-weight:bold;">${i}º</td><td style="text-align:center;">${getV(`sz-dim-inf-${i}`)}</td><td style="text-align:center;">${getV(`sz-emp-inf-${i}`)}</td></tr>`).join('')}</table>
-            </div>
-            <div style="width:50%;">
-                <table><tr><th colspan="3" style="background:#ddd;">BASE SUPERIOR</th></tr><tr><th>POS</th><th>DIÂMETRO</th><th>EMPENO</th></tr>
-                ${[1,2,3,4,5,6,7,8,9,10].map(i => `<tr><td style="text-align:center;font-weight:bold;">${i}º</td><td style="text-align:center;">${getV(`sz-dim-sup-${i}`)}</td><td style="text-align:center;">${getV(`sz-emp-sup-${i}`)}</td></tr>`).join('')}</table>
-            </div>
-        </div>
+        <!-- CANGALHAS -->
+        <div class="titulo-secao">3. INSPEÇÃO DE CANGALHAS</div>
+        <table>${gerarCangalhasPDF()}</table>
 
         <div class="quebra-pagina"></div>
-        <div class="titulo-secao">4. INSPEÇÃO DE MANCAIS (CHEGADA)</div>
-        <div style="display:flex; gap:10px;">
-            <div style="width:50%;">${genGrid('BASE INFERIOR', 'sz-manc-inf')}</div>
-            <div style="width:50%;">${genGrid('BASE SUPERIOR', 'sz-manc-sup')}</div>
+
+        <!-- PASS LINE - CHEGADA -->
+        <div class="titulo-secao">4. PASS LINE (CHEGADA)</div>
+        <div style="display:flex; gap:8px; width:100%;">
+            <div style="width:50%;"><table>
+                <tr><th colspan="5" style="background:#ddd; border:1px solid #000; padding:3px;">BASE INFERIOR (CHEGADA)</th></tr>
+                <tr><th style="border:1px solid #000; padding:3px;">Conj</th><th style="border:1px solid #000; padding:3px;">Ref</th>
+                    <th style="border:1px solid #000; padding:3px;">Pos A</th><th style="border:1px solid #000; padding:3px;">Pos B</th>
+                    <th style="border:1px solid #000; padding:3px;">Pos C</th></tr>
+                ${gerarPassLinePDF('r1-passline-inf-chegada', refPassLineInfR1)}
+            </table></div>
+            <div style="width:50%;"><table>
+                <tr><th colspan="5" style="background:#ddd; border:1px solid #000; padding:3px;">BASE SUPERIOR (CHEGADA)</th></tr>
+                <tr><th style="border:1px solid #000; padding:3px;">Conj</th><th style="border:1px solid #000; padding:3px;">Ref</th>
+                    <th style="border:1px solid #000; padding:3px;">Pos A</th><th style="border:1px solid #000; padding:3px;">Pos B</th>
+                    <th style="border:1px solid #000; padding:3px;">Pos C</th></tr>
+                ${gerarPassLinePDF('r1-passline-sup-chegada', refPassLineSupR1)}
+            </table></div>
         </div>
 
-        <div class="titulo-secao">5. INSPEÇÃO DE ROLOS (SAÍDA)</div>
-        <div style="display:flex; gap:10px;">
-            <div style="width:50%;">${genGrid('BASE INFERIOR', 'sz-rol-inf')}</div>
-            <div style="width:50%;">${genGrid('BASE SUPERIOR', 'sz-rol-sup')}</div>
-        </div>
+        <!-- CILINDROS HIDRÁULICOS (CHEGADA) -->
+        <div class="titulo-secao">5. CILINDROS HIDRÁULICOS (CHEGADA)</div>
+        <table>${gerarCilindrosChegadaPDF()}</table>
 
         <div class="quebra-pagina"></div>
-        <div class="titulo-secao">6. MEDIDAS DOS ROLOS & PASS LINE</div>
+
+        <!-- INSPEÇÃO DE ROLOS (CHEGADA) -->
+        <div class="titulo-secao">6. INSPEÇÃO DE ROLOS (CHEGADA)</div>
         <table>
-            <tr><th>POS</th><th>Nº 1</th><th>MEDIDA 1</th><th>Nº 2</th><th>MEDIDA 2</th><th>CLASSE</th><th style="border-left:3px solid #000;">PASS LINE (P1)</th><th>PASS LINE (P2)</th><th>PASS LINE (P3)</th></tr>
-            ${[1,2,3,4,5,6,7,8,9,10].map(i => `<tr>
-                <td style="text-align:center;font-weight:bold;">${i}º</td>
-                <td style="text-align:center;">${getV(`sz-mr-n1-${i}`)}</td><td style="text-align:center;">${getV(`sz-mr-m1-${i}`)}</td>
-                <td style="text-align:center;">${getV(`sz-mr-n2-${i}`)}</td><td style="text-align:center;">${getV(`sz-mr-m2-${i}`)}</td>
-                <td style="text-align:center;">${getV(`sz-mr-cls-${i}`)}</td>
-                <td style="text-align:center;border-left:3px solid #000;">${getV(`sz-pl-1-${i}`)}</td><td style="text-align:center;">${getV(`sz-pl-2-${i}`)}</td><td style="text-align:center;background:${i>4?'#eee':''}">${i<=4?getV(`sz-pl-3-${i}`):'-'}</td>
-            </tr>`).join('')}
+            ${gerarRolosPDF('chegada', 'Inferior')}
+            ${gerarRolosPDF('chegada', 'Superior')}
         </table>
-
-        <div class="titulo-secao">7. INSPEÇÃO DE SAÍDA</div>
-        ${genCheck(itensSaidaSegZero, 'sz-sai')}
 
         <div class="quebra-pagina"></div>
-        <div class="titulo-secao">8. MATERIAIS APLICADOS</div>
-        <table><tr><th>MATERIAL / CÓDIGO SKU</th><th>QUANTIDADE</th></tr>
-            ${materiaisSegZero.map((m, i) => { let q = getV(`sz-mat-qtd-${i}`); if(q) return `<tr><td>${m.desc} (${m.cod})</td><td style="text-align:center;">${q}</td></tr>`; return ''; }).join('')}
-        </table>
-        <div style="margin-bottom:10px;"><strong>OBSERVAÇÕES FINAIS:</strong> ${getV('sz-observacoes-finais')}</div>
 
-        <div style="margin-top:40px; display:flex; justify-content:space-around; text-align:center; font-weight:bold; font-size:10px;">
-            <div><p>___________________________________</p><p>Nome: ${getV('sz-assin-op-nome')} | Mat: ${getV('sz-assin-op-mat')}</p><p>Operador / Mecânico</p></div>
-            <div><p>___________________________________</p><p>Nome: ${getV('sz-assin-insp-nome')} | Mat: ${getV('sz-assin-insp-mat')}</p><p>Inspetor de Qualidade</p></div>
+        <!-- GRAXA -->
+        <div class="titulo-secao">7. INSPEÇÃO DE DISTRIBUIÇÃO DE GRAXA</div>
+        <table>${gerarGraxaPDF()}</table>
+
+        <!-- CHECKLIST DE MANUTENÇÃO -->
+        <div class="titulo-secao">8. CHECKLIST DE MANUTENÇÃO</div>
+        <table>
+            <tr><th style="width:5%;">Item</th><th>Descrição da Atividade</th>
+                <th style="width:4%;">P</th><th style="width:4%;">G</th>
+                <th style="width:12%;">Matrícula</th><th style="width:12%;">Data</th></tr>
+            ${gerarManutencaoPDF()}
+        </table>
+
+        <div class="quebra-pagina"></div>
+
+        <!-- PASS LINE - SAÍDA -->
+        <div class="titulo-secao">9. PASS LINE (SAÍDA FINAL)</div>
+        <div style="display:flex; gap:8px; width:100%;">
+            <div style="width:50%;"><table>
+                <tr><th colspan="5" style="background:#ddd; border:1px solid #000; padding:3px;">BASE INFERIOR (SAÍDA)</th></tr>
+                <tr><th style="border:1px solid #000; padding:3px;">Conj</th><th style="border:1px solid #000; padding:3px;">Ref</th>
+                    <th style="border:1px solid #000; padding:3px;">Pos A</th><th style="border:1px solid #000; padding:3px;">Pos B</th>
+                    <th style="border:1px solid #000; padding:3px;">Pos C</th></tr>
+                ${gerarPassLinePDF('r1-passline-inf-saida', refsInfSaiR1)}
+            </table></div>
+            <div style="width:50%;"><table>
+                <tr><th colspan="5" style="background:#ddd; border:1px solid #000; padding:3px;">BASE SUPERIOR (SAÍDA)</th></tr>
+                <tr><th style="border:1px solid #000; padding:3px;">Conj</th><th style="border:1px solid #000; padding:3px;">Ref</th>
+                    <th style="border:1px solid #000; padding:3px;">Pos A</th><th style="border:1px solid #000; padding:3px;">Pos B</th>
+                    <th style="border:1px solid #000; padding:3px;">Pos C</th></tr>
+                ${gerarPassLinePDF('r1-passline-sup-saida', refsSupSaiR1)}
+            </table></div>
+        </div>
+
+        <!-- CILINDROS HIDRÁULICOS (SAÍDA) -->
+        <div class="titulo-secao">10. CILINDROS HIDRÁULICOS (SAÍDA)</div>
+        <table>${gerarCilindrosSaidaPDF()}</table>
+
+        <div class="quebra-pagina"></div>
+
+        <!-- INSPEÇÃO DE ROLOS (SAÍDA) -->
+        <div class="titulo-secao">11. INSPEÇÃO DE ROLOS (SAÍDA)</div>
+        <table>
+            ${gerarRolosPDF('saida', 'Inferior')}
+            ${gerarRolosPDF('saida', 'Superior')}
+        </table>
+
+        <!-- MATERIAIS -->
+        <div class="titulo-secao">12. MATERIAIS APLICADOS</div>
+        <table>
+            <tr><th style="width:80%;">MATERIAIS</th><th style="width:20%;">QUANTIDADE</th></tr>
+            ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30].map(i => `
+                <tr><td>${getV(`r1mat-desc-${i}`)}</td><td>${getV(`r1mat-qtd-${i}`)}</td></tr>
+            `).join('')}
+        </table>
+
+        <!-- ASSINATURAS -->
+        <div style="margin-top:40px; display:flex; justify-content:space-around; text-align:center; font-size:10px; font-weight:bold;">
+            <div><p>___________________________________</p><p>Líder Responsável / Operador</p></div>
+            <div><p>___________________________________</p><p>Inspetor de Qualidade</p></div>
         </div>
     </div>`;
 
-    if (window.registrarHistorico) window.registrarHistorico(tag, `Laudo Oficial Segmento Zero finalizado.`);
-    
+    // ===== SALVA NO HISTÓRICO =====
+    if (typeof window.salvarLaudoNoHistorico === 'function') {
+        window.salvarLaudoNoHistorico(tag, "Straightener R1 MCC 4", htmlPDF);
+    }
+
+    // Folhão concluído: apaga o rascunho salvo dessa TAG.
+    finalizarRascunhoFolhao(tag);
+
+    // ===== IMPRIME =====
     const printDiv = document.getElementById('print-content');
-    if (printDiv) printDiv.innerHTML = htmlPDF;
-    
-    window.fecharFolhaoSegmentoZero();
+    if (!printDiv) { alert("Div 'print-content' não encontrada!"); return; }
+    printDiv.innerHTML = htmlPDF;
+    window.fecharFolhaoR1();
     if (typeof renderReparos === 'function') renderReparos();
     if (typeof renderReservas === 'function') renderReservas();
     if (typeof renderAtivos === 'function') renderAtivos();
+    if (typeof renderPainelVeios === 'function') renderPainelVeios();
+    if (typeof renderHistorico === 'function') renderHistorico();
     if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
     if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
     setTimeout(() => window.print(), 500);
 };
+
+console.log("✅ folhaoStraightenerR1.js carregado com todas as seções do documento oficial.");

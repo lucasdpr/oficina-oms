@@ -1,5 +1,7 @@
 // folhao_straightener_r2.js - Módulo específico do STRAIGHTENER R-II (padrão BENDER)
 
+import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
+
 let ID_FOLHAO_R2_ATUAL = null;
 
 // ==============================================================
@@ -405,6 +407,11 @@ window.abrirFolhaoR2 = function(id) {
     let dataFim = document.getElementById('r2-data-fim');
     if (dataInicio) dataInicio.value = hoje;
     if (dataFim) dataFim.value = hoje;
+
+    // Restaura progresso salvo (ex: chegada já feita, aguardando saída)
+    // e liga o auto-salvamento pra nada mais se perder.
+    restaurarRascunhoNoModal('modal-folhao-r2', id);
+    ativarAutoSalvamentoFolhao('modal-folhao-r2', id, 'Straightener R2');
 };
 
 // ==============================================================
@@ -438,6 +445,9 @@ window.salvarEImprimirFolhaoR2 = function() {
     if (typeof window.salvarPecaNoPython === 'function') {
         window.salvarPecaNoPython(item);
     }
+
+    // Folhão concluído: apaga o rascunho salvo dessa TAG.
+    finalizarRascunhoFolhao(tag);
 
     let btnPDF = `<button onclick="window.abrirFolhaoR2('${tag}')" class="btn-outline-danger" style="padding: 2px 8px; font-size: 10px; margin-left: 10px; cursor: pointer;"><i class="fas fa-file-pdf"></i> Visualizar Folhão</button>`;
 

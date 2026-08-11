@@ -1,5 +1,7 @@
 // folhaoStraightenerR1.js - VERSÃO COMPLETA PARA STRAIGHTENER R1
 
+import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
+
 let ID_FOLHAO_R1_ATUAL = null;
 
 // ==============================================================
@@ -507,6 +509,11 @@ window.abrirFolhaoR1 = function(id) {
     modal.classList.remove('hidden');
     // Ativa a primeira aba
     window.trocarAbaR1({ currentTarget: document.querySelector('#modal-folhao-r1 .folhao-tab') }, 'r1-aba-dados');
+
+    // Restaura progresso salvo (ex: chegada já feita, aguardando saída)
+    // e liga o auto-salvamento pra nada mais se perder.
+    restaurarRascunhoNoModal('modal-folhao-r1', id);
+    ativarAutoSalvamentoFolhao('modal-folhao-r1', id, 'Straightener R1');
 };
 
 // ==============================================================
@@ -948,6 +955,9 @@ window.salvarEImprimirFolhaoR1 = function() {
     if (typeof window.salvarLaudoNoHistorico === 'function') {
         window.salvarLaudoNoHistorico(tag, "Straightener R1 MCC 4", htmlPDF);
     }
+
+    // Folhão concluído: apaga o rascunho salvo dessa TAG.
+    finalizarRascunhoFolhao(tag);
 
     // ===== IMPRIME =====
     const printDiv = document.getElementById('print-content');

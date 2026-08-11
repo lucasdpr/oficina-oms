@@ -5,6 +5,7 @@
 import { BANCO_ATIVOS, resolverApiBase } from './banco.js?v=2';
 import { renderAtivos, renderReparos, renderReservas } from './ui.js';
 import { gerarTelasBenderHTML, imprimirPDFBender } from './folhao_bender.js';
+import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
 
 let ID_FOLHAO_ATUAL = null;
 
@@ -585,6 +586,11 @@ export function abrirFolhaoMCC4(id) {
         if (firstTab) firstTab.click();
         
         modal.classList.remove("hidden");
+
+        // Restaura progresso salvo (ex: chegada já feita, aguardando saída)
+        // e liga o auto-salvamento pra nada mais se perder.
+        restaurarRascunhoNoModal("modal-folhao-mcc4", id);
+        ativarAutoSalvamentoFolhao("modal-folhao-mcc4", id, "Bender");
         return;
     }
 
@@ -628,6 +634,11 @@ export function abrirFolhaoMCC4(id) {
         const firstTabM4 = modalM4.querySelector('.folhao-tab');
         if (firstTabM4) firstTabM4.click();
         modalM4.classList.remove("hidden");
+
+        // Restaura progresso salvo (ex: chegada já feita, aguardando saída)
+        // e liga o auto-salvamento pra nada mais se perder.
+        restaurarRascunhoNoModal("modal-folhao-molde4", id);
+        ativarAutoSalvamentoFolhao("modal-folhao-molde4", id, "Molde");
         return;
     }
 
@@ -649,47 +660,44 @@ export async function salvarEImprimirFolhaoMolde4() {
     const tipoE = getV('molde4-tipo-exec'); 
     const novaMeta = getV('molde4-nova-meta') || 'Manter Atual';
 
-    // 2. PREPARA OS DADOS PARA A NUVEM
-    const dadosFolhao = {
-        id_peca: tag,
-        tipo_equipamento: "Molde",
-        tecnico: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Técnico",
-        nova_meta: parseFloat(novaMeta) || 0,
-        tipo_manutencao: tipoE,
-        dados_chegada: "{}", 
-        dados_saida: "{}",
-        status_reparo: "Concluido",
-        pdf_base64: "" 
-    };
-
-    // 🔥 A CORREÇÃO MÁGICA: Obriga o navegador a ESPERAR o Python terminar de salvar! 🔥
+    // 2. ATUALIZA O EQUIPAMENTO NO BANCO (rota real que já existe na API)
+    // 🔧 CORREÇÃO: antes essa etapa chamava POST /api/salvar_folhao, uma
+    // rota que nunca existiu no backend (main.py não tem ela). Isso
+    // fazia essa tela SEMPRE cair no alerta "Erro no Banco de Dados" e
+    // travar antes de imprimir. Trocado pela mesma rota que o resto do
+    // sistema usa (/api/atualizar_peca) e, se falhar, avisa mas deixa
+    // o técnico imprimir mesmo assim (o PDF não pode ficar refém da rede).
+    let item = BANCO_ATIVOS.find(a => a.id === tag);
+    if (item) {
+        item.local = "Oficina / Reserva";
+        item.ton = 0;
+        item.dias = 0;
+        if (novaMeta && !isNaN(parseFloat(novaMeta))) item.meta = parseFloat(novaMeta);
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    }
     try {
-        // 🔧 CORREÇÃO: antes era um localhost:8000 fixo (só funcionava com
-        // servidor local rodando). Agora usa a mesma resolução de API do
-        // resto do sistema (local se existir, senão o Render).
         const apiBase = await resolverApiBase();
-        const resposta = await fetch(`${apiBase}/api/salvar_folhao`, {
+        await fetch(`${apiBase}/api/atualizar_peca`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(dadosFolhao)
+            body: JSON.stringify({
+                id: tag,
+                local: "Oficina / Reserva",
+                tonelagem: 0,
+                dias: 0,
+                status: "Reserva"
+            })
         });
-        
-        const resultado = await resposta.json();
-
-        // 🔧 CORREÇÃO: checa também o status HTTP, não só o campo
-        // resultado.status — um 404/500 não tem esse campo e passava
-        // batido como se tivesse dado certo.
-        if (!resposta.ok || resultado.status === "erro") {
-            const msg = resultado.detail || resultado.mensagem || `Erro HTTP ${resposta.status}`;
-            alert("❌ Erro no Banco de Dados: " + msg);
-            return;
-        }
-        console.log("✅ Salvo com sucesso no banco!");
-    } catch(e) {
-        console.error("Erro na Nuvem:", e);
-        alert("❌ Erro de comunicação. O Python está rodando?");
-        return;
+        console.log("✅ Peça atualizada no banco!");
+    } catch (e) {
+        console.error("Erro ao atualizar peça na nuvem:", e);
+        // Não bloqueia a impressão — o técnico já preencheu o folhão todo,
+        // ele precisa poder imprimir mesmo se a internet cair.
     }
+
+    // Folhão concluído: apaga o rascunho salvo (chegada+saída já foram
+    // impressas, não precisa mais restaurar progresso pra essa TAG).
+    finalizarRascunhoFolhao(tag);
 
     // 3. FUNÇÃO AUXILIAR DA TABELA DO PDF
     function gerarTabelaCheckPDF(prefix, arr, isFinal = false) {
@@ -807,6 +815,7 @@ export function salvarLaudoInteligente() {
 
     item.ton = 0; item.dias = 0; item.local = "Oficina / Reserva";
     localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    finalizarRascunhoFolhao(tag);
 
     let motivo = document.getElementById("mcc4-motivo")?.value || "Manutenção";
     if (window.registrarHistorico) {
