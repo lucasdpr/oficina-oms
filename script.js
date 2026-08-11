@@ -811,6 +811,7 @@ function calcularKpisGlobais() {
     animarNumero("kpi-reparo", reparo);
     animarNumero("kpi-reserva", reserva);
 }
+window.calcularKpisGlobais = calcularKpisGlobais;
 
 // ==========================================
 // ANIMAÇÃO DE CONTAGEM NOS NÚMEROS DOS KPIs

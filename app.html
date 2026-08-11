@@ -1458,7 +1458,7 @@
     <!-- SCRIPTS (consolidados)                   -->
     <!-- ========================================= -->
     <script type="module">
-        import './script.js?v=12';
+        import './script.js?v=13';
         import './ui.js?v=13';
         import './folhaoMolde4.js?v=6';
         import './folhao_bender.js?v=2';
@@ -1473,18 +1473,32 @@
 
         console.log("✅ Sistema OMS inicializado!");
 
-        // 🔧 PAINEL DE DIAGNÓSTICO TEMPORÁRIO — atualiza a cada segundo.
+        // 🔧 PAINEL DE DIAGNÓSTICO + RECONCILIADOR AUTOMÁTICO — atualiza a
+        // cada segundo. Além de mostrar o estado real (debug), também
+        // GARANTE que os cards de KPI (ex: "ATIVOS MONITORADOS") reflitam
+        // o BANCO_ATIVOS de verdade, mesmo se alguma renderização anterior
+        // tiver rodado cedo demais (antes dos dados chegarem) e nada tiver
+        // mandado redesenhar depois. Isso é leve (só números, não recria
+        // tabelas inteiras), então rodar toda hora não pesa na tela.
         setInterval(() => {
+            const logado = !!localStorage.getItem('oms_operador_v32_local');
+            if (logado) {
+                if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
+                if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
+            }
+
             const el = document.getElementById('debug-sync-status');
             if (!el) return;
             const ativos = (window.BANCO_ATIVOS && window.BANCO_ATIVOS.length) ?? 'sem BANCO_ATIVOS';
             const erro = window.ULTIMO_ERRO_SYNC || '(nenhum)';
-            const operador = localStorage.getItem('oms_operador_v32_local');
+            const kpiTotalEl = document.getElementById('kpi-total');
+            const kpiTotalTela = kpiTotalEl ? kpiTotalEl.innerText : '(elemento não existe)';
             el.innerHTML = `
                 DEBUG • ${new Date().toLocaleTimeString('pt-BR')}<br>
                 BANCO_ATIVOS.length: <b>${ativos}</b><br>
+                kpi-total na tela: <b>${kpiTotalTela}</b><br>
                 Último erro de sync: <b>${erro}</b><br>
-                Sessão salva: ${operador ? 'sim' : 'não'}
+                Sessão salva: ${logado ? 'sim' : 'não'}
             `;
         }, 1000);
 
