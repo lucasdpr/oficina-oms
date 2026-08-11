@@ -44,15 +44,32 @@ export function fetchComTimeout(url, opts = {}, ms = 1500) {
 // Agora: espera até 20s por tentativa: se estourar, tenta mais 1 vez (dando
 // tempo do banco terminar de acordar) antes de desistir de vez.
 export async function fetchDadosComTimeout(url, opts = {}, { tentativas = 3, timeoutMs = 30000, esperaMs = 4000 } = {}) {
+    let ultimaResposta = null;
     for (let i = 0; i <= tentativas; i++) {
         try {
-            return await fetchComTimeout(url, opts, timeoutMs);
+            const resposta = await fetchComTimeout(url, opts, timeoutMs);
+            // 🔧 CORREÇÃO: antes, só timeout/erro de rede tentava de novo —
+            // um erro 500 (ex: a API pegou uma conexão "zumbi" do pool logo
+            // depois do Neon suspender sozinho, mesmo com o Render já
+            // acordado) chegava aqui como resposta válida (resposta.ok =
+            // false), então NUNCA era tentado de novo: o app desistia na
+            // primeira tentativa, mesmo o problema sendo passageiro e já
+            // resolvido no servidor 1 segundo depois. Agora 5xx também
+            // entra no retry, do mesmo jeito que timeout/erro de rede.
+            if (resposta.status >= 500 && i < tentativas) {
+                ultimaResposta = resposta;
+                console.warn(`⚠️ Servidor respondeu ${resposta.status} (tentativa ${i + 1}/${tentativas + 1}). Tentando de novo em ${esperaMs / 1000}s...`);
+                await new Promise(resolve => setTimeout(resolve, esperaMs));
+                continue;
+            }
+            return resposta;
         } catch (e) {
             if (i === tentativas) throw e;
             console.warn(`⚠️ Timeout/erro de conexão (tentativa ${i + 1}/${tentativas + 1}). Tentando de novo em ${esperaMs / 1000}s...`);
             await new Promise(resolve => setTimeout(resolve, esperaMs));
         }
     }
+    return ultimaResposta;
 }
 
 let apiBaseResolvida = null;

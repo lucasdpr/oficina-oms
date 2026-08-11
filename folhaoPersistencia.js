@@ -14,7 +14,7 @@
 // é finalizado/impresso (window.finalizarRascunhoFolhao).
 // ==============================================================
 
-import { resolverApiBase } from './banco.js?v=3';
+import { resolverApiBase } from './banco.js?v=4';
 
 // --------------------------------------------------------------
 // COLETA GENÉRICA DE TODOS OS CAMPOS DENTRO DE UM MODAL
