@@ -6,10 +6,10 @@
     <title>OMS | Oficina de Moldes e Segmentos – CSN</title>
 
     <!-- ============ PWA: permite instalar o app no Android/iPhone ============ -->
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f59e0b">
-    <link rel="icon" href="/icon-192.png">
-    <link rel="apple-touch-icon" href="/icon-192.png">
+    <link rel="icon" href="icon-192.png?v=2">
+    <link rel="apple-touch-icon" href="icon-192.png?v=2">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -44,6 +44,8 @@
 
         html {
             scroll-behavior: smooth;
+            overflow-x: hidden;
+            max-width: 100%;
         }
 
         body {
@@ -52,6 +54,9 @@
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             line-height: 1.6;
             overflow-x: hidden;
+            max-width: 100%;
+            /* Trava o arrasto lateral (só deixa arrastar pra cima/baixo) */
+            touch-action: pan-y;
         }
 
         a {
@@ -252,6 +257,7 @@
             margin: 0 auto;
             min-height: 100vh;
             position: relative;
+            overflow: hidden;
         }
 
         .hero::before {
@@ -1452,7 +1458,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
+                navigator.serviceWorker.register('service-worker.js')
                     .then(() => console.log('✅ Service worker registrado - app instalável.'))
                     .catch((err) => console.warn('⚠️ Falha ao registrar service worker:', err));
             });

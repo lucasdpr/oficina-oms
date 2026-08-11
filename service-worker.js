@@ -11,36 +11,36 @@
 // usando a copia antiga guardada em cache.
 // ==============================================================
 
-const CACHE_VERSION = "oms-v1";
+const CACHE_VERSION = "oms-v2";
 
 // Arquivos baixados e guardados assim que o app é instalado.
 // (não inclui chamadas de API - essas nunca ficam em cache)
 const ARQUIVOS_PARA_CACHE = [
-    "/",
-    "/index.html",
-    "/app.html",
-    "/style.css",
-    "/script.js",
-    "/tema.js",
-    "/ui.js",
-    "/banco.js",
-    "/dados.js",
-    "/dadosMateriaisSegmentoGrupo.js",
-    "/folhaoMolde4.js",
-    "/folhaoMolde23.js",
-    "/folhaoR2.js",
-    "/folhaoSegmentoGrupo.js",
-    "/folhaoSegmentoZero.js",
-    "/folhaoStraightenerR1.js",
-    "/folhao_bender.js",
-    "/folhaoBow.js",
-    "/folhaoDesempenadeira.js",
-    "/folhaoHorizontal.js",
-    "/folhaoPersistencia.js",
-    "/Sinotico3d.html",
-    "/manifest.json",
-    "/icon-192.png",
-    "/icon-512.png"
+    "./",
+    "./index.html",
+    "./app.html",
+    "./style.css",
+    "./script.js",
+    "./tema.js",
+    "./ui.js",
+    "./banco.js",
+    "./dados.js",
+    "./dadosMateriaisSegmentoGrupo.js",
+    "./folhaoMolde4.js",
+    "./folhaoMolde23.js",
+    "./folhaoR2.js",
+    "./folhaoSegmentoGrupo.js",
+    "./folhaoSegmentoZero.js",
+    "./folhaoStraightenerR1.js",
+    "./folhao_bender.js",
+    "./folhaoBow.js",
+    "./folhaoDesempenadeira.js",
+    "./folhaoHorizontal.js",
+    "./folhaoPersistencia.js",
+    "./Sinotico3d.html",
+    "./manifest.json",
+    "./icon-192.png?v=2",
+    "./icon-512.png?v=2"
 ];
 
 // --------------------------------------------------------------
