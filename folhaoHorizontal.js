@@ -2,7 +2,7 @@
 
 // 🔧 Import novo: precisa de resolverApiBase() pra achar a API certa
 // (local ou Render) em vez de bater fixo em localhost:8000.
-import { BANCO_ATIVOS, resolverApiBase } from './banco.js?v=3';
+import { BANCO_ATIVOS, resolverApiBase } from './banco.js?v=5';
 import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
 
 let ID_FOLHAO_HORIZ_ATUAL = null;

@@ -21,7 +21,7 @@ import {
     sincronizarHidraulicaReal,
     salvarAjusteHidraulicaNoPython,
     resolverApiBase
-} from './banco.js?v=4';
+} from './banco.js?v=5';
 // ==========================================================================
 // BANCO DE DADOS CORE - SISTEMA OMS
 // ==========================================================================

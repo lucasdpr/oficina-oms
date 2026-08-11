@@ -1,6 +1,6 @@
 // folhaoBow.js - VERSÃO COMPLETA COM TODAS AS SEÇÕES DO DOCUMENTO OFICIAL
 
-import { BANCO_ATIVOS, resolverApiBase } from './banco.js?v=3';
+import { BANCO_ATIVOS, resolverApiBase } from './banco.js?v=5';
 import { renderAtivos, renderReparos, renderReservas } from './ui.js';
 import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
 

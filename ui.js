@@ -1,6 +1,6 @@
 // ui.js - Versão final corrigida (R1/R2, botão excluir, sem duplicatas)
 
-import { BANCO_ATIVOS } from './banco.js?v=4';
+import { BANCO_ATIVOS } from './banco.js?v=5';
 
 // ==============================================================
 // FUNÇÃO AUXILIAR PARA CALCULAR DIAS EM REPARO

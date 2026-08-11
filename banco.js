@@ -322,7 +322,23 @@ function gerarPosicaoFixa(idSistema, tipoCanonico, contadorGrupoPorVeio, veio) {
     return null;
 }
 
+let syncAtivosEmAndamento = null;
+
+// 🔧 CORREÇÃO ("loga, não aparece nada, mas sem erro nenhum — só fecha e
+// abre de novo que aparece"): esta função é chamada em MAIS de um lugar
+// quase ao mesmo tempo — no carregamento da página (DOMContentLoaded) E
+// logo depois do login (finalizarLogin). Sem essa guarda, as duas
+// chamadas rodavam em paralelo, cada uma fazendo sua própria busca e, no
+// final, cada uma fazia `BANCO_ATIVOS.length = 0` seguido de `push(...)`
+// — se a tela renderizasse bem no meio dessa janela (entre uma chamada
+// zerar o array e a outra ainda não ter reenchido), aparecia tudo vazio
+// por puro azar de tempo, mesmo as duas buscas tendo dado certo no
+// servidor (por isso nenhum erro aparecia). Agora, se já existe uma
+// sincronização em andamento, uma segunda chamada simplesmente espera e
+// reaproveita o resultado da primeira, em vez de rodar outra em paralelo.
 export async function sincronizarAtivosReaisMCC4() {
+    if (syncAtivosEmAndamento) return syncAtivosEmAndamento;
+    syncAtivosEmAndamento = (async () => {
     try {
         const apiBase = await resolverApiBase();
         const resposta = await fetchDadosComTimeout(`${apiBase}/api/pecas`, {}, { tentativas: 2 });
@@ -407,7 +423,11 @@ export async function sincronizarAtivosReaisMCC4() {
         // navegador) por quem chamar essa função.
         window.ULTIMO_ERRO_SYNC = `${erro.name || "Erro"}: ${erro.message || "sem detalhes"}`;
         return false;
+    } finally {
+        syncAtivosEmAndamento = null;
     }
+    })();
+    return syncAtivosEmAndamento;
 }
 // ==========================================================================
 // MÃO DUPLA: Enviando atualizações para o Python (SQLite)
@@ -489,7 +509,10 @@ export async function salvarHistoricoNoPython(evento) {
 // ==========================================================================
 // ESTOQUE DE ROLOS — sincronização com o Neon
 // ==========================================================================
+let syncRolosEmAndamento = null;
 export async function sincronizarRolosReais() {
+    if (syncRolosEmAndamento) return syncRolosEmAndamento;
+    syncRolosEmAndamento = (async () => {
     try {
         const apiBase = await resolverApiBase();
         const resposta = await fetchDadosComTimeout(`${apiBase}/api/rolos`, {}, { tentativas: 2 });
@@ -513,7 +536,11 @@ export async function sincronizarRolosReais() {
     } catch (erro) {
         console.error("❌ Falha ao buscar rolos do Neon (usando dados locais salvos):", erro);
         return false;
+    } finally {
+        syncRolosEmAndamento = null;
     }
+    })();
+    return syncRolosEmAndamento;
 }
 
 export async function salvarAjusteRoloNoPython(id, fator) {
@@ -538,7 +565,10 @@ export async function salvarAjusteRoloNoPython(id, fator) {
 // ==========================================================================
 // ESTOQUE HIDRÁULICO — sincronização com o Neon (aplicado x reserva)
 // ==========================================================================
+let syncHidraulicaEmAndamento = null;
 export async function sincronizarHidraulicaReal() {
+    if (syncHidraulicaEmAndamento) return syncHidraulicaEmAndamento;
+    syncHidraulicaEmAndamento = (async () => {
     try {
         const apiBase = await resolverApiBase();
         const resposta = await fetchDadosComTimeout(`${apiBase}/api/hidraulica`, {}, { tentativas: 2 });
@@ -563,7 +593,11 @@ export async function sincronizarHidraulicaReal() {
     } catch (erro) {
         console.error("❌ Falha ao buscar hidráulica do Neon (usando dados locais salvos):", erro);
         return false;
+    } finally {
+        syncHidraulicaEmAndamento = null;
     }
+    })();
+    return syncHidraulicaEmAndamento;
 }
 
 export async function salvarAjusteHidraulicaNoPython(id, local, fator) {
