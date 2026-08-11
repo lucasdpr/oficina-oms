@@ -291,8 +291,8 @@
                 <div class="operator-info">
                     <i class="fas fa-user-shield"></i>
                     <div>
-                        <small>Colaborador</small>
-                        <p id="nome-operador-logado">...</p>
+                        <p id="nome-operador-logado" style="margin:0;">...</p>
+                        <small id="matricula-operador-logado" class="text-muted" style="display:block;">Matrícula: --</small>
                         <span id="badge-cargo-operador" class="operator-role-badge"></span>
                     </div>
                 </div>
@@ -300,6 +300,7 @@
             </div>
             <nav class="sidebar-nav">
                 <a href="#" id="nav-painel" class="nav-link active" onclick="window.abrirAba(event,'aba-painel')"><i class="fas fa-chart-pie"></i> Painel Geral OMS</a>
+                <a href="#" id="nav-tecnico" class="nav-link" style="color:#22c55e;" onclick="window.abrirAba(event,'aba-tecnico')"><i class="fas fa-hard-hat"></i> Painel do Técnico</a>
                 <a href="#" id="nav-fluxo" class="nav-link" onclick="window.abrirAba(event,'aba-fluxo')"><i class="fas fa-stream"></i> Sequenciamento Veios</a>
                 <a href="Sinotico3d.html" id="nav-sinotico" class="nav-link" style="color:#22d3ee;" target="_blank" title="Abre em uma nova aba"><i class="fas fa-cube"></i> Sinótico 3D</a>
                 
@@ -531,6 +532,75 @@
     </div>
 
 </section>
+
+            <section id="aba-tecnico" class="tab-content">
+                <div class="welcome-box">
+                    <div>
+                        <h1><i class="fas fa-hard-hat" style="color:#22c55e;"></i> Painel do Técnico</h1>
+                        <p>Tudo que você precisa no dia a dia, num só lugar.</p>
+                    </div>
+                </div>
+
+                <!-- ATALHOS RÁPIDOS -->
+                <div class="tecnico-atalhos-grid">
+                    <button class="tecnico-atalho-btn" style="border-color:#f59e0b;" onclick="window.abrirAba(null,'aba-reparos')">
+                        <i class="fas fa-wrench" style="color:#f59e0b;"></i>
+                        <span>Folhão / Reparo</span>
+                    </button>
+                    <button class="tecnico-atalho-btn" style="border-color:#22c55e;" onclick="window.abrirAba(null,'aba-reservas')">
+                        <i class="fas fa-exchange-alt" style="color:#22c55e;"></i>
+                        <span>Sacar / Swap</span>
+                    </button>
+                    <button class="tecnico-atalho-btn" style="border-color:#ef4444;" onclick="window.abrirCriticos()">
+                        <i class="fas fa-radiation" style="color:#ef4444;"></i>
+                        <span>Críticos</span>
+                    </button>
+                    <button class="tecnico-atalho-btn" style="border-color:#a855f7;" onclick="window.abrirAba(null,'aba-almoxarifado')">
+                        <i class="fas fa-pallet" style="color:#a855f7;"></i>
+                        <span>Almoxarifado</span>
+                    </button>
+                    <button class="tecnico-atalho-btn" style="border-color:#38bdf8;" onclick="window.abrirAba(null,'aba-rolos')">
+                        <i class="fas fa-scroll" style="color:#38bdf8;"></i>
+                        <span>Rolos</span>
+                    </button>
+                    <button class="tecnico-atalho-btn" style="border-color:#f97316;" onclick="window.abrirAba(null,'aba-hidraulica')">
+                        <i class="fas fa-oil-can" style="color:#f97316;"></i>
+                        <span>Hidráulica</span>
+                    </button>
+                    <button class="tecnico-atalho-btn" style="border-color:#eab308;" onclick="window.abrirModalIntervencao()">
+                        <i class="fas fa-screwdriver-wrench" style="color:#eab308;"></i>
+                        <span>Registrar Intervenção</span>
+                    </button>
+                    <button class="tecnico-atalho-btn" style="border-color:#06b6d4;" onclick="window.abrirModalRelatorioDiario()">
+                        <i class="fas fa-clipboard-list" style="color:#06b6d4;"></i>
+                        <span>Relatório Diário</span>
+                    </button>
+                </div>
+
+                <!-- EQUIPAMENTOS EM REPARO (pra abrir o folhão direto) -->
+                <div class="glass-panel" style="padding: 18px; margin-top: 20px;">
+                    <h3 style="color:var(--text-title); font-size:1rem; margin-bottom: 12px;">
+                        <i class="fas fa-tools" style="color:#f59e0b;"></i> Em Reparo — Toque pra abrir o Folhão
+                    </h3>
+                    <div id="tecnico-lista-reparo"></div>
+                </div>
+
+                <!-- EQUIPAMENTOS CRÍTICOS -->
+                <div class="glass-panel" style="padding: 18px; margin-top: 16px;">
+                    <h3 style="color:var(--text-title); font-size:1rem; margin-bottom: 12px;">
+                        <i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i> Equipamentos Críticos (≥80%)
+                    </h3>
+                    <div id="tecnico-lista-criticos"></div>
+                </div>
+
+                <!-- RESERVAS DISPONÍVEIS PRA SWAP -->
+                <div class="glass-panel" style="padding: 18px; margin-top: 16px; margin-bottom: 20px;">
+                    <h3 style="color:var(--text-title); font-size:1rem; margin-bottom: 12px;">
+                        <i class="fas fa-boxes" style="color:#22c55e;"></i> Reserva Pronta pra Instalar
+                    </h3>
+                    <div id="tecnico-lista-reservas"></div>
+                </div>
+            </section>
 
             <section id="aba-fluxo" class="tab-content">
                 <div class="glass-panel" style="padding:24px;"><div class="panel-card-header"><h1 id="titulo-veio-focado">Sequenciamento Síncrono</h1></div><div id="container-fluxo-horizontal-scroll" class="graficos-container"></div></div>
@@ -1521,6 +1591,65 @@
     <!-- ============================================================== -->
     <!-- MODAL: PRONTUÁRIO INDIVIDUAL DO EQUIPAMENTO -->
     <!-- ============================================================== -->
+    <!-- MODAL: EQUIPAMENTOS CRÍTICOS -->
+    <div id="modal-criticos" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 560px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-radiation" style="color:var(--danger);"></i> Equipamentos Críticos (≥80%)</h2>
+                <button class="btn-close-modal" onclick="window.fecharModalCriticos()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="modal-criticos-lista" style="max-height: 60vh; overflow-y: auto;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: REGISTRAR INTERVENÇÃO RÁPIDA -->
+    <div id="modal-intervencao" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 520px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-screwdriver-wrench" style="color:#eab308;"></i> Registrar Intervenção</h2>
+                <button class="btn-close-modal" onclick="window.fecharModalIntervencao()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted" style="font-size:0.8rem; margin-bottom:14px;">Pra anotações rápidas num equipamento, sem precisar abrir o Folhão completo. Fica salvo no Prontuário do equipamento e na Auditoria.</p>
+                <div class="input-group" style="margin-bottom:14px;">
+                    <label>Equipamento</label>
+                    <select id="intervencao-equipamento" class="premium-select" style="width:100%;">
+                        <option value="">Selecione...</option>
+                    </select>
+                </div>
+                <div class="input-group" style="margin-bottom:18px;">
+                    <label>O que foi feito?</label>
+                    <textarea id="intervencao-texto" class="premium-textarea" rows="4" placeholder="Ex: Troquei o rolo travado, ajustei a pressão hidráulica..."></textarea>
+                </div>
+                <button class="btn-premium btn-success w-100" onclick="window.confirmarIntervencao()">
+                    <i class="fas fa-check"></i> Salvar Intervenção
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: RELATÓRIO DIÁRIO DO TÉCNICO -->
+    <div id="modal-relatorio-diario" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 520px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-clipboard-list" style="color:#06b6d4;"></i> Relatório Diário</h2>
+                <button class="btn-close-modal" onclick="window.fecharModalRelatorioDiario()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted" style="font-size:0.8rem; margin-bottom:14px;">Conte resumidamente o que você fez no seu turno hoje. Fica registrado na Auditoria com seu nome e a data.</p>
+                <div class="input-group" style="margin-bottom:18px;">
+                    <label>O que você fez hoje?</label>
+                    <textarea id="relatorio-diario-texto" class="premium-textarea" rows="6" placeholder="Ex: Fiz manutenção do Bow-2, troquei rolos da cadeira 45, apoiei o swap do MCC4 Veio H..."></textarea>
+                </div>
+                <button class="btn-premium btn-success w-100" onclick="window.confirmarRelatorioDiario()">
+                    <i class="fas fa-check"></i> Enviar Relatório
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="modal-historico-ativo" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 760px;">
             <div class="modal-header">

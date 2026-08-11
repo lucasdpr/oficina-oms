@@ -374,6 +374,15 @@ function finalizarLogin(nome, cargo, matricula) {
     if (typeof renderRolos === 'function') renderRolos();
     if (typeof carregarMateriaisDoBackend === 'function') carregarMateriaisDoBackend();
     if (typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
+
+    // 🔧 Técnico entra direto no Painel do Técnico (visão simplificada e
+    // com as ações do dia a dia), em vez do Painel Geral OMS — que é mais
+    // voltado pra visão gerencial/completa da planta.
+    const ehTecnico = (cargo || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("tecnico");
+    if (ehTecnico && typeof window.abrirAba === 'function') {
+        const navTecnico = document.getElementById("nav-tecnico");
+        if (navTecnico) window.abrirAba({ preventDefault(){}, currentTarget: navTecnico }, "aba-tecnico");
+    }
 }
 
 function fazerLogout() {
@@ -450,6 +459,7 @@ function abrirAba(event, idAba) {
     }
     if (idAba === "aba-ativos") renderAtivos();
     if (idAba === "aba-fluxo") renderPainelVeios();
+    if (idAba === "aba-tecnico") { if (typeof renderPainelTecnico === 'function') renderPainelTecnico(); }
     if (idAba === "aba-oficina") {
         if (typeof carregarOficina === 'function') carregarOficina();
     }
@@ -648,9 +658,11 @@ window.renderPainelDevTeste = renderPainelDevTeste;
 function atualizarInterfaceUsuario() {
     const nomeEl = document.getElementById("nome-operador-logado");
     const badgeEl = document.getElementById("badge-cargo-operador");
+    const matriculaEl = document.getElementById("matricula-operador-logado");
 
     if (!OPERADOR_LOGADO) {
         if (nomeEl) nomeEl.innerText = "Não identificado";
+        if (matriculaEl) matriculaEl.style.display = "none";
         if (badgeEl) badgeEl.style.display = "none";
         renderHistorico();
         ativarPainelDevSeAutorizado();
@@ -659,6 +671,7 @@ function atualizarInterfaceUsuario() {
 
     if (OPERADOR_LOGADO.visitante) {
         if (nomeEl) nomeEl.innerText = "👁️ Visitante";
+        if (matriculaEl) matriculaEl.style.display = "none";
         if (badgeEl) {
             badgeEl.innerText = "Somente leitura";
             badgeEl.className = "operator-role-badge role-visitante";
@@ -675,6 +688,10 @@ function atualizarInterfaceUsuario() {
     const nomeLimpo = (OPERADOR_LOGADO.nome || "").replace(/\s*\[.+?\]/, "");
 
     if (nomeEl) nomeEl.innerText = nomeLimpo || "Não identificado";
+    if (matriculaEl) {
+        matriculaEl.innerText = `Matrícula: ${OPERADOR_LOGADO.matricula || "--"}`;
+        matriculaEl.style.display = "block";
+    }
     if (badgeEl) {
         badgeEl.innerText = cargo;
         badgeEl.className = "operator-role-badge";
@@ -2740,13 +2757,184 @@ function atualizarKPIsAvancados() {
     }
 }
 
-function abrirCriticos() {
-    FILTRO_CRITICOS = true;
-    abrirAba(null, 'aba-ativos');
-    if (typeof renderAtivos === 'function') {
-        renderAtivos();
+// ==========================================
+// PAINEL DO TÉCNICO — visão simplificada e direta ao ponto
+// ==========================================
+// Pensado pra abrir sozinho no celular do técnico assim que ele loga,
+// juntando num só lugar as 3 ações que ele mais faz no dia a dia:
+// abrir folhão de equipamento em reparo, sacar/trocar (swap) uma peça
+// reserva, e ver os equipamentos críticos — sem precisar navegar pelo
+// menu lateral procurando cada coisa em aba separada.
+function renderPainelTecnico() {
+    const listaReparo = document.getElementById("tecnico-lista-reparo");
+    const listaCriticos = document.getElementById("tecnico-lista-criticos");
+    const listaReservas = document.getElementById("tecnico-lista-reservas");
+    if (!listaReparo || !listaCriticos || !listaReservas) return;
+
+    const linhaVazia = (msg) => `<div class="text-muted" style="text-align:center; padding: 18px 0;">${msg}</div>`;
+
+    // ---- EM REPARO (toque abre o folhão direto) ----
+    const emReparo = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reparo");
+    if (emReparo.length === 0) {
+        listaReparo.innerHTML = linhaVazia("Nenhum equipamento em reparo agora. 🎉");
+    } else {
+        listaReparo.innerHTML = emReparo.map(a => {
+            const dias = calcularDias(a);
+            return `
+                <div class="tecnico-item-linha" onclick="window.abrirFolhaoPorTipo('${a.id}')">
+                    <div>
+                        <span class="font-code" style="font-weight:700; color:var(--text-heading);">${a.id}</span>
+                        <span class="ind-card-tag bg-tag" style="margin-left:6px;">${a.tipo}</span>
+                    </div>
+                    <div style="text-align:right;">
+                        <span style="color:var(--warning); font-weight:700; font-size:13px;">${dias} dias</span>
+                        <i class="fas fa-chevron-right" style="margin-left:8px; color:var(--text-muted);"></i>
+                    </div>
+                </div>`;
+        }).join("");
+    }
+
+    // ---- CRÍTICOS (≥80%, instalados) ----
+    const criticos = BANCO_ATIVOS
+        .filter(a => a.local && a.local.includes("Veio") && !a.local.includes("Oficina"))
+        .map(a => ({ ...a, pct: a.meta > 0 ? (a.ton / a.meta) * 100 : 0 }))
+        .filter(a => a.pct >= 80)
+        .sort((a, b) => b.pct - a.pct);
+
+    if (criticos.length === 0) {
+        listaCriticos.innerHTML = linhaVazia("Nenhum equipamento crítico no momento. ✅");
+    } else {
+        listaCriticos.innerHTML = criticos.map(a => `
+            <div class="tecnico-item-linha" onclick="window.abrirHistoricoIndividual('${a.id}')">
+                <div>
+                    <span class="font-code" style="font-weight:700; color:var(--text-heading);">${a.id}</span>
+                    <span class="ind-card-tag bg-tag" style="margin-left:6px;">${a.tipo}</span>
+                </div>
+                <div style="text-align:right;">
+                    <span style="color:var(--danger); font-weight:700; font-size:13px;">${a.pct.toFixed(1)}%</span>
+                    <i class="fas fa-chevron-right" style="margin-left:8px; color:var(--text-muted);"></i>
+                </div>
+            </div>`).join("");
+    }
+
+    // ---- RESERVAS PRONTAS PRA SWAP ----
+    const reservas = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reserva");
+    if (reservas.length === 0) {
+        listaReservas.innerHTML = linhaVazia("Nenhuma peça em estoque reserva.");
+    } else {
+        listaReservas.innerHTML = reservas.map(a => `
+            <div class="tecnico-item-linha" onclick="window.abrirAba(null,'aba-reservas')">
+                <div>
+                    <span class="font-code" style="font-weight:700; color:var(--text-heading);">${a.id}</span>
+                    <span class="ind-card-tag bg-tag" style="margin-left:6px;">${a.tipo}</span>
+                </div>
+                <i class="fas fa-chevron-right" style="color:var(--text-muted);"></i>
+            </div>`).join("");
     }
 }
+window.renderPainelTecnico = renderPainelTecnico;
+
+// ==========================================
+// 🔧 CORREÇÃO CRÍTICA: abrirCriticos() chamava abrirAba(null, 'aba-ativos'),
+// mas esse HTML NUNCA teve uma aba com id="aba-ativos" — a "Matriz
+// Operacional Geral" ficou de fora quando o app.html foi remontado.
+// Por isso o botão "Críticos" (no Painel Geral e no Painel do Técnico)
+// não levava a lugar nenhum: o clique disparava, mas não existia
+// destino pra navegar. Agora ele abre um modal com a lista de
+// equipamentos críticos de verdade, sem depender de nenhuma aba.
+// ==========================================
+function abrirCriticos() {
+    const criticos = BANCO_ATIVOS
+        .filter(a => a.local && a.local.includes("Veio") && !a.local.includes("Oficina"))
+        .map(a => ({ ...a, pct: a.meta > 0 ? (a.ton / a.meta) * 100 : 0 }))
+        .filter(a => a.pct >= 80)
+        .sort((a, b) => b.pct - a.pct);
+
+    const lista = document.getElementById("modal-criticos-lista");
+    if (lista) {
+        lista.innerHTML = criticos.length === 0
+            ? `<div class="text-muted" style="text-align:center; padding:30px 0;">Nenhum equipamento crítico no momento. ✅</div>`
+            : criticos.map(a => `
+                <div class="tecnico-item-linha" onclick="window.fecharModalCriticos(); window.abrirHistoricoIndividual('${a.id}')">
+                    <div>
+                        <span class="font-code" style="font-weight:700; color:var(--text-heading);">${a.id}</span>
+                        <span class="ind-card-tag bg-tag" style="margin-left:6px;">${a.tipo}</span>
+                        <div class="text-muted" style="font-size:11px; margin-top:2px;">${a.local || ''}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <span style="color:var(--danger); font-weight:700; font-size:14px;">${a.pct.toFixed(1)}%</span>
+                        <i class="fas fa-chevron-right" style="margin-left:8px; color:var(--text-muted);"></i>
+                    </div>
+                </div>`).join("");
+    }
+
+    const modal = document.getElementById("modal-criticos");
+    if (modal) modal.classList.remove("hidden");
+}
+window.fecharModalCriticos = function() {
+    const modal = document.getElementById("modal-criticos");
+    if (modal) modal.classList.add("hidden");
+};
+
+// ==========================================
+// REGISTRAR INTERVENÇÃO RÁPIDA (sem precisar abrir o Folhão completo)
+// ==========================================
+window.abrirModalIntervencao = function() {
+    if (!verificarAcesso()) return;
+    const select = document.getElementById("intervencao-equipamento");
+    if (select) {
+        const ordenados = [...BANCO_ATIVOS].sort((a, b) => (a.id || "").localeCompare(b.id || ""));
+        select.innerHTML = `<option value="">Selecione...</option>` +
+            ordenados.map(a => `<option value="${a.id}">${a.id} — ${a.tipo} (${a.local || 'Sem local'})</option>`).join("");
+    }
+    const textoEl = document.getElementById("intervencao-texto");
+    if (textoEl) textoEl.value = "";
+    const modal = document.getElementById("modal-intervencao");
+    if (modal) modal.classList.remove("hidden");
+};
+window.fecharModalIntervencao = function() {
+    const modal = document.getElementById("modal-intervencao");
+    if (modal) modal.classList.add("hidden");
+};
+window.confirmarIntervencao = function() {
+    const equipamentoId = document.getElementById("intervencao-equipamento")?.value;
+    const texto = document.getElementById("intervencao-texto")?.value.trim();
+
+    if (!equipamentoId) return alert("Selecione o equipamento.");
+    if (!texto) return alert("Descreva o que foi feito.");
+
+    registrarHistorico(equipamentoId, `🔧 <span style="color:#eab308;">[INTERVENÇÃO]</span> ${texto}`);
+    window.fecharModalIntervencao();
+    alert(`✅ Intervenção registrada em [${equipamentoId}].`);
+};
+
+// ==========================================
+// RELATÓRIO DIÁRIO DO TÉCNICO (o que foi feito no turno)
+// ==========================================
+window.abrirModalRelatorioDiario = function() {
+    if (!verificarAcesso()) return;
+    const textoEl = document.getElementById("relatorio-diario-texto");
+    if (textoEl) textoEl.value = "";
+    const modal = document.getElementById("modal-relatorio-diario");
+    if (modal) modal.classList.remove("hidden");
+};
+window.fecharModalRelatorioDiario = function() {
+    const modal = document.getElementById("modal-relatorio-diario");
+    if (modal) modal.classList.add("hidden");
+};
+window.confirmarRelatorioDiario = function() {
+    const texto = document.getElementById("relatorio-diario-texto")?.value.trim();
+    if (!texto) return alert("Escreva o que você fez hoje antes de enviar.");
+
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    // Usa o próprio operador como "tag" — assim cada relatório fica
+    // agrupado por quem o escreveu na Auditoria (aba-historico), e dá
+    // pra filtrar por data ali também.
+    const nomeOperador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || "Técnico").replace(/\s*\[.+?\]/, "") : "Técnico";
+    registrarHistorico("RELATÓRIO DIÁRIO", `📋 <strong>${nomeOperador}</strong> (${hoje}): ${texto}`);
+    window.fecharModalRelatorioDiario();
+    alert("✅ Relatório diário enviado com sucesso!");
+};
 
 function atualizarNovosKPIs() {
     const total = BANCO_ATIVOS.length;
@@ -3036,6 +3224,7 @@ window.abrirAba = function(event, idAba) {
     if (idAba === "aba-painel" && typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
     if (idAba === "aba-ativos" && typeof renderAtivos === 'function') renderAtivos();
     if (idAba === "aba-fluxo" && typeof renderPainelVeios === 'function') renderPainelVeios();
+    if (idAba === "aba-tecnico" && typeof renderPainelTecnico === 'function') renderPainelTecnico();
     if (idAba === "aba-oficina" && typeof carregarOficina === 'function') carregarOficina();
     
     if (idAba === "aba-producao") {

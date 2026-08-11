@@ -2892,3 +2892,166 @@ h1, h2, h3, h4, h5, h6 {
     box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
     transform: translateY(-1px);
 }
+/* ==========================================================================
+   PAINEL DO TÉCNICO — atalhos rápidos e listas de ação
+   ========================================================================== */
+.tecnico-atalhos-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 20px;
+}
+.tecnico-atalho-btn {
+    background: var(--bg-card, var(--bg-th));
+    border: 1.5px solid var(--border-color);
+    border-left-width: 4px;
+    border-radius: var(--radius-md, 10px);
+    padding: 18px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 88px;
+    touch-action: manipulation;
+}
+.tecnico-atalho-btn:active {
+    transform: scale(0.96);
+    background: var(--bg-hover, rgba(255,255,255,0.05));
+}
+.tecnico-atalho-btn i {
+    font-size: 24px;
+}
+.tecnico-atalho-btn span {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text-heading);
+    text-align: center;
+    line-height: 1.2;
+}
+
+.tecnico-item-linha {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 12px;
+    border-radius: var(--radius-sm, 8px);
+    background: var(--bg-td);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    min-height: 44px;
+    touch-action: manipulation;
+}
+.tecnico-item-linha:active {
+    background: var(--bg-hover, rgba(255,255,255,0.06));
+    transform: scale(0.99);
+}
+
+/* ==========================================================================
+   OTIMIZAÇÃO MOBILE — app é usado quase 100% no celular
+   ========================================================================== */
+@media (max-width: 768px) {
+    /* Evita zoom automático do iOS ao focar em inputs (exige >=16px) */
+    input, select, textarea, button {
+        font-size: 16px !important;
+    }
+
+    /* Área de toque mínima recomendada (44x44px) em todo elemento clicável */
+    .nav-link, .btn-premium, .btn-outline-danger, .btn-auth, .btn-xs-primary,
+    .btn-panic, button, .status-pill, .tecnico-atalho-btn, .tecnico-item-linha {
+        min-height: 44px;
+        touch-action: manipulation;
+    }
+
+    .nav-link {
+        padding: 14px 16px;
+        font-size: 15px;
+    }
+
+    /* Painéis e grids em coluna única */
+    .kpi-container {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    .dashboard-main-grid {
+        grid-template-columns: 1fr;
+    }
+    .tecnico-atalhos-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+    .tecnico-atalho-btn {
+        padding: 14px 6px;
+        min-height: 76px;
+    }
+    .tecnico-atalho-btn i {
+        font-size: 20px;
+    }
+    .tecnico-atalho-btn span {
+        font-size: 11px;
+    }
+
+    /* Tabelas: rolagem horizontal em vez de espremer colunas */
+    .table-responsive, table {
+        -webkit-overflow-scrolling: touch;
+    }
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    /* Cabeçalho mobile fixo no topo, respeitando notch/status bar */
+    .mobile-header {
+        padding-top: max(10px, env(safe-area-inset-top));
+        position: sticky;
+        top: 0;
+        z-index: 50;
+    }
+
+    /* Sidebar ocupa a tela quase toda quando aberta, com respiro pro notch */
+    .sidebar {
+        padding-top: max(16px, env(safe-area-inset-top));
+        padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+
+    /* Botões de ação principais (Confirmar, Salvar, Autenticar) maiores e
+       mais fáceis de acertar com o polegar */
+    .login-btn-submit, .btn-success, .btn-auth {
+        min-height: 48px;
+        font-size: 15px;
+    }
+
+    /* Modais ocupam a tela quase toda no celular, sem margens desperdiçadas */
+    .modal-content, .folhao-modal-content {
+        width: 96vw !important;
+        max-width: 96vw !important;
+        margin: 8px auto !important;
+        max-height: 92vh;
+        overflow-y: auto;
+    }
+
+    /* Welcome box (topo das telas) empilha em coluna no celular */
+    .welcome-box {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    /* Remove efeitos de hover que no touch ficam "grudados" após o toque */
+    .kpi-card:hover, .top-critico-item:hover, .tecnico-atalho-btn:hover {
+        transform: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .tecnico-atalhos-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .kpi-container {
+        grid-template-columns: 1fr;
+    }
+}
