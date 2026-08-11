@@ -226,7 +226,7 @@ window.alternarVisibilidadeSenha = function() {
 // 2) tentativas: se abortar por timeout (ou cair a conexão), tenta de
 //    novo automaticamente antes de desistir de vez — dando tempo do
 //    banco terminar de acordar.
-async function fetchComRetry(url, opcoes = {}, tentativas = 1, esperaMs = 3000, timeoutMs = 20000) {
+async function fetchComRetry(url, opcoes = {}, tentativas = 2, esperaMs = 4000, timeoutMs = 35000) {
     for (let i = 0; i <= tentativas; i++) {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -270,12 +270,17 @@ async function processarAutenticacaoHome() {
 
         const apiBase = await resolverApiBase();
 
-        // Se demorar mais que ~4s, é provável que o banco esteja
-        // "acordando" — avisa o colaborador em vez de deixar ele achando
-        // que travou.
-        const avisoLento = setTimeout(() => {
-            if (btnEntrar) btnEntrar.innerText = "Conectando ao banco, aguarde...";
-        }, 4000);
+        // Se demorar, é provável que o servidor (Render) e/ou o banco
+        // (Neon) estejam "acordando" de um período parado — avisa o
+        // colaborador em vez de deixar ele achando que travou. A
+        // mensagem evolui conforme o tempo passa, pra deixar claro que
+        // ainda está tentando, não travado.
+        const avisoLento1 = setTimeout(() => {
+            if (btnEntrar) btnEntrar.innerText = "Conectando ao servidor...";
+        }, 3000);
+        const avisoLento2 = setTimeout(() => {
+            if (btnEntrar) btnEntrar.innerText = "Servidor iniciando, aguarde (até 1 min)...";
+        }, 12000);
 
         let resp;
         try {
@@ -285,7 +290,8 @@ async function processarAutenticacaoHome() {
                 body: JSON.stringify({ matricula: matriculaUpper, senha: senhaInput })
             });
         } finally {
-            clearTimeout(avisoLento);
+            clearTimeout(avisoLento1);
+            clearTimeout(avisoLento2);
         }
 
         const resultado = await resp.json().catch(() => ({}));
@@ -399,15 +405,41 @@ function fazerLogout() {
 // ==========================================
 // MODO VISITANTE (somente leitura)
 // ==========================================
-function entrarComoVisitante() {
-    OPERADOR_LOGADO = { matricula: null, nome: "Visitante", visitante: true };
+// ==========================================
+// MODAL: PEDIR NOME ANTES DE ENTRAR COMO VISITANTE
+// ==========================================
+window.abrirModalVisitante = function() {
+    const input = document.getElementById("visitante-nome-input");
+    if (input) input.value = "";
+    const modal = document.getElementById("modal-visitante-nome");
+    if (modal) modal.classList.remove("hidden");
+    setTimeout(() => { if (input) input.focus(); }, 150);
+};
+window.fecharModalVisitante = function() {
+    const modal = document.getElementById("modal-visitante-nome");
+    if (modal) modal.classList.add("hidden");
+};
+window.confirmarAcessoVisitante = function() {
+    const nome = document.getElementById("visitante-nome-input")?.value.trim();
+    if (!nome) return alert("Digite seu nome pra continuar.");
+    window.fecharModalVisitante();
+    entrarComoVisitante(nome);
+};
+
+// 🔧 Agora recebe o nome digitado no modal (antes sempre entrava como
+// "Visitante" genérico, sem dar pra saber quem realmente acessou). O
+// nome fica registrado no histórico de autenticação e aparece no lugar
+// de "Colaborador" no menu lateral.
+function entrarComoVisitante(nomeDigitado) {
+    const nome = (nomeDigitado || "Visitante").trim();
+    OPERADOR_LOGADO = { matricula: null, nome: nome, visitante: true };
     localStorage.setItem("oms_operador_v32_local", JSON.stringify(OPERADOR_LOGADO));
 
     document.getElementById("tela-login-home").style.display = "none";
     document.getElementById("container-sistema-oms").style.display = "flex";
 
     if (typeof atualizarInterfaceUsuario === 'function') atualizarInterfaceUsuario();
-    if (typeof registrarHistorico === 'function') registrarHistorico("AUTENTICAÇÃO", "Acesso em Modo Visitante (somente leitura).");
+    if (typeof registrarHistorico === 'function') registrarHistorico("AUTENTICAÇÃO", `Acesso em Modo Visitante (somente leitura) — ${nome}.`);
     if (typeof calcularKpisGlobais === 'function') calcularKpisGlobais();
     if (typeof renderPainelVeios === 'function') renderPainelVeios();
     if (typeof renderAtivos === 'function') renderAtivos();
@@ -659,6 +691,7 @@ function atualizarInterfaceUsuario() {
     const nomeEl = document.getElementById("nome-operador-logado");
     const badgeEl = document.getElementById("badge-cargo-operador");
     const matriculaEl = document.getElementById("matricula-operador-logado");
+    const btnLogout = document.getElementById("btn-encerrar-turno");
 
     if (!OPERADOR_LOGADO) {
         if (nomeEl) nomeEl.innerText = "Não identificado";
@@ -670,17 +703,22 @@ function atualizarInterfaceUsuario() {
     }
 
     if (OPERADOR_LOGADO.visitante) {
-        if (nomeEl) nomeEl.innerText = "👁️ Visitante";
+        if (nomeEl) nomeEl.innerText = `👁️ ${OPERADOR_LOGADO.nome || "Visitante"}`;
         if (matriculaEl) matriculaEl.style.display = "none";
         if (badgeEl) {
             badgeEl.innerText = "Somente leitura";
             badgeEl.className = "operator-role-badge role-visitante";
             badgeEl.style.display = "inline-block";
         }
+        // Visitante não tem "turno" pra encerrar — o botão vira um
+        // atalho direto de volta pro login, sem confirmação nem alerta.
+        if (btnLogout) btnLogout.innerText = "Voltar ao Login";
         renderHistorico();
         ativarPainelDevSeAutorizado();
         return;
     }
+
+    if (btnLogout) btnLogout.innerText = "Encerrar Turno";
 
     // Extrai o cargo entre colchetes do nome cadastrado, ex: "Filipe [Líder]"
     const match = (OPERADOR_LOGADO.nome || "").match(/\[(.+?)\]/);
@@ -3194,7 +3232,11 @@ window.toggleTheme = function() {
 };
 
 window.fazerLogout = function() {
-    if (confirm("Tem certeza que deseja encerrar o turno?")) {
+    // Visitante não tem "turno" — some sem perguntar, é só um "voltar".
+    const ehVisitante = OPERADOR_LOGADO && OPERADOR_LOGADO.visitante;
+    const mensagem = ehVisitante ? null : "Tem certeza que deseja encerrar o turno?";
+
+    if (ehVisitante || confirm(mensagem)) {
         localStorage.removeItem("oms_operador_v32_local");
         window.location.reload();
     }
