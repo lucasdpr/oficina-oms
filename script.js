@@ -214,6 +214,26 @@ window.alternarVisibilidadeSenha = function() {
 };
 
 // ==========================================
+// FETCH COM RETRY AUTOMÁTICO (pro banco "acordar" sem assustar o usuário)
+// ==========================================
+// Usado só em pontos críticos (login) onde um timeout de conexão (banco
+// Neon "acordando" de um autosuspend) não deve virar erro na cara do
+// colaborador. Tenta de novo automaticamente antes de desistir de vez.
+// Não mexe em erros de credencial (401/404) — esses vêm com resposta
+// normal do servidor, não caem aqui.
+async function fetchComRetry(url, opcoes, tentativas = 2, esperaMs = 2500) {
+    for (let i = 0; i <= tentativas; i++) {
+        try {
+            return await fetch(url, opcoes);
+        } catch (e) {
+            if (i === tentativas) throw e; // acabaram as tentativas, propaga o erro
+            console.warn(`⚠️ Falha de conexão (tentativa ${i + 1}/${tentativas + 1}). Tentando de novo em ${esperaMs / 1000}s...`);
+            await new Promise(resolve => setTimeout(resolve, esperaMs));
+        }
+    }
+}
+
+// ==========================================
 // AUTENTICAÇÃO E NAVEGAÇÃO
 // ==========================================
 async function processarAutenticacaoHome() {
@@ -239,11 +259,24 @@ async function processarAutenticacaoHome() {
         }
 
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/colaboradores/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ matricula: matriculaUpper, senha: senhaInput })
-        });
+
+        // Se demorar mais que ~4s, é provável que o banco esteja
+        // "acordando" — avisa o colaborador em vez de deixar ele achando
+        // que travou.
+        const avisoLento = setTimeout(() => {
+            if (btnEntrar) btnEntrar.innerText = "Conectando ao banco, aguarde...";
+        }, 4000);
+
+        let resp;
+        try {
+            resp = await fetchComRetry(`${apiBase}/api/colaboradores/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ matricula: matriculaUpper, senha: senhaInput })
+            });
+        } finally {
+            clearTimeout(avisoLento);
+        }
 
         const resultado = await resp.json().catch(() => ({}));
 
@@ -260,7 +293,7 @@ async function processarAutenticacaoHome() {
         finalizarLogin(resultado.nome, resultado.cargo, matriculaUpper);
     } catch (e) {
         console.error("Erro no login:", e);
-        alert("Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.");
+        alert("Não foi possível conectar ao servidor mesmo após tentar novamente. Verifique sua internet e tente mais uma vez em alguns segundos.");
     } finally {
         if (btnEntrar) { btnEntrar.disabled = false; btnEntrar.innerText = "Autenticar Terminal"; }
     }
