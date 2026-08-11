@@ -21,7 +21,7 @@ import {
     sincronizarHidraulicaReal,
     salvarAjusteHidraulicaNoPython,
     resolverApiBase
-} from './banco.js?v=3';
+} from './banco.js?v=4';
 // ==========================================================================
 // BANCO DE DADOS CORE - SISTEMA OMS
 // ==========================================================================
@@ -227,12 +227,27 @@ window.alternarVisibilidadeSenha = function() {
 //    novo automaticamente antes de desistir de vez — dando tempo do
 //    banco terminar de acordar.
 async function fetchComRetry(url, opcoes = {}, tentativas = 4, esperaMs = 4000, timeoutMs = 30000) {
+    let ultimaResposta = null;
     for (let i = 0; i <= tentativas; i++) {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), timeoutMs);
         try {
             const resp = await fetch(url, { ...opcoes, signal: controller.signal });
             clearTimeout(timer);
+            // 🔧 CORREÇÃO: um erro 500 (ex: conexão "zumbi" no pool do
+            // Python logo após o Neon suspender sozinho, mesmo com o
+            // Render já acordado — outro celular tinha acabado de
+            // acessar) chegava aqui como resposta válida e NUNCA era
+            // tentado de novo. Era por isso que às vezes o login ou um
+            // apontamento falhava na primeira tentativa e só funcionava
+            // se o usuário fechasse e abrisse o app de novo. Agora 5xx
+            // também entra no retry, igual timeout/erro de rede.
+            if (resp.status >= 500 && i < tentativas) {
+                ultimaResposta = resp;
+                console.warn(`⚠️ Servidor respondeu ${resp.status} (tentativa ${i + 1}/${tentativas + 1}). Tentando de novo em ${esperaMs / 1000}s...`);
+                await new Promise(resolve => setTimeout(resolve, esperaMs));
+                continue;
+            }
             return resp;
         } catch (e) {
             clearTimeout(timer);
@@ -241,6 +256,7 @@ async function fetchComRetry(url, opcoes = {}, tentativas = 4, esperaMs = 4000, 
             await new Promise(resolve => setTimeout(resolve, esperaMs));
         }
     }
+    return ultimaResposta;
 }
 
 // ==========================================
@@ -367,7 +383,7 @@ async function fluxoDefinirNovaSenha(matricula, senhaAtual, nome, cargo) {
 // ==========================================
 // FINALIZA O LOGIN (comum a dev, colaborador e primeiro acesso)
 // ==========================================
-function finalizarLogin(nome, cargo, matricula) {
+async function finalizarLogin(nome, cargo, matricula) {
     OPERADOR_LOGADO = { matricula: matricula, nome: `${nome} [${cargo}]` };
     localStorage.setItem("oms_operador_v32_local", JSON.stringify(OPERADOR_LOGADO));
 
@@ -376,6 +392,20 @@ function finalizarLogin(nome, cargo, matricula) {
 
     if (typeof atualizarInterfaceUsuario === 'function') atualizarInterfaceUsuario();
     if (typeof registrarHistorico === 'function') registrarHistorico("AUTENTICAÇÃO", `Login executado com sucesso.`);
+
+    // 🔧 CORREÇÃO ("encerra o turno, loga de novo, continua com os dados
+    // vazios/velhos até fechar e abrir o app"): antes, a sincronização com
+    // o banco só rodava UMA vez, no carregamento da página (antes até do
+    // login acontecer). Se ela falhasse nesse instante (servidor ainda
+    // acordando), nada nunca mandava tentar de novo — nem fazer login,
+    // nem encerrar turno e logar de novo, só um recarregamento completo
+    // da página dava outra chance. Como o login que acabou de dar certo
+    // já prova que o servidor está de pé, este é o melhor momento pra dar
+    // mais uma tentativa real de sincronizar tudo, antes de desenhar a tela.
+    if (typeof window.carregarAtivosDoPython === 'function') await window.carregarAtivosDoPython();
+    if (typeof sincronizarRolosReais === 'function') await sincronizarRolosReais();
+    if (typeof sincronizarHidraulicaReal === 'function') await sincronizarHidraulicaReal();
+
     if (typeof calcularKpisGlobais === 'function') calcularKpisGlobais();
     if (typeof renderPainelVeios === 'function') renderPainelVeios();
     if (typeof renderAtivos === 'function') renderAtivos();
@@ -434,7 +464,7 @@ window.confirmarAcessoVisitante = function() {
 // "Visitante" genérico, sem dar pra saber quem realmente acessou). O
 // nome fica registrado no histórico de autenticação e aparece no lugar
 // de "Colaborador" no menu lateral.
-function entrarComoVisitante(nomeDigitado) {
+async function entrarComoVisitante(nomeDigitado) {
     const nome = (nomeDigitado || "Visitante").trim();
     OPERADOR_LOGADO = { matricula: null, nome: nome, visitante: true };
     localStorage.setItem("oms_operador_v32_local", JSON.stringify(OPERADOR_LOGADO));
@@ -444,6 +474,14 @@ function entrarComoVisitante(nomeDigitado) {
 
     if (typeof atualizarInterfaceUsuario === 'function') atualizarInterfaceUsuario();
     if (typeof registrarHistorico === 'function') registrarHistorico("AUTENTICAÇÃO", `Acesso em Modo Visitante (somente leitura) — ${nome}.`);
+
+    // 🔧 Mesma correção do login normal: força uma sincronização real
+    // com o backend antes de desenhar a tela, em vez de só reaproveitar
+    // o que já estava (ou não estava) carregado.
+    if (typeof window.carregarAtivosDoPython === 'function') await window.carregarAtivosDoPython();
+    if (typeof sincronizarRolosReais === 'function') await sincronizarRolosReais();
+    if (typeof sincronizarHidraulicaReal === 'function') await sincronizarHidraulicaReal();
+
     if (typeof calcularKpisGlobais === 'function') calcularKpisGlobais();
     if (typeof renderPainelVeios === 'function') renderPainelVeios();
     if (typeof renderAtivos === 'function') renderAtivos();
@@ -742,6 +780,16 @@ function atualizarInterfaceUsuario() {
     renderHistorico();
     ativarPainelDevSeAutorizado();
 }
+// 🔧 CORREÇÃO ("some o nome/matrícula/cargo, fica só '...' quando reabre o
+// app já logado"): esta função só era chamada dentro do próprio script.js
+// (como identificador puro, funciona certo lá). Mas o bloco de "restaurar
+// sessão salva" no app.html é um <script type="module"> SEPARADO, que só
+// enxerga isso através de window.* — e como window.atualizarInterfaceUsuario
+// nunca existia, aquele "if (window.atualizarInterfaceUsuario) ..." era
+// sempre falso e a função nunca rodava nesse caminho. O nome/matrícula/cargo
+// ficavam parados no placeholder "..." do HTML (só apareciam certinho no
+// login normal, que chama a função direto, sem passar por window).
+window.atualizarInterfaceUsuario = atualizarInterfaceUsuario;
 
 function calcularKpisGlobais() {
     let criticos = 0, reparo = 0, reserva = 0;
