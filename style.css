@@ -2113,6 +2113,13 @@ h1, h2, h3, h4, h5, h6 {
     transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 5px 0 30px rgba(0, 0, 0, 0.4);
     padding: 20px 16px;
+    /* 🔧 CORREÇÃO: sem isso, o menu lateral no mobile tinha altura fixa
+       (100vh) mas nenhuma rolagem — conforme o menu foi crescendo
+       (Painel do Técnico, Teste de Folhões, etc.), os itens do final
+       da lista ficavam cortados fora da tela, sem nenhum jeito de
+       chegar neles (existiam no HTML, só não apareciam visualmente). */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .sidebar.open {

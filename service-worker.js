@@ -11,7 +11,7 @@
 // usando a copia antiga guardada em cache.
 // ==============================================================
 
-const CACHE_VERSION = "oms-v2";
+const CACHE_VERSION = "oms-v4";
 
 // Arquivos baixados e guardados assim que o app é instalado.
 // (não inclui chamadas de API - essas nunca ficam em cache)
@@ -61,6 +61,10 @@ self.addEventListener("install", (event) => {
             );
         })
     );
+    // 🔧 Força o novo service worker a assumir imediatamente, sem
+    // esperar todas as abas antigas fecharem. Combinado com o
+    // clients.claim() no activate, isso reduz o atraso entre o deploy
+    // e o celular realmente passar a usar a versão nova.
     self.skipWaiting();
 });
 
@@ -75,9 +79,8 @@ self.addEventListener("activate", (event) => {
                     .filter((nome) => nome !== CACHE_VERSION)
                     .map((nome) => caches.delete(nome))
             )
-        )
+        ).then(() => self.clients.claim())
     );
-    self.clients.claim();
 });
 
 // --------------------------------------------------------------
@@ -91,7 +94,19 @@ self.addEventListener("fetch", (event) => {
     const url = new URL(event.request.url);
 
     // Só cuida de requisições do próprio site (GET). Chamadas de API
-    // de outro domínio (ex: api.seusite.onrender.com) passam direto.
+    // de outro domínio (ex: api.seusite.onrender.com) e a checagem de
+    // servidor local (localhost:8000, feita pelo resolverApiBase() no
+    // banco.js) passam direto pro navegador, sem o service worker
+    // interceptar nada. 🔧 CORREÇÃO: antes, mesmo essas chamadas de
+    // outra origem passavam pelo respondWith() abaixo; quando a
+    // checagem de localhost:8000 falhava (o normal, fora do seu PC) e
+    // caía no .catch() -> caches.match(), esse cache nunca teria essa
+    // URL guardada, e devolver "undefined" pro respondWith() gerava o
+    // erro "Failed to convert value to 'Response'" no console — sem
+    // quebrar o app de verdade, mas sujando o log e mascarando erros
+    // reais. Ignorar tudo que não é do mesmo domínio resolve os dois
+    // problemas de uma vez.
+    if (url.origin !== self.location.origin) return;
     if (event.request.method !== "GET") return;
 
     if (url.pathname.startsWith("/api/")) {
@@ -101,7 +116,7 @@ self.addEventListener("fetch", (event) => {
     }
 
     event.respondWith(
-        fetch(event.request)
+        fetch(event.request, { cache: "no-store" })
             .then((resposta) => {
                 // Atualiza o cache com a versão mais nova sempre que
                 // conseguir buscar na rede.
