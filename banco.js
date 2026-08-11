@@ -26,10 +26,33 @@ const API_PLANILHA_URL = "https://script.google.com/macros/s/AKfycby_XSR5hrrvOgD
 const URL_LOCAL = "http://localhost:8000";
 const URL_RENDER = "https://api-oms-csn.onrender.com";
 
-function fetchComTimeout(url, opts = {}, ms = 1500) {
+export function fetchComTimeout(url, opts = {}, ms = 1500) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), ms);
     return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
+// ==========================================================================
+// FETCH DE DADOS COM TIMEOUT + RETRY (pro banco "acordar" sem travar a tela)
+// ==========================================================================
+// Diferente do fetchComTimeout acima (usado só pra testar se o servidor
+// local existe, com timeout curto de 1,5s), esta função é usada em TODAS
+// as chamadas que buscam/enviam dados reais pro Neon. Sem um timeout aqui,
+// se o banco estiver "acordando" de um autosuspend (ou a conexão cair no
+// meio do caminho), o fetch podia ficar pendurado pra sempre — travando a
+// tela em "carregando" eternamente, mesmo o app tendo entrado com sucesso.
+// Agora: espera até 20s por tentativa: se estourar, tenta mais 1 vez (dando
+// tempo do banco terminar de acordar) antes de desistir de vez.
+export async function fetchDadosComTimeout(url, opts = {}, { tentativas = 1, timeoutMs = 20000, esperaMs = 3000 } = {}) {
+    for (let i = 0; i <= tentativas; i++) {
+        try {
+            return await fetchComTimeout(url, opts, timeoutMs);
+        } catch (e) {
+            if (i === tentativas) throw e;
+            console.warn(`⚠️ Timeout/erro de conexão (tentativa ${i + 1}/${tentativas + 1}). Tentando de novo em ${esperaMs / 1000}s...`);
+            await new Promise(resolve => setTimeout(resolve, esperaMs));
+        }
+    }
 }
 
 let apiBaseResolvida = null;
@@ -285,7 +308,7 @@ function gerarPosicaoFixa(idSistema, tipoCanonico, contadorGrupoPorVeio, veio) {
 export async function sincronizarAtivosReaisMCC4() {
     try {
         const apiBase = await resolverApiBase();
-        const resposta = await fetch(`${apiBase}/api/pecas`);
+        const resposta = await fetchDadosComTimeout(`${apiBase}/api/pecas`, {}, { tentativas: 1 });
 
         if (!resposta.ok) {
             throw new Error(`API respondeu com status ${resposta.status}`);
@@ -371,7 +394,7 @@ export async function sincronizarAtivosReaisMCC4() {
 export async function salvarPecaNoPython(peca) {
     try {
         const apiBase = await resolverApiBase();
-        const resposta = await fetch(`${apiBase}/api/atualizar_peca`, {
+        const resposta = await fetchDadosComTimeout(`${apiBase}/api/atualizar_peca`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -395,7 +418,7 @@ export async function salvarPecaNoPython(peca) {
                 data_entrada: peca.data_entrada || null,
                 observacao: peca.observacao ?? null
             })
-        });
+        }, { tentativas: 1 });
 
         const resultado = await resposta.json();
 
@@ -422,7 +445,7 @@ export async function salvarPecaNoPython(peca) {
 export async function salvarHistoricoNoPython(evento) {
     try {
         const apiBase = await resolverApiBase();
-        const resposta = await fetch(`${apiBase}/api/registrar_evento`, {
+        const resposta = await fetchDadosComTimeout(`${apiBase}/api/registrar_evento`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -430,7 +453,7 @@ export async function salvarHistoricoNoPython(evento) {
                 acao: evento.acao || "",
                 operador: evento.responsavel || "Sistema"
             })
-        });
+        }, { tentativas: 1 });
 
         const resultado = await resposta.json();
 
@@ -448,7 +471,7 @@ export async function salvarHistoricoNoPython(evento) {
 export async function sincronizarRolosReais() {
     try {
         const apiBase = await resolverApiBase();
-        const resposta = await fetch(`${apiBase}/api/rolos`);
+        const resposta = await fetchDadosComTimeout(`${apiBase}/api/rolos`, {}, { tentativas: 1 });
         if (!resposta.ok) throw new Error(`API respondeu com status ${resposta.status}`);
 
         const rolosApi = await resposta.json();
@@ -475,11 +498,11 @@ export async function sincronizarRolosReais() {
 export async function salvarAjusteRoloNoPython(id, fator) {
     try {
         const apiBase = await resolverApiBase();
-        const resposta = await fetch(`${apiBase}/api/rolos/ajustar`, {
+        const resposta = await fetchDadosComTimeout(`${apiBase}/api/rolos/ajustar`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ id, fator })
-        });
+        }, { tentativas: 1 });
         const resultado = await resposta.json().catch(() => ({}));
         if (!resposta.ok || !resultado.sucesso) {
             throw new Error(resultado.detail || `HTTP ${resposta.status}`);
@@ -497,7 +520,7 @@ export async function salvarAjusteRoloNoPython(id, fator) {
 export async function sincronizarHidraulicaReal() {
     try {
         const apiBase = await resolverApiBase();
-        const resposta = await fetch(`${apiBase}/api/hidraulica`);
+        const resposta = await fetchDadosComTimeout(`${apiBase}/api/hidraulica`, {}, { tentativas: 1 });
         if (!resposta.ok) throw new Error(`API respondeu com status ${resposta.status}`);
 
         const hidraulicaApi = await resposta.json();
@@ -525,11 +548,11 @@ export async function sincronizarHidraulicaReal() {
 export async function salvarAjusteHidraulicaNoPython(id, local, fator) {
     try {
         const apiBase = await resolverApiBase();
-        const resposta = await fetch(`${apiBase}/api/hidraulica/ajustar`, {
+        const resposta = await fetchDadosComTimeout(`${apiBase}/api/hidraulica/ajustar`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ id, local, fator })
-        });
+        }, { tentativas: 1 });
         const resultado = await resposta.json().catch(() => ({}));
         if (!resposta.ok || !resultado.sucesso) {
             throw new Error(resultado.detail || `HTTP ${resposta.status}`);

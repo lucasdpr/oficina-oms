@@ -216,18 +216,28 @@ window.alternarVisibilidadeSenha = function() {
 // ==========================================
 // FETCH COM RETRY AUTOMÁTICO (pro banco "acordar" sem assustar o usuário)
 // ==========================================
-// Usado só em pontos críticos (login) onde um timeout de conexão (banco
-// Neon "acordando" de um autosuspend) não deve virar erro na cara do
-// colaborador. Tenta de novo automaticamente antes de desistir de vez.
-// Não mexe em erros de credencial (401/404) — esses vêm com resposta
-// normal do servidor, não caem aqui.
-async function fetchComRetry(url, opcoes, tentativas = 2, esperaMs = 2500) {
+// Usado em todas as chamadas de API que buscam/enviam dados reais.
+// Tem DUAS proteções:
+// 1) timeoutMs: se o servidor não responder dentro desse prazo (banco
+//    Neon "acordando" de um autosuspend, ou conexão travada), a chamada
+//    é abortada sozinha — sem isso, um fetch() puro podia ficar
+//    pendurado PRA SEMPRE, travando a tela em "carregando" eternamente
+//    mesmo com o app já tendo aberto.
+// 2) tentativas: se abortar por timeout (ou cair a conexão), tenta de
+//    novo automaticamente antes de desistir de vez — dando tempo do
+//    banco terminar de acordar.
+async function fetchComRetry(url, opcoes = {}, tentativas = 1, esperaMs = 3000, timeoutMs = 20000) {
     for (let i = 0; i <= tentativas; i++) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
         try {
-            return await fetch(url, opcoes);
+            const resp = await fetch(url, { ...opcoes, signal: controller.signal });
+            clearTimeout(timer);
+            return resp;
         } catch (e) {
+            clearTimeout(timer);
             if (i === tentativas) throw e; // acabaram as tentativas, propaga o erro
-            console.warn(`⚠️ Falha de conexão (tentativa ${i + 1}/${tentativas + 1}). Tentando de novo em ${esperaMs / 1000}s...`);
+            console.warn(`⚠️ Falha/timeout de conexão (tentativa ${i + 1}/${tentativas + 1}). Tentando de novo em ${esperaMs / 1000}s...`);
             await new Promise(resolve => setTimeout(resolve, esperaMs));
         }
     }
@@ -323,7 +333,7 @@ async function fluxoDefinirNovaSenha(matricula, senhaAtual, nome, cargo) {
 
         try {
             const apiBase = await resolverApiBase();
-            const resp = await fetch(`${apiBase}/api/colaboradores/definir_senha`, {
+            const resp = await fetchComRetry(`${apiBase}/api/colaboradores/definir_senha`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ matricula, senha_atual: senhaAtual, nova_senha: novaSenha })
@@ -2227,7 +2237,7 @@ function toggleFormMaterial() {
 async function carregarMateriaisDoBackend() {
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/materiais`);
+        const resp = await fetchComRetry(`${apiBase}/api/materiais`);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         BANCO_MATERIAIS = await resp.json();
         renderMateriais();
@@ -2248,7 +2258,7 @@ async function salvarEntradaMaterial() {
 
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/materiais/cadastrar`, {
+        const resp = await fetchComRetry(`${apiBase}/api/materiais/cadastrar`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ codigo, descricao, qtd })
@@ -2282,7 +2292,7 @@ async function ajustarSaldoMaterial(codigo, fator) {
     if (!verificarAcesso()) return;
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/materiais/ajustar`, {
+        const resp = await fetchComRetry(`${apiBase}/api/materiais/ajustar`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ codigo, fator })
@@ -2307,7 +2317,7 @@ async function removerMaterial(codigo) {
 
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/materiais/remover`, {
+        const resp = await fetchComRetry(`${apiBase}/api/materiais/remover`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ codigo })
@@ -3091,7 +3101,7 @@ window.processarProducaoDiaria = async function() {
 
     try {
         const apiBase = await resolverApiBase();
-        const resposta = await fetch(`${apiBase}/api/apontar_producao_geral`, {
+        const resposta = await fetchComRetry(`${apiBase}/api/apontar_producao_geral`, {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ mcc2: prodMcc2, mcc3: prodMcc3, mcc4: prodMcc4, operador: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Sistema" })
         });
@@ -3139,7 +3149,7 @@ window.salvarApontamentoMoldes = async function(event) {
 
     try {
         const apiBase = await resolverApiBase();
-        const resposta = await fetch(`${apiBase}/api/apontar_moldes`, {
+        const resposta = await fetchComRetry(`${apiBase}/api/apontar_moldes`, {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ qtd_mcc2: m2, qtd_mcc3: m3, qtd_mcc4: m4, operador: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Desconhecido" })
         });
@@ -3162,7 +3172,7 @@ window.salvarApontamentoMoldes = async function(event) {
 window.carregarHistoricoApontamentoGeral = async function() {
     try {
         const apiBase = await resolverApiBase();
-        const res = await fetch(`${apiBase}/api/historico_apontamentos_geral`);
+        const res = await fetchComRetry(`${apiBase}/api/historico_apontamentos_geral`);
         const json = await res.json();
         const tbody = document.getElementById("tabela-historico-geral");
         if (!tbody) return;
@@ -3185,7 +3195,7 @@ window.carregarHistoricoApontamentoGeral = async function() {
 window.carregarHistoricoApontamentoMoldes = async function() {
     try {
         const apiBase = await resolverApiBase();
-        const res = await fetch(`${apiBase}/api/historico_apontamentos_moldes`);
+        const res = await fetchComRetry(`${apiBase}/api/historico_apontamentos_moldes`);
         const json = await res.json();
         const tbody = document.getElementById("tabela-historico-moldes");
         if (!tbody) return;
@@ -3209,7 +3219,7 @@ window.desfazerApontamentoGeral = async function(id_log) {
     if (!confirm("Tem certeza? A tonelagem será RETIRADA de todas as peças instaladas.")) return;
     try {
         const apiBase = await resolverApiBase();
-        const res = await fetch(`${apiBase}/api/desfazer_apontamento_geral`, {
+        const res = await fetchComRetry(`${apiBase}/api/desfazer_apontamento_geral`, {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ log_id: id_log, operador: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Desconhecido" })
         });
@@ -3231,7 +3241,7 @@ window.desfazerApontamentoMolde = async function(id_log) {
     if (!confirm("Tem certeza? As corridas serão RETIRADAS dos moldes na linha.")) return;
     try {
         const apiBase = await resolverApiBase();
-        const res = await fetch(`${apiBase}/api/desfazer_apontamento_moldes`, {
+        const res = await fetchComRetry(`${apiBase}/api/desfazer_apontamento_moldes`, {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ log_id: id_log, operador: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Desconhecido" })
         });
