@@ -53,14 +53,22 @@ function getOrdemPadrao(tipo) {
 }
 
 // ==============================================================
-// FUNÇÃO GLOBAL DE CÁLCULO DE DIAS EM REPARO
+// FUNÇÃO GLOBAL DE CÁLCULO DE DIAS (em reparo OU no veio/máquina)
 // ==============================================================
+// 🔧 CORREÇÃO: antes, "dias" era um número estático que só mudava se
+// alguém editasse manualmente. Agora, todo equipamento instalado num
+// veio guarda "dataEntradaVeio" (timestamp de quando entrou na
+// máquina), e os dias são sempre calculados na hora, a partir dessa
+// data — por isso passam a subir sozinhos, dia após dia, sem precisar
+// de nenhuma ação manual. O mesmo já valia pra dias em reparo
+// (dataReparo); agora os dois casos usam a mesma lógica central.
 window.calcularDias = function(item) {
+    const agora = Date.now();
     if (item.local === "Oficina / Reparo" && item.dataReparo) {
-        const agora = Date.now();
-        const diffMs = agora - item.dataReparo;
-        const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        return diffDias;
+        return Math.floor((agora - item.dataReparo) / (1000 * 60 * 60 * 24));
+    }
+    if (item.dataEntradaVeio && item.local && !item.local.includes("Oficina")) {
+        return Math.floor((agora - item.dataEntradaVeio) / (1000 * 60 * 60 * 24));
     }
     return item.dias || 0;
 };
@@ -117,6 +125,28 @@ if (!BANCO_ROLOS) {
         { id: "R-FR23", nome: "Foot Roll", conjunto: "Molde", mcc_compat: "2/3", qtd: 4 }
     ];
     localStorage.setItem("oms_rolos_v32_local", JSON.stringify(BANCO_ROLOS));
+}
+
+// ==========================================================================
+// ESTOQUE HIDRÁULICO (fica logo abaixo de Estoque de Rolos no menu)
+// ==========================================================================
+let BANCO_HIDRAULICA = JSON.parse(localStorage.getItem("oms_hidraulica_v32_local"));
+if (!BANCO_HIDRAULICA) {
+    BANCO_HIDRAULICA = [
+        // ---- MCC 2/3 ----
+        { id: "H-PGH12", nome: "Porca Hidráulica Grupo 1,2", conjunto: "Grupo 1,2", mcc_compat: "2/3", qtd: 0 },
+        { id: "H-PGH3", nome: "Porca Hidráulica Grupo 3", conjunto: "Grupo 3", mcc_compat: "2/3", qtd: 0 },
+        { id: "H-CIL-G1", nome: "Cilindro de Grupo 1", conjunto: "Grupo 1", mcc_compat: "2/3", qtd: 0 },
+        { id: "H-CIL-G2", nome: "Cilindro de Grupo 2", conjunto: "Grupo 2", mcc_compat: "2/3", qtd: 0 },
+        { id: "H-CIL-G3", nome: "Cilindro de Grupo 3", conjunto: "Grupo 3", mcc_compat: "2/3", qtd: 0 },
+        { id: "H-DESEMP", nome: "Desempenadeira Cadeira", conjunto: "Cadeira", mcc_compat: "2/3", qtd: 0 },
+        // ---- MCC 4 ----
+        { id: "H-CIL-ELEV4", nome: "Cilindro de Elevação de Estrutura", conjunto: "Estrutura", mcc_compat: "4", qtd: 0 },
+        { id: "H-CIL-PUX4", nome: "Cilindro Puxador", conjunto: "Puxador", mcc_compat: "4", qtd: 0 },
+        { id: "H-PH-BOW", nome: "Porca Hidráulica Bow", conjunto: "Bow", mcc_compat: "4", qtd: 0 },
+        { id: "H-PH-HOR", nome: "Porca Hidráulica Horizontal", conjunto: "Horizontal", mcc_compat: "4", qtd: 0 }
+    ];
+    localStorage.setItem("oms_hidraulica_v32_local", JSON.stringify(BANCO_HIDRAULICA));
 }
 
 // ==========================================
@@ -359,6 +389,7 @@ function abrirAba(event, idAba) {
     if (idAba === "aba-reparos") renderReparos();
     if (idAba === "aba-reservas") renderReservas();
     if (idAba === "aba-rolos") renderRolos();
+    if (idAba === "aba-hidraulica") renderHidraulica();
     if (idAba === "aba-almoxarifado") carregarMateriaisDoBackend();
     if (idAba === "aba-historico") renderHistorico();
     if (idAba === "aba-painel") {
@@ -502,6 +533,7 @@ const MATRICULAS_TESTE_FOLHOES = ["CBK3574", "CSP1869"];
 
 function ativarPainelDevSeAutorizado() {
     const link = document.getElementById("nav-dev-teste");
+    const divisor = document.getElementById("nav-divider-dev");
     if (!link) return;
 
     const matricula = (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula || "").toUpperCase();
@@ -509,9 +541,11 @@ function ativarPainelDevSeAutorizado() {
 
     if (autorizado) {
         link.classList.remove("hidden");
+        if (divisor) divisor.classList.remove("hidden");
         renderPainelDevTeste();
     } else {
         link.classList.add("hidden");
+        if (divisor) divisor.classList.add("hidden");
         const corpo = document.getElementById("dev-teste-table-body");
         if (corpo) corpo.innerHTML = ""; // garante que não sobra nada renderizado de uma sessão anterior
     }
@@ -602,10 +636,39 @@ function calcularKpisGlobais() {
         }
     });
 
-    document.getElementById("kpi-criticos").innerText = criticos;
-    document.getElementById("kpi-reparo").innerText = reparo;
-    document.getElementById("kpi-reserva").innerText = reserva;
+    animarNumero("kpi-criticos", criticos);
+    animarNumero("kpi-reparo", reparo);
+    animarNumero("kpi-reserva", reserva);
 }
+
+// ==========================================
+// ANIMAÇÃO DE CONTAGEM NOS NÚMEROS DOS KPIs
+// ==========================================
+function animarNumero(elId, valorFinal, duracaoMs = 650) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const valorInicial = parseInt(el.dataset.valorAtual || el.innerText, 10) || 0;
+    if (valorInicial === valorFinal) {
+        el.innerText = valorFinal;
+        el.dataset.valorAtual = valorFinal;
+        return;
+    }
+    const inicio = performance.now();
+    function passo(agora) {
+        const progresso = Math.min((agora - inicio) / duracaoMs, 1);
+        const facilitado = 1 - Math.pow(1 - progresso, 3); // ease-out cúbico
+        const valorAtual = Math.round(valorInicial + (valorFinal - valorInicial) * facilitado);
+        el.innerText = valorAtual;
+        if (progresso < 1) {
+            requestAnimationFrame(passo);
+        } else {
+            el.innerText = valorFinal;
+            el.dataset.valorAtual = valorFinal;
+        }
+    }
+    requestAnimationFrame(passo);
+}
+window.animarNumero = animarNumero;
 
 // ==========================================
 // CONFIGURAÇÕES DAS MÁQUINAS
@@ -915,7 +978,7 @@ function gerarCardGraficoHTML(a) {
     const pct = a.meta > 0 ? ((a.ton / a.meta) * 100) : 0;
     const pctFixed = pct.toFixed(1);
     let cor = pct >= 80 ? "var(--danger)" : (pct >= 50 ? "var(--warning)" : "var(--success)");
-    const dias = a.dias || 0;
+    const dias = calcularDias(a);
 
     return `
         <div class="mcc-grafico-card premium-shadow" style="border-top: 3px solid ${cor};">
@@ -948,6 +1011,23 @@ function renderAtivos() {
     const tbody = document.getElementById("ativos-table-body");
     const filtroEl = document.getElementById("filtro-tipo-ativo");
     if (!tbody || !filtroEl) return;
+
+    // 🔧 MIGRAÇÃO: equipamentos que já estavam instalados num veio antes
+    // dessa atualização não tinham "dataEntradaVeio". Pra não zerar a
+    // contagem de dias deles, plantamos a data retroativa com base no
+    // valor de "dias" que já existia — a partir daqui, o contador passa
+    // a andar sozinho, todo santo dia, sem precisar editar nada.
+    let precisaSalvarMigracao = false;
+    BANCO_ATIVOS.forEach(a => {
+        if (a.local && a.local.includes("Veio") && !a.local.includes("Oficina") && !a.dataEntradaVeio) {
+            const diasAtuais = a.dias || 0;
+            a.dataEntradaVeio = Date.now() - (diasAtuais * 24 * 60 * 60 * 1000);
+            precisaSalvarMigracao = true;
+        }
+    });
+    if (precisaSalvarMigracao) {
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    }
 
     let f = BANCO_ATIVOS.filter(a => (a.local || "").includes(`Veio ${VEIO_SELECIONADO_PAINEL}`) || filtroEl.value.includes("Oficina"));
     
@@ -993,7 +1073,7 @@ function renderAtivos() {
                 <td class="editavel font-code" onclick="fazerCelulaEditavel(this, '${a.id}', 'id')">${a.id}</td>
                 <td><span class="ind-card-tag bg-tag">${a.tipo} <span style="opacity:0.7; font-size:10px;">(MCC ${a.mcc_compat || ''})</span></span></td>
                 <td class="font-code text-muted">${a.local || "Não Alocado"}</td>
-                <td class="editavel font-code" onclick="fazerCelulaEditavel(this, '${a.id}', 'dias')">${a.dias || 0}</td>
+                <td class="editavel font-code" onclick="fazerCelulaEditavel(this, '${a.id}', 'dias')">${calcularDias(a)}</td>
                 <td class="editavel font-code" onclick="fazerCelulaEditavel(this, '${a.id}', 'ton')">${Math.round(a.ton || 0).toLocaleString()}</td>
                 <td class="font-code text-muted">${(a.meta || 0).toLocaleString()}</td>
                 <td><span class="status-pill ${classe}">${pctFixed}%</span></td>
@@ -1066,8 +1146,7 @@ function renderReparos() {
             lista.forEach(a => {
                 const pct = a.meta > 0 ? ((a.ton / a.meta) * 100) : 0;
                 const pctFixed = pct.toFixed(1);
-                const dias = a.dias || 0;
-                const btnExcluir = `<button class="btn-outline-danger" style="border-color:var(--danger); color:var(--danger); padding: 4px 8px;" onclick="excluirEquipamento('${a.id}')" title="Excluir"><i class="fas fa-trash"></i></button>`;
+                const dias = calcularDias(a);
                 htmlFinal += `
                     <tr>
                         <td class="font-code" style="padding-left: 45px;">${a.id}</td>
@@ -1154,11 +1233,61 @@ function abrirHistoricoIndividual(id) {
     const tagNome = document.getElementById("hist-tag-nome");
     const tagLocal = document.getElementById("hist-tag-local");
     if (tagNome) tagNome.innerText = item.id;
-    if (tagLocal) tagLocal.innerText = item.local;
-    
+    if (tagLocal) tagLocal.innerText = item.local || "Não alocado";
+
+    renderizarResumoHistoricoIndividual(item);
     renderizarTabelaHistoricoIndividual(id);
     const modal = document.getElementById("modal-historico-ativo");
     if (modal) modal.classList.remove("hidden");
+}
+
+// ==============================================================
+// RESUMO RÁPIDO DO PRONTUÁRIO (entrada atual, dias, folhões feitos)
+// ==============================================================
+function renderizarResumoHistoricoIndividual(item) {
+    const container = document.getElementById("hist-resumo-cards");
+    if (!container) return;
+
+    const formatarData = (ts) => ts ? new Date(ts).toLocaleDateString('pt-BR') : "--";
+
+    let cardEntrada, cardDias, iconeDias, corDias;
+
+    if (item.local === "Oficina / Reparo" && item.dataReparo) {
+        cardEntrada = formatarData(item.dataReparo);
+        iconeDias = "fa-tools";
+        corDias = "#ef4444";
+    } else if (item.dataEntradaVeio && item.local && !item.local.includes("Oficina")) {
+        cardEntrada = formatarData(item.dataEntradaVeio);
+        iconeDias = "fa-industry";
+        corDias = "#22c55e";
+    } else {
+        cardEntrada = "--";
+        iconeDias = "fa-question";
+        corDias = "var(--text-muted)";
+    }
+
+    const dias = typeof calcularDias === 'function' ? calcularDias(item) : (item.dias || 0);
+    const statusLabel = item.local === "Oficina / Reparo" ? "Dias em Reparo" : "Dias na Máquina";
+
+    // Conta quantos folhões (laudos de manutenção) já foram feitos nesse
+    // equipamento, olhando o histórico global por menções de finalização.
+    const historicoItem = HISTORICO_ACOES.filter(h => h.tag === item.id);
+    const folhoesFeitos = historicoItem.filter(h => (h.acao || "").toLowerCase().includes("folhão") || (h.acao || "").toLowerCase().includes("laudo")).length;
+
+    container.innerHTML = `
+        <div class="kpi-card" style="border-top:3px solid ${corDias};">
+            <div class="kpi-icon" style="color:${corDias}; border-color:${corDias}33;"><i class="fas ${iconeDias}"></i></div>
+            <div class="kpi-data"><h4 style="font-size:1.3rem;">${cardEntrada}</h4><p>Data de Entrada Atual</p></div>
+        </div>
+        <div class="kpi-card" style="border-top:3px solid ${corDias};">
+            <div class="kpi-icon" style="color:${corDias}; border-color:${corDias}33;"><i class="fas fa-calendar-day"></i></div>
+            <div class="kpi-data"><h4 style="font-size:1.3rem;">${dias}</h4><p>${statusLabel}</p></div>
+        </div>
+        <div class="kpi-card" style="border-top:3px solid var(--primary);">
+            <div class="kpi-icon" style="color:var(--primary); border-color:rgba(56,189,248,0.2);"><i class="fas fa-clipboard-check"></i></div>
+            <div class="kpi-data"><h4 style="font-size:1.3rem;">${folhoesFeitos}</h4><p>Folhões Concluídos</p></div>
+        </div>
+    `;
 }
 
 function fecharModalHistorico() {
@@ -1172,17 +1301,29 @@ function renderizarTabelaHistoricoIndividual(id) {
     let historicoFiltrado = HISTORICO_ACOES.filter(h => h.tag === id || h.acao.includes(id));
 
     if (historicoFiltrado.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">Nenhum evento registrado.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">Nenhum evento registrado ainda.</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = historicoFiltrado.map(h => `
+    const iconePorEvento = (acao) => {
+        const a = (acao || "").toLowerCase();
+        if (a.includes("entrou") || a.includes("instalado")) return { icone: "fa-arrow-right-to-bracket", cor: "#22c55e" };
+        if (a.includes("saiu") || a.includes("sacado")) return { icone: "fa-arrow-right-from-bracket", cor: "#ef4444" };
+        if (a.includes("reparo")) return { icone: "fa-tools", cor: "#eab308" };
+        if (a.includes("folhão") || a.includes("laudo")) return { icone: "fa-clipboard-check", cor: "#38bdf8" };
+        if (a.includes("registro manual")) return { icone: "fa-pen", cor: "#a855f7" };
+        return { icone: "fa-circle-dot", cor: "var(--text-muted)" };
+    };
+
+    tbody.innerHTML = historicoFiltrado.map(h => {
+        const { icone, cor } = iconePorEvento(h.acao);
+        return `
         <tr>
             <td style="font-size: 11px; white-space: nowrap; color: var(--text-muted);">${h.data}</td>
-            <td style="font-size: 13px; color: var(--text-main);">${h.acao}</td>
-            <td style="font-size: 11px; color: var(--text-accent);">${h.responsavel}</td>
-        </tr>
-    `).join("");
+            <td style="font-size: 13px; color: var(--text-body);"><i class="fas ${icone}" style="color:${cor}; margin-right:8px;"></i>${h.acao}</td>
+            <td style="font-size: 11px; color: var(--text-accent);">${h.responsavel || 'Sistema'}</td>
+        </tr>`;
+    }).join("");
 }
 
 function salvarRegistroManual() {
@@ -1196,6 +1337,8 @@ function salvarRegistroManual() {
     registrarHistorico(ID_HISTORICO_ATUAL, `<span style="color:var(--text-accent);">[REGISTRO MANUAL]</span> ${nota}`);
     document.getElementById("input-nota-manual").value = "";
     renderizarTabelaHistoricoIndividual(ID_HISTORICO_ATUAL);
+    const itemAtual = BANCO_ATIVOS.find(a => a.id === ID_HISTORICO_ATUAL);
+    if (itemAtual) renderizarResumoHistoricoIndividual(itemAtual);
 }
 
 // ==========================================
@@ -1257,6 +1400,7 @@ async function executarSaqueFinal(id, laudo) {
         item.status = "Oficina / Reparo";
         item.dataReparo = Date.now();
         item.dias = 0;
+        item.dataEntradaVeio = null;
         localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
         registrarHistorico(id, `Sacado da linha (${loc}) p/ Reparo. ${laudo}`);
 
@@ -2013,6 +2157,7 @@ async function processarCadastroPeca() {
                 BANCO_ATIVOS[i].pos = "";
                 BANCO_ATIVOS[i].dataReparo = Date.now();
                 BANCO_ATIVOS[i].dias = 0;
+                BANCO_ATIVOS[i].dataEntradaVeio = null;
 
                 pecaExpulsa = true;
                 pecaExpulsaId = p.id;
@@ -2047,7 +2192,8 @@ async function processarCadastroPeca() {
         meta: limite,
         mcc_compat: mccCompat,
         ordem: typeof getOrdemPadrao === 'function' ? getOrdemPadrao(familia) : 999,
-        dataReparo: null
+        dataReparo: null,
+        dataEntradaVeio: instalarDireto ? Date.now() : null
     };
 
     BANCO_ATIVOS.push(novaPeca);
@@ -2115,6 +2261,49 @@ function alterarSaldoRolo(id, fator) {
         localStorage.setItem("oms_rolos_v32_local", JSON.stringify(BANCO_ROLOS));
         registrarHistorico("ALMOXARIFADO", `Ajuste de estoque do rolo [${rolo.nome}]. Novo saldo: ${rolo.qtd} Pçs.`);
         renderRolos();
+    }
+}
+
+// ==========================================
+// ESTOQUE HIDRÁULICO
+// ==========================================
+function renderHidraulica() {
+    const tbody = document.getElementById("hidraulica-table-body");
+    if (!tbody) return;
+    let htmlFinal = "";
+    const gruposMcc = [...new Set(BANCO_HIDRAULICA.map(h => h.mcc_compat))].sort();
+
+    gruposMcc.forEach(mcc => {
+        htmlFinal += `
+            <tr style="background: rgba(249, 115, 22, 0.08); border-left: 4px solid #f97316;">
+                <td colspan="5" style="padding: 12px 16px; color: #f97316; font-weight: 700; text-transform: uppercase; font-size: 14px;"><i class="fas fa-server"></i> MCC ${mcc}</td>
+            </tr>
+        `;
+        const itensDoGrupo = BANCO_HIDRAULICA.filter(h => h.mcc_compat === mcc);
+        itensDoGrupo.forEach(h => {
+            htmlFinal += `
+                <tr>
+                    <td class="font-code" style="color:var(--text-heading); padding-left: 25px;"><strong>${h.nome}</strong></td>
+                    <td><span class="ind-card-tag bg-tag">${h.conjunto}</span></td>
+                    <td><code>MCC ${h.mcc_compat}</code></td>
+                    <td><span class="font-code bold" id="saldo-hidraulica-${h.id}" style="font-size:16px; color:#f97316; margin-right:15px;">${h.qtd} Pçs</span></td>
+                    <td><div style="display:inline-flex; gap:5px;"><button class="btn-premium btn-success" style="padding:4px 10px;" onclick="alterarSaldoHidraulica('${h.id}', 1)"><i class="fas fa-plus"></i></button><button class="btn-premium btn-warning" style="padding:4px 10px;" onclick="alterarSaldoHidraulica('${h.id}', -1)"><i class="fas fa-minus"></i></button></div></td>
+                </tr>
+            `;
+        });
+    });
+    tbody.innerHTML = htmlFinal;
+}
+
+function alterarSaldoHidraulica(id, fator) {
+    if (!verificarAcesso()) return;
+    let peca = BANCO_HIDRAULICA.find(h => h.id === id);
+    if (peca) {
+        if (peca.qtd + fator < 0) { return alert("O saldo em estoque não pode ser negativo."); }
+        peca.qtd += fator;
+        localStorage.setItem("oms_hidraulica_v32_local", JSON.stringify(BANCO_HIDRAULICA));
+        registrarHistorico("ALMOXARIFADO", `Ajuste de estoque hidráulico [${peca.nome}]. Novo saldo: ${peca.qtd} Pçs.`);
+        renderHidraulica();
     }
 }
 
@@ -2329,10 +2518,14 @@ function fazerCelulaEditavel(elemento, id, campo) {
                 }
                 item.id = novoValor;
             } else if (campo === 'dias') {
+                const novoDiasNum = parseFloat(novoValor) || 0;
+                const dataBase = Date.now() - (novoDiasNum * 24 * 60 * 60 * 1000);
                 if (item.local === "Oficina / Reparo") {
-                    item.dataReparo = Date.now();
+                    item.dataReparo = dataBase;
+                } else if (item.local && !item.local.includes("Oficina")) {
+                    item.dataEntradaVeio = dataBase;
                 }
-                item.dias = parseFloat(novoValor) || 0;
+                item.dias = novoDiasNum;
             } else if (campo === 'ton') {
                 item.ton = parseFloat(novoValor) || 0;
             }
@@ -2651,7 +2844,7 @@ function atualizarKPIsAvancados() {
     const emReparo = BANCO_ATIVOS.filter(a => a.local === 'Oficina / Reparo');
     if (emReparo.length > 0) {
         const somaDias = emReparo.reduce((acc, a) => {
-            const dias = a.dataReparo ? Math.floor((Date.now() - a.dataReparo) / (1000*60*60*24)) : (a.dias || 0);
+            const dias = calcularDias(a);
             return acc + dias;
         }, 0);
         const mediaDias = Math.round(somaDias / emReparo.length);
@@ -2744,13 +2937,14 @@ window.carregarOficina = async function() {
     if (!container) return;
     
     container.innerHTML = `
-        <div style="text-align:center; padding: 60px 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px dashed var(--text-muted);">
-            <i class="fas fa-clipboard-list" style="font-size: 48px; color: var(--text-muted); margin-bottom: 15px; opacity: 0.5;"></i>
-            <h3 style="color: var(--text-heading); margin-bottom: 10px;">Oficina Zerada (Marco Zero)</h3>
-            <p style="color: var(--text-muted); font-size: 14px; max-width: 400px; margin: 0 auto;">
-                Os dados antigos do Google Sheets foram desconectados.<br><br>
-                Em breve, você poderá adicionar os serviços de manutenção manualmente aqui, e a porcentagem subirá de forma inteligente de acordo com as atividades concluídas!
+        <div class="empty-state">
+            <i class="fas fa-tools"></i>
+            <h3>Módulo de Gestão da Oficina em Desenvolvimento</h3>
+            <p>
+                Estamos estruturando uma solução completa para o controle centralizado das operações de manutenção.<br><br>
+                Em breve, a plataforma contará com indicadores avançados e acompanhamento dinâmico da porcentagem de finalização dos equipamentos em tempo real.
             </p>
+            <p class="empty-tag">Próxima Atualização do Sistema</p>
         </div>
     `;
 };
@@ -3262,9 +3456,9 @@ window.iniciarSwapAlocacao = async function(idReserva) {
     if (pecaAntiga) {
         if (confirm(`A peça ${pecaAntiga.id} será SACADA do slot ${slotChassi} (Veio ${veio}) para dar lugar à ${pecaReserva.id}.`)) {
             pecaAntiga.status = "Oficina / Reparo"; pecaAntiga.local = "Oficina / Reparo";
-            pecaAntiga.veio = ""; pecaAntiga.posicaoFixa = ""; pecaAntiga.pos = ""; pecaAntiga.dataReparo = Date.now(); pecaAntiga.dias = 0;
-            
-            pecaReserva.local = `MCC ${mcc} - Veio ${veio}`; pecaReserva.veio = veio; pecaReserva.posicaoFixa = slotChassi; pecaReserva.pos = slotChassi; pecaReserva.status = "Instalado";
+            pecaAntiga.veio = ""; pecaAntiga.posicaoFixa = ""; pecaAntiga.pos = ""; pecaAntiga.dataReparo = Date.now(); pecaAntiga.dias = 0; pecaAntiga.dataEntradaVeio = null;
+
+            pecaReserva.local = `MCC ${mcc} - Veio ${veio}`; pecaReserva.veio = veio; pecaReserva.posicaoFixa = slotChassi; pecaReserva.pos = slotChassi; pecaReserva.status = "Instalado"; pecaReserva.dataEntradaVeio = Date.now(); pecaReserva.dias = 0;
             localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
 
             // Persiste as duas peças no banco Postgres (a que saiu e a que entrou)
@@ -3274,8 +3468,8 @@ window.iniciarSwapAlocacao = async function(idReserva) {
             }
             
             if (window.registrarHistorico) {
-                window.registrarHistorico(pecaReserva.id, `Instalado no slot ${slotChassi} do Veio ${veio} (substituiu ${pecaAntiga.id}).`);
-                window.registrarHistorico(pecaAntiga.id, `Sacado do slot ${slotChassi} do Veio ${veio} para reparo.`);
+                window.registrarHistorico(pecaReserva.id, `📥 Entrou no slot ${slotChassi} do Veio ${veio} (substituiu ${pecaAntiga.id}). Contagem de dias na máquina reiniciada.`);
+                window.registrarHistorico(pecaAntiga.id, `📤 Saiu do slot ${slotChassi} do Veio ${veio} para reparo.`);
             }
             if (typeof renderReparos === 'function') renderReparos(); if (typeof renderReservas === 'function') renderReservas();
             if (typeof renderAtivos === 'function') renderAtivos(); if (typeof renderPainelVeios === 'function') renderPainelVeios();
@@ -3283,14 +3477,14 @@ window.iniciarSwapAlocacao = async function(idReserva) {
         }
     } else {
         if (confirm(`Instalar a reserva ${pecaReserva.id} no slot ${slotChassi} do Veio ${veio}?`)) {
-            pecaReserva.local = `MCC ${mcc} - Veio ${veio}`; pecaReserva.veio = veio; pecaReserva.posicaoFixa = slotChassi; pecaReserva.pos = slotChassi; pecaReserva.status = "Instalado";
+            pecaReserva.local = `MCC ${mcc} - Veio ${veio}`; pecaReserva.veio = veio; pecaReserva.posicaoFixa = slotChassi; pecaReserva.pos = slotChassi; pecaReserva.status = "Instalado"; pecaReserva.dataEntradaVeio = Date.now(); pecaReserva.dias = 0;
             localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
 
             if (typeof salvarPecaNoPython === 'function') {
                 await salvarPecaNoPython(pecaReserva);
             }
 
-            if (window.registrarHistorico) window.registrarHistorico(pecaReserva.id, `Instalado no slot ${slotChassi} do Veio ${veio} (gaveta vazia).`);
+            if (window.registrarHistorico) window.registrarHistorico(pecaReserva.id, `📥 Entrou no slot ${slotChassi} do Veio ${veio} (gaveta vazia). Contagem de dias na máquina reiniciada.`);
             
             if (typeof renderReparos === 'function') renderReparos(); if (typeof renderReservas === 'function') renderReservas();
             if (typeof renderAtivos === 'function') renderAtivos(); if (typeof renderPainelVeios === 'function') renderPainelVeios();
@@ -3338,6 +3532,8 @@ if (typeof abrirHistoricoIndividual !== 'undefined') window.abrirHistoricoIndivi
 if (typeof iniciarSaque !== 'undefined') window.iniciarSaque = iniciarSaque;
 if (typeof fazerCelulaEditavel !== 'undefined') window.fazerCelulaEditavel = fazerCelulaEditavel;
 if (typeof alterarSaldoRolo !== 'undefined') window.alterarSaldoRolo = alterarSaldoRolo;
+if (typeof renderHidraulica !== 'undefined') window.renderHidraulica = renderHidraulica;
+if (typeof alterarSaldoHidraulica !== 'undefined') window.alterarSaldoHidraulica = alterarSaldoHidraulica;
 if (typeof ajustarSaldoMaterial !== 'undefined') window.ajustarSaldoMaterial = ajustarSaldoMaterial;
 if (typeof removerMaterial !== 'undefined') window.removerMaterial = removerMaterial;
 if (typeof toggleFormMaterial !== 'undefined') window.toggleFormMaterial = toggleFormMaterial;
@@ -3348,6 +3544,43 @@ if (typeof carregarMateriaisDoBackend !== 'undefined') window.carregarMateriaisD
 // ==============================================================
 // 5. INICIALIZAÇÃO DA PÁGINA (START - LIVRE DE GOOGLE SHEETS)
 // ==============================================================
+
+// ==============================================================
+// AUTO-REFRESH DOS CONTADORES DE DIAS
+// ==============================================================
+// Como "dias" agora é sempre calculado na hora (a partir de
+// dataEntradaVeio / dataReparo), basta re-renderizar as telas que
+// mostram esse número de tempos em tempos pra ele ficar sempre em dia
+// mesmo se o técnico deixar a aba aberta passando da meia-noite.
+setInterval(() => {
+    const abaAtiva = document.querySelector('.tab-content.active');
+    const idAtivo = abaAtiva ? abaAtiva.id : null;
+    if (idAtivo === 'aba-ativos' && typeof renderAtivos === 'function') renderAtivos();
+    if (idAtivo === 'aba-reparos' && typeof renderReparos === 'function') renderReparos();
+    if (idAtivo === 'aba-fluxo' && typeof renderPainelVeios === 'function') renderPainelVeios();
+    if (typeof atualizarKPIsAvancados === 'function') atualizarKPIsAvancados();
+}, 15 * 60 * 1000); // a cada 15 minutos
+
+// ==============================================================
+// EFEITO RIPPLE GLOBAL (botões premium, outline-danger, panic, auth)
+// ==============================================================
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.btn-premium, .btn-outline-danger, .btn-panic, .btn-auth');
+    if (!btn) return;
+    const rect = btn.getBoundingClientRect();
+    const tamanho = Math.max(rect.width, rect.height);
+    const raio = tamanho / 2;
+    const onda = document.createElement('span');
+    onda.className = 'ui-ripple';
+    onda.style.width = onda.style.height = tamanho + 'px';
+    onda.style.left = (e.clientX - rect.left - raio) + 'px';
+    onda.style.top = (e.clientY - rect.top - raio) + 'px';
+    const posicaoOriginal = getComputedStyle(btn).position;
+    if (posicaoOriginal === 'static') btn.style.position = 'relative';
+    btn.appendChild(onda);
+    setTimeout(() => onda.remove(), 550);
+});
+
 document.addEventListener('DOMContentLoaded', async () => {
     if (typeof carregarTema === 'function') carregarTema();
     console.log("🚀 Iniciando Sistema...");

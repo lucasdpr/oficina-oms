@@ -8,7 +8,7 @@
 // Por isso um único módulo atende os 3, parametrizado pelo número do grupo.
 // ==============================================================
 
-import { BANCO_ATIVOS, resolverApiBase } from './banco.js?v=2';
+import { BANCO_ATIVOS, resolverApiBase } from './banco.js?v=3';
 import { renderAtivos, renderReparos, renderReservas } from './ui.js';
 import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
 import { MATERIAIS_SEG_GRUPO1, MATERIAIS_SEG_GRUPO2, MATERIAIS_SEG_GRUPO3 } from './dadosMateriaisSegmentoGrupo.js';
@@ -343,7 +343,7 @@ window.salvarEImprimirFolhaoSegmentoGrupo = async function () {
     } catch (e) {
         console.error("Erro ao atualizar peça na nuvem:", e);
     }
-    finalizarRascunhoFolhao(tag);
+    finalizarRascunhoFolhao(tag, "Segmento de Grupo");
 
     // Monta o PDF (padrão visual igual aos demais folhões)
     const gerarTabelaChecklistPDF = (itens, prefix) => {

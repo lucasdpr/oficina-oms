@@ -3,6 +3,7 @@
 export let BANCO_ATIVOS = JSON.parse(localStorage.getItem("oms_ativos_v32_local"));
 export let HISTORICO_ACOES = JSON.parse(localStorage.getItem("oms_historico_v32_local")) || [];
 export let BANCO_ROLOS = JSON.parse(localStorage.getItem("oms_rolos_v32_local"));
+export let BANCO_HIDRAULICA = JSON.parse(localStorage.getItem("oms_hidraulica_v32_local"));
 export let BANCO_MATERIAIS = JSON.parse(localStorage.getItem("oms_materiais_v32_local"));
 export let EM_EMERGENCIA = JSON.parse(localStorage.getItem("oms_emergencia_v32_local")) || null;
 export let OPERADOR_LOGADO = JSON.parse(localStorage.getItem("oms_operador_v32_local")) || null;
@@ -168,6 +169,24 @@ if (!BANCO_ROLOS) {
         { id: "R-FR23", nome: "Foot Roll", conjunto: "Molde", mcc_compat: "2/3", qtd: 4 }
     ];
     localStorage.setItem("oms_rolos_v32_local", JSON.stringify(BANCO_ROLOS));
+}
+
+if (!BANCO_HIDRAULICA) {
+    BANCO_HIDRAULICA = [
+        // ---- MCC 2/3 ----
+        { id: "H-PGH12", nome: "Porca Hidráulica Grupo 1,2", conjunto: "Grupo 1,2", mcc_compat: "2/3", qtd: 0 },
+        { id: "H-PGH3", nome: "Porca Hidráulica Grupo 3", conjunto: "Grupo 3", mcc_compat: "2/3", qtd: 0 },
+        { id: "H-CIL-G1", nome: "Cilindro de Grupo 1", conjunto: "Grupo 1", mcc_compat: "2/3", qtd: 0 },
+        { id: "H-CIL-G2", nome: "Cilindro de Grupo 2", conjunto: "Grupo 2", mcc_compat: "2/3", qtd: 0 },
+        { id: "H-CIL-G3", nome: "Cilindro de Grupo 3", conjunto: "Grupo 3", mcc_compat: "2/3", qtd: 0 },
+        { id: "H-DESEMP", nome: "Desempenadeira Cadeira", conjunto: "Cadeira", mcc_compat: "2/3", qtd: 0 },
+        // ---- MCC 4 ----
+        { id: "H-CIL-ELEV4", nome: "Cilindro de Elevação de Estrutura", conjunto: "Estrutura", mcc_compat: "4", qtd: 0 },
+        { id: "H-CIL-PUX4", nome: "Cilindro Puxador", conjunto: "Puxador", mcc_compat: "4", qtd: 0 },
+        { id: "H-PH-BOW", nome: "Porca Hidráulica Bow", conjunto: "Bow", mcc_compat: "4", qtd: 0 },
+        { id: "H-PH-HOR", nome: "Porca Hidráulica Horizontal", conjunto: "Horizontal", mcc_compat: "4", qtd: 0 }
+    ];
+    localStorage.setItem("oms_hidraulica_v32_local", JSON.stringify(BANCO_HIDRAULICA));
 }
 
 if (!BANCO_MATERIAIS) {
@@ -430,6 +449,7 @@ export default {
     BANCO_ATIVOS,
     HISTORICO_ACOES,
     BANCO_ROLOS,
+    BANCO_HIDRAULICA,
     BANCO_MATERIAIS,
     EM_EMERGENCIA,
     OPERADOR_LOGADO,
