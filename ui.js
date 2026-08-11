@@ -1,6 +1,6 @@
 // ui.js - Versão final corrigida (R1/R2, botão excluir, sem duplicatas)
 
-import { BANCO_ATIVOS } from './banco.js?v=2';
+import { BANCO_ATIVOS } from './banco.js?v=3';
 
 // ==============================================================
 // FUNÇÃO AUXILIAR PARA CALCULAR DIAS EM REPARO
@@ -197,6 +197,20 @@ function renderReservas() {
 
     tbody.innerHTML = htmlFinal;
 }
+
+// ==============================================================
+// 🔧 CORREÇÃO CRÍTICA: window.renderReservas nunca existia de verdade.
+// Esse arquivo define a função renderReservas() (a que monta a tabela
+// de Estoque Reserva de verdade, com selects de veio/posição), mas ela
+// só era usada via `export` do módulo — nunca virava uma propriedade
+// em `window`. Como o app.html importa este arquivo só por efeito
+// colateral (sem capturar os exports), TODO lugar do sistema que
+// chamava `window.renderReservas()` (cadastro de peça nova, saque,
+// swap, exclusão...) executava um "if" que nunca era verdadeiro, e a
+// tabela de reserva só atualizava quando a página era recarregada do
+// zero. Agora a função real fica exposta corretamente.
+// ==============================================================
+window.renderReservas = renderReservas;
 
 // ==============================================================
 // EXCLUIR EQUIPAMENTO (definido globalmente)

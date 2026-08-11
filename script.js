@@ -11,7 +11,17 @@ import {
     BIBLIOTECA_CHECKLISTS 
 } from './dados.js';
 
-import { BANCO_ATIVOS, sincronizarAtivosReaisMCC4, salvarPecaNoPython, resolverApiBase } from './banco.js?v=2';
+import {
+    BANCO_ATIVOS,
+    sincronizarAtivosReaisMCC4,
+    salvarPecaNoPython,
+    salvarHistoricoNoPython,
+    sincronizarRolosReais,
+    salvarAjusteRoloNoPython,
+    sincronizarHidraulicaReal,
+    salvarAjusteHidraulicaNoPython,
+    resolverApiBase
+} from './banco.js?v=3';
 // ==========================================================================
 // BANCO DE DADOS CORE - SISTEMA OMS
 // ==========================================================================
@@ -425,12 +435,14 @@ function registrarHistorico(tag, acao) {
     const agora = new Date();
     const data = agora.toLocaleDateString('pt-BR') + " " + agora.toLocaleTimeString('pt-BR');
 
-    HISTORICO_ACOES.unshift({
+    const evento = {
         data: data,
         tag: tag,
         acao: acao,
         responsavel: OPERADOR_LOGADO ? OPERADOR_LOGADO.nome : "Sistema"
-    });
+    };
+
+    HISTORICO_ACOES.unshift(evento);
 
     if (HISTORICO_ACOES.length > 2000) {
         HISTORICO_ACOES.pop();
@@ -439,6 +451,15 @@ function registrarHistorico(tag, acao) {
     localStorage.setItem("oms_historico_v32_local", JSON.stringify(HISTORICO_ACOES));
     renderHistorico();
     if (typeof renderizarFeedAtividadeRecente === 'function') renderizarFeedAtividadeRecente();
+
+    // 🔧 Antes, o histórico só ficava salvo no localStorage do navegador
+    // de cada colaborador — cada um via um histórico diferente, e não
+    // dava pra consultar nada pela API. Agora, toda ação registrada aqui
+    // também é enviada pro Neon (tabela log_eventos), disponível em
+    // GET /api/historico_eventos (com filtro por peca_id).
+    if (typeof salvarHistoricoNoPython === 'function') {
+        salvarHistoricoNoPython(evento);
+    }
 }
 
 function renderHistorico() {
@@ -1928,17 +1949,13 @@ window.atualizarPosicoesCadastro = function() {
     const tipo = document.getElementById("add-tipo").value;
     const selectPos = document.getElementById("add-posicao");
     const inputMeta = document.getElementById("add-meta");
-    const selectVeio = document.getElementById("add-veio");
-    
+
     if (!selectPos || !inputMeta) return;
     selectPos.innerHTML = "";
 
     if (!tipo) {
         selectPos.innerHTML = `<option value="">Selecione um tipo primeiro...</option>`;
         inputMeta.value = "";
-        // 🔧 Sem tipo selecionado ainda, deixa o Veio num estado neutro
-        // (nenhuma opção pré-selecionada de um MCC errado).
-        if (selectVeio) selectVeio.innerHTML = `<option value="">Selecione um tipo primeiro...</option>`;
         return;
     }
 
@@ -1962,41 +1979,11 @@ window.atualizarPosicoesCadastro = function() {
 
     if (familia.includes("Molde")) {
         // 🔥 AQUI ESTÁ A MÁGICA DOS MOLDES AUTOMÁTICOS 🔥
-        // 🔧 CORREÇÃO: estava 1100 / 900 (3 zeros a menos que todo o resto
-        // da tabela `metas` acima e do que o próprio banco.js usa pros
-        // Moldes já existentes — ver BANCO_ATIVOS). Uma peça criada com
-        // meta=1100 chegava a 100% de desgaste quase instantaneamente,
-        // porque a tonelagem (tipicamente centenas de milhares) dividida
-        // por 1100 estoura a porcentagem em qualquer apontamento.
+        // Molde MCC 2/3 = 900.000 | Molde MCC 4 = 1.100.000
         inputMeta.value = (mcc === "4") ? 1100000 : 900000;
         inputMeta.readOnly = false;
     } else {
         inputMeta.value = metas[familia] || 1000000;
-    }
-
-    // 1.5. 🔧 TRAVAR O VEIO DE DESTINO NO MCC CORRETO
-    // Antes, o select #add-veio sempre mostrava as 6 opções (C, D, E, F,
-    // G, H) não importa qual família/MCC estava selecionado — dava pra
-    // cadastrar um "Molde (MCC 4)" e instalar ele no Veio C, que é da
-    // MCC 2. Agora a lista é reconstruída de acordo com o MCC da família
-    // escolhida, do mesmo jeito que já acontece com a Posição logo abaixo.
-    if (selectVeio) {
-        const veioAtualSelecionado = selectVeio.value;
-        let opcoesVeio = '<option value="">Selecione...</option>';
-        if (mcc === "4") {
-            opcoesVeio += '<option value="G">Veio G (MCC 4)</option>';
-            opcoesVeio += '<option value="H">Veio H (MCC 4)</option>';
-        } else if (mcc === "2/3") {
-            opcoesVeio += '<option value="C">Veio C (MCC 2)</option>';
-            opcoesVeio += '<option value="D">Veio D (MCC 2)</option>';
-            opcoesVeio += '<option value="E">Veio E (MCC 3)</option>';
-            opcoesVeio += '<option value="F">Veio F (MCC 3)</option>';
-        }
-        selectVeio.innerHTML = opcoesVeio;
-        // Se o veio que já estava marcado continua válido pro novo MCC, mantém.
-        if ([...selectVeio.options].some(o => o.value === veioAtualSelecionado)) {
-            selectVeio.value = veioAtualSelecionado;
-        }
     }
 
     // 2. TRAVAR AS POSIÇÕES CORRETAS
@@ -2033,196 +2020,9 @@ window.atualizarPosicoesCadastro = function() {
         selectPos.innerHTML = `<option value="GERAL">Geral / Sem posição fixa</option>`;
     }
 };
-async function processarCadastroPeca() {
-    if (typeof window.verificarAcesso === 'function' && !window.verificarAcesso()) return;
-
-    const tag = document.getElementById("add-tag").value.trim() || `NOVA-PECA-${Math.floor(Math.random() * 1000)}`;
-    const tipoValor = document.getElementById("add-tipo").value || "";
-    const tipoSplit = tipoValor.split("|");
-    const familia = tipoSplit[0] || "";
-    const mccCompat = tipoSplit[1] || "4";
-
-    const limite = parseFloat(document.getElementById("add-meta").value) || 1000000;
-    const veio = document.getElementById("add-veio").value || "";
-    const posicao = document.getElementById("add-posicao").value || "";
-    const instalarDireto = document.getElementById("add-instalar-direto").checked;
-
-    if (!familia) {
-        alert("Selecione um tipo de peça.");
-        return;
-    }
-
-    if (instalarDireto && !veio) {
-        alert("Selecione o Veio de destino.");
-        return;
-    }
-
-    // 🔧 TRAVA DE SEGURANÇA: confirma no back-end do formulário (não só
-    // visualmente no <select>) que o veio escolhido realmente pertence ao
-    // MCC do tipo selecionado. Isso é reforço pra correção feita em
-    // atualizarPosicoesCadastro() — mesmo que o <select> de veio fique
-    // desatualizado por algum motivo, o cadastro não deixa passar uma
-    // combinação inválida (ex: Molde MCC 4 indo pro Veio C, que é MCC 2).
-    if (instalarDireto && veio) {
-        const veiosValidos = (mccCompat === "4") ? ["G", "H"] : ["C", "D", "E", "F"];
-        if (!veiosValidos.includes(veio)) {
-            alert(`⚠️ O Veio ${veio} não é compatível com este tipo de equipamento (MCC ${mccCompat}). Selecione um veio válido.`);
-            return;
-        }
-    }
-
-    const tipoUpper = familia.toUpperCase();
-    let slotChassi = "";
-    let posicaoObrigatoria = true; 
-
-    // MCC 4
-    if (mccCompat === "4") {
-        if (tipoUpper.includes("BOW")) {
-            slotChassi = `BOW-${posicao}`;
-        } else if (tipoUpper.includes("HORIZONTAL")) {
-            slotChassi = `HOR-${posicao}`;
-        } else if (tipoUpper.includes("STRAIGHTENER R1") || tipoUpper.includes("R1")) {
-            slotChassi = "STR-1";
-            posicaoObrigatoria = false;
-        } else if (tipoUpper.includes("STRAIGHTENER R2") || tipoUpper.includes("R2")) {
-            slotChassi = "STR-2";
-            posicaoObrigatoria = false;
-        } else if (tipoUpper.includes("MOLDE")) {
-            slotChassi = "MOLDE";
-            posicaoObrigatoria = false;
-        } else if (tipoUpper.includes("BENDER")) {
-            slotChassi = "BENDER";
-            posicaoObrigatoria = false;
-        } else {
-            slotChassi = posicao;
-        }
-    } 
-    // MCC 2/3
-    else if (mccCompat === "2/3") {
-        if (tipoUpper.includes("CADEIRA SUPERIOR")) {
-            slotChassi = `CAD-SUP-${posicao}`;
-        } else if (tipoUpper.includes("CADEIRA INFERIOR")) {
-            slotChassi = `CAD-INF-${posicao}`;
-        } else if (tipoUpper.includes("SEGMENTO ZERO") || tipoUpper.includes("SEGUIMENTO ZERO")) {
-            slotChassi = "SEG-ZERO";
-            posicaoObrigatoria = false;
-        } else if (tipoUpper.includes("SEGMENTO") && !tipoUpper.includes("ZERO")) {
-            slotChassi = `SEG-${posicao}`;
-        } else if (tipoUpper.includes("MOLDE")) {
-            slotChassi = "MOLDE";
-            posicaoObrigatoria = false;
-        } else {
-            slotChassi = posicao;
-        }
-    } else {
-        slotChassi = posicao;
-    }
-
-    if (instalarDireto && posicaoObrigatoria && !posicao) {
-        alert("⚠️ Selecione a Posição de destino para este tipo de equipamento.");
-        return;
-    }
-
-    if (!instalarDireto) slotChassi = ""; 
-
-    let statusFinal = instalarDireto ? "Instalado" : "Oficina / Reserva";
-    let localFinal = instalarDireto ? `MCC ${mccCompat} - Veio ${veio}` : "Oficina / Reserva";
-
-    if (instalarDireto && veio && slotChassi) {
-        const config = typeof getConfiguracaoPorVeio === 'function' ? getConfiguracaoPorVeio(veio) : null;
-        let pecaExpulsa = false;
-        let pecaExpulsaId = "";
-
-        for (let i = 0; i < BANCO_ATIVOS.length; i++) {
-            const p = BANCO_ATIVOS[i];
-            const taNoVeio = (p.veio === veio && p.status === "Instalado") ||
-                             (p.local && p.local.includes(`Veio ${veio}`) && !p.local.includes("Oficina"));
-            if (!taNoVeio) continue;
-
-            let ehVelha = false;
-            if (p.posicaoFixa && p.posicaoFixa === slotChassi) {
-                ehVelha = true;
-            } else if (!p.posicaoFixa && config && config.mapearSlotLegado) {
-                const slotMapeado = config.mapearSlotLegado(p);
-                if (slotMapeado === slotChassi) {
-                    ehVelha = true;
-                }
-            }
-
-            if (ehVelha) {
-                BANCO_ATIVOS[i].status = "Oficina / Reparo";
-                BANCO_ATIVOS[i].local = "Oficina / Reparo";
-                BANCO_ATIVOS[i].veio = "";
-                BANCO_ATIVOS[i].posicaoFixa = "";
-                BANCO_ATIVOS[i].pos = "";
-                BANCO_ATIVOS[i].dataReparo = Date.now();
-                BANCO_ATIVOS[i].dias = 0;
-                BANCO_ATIVOS[i].dataEntradaVeio = null;
-
-                pecaExpulsa = true;
-                pecaExpulsaId = p.id;
-
-                if (typeof window.registrarHistorico === 'function') {
-                    window.registrarHistorico(p.id, `Sacado da gaveta ${slotChassi} do Veio ${veio} por substituição.`);
-                }
-                
-                // 🔥 MAGIA: SALVA A PEÇA VELHA (EXPULSA) NO PYTHON 🔥
-                if (typeof salvarPecaNoPython === 'function') {
-                    await salvarPecaNoPython(BANCO_ATIVOS[i]);
-                }
-                break;
-            }
-        }
-
-        if (pecaExpulsa) {
-            alert(`⚠️ A peça velha [${pecaExpulsaId}] foi removida da gaveta ${slotChassi} e enviada para REPARO.`);
-        }
-    }
-
-    const novaPeca = {
-        id: tag,
-        tipo: familia,
-        veio: instalarDireto ? veio : "",
-        local: localFinal,
-        posicaoFixa: instalarDireto ? slotChassi : "",
-        pos: instalarDireto ? posicao : "Estoque",
-        status: statusFinal,
-        ton: 0,
-        dias: 0,
-        meta: limite,
-        mcc_compat: mccCompat,
-        ordem: typeof getOrdemPadrao === 'function' ? getOrdemPadrao(familia) : 999,
-        dataReparo: null,
-        dataEntradaVeio: instalarDireto ? Date.now() : null
-    };
-
-    BANCO_ATIVOS.push(novaPeca);
-    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-
-    // 🔥 MAGIA: SALVA A PEÇA NOVA CRIADA NO PYTHON 🔥
-    if (typeof salvarPecaNoPython === 'function') {
-        await salvarPecaNoPython(novaPeca);
-    }
-
-    if (statusFinal === "Instalado") {
-        alert(`✅ Sucesso! A nova peça [${tag}] assumiu o controle da gaveta ${slotChassi} do Veio ${veio}.`);
-    } else {
-        alert(`✅ Sucesso! Peça [${tag}] criada e guardada no Estoque Reserva.`);
-    }
-
-    document.getElementById("add-tag").value = "";
-    document.getElementById("add-meta").value = "";
-    document.getElementById("add-instalar-direto").checked = false;
-
-    if (typeof window.renderReservas === 'function') window.renderReservas();
-    if (typeof window.renderAtivos === 'function') window.renderAtivos();
-    if (typeof window.renderReparos === 'function') window.renderReparos();
-    if (typeof window.renderPainelVeios === 'function') window.renderPainelVeios();
-    if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
-    if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
-
-    if (instalarDireto && typeof window.mudarVeioVisualizado === 'function') window.mudarVeioVisualizado(veio);
-}
+// ⚠️ A implementação de verdade do cadastro fica em
+// window.processarCadastroPeca, mais abaixo neste arquivo — é ela que
+// o botão "Confirmar Cadastro" chama (onclick="window.processarCadastroPeca()").
 
 function renderRolos() {
     const tbody = document.getElementById("rolos-table-body");
@@ -2252,7 +2052,7 @@ function renderRolos() {
     tbody.innerHTML = htmlFinal;
 }
 
-function alterarSaldoRolo(id, fator) {
+async function alterarSaldoRolo(id, fator) {
     if (!verificarAcesso()) return;
     let rolo = BANCO_ROLOS.find(r => r.id === id);
     if (rolo) {
@@ -2261,11 +2061,17 @@ function alterarSaldoRolo(id, fator) {
         localStorage.setItem("oms_rolos_v32_local", JSON.stringify(BANCO_ROLOS));
         registrarHistorico("ALMOXARIFADO", `Ajuste de estoque do rolo [${rolo.nome}]. Novo saldo: ${rolo.qtd} Pçs.`);
         renderRolos();
+
+        // Persiste no Neon — sem isso, o ajuste sumia assim que a página
+        // sincronizasse de novo com o servidor.
+        if (typeof salvarAjusteRoloNoPython === 'function') {
+            await salvarAjusteRoloNoPython(id, fator);
+        }
     }
 }
 
 // ==========================================
-// ESTOQUE HIDRÁULICO
+// ESTOQUE HIDRÁULICO (Aplicado na Máquina x Reserva na Oficina)
 // ==========================================
 function renderHidraulica() {
     const tbody = document.getElementById("hidraulica-table-body");
@@ -2276,18 +2082,37 @@ function renderHidraulica() {
     gruposMcc.forEach(mcc => {
         htmlFinal += `
             <tr style="background: rgba(249, 115, 22, 0.08); border-left: 4px solid #f97316;">
-                <td colspan="5" style="padding: 12px 16px; color: #f97316; font-weight: 700; text-transform: uppercase; font-size: 14px;"><i class="fas fa-server"></i> MCC ${mcc}</td>
+                <td colspan="6" style="padding: 12px 16px; color: #f97316; font-weight: 700; text-transform: uppercase; font-size: 14px;"><i class="fas fa-server"></i> MCC ${mcc}</td>
             </tr>
         `;
         const itensDoGrupo = BANCO_HIDRAULICA.filter(h => h.mcc_compat === mcc);
         itensDoGrupo.forEach(h => {
+            const aplicado = h.qtd_aplicado || 0;
+            const reserva = h.qtd_reserva || 0;
             htmlFinal += `
                 <tr>
                     <td class="font-code" style="color:var(--text-heading); padding-left: 25px;"><strong>${h.nome}</strong></td>
                     <td><span class="ind-card-tag bg-tag">${h.conjunto}</span></td>
                     <td><code>MCC ${h.mcc_compat}</code></td>
-                    <td><span class="font-code bold" id="saldo-hidraulica-${h.id}" style="font-size:16px; color:#f97316; margin-right:15px;">${h.qtd} Pçs</span></td>
-                    <td><div style="display:inline-flex; gap:5px;"><button class="btn-premium btn-success" style="padding:4px 10px;" onclick="alterarSaldoHidraulica('${h.id}', 1)"><i class="fas fa-plus"></i></button><button class="btn-premium btn-warning" style="padding:4px 10px;" onclick="alterarSaldoHidraulica('${h.id}', -1)"><i class="fas fa-minus"></i></button></div></td>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="font-code bold" id="saldo-hidraulica-aplicado-${h.id}" style="font-size:15px; color:#22c55e;"><i class="fas fa-industry" style="font-size:11px;"></i> ${aplicado}</span>
+                            <div style="display:inline-flex; gap:4px;">
+                                <button class="btn-premium btn-success" style="padding:3px 8px;" onclick="alterarSaldoHidraulica('${h.id}', 'aplicado', 1)"><i class="fas fa-plus"></i></button>
+                                <button class="btn-premium btn-warning" style="padding:3px 8px;" onclick="alterarSaldoHidraulica('${h.id}', 'aplicado', -1)"><i class="fas fa-minus"></i></button>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="font-code bold" id="saldo-hidraulica-reserva-${h.id}" style="font-size:15px; color:var(--text-accent);"><i class="fas fa-warehouse" style="font-size:11px;"></i> ${reserva}</span>
+                            <div style="display:inline-flex; gap:4px;">
+                                <button class="btn-premium btn-success" style="padding:3px 8px;" onclick="alterarSaldoHidraulica('${h.id}', 'reserva', 1)"><i class="fas fa-plus"></i></button>
+                                <button class="btn-premium btn-warning" style="padding:3px 8px;" onclick="alterarSaldoHidraulica('${h.id}', 'reserva', -1)"><i class="fas fa-minus"></i></button>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="font-code text-muted" style="font-size:12px;">Total: ${aplicado + reserva}</span></td>
                 </tr>
             `;
         });
@@ -2295,15 +2120,24 @@ function renderHidraulica() {
     tbody.innerHTML = htmlFinal;
 }
 
-function alterarSaldoHidraulica(id, fator) {
+async function alterarSaldoHidraulica(id, local, fator) {
     if (!verificarAcesso()) return;
     let peca = BANCO_HIDRAULICA.find(h => h.id === id);
-    if (peca) {
-        if (peca.qtd + fator < 0) { return alert("O saldo em estoque não pode ser negativo."); }
-        peca.qtd += fator;
-        localStorage.setItem("oms_hidraulica_v32_local", JSON.stringify(BANCO_HIDRAULICA));
-        registrarHistorico("ALMOXARIFADO", `Ajuste de estoque hidráulico [${peca.nome}]. Novo saldo: ${peca.qtd} Pçs.`);
-        renderHidraulica();
+    if (!peca) return;
+
+    const campo = local === 'aplicado' ? 'qtd_aplicado' : 'qtd_reserva';
+    const rotulo = local === 'aplicado' ? 'Aplicado na Máquina' : 'Reserva (Oficina)';
+
+    if ((peca[campo] || 0) + fator < 0) { return alert("O saldo em estoque não pode ser negativo."); }
+    peca[campo] = (peca[campo] || 0) + fator;
+    localStorage.setItem("oms_hidraulica_v32_local", JSON.stringify(BANCO_HIDRAULICA));
+    registrarHistorico("ALMOXARIFADO", `Ajuste hidráulico [${peca.nome}] — ${rotulo}. Novo saldo: ${peca[campo]} Pçs.`);
+    renderHidraulica();
+
+    // Persiste no Neon — sem isso, o ajuste sumia assim que a página
+    // sincronizasse de novo com o servidor.
+    if (typeof salvarAjusteHidraulicaNoPython === 'function') {
+        await salvarAjusteHidraulicaNoPython(id, local, fator);
     }
 }
 
@@ -2596,8 +2430,7 @@ window.processarCadastroPeca = async function() {
     const tagInput = document.getElementById('add-tag');
     const tipoSelect = document.getElementById('add-tipo');
     const metaInput = document.getElementById('add-meta');
-    const instalarDiretoSelect = document.getElementById('add-instalar-direto');
-    const veioSelect = document.getElementById('add-veio');
+    const tonInput = document.getElementById('add-ton-atual');
     const posicaoSelect = document.getElementById('add-posicao');
 
     if (!tagInput || !tipoSelect || !metaInput) {
@@ -2608,8 +2441,7 @@ window.processarCadastroPeca = async function() {
     const id = tagInput.value.trim().toUpperCase();
     const tipoCompleto = tipoSelect.value; // Ex: "Molde|2/3"
     const meta = parseFloat(metaInput.value) || 0;
-    const instalarDireto = instalarDiretoSelect ? instalarDiretoSelect.value === "true" : false;
-    const veio = veioSelect ? veioSelect.value : "";
+    const tonAtual = parseFloat(tonInput?.value) || 0; // 0 = peça nova, sem desgaste
     const posicao = posicaoSelect ? posicaoSelect.value : "";
 
     if (!id || !tipoCompleto) {
@@ -2635,26 +2467,20 @@ window.processarCadastroPeca = async function() {
         }
     }
 
-    let local = "Oficina / Reserva";
-    let veioAtribuido = "";
-    let posAtribuida = "";
-
-    if (instalarDireto) {
-        if (!veio) {
-            alert("Selecione o Veio de destino para a instalação direta.");
-            return;
-        }
-        // 🔧 TRAVA DE SEGURANÇA: impede instalar um tipo de MCC 4
-        // (Molde, Bender, Bow, Straightener, Horizontal) num veio C/D/E/F
-        // (que são da MCC 2/3), ou vice-versa.
-        const veiosValidos = (mcc_compat === "4") ? ["G", "H"] : ["C", "D", "E", "F"];
-        if (!veiosValidos.includes(veio)) {
-            alert(`⚠️ O Veio ${veio} não é compatível com este tipo de equipamento (MCC ${mcc_compat}). Selecione um veio válido.`);
-            return;
-        }
-        local = `MCC ${mcc_compat} - Veio ${veio}`;
-        veioAtribuido = veio;
-        posAtribuida = posicao;
+    // Monta a posição/gaveta específica dessa peça (ex: BOW-3, CAD-SUP-45,
+    // SEG-2, HOR-10, ou o valor fixo já vindo do select pros tipos de
+    // posição única — MOLDE, BENDER, STR-1, STR-2, SEG-ZERO). Isso é só
+    // uma referência de qual vaga a peça foi pensada pra ocupar; o Swap
+    // Automático confirma tudo de novo na hora de instalar de verdade.
+    const tipoUpper = tipo.toUpperCase();
+    let posicaoFixa = posicao;
+    if (mcc_compat === "4") {
+        if (tipoUpper.includes("BOW") && posicao) posicaoFixa = `BOW-${posicao}`;
+        else if (tipoUpper.includes("HORIZONTAL") && posicao) posicaoFixa = `HOR-${posicao}`;
+    } else if (mcc_compat === "2/3") {
+        if (tipoUpper.includes("CADEIRA SUPERIOR") && posicao) posicaoFixa = `CAD-SUP-${posicao}`;
+        else if (tipoUpper.includes("CADEIRA INFERIOR") && posicao) posicaoFixa = `CAD-INF-${posicao}`;
+        else if (tipoUpper.includes("SEGMENTO") && !tipoUpper.includes("ZERO") && posicao) posicaoFixa = `SEG-${posicao}`;
     }
 
     const novoItem = {
@@ -2662,12 +2488,15 @@ window.processarCadastroPeca = async function() {
         tipo: tipo,
         mcc_compat: mcc_compat,
         meta: meta,
-        ton: 0,
-        local: local,
-        veio: veioAtribuido,
-        posicao: posAtribuida,
+        ton: tonAtual,
+        local: "Oficina / Reserva",
+        veio: "",
+        posicaoFixa: posicaoFixa,
+        pos: posicaoFixa || "Estoque",
         dias: 0,
-        dataReparo: null
+        ordem: typeof getOrdemPadrao === 'function' ? getOrdemPadrao(tipo) : 999,
+        dataReparo: null,
+        dataEntradaVeio: null
     };
 
     // Adiciona ao array global de ativos
@@ -2681,6 +2510,11 @@ window.processarCadastroPeca = async function() {
         await window.salvarPecaNoPython(novoItem);
     }
 
+    if (typeof registrarHistorico === 'function') {
+        const rotuloDesgaste = tonAtual > 0 ? ` (cadastrada já com ${tonAtual.toLocaleString('pt-BR')} de desgaste)` : ' (peça nova, sem uso)';
+        registrarHistorico(id, `📦 Peça cadastrada no Estoque Reserva${rotuloDesgaste}.`);
+    }
+
     // Atualiza as telas do sistema
     if (typeof window.renderAtivos === 'function') window.renderAtivos();
     if (typeof window.renderReservas === 'function') window.renderReservas();
@@ -2690,12 +2524,13 @@ window.processarCadastroPeca = async function() {
     // Limpa os campos e fecha o formulário
     tagInput.value = '';
     metaInput.value = '';
+    if (tonInput) tonInput.value = '';
     tipoSelect.value = '';
     if (typeof window.toggleFormAdicionar === 'function') {
         window.toggleFormAdicionar();
     }
 
-    alert(`✅ Equipamento [${id}] cadastrado com sucesso!`);
+    alert(`✅ Equipamento [${id}] cadastrado com sucesso no Estoque Reserva!`);
 };
 
 // 🔧 CORREÇÃO CRÍTICA: aqui embaixo existia uma SEGUNDA definição de
@@ -3587,7 +3422,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const atualizou = await window.carregarAtivosDoPython();
     if (typeof carregarMateriaisDoBackend === 'function') carregarMateriaisDoBackend();
-    
+
+    // 🔧 Rolos e Hidráulica agora vivem no Neon (antes só no localStorage
+    // de cada colaborador). Sincroniza e já deixa a tela pronta se o
+    // técnico for direto pra uma dessas abas.
+    if (typeof sincronizarRolosReais === 'function') {
+        await sincronizarRolosReais();
+        if (typeof renderRolos === 'function') renderRolos();
+    }
+    if (typeof sincronizarHidraulicaReal === 'function') {
+        await sincronizarHidraulicaReal();
+        if (typeof renderHidraulica === 'function') renderHidraulica();
+    }
+
     if (atualizou) {
         if (typeof renderPainelVeios === 'function') renderPainelVeios();
         if (typeof renderAtivos === 'function') renderAtivos();

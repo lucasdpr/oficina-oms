@@ -2,7 +2,7 @@
 // folhaoMolde4.js - Módulo completo para BENDER e MOLDE MCC 4
 // ==============================================================
 
-import { BANCO_ATIVOS, resolverApiBase } from './banco.js?v=2';
+import { BANCO_ATIVOS, resolverApiBase } from './banco.js?v=3';
 import { renderAtivos, renderReparos, renderReservas } from './ui.js';
 import { gerarTelasBenderHTML, imprimirPDFBender } from './folhao_bender.js';
 import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
@@ -697,7 +697,7 @@ export async function salvarEImprimirFolhaoMolde4() {
 
     // Folhão concluído: apaga o rascunho salvo (chegada+saída já foram
     // impressas, não precisa mais restaurar progresso pra essa TAG).
-    finalizarRascunhoFolhao(tag);
+    finalizarRascunhoFolhao(tag, "Molde 4");
 
     // 3. FUNÇÃO AUXILIAR DA TABELA DO PDF
     function gerarTabelaCheckPDF(prefix, arr, isFinal = false) {
@@ -815,7 +815,7 @@ export function salvarLaudoInteligente() {
 
     item.ton = 0; item.dias = 0; item.local = "Oficina / Reserva";
     localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-    finalizarRascunhoFolhao(tag);
+    finalizarRascunhoFolhao(tag, "Bender");
 
     let motivo = document.getElementById("mcc4-motivo")?.value || "Manutenção";
     if (window.registrarHistorico) {

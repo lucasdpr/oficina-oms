@@ -447,7 +447,7 @@ window.salvarEImprimirFolhaoR2 = function() {
     }
 
     // Folhão concluído: apaga o rascunho salvo dessa TAG.
-    finalizarRascunhoFolhao(tag);
+    finalizarRascunhoFolhao(tag, "Straightener R2");
 
     let btnPDF = `<button onclick="window.abrirFolhaoR2('${tag}')" class="btn-outline-danger" style="padding: 2px 8px; font-size: 10px; margin-left: 10px; cursor: pointer;"><i class="fas fa-file-pdf"></i> Visualizar Folhão</button>`;
 

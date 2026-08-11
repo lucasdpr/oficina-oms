@@ -957,7 +957,7 @@ window.salvarEImprimirFolhaoR1 = function() {
     }
 
     // Folhão concluído: apaga o rascunho salvo dessa TAG.
-    finalizarRascunhoFolhao(tag);
+    finalizarRascunhoFolhao(tag, "Segmento Zero");
 
     // ===== IMPRIME =====
     const printDiv = document.getElementById('print-content');

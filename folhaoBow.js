@@ -1,6 +1,6 @@
 // folhaoBow.js - VERSÃO COMPLETA COM TODAS AS SEÇÕES DO DOCUMENTO OFICIAL
 
-import { BANCO_ATIVOS, resolverApiBase } from './banco.js?v=2';
+import { BANCO_ATIVOS, resolverApiBase } from './banco.js?v=3';
 import { renderAtivos, renderReparos, renderReservas } from './ui.js';
 import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
 
@@ -575,7 +575,7 @@ window.salvarEImprimirFolhaoBow = async function() {
     }
 
     // Folhão concluído: apaga o rascunho salvo dessa TAG.
-    finalizarRascunhoFolhao(tag);
+    finalizarRascunhoFolhao(tag, "Bow");
 
     // ==========================================================
     // FUNÇÕES AUXILIARES DO PDF (Mantidas do original)

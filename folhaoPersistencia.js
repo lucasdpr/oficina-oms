@@ -14,7 +14,7 @@
 // é finalizado/impresso (window.finalizarRascunhoFolhao).
 // ==============================================================
 
-import { resolverApiBase } from './banco.js?v=2';
+import { resolverApiBase } from './banco.js?v=3';
 
 // --------------------------------------------------------------
 // COLETA GENÉRICA DE TODOS OS CAMPOS DENTRO DE UM MODAL
@@ -105,8 +105,20 @@ export async function carregarRascunhoFolhao(equipamentoId) {
     }
 }
 
-export async function finalizarRascunhoFolhao(equipamentoId) {
+export async function finalizarRascunhoFolhao(equipamentoId, tipoFolhao = null) {
     if (!equipamentoId) return;
+
+    // 📋 Registra no histórico individual do equipamento que um folhão foi
+    // concluído — é isso que faz o card "Folhões Concluídos" do Prontuário
+    // (e a linha do tempo) contarem certo. Fica centralizado aqui porque
+    // TODOS os folhões (Molde4, Molde23, Bow, Horizontal, R2, Straightener
+    // R1, Segmento Zero, Segmento de Grupo, Desempenadeira) chamam essa
+    // mesma função no momento de salvar/imprimir.
+    if (typeof window.registrarHistorico === 'function') {
+        const rotulo = tipoFolhao ? ` (${tipoFolhao})` : '';
+        window.registrarHistorico(equipamentoId, `📋 Folhão de manutenção${rotulo} finalizado e salvo.`);
+    }
+
     try {
         const apiBase = await resolverApiBase();
         await fetch(`${apiBase}/api/folhao/finalizar`, {

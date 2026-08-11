@@ -631,23 +631,8 @@
             <input type="number" id="add-meta" class="premium-input" placeholder="Ex: 1200000">
         </div>
         <div class="input-group">
-            <label>Instalar Direto?</label>
-            <select id="add-instalar-direto" class="premium-select">
-                <option value="false">Não (Mandar p/ Reserva)</option>
-                <option value="true">Sim (Instalar na Máquina)</option>
-            </select>
-        </div>
-        <div class="input-group" style="grid-column: span 2;">
-            <label>Veio de Destino (se instalar direto)</label>
-            <select id="add-veio" class="premium-select">
-                <option value="">Selecione...</option>
-                <option value="C">Veio C (MCC 2)</option>
-                <option value="D">Veio D (MCC 2)</option>
-                <option value="E">Veio E (MCC 3)</option>
-                <option value="F">Veio F (MCC 3)</option>
-                <option value="H">Veio H (MCC 4)</option>
-                <option value="G">Veio G (MCC 4)</option>
-            </select>
+            <label>Já está desgastado?</label>
+            <input type="number" id="add-ton-atual" class="premium-input" placeholder="0 = peça nova / sem uso">
         </div>
         <div class="input-group" style="grid-column: span 2;">
             <label>Posição Específica (Gaveta)</label>
@@ -683,8 +668,8 @@
             <section id="aba-hidraulica" class="tab-content">
                 <div class="glass-panel" style="border-top:4px solid #f97316;padding:24px;">
                     <h2 style="color:#f97316;"><i class="fas fa-oil-can"></i> Estoque Hidráulico</h2>
-                    <p class="text-muted" style="font-size:13px;">Porcas hidráulicas e cilindros, agrupados por MCC.</p>
-                    <div class="table-responsive" style="margin-top:16px;"><table class="premium-table"><thead><tr><th>Item</th><th>Conjunto</th><th>Família</th><th>Saldo</th><th>Ações</th></tr></thead><tbody id="hidraulica-table-body"></tbody></table></div>
+                    <p class="text-muted" style="font-size:13px;">Porcas hidráulicas e cilindros, agrupados por MCC — separado entre o que está aplicado na máquina e o que está de reserva na oficina.</p>
+                    <div class="table-responsive" style="margin-top:16px;"><table class="premium-table"><thead><tr><th>Item</th><th>Conjunto</th><th>Família</th><th><i class="fas fa-industry"></i> Aplicado na Máquina</th><th><i class="fas fa-warehouse"></i> Reserva (Oficina)</th><th>Total</th></tr></thead><tbody id="hidraulica-table-body"></tbody></table></div>
                 </div>
             </section>
 
@@ -1386,18 +1371,18 @@
     <!-- SCRIPTS (consolidados)                   -->
     <!-- ========================================= -->
     <script type="module">
-        import './script.js?v=5';
-        import './ui.js?v=9';
-        import './folhaoMolde4.js?v=3';
+        import './script.js?v=8';
+        import './ui.js?v=11';
+        import './folhaoMolde4.js?v=4';
         import './folhao_bender.js?v=2';
         import './folhaoR2.js?v=3';
-        import './folhaoHorizontal.js?v=3';
-        import './folhaoBow.js?v=3';
+        import './folhaoHorizontal.js?v=4';
+        import './folhaoBow.js?v=4';
         import './folhaoDesempenadeira.js?v=3';
         import './folhaoSegmentoZero.js?v=3';
-        import './folhaoMolde23.js?v=3';
+        import './folhaoMolde23.js?v=4';
         import './folhaoStraightenerR1.js?v=3';
-        import './folhaoSegmentoGrupo.js?v=1';
+        import './folhaoSegmentoGrupo.js?v=2';
 
         console.log("✅ Sistema OMS inicializado!");
 

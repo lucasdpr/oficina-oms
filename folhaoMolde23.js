@@ -2,7 +2,7 @@
 
 // 🔧 Import novo: precisa de resolverApiBase() pra achar a API certa
 // (local ou Render) em vez de bater fixo em localhost:8000.
-import { BANCO_ATIVOS, resolverApiBase } from './banco.js?v=2';
+import { BANCO_ATIVOS, resolverApiBase } from './banco.js?v=3';
 import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
 
 let ID_FOLHAO_MOLDE23_ATUAL = null;
@@ -681,7 +681,7 @@ window.salvarEImprimirFolhaoMolde23 = async function() {
     }
 
     // Folhão concluído: apaga o rascunho salvo dessa TAG.
-    finalizarRascunhoFolhao(tag);
+    finalizarRascunhoFolhao(tag, "Molde 2/3");
 
     // FUNÇÃO AUXILIAR PARA CHECKLISTS DO PDF
     function gerarLinhasChecklist(prefix, array, isMatricula = false) {

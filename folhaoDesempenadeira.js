@@ -492,7 +492,7 @@ window.salvarEImprimirFolhaoDesemp = function() {
     }
 
     // Folhão concluído: apaga o rascunho salvo dessa TAG.
-    finalizarRascunhoFolhao(tag);
+    finalizarRascunhoFolhao(tag, "Desempenadeira (Cadeira)");
 
     if (window.registrarHistorico) {
         window.registrarHistorico(tag, `Laudo Desempenadeira (${tipoCadeira}) concluído.`);

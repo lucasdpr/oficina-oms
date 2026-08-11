@@ -174,17 +174,17 @@ if (!BANCO_ROLOS) {
 if (!BANCO_HIDRAULICA) {
     BANCO_HIDRAULICA = [
         // ---- MCC 2/3 ----
-        { id: "H-PGH12", nome: "Porca Hidráulica Grupo 1,2", conjunto: "Grupo 1,2", mcc_compat: "2/3", qtd: 0 },
-        { id: "H-PGH3", nome: "Porca Hidráulica Grupo 3", conjunto: "Grupo 3", mcc_compat: "2/3", qtd: 0 },
-        { id: "H-CIL-G1", nome: "Cilindro de Grupo 1", conjunto: "Grupo 1", mcc_compat: "2/3", qtd: 0 },
-        { id: "H-CIL-G2", nome: "Cilindro de Grupo 2", conjunto: "Grupo 2", mcc_compat: "2/3", qtd: 0 },
-        { id: "H-CIL-G3", nome: "Cilindro de Grupo 3", conjunto: "Grupo 3", mcc_compat: "2/3", qtd: 0 },
-        { id: "H-DESEMP", nome: "Desempenadeira Cadeira", conjunto: "Cadeira", mcc_compat: "2/3", qtd: 0 },
+        { id: "H-PGH12", nome: "Porca Hidráulica Grupo 1,2", conjunto: "Grupo 1,2", mcc_compat: "2/3", qtd_aplicado: 0, qtd_reserva: 0 },
+        { id: "H-PGH3", nome: "Porca Hidráulica Grupo 3", conjunto: "Grupo 3", mcc_compat: "2/3", qtd_aplicado: 0, qtd_reserva: 0 },
+        { id: "H-CIL-G1", nome: "Cilindro de Grupo 1", conjunto: "Grupo 1", mcc_compat: "2/3", qtd_aplicado: 0, qtd_reserva: 0 },
+        { id: "H-CIL-G2", nome: "Cilindro de Grupo 2", conjunto: "Grupo 2", mcc_compat: "2/3", qtd_aplicado: 0, qtd_reserva: 0 },
+        { id: "H-CIL-G3", nome: "Cilindro de Grupo 3", conjunto: "Grupo 3", mcc_compat: "2/3", qtd_aplicado: 0, qtd_reserva: 0 },
+        { id: "H-DESEMP", nome: "Desempenadeira Cadeira", conjunto: "Cadeira", mcc_compat: "2/3", qtd_aplicado: 0, qtd_reserva: 0 },
         // ---- MCC 4 ----
-        { id: "H-CIL-ELEV4", nome: "Cilindro de Elevação de Estrutura", conjunto: "Estrutura", mcc_compat: "4", qtd: 0 },
-        { id: "H-CIL-PUX4", nome: "Cilindro Puxador", conjunto: "Puxador", mcc_compat: "4", qtd: 0 },
-        { id: "H-PH-BOW", nome: "Porca Hidráulica Bow", conjunto: "Bow", mcc_compat: "4", qtd: 0 },
-        { id: "H-PH-HOR", nome: "Porca Hidráulica Horizontal", conjunto: "Horizontal", mcc_compat: "4", qtd: 0 }
+        { id: "H-CIL-ELEV4", nome: "Cilindro de Elevação de Estrutura", conjunto: "Estrutura", mcc_compat: "4", qtd_aplicado: 0, qtd_reserva: 0 },
+        { id: "H-CIL-PUX4", nome: "Cilindro Puxador", conjunto: "Puxador", mcc_compat: "4", qtd_aplicado: 0, qtd_reserva: 0 },
+        { id: "H-PH-BOW", nome: "Porca Hidráulica Bow", conjunto: "Bow", mcc_compat: "4", qtd_aplicado: 0, qtd_reserva: 0 },
+        { id: "H-PH-HOR", nome: "Porca Hidráulica Horizontal", conjunto: "Horizontal", mcc_compat: "4", qtd_aplicado: 0, qtd_reserva: 0 }
     ];
     localStorage.setItem("oms_hidraulica_v32_local", JSON.stringify(BANCO_HIDRAULICA));
 }
@@ -443,6 +443,105 @@ export async function salvarHistoricoNoPython(evento) {
 }
 
 // ==========================================================================
+// ESTOQUE DE ROLOS — sincronização com o Neon
+// ==========================================================================
+export async function sincronizarRolosReais() {
+    try {
+        const apiBase = await resolverApiBase();
+        const resposta = await fetch(`${apiBase}/api/rolos`);
+        if (!resposta.ok) throw new Error(`API respondeu com status ${resposta.status}`);
+
+        const rolosApi = await resposta.json();
+        if (!Array.isArray(rolosApi)) return false;
+
+        BANCO_ROLOS.length = 0;
+        BANCO_ROLOS.push(...rolosApi.map(r => ({
+            id: r.id,
+            nome: r.nome,
+            conjunto: r.conjunto,
+            mcc_compat: r.mcc_compat,
+            qtd: parseFloat(r.qtd) || 0
+        })));
+
+        localStorage.setItem("oms_rolos_v32_local", JSON.stringify(BANCO_ROLOS));
+        console.log(`✅ Estoque de rolos sincronizado com o Neon: ${BANCO_ROLOS.length} itens.`);
+        return true;
+    } catch (erro) {
+        console.error("❌ Falha ao buscar rolos do Neon (usando dados locais salvos):", erro);
+        return false;
+    }
+}
+
+export async function salvarAjusteRoloNoPython(id, fator) {
+    try {
+        const apiBase = await resolverApiBase();
+        const resposta = await fetch(`${apiBase}/api/rolos/ajustar`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, fator })
+        });
+        const resultado = await resposta.json().catch(() => ({}));
+        if (!resposta.ok || !resultado.sucesso) {
+            throw new Error(resultado.detail || `HTTP ${resposta.status}`);
+        }
+        return resultado;
+    } catch (erro) {
+        console.error("❌ Não foi possível salvar o ajuste do rolo no Neon:", erro);
+        return null;
+    }
+}
+
+// ==========================================================================
+// ESTOQUE HIDRÁULICO — sincronização com o Neon (aplicado x reserva)
+// ==========================================================================
+export async function sincronizarHidraulicaReal() {
+    try {
+        const apiBase = await resolverApiBase();
+        const resposta = await fetch(`${apiBase}/api/hidraulica`);
+        if (!resposta.ok) throw new Error(`API respondeu com status ${resposta.status}`);
+
+        const hidraulicaApi = await resposta.json();
+        if (!Array.isArray(hidraulicaApi)) return false;
+
+        BANCO_HIDRAULICA.length = 0;
+        BANCO_HIDRAULICA.push(...hidraulicaApi.map(h => ({
+            id: h.id,
+            nome: h.nome,
+            conjunto: h.conjunto,
+            mcc_compat: h.mcc_compat,
+            qtd_aplicado: parseFloat(h.qtd_aplicado) || 0,
+            qtd_reserva: parseFloat(h.qtd_reserva) || 0
+        })));
+
+        localStorage.setItem("oms_hidraulica_v32_local", JSON.stringify(BANCO_HIDRAULICA));
+        console.log(`✅ Estoque hidráulico sincronizado com o Neon: ${BANCO_HIDRAULICA.length} itens.`);
+        return true;
+    } catch (erro) {
+        console.error("❌ Falha ao buscar hidráulica do Neon (usando dados locais salvos):", erro);
+        return false;
+    }
+}
+
+export async function salvarAjusteHidraulicaNoPython(id, local, fator) {
+    try {
+        const apiBase = await resolverApiBase();
+        const resposta = await fetch(`${apiBase}/api/hidraulica/ajustar`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, local, fator })
+        });
+        const resultado = await resposta.json().catch(() => ({}));
+        if (!resposta.ok || !resultado.sucesso) {
+            throw new Error(resultado.detail || `HTTP ${resposta.status}`);
+        }
+        return resultado;
+    } catch (erro) {
+        console.error("❌ Não foi possível salvar o ajuste hidráulico no Neon:", erro);
+        return null;
+    }
+}
+
+// ==========================================================================
 // EXPORTAÇÃO PADRÃO
 // ==========================================================================
 export default {
@@ -463,5 +562,9 @@ export default {
     sincronizarAtivosReaisMCC4,
     salvarPecaNoPython,
     salvarHistoricoNoPython,
+    sincronizarRolosReais,
+    salvarAjusteRoloNoPython,
+    sincronizarHidraulicaReal,
+    salvarAjusteHidraulicaNoPython,
     resolverApiBase
 };
