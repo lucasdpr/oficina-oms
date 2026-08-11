@@ -43,7 +43,7 @@ export function fetchComTimeout(url, opts = {}, ms = 1500) {
 // tela em "carregando" eternamente, mesmo o app tendo entrado com sucesso.
 // Agora: espera até 20s por tentativa: se estourar, tenta mais 1 vez (dando
 // tempo do banco terminar de acordar) antes de desistir de vez.
-export async function fetchDadosComTimeout(url, opts = {}, { tentativas = 1, timeoutMs = 20000, esperaMs = 3000 } = {}) {
+export async function fetchDadosComTimeout(url, opts = {}, { tentativas = 3, timeoutMs = 30000, esperaMs = 4000 } = {}) {
     for (let i = 0; i <= tentativas; i++) {
         try {
             return await fetchComTimeout(url, opts, timeoutMs);
@@ -308,7 +308,7 @@ function gerarPosicaoFixa(idSistema, tipoCanonico, contadorGrupoPorVeio, veio) {
 export async function sincronizarAtivosReaisMCC4() {
     try {
         const apiBase = await resolverApiBase();
-        const resposta = await fetchDadosComTimeout(`${apiBase}/api/pecas`, {}, { tentativas: 1 });
+        const resposta = await fetchDadosComTimeout(`${apiBase}/api/pecas`, {}, { tentativas: 2 });
 
         if (!resposta.ok) {
             throw new Error(`API respondeu com status ${resposta.status}`);
@@ -418,7 +418,7 @@ export async function salvarPecaNoPython(peca) {
                 data_entrada: peca.data_entrada || null,
                 observacao: peca.observacao ?? null
             })
-        }, { tentativas: 1 });
+        }, { tentativas: 2 });
 
         const resultado = await resposta.json();
 
@@ -453,7 +453,7 @@ export async function salvarHistoricoNoPython(evento) {
                 acao: evento.acao || "",
                 operador: evento.responsavel || "Sistema"
             })
-        }, { tentativas: 1 });
+        }, { tentativas: 2 });
 
         const resultado = await resposta.json();
 
@@ -471,7 +471,7 @@ export async function salvarHistoricoNoPython(evento) {
 export async function sincronizarRolosReais() {
     try {
         const apiBase = await resolverApiBase();
-        const resposta = await fetchDadosComTimeout(`${apiBase}/api/rolos`, {}, { tentativas: 1 });
+        const resposta = await fetchDadosComTimeout(`${apiBase}/api/rolos`, {}, { tentativas: 2 });
         if (!resposta.ok) throw new Error(`API respondeu com status ${resposta.status}`);
 
         const rolosApi = await resposta.json();
@@ -502,7 +502,7 @@ export async function salvarAjusteRoloNoPython(id, fator) {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ id, fator })
-        }, { tentativas: 1 });
+        }, { tentativas: 2 });
         const resultado = await resposta.json().catch(() => ({}));
         if (!resposta.ok || !resultado.sucesso) {
             throw new Error(resultado.detail || `HTTP ${resposta.status}`);
@@ -520,7 +520,7 @@ export async function salvarAjusteRoloNoPython(id, fator) {
 export async function sincronizarHidraulicaReal() {
     try {
         const apiBase = await resolverApiBase();
-        const resposta = await fetchDadosComTimeout(`${apiBase}/api/hidraulica`, {}, { tentativas: 1 });
+        const resposta = await fetchDadosComTimeout(`${apiBase}/api/hidraulica`, {}, { tentativas: 2 });
         if (!resposta.ok) throw new Error(`API respondeu com status ${resposta.status}`);
 
         const hidraulicaApi = await resposta.json();
@@ -552,7 +552,7 @@ export async function salvarAjusteHidraulicaNoPython(id, local, fator) {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ id, local, fator })
-        }, { tentativas: 1 });
+        }, { tentativas: 2 });
         const resultado = await resposta.json().catch(() => ({}));
         if (!resposta.ok || !resultado.sucesso) {
             throw new Error(resultado.detail || `HTTP ${resposta.status}`);

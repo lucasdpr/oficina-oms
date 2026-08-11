@@ -226,7 +226,7 @@ window.alternarVisibilidadeSenha = function() {
 // 2) tentativas: se abortar por timeout (ou cair a conexão), tenta de
 //    novo automaticamente antes de desistir de vez — dando tempo do
 //    banco terminar de acordar.
-async function fetchComRetry(url, opcoes = {}, tentativas = 2, esperaMs = 4000, timeoutMs = 35000) {
+async function fetchComRetry(url, opcoes = {}, tentativas = 4, esperaMs = 4000, timeoutMs = 30000) {
     for (let i = 0; i <= tentativas; i++) {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -279,8 +279,11 @@ async function processarAutenticacaoHome() {
             if (btnEntrar) btnEntrar.innerText = "Conectando ao servidor...";
         }, 3000);
         const avisoLento2 = setTimeout(() => {
-            if (btnEntrar) btnEntrar.innerText = "Servidor iniciando, aguarde (até 1 min)...";
+            if (btnEntrar) btnEntrar.innerText = "Servidor iniciando, aguarde...";
         }, 12000);
+        const avisoLento3 = setTimeout(() => {
+            if (btnEntrar) btnEntrar.innerText = "Quase lá, ainda tentando...";
+        }, 45000);
 
         let resp;
         try {
@@ -292,6 +295,7 @@ async function processarAutenticacaoHome() {
         } finally {
             clearTimeout(avisoLento1);
             clearTimeout(avisoLento2);
+            clearTimeout(avisoLento3);
         }
 
         const resultado = await resp.json().catch(() => ({}));
