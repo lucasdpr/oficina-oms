@@ -40,3 +40,4 @@ export function toggleTheme() {
 function toggleSidebar() {
     document.getElementById('sidebar-menu').classList.toggle('open');
 }
+
