@@ -391,6 +391,7 @@ function fazerLogout() {
         document.getElementById("container-sistema-oms").style.display = "none";
         document.getElementById("tela-login-home").style.display = "flex";
         if (typeof ativarPainelDevSeAutorizado === 'function') ativarPainelDevSeAutorizado();
+        if (typeof ativarAuditoriaSeAutorizado === 'function') ativarAuditoriaSeAutorizado();
     }
 }
 
@@ -551,6 +552,12 @@ function renderHistorico() {
     const tbody = document.getElementById("historico-table-body");
     if (!tbody) return;
 
+    const matricula = (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula || "").toUpperCase();
+    if (!MATRICULAS_AUDITORIA.includes(matricula)) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Acesso restrito.</td></tr>`;
+        return;
+    }
+
     const filtroData = document.getElementById("filtro-data-historico")?.value || '';
     const laudos = getLaudosSalvos();
 
@@ -637,6 +644,42 @@ function renderHistorico() {
 // abrir na unha pelo console.
 const MATRICULAS_TESTE_FOLHOES = ["CBK3574", "CSP1869"];
 
+// ==========================================
+// AUDITORIA — só CBK3574 e CSP1869 podem ver
+// ==========================================
+// 🔒 Mesmo princípio do painel de teste acima: a restrição não é só
+// visual (esconder o link do menu). renderHistorico() abaixo também
+// se recusa a montar a tabela pra quem não está na lista — ninguém
+// não autorizado vê os dados de auditoria, nem forçando a aba pelo
+// console do navegador.
+const MATRICULAS_AUDITORIA = ["CBK3574", "CSP1869"];
+
+function ativarAuditoriaSeAutorizado() {
+    const link = document.getElementById("nav-historico");
+    if (!link) return;
+
+    const matricula = (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula || "").toUpperCase();
+    const autorizado = MATRICULAS_AUDITORIA.includes(matricula);
+
+    if (autorizado) {
+        link.classList.remove("hidden");
+    } else {
+        link.classList.add("hidden");
+        // Se a aba de Auditoria estava aberta (ex: outro operador loga
+        // por cima na mesma tela), tira a pessoa de lá.
+        const abaHistorico = document.getElementById("aba-historico");
+        if (abaHistorico && !abaHistorico.classList.contains("hidden") && typeof window.abrirAba === 'function') {
+            const navPainel = document.getElementById("nav-painel");
+            if (navPainel) window.abrirAba({ preventDefault(){}, currentTarget: navPainel }, "aba-painel");
+        }
+    }
+    // renderHistorico() decide sozinha se preenche a tabela ou não,
+    // com base na mesma checagem de matrícula — chamar de novo aqui
+    // garante que o conteúdo (não só o link) reflita a autorização atual.
+    if (typeof renderHistorico === 'function') renderHistorico();
+}
+window.ativarAuditoriaSeAutorizado = ativarAuditoriaSeAutorizado;
+
 function ativarPainelDevSeAutorizado() {
     const link = document.getElementById("nav-dev-teste");
     const divisor = document.getElementById("nav-divider-dev");
@@ -699,6 +742,7 @@ function atualizarInterfaceUsuario() {
         if (badgeEl) badgeEl.style.display = "none";
         renderHistorico();
         ativarPainelDevSeAutorizado();
+        ativarAuditoriaSeAutorizado();
         return;
     }
 
@@ -715,6 +759,7 @@ function atualizarInterfaceUsuario() {
         if (btnLogout) btnLogout.innerText = "Voltar ao Login";
         renderHistorico();
         ativarPainelDevSeAutorizado();
+        ativarAuditoriaSeAutorizado();
         return;
     }
 
@@ -737,6 +782,7 @@ function atualizarInterfaceUsuario() {
     }
     renderHistorico();
     ativarPainelDevSeAutorizado();
+    ativarAuditoriaSeAutorizado();
 }
 // 🔧 CORREÇÃO ("some o nome/matrícula/cargo, fica só '...' quando reabre o
 // app já logado"): esta função só era chamada dentro do próprio script.js

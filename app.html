@@ -207,7 +207,7 @@
     </div>
 
     <!-- NOVO: Botão de Acesso Visitante -->
-    <button type="button" class="btn-visitante-top" onclick="window.entrarComoVisitante()">
+    <button type="button" class="btn-visitante-top" onclick="window.abrirModalVisitante()">
         <i class="fas fa-eye"></i> Modo Visitante
     </button>
 
@@ -269,6 +269,26 @@
     </div>
 </div>
 
+    <!-- MODAL: PEDIR NOME ANTES DE ENTRAR COMO VISITANTE -->
+    <div id="modal-visitante-nome" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 420px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-eye" style="color:var(--text-accent);"></i> Acesso Visitante</h2>
+                <button class="btn-close-modal" onclick="window.fecharModalVisitante()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted" style="font-size:0.8rem; margin-bottom:14px;">Somente leitura — sem seu nome não dá pra saber quem acessou o sistema como visitante.</p>
+                <div class="input-group" style="margin-bottom:18px;">
+                    <label>Seu nome</label>
+                    <input type="text" id="visitante-nome-input" class="premium-input" placeholder="Digite seu nome" onkeydown="if(event.key==='Enter') window.confirmarAcessoVisitante()">
+                </div>
+                <button class="btn-premium btn-success w-100" onclick="window.confirmarAcessoVisitante()">
+                    <i class="fas fa-check"></i> Entrar como Visitante
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- ===== CONTAINER PRINCIPAL ===== -->
     <div id="container-sistema-oms" class="app-container no-print" style="display: none;">
         <!-- MOBILE HEADER -->
@@ -306,7 +326,7 @@
                 <a href="#" id="nav-hidraulica" class="nav-link highlight-hidraulica" onclick="window.abrirAba(event,'aba-hidraulica')"><i class="fas fa-oil-can"></i> Hidráulica</a>
                 <a href="#" id="nav-almoxarifado" class="nav-link highlight-almoxarifado" onclick="window.abrirAba(event,'aba-almoxarifado')"><i class="fas fa-pallet"></i> Almoxarifado Central</a>
                 <a href="#" id="nav-oficina" class="nav-link" onclick="window.abrirAba(event,'aba-oficina')"><i class="fas fa-clipboard-list"></i> Oficina</a>
-                <a href="#" id="nav-historico" class="nav-link" onclick="window.abrirAba(event,'aba-historico')"><i class="fas fa-history"></i> Auditoria</a>
+                <a href="#" id="nav-historico" class="nav-link hidden" onclick="window.abrirAba(event,'aba-historico')"><i class="fas fa-history"></i> Auditoria</a>
 
                 <div class="nav-divider nav-divider-dev hidden" id="nav-divider-dev"><i class="fas fa-lock"></i> Área Restrita</div>
                 <a href="#" id="nav-dev-teste" class="nav-link nav-link-dev hidden" onclick="window.abrirAba(event,'aba-dev-teste')"><i class="fas fa-flask"></i> Teste de Folhões</a>
