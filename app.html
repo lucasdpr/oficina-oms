@@ -273,12 +273,6 @@
 
     <!-- ===== CONTAINER PRINCIPAL ===== -->
     <div id="container-sistema-oms" class="app-container no-print" style="display: none;">
-        <!-- 🔧 PAINEL DE DIAGNÓSTICO TEMPORÁRIO — pode remover depois que o
-        problema de sincronização estiver 100% confirmado como resolvido.
-        Mostra, direto na tela, o que está acontecendo com a sincronização
-        de dados, sem precisar abrir o console do navegador (útil pra
-        depurar em celular, que não tem DevTools fácil de acessar). -->
-        <div id="debug-sync-status" style="position:fixed; bottom:0; left:0; right:0; z-index:99999; background:#000; color:#0f0; font-family:monospace; font-size:11px; padding:6px 10px; line-height:1.5; max-height:35vh; overflow-y:auto; opacity:0.92;"></div>
         <!-- BARRA DE EMERGÊNCIA -->
         <div id="barra-emergencia" class="emergency-bar" style="display: none;">
             <div class="emergency-content"><span id="texto-emergencia"></span><button class="btn-close-emergency" onclick="window.encerrarEmergencia()">Resetar Sistema</button></div>
@@ -1473,33 +1467,16 @@
 
         console.log("✅ Sistema OMS inicializado!");
 
-        // 🔧 PAINEL DE DIAGNÓSTICO + RECONCILIADOR AUTOMÁTICO — atualiza a
-        // cada segundo. Além de mostrar o estado real (debug), também
-        // GARANTE que os cards de KPI (ex: "ATIVOS MONITORADOS") reflitam
+        // 🔧 RECONCILIADOR AUTOMÁTICO (silencioso) — a cada 1 segundo,
+        // garante que os cards de KPI (ex: "ATIVOS MONITORADOS") reflitam
         // o BANCO_ATIVOS de verdade, mesmo se alguma renderização anterior
-        // tiver rodado cedo demais (antes dos dados chegarem) e nada tiver
-        // mandado redesenhar depois. Isso é leve (só números, não recria
-        // tabelas inteiras), então rodar toda hora não pesa na tela.
+        // tiver rodado cedo demais. Leve (só números, não recria tabelas).
         setInterval(() => {
             const logado = !!localStorage.getItem('oms_operador_v32_local');
             if (logado) {
                 if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
                 if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
             }
-
-            const el = document.getElementById('debug-sync-status');
-            if (!el) return;
-            const ativos = (window.BANCO_ATIVOS && window.BANCO_ATIVOS.length) ?? 'sem BANCO_ATIVOS';
-            const erro = window.ULTIMO_ERRO_SYNC || '(nenhum)';
-            const kpiTotalEl = document.getElementById('kpi-total');
-            const kpiTotalTela = kpiTotalEl ? kpiTotalEl.innerText : '(elemento não existe)';
-            el.innerHTML = `
-                DEBUG • ${new Date().toLocaleTimeString('pt-BR')}<br>
-                BANCO_ATIVOS.length: <b>${ativos}</b><br>
-                kpi-total na tela: <b>${kpiTotalTela}</b><br>
-                Último erro de sync: <b>${erro}</b><br>
-                Sessão salva: ${logado ? 'sim' : 'não'}
-            `;
         }, 1000);
 
         // Verifica se já tem operador logado
