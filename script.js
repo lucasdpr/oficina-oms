@@ -348,7 +348,14 @@ async function finalizarLogin(nome, cargo, matricula) {
     document.getElementById("tela-login-home").style.display = "none";
     document.getElementById("container-sistema-oms").style.display = "flex";
 
-    if (typeof atualizarInterfaceUsuario === 'function') atualizarInterfaceUsuario();
+    // 🛡️ Protegido: se atualizarInterfaceUsuario() (que redesenha várias
+    // partes da tela) falhar por qualquer motivo, isso NÃO pode impedir
+    // o registro do login nem a sincronização de dados logo abaixo — foi
+    // exatamente isso que aconteceu quando um bug de renderização
+    // (btnExcluir) travava aqui e o login "sumia" sem deixar rastro.
+    if (typeof atualizarInterfaceUsuario === 'function') {
+        try { atualizarInterfaceUsuario(); } catch (e) { console.error('⚠️ Falha ao atualizar a interface (login prosseguiu mesmo assim):', e); }
+    }
     if (typeof registrarHistorico === 'function') registrarHistorico("AUTENTICAÇÃO", `Login executado com sucesso.`);
 
     // 🔧 CORREÇÃO ("encerra o turno, loga de novo, continua com os dados
@@ -431,7 +438,9 @@ async function entrarComoVisitante(nomeDigitado) {
     document.getElementById("tela-login-home").style.display = "none";
     document.getElementById("container-sistema-oms").style.display = "flex";
 
-    if (typeof atualizarInterfaceUsuario === 'function') atualizarInterfaceUsuario();
+    if (typeof atualizarInterfaceUsuario === 'function') {
+        try { atualizarInterfaceUsuario(); } catch (e) { console.error('⚠️ Falha ao atualizar a interface (acesso visitante prosseguiu mesmo assim):', e); }
+    }
     if (typeof registrarHistorico === 'function') registrarHistorico("AUTENTICAÇÃO", `Acesso em Modo Visitante (somente leitura) — ${nome}.`);
 
     // 🔧 Mesma correção do login normal: força uma sincronização real
@@ -1441,7 +1450,7 @@ function renderizarResumoHistoricoIndividual(item) {
     container.innerHTML = `
         <div class="kpi-card" style="border-top:3px solid ${corDias};">
             <div class="kpi-icon" style="color:${corDias}; border-color:${corDias}33;"><i class="fas ${iconeDias}"></i></div>
-            <div class="kpi-data"><h4 style="font-size:1.3rem;">${cardEntrada}</h4><p>Data de Entrada Atual</p></div>
+            <div class="kpi-data"><h4 style="font-size:1.3rem;">${cardEntrada}</h4><p>${item.local === "Oficina / Reparo" ? "Saiu do Veio em" : "Data de Entrada Atual"}</p></div>
         </div>
         <div class="kpi-card" style="border-top:3px solid ${corDias};">
             <div class="kpi-icon" style="color:${corDias}; border-color:${corDias}33;"><i class="fas fa-calendar-day"></i></div>
@@ -1452,6 +1461,20 @@ function renderizarResumoHistoricoIndividual(item) {
             <div class="kpi-data"><h4 style="font-size:1.3rem;">${folhoesFeitos}</h4><p>Folhões Concluídos</p></div>
         </div>
     `;
+
+    // 🔁 Quando a peça está em reparo por causa de um Swap (não um saque
+    // manual), mostra quem entrou no lugar dela — antes essa informação
+    // só existia dentro do texto livre da linha do tempo, difícil de
+    // achar rápido.
+    const avisoSubstituicao = document.getElementById("hist-aviso-substituicao");
+    if (avisoSubstituicao) {
+        if (item.local === "Oficina / Reparo" && item.substituidoPor) {
+            avisoSubstituicao.innerHTML = `<i class="fas fa-right-left"></i> Substituída por <strong class="font-code">${item.substituidoPor}</strong>`;
+            avisoSubstituicao.classList.remove("hidden");
+        } else {
+            avisoSubstituicao.classList.add("hidden");
+        }
+    }
 }
 
 function fecharModalHistorico() {
@@ -1565,8 +1588,10 @@ async function executarSaqueFinal(id, laudo) {
         item.dataReparo = Date.now();
         item.dias = 0;
         item.dataEntradaVeio = null;
+        item.substituidoPor = null;
         localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-        registrarHistorico(id, `Sacado da linha (${loc}) p/ Reparo. ${laudo}`);
+        const agora = new Date().toLocaleDateString('pt-BR');
+        registrarHistorico(id, `Sacado da linha (${loc}) em ${agora} p/ Reparo. ${laudo}`);
 
         // Persiste no banco Postgres — sem isso, o saque some assim que a
         // tela sincronizar de novo com o servidor (sincronizarAtivosReaisMCC4
@@ -3016,8 +3041,9 @@ window.iniciarSwapAlocacao = async function(idReserva) {
         if (confirm(`A peça ${pecaAntiga.id} será SACADA do slot ${slotChassi} (Veio ${veio}) para dar lugar à ${pecaReserva.id}.`)) {
             pecaAntiga.status = "Oficina / Reparo"; pecaAntiga.local = "Oficina / Reparo";
             pecaAntiga.veio = ""; pecaAntiga.posicaoFixa = ""; pecaAntiga.pos = ""; pecaAntiga.dataReparo = Date.now(); pecaAntiga.dias = 0; pecaAntiga.dataEntradaVeio = null;
+            pecaAntiga.substituidoPor = pecaReserva.id;
 
-            pecaReserva.local = `MCC ${mcc} - Veio ${veio}`; pecaReserva.veio = veio; pecaReserva.posicaoFixa = slotChassi; pecaReserva.pos = slotChassi; pecaReserva.status = "Instalado"; pecaReserva.dataEntradaVeio = Date.now(); pecaReserva.dias = 0;
+            pecaReserva.local = `MCC ${mcc} - Veio ${veio}`; pecaReserva.veio = veio; pecaReserva.posicaoFixa = slotChassi; pecaReserva.pos = slotChassi; pecaReserva.status = "Instalado"; pecaReserva.dataEntradaVeio = Date.now(); pecaReserva.dias = 0; pecaReserva.substituidoPor = null;
             localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
 
             // Persiste as duas peças no banco Postgres (a que saiu e a que entrou)
@@ -3027,8 +3053,9 @@ window.iniciarSwapAlocacao = async function(idReserva) {
             }
             
             if (window.registrarHistorico) {
-                window.registrarHistorico(pecaReserva.id, `📥 Entrou no slot ${slotChassi} do Veio ${veio} (substituiu ${pecaAntiga.id}). Contagem de dias na máquina reiniciada.`);
-                window.registrarHistorico(pecaAntiga.id, `📤 Saiu do slot ${slotChassi} do Veio ${veio} para reparo.`);
+                const agora = new Date().toLocaleDateString('pt-BR');
+                window.registrarHistorico(pecaReserva.id, `📥 Entrou no slot ${slotChassi} do Veio ${veio} em ${agora} (substituiu ${pecaAntiga.id}). Contagem de dias na máquina reiniciada.`);
+                window.registrarHistorico(pecaAntiga.id, `📤 Saiu do slot ${slotChassi} do Veio ${veio} em ${agora}, substituída por ${pecaReserva.id}. Foi para reparo — contagem de dias em reparo reiniciada.`);
             }
             if (typeof renderReparos === 'function') renderReparos(); if (typeof renderReservas === 'function') renderReservas();
             if (typeof renderAtivos === 'function') renderAtivos(); if (typeof renderPainelVeios === 'function') renderPainelVeios();
@@ -3036,7 +3063,7 @@ window.iniciarSwapAlocacao = async function(idReserva) {
         }
     } else {
         if (confirm(`Instalar a reserva ${pecaReserva.id} no slot ${slotChassi} do Veio ${veio}?`)) {
-            pecaReserva.local = `MCC ${mcc} - Veio ${veio}`; pecaReserva.veio = veio; pecaReserva.posicaoFixa = slotChassi; pecaReserva.pos = slotChassi; pecaReserva.status = "Instalado"; pecaReserva.dataEntradaVeio = Date.now(); pecaReserva.dias = 0;
+            pecaReserva.local = `MCC ${mcc} - Veio ${veio}`; pecaReserva.veio = veio; pecaReserva.posicaoFixa = slotChassi; pecaReserva.pos = slotChassi; pecaReserva.status = "Instalado"; pecaReserva.dataEntradaVeio = Date.now(); pecaReserva.dias = 0; pecaReserva.substituidoPor = null;
             localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
 
             if (typeof salvarPecaNoPython === 'function') {

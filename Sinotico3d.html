@@ -1332,7 +1332,11 @@ async function carregarDados() {
 
     try {
         const apiBase = await resolverApiBase();
-        const resposta = await fetch(`${apiBase}/api/pecas`);
+        // cache: 'no-store' + parâmetro _t garantem que o navegador NUNCA
+        // devolve uma resposta antiga em cache pra essa chamada — sem
+        // isso, clicar em "Atualizar" logo após uma mudança podia
+        // continuar mostrando os dados de antes por causa do cache HTTP.
+        const resposta = await fetch(`${apiBase}/api/pecas?_t=${Date.now()}`, { cache: 'no-store' });
         if (!resposta.ok) throw new Error(`API respondeu ${resposta.status}`);
         const dados = await resposta.json();
 

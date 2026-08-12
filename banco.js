@@ -379,6 +379,13 @@ export async function sincronizarAtivosReaisMCC4() {
                 mcc_compat: (peca.local && peca.local.includes("MCC 4")) ? "4" : "2/3",
                 tag_patrimonio: peca.tag_patrimonio || null,
                 data_entrada: peca.data_entrada || null,
+                // 🔧 CORREÇÃO: sem isso, todo login "esquecia" quando a
+                // peça realmente entrou em Oficina/Reparo — dataReparo só
+                // existia localmente, então virava undefined aqui mesmo
+                // pra uma peça salva corretamente no banco. calcularDias()
+                // (ui.js) precisa desse timestamp pra contar os dias certos.
+                dataReparo: peca.data_reparo ? new Date(peca.data_reparo).getTime() : null,
+                substituidoPor: peca.substituido_por || null,
                 observacao: peca.observacao || "",
                 status: peca.status || "Instalado"
             };
@@ -450,6 +457,14 @@ export async function salvarPecaNoPython(peca) {
                 posicao: peca.posicaoFixa || peca.pos || peca.posicao || "",
                 tag_patrimonio: peca.tag_patrimonio || null,
                 data_entrada: peca.data_entrada || null,
+                // 🔧 CORREÇÃO: antes esses dois campos só existiam na
+                // memória do navegador. Toda sincronização com o banco
+                // (que roda em todo login) reconstruía a peça do zero, sem
+                // eles — o contador de "dias em reparo" perdia a
+                // referência de quando a peça realmente saiu do veio, e
+                // voltava a mostrar um valor antigo/congelado.
+                data_reparo: peca.dataReparo ? new Date(peca.dataReparo).toISOString() : null,
+                substituido_por: peca.substituidoPor || null,
                 observacao: peca.observacao ?? null
             })
         }, { tentativas: 2 });
