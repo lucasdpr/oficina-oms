@@ -255,7 +255,6 @@ const renderRolos = window.renderRolos;
 const renderMateriais = window.renderMateriais;
 const renderHistorico = window.renderHistorico;
 const gerarCardGraficoHTML = window.gerarCardGraficoHTML;
-const aplicarFiltrosMCC = window.aplicarFiltrosMCC;
 const renderizarGraficosMCC = window.renderizarGraficosMCC;
 
 export {
@@ -268,6 +267,5 @@ export {
     renderMateriais,
     renderHistorico,
     gerarCardGraficoHTML,
-    aplicarFiltrosMCC,
     renderizarGraficosMCC
 };

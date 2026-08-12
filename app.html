@@ -69,8 +69,6 @@
         .btn-outline-danger:active { transform: scale(0.98); }
         .btn-xs-primary { background: transparent; border: none; color: var(--text-muted); font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: var(--radius); cursor: pointer; transition: color var(--transition); }
         .btn-xs-primary:hover { color: var(--text-accent); }
-        .btn-panic { position: relative; overflow: hidden; width: 100%; background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid #ef4444; padding: 14px; border-radius: var(--radius); font-weight: 700; cursor: pointer; transition: all var(--transition); font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 16px; }
-        .btn-panic:hover { background: #ef4444; color: #0a0e17; box-shadow: 0 0 30px rgba(239,68,68,0.4); transform: scale(1.02); }
         .ui-ripple { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.5); transform: scale(0); animation: ui-ripple-anim 0.55s ease-out; pointer-events: none; }
         @keyframes ui-ripple-anim { to { transform: scale(2.6); opacity: 0; } }
         /* ===== GLASS PANEL ===== */
@@ -273,11 +271,6 @@
 
     <!-- ===== CONTAINER PRINCIPAL ===== -->
     <div id="container-sistema-oms" class="app-container no-print" style="display: none;">
-        <!-- BARRA DE EMERGÊNCIA -->
-        <div id="barra-emergencia" class="emergency-bar" style="display: none;">
-            <div class="emergency-content"><span id="texto-emergencia"></span><button class="btn-close-emergency" onclick="window.encerrarEmergencia()">Resetar Sistema</button></div>
-        </div>
-
         <!-- MOBILE HEADER -->
         <div class="mobile-header glass-panel">
             <div class="mobile-logo flex-align-center gap-10"><div class="login-logo-factory" style="width:35px;height:35px;margin:0;box-shadow:none;"><svg viewBox="0 0 24 24" style="width:20px;height:20px;"><path d="M4,18V11.42L8.27,4H14V11H18V14H20V18H4M2,22V20H22V22H2M12,13H10V15H12V13M16,13H14V15H16V13M12,16H10V18H12V16M16,16H14V18H16V16Z"/></svg></div><strong style="color:var(--text-heading);font-size:16px;">OMS Mobile</strong></div>
@@ -1121,7 +1114,7 @@
     </div>
 
     <div id="modal-folhao-segmento-zero" class="modal-overlay hidden">
-        <div class="modal-content" style="max-width: 1000px;">
+        <div class="modal-content" style="max-width: 1000px; max-height: 90vh; overflow-y: auto;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
                 <h2><i class="fas fa-clipboard-check"></i> Liberação - Segmento Zero</h2>
                 <button class="btn-close-emergency" onclick="window.fecharFolhaoSegmentoZero()"><i class="fas fa-times"></i></button>
@@ -1143,14 +1136,21 @@
                 <button class="folhao-tab" onclick="window.trocarAbaSegZero(event, 'segzero-aba-materiais')">8. Materiais</button>
             </div>
             <div class="folhao-body">
-                <div id="segzero-aba-dados" class="folhao-content"><div class="input-group"><label>VEIO</label><input type="text" id="segzero-veio"></div><div class="input-group"><label>TIPO EXECUÇÃO</label><select id="segzero-tipo-execucao"><option value="GERAL">GERAL</option><option value="PARCIAL">PARCIAL</option></select></div></div>
-                <div id="segzero-aba-chegada" class="folhao-content hidden"></div>
-                <div id="segzero-aba-gap" class="folhao-content hidden"></div>
-                <div id="segzero-aba-medidas" class="folhao-content hidden"></div>
-                <div id="segzero-aba-mancais" class="folhao-content hidden"></div>
-                <div id="segzero-aba-passline" class="folhao-content hidden"></div>
-                <div id="segzero-aba-saida" class="folhao-content hidden"></div>
-                <div id="segzero-aba-materiais" class="folhao-content hidden"></div>
+                <div id="segzero-aba-dados" class="folhao-content">
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:10px;">
+                        <div class="input-group"><label>Nº SEGMENTO</label><input type="text" id="segzero-num-segmento" placeholder="Ex: 01"></div>
+                        <div class="input-group"><label>VEIO (SAÍDA)</label><select id="segzero-veio" class="premium-select"><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option></select></div>
+                        <div class="input-group"><label>DESEMPENHO</label><input type="text" id="segzero-desempenho" placeholder="Ex: OK"></div>
+                        <div class="input-group"><label>TIPO EXECUÇÃO</label><select id="segzero-tipo-execucao" class="premium-select"><option value="GERAL">GERAL</option><option value="PARCIAL">PARCIAL</option></select></div>
+                    </div>
+                </div>
+                <div id="segzero-aba-chegada" class="folhao-content hidden"><div id="segzero-container-chegada"></div></div>
+                <div id="segzero-aba-gap" class="folhao-content hidden"><div id="segzero-container-gap-chegada"></div><hr style="margin:15px 0; border-color:var(--border-color);"><div id="segzero-container-gap-saida"></div></div>
+                <div id="segzero-aba-medidas" class="folhao-content hidden"><div id="segzero-container-medidas"></div></div>
+                <div id="segzero-aba-mancais" class="folhao-content hidden"><div id="segzero-container-mancais-inf"></div><hr style="margin:15px 0; border-color:var(--border-color);"><div id="segzero-container-mancais-sup"></div></div>
+                <div id="segzero-aba-passline" class="folhao-content hidden"><div id="segzero-container-passline"></div></div>
+                <div id="segzero-aba-saida" class="folhao-content hidden"><div id="segzero-container-rolos-sup"></div><hr style="margin:15px 0; border-color:var(--border-color);"><div id="segzero-container-rolos-inf"></div><hr style="margin:15px 0; border-color:var(--border-color);"><div id="segzero-container-checklist-saida"></div></div>
+                <div id="segzero-aba-materiais" class="folhao-content hidden"><div id="segzero-container-materiais"></div></div>
             </div>
             <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
                 <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoSegmentoZero()"><i class="fas fa-save"></i> Salvar e Imprimir</button>
@@ -1637,6 +1637,29 @@
                 </div>
                 <button class="btn-premium btn-success w-100" onclick="window.confirmarIntervencao()">
                     <i class="fas fa-check"></i> Salvar Intervenção
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: RETIRAR EQUIPAMENTO (SAQUE PARA REPARO) -->
+    <div id="modal-relatorio" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 520px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-exchange-alt" style="color:var(--warning);"></i> Retirar Equipamento <span id="modal-tag" class="font-code" style="color:var(--warning);"></span></h2>
+                <button class="btn-close-modal" onclick="window.fecharModalRelatorio()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group" style="margin-bottom:14px;">
+                    <label>Motivo da Retirada</label>
+                    <select id="modal-motivo" class="premium-select w-100"></select>
+                </div>
+                <div class="input-group" style="margin-bottom:18px;">
+                    <label>Condição / Laudo Visual</label>
+                    <textarea id="modal-condicao" class="premium-textarea" rows="4" placeholder="Descreva como o equipamento chegou na oficina..."></textarea>
+                </div>
+                <button class="btn-premium btn-success w-100" onclick="window.confirmarRelatorio()">
+                    <i class="fas fa-check"></i> Confirmar Retirada
                 </button>
             </div>
         </div>

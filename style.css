@@ -444,29 +444,6 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(255, 255, 255, 0.15);
 }
 
-.btn-panic {
-  width: 100%;
-  background: var(--danger-bg);
-  color: var(--danger);
-  border: 1px solid var(--danger);
-  padding: 14px;
-  border-radius: var(--radius-sm);
-  font-weight: 700;
-  cursor: pointer;
-  transition: all var(--transition-base);
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-family: var(--font-family);
-}
-
-.btn-panic:hover {
-  background: var(--danger);
-  color: var(--text-on-primary);
-  box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
-  transform: scale(1.02);
-}
-
 .btn-auth {
   position: relative;
   overflow: hidden;
@@ -1761,38 +1738,6 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ==========================================
-   BARRA DE EMERGÊNCIA
-========================================== */
-.emergency-bar {
-  background: linear-gradient(90deg, #7f1d1d, #dc2626);
-  color: var(--text-on-primary);
-  padding: 10px 20px;
-  font-weight: 700;
-  text-align: center;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 9999;
-  box-shadow: 0 4px 30px rgba(239, 68, 68, 0.3);
-  font-family: var(--font-family);
-  animation: pulseEmergency 2s infinite;
-}
-
-@keyframes pulseEmergency {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.85; }
-}
-
-.emergency-content {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-/* ==========================================
    FOLHÃO - TABS E CONTENT
 ========================================== */
 .folhao-tabs {
@@ -2968,7 +2913,7 @@ h1, h2, h3, h4, h5, h6 {
 
     /* Área de toque mínima recomendada (44x44px) em todo elemento clicável */
     .nav-link, .btn-premium, .btn-outline-danger, .btn-auth, .btn-xs-primary,
-    .btn-panic, button, .status-pill, .tecnico-atalho-btn, .tecnico-item-linha {
+    button, .status-pill, .tecnico-atalho-btn, .tecnico-item-linha {
         min-height: 44px;
         touch-action: manipulation;
     }

@@ -5,14 +5,8 @@ export let HISTORICO_ACOES = JSON.parse(localStorage.getItem("oms_historico_v32_
 export let BANCO_ROLOS = JSON.parse(localStorage.getItem("oms_rolos_v32_local"));
 export let BANCO_HIDRAULICA = JSON.parse(localStorage.getItem("oms_hidraulica_v32_local"));
 export let BANCO_MATERIAIS = JSON.parse(localStorage.getItem("oms_materiais_v32_local"));
-export let EM_EMERGENCIA = JSON.parse(localStorage.getItem("oms_emergencia_v32_local")) || null;
 export let OPERADOR_LOGADO = JSON.parse(localStorage.getItem("oms_operador_v32_local")) || null;
 export let VEIO_SELECIONADO_PAINEL = "C";
-
-export const CADASTRO_MATRICULAS = {
-    "1011": "Desenvoldedor"
-};
-
 
 const API_PLANILHA_URL = "https://script.google.com/macros/s/AKfycby_XSR5hrrvOgDEqlWhbKC2l7iPjthe6ht5YrabNliXsFlkNhzYGFU2BR8JUhzv8yY2/exec";
 
@@ -292,7 +286,6 @@ window.resolverApiBase = resolverApiBase;
 
 // Funções de acesso para alterar variáveis blindadas
 export function setOperador(novoOperador) { OPERADOR_LOGADO = novoOperador; }
-export function setEmergencia(status) { EM_EMERGENCIA = status; }
 export function setVeioSelecionado(veio) { VEIO_SELECIONADO_PAINEL = veio; }
 
 
@@ -628,14 +621,11 @@ export default {
     BANCO_ROLOS,
     BANCO_HIDRAULICA,
     BANCO_MATERIAIS,
-    EM_EMERGENCIA,
     OPERADOR_LOGADO,
     VEIO_SELECIONADO_PAINEL,
-    CADASTRO_MATRICULAS,
     getOrdemPadrao,
     traduzirTipo,
     setOperador,
-    setEmergencia,
     setVeioSelecionado,
     sincronizarAtivosReaisMCC4,
     salvarPecaNoPython,

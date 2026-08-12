@@ -1,156 +1,123 @@
-// folhaoStraightenerR1.js - VERSÃO COMPLETA PARA STRAIGHTENER R1
+// folhaoSegmentoZero.js - VERSÃO COMPLETA PARA SEGMENTO ZERO (MCC 2/3)
+// ==============================================================
+// Transcrito do documento oficial "CHECK LIST GERAL SEGMENTOS ZERO
+// MCC 2/3". Antes deste arquivo, folhaoSegmentoZero.js era uma cópia
+// esquecida do folhaoStraightenerR1.js (mesmo conteúdo, só um texto
+// interno trocado) — abrir o folhão de um Segmento Zero não fazia
+// nada, porque window.abrirFolhaoSegmentoZero nunca existia de
+// verdade. Agora o formulário é o checklist real de Segmento Zero.
+// ==============================================================
 
 import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
 
-let ID_FOLHAO_R1_ATUAL = null;
+let ID_FOLHAO_SEGZERO_ATUAL = null;
 
 // ==============================================================
-// 1. DADOS DAS TABELAS (transcritos do documento oficial R1)
+// 1. DADOS DAS TABELAS (transcritos do documento oficial)
 // ==============================================================
 
-const itensChegadaR1 = [
-    { grupo: "LUBRIFICAÇÃO", desc: "Sistema de lubrificação isento de vazamentos." },
-    { grupo: "", desc: "Tubulação amassada." },
-    { grupo: "", desc: "Distribuidores de graxa funcionando corretamente sem vazamentos." },
-    { grupo: "REFRIGERAÇÃO", desc: "Resfriadores completos e alinhados." },
-    { grupo: "", desc: "Bicos obstruídos." },
-    { grupo: "", desc: "Flexíveis isentos de vazamentos." },
-    { grupo: "", desc: "Tubulações isentas de empenos." },
-    { grupo: "", desc: "Tubulações furadas." },
-    { grupo: "CILINDROS", desc: "Isento de vazamento." },
-    { grupo: "", desc: "Conexões completas e apertadas." },
-    { grupo: "", desc: "Flexíveis isentos de vazamentos." },
-    { grupo: "", desc: "Tubulações isentas de empenos." },
-    { grupo: "PORCA HIDRÁULICA", desc: "Isento de vazamento." },
-    { grupo: "", desc: "Conexões completas e apertadas." },
-    { grupo: "", desc: "Proteções danificadas." },
-    { grupo: "", desc: "Tubulações isentas de vazamentos." },
-    { grupo: "ESTRUTURA", desc: "Tubulações isentas de amassados." },
-    { grupo: "", desc: "Proteções isentas de avarias." },
-    { grupo: "", desc: "Estrutura com break-out." },
-    { grupo: "", desc: "Rolamentos quebrados." },
-    { grupo: "", desc: "Rolos travados" },
-    { grupo: "", desc: "Mancais furados." },
-    { grupo: "", desc: "Estrias do rolo puxador danificada." },
-    { grupo: "", desc: "Conexões apertadas." }
+const itensChegadaSegZero = [
+    { grupo: "LUBRIFICAÇÃO", desc: 'Distribuidores de graxa com vazamentos' },
+    { grupo: "", desc: 'Distribuidores de graxa com agarramentos' },
+    { grupo: "", desc: 'Tubulações de graxa amassadas ou danificadas' },
+    { grupo: "", desc: 'Flexíveis com vazamentos e/ou avarias' },
+    { grupo: "", desc: 'Tubulações de graxa (inox), com avarias' },
+    { grupo: "REFRIGERAÇÃO", desc: 'Resfriadores com vazamento' },
+    { grupo: "", desc: 'Resfriadores com empeno' },
+    { grupo: "", desc: 'Bicos de spray obstruídos' },
+    { grupo: "", desc: 'Tubulação com avarias' },
+    { grupo: "", desc: 'Uniões com avarias' },
+    { grupo: "ESTRUTURA", desc: 'Proteções dos parafusos em perfeito estado, sem avarias' },
+    { grupo: "", desc: 'Rolamentos quebrados' },
+    { grupo: "", desc: 'Mancais soltos e avariados' },
+    { grupo: "", desc: 'Rolos girando normalmente sem restrições' },
+    { grupo: "", desc: 'Estrutura com break-out' }
 ];
 
-const refPassLineInfR1 = ["12,46", "41,22", "56,80", "60,15", "52,68", "36,07", "12,11"];
-const refPassLineSupR1 = ["79,75", "52,18", "37,61", "35,00", "42,83", "59,38", "82,89"];
+const itensSaidaSegZero = [
+    { grupo: "LUBRIFICAÇÃO", desc: 'Distribuidores de graxa sem vazamentos, isentos de agarramento' },
+    { grupo: "", desc: 'Mancais lubrificados' },
+    { grupo: "", desc: 'Flexíveis apertados e distorcidos' },
+    { grupo: "", desc: 'Pressão de teste entre 90 a 110 kgf/cm² (pressão de referência)' },
+    { grupo: "", desc: 'Tubulações em inox, sem avarias' },
+    { grupo: "REFRIGERAÇÃO", desc: 'Flexíveis isentos de vazamentos' },
+    { grupo: "", desc: 'Resfriadores isentos de empenos' },
+    { grupo: "", desc: 'Bicos de spray alinhados e isentos de obstruções' },
+    { grupo: "", desc: 'Tubulação apertada sem avaria' },
+    { grupo: "", desc: 'Teste de pressão lateral com 5kg/cm² (Pressão referência)' },
+    { grupo: "", desc: 'Uniões apertadas isentas de vazamento e avarias' },
+    { grupo: "", desc: 'Uniões montadas na tubulação 2\'\' da cangalha inferior' },
+    { grupo: "ESTRUTURA", desc: 'Proteções dos parafusos fixadas' },
+    { grupo: "", desc: 'Estrutura jateada e pintada' },
+    { grupo: "", desc: 'Gap em conformidade com o desenho' },
+    { grupo: "", desc: 'Rolos girando normalmente sem restrições' },
+    { grupo: "", desc: 'Chapa de proteção soldada' }
+];
 
-// Mesmos refs de saída (Bow) conforme documento
-const refsInfSaiR1 = ["68,66", "91,34", "105,13", "110,00", "105,13", "91,34", "68,66"];
-const refsSupSaiR1 = ["124,13", "102,66", "89,61", "85,00", "89,61", "102,66", "124,13"];
+// Referência fixa da tabela de ajuste de GAP (chegada e saída usam a
+// mesma referência: Espessura A e B = 261,5 (-0,1) mm).
+const REF_GAP_SEGZERO = "261,5 (-0,1)";
 
-const manutencaoR1 = [
-    { item: "1", desc: "Lavagem e/ou Limpeza Mecânica" },
-    { item: "2.1", desc: "Teste Hidrostático" },
-    { item: "2.2", desc: "Teste Hidráulico" },
-    { item: "2.3", desc: "Teste de Refrigeração" },
-    { item: "2.4", desc: "Aferição de Gap (255mm)" },
-    { item: "2.5", desc: "Abrir Segmento" },
-    { item: "3.1", desc: "Desmontagem de proteções" },
-    { item: "3.2", desc: "Retirar chavetas" },
-    { item: "3.3", desc: "Desconectar pinos dos cilindros de elevação" },
-    { item: "3.4", desc: "Retirada da Barra Transversal" },
-    { item: "3.5", desc: "Desconectar flexíveis principais" },
-    { item: "3.6", desc: "Retirar parafusos de fixação das buchas" },
-    { item: "3.7", desc: "Transferir base para stand" },
-    { item: "3.8", desc: "Aferir pass-line Inf. e Sup." },
-    { item: "3.9", desc: "Retirar cangalhas (Inf. e Sup.)" },
-    { item: "3.10", desc: "Desconectar flexíveis das juntas rotativas" },
-    { item: "3.11", desc: "Retirar proteções de mancal" },
-    { item: "3.12", desc: "Desmontagem dos rolos (Destorquear e soltá-los) inferior" },
-    { item: "3.13", desc: "Desmontagem dos rolos (Destorquear e soltá-los) superior" },
-    { item: "3.14", desc: "Desmontagem da estrutura do rolo acionado" },
-    { item: "3.15", desc: "Retirada dos cilindros motriz" },
-    { item: "3.16", desc: "Desmontagem de buchas e conjuntos na base" },
-    { item: "3.17", desc: "Desmontagem de buchas e conjuntos" },
-    { item: "3.18", desc: "Preparar bases e barra para jateamento e pintura" },
-    { item: "4.1", desc: "Desmontagem de proteções e preparação dos calços e base Inferior" },
-    { item: "4.2", desc: "Troca de oring’s" },
-    { item: "4.3", desc: "Montagem de distribuidores" },
-    { item: "4.4", desc: "Fixação dos distribuidores na base" },
-    { item: "4.5", desc: "Desobstrução das tubulações de graxa e de refrigeração" },
-    { item: "4.6", desc: "Preparação dos Rolos" },
-    { item: "4.7", desc: "Montagem de flexíveis na base" },
-    { item: "4.8", desc: "Preparação de pés e tulipas" },
-    { item: "4.9", desc: "Montagem de rolos na base" },
-    { item: "4.10", desc: "Torque dos parafusos dos mancais" },
-    { item: "4.11", desc: "Regulagem dos distribuidores" },
-    { item: "4.12", desc: "Teste de Lubrificação" },
-    { item: "4.13", desc: "Fixação dos distribuidores na base" },
-    { item: "4.14", desc: "Preparar hastes" },
-    { item: "4.15", desc: "Preparar e montar conjuntos de ajustes e buchas" },
-    { item: "4.16", desc: "Montagem das buchas e conjuntos na base" },
-    { item: "4.17", desc: "Montagem dos flexíveis principais" },
-    { item: "4.18", desc: "Conectar flexíveis de juntas nos rolos" },
-    { item: "4.19", desc: "Teste hidrostático juntas rotativas" },
-    { item: "4.20", desc: "Teste hidrostático Mancal" },
-    { item: "4.21", desc: "Aferir Pass-Line e Ajustar" },
-    { item: "4.22", desc: "Montagem e alinhamento das cangalhas" },
-    { item: "5.1", desc: "Desmontar todos os bicos" },
-    { item: "5.2", desc: "Realizar Limpeza das tubulações" },
-    { item: "5.3", desc: "Montar os bicos e flexíveis" },
-    { item: "5.4", desc: "Realizar teste" },
-    { item: "6.1", desc: "Preparação de Lines ou troca" },
-    { item: "6.2", desc: "Preparação dos calços e apoios" },
-    { item: "6.3", desc: "Troca de oring’s" },
-    { item: "6.4", desc: "Desobstrução de tubulações de graxa e de refrigeração" },
-    { item: "6.5", desc: "Montagem de proteções das tubulações e de stauff" },
-    { item: "6.6", desc: "Verificar roscas dos parafusos M30" },
-    { item: "6.7", desc: "Montagem do rolo motriz" },
-    { item: "7.1", desc: "Preparação para receber estrutura e cilindros (Lines e mancais)" },
-    { item: "7.2", desc: "Montagem de Cilindros Motriz" },
-    { item: "7.3", desc: "Desmontagem de proteções e preparação dos calços e base Superior" },
-    { item: "7.4", desc: "Troca de oring’s" },
-    { item: "7.5", desc: "Desobstruição das tubulações de graxa e de refrigeração" },
-    { item: "7.6", desc: "Preparação dos Rolos" },
-    { item: "7.7", desc: "Troca de parafusos dos calços de alinhamento pass-line" },
-    { item: "7.8", desc: "Montagem de rolos na base" },
-    { item: "7.9", desc: "Aperto de parafusos nos mancais" },
-    { item: "7.10", desc: "Montagem da estrutura" },
-    { item: "7.11", desc: "Montagem de distribuidores" },
-    { item: "7.12", desc: "Regulagem dos distribuidores" },
-    { item: "7.13", desc: "Teste de Lubrificação" },
-    { item: "7.14", desc: "Fixação dos distribuidores na base" },
-    { item: "7.15", desc: "Montagem de proteções dos mancais" },
-    { item: "7.16", desc: "Realização do teste hidrostático da base" },
-    { item: "7.17", desc: "Virar a base" },
-    { item: "7.18", desc: "Torque dos parafusos dos mancais" },
-    { item: "7.19", desc: "Montagem de flexíveis de junta rotativa" },
-    { item: "7.20", desc: "Aferir e ajustar pass-line" },
-    { item: "7.21", desc: "Troca das válvulas dos cilindros" },
-    { item: "7.22", desc: "Troca dos mangotes hidráulicos dos cilindros" },
-    { item: "7.23", desc: "Montagem de proteções sanfonadas" },
-    { item: "7.24", desc: "Substituição dos engates rápidos (hidráulicos)" },
-    { item: "7.25", desc: "Substituição dos engates rápidos (refrigeração)" },
-    { item: "7.26", desc: "Montagem de cangalhas na base" },
-    { item: "8.1", desc: "Troca de cilindros de elevação" },
-    { item: "8.2", desc: "Troca de cilindros clamp" },
-    { item: "8.3", desc: "Montagem de blocos nos cilindros clamp" },
-    { item: "8.4", desc: "Troca de oring’s (completo)" },
-    { item: "8.5", desc: "Aperto de tubulações (Conferir)" },
-    { item: "8.6", desc: "Montagem de mangotes dos cilindros de elevação" },
-    { item: "8.7", desc: "Teste hidráulico da barra" },
-    { item: "9.1", desc: "Movimentar base sup para inf" },
-    { item: "9.2", desc: "Conectar flexíveis principais (graxa e água)" },
-    { item: "9.3", desc: "Montar parafusos das buchas" },
-    { item: "9.4", desc: "Preparação das hastes para receber a barra" },
-    { item: "9.5", desc: "Alinhamento de cangalha superior" },
-    { item: "9.6", desc: "Teste geral de juntas" },
-    { item: "9.7", desc: "Montagem da barra transversal no segmento" },
-    { item: "9.8", desc: "Aperto de parafusos dos cilindros clamp" },
-    { item: "9.9", desc: "Montagem de pinos e chavetas" },
-    { item: "9.10", desc: "Montagem de proteções" },
-    { item: "9.11", desc: "Conexão da hidráulica" },
-    { item: "9.12", desc: "Equalização dos cilindros motriz" },
-    { item: "9.13", desc: "Aferir e Ajustar Gap (255mm)" },
-    { item: "10.1", desc: "Teste e Liberação hidráulica" },
-    { item: "10.2", desc: "Teste e Liberação hidrostática" },
-    { item: "10.3", desc: "Retirar Segmento do Stand" },
-    { item: "10.4", desc: "Montagem de Acoplamentos" },
-    { item: "10.5", desc: "Teste de lubrificação geral" }
+const materiaisSegZero = [
+    { nome: 'ARRUELA DE PRESSÃO M16', codigo: '1205772' },
+    { nome: 'ARRUELA DE PRESSAO M24 DIN 127', codigo: '1203902' },
+    { nome: 'ARRUELA DE PRESSÃO M36', codigo: '1205307' },
+    { nome: 'ARRUELA LISA M64 X 66MM X 115MM', codigo: '1203775' },
+    { nome: 'BASE DESENHO HITACHI 0294000 MC.1 -  PÉ', codigo: '1777550' },
+    { nome: 'CARCAÇA DESENHO HITACHI 0144798 MC1 INFERIOR', codigo: '1660305' },
+    { nome: 'CARCAÇA DESENHO HITACHI 0294079 MC1', codigo: '1660305' },
+    { nome: 'CARCAÇA HITACHI 2245098 SUPERIOR', codigo: '1660303' },
+    { nome: 'CARCAÇA LATERAL HITACHI 2253621 MC.1', codigo: '1672147' },
+    { nome: 'CARCAÇA LATERAL HITACHI 2253621 MC.2', codigo: '1672146' },
+    { nome: 'CONEXÃO 1/4" COMPRESSÃO 188D-E-1', codigo: '8288919' },
+    { nome: 'CORPO CSN DM613216 1', codigo: '9140946' },
+    { nome: 'COTOVELO 1.1/4" X 90º ROSCA BSP', codigo: '1691878' },
+    { nome: 'COTOVELO 1/4" X 90º', codigo: '1064442' },
+    { nome: 'DISTRIBUIDOR GRAXA 3/8 X1/4" NPTF 2 SAID', codigo: '8097039' },
+    { nome: 'ENGATE RAPIDO 1.1/4"', codigo: '1211859' },
+    { nome: 'ENGATE RAPIDO 2"', codigo: '1211500' },
+    { nome: 'ENGATE RÁPIDO 3/8" - GRAXA', codigo: '1268070' },
+    { nome: 'FITA DE ARAMIDA 1" X 1,7MM X 30 METROS', codigo: '1195298' },
+    { nome: 'MANGUEIRA 3/8" X 1400MM (GRAXA)', codigo: '1624645' },
+    { nome: 'PARAF CB SEXT M16X140MM', codigo: '1204966' },
+    { nome: 'PARAFUSO CABEÇA SEXT.M12 X 45MM - INOX', codigo: '1204620' },
+    { nome: 'PARAFUSO CABEÇA SEXT.M16 X 70MM-INOX', codigo: '8003560' },
+    { nome: 'PARAFUSO CABEÇA SEXT.M16 X 90MM-INOX', codigo: '1628930' },
+    { nome: 'PARAFUSO CABEÇA SEXTAVADA M12 X 30MM', codigo: '1204624' },
+    { nome: 'PARAFUSO CABEÇA SEXTAVADA M16 X 115MM', codigo: '8010789' },
+    { nome: 'PARAFUSO CABEÇA SEXTAVADA M16 X 150MM', codigo: '1221020' },
+    { nome: 'PARAFUSO CABEÇA SEXTAVADA M16 X 160MM', codigo: '1615479' },
+    { nome: 'PARAFUSO CABEÇA SEXTAVADA M16 X 175MM', codigo: '1615369' },
+    { nome: 'PARAFUSO CABEÇA SEXTAVADA M16 X 180MM', codigo: '1204967' },
+    { nome: 'PARAFUSO CABEÇA SEXTAVADA M16 X 190MM', codigo: '1205571' },
+    { nome: 'PARAFUSO CABEÇA SEXTAVADA M16 X 200MM', codigo: '1205334' },
+    { nome: 'PARAFUSO CABEÇA SEXTAVADA M16 X 210MM', codigo: '1205193' },
+    { nome: 'PARAFUSO CABEÇA SEXTAVADA M16 X 90MM', codigo: '1219654' },
+    { nome: 'PARAFUSO CABEÇA SEXTAVADA M36 X 150MM', codigo: '1203880' },
+    { nome: 'PARAFUSO CABEÇA SEXTAVADA M36 X 440MM', codigo: '1620873' },
+    { nome: 'PARAFUSO CABEÇA SEXTAVADA M64 X 170MM', codigo: '1205431' },
+    { nome: 'PARAFUSO CABEÇA SEXTAVADO M16 X 120MM', codigo: '1204965' },
+    { nome: 'PARAFUSO CIL CL10.9    M16X    150MM', codigo: '1205144' },
+    { nome: 'PINO HITACHI 0294015 2', codigo: '1752138' },
+    { nome: 'PLACA HITACHI 0293493 1', codigo: '8500175' },
+    { nome: 'PLACA HITACHI 0293493 2', codigo: '8500174' },
+    { nome: 'PONTA UNIJET TP1285L - 12,3 L/MIN A 3,0 BAR (cod. Antigo 8768428)', codigo: '9272310' },
+    { nome: 'PORCA FIX. INOX PONTA UNIJET CSN DM613216 2', codigo: '9140945' },
+    { nome: 'PORCA SEXTAVADA M12', codigo: '1205361' },
+    { nome: 'PORCA SEXTAVADA M16', codigo: '1204312' },
+    { nome: 'PORCA SEXTAVADA M24', codigo: '1228240' },
+    { nome: 'PORCA SEXTAVADA M64', codigo: '1206197' },
+    { nome: 'RESFRIADOR DESENHO HITACHI 0295300 MC.1', codigo: '1642482' },
+    { nome: 'RESFRIADOR DESENHO HITACHI 0295300 MC.31', codigo: '1642484' },
+    { nome: 'RESFRIADOR DESENHO HITACHI 0295301MC.12', codigo: '1642483' },
+    { nome: 'RESFRIADOR DESENHO HITACHI 0295302 MC.25', codigo: '1642481' },
+    { nome: 'TUBO DE COBRE 6,35MM X 0,79MM X 30M', codigo: '8287526' },
+    { nome: 'TUBO FLEX SANF AISI304 1.1/4 " 2600MM', codigo: '9182710' },
+    { nome: 'TUBO Ø 1.1/4 X 42,16 X 6M - AÇO INOX', codigo: '1220355' },
+    { nome: 'UNIÃO 3/8" INOX PARA SOLDA', codigo: '1726447' },
+    { nome: 'UNIÃO DE 1.1/4" - INOX - ROSCA NPT', codigo: '1220503' },
+    { nome: 'UNIÃO PARA TUBO 1/4"', codigo: '1064438' },
+    { nome: 'VALVULA BM-7 (Distributor)', codigo: '1779160' }
 ];
 
 // ==============================================================
@@ -164,37 +131,16 @@ function getV(id) {
 function getRadioValue(name) {
     const radios = document.getElementsByName(name);
     for (let r of radios) if (r.checked) return r.value;
-    return 'NÃO';
-}
-
-function getCheckboxValue(id) {
-    const el = document.getElementById(id);
-    return el && el.checked ? 'X' : '';
-}
-
-function garantirContainer(id) {
-    let container = document.getElementById(id);
-    if (!container) {
-        const body = document.querySelector('.folhao-body');
-        if (body) {
-            container = document.createElement('div');
-            container.id = id;
-            body.appendChild(container);
-        }
-    }
-    return container;
+    return '';
 }
 
 // ==============================================================
-// 3. RENDERIZAR CHECKLIST DE CHEGADA (com categorias)
+// 3. INSPEÇÃO DE CHEGADA (checklist com categorias)
 // ==============================================================
-function renderizarInspecaoChegadaR1() {
-    const container = garantirContainer('container-check-recebimento-r1');
-    if (!container) return;
-
+function montarChecklistHTML(itens, prefixo) {
     let categorias = {};
     let currentGroup = "GERAL";
-    itensChegadaR1.forEach(item => {
+    itens.forEach(item => {
         if (item.grupo && item.grupo.trim() !== "") currentGroup = item.grupo;
         if (!categorias[currentGroup]) categorias[currentGroup] = [];
         categorias[currentGroup].push(item.desc);
@@ -205,328 +151,271 @@ function renderizarInspecaoChegadaR1() {
     for (const [nomeCategoria, perguntas] of Object.entries(categorias)) {
         html += `<h4 style="margin: 20px 0 10px 0; color: var(--text-accent); border-bottom: 1px dashed var(--border-color); padding-bottom: 5px;"><i class="fas fa-tasks"></i> ${nomeCategoria}</h4><div class="checklist-container">`;
         perguntas.forEach((pergunta, index) => {
-            const name = `r1-g${groupIndex}-q${index}`;
+            const name = `${prefixo}-g${groupIndex}-q${index}`;
             html += `<div class="check-item"><p>${index + 1}. ${pergunta}</p><div class="check-options"><label><input type="radio" name="${name}" value="SIM" checked> SIM</label><label><input type="radio" name="${name}" value="NÃO"> NÃO</label></div></div>`;
         });
         html += `</div>`;
         groupIndex++;
     }
+    return html;
+}
+
+function renderizarChegadaSegZero() {
+    const container = document.getElementById('segzero-container-chegada');
+    if (!container) return;
+    let html = `<h3 style="color:var(--text-heading);">1. INSPEÇÃO DE CHEGADA</h3>`;
+    html += montarChecklistHTML(itensChegadaSegZero, 'segzero-cheg');
+    html += `<div class="input-group" style="margin-top:15px;"><label>Observações</label><textarea id="segzero-obs-chegada" class="premium-textarea" rows="3"></textarea></div>`;
     container.innerHTML = html;
 }
 
 // ==============================================================
-// 4. GAP (7 conjuntos)
+// 4. AFERIÇÃO DE GAP (Chegada e Saída — mesma estrutura: 10
+// conjuntos de rolo, referência fixa 261,5(-0,1)mm, 3 posições.
+// A partir do 5º conjunto a Posição 2 não se aplica no documento
+// original, por isso fica travada como "-".)
 // ==============================================================
-function renderizarGapR1() {
-    const container = garantirContainer('r1-gap');
+function renderizarTabelaGap(containerId, titulo) {
+    const container = document.getElementById(containerId);
     if (!container) return;
-    let html = `<h3 style="color:var(--text-heading);">AFERIÇÃO DE GAP (255+0,3/-0,3)</h3>
+    let html = `<h3 style="color:var(--text-heading);">${titulo}</h3>
+        <p style="font-size:11px;color:var(--text-muted);">*Inspeção para identificar afastamento entre rolos. Referência: Espessura A e B = ${REF_GAP_SEGZERO}mm.</p>
+        <table class="premium-table" style="font-size:11px;">
+            <tr><th>LOCAL</th><th>REFERÊNCIA</th><th>Posição 1</th><th>Posição 2</th><th>Posição 3</th></tr>`;
+    for (let i = 1; i <= 10; i++) {
+        const prefix = containerId.includes('saida') ? 'segzero-gap-sai' : 'segzero-gap-cheg';
+        const pos2 = i >= 5
+            ? `<td style="text-align:center; color:var(--text-muted);">-</td>`
+            : `<td><input id="${prefix}-${i}-p2"></td>`;
+        html += `<tr><td style="font-weight:bold;">${i}º Conj. Rolo</td>
+            <td style="text-align:center;">${REF_GAP_SEGZERO}</td>
+            <td><input id="${prefix}-${i}-p1"></td>
+            ${pos2}
+            <td><input id="${prefix}-${i}-p3"></td></tr>`;
+    }
+    html += `</table>`;
+    container.innerHTML = html;
+}
+
+function renderizarGapSegZero() {
+    renderizarTabelaGap('segzero-container-gap-chegada', '3. AFERIÇÃO DE GAP (CHEGADA)');
+    renderizarTabelaGap('segzero-container-gap-saida', 'AFERIÇÃO DE GAP (SAÍDA)');
+}
+
+// ==============================================================
+// 5. INSPEÇÃO DIMENSIONAL DOS ROLOS (Chegada) — tabelas de
+// referência fixas + observações das bases.
+// ==============================================================
+function renderizarMedidasSegZero() {
+    const container = document.getElementById('segzero-container-medidas');
+    if (!container) return;
+    let html = `<h3 style="color:var(--text-heading);">4. INSPEÇÃO DIMENSIONAL DOS ROLOS (CHEGADA)</h3>
+        <p style="font-size:11px;color:var(--text-muted);">*Inspeção para identificar rolos e mancais aptos à reutilização.</p>
+
+        <table class="premium-table" style="font-size:11px;">
+            <tr><th colspan="3">DIÂMETROS PARA REUTILIZAÇÃO</th></tr>
+            <tr><td style="font-weight:bold;">Rolo ø 140mm</td><td>(Máximo) 140mm</td><td>(Mínimo) 137mm</td></tr>
+            <tr><td style="font-weight:bold;">Rolo ø 200mm</td><td>(Máximo) 200mm</td><td>(Mínimo) 197mm</td></tr>
+        </table>
+
+        <table class="premium-table" style="font-size:11px;">
+            <tr><th colspan="2">EMPENO MÁXIMO PARA REUTILIZAÇÃO</th></tr>
+            <tr><td style="font-weight:bold;">Rolo ø 140mm</td><td>0,5mm</td></tr>
+            <tr><td style="font-weight:bold;">Rolo ø 200mm</td><td>0,5mm</td></tr>
+        </table>
+
+        <table class="premium-table" style="font-size:11px;">
+            <tr><th colspan="3">DIÂMETROS PARA REUTILIZAÇÃO DOS MANCAIS</th></tr>
+            <tr><td style="font-weight:bold;">Rolo ø 140mm – 80 H7</td><td>(Mínimo) 80,00mm</td><td>(Máximo) 80,04mm</td></tr>
+            <tr><td style="font-weight:bold;">Rolo ø 200mm – 120 F7</td><td>(Mínimo) 120,05mm</td><td>(Máximo) 120,09mm</td></tr>
+        </table>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:15px;">
+            <div class="input-group"><label>Base Superior (diâmetro) — Observação</label><textarea id="segzero-obs-diam-sup" class="premium-textarea" rows="2"></textarea></div>
+            <div class="input-group"><label>Base Inferior (diâmetro) — Observação</label><textarea id="segzero-obs-diam-inf" class="premium-textarea" rows="2"></textarea></div>
+            <div class="input-group"><label>Base Superior (empeno) — Observação</label><textarea id="segzero-obs-empeno-sup" class="premium-textarea" rows="2"></textarea></div>
+            <div class="input-group"><label>Base Inferior (empeno) — Observação</label><textarea id="segzero-obs-empeno-inf" class="premium-textarea" rows="2"></textarea></div>
+        </div>`;
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 6. INSPEÇÃO DE MANCAIS (Chegada — Base Inferior e Base Superior)
+// Grade de 10 posições x 3 pares OK/Ñ-OK. A partir da posição 5, o
+// 3º par (posição 3) não se aplica no documento original ("-").
+// ==============================================================
+function renderizarTabelaMancais(containerId, titulo, prefixo) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    let html = `<h3 style="color:var(--text-heading);">${titulo}</h3>
         <table class="premium-table" style="font-size:10px;">
-            <tr><th>CONJ. ROLO</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr>`;
-    for (let i = 1; i <= 7; i++) {
+            <tr><th rowspan="2">Posição</th><th colspan="2">1</th><th colspan="2">2</th><th colspan="2">3</th></tr>
+            <tr><th>OK</th><th>Ñ/OK</th><th>OK</th><th>Ñ/OK</th><th>OK</th><th>Ñ/OK</th></tr>`;
+    for (let i = 1; i <= 10; i++) {
+        const par3 = i >= 5
+            ? `<td style="text-align:center; color:var(--text-muted);">-</td><td style="text-align:center; color:var(--text-muted);">-</td>`
+            : `<td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p3"></td><td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p3"></td>`;
         html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>
-            <td><input id="r1gap-${i}-a"></td>
-            <td><input id="r1gap-${i}-b"></td>
-            <td><input id="r1gap-${i}-c"></td></tr>`;
+            <td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p1"></td>
+            <td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p1"></td>
+            <td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p2"></td>
+            <td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p2"></td>
+            ${par3}</tr>`;
+    }
+    html += `</table>`;
+    container.innerHTML = html;
+}
+
+function renderizarMancaisSegZero() {
+    renderizarTabelaMancais('segzero-container-mancais-inf', '5. INSPEÇÃO DE MANCAIS — CHEGADA BASE INFERIOR', 'segzero-manc-inf');
+    renderizarTabelaMancais('segzero-container-mancais-sup', 'INSPEÇÃO DE MANCAIS — CHEGADA BASE SUPERIOR', 'segzero-manc-sup');
+}
+
+// ==============================================================
+// 7. PASS LINE — BASE INFERIOR (referência: 1±0,05mm). A partir do
+// 5º conjunto, a Posição 2 não se aplica no documento original.
+// ==============================================================
+function renderizarPassLineSegZero() {
+    const container = document.getElementById('segzero-container-passline');
+    if (!container) return;
+    let html = `<h3 style="color:var(--text-heading);">6. PASS LINE — BASE INFERIOR</h3>
+        <p style="font-size:11px;color:var(--text-muted);">*Aferição do pass line na base inferior: referência 1±0,05mm.</p>
+        <table class="premium-table" style="font-size:11px;">
+            <tr><th>Conj. Rolo</th><th>Posição 1</th><th>Posição 2</th><th>Posição 3</th></tr>`;
+    for (let i = 1; i <= 10; i++) {
+        const pos2 = i >= 5
+            ? `<td style="text-align:center; color:var(--text-muted);">-</td>`
+            : `<td><input id="segzero-passline-${i}-p2"></td>`;
+        html += `<tr><td style="text-align:center;font-weight:bold;">${i}°</td>
+            <td><input id="segzero-passline-${i}-p1"></td>
+            ${pos2}
+            <td><input id="segzero-passline-${i}-p3"></td></tr>`;
     }
     html += `</table>`;
     container.innerHTML = html;
 }
 
 // ==============================================================
-// 5. CANGALHAS (Superior e Inferior)
+// 8. INSPEÇÃO DE ROLOS — SAÍDA (Base Superior: 3 posições, Base
+// Inferior: 4 posições) + Medidas dos Rolos de cada base.
 // ==============================================================
-function renderizarCangalhasR1() {
-    const container = garantirContainer('r1-cangalhas');
+function renderizarTabelaRolosSaida(containerId, titulo, prefixo, numPosicoes) {
+    const container = document.getElementById(containerId);
     if (!container) return;
-    const bases = ['Sup', 'Inf'];
-    let html = `<h3 style="color:var(--text-heading);">INSPEÇÃO DE CANGALHAS</h3>`;
-    bases.forEach(base => {
-        const prefix = base === 'Sup' ? 'sup' : 'inf';
-        html += `<h4>Base ${base}</h4>
-            <table class="premium-table" style="font-size:9px;">
-                <tr><th>Posição</th><th colspan="2">Posição Bico A</th><th colspan="2">Posição Bico B</th></tr>
-                <tr><th></th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th></tr>`;
-        for (let i = 1; i <= 7; i++) {
-            html += `<tr><td>${i}ª</td>
-                <td style="text-align:center;"><input type="radio" name="r1cang-${prefix}-${i}-a" value="OK" checked></td>
-                <td style="text-align:center;"><input type="radio" name="r1cang-${prefix}-${i}-a" value="NOK"></td>
-                <td style="text-align:center;"><input type="radio" name="r1cang-${prefix}-${i}-b" value="OK" checked></td>
-                <td style="text-align:center;"><input type="radio" name="r1cang-${prefix}-${i}-b" value="NOK"></td></tr>`;
+    let html = `<h3 style="color:var(--text-heading);">${titulo}</h3>
+        <table class="premium-table" style="font-size:10px;">
+            <tr><th rowspan="2">Posição</th>`;
+    for (let p = 1; p <= numPosicoes; p++) html += `<th colspan="2">${p}</th>`;
+    html += `</tr><tr>`;
+    for (let p = 1; p <= numPosicoes; p++) html += `<th>OK</th><th>Ñ/OK</th>`;
+    html += `</tr>`;
+    for (let i = 1; i <= 10; i++) {
+        html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>`;
+        for (let p = 1; p <= numPosicoes; p++) {
+            html += `<td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p${p}"></td><td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p${p}"></td>`;
         }
-        html += `</table>`;
-    });
-    container.innerHTML = html;
-}
-
-// ==============================================================
-// 6. PASS LINE (Chegada e Saída)
-// ==============================================================
-function renderizarPassLinesR1() {
-    const renderTable = (id, refs, titulo) => {
-        const container = garantirContainer(id);
-        if (!container) return;
-        let html = `<h3 style="color:var(--text-heading);">${titulo}</h3>
-            <table class="premium-table" style="font-size:9px;">
-                <tr><th>Conj. Rolo</th><th>Referência</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr>`;
-        refs.forEach((ref, i) => {
-            html += `<tr><td style="text-align:center;font-weight:bold;">${i+1}°</td>
-                <td style="text-align:center;font-weight:bold;">${ref}</td>
-                <td><input id="${id}-a-${i}"></td>
-                <td><input id="${id}-b-${i}"></td>
-                <td><input id="${id}-c-${i}"></td></tr>`;
-        });
-        html += `</table>`;
-        container.innerHTML = html;
-    };
-    renderTable('r1-passline-inf-chegada', refPassLineInfR1, 'PASS LINE - BASE INFERIOR (CHEGADA)');
-    renderTable('r1-passline-sup-chegada', refPassLineSupR1, 'PASS LINE - BASE SUPERIOR (CHEGADA)');
-    renderTable('r1-passline-inf-saida', refsInfSaiR1, 'PASS LINE - BASE INFERIOR (SAÍDA)');
-    renderTable('r1-passline-sup-saida', refsSupSaiR1, 'PASS LINE - BASE SUPERIOR (SAÍDA)');
-}
-
-// ==============================================================
-// 7. CILINDROS HIDRÁULICOS (Chegada)
-// ==============================================================
-function renderizarCilindrosChegadaR1() {
-    const container = garantirContainer('r1-cilindros-chegada');
-    if (!container) return;
-    const tipos = [
-        { nome: 'Cilindro de Elevação', prefix: 'ce', pos: ['A','B','C','D'] },
-        { nome: 'Cilindro Clamp (Porcas Hidráulicas)', prefix: 'cc', pos: ['A','B','C','D'] },
-        { nome: 'Cilindros Motriz', prefix: 'cm', pos: ['A','B'] }
-    ];
-    let html = `<h3 style="color:var(--text-heading);">CILINDROS HIDRÁULICOS (CHEGADA)</h3>`;
-    tipos.forEach(t => {
-        html += `<h4>${t.nome}</h4>
-            <table class="premium-table" style="font-size:9px;">
-                <tr><th>Posição</th><th>Número</th><th>Produção</th><th>OK</th><th>NOK</th><th>Observação</th></tr>`;
-        t.pos.forEach(p => {
-            html += `<tr><td style="text-align:center;font-weight:bold;">${p}</td>
-                <td><input id="r1cil-${t.prefix}-num-${p}"></td>
-                <td><input id="r1cil-${t.prefix}-prod-${p}"></td>
-                <td style="text-align:center;"><input type="radio" name="r1cil-${t.prefix}-${p}" value="OK" checked></td>
-                <td style="text-align:center;"><input type="radio" name="r1cil-${t.prefix}-${p}" value="NOK"></td>
-                <td><input id="r1cil-${t.prefix}-obs-${p}"></td></tr>`;
-        });
-        html += `</table>`;
-    });
-    container.innerHTML = html;
-}
-
-// ==============================================================
-// 8. CILINDROS HIDRÁULICOS (Saída)
-// ==============================================================
-function renderizarCilindrosSaidaR1() {
-    const container = garantirContainer('r1-cilindros-saida');
-    if (!container) return;
-    const tipos = [
-        { nome: 'Cilindro de Elevação', prefix: 'se', pos: ['A','B','C','D'] },
-        { nome: 'Cilindro Clamp (Porcas Hidráulicas)', prefix: 'sc', pos: ['A','B','C','D'] },
-        { nome: 'Cilindros Motriz', prefix: 'sm', pos: ['A','B'] }
-    ];
-    let html = `<h3 style="color:var(--text-heading);">CILINDROS HIDRÁULICOS (SAÍDA)</h3>`;
-    tipos.forEach(t => {
-        html += `<h4>${t.nome}</h4>
-            <table class="premium-table" style="font-size:9px;">
-                <tr><th>Posição</th><th>Número</th><th>Produção</th><th>Reparado</th><th>Reutilizado</th><th>Novo</th><th>Observação</th></tr>`;
-        t.pos.forEach(p => {
-            html += `<tr><td style="text-align:center;font-weight:bold;">${p}</td>
-                <td><input id="r1cils-${t.prefix}-num-${p}"></td>
-                <td><input id="r1cils-${t.prefix}-prod-${p}"></td>
-                <td style="text-align:center;"><input type="checkbox" id="r1cils-${t.prefix}-rep-${p}"></td>
-                <td style="text-align:center;"><input type="checkbox" id="r1cils-${t.prefix}-reu-${p}"></td>
-                <td style="text-align:center;"><input type="checkbox" id="r1cils-${t.prefix}-nov-${p}"></td>
-                <td><input id="r1cils-${t.prefix}-obs-${p}"></td></tr>`;
-        });
-        html += `</table>`;
-    });
-    container.innerHTML = html;
-}
-
-// ==============================================================
-// 9. INSPEÇÃO DE ROLOS (Chegada e Saída)
-// ==============================================================
-function renderizarInspecaoRolosR1(tipo) {
-    const idContainer = `r1-rolos-${tipo}`;
-    const container = garantirContainer(idContainer);
-    if (!container) return;
-    const titulo = tipo === 'chegada' ? 'CHEGADA' : 'SAÍDA';
-    const prefix = tipo === 'chegada' ? 'ch' : 'sa';
-    const bases = ['Inferior', 'Superior'];
-    let html = `<h3 style="color:var(--text-heading);">INSPEÇÃO DE ROLOS (${titulo})</h3>`;
-    bases.forEach(base => {
-        const bPrefix = base === 'Inferior' ? 'inf' : 'sup';
-        html += `<h4>Base ${base}</h4>
-            <h5>Rolamento</h5>
-            <table class="premium-table" style="font-size:8px;">
-                <tr><th>Posição</th><th colspan="2">1</th><th colspan="2">2</th><th colspan="2">3</th><th colspan="2">4</th></tr>
-                <tr><th></th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th></tr>`;
-        for (let i = 1; i <= 7; i++) {
-            html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>`;
-            for (let j = 1; j <= 4; j++) {
-                html += `<td style="text-align:center;"><input type="radio" name="r1rol-${prefix}-${bPrefix}-${i}-${j}" value="OK" checked></td>
-                         <td style="text-align:center;"><input type="radio" name="r1rol-${prefix}-${bPrefix}-${i}-${j}" value="NOK"></td>`;
-            }
-            html += `</tr>`;
-        }
-        html += `</table>
-            <h5>Teste Hidrostático</h5>
-            <table class="premium-table" style="font-size:8px;">
-                <tr><th>Posição</th><th colspan="2">1</th><th colspan="2">2</th><th colspan="2">3</th><th colspan="2">4</th></tr>
-                <tr><th></th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th></tr>`;
-        for (let i = 1; i <= 7; i++) {
-            html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>`;
-            for (let j = 1; j <= 4; j++) {
-                html += `<td style="text-align:center;"><input type="radio" name="r1hid-${prefix}-${bPrefix}-${i}-${j}" value="OK" checked></td>
-                         <td style="text-align:center;"><input type="radio" name="r1hid-${prefix}-${bPrefix}-${i}-${j}" value="NOK"></td>`;
-            }
-            html += `</tr>`;
-        }
-        html += `</table>
-            <h5>Medidas dos Rolos</h5>
-            <table class="premium-table" style="font-size:8px;">
-                <tr><th>Posição</th><th colspan="2">1</th><th colspan="2">2</th><th colspan="2">3</th></tr>
-                <tr><th></th><th>Num</th><th>Medida</th><th>Num</th><th>Medida</th><th>Num</th><th>Medida</th></tr>`;
-        for (let i = 1; i <= 7; i++) {
-            html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>
-                <td><input id="r1med-${prefix}-${bPrefix}-${i}-n1"></td>
-                <td><input id="r1med-${prefix}-${bPrefix}-${i}-m1"></td>
-                <td><input id="r1med-${prefix}-${bPrefix}-${i}-n2"></td>
-                <td><input id="r1med-${prefix}-${bPrefix}-${i}-m2"></td>
-                <td><input id="r1med-${prefix}-${bPrefix}-${i}-n3"></td>
-                <td><input id="r1med-${prefix}-${bPrefix}-${i}-m3"></td></tr>`;
-        }
-        html += `</table>
-            <p style="font-size:8px;color:var(--text-muted);">*Nota: Diâmetros nominais: Bow: 230,00mm louco; Bow 250,00mm acionado; H e R: 300,00mm.</p>`;
-    });
-    container.innerHTML = html;
-}
-
-// ==============================================================
-// 10. DISTRIBUIÇÃO DE GRAXA
-// ==============================================================
-function renderizarGraxaR1() {
-    const container = garantirContainer('r1-graxa');
-    if (!container) return;
-    const bases = ['Superior', 'Inferior'];
-    let html = `<h3 style="color:var(--text-heading);">INSPEÇÃO DE DISTRIBUIÇÃO DE GRAXA</h3>
-        <p style="font-size:9px;color:var(--text-muted);">*Nota: Checklist de vazamento (Tubulações e distribuidores)</p>`;
-    bases.forEach(base => {
-        const prefix = base === 'Superior' ? 'sup' : 'inf';
-        html += `<h4>Base ${base}</h4>
-            <table class="premium-table" style="font-size:9px;">
-                <tr><th>Esquerda</th><th colspan="4">Status</th><th>Direita</th></tr>
-                <tr><th></th><th>OK</th><th>VT</th><th>SA</th><th></th><th></th></tr>`;
-        for (let i = 7; i >= 1; i--) {
-            html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>
-                <td style="text-align:center;"><input type="radio" name="r1grx-${prefix}-${i}" value="OK" checked></td>
-                <td style="text-align:center;"><input type="radio" name="r1grx-${prefix}-${i}" value="VT"></td>
-                <td style="text-align:center;"><input type="radio" name="r1grx-${prefix}-${i}" value="SA"></td>
-                <td></td>
-                <td style="text-align:center;font-weight:bold;">${i}</td></tr>`;
-        }
-        html += `</table>`;
-    });
-    html += `<p style="font-size:9px;color:var(--text-muted);">*Nota: VT – Vazamento em tubulação; SA – Sem alimentação;</p>`;
-    container.innerHTML = html;
-}
-
-// ==============================================================
-// 11. CHECKLIST DE MANUTENÇÃO (com P, G, Executante, Matrícula, Data)
-// ==============================================================
-function renderizarChecklistManutencaoR1() {
-    const container = garantirContainer('r1-checklist-manutencao');
-    if (!container) return;
-    let html = `<h3 style="color:var(--text-heading);">CHECKLIST DE MANUTENÇÃO</h3>
-        <table class="premium-table" style="font-size:9px;">
-            <tr><th>Item</th><th>Descrição da Atividade</th><th style="width:30px;">P</th><th style="width:30px;">G</th><th>Executante</th><th>Matrícula</th><th>Data</th></tr>`;
-    manutencaoR1.forEach((tarefa, index) => {
-        html += `<tr><td style="text-align:center;font-weight:bold;">${tarefa.item}</td>
-            <td style="font-size:9px;">${tarefa.desc}</td>
-            <td style="text-align:center;"><input type="checkbox" id="r1-p-${index}"></td>
-            <td style="text-align:center;"><input type="checkbox" id="r1-g-${index}"></td>
-            <td><input id="r1-resp-${index}"></td>
-            <td><input id="r1-mat-${index}"></td>
-            <td><input type="date" id="r1-dat-${index}"></td></tr>`;
-    });
-    html += `</table>`;
-    container.innerHTML = html;
-}
-
-// ==============================================================
-// 12. MATERIAIS APLICADOS
-// ==============================================================
-function renderizarMateriaisR1() {
-    const container = garantirContainer('r1-materiais');
-    if (!container) return;
-    let rows = '';
-    for (let i = 1; i <= 30; i++) {
-        rows += `<tr><td><input id="r1mat-desc-${i}" style="width:100%;"></td><td><input id="r1mat-qtd-${i}" style="width:60px;"></td></tr>`;
+        html += `</tr>`;
     }
-    const html = `<h3 style="color:var(--text-heading);">MATERIAIS APLICADOS</h3>
-        <table class="premium-table" style="font-size:9px;">
-            <tr><th style="width:80%;">MATERIAIS</th><th style="width:20%;">QUANTIDADE</th></tr>
+    html += `</table>
+        <h4 style="margin-top:12px;">Medidas dos Rolos</h4>
+        <table class="premium-table" style="font-size:10px;">
+            <tr><th rowspan="2">Posição</th><th colspan="2">1</th><th colspan="2">2</th><th rowspan="2">Classe</th></tr>
+            <tr><th>Num</th><th>Medida</th><th>Num</th><th>Medida</th></tr>`;
+    for (let i = 1; i <= 10; i++) {
+        html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>
+            <td><input id="${prefixo}-med-${i}-n1"></td>
+            <td><input id="${prefixo}-med-${i}-m1"></td>
+            <td><input id="${prefixo}-med-${i}-n2"></td>
+            <td><input id="${prefixo}-med-${i}-m2"></td>
+            <td><input id="${prefixo}-med-${i}-classe"></td></tr>`;
+    }
+    html += `</table>
+        <p style="font-size:10px;color:var(--text-muted);">*Nota: Diâmetros nominais — Classes: Vermelho (150,00); Azul (); Verde (); Amarelo ().</p>`;
+    container.innerHTML = html;
+}
+
+function renderizarRolosSaidaSegZero() {
+    renderizarTabelaRolosSaida('segzero-container-rolos-sup', '7. INSPEÇÃO DE ROLOS — SAÍDA BASE SUPERIOR', 'segzero-rol-sup', 3);
+    renderizarTabelaRolosSaida('segzero-container-rolos-inf', 'INSPEÇÃO DE ROLOS — SAÍDA BASE INFERIOR', 'segzero-rol-inf', 4);
+}
+
+function renderizarChecklistSaidaSegZero() {
+    const container = document.getElementById('segzero-container-checklist-saida');
+    if (!container) return;
+    let html = `<h3 style="color:var(--text-heading);">INSPEÇÃO DE SAÍDA</h3>`;
+    html += montarChecklistHTML(itensSaidaSegZero, 'segzero-sai');
+    html += `<div class="input-group" style="margin-top:15px;"><label>Observações</label><textarea id="segzero-obs-saida" class="premium-textarea" rows="3"></textarea></div>`;
+    container.innerHTML = html;
+}
+
+// ==============================================================
+// 9. MATERIAIS APLICADOS (lista oficial pré-preenchida — só a
+// quantidade é editável).
+// ==============================================================
+function renderizarMateriaisSegZero() {
+    const container = document.getElementById('segzero-container-materiais');
+    if (!container) return;
+    let rows = materiaisSegZero.map((m, i) => `
+        <tr><td style="font-size:10px;">${m.nome}</td><td style="text-align:center; font-family:var(--font-mono); font-size:10px;">${m.codigo}</td>
+        <td><input id="segzero-mat-qtd-${i}" style="width:70px;"></td></tr>`).join('');
+    const html = `<h3 style="color:var(--text-heading);">8. MATERIAIS APLICADOS</h3>
+        <table class="premium-table" style="font-size:11px;">
+            <tr><th>MATERIAL</th><th style="width:100px;">CÓDIGO</th><th style="width:90px;">QUANTIDADE</th></tr>
             ${rows}
         </table>`;
     container.innerHTML = html;
 }
 
 // ==============================================================
-// 13. FUNÇÃO PRINCIPAL DE ABRIR
+// 10. ABRIR FOLHÃO
 // ==============================================================
-window.abrirFolhaoR1 = function(id) {
-    ID_FOLHAO_R1_ATUAL = id;
-    const modal = document.getElementById('modal-folhao-r1');
+window.abrirFolhaoSegmentoZero = function(id) {
+    ID_FOLHAO_SEGZERO_ATUAL = id;
+    const modal = document.getElementById('modal-folhao-segmento-zero');
     if (!modal) {
-        console.error("Modal #modal-folhao-r1 não encontrado!");
+        console.error("Modal #modal-folhao-segmento-zero não encontrado!");
         return;
     }
 
-    // Preenche cabeçalho
-    const tagNameEl = document.getElementById('r1-tag-name');
-    if (tagNameEl) tagNameEl.innerText = id;
-    const dataInicio = document.getElementById('r1-data-inicio');
-    const dataFim = document.getElementById('r1-data-fim');
+    const tagEl = document.getElementById('segzero-tag-ativo');
+    if (tagEl) tagEl.innerText = id;
+    const dataInicio = document.getElementById('segzero-data-inicio');
+    const dataFim = document.getElementById('segzero-data-fim');
     if (dataInicio) dataInicio.valueAsDate = new Date();
     if (dataFim) dataFim.valueAsDate = new Date();
-    const motivoEl = document.getElementById('r1-motivo');
+    const motivoEl = document.getElementById('segzero-motivo');
     if (motivoEl) motivoEl.value = '';
 
-    // Renderiza todas as abas
-    renderizarInspecaoChegadaR1();
-    renderizarGapR1();
-    renderizarCangalhasR1();
-    renderizarPassLinesR1();
-    renderizarCilindrosChegadaR1();
-    renderizarCilindrosSaidaR1();
-    renderizarInspecaoRolosR1('chegada');
-    renderizarInspecaoRolosR1('saida');
-    renderizarGraxaR1();
-    renderizarChecklistManutencaoR1();
-    renderizarMateriaisR1();
+    renderizarChegadaSegZero();
+    renderizarGapSegZero();
+    renderizarMedidasSegZero();
+    renderizarMancaisSegZero();
+    renderizarPassLineSegZero();
+    renderizarRolosSaidaSegZero();
+    renderizarChecklistSaidaSegZero();
+    renderizarMateriaisSegZero();
 
     modal.classList.remove('hidden');
-    // Ativa a primeira aba
-    window.trocarAbaR1({ currentTarget: document.querySelector('#modal-folhao-r1 .folhao-tab') }, 'r1-aba-dados');
+    window.trocarAbaSegZero({ currentTarget: modal.querySelector('.folhao-tab') }, 'segzero-aba-dados');
 
-    // Restaura progresso salvo (ex: chegada já feita, aguardando saída)
-    // e liga o auto-salvamento pra nada mais se perder.
-    restaurarRascunhoNoModal('modal-folhao-r1', id);
-    ativarAutoSalvamentoFolhao('modal-folhao-r1', id, 'Straightener R1');
+    // Restaura progresso salvo e liga o auto-salvamento (mesmo
+    // mecanismo genérico usado pelos outros folhões — persiste no
+    // Neon via /api/folhao/salvar, não só no navegador).
+    restaurarRascunhoNoModal('modal-folhao-segmento-zero', id);
+    ativarAutoSalvamentoFolhao('modal-folhao-segmento-zero', id, 'Segmento Zero');
 };
 
 // ==============================================================
-// 14. FECHAR E TROCAR ABA
+// 11. FECHAR E TROCAR ABA
 // ==============================================================
-window.fecharFolhaoR1 = function() {
-    const modal = document.getElementById('modal-folhao-r1');
+window.fecharFolhaoSegmentoZero = function() {
+    const modal = document.getElementById('modal-folhao-segmento-zero');
     if (modal) modal.classList.add('hidden');
-    ID_FOLHAO_R1_ATUAL = null;
+    ID_FOLHAO_SEGZERO_ATUAL = null;
 };
 
-window.trocarAbaR1 = function(evt, abaId) {
-    const modal = document.getElementById('modal-folhao-r1');
+window.trocarAbaSegZero = function(evt, abaId) {
+    const modal = document.getElementById('modal-folhao-segmento-zero');
     if (!modal) return;
     modal.querySelectorAll('.folhao-content').forEach(c => c.classList.add('hidden'));
     modal.querySelectorAll('.folhao-tab').forEach(b => b.classList.remove('active'));
@@ -536,40 +425,39 @@ window.trocarAbaR1 = function(evt, abaId) {
 };
 
 // ==============================================================
-// 15. GERAR PDF COMPLETO
+// 12. SALVAR, GERAR LAUDO E IMPRIMIR
 // ==============================================================
-window.salvarEImprimirFolhaoR1 = function() {
+window.salvarEImprimirFolhaoSegmentoZero = function() {
     if (!window.verificarAcesso || !window.verificarAcesso()) { alert("Acesso negado."); return; }
-    if (!ID_FOLHAO_R1_ATUAL) { alert("Nenhuma TAG carregada."); return; }
+    if (!ID_FOLHAO_SEGZERO_ATUAL) { alert("Nenhuma TAG carregada."); return; }
 
-    const tag = ID_FOLHAO_R1_ATUAL;
-    const item = BANCO_ATIVOS.find(a => a.id === tag);
+    const tag = ID_FOLHAO_SEGZERO_ATUAL;
+    const item = window.BANCO_ATIVOS.find(a => a.id === tag);
     if (item) {
         item.ton = 0;
         item.dias = 0;
         item.local = "Oficina / Reserva";
-        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-        // 🔧 CORREÇÃO: faltava avisar o Postgres dessa conclusão — sem
-        // isso, a mudança só existia no navegador e sumia no próximo F5.
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(window.BANCO_ATIVOS));
+        // Persiste no Postgres — sem isso a conclusão só existiria no
+        // navegador e sumiria no próximo carregamento do Neon.
         if (typeof window.salvarPecaNoPython === 'function') {
             window.salvarPecaNoPython(item);
         }
     }
 
-    // Coleta dados do cabeçalho
-    const dtInicio = getV('r1-data-inicio') || new Date().toLocaleDateString('pt-BR');
-    const dtFim = getV('r1-data-fim') || new Date().toLocaleDateString('pt-BR');
-    const numSeg = getV('r1-num-segmento') || '______';
-    const veio = document.getElementById('r1-veio')?.value || '';
-    const motivo = getV('r1-motivo') || '_______________';
-    const tipoExec = document.getElementById('r1-tipo-execucao')?.value || 'GERAL';
+    const dtInicio = getV('segzero-data-inicio') || new Date().toLocaleDateString('pt-BR');
+    const dtFim = getV('segzero-data-fim') || new Date().toLocaleDateString('pt-BR');
+    const numSeg = getV('segzero-num-segmento') || '______';
+    const veio = document.getElementById('segzero-veio')?.value || '';
+    const desempenho = getV('segzero-desempenho') || '';
+    const motivo = getV('segzero-motivo') || '_______________';
+    const tipoExec = document.getElementById('segzero-tipo-execucao')?.value || 'GERAL';
 
-    // Função auxiliar para checklist de chegada
-    function gerarLinhasChegada() {
+    function gerarChecklistPDF(itens, prefixo) {
         let html = '';
         let categorias = {};
         let currentGroup = "GERAL";
-        itensChegadaR1.forEach(it => {
+        itens.forEach(it => {
             if (it.grupo && it.grupo.trim() !== "") currentGroup = it.grupo;
             if (!categorias[currentGroup]) categorias[currentGroup] = [];
             categorias[currentGroup].push(it.desc);
@@ -579,7 +467,7 @@ window.salvarEImprimirFolhaoR1 = function() {
             html += `<tr><th colspan="3" style="background:#002b5e; color:#fff; font-size:10px; text-align:left; padding:4px; border:1px solid #000;">${nomeCategoria}</th></tr>`;
             html += `<tr><th style="border:1px solid #000; padding:3px; width:5%;">Item</th><th style="border:1px solid #000; padding:3px;">Descrição</th><th style="border:1px solid #000; padding:3px; width:12%;">Status</th></tr>`;
             perguntas.forEach((pergunta, index) => {
-                const name = `r1-g${groupIndex}-q${index}`;
+                const name = `${prefixo}-g${groupIndex}-q${index}`;
                 const val = getRadioValue(name);
                 html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px;">${index+1}</td>
                     <td style="border:1px solid #000; padding:3px;">${pergunta}</td>
@@ -590,214 +478,80 @@ window.salvarEImprimirFolhaoR1 = function() {
         return html;
     }
 
-    // Gera tabela de GAP
-    function gerarGapPDF() {
+    function gerarGapPDF(prefixo) {
         let html = '';
-        for (let i = 1; i <= 7; i++) {
-            html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1gap-${i}-a`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1gap-${i}-b`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1gap-${i}-c`)}</td></tr>`;
+        for (let i = 1; i <= 10; i++) {
+            const pos2 = i >= 5 ? '-' : getV(`${prefixo}-${i}-p2`);
+            html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}º Conj. Rolo</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${REF_GAP_SEGZERO}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${prefixo}-${i}-p1`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${pos2}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${prefixo}-${i}-p3`)}</td></tr>`;
         }
         return html;
     }
 
-    // Gera tabela de Cangalhas
-    function gerarCangalhasPDF() {
+    function gerarMancaisPDF(prefixo) {
         let html = '';
-        const bases = ['sup', 'inf'];
-        const labels = ['Superior', 'Inferior'];
-        bases.forEach((b, idx) => {
-            html += `<tr><th colspan="5" style="background:#ddd; border:1px solid #000; padding:3px;">Base ${labels[idx]}</th></tr>
-                <tr><th style="border:1px solid #000; padding:3px;">Posição</th>
-                    <th colspan="2" style="border:1px solid #000; padding:3px;">Bico A</th>
-                    <th colspan="2" style="border:1px solid #000; padding:3px;">Bico B</th></tr>
-                <tr><th style="border:1px solid #000; padding:3px;"></th>
-                    <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th>
-                    <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th></tr>`;
-            for (let i = 1; i <= 7; i++) {
-                const a = getRadioValue(`r1cang-${b}-${i}-a`);
-                const bVal = getRadioValue(`r1cang-${b}-${i}-b`);
-                html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px;">${i}ª</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${a === 'OK' ? 'X' : ''}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${a === 'NOK' ? 'X' : ''}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${bVal === 'OK' ? 'X' : ''}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${bVal === 'NOK' ? 'X' : ''}</td></tr>`;
-            }
-        });
+        for (let i = 1; i <= 10; i++) {
+            const p1 = getRadioValue(`${prefixo}-${i}-p1`);
+            const p2 = getRadioValue(`${prefixo}-${i}-p2`);
+            const p3 = i >= 5 ? null : getRadioValue(`${prefixo}-${i}-p3`);
+            html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${p1 === 'OK' ? 'X' : ''}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${p1 === 'Ñ/OK' ? 'X' : ''}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${p2 === 'OK' ? 'X' : ''}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${p2 === 'Ñ/OK' ? 'X' : ''}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${i >= 5 ? '-' : (p3 === 'OK' ? 'X' : '')}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${i >= 5 ? '-' : (p3 === 'Ñ/OK' ? 'X' : '')}</td></tr>`;
+        }
         return html;
     }
 
-    // Gera Pass Line
-    function gerarPassLinePDF(id, refs) {
+    function gerarPassLinePDF() {
         let html = '';
-        refs.forEach((ref, i) => {
-            html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i+1}°</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${ref}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${id}-a-${i}`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${id}-b-${i}`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${id}-c-${i}`)}</td></tr>`;
-        });
+        for (let i = 1; i <= 10; i++) {
+            const pos2 = i >= 5 ? '-' : getV(`segzero-passline-${i}-p2`);
+            html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}°</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`segzero-passline-${i}-p1`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${pos2}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`segzero-passline-${i}-p3`)}</td></tr>`;
+        }
         return html;
     }
 
-    // Gera Cilindros Chegada
-    function gerarCilindrosChegadaPDF() {
+    function gerarRolosSaidaPDF(prefixo, numPos) {
         let html = '';
-        const tipos = [
-            { nome: 'Cilindro de Elevação', prefix: 'ce', pos: ['A','B','C','D'] },
-            { nome: 'Cilindro Clamp (Porcas Hidráulicas)', prefix: 'cc', pos: ['A','B','C','D'] },
-            { nome: 'Cilindros Motriz', prefix: 'cm', pos: ['A','B'] }
-        ];
-        tipos.forEach(t => {
-            html += `<tr><th colspan="6" style="background:#ddd; border:1px solid #000; padding:3px;">${t.nome}</th></tr>
-                <tr><th style="border:1px solid #000; padding:3px;">Pos</th><th style="border:1px solid #000; padding:3px;">Número</th>
-                    <th style="border:1px solid #000; padding:3px;">Produção</th><th style="border:1px solid #000; padding:3px;">OK</th>
-                    <th style="border:1px solid #000; padding:3px;">NOK</th><th style="border:1px solid #000; padding:3px;">Obs</th></tr>`;
-            t.pos.forEach(p => {
-                const ok = getRadioValue(`r1cil-${t.prefix}-${p}`);
-                html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cil-${t.prefix}-num-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cil-${t.prefix}-prod-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${ok === 'OK' ? 'X' : ''}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${ok === 'NOK' ? 'X' : ''}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cil-${t.prefix}-obs-${p}`)}</td></tr>`;
-            });
-        });
-        return html;
-    }
-
-    // Gera Cilindros Saída
-    function gerarCilindrosSaidaPDF() {
-        let html = '';
-        const tipos = [
-            { nome: 'Cilindro de Elevação', prefix: 'se', pos: ['A','B','C','D'] },
-            { nome: 'Cilindro Clamp (Porcas Hidráulicas)', prefix: 'sc', pos: ['A','B','C','D'] },
-            { nome: 'Cilindros Motriz', prefix: 'sm', pos: ['A','B'] }
-        ];
-        tipos.forEach(t => {
-            html += `<tr><th colspan="7" style="background:#ddd; border:1px solid #000; padding:3px;">${t.nome}</th></tr>
-                <tr><th style="border:1px solid #000; padding:3px;">Pos</th><th style="border:1px solid #000; padding:3px;">Número</th>
-                    <th style="border:1px solid #000; padding:3px;">Produção</th><th style="border:1px solid #000; padding:3px;">Rep</th>
-                    <th style="border:1px solid #000; padding:3px;">Reu</th><th style="border:1px solid #000; padding:3px;">Novo</th>
-                    <th style="border:1px solid #000; padding:3px;">Obs</th></tr>`;
-            t.pos.forEach(p => {
-                html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cils-${t.prefix}-num-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cils-${t.prefix}-prod-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`r1cils-${t.prefix}-rep-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`r1cils-${t.prefix}-reu-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`r1cils-${t.prefix}-nov-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cils-${t.prefix}-obs-${p}`)}</td></tr>`;
-            });
-        });
-        return html;
-    }
-
-    // Gera Rolos
-    function gerarRolosPDF(tipo, base) {
-        const prefix = tipo === 'chegada' ? 'ch' : 'sa';
-        const bPrefix = base === 'Inferior' ? 'inf' : 'sup';
-        let html = '';
-        html += `<tr><th colspan="9" style="background:#ddd; border:1px solid #000; padding:3px;">Rolamento - Base ${base}</th></tr>
-            <tr><th style="border:1px solid #000; padding:3px;">Pos</th>
-                <th colspan="2" style="border:1px solid #000; padding:3px;">1</th>
-                <th colspan="2" style="border:1px solid #000; padding:3px;">2</th>
-                <th colspan="2" style="border:1px solid #000; padding:3px;">3</th>
-                <th colspan="2" style="border:1px solid #000; padding:3px;">4</th></tr>
-            <tr><th style="border:1px solid #000; padding:3px;"></th>
-                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th>
-                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th>
-                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th>
-                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th></tr>`;
-        for (let i = 1; i <= 7; i++) {
+        for (let i = 1; i <= 10; i++) {
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>`;
-            for (let j = 1; j <= 4; j++) {
-                const val = getRadioValue(`r1rol-${prefix}-${bPrefix}-${i}-${j}`);
+            for (let p = 1; p <= numPos; p++) {
+                const val = getRadioValue(`${prefixo}-${i}-p${p}`);
                 html += `<td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'OK' ? 'X' : ''}</td>
-                         <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'NOK' ? 'X' : ''}</td>`;
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'Ñ/OK' ? 'X' : ''}</td>`;
             }
             html += `</tr>`;
         }
-        html += `<tr><th colspan="9" style="background:#ddd; border:1px solid #000; padding:3px;">Teste Hidrostático - Base ${base}</th></tr>
-            <tr><th style="border:1px solid #000; padding:3px;">Pos</th>
-                <th colspan="2" style="border:1px solid #000; padding:3px;">1</th>
-                <th colspan="2" style="border:1px solid #000; padding:3px;">2</th>
-                <th colspan="2" style="border:1px solid #000; padding:3px;">3</th>
-                <th colspan="2" style="border:1px solid #000; padding:3px;">4</th></tr>
-            <tr><th style="border:1px solid #000; padding:3px;"></th>
-                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th>
-                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th>
-                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th>
-                <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th></tr>`;
-        for (let i = 1; i <= 7; i++) {
-            html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>`;
-            for (let j = 1; j <= 4; j++) {
-                const val = getRadioValue(`r1hid-${prefix}-${bPrefix}-${i}-${j}`);
-                html += `<td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'OK' ? 'X' : ''}</td>
-                         <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'NOK' ? 'X' : ''}</td>`;
-            }
-            html += `</tr>`;
-        }
-        html += `<tr><th colspan="7" style="background:#ddd; border:1px solid #000; padding:3px;">Medidas dos Rolos - Base ${base}</th></tr>
-            <tr><th style="border:1px solid #000; padding:3px;">Pos</th>
-                <th colspan="2" style="border:1px solid #000; padding:3px;">1</th>
-                <th colspan="2" style="border:1px solid #000; padding:3px;">2</th>
-                <th colspan="2" style="border:1px solid #000; padding:3px;">3</th></tr>
-            <tr><th style="border:1px solid #000; padding:3px;"></th>
-                <th style="border:1px solid #000; padding:3px;">Num</th><th style="border:1px solid #000; padding:3px;">Medida</th>
-                <th style="border:1px solid #000; padding:3px;">Num</th><th style="border:1px solid #000; padding:3px;">Medida</th>
-                <th style="border:1px solid #000; padding:3px;">Num</th><th style="border:1px solid #000; padding:3px;">Medida</th></tr>`;
-        for (let i = 1; i <= 7; i++) {
+        return html;
+    }
+
+    function gerarMedidasRolosPDF(prefixo) {
+        let html = '';
+        for (let i = 1; i <= 10; i++) {
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-n1`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-m1`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-n2`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-m2`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-n3`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-m3`)}</td></tr>`;
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${prefixo}-med-${i}-n1`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${prefixo}-med-${i}-m1`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${prefixo}-med-${i}-n2`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${prefixo}-med-${i}-m2`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${prefixo}-med-${i}-classe`)}</td></tr>`;
         }
         return html;
     }
 
-    // Gera Graxa
-    function gerarGraxaPDF() {
-        let html = '';
-        const bases = ['sup', 'inf'];
-        const labels = ['Superior', 'Inferior'];
-        bases.forEach((b, idx) => {
-            html += `<tr><th colspan="5" style="background:#ddd; border:1px solid #000; padding:3px;">Base ${labels[idx]}</th></tr>
-                <tr><th style="border:1px solid #000; padding:3px;">Esq</th>
-                    <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">VT</th>
-                    <th style="border:1px solid #000; padding:3px;">SA</th><th style="border:1px solid #000; padding:3px;">Dir</th></tr>`;
-            for (let i = 7; i >= 1; i--) {
-                const val = getRadioValue(`r1grx-${b}-${i}`);
-                html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'OK' ? 'X' : ''}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'VT' ? 'X' : ''}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'SA' ? 'X' : ''}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td></tr>`;
-            }
-        });
-        return html;
-    }
-
-    // Gera Checklist de Manutenção
-    function gerarManutencaoPDF() {
-        let html = '';
-        manutencaoR1.forEach((tarefa, index) => {
-            const p = document.getElementById(`r1-p-${index}`)?.checked ? 'X' : '';
-            const g = document.getElementById(`r1-g-${index}`)?.checked ? 'X' : '';
-            const mat = getV(`r1-mat-${index}`);
-            const data = getV(`r1-dat-${index}`);
-            html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${tarefa.item}</td>
-                <td style="border:1px solid #000; padding:3px; font-size:9px;">${tarefa.desc}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${g}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${mat}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${data}</td></tr>`;
-        });
-        return html;
+    function gerarMateriaisPDF() {
+        return materiaisSegZero.map((m, i) => `
+            <tr><td style="border:1px solid #000; padding:3px; font-size:9px;">${m.nome}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${m.codigo}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`segzero-mat-qtd-${i}`)}</td></tr>`).join('');
     }
 
     // ==============================================================
@@ -810,15 +564,13 @@ window.salvarEImprimirFolhaoR1 = function() {
         .pdf-base th, .pdf-base td { border: 1px solid #000; padding: 3px; }
         .pdf-base th { background: #e0e0e0; text-align: center; font-weight: bold; font-size: 9px; }
         .pdf-base .titulo-secao { background: #002b5e; color: #fff; font-weight: bold; padding: 4px; text-align: left; margin: 10px 0 4px 0; border: 1px solid #000; font-size: 10px; text-transform: uppercase; }
-        .pdf-base .subtitulo { background: #d0d0d0; font-weight: bold; text-align: center; padding: 3px; font-size: 9px; }
         @media print { .quebra-pagina { break-before: page; page-break-before: always; margin-top: 10px; } }
     </style>
     <div class="pdf-base">
-        <!-- Cabeçalho -->
         <div style="display: flex; border: 2px solid #000; border-bottom: 5px solid #002b5e; margin-bottom: 8px; align-items: center; background: #fff;">
             <div style="width: 20%; text-align: center; border-right: 2px solid #000; padding: 8px;"><span style="font-weight: 900; font-size: 28px; color: #002b5e; letter-spacing: -2px;">CSN</span></div>
             <div style="width: 60%; text-align: center; padding: 8px;">
-                <h2 style="margin: 0; font-size: 12px; color: #000;">CHECK LIST GERAL SEGMENTOS STRAIGHTENER R-I MCC#4</h2>
+                <h2 style="margin: 0; font-size: 12px; color: #000;">CHECK LIST GERAL SEGMENTOS ZERO MCC 2/3</h2>
                 <p style="margin: 4px 0 0 0; font-size: 8px; color: #333; font-weight: bold;">DATA INÍCIO: ${dtInicio} | DATA FIM: ${dtFim}</p>
             </div>
             <div style="width: 20%; font-size: 9px; border-left: 2px solid #000; padding: 8px; line-height: 1.4; font-weight: bold;">
@@ -826,125 +578,119 @@ window.salvarEImprimirFolhaoR1 = function() {
             </div>
         </div>
 
-        <!-- Dados adicionais -->
         <table>
             <tr><td><strong>Nº SEGMENTO:</strong> ${numSeg}</td>
-                <td><strong>VEIO(SAIDA):</strong> ${veio}</td>
-                <td><strong>TIPO EXECUÇÃO:</strong> ${tipoExec}</td></tr>
+                <td><strong>VEIO (SAÍDA):</strong> ${veio}</td>
+                <td><strong>DESEMPENHO:</strong> ${desempenho}</td></tr>
             <tr><td><strong>MOTIVO:</strong> ${motivo}</td>
-                <td colspan="2"><strong>VEIO(ENTRADA):</strong> ${veio}</td></tr>
+                <td colspan="2"><strong>TIPO DE EXECUÇÃO:</strong> ${tipoExec}</td></tr>
         </table>
 
-        <!-- INSPEÇÃO DE CHEGADA -->
         <div class="titulo-secao">1. INSPEÇÃO DE CHEGADA</div>
-        <table>${gerarLinhasChegada()}</table>
+        <table>${gerarChecklistPDF(itensChegadaSegZero, 'segzero-cheg')}</table>
+        <p style="font-size:9px;"><strong>Observações:</strong> ${getV('segzero-obs-chegada')}</p>
 
         <div class="quebra-pagina"></div>
 
-        <!-- AFERIÇÃO DE GAP -->
-        <div class="titulo-secao">2. AFERIÇÃO DE GAP (255+0,3/-0,3)</div>
+        <div class="titulo-secao">2. AFERIÇÃO DE GAP (CHEGADA)</div>
         <table>
-            <tr><th style="width:15%;">CONJ. ROLO</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr>
-            ${gerarGapPDF()}
+            <tr><th>LOCAL</th><th>REFERÊNCIA</th><th>Posição 1</th><th>Posição 2</th><th>Posição 3</th></tr>
+            ${gerarGapPDF('segzero-gap-cheg')}
         </table>
 
-        <!-- CANGALHAS -->
-        <div class="titulo-secao">3. INSPEÇÃO DE CANGALHAS</div>
-        <table>${gerarCangalhasPDF()}</table>
-
-        <div class="quebra-pagina"></div>
-
-        <!-- PASS LINE - CHEGADA -->
-        <div class="titulo-secao">4. PASS LINE (CHEGADA)</div>
-        <div style="display:flex; gap:8px; width:100%;">
-            <div style="width:50%;"><table>
-                <tr><th colspan="5" style="background:#ddd; border:1px solid #000; padding:3px;">BASE INFERIOR (CHEGADA)</th></tr>
-                <tr><th style="border:1px solid #000; padding:3px;">Conj</th><th style="border:1px solid #000; padding:3px;">Ref</th>
-                    <th style="border:1px solid #000; padding:3px;">Pos A</th><th style="border:1px solid #000; padding:3px;">Pos B</th>
-                    <th style="border:1px solid #000; padding:3px;">Pos C</th></tr>
-                ${gerarPassLinePDF('r1-passline-inf-chegada', refPassLineInfR1)}
-            </table></div>
-            <div style="width:50%;"><table>
-                <tr><th colspan="5" style="background:#ddd; border:1px solid #000; padding:3px;">BASE SUPERIOR (CHEGADA)</th></tr>
-                <tr><th style="border:1px solid #000; padding:3px;">Conj</th><th style="border:1px solid #000; padding:3px;">Ref</th>
-                    <th style="border:1px solid #000; padding:3px;">Pos A</th><th style="border:1px solid #000; padding:3px;">Pos B</th>
-                    <th style="border:1px solid #000; padding:3px;">Pos C</th></tr>
-                ${gerarPassLinePDF('r1-passline-sup-chegada', refPassLineSupR1)}
-            </table></div>
-        </div>
-
-        <!-- CILINDROS HIDRÁULICOS (CHEGADA) -->
-        <div class="titulo-secao">5. CILINDROS HIDRÁULICOS (CHEGADA)</div>
-        <table>${gerarCilindrosChegadaPDF()}</table>
-
-        <div class="quebra-pagina"></div>
-
-        <!-- INSPEÇÃO DE ROLOS (CHEGADA) -->
-        <div class="titulo-secao">6. INSPEÇÃO DE ROLOS (CHEGADA)</div>
+        <div class="titulo-secao">3. INSPEÇÃO DIMENSIONAL DOS ROLOS (CHEGADA)</div>
         <table>
-            ${gerarRolosPDF('chegada', 'Inferior')}
-            ${gerarRolosPDF('chegada', 'Superior')}
+            <tr><th colspan="3">DIÂMETROS PARA REUTILIZAÇÃO</th></tr>
+            <tr><td><strong>Rolo ø 140mm</strong></td><td>(Máximo) 140mm</td><td>(Mínimo) 137mm</td></tr>
+            <tr><td><strong>Rolo ø 200mm</strong></td><td>(Máximo) 200mm</td><td>(Mínimo) 197mm</td></tr>
+        </table>
+        <table>
+            <tr><th colspan="2">EMPENO MÁXIMO PARA REUTILIZAÇÃO</th></tr>
+            <tr><td><strong>Rolo ø 140mm</strong></td><td>0,5mm</td></tr>
+            <tr><td><strong>Rolo ø 200mm</strong></td><td>0,5mm</td></tr>
+        </table>
+        <table>
+            <tr><th colspan="3">DIÂMETROS PARA REUTILIZAÇÃO DOS MANCAIS</th></tr>
+            <tr><td><strong>Rolo ø 140mm – 80 H7</strong></td><td>(Mínimo) 80,00mm</td><td>(Máximo) 80,04mm</td></tr>
+            <tr><td><strong>Rolo ø 200mm – 120 F7</strong></td><td>(Mínimo) 120,05mm</td><td>(Máximo) 120,09mm</td></tr>
+        </table>
+        <table>
+            <tr><td><strong>Base Superior (diâmetro):</strong> ${getV('segzero-obs-diam-sup')}</td></tr>
+            <tr><td><strong>Base Inferior (diâmetro):</strong> ${getV('segzero-obs-diam-inf')}</td></tr>
+            <tr><td><strong>Base Superior (empeno):</strong> ${getV('segzero-obs-empeno-sup')}</td></tr>
+            <tr><td><strong>Base Inferior (empeno):</strong> ${getV('segzero-obs-empeno-inf')}</td></tr>
         </table>
 
         <div class="quebra-pagina"></div>
 
-        <!-- GRAXA -->
-        <div class="titulo-secao">7. INSPEÇÃO DE DISTRIBUIÇÃO DE GRAXA</div>
-        <table>${gerarGraxaPDF()}</table>
-
-        <!-- CHECKLIST DE MANUTENÇÃO -->
-        <div class="titulo-secao">8. CHECKLIST DE MANUTENÇÃO</div>
+        <div class="titulo-secao">4. INSPEÇÃO DE MANCAIS — CHEGADA BASE INFERIOR</div>
         <table>
-            <tr><th style="width:5%;">Item</th><th>Descrição da Atividade</th>
-                <th style="width:4%;">P</th><th style="width:4%;">G</th>
-                <th style="width:12%;">Matrícula</th><th style="width:12%;">Data</th></tr>
-            ${gerarManutencaoPDF()}
+            <tr><th rowspan="2">Posição</th><th colspan="2">1</th><th colspan="2">2</th><th colspan="2">3</th></tr>
+            <tr><th>OK</th><th>Ñ/OK</th><th>OK</th><th>Ñ/OK</th><th>OK</th><th>Ñ/OK</th></tr>
+            ${gerarMancaisPDF('segzero-manc-inf')}
+        </table>
+
+        <div class="titulo-secao">INSPEÇÃO DE MANCAIS — CHEGADA BASE SUPERIOR</div>
+        <table>
+            <tr><th rowspan="2">Posição</th><th colspan="2">1</th><th colspan="2">2</th><th colspan="2">3</th></tr>
+            <tr><th>OK</th><th>Ñ/OK</th><th>OK</th><th>Ñ/OK</th><th>OK</th><th>Ñ/OK</th></tr>
+            ${gerarMancaisPDF('segzero-manc-sup')}
         </table>
 
         <div class="quebra-pagina"></div>
 
-        <!-- PASS LINE - SAÍDA -->
-        <div class="titulo-secao">9. PASS LINE (SAÍDA FINAL)</div>
-        <div style="display:flex; gap:8px; width:100%;">
-            <div style="width:50%;"><table>
-                <tr><th colspan="5" style="background:#ddd; border:1px solid #000; padding:3px;">BASE INFERIOR (SAÍDA)</th></tr>
-                <tr><th style="border:1px solid #000; padding:3px;">Conj</th><th style="border:1px solid #000; padding:3px;">Ref</th>
-                    <th style="border:1px solid #000; padding:3px;">Pos A</th><th style="border:1px solid #000; padding:3px;">Pos B</th>
-                    <th style="border:1px solid #000; padding:3px;">Pos C</th></tr>
-                ${gerarPassLinePDF('r1-passline-inf-saida', refsInfSaiR1)}
-            </table></div>
-            <div style="width:50%;"><table>
-                <tr><th colspan="5" style="background:#ddd; border:1px solid #000; padding:3px;">BASE SUPERIOR (SAÍDA)</th></tr>
-                <tr><th style="border:1px solid #000; padding:3px;">Conj</th><th style="border:1px solid #000; padding:3px;">Ref</th>
-                    <th style="border:1px solid #000; padding:3px;">Pos A</th><th style="border:1px solid #000; padding:3px;">Pos B</th>
-                    <th style="border:1px solid #000; padding:3px;">Pos C</th></tr>
-                ${gerarPassLinePDF('r1-passline-sup-saida', refsSupSaiR1)}
-            </table></div>
-        </div>
+        <div class="titulo-secao">5. PASS LINE — BASE INFERIOR (ref. 1±0,05mm)</div>
+        <table>
+            <tr><th>Conj. Rolo</th><th>Posição 1</th><th>Posição 2</th><th>Posição 3</th></tr>
+            ${gerarPassLinePDF()}
+        </table>
 
-        <!-- CILINDROS HIDRÁULICOS (SAÍDA) -->
-        <div class="titulo-secao">10. CILINDROS HIDRÁULICOS (SAÍDA)</div>
-        <table>${gerarCilindrosSaidaPDF()}</table>
+        <div class="titulo-secao">6. AFERIÇÃO DE GAP (SAÍDA)</div>
+        <table>
+            <tr><th>LOCAL</th><th>REFERÊNCIA</th><th>Posição 1</th><th>Posição 2</th><th>Posição 3</th></tr>
+            ${gerarGapPDF('segzero-gap-sai')}
+        </table>
 
         <div class="quebra-pagina"></div>
 
-        <!-- INSPEÇÃO DE ROLOS (SAÍDA) -->
-        <div class="titulo-secao">11. INSPEÇÃO DE ROLOS (SAÍDA)</div>
+        <div class="titulo-secao">7. INSPEÇÃO DE ROLOS — SAÍDA BASE SUPERIOR</div>
         <table>
-            ${gerarRolosPDF('saida', 'Inferior')}
-            ${gerarRolosPDF('saida', 'Superior')}
+            <tr><th rowspan="2">Posição</th><th colspan="2">1</th><th colspan="2">2</th><th colspan="2">3</th></tr>
+            <tr><th>OK</th><th>Ñ/OK</th><th>OK</th><th>Ñ/OK</th><th>OK</th><th>Ñ/OK</th></tr>
+            ${gerarRolosSaidaPDF('segzero-rol-sup', 3)}
+        </table>
+        <table>
+            <tr><th rowspan="2">Posição</th><th colspan="2">1</th><th colspan="2">2</th><th rowspan="2">Classe</th></tr>
+            <tr><th>Num</th><th>Medida</th><th>Num</th><th>Medida</th></tr>
+            ${gerarMedidasRolosPDF('segzero-rol-sup')}
         </table>
 
-        <!-- MATERIAIS -->
-        <div class="titulo-secao">12. MATERIAIS APLICADOS</div>
+        <div class="titulo-secao">INSPEÇÃO DE ROLOS — SAÍDA BASE INFERIOR</div>
         <table>
-            <tr><th style="width:80%;">MATERIAIS</th><th style="width:20%;">QUANTIDADE</th></tr>
-            ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30].map(i => `
-                <tr><td>${getV(`r1mat-desc-${i}`)}</td><td>${getV(`r1mat-qtd-${i}`)}</td></tr>
-            `).join('')}
+            <tr><th rowspan="2">Posição</th><th colspan="2">1</th><th colspan="2">2</th><th colspan="2">3</th><th colspan="2">4</th></tr>
+            <tr><th>OK</th><th>Ñ/OK</th><th>OK</th><th>Ñ/OK</th><th>OK</th><th>Ñ/OK</th><th>OK</th><th>Ñ/OK</th></tr>
+            ${gerarRolosSaidaPDF('segzero-rol-inf', 4)}
+        </table>
+        <table>
+            <tr><th rowspan="2">Posição</th><th colspan="2">1</th><th colspan="2">2</th><th rowspan="2">Classe</th></tr>
+            <tr><th>Num</th><th>Medida</th><th>Num</th><th>Medida</th></tr>
+            ${gerarMedidasRolosPDF('segzero-rol-inf')}
         </table>
 
-        <!-- ASSINATURAS -->
+        <div class="quebra-pagina"></div>
+
+        <div class="titulo-secao">8. INSPEÇÃO DE SAÍDA</div>
+        <table>${gerarChecklistPDF(itensSaidaSegZero, 'segzero-sai')}</table>
+        <p style="font-size:9px;"><strong>Observações:</strong> ${getV('segzero-obs-saida')}</p>
+
+        <div class="quebra-pagina"></div>
+
+        <div class="titulo-secao">9. MATERIAIS APLICADOS</div>
+        <table>
+            <tr><th>MATERIAL</th><th>CÓDIGO</th><th>QUANTIDADE</th></tr>
+            ${gerarMateriaisPDF()}
+        </table>
+
         <div style="margin-top:40px; display:flex; justify-content:space-around; text-align:center; font-size:10px; font-weight:bold;">
             <div><p>___________________________________</p><p>Líder Responsável / Operador</p></div>
             <div><p>___________________________________</p><p>Inspetor de Qualidade</p></div>
@@ -953,7 +699,7 @@ window.salvarEImprimirFolhaoR1 = function() {
 
     // ===== SALVA NO HISTÓRICO =====
     if (typeof window.salvarLaudoNoHistorico === 'function') {
-        window.salvarLaudoNoHistorico(tag, "Straightener R1 MCC 4", htmlPDF);
+        window.salvarLaudoNoHistorico(tag, "Segmento Zero MCC 2/3", htmlPDF);
     }
 
     // Folhão concluído: apaga o rascunho salvo dessa TAG.
@@ -963,7 +709,7 @@ window.salvarEImprimirFolhaoR1 = function() {
     const printDiv = document.getElementById('print-content');
     if (!printDiv) { alert("Div 'print-content' não encontrada!"); return; }
     printDiv.innerHTML = htmlPDF;
-    window.fecharFolhaoR1();
+    window.fecharFolhaoSegmentoZero();
     if (typeof renderReparos === 'function') renderReparos();
     if (typeof renderReservas === 'function') renderReservas();
     if (typeof renderAtivos === 'function') renderAtivos();
@@ -974,4 +720,4 @@ window.salvarEImprimirFolhaoR1 = function() {
     setTimeout(() => window.print(), 500);
 };
 
-console.log("✅ folhaoStraightenerR1.js carregado com todas as seções do documento oficial.");
+console.log("✅ folhaoSegmentoZero.js carregado com o checklist oficial de Segmento Zero MCC 2/3.");

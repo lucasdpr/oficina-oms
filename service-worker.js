@@ -11,7 +11,7 @@
 // usando a copia antiga guardada em cache.
 // ==============================================================
 
-const CACHE_VERSION = "oms-v11";
+const CACHE_VERSION = "oms-v12";
 
 // Arquivos baixados e guardados assim que o app é instalado.
 // (não inclui chamadas de API - essas nunca ficam em cache)
@@ -21,7 +21,6 @@ const ARQUIVOS_PARA_CACHE = [
     "./app.html",
     "./style.css",
     "./script.js",
-    "./tema.js",
     "./ui.js",
     "./banco.js",
     "./dados.js",
@@ -128,7 +127,17 @@ self.addEventListener("fetch", (event) => {
             })
             .catch(() => {
                 // Sem internet: usa o que tiver salvo em cache.
-                return caches.match(event.request);
+                // 🔧 CORREÇÃO: os módulos JS são importados no app.html com
+                // "?v=13" etc (ex: script.js?v=13), mas o precache do install
+                // guarda a URL "pelada" (./script.js, sem query). Sem
+                // ignoreSearch, essas duas URLs contam como chaves de cache
+                // DIFERENTES — o fallback offline não encontrava o arquivo
+                // certo na primeira vez que o app abria sem internet (só
+                // "curava" sozinho depois de pelo menos 1 visita online, que
+                // é quando o handler acima salva a URL com query de verdade).
+                // ignoreSearch faz o match ignorar a query string, então o
+                // arquivo pré-cacheado já serve de primeira, mesmo offline.
+                return caches.match(event.request, { ignoreSearch: true });
             })
     );
 });
