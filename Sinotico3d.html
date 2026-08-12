@@ -1293,20 +1293,93 @@ function abrirModalPeca(slot, peca) {
             });
         }
 
-        modal.querySelector('#btn-prontuario').addEventListener('click', () => {
+        modal.querySelector('#btn-prontuario').addEventListener('click', async () => {
             if (typeof window.abrirHistoricoIndividual === 'function') {
                 window.abrirHistoricoIndividual(peca.id);
-            } else {
-                alert('Este módulo 3D está aberto de forma independente.\nPara abrir o prontuário real, integre este arquivo dentro do app.html (onde banco.js e script.js já estão carregados).');
+                return;
+            }
+            // 🔧 Antes, sem o app.html carregado, esse botão só mostrava um
+            // aviso dizendo que a função não estava disponível. Agora ele
+            // busca o histórico direto da API (mesma rota que o app
+            // principal usa) e mostra embutido no próprio modal.
+            const areaHistorico = modal.querySelector('#historico-standalone');
+            if (areaHistorico) { areaHistorico.remove(); return; } // clique de novo fecha
+            const div = document.createElement('div');
+            div.id = 'historico-standalone';
+            div.className = 'obs-wrap';
+            div.innerHTML = `<label class="obs-label">Prontuário — últimos eventos</label><div style="font-size:12px; color:var(--text-muted);">Carregando...</div>`;
+            modal.querySelector('.acoes').insertAdjacentElement('afterend', div);
+            try {
+                const apiBase = await resolverApiBase();
+                const resposta = await fetch(`${apiBase}/api/historico_eventos?peca_id=${encodeURIComponent(peca.id)}&limite=15`, { cache: 'no-store' });
+                const eventos = await resposta.json();
+                if (!Array.isArray(eventos) || eventos.length === 0) {
+                    div.innerHTML = `<label class="obs-label">Prontuário — últimos eventos</label><div style="font-size:12px; color:var(--text-muted); padding:8px 0;">Nenhum evento registrado ainda.</div>`;
+                    return;
+                }
+                const linhas = eventos.map(e => `
+                    <div style="padding:7px 0; border-bottom:1px solid var(--border); font-size:12px;">
+                        <div style="color:var(--text-muted); font-family:var(--mono);">${e.data_hora || '—'} · ${e.operador || 'Sistema'}</div>
+                        <div style="color:var(--text-primary); margin-top:2px;">${e.acao || ''}</div>
+                    </div>`).join('');
+                div.innerHTML = `<label class="obs-label">Prontuário — últimos eventos</label><div style="max-height:220px; overflow-y:auto;">${linhas}</div>`;
+            } catch (erro) {
+                div.innerHTML = `<label class="obs-label">Prontuário — últimos eventos</label><div style="font-size:12px; color:#ef4444;">Não consegui buscar o histórico: ${erro.message}</div>`;
             }
         });
 
-        modal.querySelector('#btn-oficina').addEventListener('click', () => {
+        modal.querySelector('#btn-oficina').addEventListener('click', async () => {
             if (typeof window.iniciarSaque === 'function') {
                 window.iniciarSaque(peca.id);
                 fecharModal();
-            } else {
-                alert('Este módulo 3D está aberto de forma independente.\nPara encaminhar a peça pra oficina de verdade, integre este arquivo dentro do app.html (onde banco.js e script.js já estão carregados).');
+                return;
+            }
+            // 🔧 Antes, sem o app.html carregado, este botão só avisava que
+            // não dava pra encaminhar a peça — mesmo a API estando
+            // disponível e pronta pra receber a mudança. Agora ele faz a
+            // mesma coisa que o "Sacar" do app principal faz, direto pela
+            // API: move pra Oficina/Reparo, zera os dias, marca a data de
+            // saída (pro contador de dias funcionar certo depois) e
+            // registra no histórico de auditoria.
+            if (!confirm(`Encaminhar ${peca.id} pra Oficina / Reparo?`)) return;
+            const btn = modal.querySelector('#btn-oficina');
+            btn.disabled = true;
+            btn.textContent = 'Enviando...';
+            try {
+                const apiBase = await resolverApiBase();
+                const agoraIso = new Date().toISOString();
+                const resposta = await fetch(`${apiBase}/api/atualizar_peca`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: peca.id,
+                        local: 'Oficina / Reparo',
+                        status: 'Oficina / Reparo',
+                        dias: 0,
+                        data_reparo: agoraIso,
+                        substituido_por: null
+                    })
+                });
+                const resultado = await resposta.json();
+                if (!resposta.ok || !resultado.sucesso) throw new Error(resultado.detail || 'A API não confirmou o salvamento.');
+
+                await fetch(`${apiBase}/api/registrar_evento`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        peca_id: peca.id,
+                        acao: `Encaminhado p/ Oficina / Reparo (via Sinótico 3D, módulo independente).`,
+                        operador: 'Sinótico 3D'
+                    })
+                }).catch(() => {}); // não trava o fluxo se só o log de auditoria falhar
+
+                alert(`✅ ${peca.id} encaminhado pra Oficina / Reparo.`);
+                fecharModal();
+                carregarDados();
+            } catch (erro) {
+                alert(`❌ Não consegui encaminhar: ${erro.message}`);
+                btn.disabled = false;
+                btn.textContent = '🔧 Encaminhar p/ Oficina';
             }
         });
     }

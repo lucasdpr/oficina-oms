@@ -1,6 +1,6 @@
 // ui.js - Versão final corrigida (R1/R2, botão excluir, sem duplicatas)
 
-import { BANCO_ATIVOS } from './banco.js?v=5';
+import { BANCO_ATIVOS, resolverApiBase } from './banco.js?v=5';
 
 // ==============================================================
 // FUNÇÃO AUXILIAR PARA CALCULAR DIAS EM REPARO
@@ -215,7 +215,7 @@ window.renderReservas = renderReservas;
 // ==============================================================
 // EXCLUIR EQUIPAMENTO (definido globalmente)
 // ==============================================================
-window.excluirEquipamento = function(id) {
+window.excluirEquipamento = async function(id) {
     if (typeof window.verificarAcesso === 'function') {
         if (!window.verificarAcesso()) return;
     }
@@ -227,6 +227,34 @@ window.excluirEquipamento = function(id) {
     if (!confirm(`⚠️ EXCLUIR permanentemente [${id}]?\n\nTipo: ${item.tipo}\nLocal: ${item.local}\n\nEsta ação NÃO pode ser desfeita!`)) {
         return;
     }
+
+    // 🔧 CORREÇÃO: antes isso só tirava a peça do localStorage — sumia da
+    // tela e dava a mensagem de sucesso, mas nunca chegava a mexer no
+    // Postgres. Ao recarregar a página, a sincronização com o banco
+    // trazia a peça de volta, porque ela nunca tinha sido excluída de
+    // verdade. Agora a exclusão só é confirmada na tela depois que a API
+    // confirma que apagou no banco.
+    let apiConfirmou = false;
+    try {
+        const apiBase = await resolverApiBase();
+        const resposta = await fetch(`${apiBase}/api/excluir_peca`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+        });
+        const resultado = await resposta.json();
+        if (!resposta.ok || !resultado.sucesso) {
+            throw new Error(resultado.detail || 'A API não confirmou a exclusão.');
+        }
+        apiConfirmou = true;
+    } catch (erro) {
+        console.error('❌ Erro ao excluir peça no banco:', erro);
+        alert(`❌ Não consegui excluir [${id}] no banco de dados.\n\nMotivo: ${erro.message}\n\nA peça NÃO foi removida — tente de novo, ou confira sua conexão.`);
+        return;
+    }
+
+    if (!apiConfirmou) return;
+
     const index = BANCO_ATIVOS.findIndex(a => a.id === id);
     if (index !== -1) {
         BANCO_ATIVOS.splice(index, 1);
