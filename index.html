@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
     <title>OMS | Oficina de Moldes e Segmentos – CSN</title>
 
     <!-- ============ PWA: permite instalar o app no Android/iPhone ============ -->
@@ -57,6 +57,20 @@
             max-width: 100%;
             /* Trava o arrasto lateral (só deixa arrastar pra cima/baixo) */
             touch-action: pan-y;
+            /* Respeita a área segura em iPhones com notch/ilha dinâmica */
+            padding-top: env(safe-area-inset-top);
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+        }
+
+        /* Compensa a navbar fixa ao clicar em links âncora (#proposito etc) */
+        section[id] {
+            scroll-margin-top: 84px;
+        }
+
+        /* Tamanho mínimo de toque confortável em qualquer botão/link clicável */
+        .btn-primary, .btn-outline, .btn-ghost, .btn-login, .nav-links a {
+            min-height: 44px;
         }
 
         a {
@@ -246,6 +260,90 @@
             color: var(--primary);
         }
 
+        /* ===== MENU MOBILE (hambúrguer + drawer) ===== */
+        .nav-hamburger {
+            display: none;
+            width: 44px;
+            height: 44px;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-title);
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .mobile-drawer-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(2px);
+            z-index: 1100;
+            opacity: 0;
+            transition: opacity var(--transition);
+        }
+        .mobile-drawer-overlay.open {
+            display: block;
+            opacity: 1;
+        }
+
+        .mobile-drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            height: 100%;
+            width: min(80vw, 320px);
+            background: var(--bg-surface);
+            border-left: 1px solid var(--border);
+            z-index: 1200;
+            transform: translateX(100%);
+            transition: transform var(--transition);
+            padding: 24px 20px;
+            padding-top: calc(24px + env(safe-area-inset-top));
+            padding-right: calc(20px + env(safe-area-inset-right));
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            overflow-y: auto;
+        }
+        .mobile-drawer.open {
+            transform: translateX(0);
+        }
+        .mobile-drawer-close {
+            align-self: flex-end;
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-title);
+            font-size: 18px;
+            margin-bottom: 16px;
+            cursor: pointer;
+        }
+        .mobile-drawer a {
+            padding: 14px 10px;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-body);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .mobile-drawer a i {
+            color: var(--primary);
+            width: 20px;
+            text-align: center;
+        }
+        .mobile-drawer .btn-primary {
+            justify-content: center;
+            margin-top: 16px;
+        }
+
         /* ===== HERO ===== */
         .hero {
             padding: 140px 5% 80px;
@@ -282,13 +380,71 @@
             margin-bottom: 24px;
         }
 
+        /* Selo "ao vivo" com indicador pulsante */
+        .live-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            color: #10b981;
+            font-size: 12.5px;
+            font-weight: 600;
+            padding: 7px 14px;
+            border-radius: 30px;
+            margin-bottom: 20px;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            animation: pulse 1.6s infinite;
+            flex-shrink: 0;
+        }
+        .status-indicator.offline {
+            background-color: var(--text-muted);
+            animation: none;
+            box-shadow: none;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* Indicador de conexão PWA no navbar */
+        .conn-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+        }
+        .conn-status.online { color: #10b981; }
+        .conn-status.offline { color: var(--text-muted); }
+
+        /* Glassmorphism nos cards principais */
+        .dashboard-mockup, .diff-card, .history-card, .recurso-card {
+            background: rgba(26, 35, 50, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
         .hero-content h1 {
             color: var(--text-title);
-            font-size: 52px;
+            font-size: clamp(30px, 7vw, 52px);
             font-weight: 800;
-            line-height: 1.08;
+            line-height: 1.1;
             margin-bottom: 24px;
-            letter-spacing: -1.5px;
+            letter-spacing: -1px;
         }
         .hero-content h1 span {
             color: var(--primary);
@@ -441,8 +597,11 @@
 
         /* ===== SEÇÃO: PROPÓSITO (frase institucional) ===== */
         .proposito {
-            padding: 80px 5%;
-            background: var(--bg-surface);
+            position: relative;
+            padding: 100px 5%;
+            background:
+                linear-gradient(180deg, rgba(10,14,23,0.88), rgba(10,14,23,0.93)),
+                url('WhatsApp%20Image%202026-06-08%20at%2014.06.56.jpeg') center/cover no-repeat;
             text-align: center;
             border-top: 1px solid var(--border);
             border-bottom: 1px solid var(--border);
@@ -450,9 +609,13 @@
 
         .proposito .badge {
             margin-bottom: 24px;
+            position: relative;
+            z-index: 1;
         }
 
         .proposito blockquote {
+            position: relative;
+            z-index: 1;
             max-width: 900px;
             margin: 0 auto;
             font-size: 22px;
@@ -465,18 +628,20 @@
 
         .proposito blockquote::before {
             content: '"';
-            font-size: 40px;
+            font-size: clamp(26px, 5vw, 40px);
             color: var(--primary);
             opacity: 0.4;
         }
         .proposito blockquote::after {
             content: '"';
-            font-size: 40px;
+            font-size: clamp(26px, 5vw, 40px);
             color: var(--primary);
             opacity: 0.4;
         }
 
         .proposito .assinatura {
+            position: relative;
+            z-index: 1;
             margin-top: 24px;
             font-size: 14px;
             color: var(--text-muted);
@@ -495,7 +660,7 @@
 
         .equipe h2 {
             color: var(--text-title);
-            font-size: 40px;
+            font-size: clamp(26px, 5vw, 40px);
             margin-bottom: 16px;
         }
         .equipe > p {
@@ -557,7 +722,7 @@
 
         .diversidade h2 {
             color: var(--text-title);
-            font-size: 40px;
+            font-size: clamp(26px, 5vw, 40px);
             margin-bottom: 16px;
         }
         .diversidade h2 span {
@@ -567,6 +732,44 @@
             max-width: 700px;
             margin: 0 auto 40px;
             font-size: 16px;
+        }
+
+        .diversidade-numero {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+        .diversidade-numero strong {
+            font-size: clamp(40px, 8vw, 64px);
+            font-weight: 800;
+            color: #ec4899;
+            line-height: 1;
+        }
+        .diversidade-numero span {
+            font-size: 14px;
+            color: var(--text-muted);
+            max-width: 180px;
+            text-align: left;
+        }
+        .diversidade-quote {
+            max-width: 600px;
+            margin: 0 auto 40px;
+            font-size: 16px;
+            font-style: italic;
+            color: var(--text-body);
+            border-left: 3px solid #ec4899;
+            padding-left: 16px;
+            text-align: left;
+        }
+        .diversidade-quote cite {
+            display: block;
+            margin-top: 8px;
+            font-size: 13px;
+            font-style: normal;
+            color: var(--text-muted);
         }
 
         .diversidade .galeria-imagens {
@@ -610,6 +813,82 @@
             color: var(--text-title);
         }
 
+        /* ===== SEÇÃO: RECURSOS DO SISTEMA (NOVA) ===== */
+        .recursos {
+            padding: 80px 5%;
+            background: var(--bg-base);
+            text-align: center;
+            border-top: 1px solid var(--border);
+        }
+        .recursos h2 {
+            color: var(--text-title);
+            font-size: clamp(26px, 5vw, 40px);
+            margin-bottom: 16px;
+        }
+        .recursos > p {
+            max-width: 700px;
+            margin: 0 auto 48px;
+            font-size: 16px;
+        }
+        .recursos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: left;
+        }
+        .recurso-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 26px 22px;
+            border-radius: var(--radius);
+            transition: all var(--transition);
+            position: relative;
+        }
+        .recurso-card:hover {
+            border-color: var(--secondary);
+            transform: translateY(-5px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+        }
+        .recurso-card .recurso-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 10px;
+            background: rgba(59, 130, 246, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+        .recurso-card .recurso-icon i {
+            font-size: 20px;
+            color: var(--secondary);
+        }
+        .recurso-card h4 {
+            color: var(--text-title);
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .recurso-card p {
+            color: var(--text-body);
+            font-size: 13.5px;
+        }
+        .recurso-card .recurso-tag {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--primary);
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            padding: 3px 8px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+        }
+
         /* ===== SEÇÃO: DIFERENCIAIS ===== */
         .diferenciais {
             padding: 80px 5%;
@@ -620,7 +899,7 @@
 
         .diferenciais h2 {
             color: var(--text-title);
-            font-size: 40px;
+            font-size: clamp(26px, 5vw, 40px);
             margin-bottom: 16px;
         }
         .diferenciais > p {
@@ -693,7 +972,7 @@
 
         .servicos h2 {
             color: var(--text-title);
-            font-size: 40px;
+            font-size: clamp(26px, 5vw, 40px);
             margin-bottom: 16px;
         }
         .servicos > p {
@@ -748,7 +1027,7 @@
 
         .sobre-mcc h2 {
             color: var(--text-title);
-            font-size: 40px;
+            font-size: clamp(26px, 5vw, 40px);
             margin-bottom: 16px;
         }
         .sobre-mcc > p {
@@ -772,10 +1051,46 @@
             border-radius: var(--radius);
             transition: all var(--transition);
             text-align: center;
+            cursor: pointer;
         }
         .mcc-card:hover {
             border-color: var(--primary);
             transform: translateY(-4px);
+        }
+        .mcc-card.active {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 1px var(--primary);
+        }
+        .mcc-detalhe {
+            display: none;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px dashed var(--border);
+        }
+        .mcc-card.active .mcc-detalhe {
+            display: flex;
+        }
+        .mcc-chip {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--primary);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+        .mcc-dica {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 24px;
+        }
+        .mcc-dica i {
+            color: var(--primary);
+            margin-right: 6px;
         }
         .mcc-card .numero {
             font-size: 48px;
@@ -807,7 +1122,7 @@
         }
 
         .historia-header h2 {
-            font-size: 40px;
+            font-size: clamp(26px, 5vw, 40px);
             color: var(--text-title);
             margin-bottom: 16px;
         }
@@ -887,7 +1202,7 @@
             font-size: 14px;
         }
 
-        /* Galeria Estilo Masonry/Grid */
+        /* Galeria de fotos da oficina (grid 2x2, responsiva) */
         .photo-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -900,6 +1215,7 @@
             overflow: hidden;
             border: 1px solid var(--border);
             background: var(--bg-surface);
+            aspect-ratio: 4 / 3;
         }
 
         .photo-item img {
@@ -912,18 +1228,6 @@
 
         .photo-item:hover img {
             transform: scale(1.05);
-        }
-
-        .photo-tall {
-            grid-row: span 2;
-        }
-
-        .photo-tall img {
-            min-height: 400px;
-        }
-
-        .photo-wide img {
-            min-height: 192px;
         }
 
         .photo-overlay {
@@ -956,7 +1260,7 @@
 
         .cta-final h2 {
             color: var(--text-title);
-            font-size: 40px;
+            font-size: clamp(26px, 5vw, 40px);
             margin-bottom: 16px;
         }
         .cta-final p {
@@ -1021,6 +1325,12 @@
             .nav-links {
                 display: none;
             }
+            .nav-hamburger {
+                display: flex;
+            }
+            .nav-actions .btn-login {
+                display: none;
+            }
             .mockup-body {
                 height: 200px;
             }
@@ -1037,21 +1347,35 @@
         }
 
         @media (max-width: 600px) {
-            .hero-content h1 {
-                font-size: 36px;
+            .navbar {
+                padding: 12px 5%;
             }
-            .diferenciais h2,
-            .servicos h2,
-            .sobre-mcc h2,
-            .cta-final h2,
-            .equipe h2,
-            .diversidade h2,
-            .historia-header h2 {
-                font-size: 30px;
+            .logo {
+                font-size: 20px;
+            }
+            .nav-actions {
+                gap: 8px;
+            }
+            #conn-status-text {
+                display: none;
+            }
+            .conn-status {
+                padding: 6px 8px;
+            }
+            #btn-install-pwa span.btn-full-text-install {
+                display: none;
+            }
+            #btn-install-pwa {
+                padding: 8px 10px;
             }
             .nav-actions .btn-primary {
-                padding: 8px 16px;
+                padding: 10px 14px;
                 font-size: 12px;
+            }
+            .hero {
+                padding: 100px 5% 60px;
+                gap: 36px;
+                min-height: auto;
             }
             .dashboard-mockup {
                 transform: none;
@@ -1066,17 +1390,47 @@
                 flex-direction: column;
                 gap: 16px;
             }
+            .proposito {
+                padding: 56px 6%;
+            }
             .proposito blockquote {
-                font-size: 18px;
+                font-size: 17px;
+            }
+            .diferenciais, .servicos, .sobre-mcc, .equipe, .diversidade, .historia, .cta-final {
+                padding: 56px 6%;
             }
             .servicos-grid {
                 grid-template-columns: 1fr 1fr;
+                gap: 14px;
+            }
+            .diferenciais-grid {
+                gap: 16px;
+            }
+            .diff-card {
+                padding: 24px 20px;
             }
             .photo-grid { 
                 grid-template-columns: 1fr; 
-            } 
-            .photo-tall { 
-                grid-row: auto; 
+            }
+            .cta-buttons {
+                flex-direction: column;
+                width: 100%;
+            }
+            .cta-buttons a {
+                width: 100%;
+                justify-content: center;
+            }
+            .footer-links {
+                gap: 14px 20px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .servicos-grid {
+                grid-template-columns: 1fr;
+            }
+            .logo span {
+                display: none;
             }
         }
     </style>
@@ -1089,6 +1443,7 @@
         </a>
         <div class="nav-links">
             <a href="#proposito">Nosso Propósito</a>
+            <a href="#recursos">Recursos</a>
             <a href="#diferenciais">Serviços</a>
             <a href="#equipe">Time</a>
             <a href="#diversidade">Diversidade</a>
@@ -1096,16 +1451,46 @@
             <a href="#mcc">MCCs</a>
         </div>
         <div class="nav-actions">
+            <span class="conn-status online" id="conn-status">
+                <i class="fas fa-circle" style="font-size:8px;"></i> <span id="conn-status-text">On-line</span>
+            </span>
+            <button class="btn-ghost" id="btn-install-pwa" style="display:none;">
+                <i class="fas fa-mobile-alt"></i> <span class="btn-full-text-install">Instalar App</span>
+            </button>
             <a href="app.html" class="btn-login">Entrar</a>
             <a href="app.html" class="btn-primary">
-                <i class="fas fa-rocket"></i> Acessar Sistema
+                <i class="fas fa-rocket"></i> <span class="btn-full-text">Acessar Sistema</span>
             </a>
+            <button class="nav-hamburger" id="nav-hamburger" aria-label="Abrir menu" aria-expanded="false">
+                <i class="fas fa-bars"></i>
+            </button>
         </div>
     </nav>
+
+    <!-- ===== DRAWER MOBILE ===== -->
+    <div class="mobile-drawer-overlay" id="mobile-drawer-overlay"></div>
+    <div class="mobile-drawer" id="mobile-drawer">
+        <button class="mobile-drawer-close" id="mobile-drawer-close" aria-label="Fechar menu">
+            <i class="fas fa-times"></i>
+        </button>
+        <a href="#proposito"><i class="fas fa-bullseye"></i> Nosso Propósito</a>
+        <a href="#recursos"><i class="fas fa-layer-group"></i> Recursos do Sistema</a>
+        <a href="#diferenciais"><i class="fas fa-cogs"></i> Serviços</a>
+        <a href="#equipe"><i class="fas fa-users"></i> Time</a>
+        <a href="#diversidade"><i class="fas fa-venus-mars"></i> Diversidade</a>
+        <a href="#historia"><i class="fas fa-landmark"></i> História</a>
+        <a href="#mcc"><i class="fas fa-industry"></i> MCCs</a>
+        <a href="app.html" class="btn-primary">
+            <i class="fas fa-rocket"></i> Acessar Sistema
+        </a>
+    </div>
 
     <section class="hero">
         <div class="hero-content">
             <span class="badge">🏭 CSN – Volta Redonda</span>
+            <div class="live-pill">
+                <span class="status-indicator"></span> Sistema operando em tempo real na Aciaria
+            </div>
             <h1>Oficina de Moldes e <br><span>Segmentos</span></h1>
             <p>
                 Referência em manutenção e recuperação de moldes e segmentos para
@@ -1114,19 +1499,19 @@
             </p>
             <div style="display: flex; gap: 14px; flex-wrap: wrap;">
                 <a href="app.html" class="btn-primary">
-                    <i class="fas fa-arrow-right"></i> Acessar Sistema
+                    <i class="fas fa-arrow-right"></i> Entrar no Painel do Operador
                 </a>
-                <a href="#proposito" class="btn-outline">
-                    <i class="fas fa-play-circle"></i> Conhecer
+                <a href="#recursos" class="btn-outline">
+                    <i class="fas fa-chart-bar"></i> Ver Relatório de Disponibilidade
                 </a>
             </div>
             <div class="hero-stats">
                 <div>
-                    <strong>150+</strong>
+                    <strong data-count="150" data-suffix="+">0</strong>
                     <span>Profissionais capacitados</span>
                 </div>
                 <div>
-                    <strong>15+</strong>
+                    <strong data-count="15" data-suffix="+">0</strong>
                     <span>Especialistas em manutenção</span>
                 </div>
                 <div>
@@ -1151,9 +1536,9 @@
                     </div>
                     <div class="mockup-main">
                         <div class="mockup-kpi">
-                            <div><strong>128</strong><small>Ativos</small></div>
-                            <div><strong>14</strong><small>Em Reparo</small></div>
-                            <div><strong>96%</strong><small>Disponível</small></div>
+                            <div><strong data-count="128">0</strong><small>Ativos</small></div>
+                            <div><strong data-count="14">0</strong><small>Em Reparo</small></div>
+                            <div><strong data-count="96" data-suffix="%">0</strong><small>Disponível</small></div>
                         </div>
                         <div class="mockup-chart">
                             <i style="height:35%"></i>
@@ -1183,6 +1568,67 @@
         </div>
     </section>
 
+    <!-- ===== NOVA SEÇÃO: RECURSOS DO SISTEMA ===== -->
+    <section id="recursos" class="recursos">
+        <span class="badge badge-csn">Dentro do Sistema</span>
+        <h2>Tudo que o OMS faz por você</h2>
+        <p>
+            Um único sistema para acompanhar o ciclo completo de vida de cada
+            equipamento — da chegada na oficina até a liberação para a linha.
+        </p>
+
+        <div class="recursos-grid">
+            <div class="recurso-card">
+                <span class="recurso-tag">3D</span>
+                <div class="recurso-icon"><i class="fas fa-cube"></i></div>
+                <h4>Sinótico 3D</h4>
+                <p>Visualização em 3D da posição real de cada equipamento nas MCCs, em tempo real.</p>
+            </div>
+            <div class="recurso-card">
+                <div class="recurso-icon"><i class="fas fa-clipboard-list"></i></div>
+                <h4>Folhões Digitais por Equipamento</h4>
+                <p>Checklists específicos para Molde, Bow, Horizontal, R1/R2, Bender, Segmento Zero, Segmento de Grupo e Desempenadeira.</p>
+            </div>
+            <div class="recurso-card">
+                <span class="recurso-tag">Auto-save</span>
+                <div class="recurso-icon"><i class="fas fa-save"></i></div>
+                <h4>Progresso Salvo Automaticamente</h4>
+                <p>Se o folhão for fechado no meio do preenchimento, o progresso continua salvo — nada se perde.</p>
+            </div>
+            <div class="recurso-card">
+                <div class="recurso-icon"><i class="fas fa-exchange-alt"></i></div>
+                <h4>Swap Inteligente</h4>
+                <p>Troca rápida de peças entre oficina e linha, com validação automática de posição e veio.</p>
+            </div>
+            <div class="recurso-card">
+                <div class="recurso-icon"><i class="fas fa-warehouse"></i></div>
+                <h4>Estoque e Materiais</h4>
+                <p>Controle de peças em reserva, rolos e materiais consumíveis com localização e valores.</p>
+            </div>
+            <div class="recurso-card">
+                <div class="recurso-icon"><i class="fas fa-chart-line"></i></div>
+                <h4>KPIs e Gráficos por MCC</h4>
+                <p>Painéis com disponibilidade, tonelagem e dias em operação por veio e por MCC.</p>
+            </div>
+            <div class="recurso-card">
+                <div class="recurso-icon"><i class="fas fa-history"></i></div>
+                <h4>Histórico e Rastreabilidade</h4>
+                <p>Cada ação fica registrada por equipamento, com data, autor e o que foi feito.</p>
+            </div>
+            <div class="recurso-card">
+                <span class="recurso-tag">PWA</span>
+                <div class="recurso-icon"><i class="fas fa-mobile-alt"></i></div>
+                <h4>Instalável no Celular</h4>
+                <p>Funciona como app nativo no Android e iPhone, inclusive com uso offline.</p>
+            </div>
+            <div class="recurso-card">
+                <div class="recurso-icon"><i class="fas fa-adjust"></i></div>
+                <h4>Modo Claro e Escuro</h4>
+                <p>Interface adaptada para qualquer ambiente da oficina, de dia ou à noite.</p>
+            </div>
+        </div>
+    </section>
+
     <!-- ===== SEÇÃO: IMAGENS DA EQUIPE (já existente) ===== -->
     <section id="equipe" class="equipe">
         <span class="badge badge-csn">Nosso Time</span>
@@ -1195,13 +1641,13 @@
 
         <div class="galeria-imagens">
             <div class="img-wrapper">
-                <img src="WhatsApp Image 2026-06-23 at 14.39.57.jpeg" alt="Oficina de Moldes e Segmentos - CSN" onerror="this.style.display='none'">
+                <img src="WhatsApp%20Image%202026-06-23%20at%2014.39.57.jpeg" alt="Oficina de Moldes e Segmentos - CSN" onerror="this.style.display='none'">
                 <div class="legenda">
                     <strong>Oficina de Moldes e Segmentos</strong> — CSN Volta Redonda
                 </div>
             </div>
             <div class="img-wrapper">
-                <img src="WhatsApp Image 2026-06-23 at 14.40.12.jpeg" alt="Propósito OMS - GMLC/GGMA" onerror="this.style.display='none'">
+                <img src="WhatsApp%20Image%202026-06-23%20at%2014.40.12.jpeg" alt="Propósito OMS - GMLC/GGMA" onerror="this.style.display='none'">
                 <div class="legenda">
                     <strong>Propósito OMS</strong> — GMLC / GGMA
                 </div>
@@ -1221,6 +1667,17 @@
             segmentos, rompendo barreiras e trazendo inovação, precisão e cuidado
             para cada serviço executado.
         </p>
+
+        <!-- 🔧 EDITE O NÚMERO ABAIXO com o percentual real do efetivo feminino da oficina -->
+        <div class="diversidade-numero">
+            <strong>+35%</strong>
+            <span>do efetivo de manutenção da oficina</span>
+        </div>
+
+        <blockquote class="diversidade-quote">
+            "Aqui a gente não pede espaço — a gente entrega resultado, e o respeito vem junto."
+            <cite>— Equipe feminina da OMS</cite>
+        </blockquote>
 
         <div class="galeria-imagens">
             <div class="img-wrapper">
@@ -1345,22 +1802,43 @@
         </p>
 
         <div class="mcc-grid">
-            <div class="mcc-card">
+            <div class="mcc-card" data-mcc="2" tabindex="0" role="button" aria-expanded="false">
                 <span class="numero">MCC 2</span>
                 <h4>Veios C e D</h4>
                 <span>Moldes, segmentos e cadeiras</span>
+                <div class="mcc-detalhe">
+                    <span class="mcc-chip">Molde</span>
+                    <span class="mcc-chip">Segmento</span>
+                    <span class="mcc-chip">Cadeira Superior</span>
+                    <span class="mcc-chip">Cadeira Inferior</span>
+                </div>
             </div>
-            <div class="mcc-card">
+            <div class="mcc-card" data-mcc="3" tabindex="0" role="button" aria-expanded="false">
                 <span class="numero">MCC 3</span>
                 <h4>Veios E e F</h4>
                 <span>Moldes, segmentos e cadeiras</span>
+                <div class="mcc-detalhe">
+                    <span class="mcc-chip">Molde</span>
+                    <span class="mcc-chip">Segmento</span>
+                    <span class="mcc-chip">Cadeira Superior</span>
+                    <span class="mcc-chip">Cadeira Inferior</span>
+                </div>
             </div>
-            <div class="mcc-card">
+            <div class="mcc-card" data-mcc="4" tabindex="0" role="button" aria-expanded="false">
                 <span class="numero">MCC 4</span>
                 <h4>Veios G e H</h4>
                 <span>Moldes, bender, bow, straightener e horizontais</span>
+                <div class="mcc-detalhe">
+                    <span class="mcc-chip">Molde</span>
+                    <span class="mcc-chip">Bender</span>
+                    <span class="mcc-chip">Bow</span>
+                    <span class="mcc-chip">Straightener R1</span>
+                    <span class="mcc-chip">Straightener R2</span>
+                    <span class="mcc-chip">Horizontal</span>
+                </div>
             </div>
         </div>
+        <p class="mcc-dica"><i class="fas fa-hand-pointer"></i> Toque em uma MCC para ver os equipamentos atendidos.</p>
     </section>
 
     <section id="historia" class="historia">
@@ -1405,17 +1883,21 @@
             </div>
 
             <div class="photo-grid">
-                <div class="photo-item photo-tall">
+                <div class="photo-item">
                     <img src="USINAGEM.jpg" alt="Mecânico operando torno na Usinagem" onerror="this.style.display='none'">
                     <div class="photo-overlay">Usinagem de Precisão</div>
                 </div>
-                <div class="photo-item photo-wide">
+                <div class="photo-item">
                     <img src="ELETRICA.jpg" alt="Manutenção Elétrica CSN" onerror="this.style.display='none'">
                     <div class="photo-overlay">Manutenção Elétrica</div>
                 </div>
-                <div class="photo-item photo-wide">
-                    <img src="SOLDA FOTO.jpg" alt="Soldador na manutenção" onerror="this.style.display='none'">
+                <div class="photo-item">
+                    <img src="SOLDA%20FOTO.jpg" alt="Soldador na manutenção" onerror="this.style.display='none'">
                     <div class="photo-overlay">Soldagem e Caldeiraria</div>
+                </div>
+                <div class="photo-item">
+                    <img src="SILLAS%20IAMGEM%20%281%29.png" alt="Montagem de cilindro hidráulico" onerror="this.style.display='none'">
+                    <div class="photo-overlay">Montagem Hidráulica</div>
                 </div>
             </div>
         </div>
@@ -1441,6 +1923,7 @@
     <footer class="footer">
         <div class="footer-links">
             <a href="#proposito">Propósito</a>
+            <a href="#recursos">Recursos</a>
             <a href="#diferenciais">Serviços</a>
             <a href="#equipe">Time</a>
             <a href="#diversidade">Diversidade</a>
@@ -1453,6 +1936,138 @@
             CSN Volta Redonda &bull; GMLC / GGMA
         </p>
     </footer>
+
+    <!-- ============ CONTADORES ANIMADOS + STATUS DE CONEXÃO + INSTALAÇÃO PWA ============ -->
+    <script>
+        // --- Contadores animados (sobem de 0 até o valor real quando entram na tela) ---
+        (function () {
+            const els = document.querySelectorAll('[data-count]');
+            if (!els.length) return;
+
+            function animar(el) {
+                const alvo = parseInt(el.dataset.count, 10) || 0;
+                const sufixo = el.dataset.suffix || '';
+                const duracao = 1200;
+                const inicio = performance.now();
+
+                function passo(agora) {
+                    const progresso = Math.min((agora - inicio) / duracao, 1);
+                    const valor = Math.floor(progresso * alvo);
+                    el.textContent = valor + sufixo;
+                    if (progresso < 1) requestAnimationFrame(passo);
+                    else el.textContent = alvo + sufixo;
+                }
+                requestAnimationFrame(passo);
+            }
+
+            const observer = new IntersectionObserver((entradas) => {
+                entradas.forEach((entrada) => {
+                    if (entrada.isIntersecting) {
+                        animar(entrada.target);
+                        observer.unobserve(entrada.target);
+                    }
+                });
+            }, { threshold: 0.4 });
+
+            els.forEach((el) => observer.observe(el));
+        })();
+
+        // --- Status de conexão (On-line / Off-line) para o modo PWA ---
+        (function () {
+            const pill = document.getElementById('conn-status');
+            const texto = document.getElementById('conn-status-text');
+            if (!pill || !texto) return;
+
+            function atualizar() {
+                if (navigator.onLine) {
+                    pill.classList.remove('offline');
+                    pill.classList.add('online');
+                    texto.textContent = 'On-line';
+                } else {
+                    pill.classList.remove('online');
+                    pill.classList.add('offline');
+                    texto.textContent = 'Off-line (leitura)';
+                }
+            }
+            window.addEventListener('online', atualizar);
+            window.addEventListener('offline', atualizar);
+            atualizar();
+        })();
+
+        // --- Botão "Instalar App" (aparece só quando o navegador permite instalar o PWA) ---
+        (function () {
+            const btn = document.getElementById('btn-install-pwa');
+            if (!btn) return;
+            let promptEvento = null;
+
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                promptEvento = e;
+                btn.style.display = 'inline-flex';
+            });
+
+            btn.addEventListener('click', async () => {
+                if (!promptEvento) return;
+                promptEvento.prompt();
+                await promptEvento.userChoice;
+                promptEvento = null;
+                btn.style.display = 'none';
+            });
+
+            window.addEventListener('appinstalled', () => {
+                btn.style.display = 'none';
+            });
+        })();
+        // --- Cards de MCC clicáveis (mostra os equipamentos atendidos) ---
+        (function () {
+            const cards = document.querySelectorAll('.mcc-card');
+            cards.forEach((card) => {
+                function toggle() {
+                    const estaAtivo = card.classList.contains('active');
+                    cards.forEach((c) => { c.classList.remove('active'); c.setAttribute('aria-expanded', 'false'); });
+                    if (!estaAtivo) {
+                        card.classList.add('active');
+                        card.setAttribute('aria-expanded', 'true');
+                    }
+                }
+                card.addEventListener('click', toggle);
+                card.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+                });
+            });
+        })();
+    </script>
+    <!-- ================================================================================== -->
+
+    <!-- ============ MENU MOBILE: abrir/fechar drawer ============ -->
+    <script>
+        (function () {
+            const btnAbrir = document.getElementById('nav-hamburger');
+            const btnFechar = document.getElementById('mobile-drawer-close');
+            const overlay = document.getElementById('mobile-drawer-overlay');
+            const drawer = document.getElementById('mobile-drawer');
+
+            function abrirMenu() {
+                drawer.classList.add('open');
+                overlay.classList.add('open');
+                btnAbrir.setAttribute('aria-expanded', 'true');
+                document.body.style.overflow = 'hidden';
+            }
+            function fecharMenu() {
+                drawer.classList.remove('open');
+                overlay.classList.remove('open');
+                btnAbrir.setAttribute('aria-expanded', 'false');
+                document.body.style.overflow = '';
+            }
+
+            btnAbrir?.addEventListener('click', abrirMenu);
+            btnFechar?.addEventListener('click', fecharMenu);
+            overlay?.addEventListener('click', fecharMenu);
+            drawer?.querySelectorAll('a').forEach(a => a.addEventListener('click', fecharMenu));
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fecharMenu(); });
+        })();
+    </script>
+    <!-- ============================================================== -->
 
     <!-- ============ PWA: registra o service worker (instalação + offline) ============ -->
     <script>
