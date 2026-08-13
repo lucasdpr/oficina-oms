@@ -358,6 +358,48 @@ function parseDataBrParaTimestamp(dataBr) {
     return isNaN(ts) ? null : ts;
 }
 
+// Descobre a família MCC (4, ou 2/3) de uma peça. Usado como correção
+// de: "instalei um Molde MCC4, expulsei ele sem querer, ele voltou pra
+// Oficina/Reserva, e passou a aparecer rotulado como MCC 2/3 — fica
+// preso lá, porque o dropdown de veio só oferece C/D/E/F pra quem tá
+// nesse grupo, nunca G/H". Antes, mcc_compat era SEMPRE recalculado a
+// partir de "local" — mas uma peça em "Oficina / Reserva" ou "Oficina /
+// Reparo" não tem NENHUMA pista de MCC no local (não é "MCC 4 - Veio
+// G", é só "Oficina / Reserva"), então caía sempre no "senão" e virava
+// "2/3", mesmo pra peças que eram MCC4 até segundos atrás.
+function inferirMccCompat(peca, tipoCanonico) {
+    // Instalada agora? O local já entrega a resposta certa, sem margem
+    // pra erro — mantém exatamente como já funcionava.
+    if (peca.local && peca.local.includes("MCC 4")) return "4";
+    if (peca.local && (peca.local.includes("MCC 2") || peca.local.includes("MCC 3"))) return "2/3";
+
+    // Não instalada (Reserva/Reparo): a maioria dos tipos só existe numa
+    // família só, então dá pra confiar 100% no tipo, sem ambiguidade.
+    const SOMENTE_MCC4 = ["Bender", "Bow", "Horizontal", "Straightener"];
+    const SOMENTE_MCC23 = [
+        "Segmento Zero", "Cadeira Superior", "Cadeira Inferior",
+        "Grupo 1", "Grupo 2", "Grupo 3",
+        "Segmento Grupo 1", "Segmento Grupo 2", "Segmento Grupo 3"
+    ];
+    if (SOMENTE_MCC4.includes(tipoCanonico)) return "4";
+    if (SOMENTE_MCC23.includes(tipoCanonico)) return "2/3";
+
+    // "Molde" é o ÚNICO tipo que existe nas duas famílias — sem estar
+    // instalado, o banco hoje não guarda essa informação separada da
+    // localização (não existe uma coluna própria pra isso ainda). Usa a
+    // meta de vida útil como pista: Molde MCC4 = 1.100.000, MCC2/3 =
+    // 900.000 (ver META_POR_TIPO no cadastro de peça nova, em
+    // script.js). Não é infalível se alguém mudar a meta manualmente
+    // pra um valor fora do padrão, mas resolve o caso comum sem precisar
+    // mexer no banco de dados agora.
+    if (tipoCanonico === "Molde") {
+        const meta = parseFloat(peca.meta) || 0;
+        return meta >= 1000000 ? "4" : "2/3";
+    }
+
+    return "2/3"; // fallback final — mesmo comportamento de antes
+}
+
 let syncAtivosEmAndamento = null;
 
 // 🔧 CORREÇÃO ("loga, não aparece nada, mas sem erro nenhum — só fecha e
@@ -478,7 +520,7 @@ export async function sincronizarAtivosReaisMCC4() {
                 ton: parseFloat(peca.tonelagem) || 0,
                 meta: parseFloat(peca.meta) || 0,
                 ordem: getOrdemPadrao(tipoCanonico),
-                mcc_compat: (peca.local && peca.local.includes("MCC 4")) ? "4" : "2/3",
+                mcc_compat: inferirMccCompat(peca, tipoCanonico),
                 tag_patrimonio: peca.tag_patrimonio || null,
                 data_entrada: peca.data_entrada || null,
                 // 🔧 CORREÇÃO ("instalei e não foi salvo com a data"): esta

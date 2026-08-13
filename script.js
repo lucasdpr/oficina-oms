@@ -3166,10 +3166,23 @@ window.iniciarSwapAlocacao = async function(idReserva) {
 
     if (!slotChassi || slotChassi === "") return alert('Selecione a Posição de destino para este equipamento.');
 
+    // 🔧 CORREÇÃO CRÍTICA ("coloquei o Bow e ele expulsou o Molde que
+    // tinha acabado de instalar"): a busca pela peça que já ocupa o
+    // slot usava DOIS critérios — `p.posicaoFixa === slotChassi` OU
+    // `p.id.includes(slotChassi)`. O segundo critério (substring no ID)
+    // era uma tentativa antiga de cobrir peças sem posicaoFixa
+    // confiável — mas hoje toda peça instalada TEM posicaoFixa
+    // confiável (essa é literalmente a correção que fizemos nas últimas
+    // rodadas). Esse segundo critério agora só serve pra gerar falso
+    // positivo: como as peças de Estoque Reserva podem ter QUALQUER tag
+    // digitada pelo técnico, era só o ID de alguma peça já instalada
+    // (ex: o Molde) conter, por coincidência, os mesmos caracteres do
+    // slotChassi sendo procurado (ex: "BOW-1") pra ela ser encontrada
+    // por engano e expulsa do lugar certo dela.
     let pecaAntiga = null;
     for (const p of BANCO_ATIVOS) {
         if ((p.veio === veio && p.status === "Instalado") || (p.local && p.local.includes(`Veio ${veio}`) && !p.local.includes("Oficina"))) {
-            if (p.posicaoFixa === slotChassi || p.id.includes(slotChassi)) { pecaAntiga = p; break; }
+            if (p.posicaoFixa === slotChassi) { pecaAntiga = p; break; }
         }
     }
 
