@@ -395,6 +395,95 @@ function construirLayoutSlots(veio) {
     return ehMCC4(veio) ? construirLayoutSlotsMCC4(veio) : construirLayoutSlotsMCC23(veio);
 }
 
+// ==========================================================================
+// 🔧 CORREÇÃO CRÍTICA: CASAMENTO PEÇA <-> SLOT PELA POSIÇÃO REAL, NÃO
+// SÓ PELO ID FIXO DA VAGA.
+//
+// Antes, cada slot só encontrava sua peça com `piecesById[slot.id]` —
+// ou seja, comparando o ID FIXO da vaga (ex: "BOW-3-4G", igual ao que o
+// importar_excel.py gera) com o ID de alguma peça vinda da API. Isso
+// funciona pra peças originais da planilha (o próprio ID já É o da
+// vaga). Mas quando uma peça do Estoque Reserva é instalada num veio
+// pelo Swap Automático (tela "Estoque Reserva" do app principal), ela
+// continua com O SEU PRÓPRIO id (ex: "MLD-RES-01" — o Swap nunca
+// renomeia a peça pro ID da vaga) — então o Sinótico nunca encontrava
+// ela: a vaga aparecia vazia, ou pior, ainda mostrando a peça ANTIGA
+// (que na verdade já foi mandada pra Oficina/Reparo), mesmo com o Swap
+// salvo certinho no banco. É exatamente o "faço a troca e não fica no
+// veio" — o dado estava certo no Postgres, só o Sinótico procurava no
+// lugar errado.
+//
+// Agora o casamento usa a mesma lógica de "posição real" que o Painel
+// de Sequenciamento de Veios do app principal (script.js/banco.js) já
+// usa: prioriza o campo "posicao" salvo no banco quando ele foi
+// definido por um Swap (vem no formato curto, tipo "BOW-3"); só cai de
+// volta pro cálculo a partir do ID pra peça original, nunca trocada
+// (que é quando "posicao" no banco é igual ao próprio ID da peça).
+// ==========================================================================
+
+// Extrai a letra do veio (C, D, E, F, G, H) a partir do texto salvo em
+// "local" (ex: "MCC 4 - Veio G" -> "G"). Mesma função usada no app
+// principal (banco.js), reproduzida aqui porque este arquivo roda de
+// forma independente (não importa banco.js).
+function extrairVeioDoLocal(local) {
+    const m = local && String(local).match(/Veio\s+([A-Z])/i);
+    return m ? m[1].toUpperCase() : '';
+}
+
+// Converte o ID FIXO de uma vaga (ex: "BOW-3-4G", "CAD-SUP-73-2C") no
+// mesmo "código curto de slot" que o Swap Automático salva no banco
+// (ex: "BOW-3", "CAD-SUP-73"). GRP1/GRP2/GRP3 (Grupos da MCC2/3) ainda
+// não passam pelo Swap Automático hoje, então continuam de fora — o
+// chamador cai de volta pro casamento antigo por ID nesse caso.
+function slotKeyDoIdFixo(idFixo) {
+    const partes = String(idFixo).split('-');
+    const prefixo = partes[0];
+    if (prefixo === 'MLD') return 'MOLDE';
+    if (prefixo === 'BND') return 'BENDER';
+    if (prefixo === 'BOW') return `BOW-${partes[1]}`;
+    if (prefixo === 'STR') return `STR-${partes[1]}`;
+    if (prefixo === 'HOR') return `HOR-${partes[1]}`;
+    if (prefixo === 'SEG') return 'SEG-ZERO';
+    if (prefixo === 'CAD') return `${partes[0]}-${partes[1]}-${partes[2]}`;
+    return null;
+}
+
+// A posição REAL de uma peça vinda da API: se "posicao" está salvo no
+// banco e é diferente do próprio ID dela, foi definido por um Swap
+// (formato curto) — usa direto. Senão, deriva a partir do próprio ID
+// (peça original da planilha, nunca trocada).
+function slotKeyDaPeca(peca) {
+    if (peca.posicao && peca.posicao !== peca.id) return peca.posicao;
+    return slotKeyDoIdFixo(peca.id);
+}
+
+// Monta um mapa { slotKeyCurto: peca } com todas as peças realmente
+// "Instaladas" no veio informado. Reconstruído a cada render (o
+// dataset é pequeno, ~250 peças) pra sempre refletir o estado mais
+// recente vindo da API — inclusive trocas feitas há poucos segundos no
+// app principal, sem precisar F5.
+function montarMapaSlotsInstalados(veio) {
+    const mapa = {};
+    Object.values(piecesById).forEach(p => {
+        const estaNesteVeio = extrairVeioDoLocal(p.local) === veio ||
+            (p.local && p.local.includes(`Veio ${veio}`) && !p.local.includes('Oficina'));
+        if (!estaNesteVeio || p.status !== 'Instalado') return;
+        const chave = slotKeyDaPeca(p);
+        if (chave) mapa[chave] = p;
+    });
+    return mapa;
+}
+
+// Ponto único de busca "qual peça ocupa este slot?" — usado tanto na
+// montagem da cena 3D quanto no relatório de alertas.
+function encontrarPecaDoSlot(slot, mapaSlots) {
+    const chave = slotKeyDoIdFixo(slot.id);
+    if (chave) return mapaSlots[chave] || null;
+    // GRP1/GRP2/GRP3: sem Swap disponível ainda, mantém o casamento
+    // antigo por ID exato (comportamento inalterado pra esses slots).
+    return piecesById[slot.id] || null;
+}
+
 function calcularTransformacoes(slots) {
     const eMCC23 = slots.some(s => s.grupo === 'sup' || s.grupo === 'inf');
     return eMCC23 ? calcularTransformacoesMCC23(slots) : calcularTransformacoesMCC4(slots);
@@ -818,8 +907,14 @@ function construirCena(veio) {
 
     if (!mcc4) construirChassiMCC23(slots);
 
+    // 🔧 Ver correção "CASAMENTO PEÇA <-> SLOT" acima: o mapa é
+    // reconstruído a cada render pra sempre casar com o estado mais
+    // recente vindo da API (inclusive peças de reserva instaladas por
+    // Swap, que continuam com o próprio ID).
+    const mapaSlotsInstalados = montarMapaSlotsInstalados(veio);
+
     slots.forEach(slot => {
-        const peca = piecesById[slot.id] || null;
+        const peca = encontrarPecaDoSlot(slot, mapaSlotsInstalados);
         const cor = corPorPeca(peca);
         const glow = emissivoPorPeca(peca);
         let geo;
@@ -1439,10 +1534,11 @@ document.getElementById('btn-retry').addEventListener('click', carregarDados);
 // ==========================================================================
 function pecasEmAlerta() {
     const slots = construirLayoutSlots(veioAtual);
+    const mapaSlotsInstalados = montarMapaSlotsInstalados(veioAtual);
     const linhas = [];
 
     slots.forEach(slot => {
-        const peca = piecesById[slot.id];
+        const peca = encontrarPecaDoSlot(slot, mapaSlotsInstalados);
         if (!peca) return;
 
         const meta = parseFloat(peca.meta) || 0;

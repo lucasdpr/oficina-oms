@@ -315,6 +315,15 @@ function gerarPosicaoFixa(idSistema, tipoCanonico, contadorGrupoPorVeio, veio) {
     return null;
 }
 
+// Extrai a letra do veio (C, D, E, F, G, H) a partir do texto salvo em
+// "local" (ex: "MCC 4 - Veio G" -> "G"). Usada pra popular o campo
+// `veio` de cada peça depois de sincronizar com o banco — ver correção
+// logo abaixo, dentro de sincronizarAtivosReaisMCC4().
+function extrairVeioDoLocal(local) {
+    const m = local && String(local).match(/Veio\s+([A-Z])/i);
+    return m ? m[1].toUpperCase() : "";
+}
+
 let syncAtivosEmAndamento = null;
 
 // 🔧 CORREÇÃO ("loga, não aparece nada, mas sem erro nenhum — só fecha e
@@ -366,12 +375,49 @@ export async function sincronizarAtivosReaisMCC4() {
 
         const novosAtivos = pecasApi.map(peca => {
             const tipoCanonico = traduzirTipo(peca.tipo);
+
+            // Mantém sempre o cálculo original a partir do ID (garante que o
+            // contador de "Grupo 1/2/3" -> SEG-1..SEG-6 continue funcionando
+            // certinho pra quem nunca passou por um Swap).
+            const posicaoDerivadaDoId = gerarPosicaoFixa(peca.id, tipoCanonico, contadorGrupoPorVeio, peca.local);
+
+            // 🔧 CORREÇÃO CRÍTICA (peça "some" do Sequenciamento de Veios e
+            // do Sinótico 3D ao atualizar a página, depois de um Swap):
+            // esta função sempre IGNORAVA o campo "posicao" que o Swap
+            // Automático (iniciarSwapAlocacao, em script.js) já grava
+            // corretamente no banco (ex: "BOW-3"), e recalculava a posição
+            // do zero a partir do próprio ID da peça. Isso funciona pra
+            // peças originais da planilha (o ID "BOW-3-4G" já entrega o
+            // slot certo), mas quebra pra qualquer peça do Estoque Reserva
+            // instalada via Swap: ela continua com o SEU PRÓPRIO id (ex:
+            // "MLD-RES-01" — o Swap nunca renomeia a peça), então o ID
+            // dela não bate com nenhum slot real, e a posição calculada
+            // "MLD-RES" não encontra lugar nenhum no painel. A peça ficava
+            // "Instalada" no banco (o /api/atualizar_peca salvou certo),
+            // mas invisível no Sequenciamento — e sumia de vez ao dar F5,
+            // que reconstrói tudo a partir do banco refazendo esse mesmo
+            // cálculo errado.
+            //
+            // Agora: se o "posicao" salvo no banco é DIFERENTE do próprio
+            // ID da peça, é sinal de que foi definido manualmente por um
+            // Swap (que sempre grava o slot curto certo) — nesse caso ele
+            // é a fonte confiável e tem prioridade sobre o cálculo pelo ID.
+            const posicaoSalvaPeloSwap = (peca.posicao && peca.posicao !== peca.id) ? peca.posicao : null;
+
             return {
                 id: peca.id,
                 tipo: tipoCanonico,
                 local: peca.local,
+                // 🔧 CORREÇÃO: o campo "veio" nunca era preenchido aqui —
+                // ficava sempre undefined depois de qualquer sincronização
+                // com o banco (a única coisa confiável era o texto de
+                // "local"). Agora é extraído direto do "local" (ex:
+                // "MCC 4 - Veio G" -> "G"), pra bater com o que o Swap
+                // Automático e o Painel de Veios esperam encontrar em
+                // peca.veio.
+                veio: extrairVeioDoLocal(peca.local),
                 pos: gerarLabelPosicao(tipoCanonico, peca.id),
-                posicaoFixa: gerarPosicaoFixa(peca.id, tipoCanonico, contadorGrupoPorVeio, peca.local),
+                posicaoFixa: posicaoSalvaPeloSwap || posicaoDerivadaDoId,
                 dias: parseInt(peca.dias) || 0,
                 ton: parseFloat(peca.tonelagem) || 0,
                 meta: parseFloat(peca.meta) || 0,
