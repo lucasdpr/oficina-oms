@@ -3052,3 +3052,88 @@ h1, h2, h3, h4, h5, h6 {
     from { opacity: 0; transform: translateY(-4px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* ==========================================================================
+   FOLHÕES NO CELULAR — "está tudo bugado apenas no cell"
+   ==========================================================================
+   Causa: TODOS os folhões (Molde4, Molde23, R2, Bender, Bow, Horizontal,
+   Straightener R1, Segmento Zero, Segmento Grupo, Desempenadeira) usam
+   inputs/selects com largura fixa em pixels (ex: width:70px, width:40px,
+   às vezes até width:30px) dentro de tabelas de checklist — pensados pra
+   mouse numa tela grande. No celular isso vira: campo minúsculo demais
+   pra tocar com o dedo, várias colunas lado a lado que não cabem na tela
+   (empurrando a tabela pra rolar de lado), ou blocos de "duas colunas"
+   (width:48% + min-width:300px) que nunca cabem lado a lado numa tela de
+   ~360-400px de largura.
+   Em vez de editar os 10 arquivos de folhão um por um (arriscado, muita
+   coisa pra revisar até amanhã), a correção é só aqui: essas regras
+   sobrescrevem (com !important, porque estilo inline sempre vence CSS
+   normal) o comportamento SÓ no celular, sem mudar nada no desktop.
+   ========================================================================== */
+@media (max-width: 768px) {
+    /* Todo input/select de folhão (mesmo com width:Npx fixo no HTML)
+       passa a ocupar a célula/linha inteira — muito mais fácil de tocar,
+       e não estoura a largura da tela. min-height garante uma área de
+       toque decente mesmo em campos que antes eram bem pequenos. */
+    .folhao-content input:not([type="checkbox"]):not([type="radio"]),
+    .folhao-content select,
+    .folhao-body input:not([type="checkbox"]):not([type="radio"]),
+    .folhao-body select {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        min-height: 40px;
+        box-sizing: border-box;
+    }
+
+    /* Blocos de "duas colunas lado a lado" (largura:48% + mínimo de
+       300px) — muito comuns nos cabeçalhos dos folhões (datas, dados do
+       equipamento, assinaturas). Numa tela de celular, 300px de mínimo
+       não cabe do lado de outro bloco igual — força empilhar em coluna
+       única, cada bloco ocupando a largura toda. */
+    .folhao-content div[style*="min-width:300px"],
+    .folhao-content div[style*="min-width: 300px"],
+    .folhao-body div[style*="min-width:300px"],
+    .folhao-body div[style*="min-width: 300px"] {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    /* Tabelas de checklist: texto das células pode quebrar linha (em vez
+       de forçar tudo numa linha só e estourar a tela) e cada linha ganha
+       um respiro vertical maior — mais fácil de tocar o input certo sem
+       acertar o vizinho por engano. */
+    .folhao-content table td,
+    .folhao-content table th,
+    .folhao-body table td,
+    .folhao-body table th {
+        white-space: normal !important;
+        padding: 8px 6px !important;
+    }
+
+    /* Trava qualquer overflow horizontal residual dentro do corpo do
+       folhão — a tabela em si já rola de lado sozinha quando precisa
+       (regra já existente pra <table>), mas o CONTAINER ao redor não
+       deixa isso "vazar" e alargar o modal inteiro. */
+    .folhao-body {
+        overflow-x: hidden;
+    }
+
+    /* Linhas de rótulo + campo lado a lado (ex: "Sup: [input] Inf:
+       [input]" dentro da mesma célula) — empilha em vez de espremer.
+       display:flex nos <div> internos dos folhões já viravam coluna via
+       flex-wrap, isso só garante que os próprios INPUTS somem à quebra
+       de linha corretamente mesmo sendo elementos "inline" por padrão. */
+    .folhao-content div[style*="display:flex"],
+    .folhao-content div[style*="display: flex"] {
+        flex-wrap: wrap !important;
+    }
+
+    /* Botões de ação no rodapé do folhão (Concluir, Salvar, Imprimir)
+       ficam largos e fáceis de acertar com o polegar, em vez de
+       amontoados numa linha só. */
+    .folhao-content .btn-premium,
+    .folhao-body .btn-premium {
+        min-height: 46px;
+    }
+}
