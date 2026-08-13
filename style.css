@@ -272,6 +272,24 @@ h1, h2, h3, h4, h5, h6 {
   padding: 15px;
 }
 
+/* 🔧 CORREÇÃO: "clico em Modo Visitante e não acontece nada" — o modal
+   de nome do Visitante (#modal-visitante-nome) é o ÚNICO modal do
+   sistema que abre ENQUANTO a tela de login (.login-home-container)
+   ainda está visível — todos os outros modais só existem depois que a
+   pessoa já entrou no sistema, quando a tela de login já está com
+   display:none, então nunca esbarraram nisso.
+   A tela de login usa z-index 10000, maior que o dos modais padrão
+   (.modal-overlay, 9000). Resultado: o clique funcionava (o modal
+   realmente abria no DOM, classe "hidden" era removida certinho), só
+   que ele renderizava POR BAIXO da tela de login — 100% invisível,
+   mesmo a lógica em JS estando correta. Por isso o login normal
+   "funcionava" (usa alert()/prompt() nativos do navegador, que sempre
+   aparecem por cima de tudo, não dependem de z-index) enquanto o Modo
+   Visitante parecia simplesmente não reagir ao clique. */
+#modal-visitante-nome {
+  z-index: 10050;
+}
+
 .modal-content {
   width: 100%;
   max-width: 560px;
