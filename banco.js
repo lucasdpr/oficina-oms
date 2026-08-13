@@ -305,13 +305,28 @@ function gerarPosicaoFixa(idSistema, tipoCanonico, contadorGrupoPorVeio, veio) {
     if (prefixo === "HOR") return `HOR-${partes[1]}`;
     if (prefixo === "SEG") return "SEG-ZERO";
     if (prefixo === "CAD") return `${partes[0]}-${partes[1]}-${partes[2]}`; // CAD-SUP-73 / CAD-INF-73
-    if (prefixo.startsWith("GRP")) {
-        // Os 3 "Grupos" da planilha (1 + 2 + 3 = 6 peças por veio) ocupam
-        // os 6 slots genéricos "SEG-1".."SEG-6" da grade, na ordem em que
-        // chegam da API (que já segue a ordem real da planilha).
-        contadorGrupoPorVeio[veio] = (contadorGrupoPorVeio[veio] || 0) + 1;
-        return `SEG-${contadorGrupoPorVeio[veio]}`;
-    }
+    // 🔧 CORREÇÃO CRÍTICA ("Segmento Grupo 3 nunca aparece no Sinótico 3D,
+    // mesmo depois da correção anterior"): antes, os 3 "Grupos" da
+    // planilha (GRP1, GRP2-1/2, GRP3-1/2/3 — 6 peças por veio) ocupavam
+    // os slots genéricos "SEG-1".."SEG-6" CONTANDO na ordem em que a API
+    // devolvia as peças. Isso parece funcionar quando os 6 existem, mas
+    // quebra sempre que falta alguma (como a GRP3-2 desse veio, que nunca
+    // foi importada da planilha): a contagem "escorrega" — a peça
+    // seguinte assume o número de quem faltou, e o Swap Automático (que
+    // deixa escolher um número qualquer de 1 a 6, sem saber a diferença
+    // entre Grupo 1/2/3) acaba gerando colisões ou números "órfãos" que
+    // nunca existiram em nenhuma vaga real.
+    //
+    // A posição de cada Grupo NÃO deveria depender de quantos existem —
+    // é FIXA pela identidade dele, e o próprio formulário de Cadastro já
+    // sabia disso (Grupo 1 = posição 1, Grupo 2 = posições 2/3, Grupo 3 =
+    // posições 4/5/6 — ver comentário "AQUI ESTÃO OS GRUPOS 1, 2 E 3
+    // TRAVADOS NAS POSIÇÕES CORRETAS" em script.js). Agora essa MESMA
+    // regra fixa é usada aqui, sem depender de contagem nem de quais
+    // peças existem no banco no momento.
+    if (prefixo === "GRP1") return "SEG-1";
+    if (prefixo === "GRP2") return `SEG-${1 + (parseInt(partes[1], 10) || 0)}`;   // rank 1 -> SEG-2, rank 2 -> SEG-3
+    if (prefixo === "GRP3") return `SEG-${3 + (parseInt(partes[1], 10) || 0)}`;   // rank 1 -> SEG-4, rank 2 -> SEG-5, rank 3 -> SEG-6
     return null;
 }
 

@@ -445,17 +445,23 @@ function slotKeyDoIdFixo(idFixo) {
     if (prefixo === 'HOR') return `HOR-${partes[1]}`;
     if (prefixo === 'SEG') return 'SEG-ZERO';
     if (prefixo === 'CAD') return `${partes[0]}-${partes[1]}-${partes[2]}`;
-    // 🔧 CORREÇÃO ("Segmento Grupo 3 ainda não [aparece]"): os Grupos
-    // 1/2/3 da MCC2/3 (ids "GRP1-...", "GRP2-1-...", "GRP3-2-...") não
-    // têm um slot curto fixo tipo "BOW-3" — o app principal
-    // (banco.js/gerarPosicaoFixa) distribui os 6 Grupos de cada veio nos
-    // slots genéricos "SEG-1".."SEG-6" contando na ordem em que a API
-    // devolve as peças. Pra um Grupo trocado (Swap) aparecer no lugar
-    // certo aqui, a vaga fixa (ex: "GRP3-2-...") precisa saber qual
-    // "SEG-N" ELA MESMA seria — isso é o que mapaSlotKeyGrupo guarda,
-    // calculado com a MESMA lógica de contagem, sobre os MESMOS dados,
-    // então bate 1:1 com o que o app principal mostra.
-    if (prefixo.startsWith('GRP')) return mapaSlotKeyGrupo[idFixo] || null;
+    // 🔧 CORREÇÃO ("Segmento Grupo 3 nunca aparece no Sinótico 3D, mesmo
+    // depois da correção anterior"): a versão anterior desta função
+    // calculava a posição dos Grupos 1/2/3 CONTANDO quantas peças de
+    // Grupo existiam pra cada veio, na ordem em que a API devolvia —
+    // igual ao banco.js fazia. Isso quebra sempre que falta algum Grupo
+    // no banco (como o GRP3-2 deste veio, nunca importado da planilha): a
+    // contagem "escorrega" e os números deixam de bater com a vaga física
+    // real, causando colisão com outra peça ou números que nunca
+    // existiram em lugar nenhum.
+    //
+    // A posição de cada Grupo é FIXA pela identidade dele, não depende de
+    // quantos existem — mesma regra agora usada em banco.js
+    // (gerarPosicaoFixa) e no próprio formulário de Cadastro (Grupo 1 =
+    // posição 1, Grupo 2 = posições 2/3, Grupo 3 = posições 4/5/6).
+    if (prefixo === 'GRP1') return 'SEG-1';
+    if (prefixo === 'GRP2') return `SEG-${1 + (parseInt(partes[1], 10) || 0)}`;
+    if (prefixo === 'GRP3') return `SEG-${3 + (parseInt(partes[1], 10) || 0)}`;
     return null;
 }
 
@@ -804,10 +810,6 @@ const cilindroCadeiraGeo = new THREE.CylinderGeometry(0.15, 0.15, 1.35, 18);
 cilindroCadeiraGeo.rotateX(Math.PI / 2); // deita o cilindro: eixo passa a ficar ao longo de Z (largura da linha)
 
 let piecesById = {};      // dados vindos da API, por id
-// 🔧 Ver correção "GRUPOS 1/2/3 (MCC2/3) não aparecem no Sinótico"
-// logo abaixo, perto de slotKeyDoIdFixo(). Mapa { id da peça: "SEG-N" },
-// recalculado a cada carregarDados().
-let mapaSlotKeyGrupo = {};
 let meshesBySlot = [];    // { slot, mesh, material }
 let hoveredMesh = null;
 let veioAtual = 'H';
@@ -1542,20 +1544,6 @@ async function carregarDados() {
 
         piecesById = {};
         dados.forEach(p => { piecesById[p.id] = p; });
-
-        // 🔧 Ver correção "GRUPOS 1/2/3 (MCC2/3) não aparecem no
-        // Sinótico" em slotKeyDoIdFixo(): recalcula, a cada carga de
-        // dados, qual "SEG-N" cada vaga fixa de Grupo (GRP1/GRP2/GRP3)
-        // representa — contando na MESMA ordem que a API devolve as
-        // peças, exatamente como o app principal (banco.js) já faz.
-        mapaSlotKeyGrupo = {};
-        const contadorGrupoPorLocal = {};
-        dados.forEach(p => {
-            const prefixo = String(p.id).split('-')[0];
-            if (!prefixo.startsWith('GRP')) return;
-            contadorGrupoPorLocal[p.local] = (contadorGrupoPorLocal[p.local] || 0) + 1;
-            mapaSlotKeyGrupo[p.id] = `SEG-${contadorGrupoPorLocal[p.local]}`;
-        });
 
         elStatusDot.className = 'dot on';
         const origemLabel = apiBase === URL_LOCAL ? 'local' : 'Render';

@@ -64,6 +64,20 @@ function renderReservas() {
         return '';
     }
 
+    // 🔧 CORREÇÃO ("B-20 ocupa a mesma posição de outra peça, e o Sinótico
+    // 3D nunca mostra ele"): antes, qualquer peça "Segmento" (Grupo 1, 2
+    // ou 3) via as MESMAS opções de posição (1 a 6), sem diferenciar qual
+    // Grupo era. Isso permitia escolher um número que não bate com a
+    // vaga física real do Grupo daquela peça (ex: uma peça "Segmento
+    // Grupo 3" sendo instalada na posição "1", que na verdade pertence
+    // ao Grupo 1) — causando colisão com outra peça que já ocupa aquele
+    // número, ou "órfãos" que nunca aparecem no Sinótico 3D (porque não
+    // existe vaga física pro número escolhido).
+    //
+    // O formulário de Cadastro já fazia essa trava direito (ver "AQUI
+    // ESTÃO OS GRUPOS 1, 2 E 3 TRAVADOS NAS POSIÇÕES CORRETAS", mais
+    // abaixo em script.js) — Grupo 1 = posição 1, Grupo 2 = posições 2/3,
+    // Grupo 3 = posições 4/5/6. Agora o Swap usa a MESMA trava.
     function getOpcoesPosicao(tipo, mcc) {
         const t = tipo.toUpperCase();
         let opcoes = '';
@@ -78,12 +92,23 @@ function renderReservas() {
                 for (let i = 43; i <= 79; i++) opcoes += `<option value="${i}">#${i}</option>`;
             } else if (t.includes('CADEIRA INFERIOR')) {
                 for (let i = 43; i <= 79; i++) opcoes += `<option value="${i}">#${i}</option>`;
+            } else if (t.includes('SEGMENTO GRUPO 1')) {
+                opcoes += `<option value="1">Segmento #1</option>`;
+            } else if (t.includes('SEGMENTO GRUPO 2')) {
+                opcoes += `<option value="2">Segmento #2</option><option value="3">Segmento #3</option>`;
+            } else if (t.includes('SEGMENTO GRUPO 3')) {
+                opcoes += `<option value="4">Segmento #4</option><option value="5">Segmento #5</option><option value="6">Segmento #6</option>`;
             } else if (t.includes('SEGMENTO') && !t.includes('ZERO')) {
+                // Fallback pra peças "Segmento" sem o número do Grupo no
+                // tipo (ex: importadas de um jeito diferente) — mantém o
+                // comportamento antigo (mostra tudo) em vez de esconder a
+                // peça do dropdown por completo.
                 for (let i = 1; i <= 6; i++) opcoes += `<option value="${i}">#${i}</option>`;
             }
         }
         return opcoes;
     }
+
 
     // ==========================================
     // AGRUPAMENTO POR MCC
