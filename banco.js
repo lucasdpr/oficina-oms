@@ -324,6 +324,25 @@ function extrairVeioDoLocal(local) {
     return m ? m[1].toUpperCase() : "";
 }
 
+// Converte um timestamp (ms) pro mesmo formato "DD/MM/AAAA" que o
+// importar_excel.py já grava na coluna data_entrada pras peças
+// originais da planilha — ver correção "DATA DE ENTRADA não é salva"
+// logo abaixo.
+function formatarDataBr(timestampMs) {
+    return new Date(timestampMs).toLocaleDateString('pt-BR');
+}
+
+// Caminho inverso: lê "DD/MM/AAAA" (como vem do banco) e devolve um
+// timestamp (ms), pra virar dataEntradaVeio depois de uma sincronização.
+function parseDataBrParaTimestamp(dataBr) {
+    if (!dataBr || typeof dataBr !== 'string') return null;
+    const m = dataBr.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (!m) return null;
+    const [, dia, mes, ano] = m;
+    const ts = new Date(`${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}T00:00:00`).getTime();
+    return isNaN(ts) ? null : ts;
+}
+
 let syncAtivosEmAndamento = null;
 
 // 🔧 CORREÇÃO ("loga, não aparece nada, mas sem erro nenhum — só fecha e
@@ -425,6 +444,20 @@ export async function sincronizarAtivosReaisMCC4() {
                 mcc_compat: (peca.local && peca.local.includes("MCC 4")) ? "4" : "2/3",
                 tag_patrimonio: peca.tag_patrimonio || null,
                 data_entrada: peca.data_entrada || null,
+                // 🔧 CORREÇÃO ("instalei e não foi salvo com a data"): esta
+                // função nunca reconstruía dataEntradaVeio (o timestamp que
+                // o resto do app usa pra saber "desde quando essa peça está
+                // no veio" — calcularDias(), o Prontuário, etc). Ela só
+                // existia enquanto durasse a sessão em que o Swap foi feito;
+                // depois de qualquer F5/login novo, sumia (undefined), e o
+                // Prontuário ficava sem "Data de Entrada" mesmo a peça
+                // estando Instalada. Agora ela é reconstruída a partir do
+                // "data_entrada" salvo no banco (formato "DD/MM/AAAA") —
+                // que só existe de verdade a partir da correção em
+                // salvarPecaNoPython(), logo abaixo, que agora grava esse
+                // campo corretamente (antes ele nunca era enviado certo,
+                // então ficava sempre NULL no Postgres).
+                dataEntradaVeio: parseDataBrParaTimestamp(peca.data_entrada),
                 // 🔧 CORREÇÃO: sem isso, todo login "esquecia" quando a
                 // peça realmente entrou em Oficina/Reparo — dataReparo só
                 // existia localmente, então virava undefined aqui mesmo
@@ -502,7 +535,22 @@ export async function salvarPecaNoPython(peca) {
                 meta: peca.meta || 0,
                 posicao: peca.posicaoFixa || peca.pos || peca.posicao || "",
                 tag_patrimonio: peca.tag_patrimonio || null,
-                data_entrada: peca.data_entrada || null,
+                // 🔧 CORREÇÃO CRÍTICA ("instalei e não foi salvo com a
+                // data"): este campo mandava pro banco "peca.data_entrada"
+                // — só que NADA no app escreve nesse nome (snake_case).
+                // Quem marca a data de entrada de verdade é
+                // iniciarSwapAlocacao() (script.js), e ele grava em
+                // "peca.dataEntradaVeio" (camelCase, um timestamp em ms).
+                // Resultado: essa linha sempre mandava null pro banco, TODA
+                // vez que uma peça era instalada via Swap — a peça aparecia
+                // certinho no Sinótico 3D (depois da correção anterior),
+                // só que sem data nenhuma. Agora prioriza dataEntradaVeio
+                // (convertendo pra "DD/MM/AAAA", o mesmo formato que a
+                // planilha original já usa); se não tiver (ex: só uma
+                // observação sendo salva, sem mexer na instalação), mantém
+                // o que já veio de "data_entrada" pra não apagar a data por
+                // engano.
+                data_entrada: peca.dataEntradaVeio ? formatarDataBr(peca.dataEntradaVeio) : (peca.data_entrada || null),
                 // 🔧 CORREÇÃO: antes esses dois campos só existiam na
                 // memória do navegador. Toda sincronização com o banco
                 // (que roda em todo login) reconstruía a peça do zero, sem

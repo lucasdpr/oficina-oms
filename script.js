@@ -1412,6 +1412,13 @@ function abrirHistoricoIndividual(id) {
     renderizarTabelaHistoricoIndividual(id);
     const modal = document.getElementById("modal-historico-ativo");
     if (modal) modal.classList.remove("hidden");
+
+    // 🔧 Ver correção "PRONTUÁRIO NÃO MOSTRA QUANDO A PEÇA FOI
+    // INSTALADA" logo abaixo, em atualizarTabelaHistoricoComServidor().
+    // Não usa "await" de propósito: o modal já abre na hora com o que
+    // tinha local, e a tabela é substituída assim que o servidor
+    // responder, sem travar a abertura do modal.
+    atualizarTabelaHistoricoComServidor(id);
 }
 
 // ==============================================================
@@ -1513,6 +1520,75 @@ function renderizarTabelaHistoricoIndividual(id) {
     }).join("");
 }
 
+// ==============================================================
+// 🔧 CORREÇÃO CRÍTICA ("não aparece no Prontuário quando foi
+// instalado na máquina"): renderizarTabelaHistoricoIndividual() (acima)
+// só lê de HISTORICO_ACOES — um array que vive no localStorage DE CADA
+// APARELHO/NAVEGADOR. Toda ação (troca, saque, cadastro...) já era
+// enviada certinho pro banco (registrarHistorico -> salvarHistoricoNoPython
+// -> tabela log_eventos no Neon), mas o Prontuário nunca ia buscar isso
+// de volta — só mostrava o que aquele navegador específico acumulou na
+// própria sessão. Resultado: um Swap feito e visto na hora (mesma
+// sessão) parecia registrar certo, mas abrir o Prontuário dessa peça
+// depois — em outro aparelho, outra sessão, ou depois de limpar o
+// site — não mostrava o evento de instalação, só o que sobrou local
+// (nesse caso, só o cadastro inicial). A própria aba do Sinótico 3D
+// (que roda isolada, sem acesso a esse localStorage) já resolvia isso
+// buscando direto do servidor — a correção abaixo faz o Prontuário do
+// app principal fazer a mesma coisa.
+//
+// Fluxo: mostra o que já tem local na hora (resposta instantânea, feito
+// em abrirHistoricoIndividual), depois busca a lista oficial do
+// servidor e SUBSTITUI a tabela por ela. Se a busca falhar (sem
+// internet), mantém o que já estava mostrando em vez de esvaziar.
+// ==============================================================
+async function atualizarTabelaHistoricoComServidor(id) {
+    const tbody = document.getElementById("tabela-historico-individual");
+    if (!tbody) return;
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/historico_eventos?peca_id=${encodeURIComponent(id)}&limite=200`, { cache: 'no-store' });
+        if (!resp.ok) return;
+        const eventos = await resp.json();
+        if (!Array.isArray(eventos)) return;
+
+        // Enquanto a busca rodava, o técnico pode ter fechado o
+        // Prontuário ou aberto o de outra peça — não sobrescreve com um
+        // resultado que já não é mais o que está na tela.
+        if (ID_HISTORICO_ATUAL !== id) return;
+
+        if (eventos.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">Nenhum evento registrado ainda.</td></tr>`;
+            return;
+        }
+
+        const iconePorEvento = (acao) => {
+            const a = (acao || "").toLowerCase();
+            if (a.includes("entrou") || a.includes("instalado")) return { icone: "fa-arrow-right-to-bracket", cor: "#22c55e" };
+            if (a.includes("saiu") || a.includes("sacado")) return { icone: "fa-arrow-right-from-bracket", cor: "#ef4444" };
+            if (a.includes("reparo")) return { icone: "fa-tools", cor: "#eab308" };
+            if (a.includes("folhão") || a.includes("laudo")) return { icone: "fa-clipboard-check", cor: "#38bdf8" };
+            if (a.includes("registro manual")) return { icone: "fa-pen", cor: "#a855f7" };
+            return { icone: "fa-circle-dot", cor: "var(--text-muted)" };
+        };
+
+        // A API já devolve mais recente primeiro (ORDER BY id DESC),
+        // igual à ordem que a tabela local usa (unshift a cada evento novo).
+        tbody.innerHTML = eventos.map(e => {
+            const { icone, cor } = iconePorEvento(e.acao);
+            return `
+            <tr>
+                <td style="font-size: 11px; white-space: nowrap; color: var(--text-muted);">${e.data_hora || '—'}</td>
+                <td style="font-size: 13px; color: var(--text-body);"><i class="fas ${icone}" style="color:${cor}; margin-right:8px;"></i>${e.acao || ''}</td>
+                <td style="font-size: 11px; color: var(--text-accent);">${e.operador || 'Sistema'}</td>
+            </tr>`;
+        }).join("");
+    } catch (e) {
+        console.error('⚠️ Não consegui buscar o histórico do servidor pro Prontuário (mantendo o que tinha local):', e);
+    }
+}
+
 function salvarRegistroManual() {
     if (!verificarAcesso() || !ID_HISTORICO_ATUAL) return;
 
@@ -1588,6 +1664,11 @@ async function executarSaqueFinal(id, laudo) {
         item.dataReparo = Date.now();
         item.dias = 0;
         item.dataEntradaVeio = null;
+        // 🔧 Ver correção "DATA DE ENTRADA não é salva" em
+        // salvarPecaNoPython() (banco.js): sem isso, o "data_entrada"
+        // (string) antigo ficava esquecido no objeto e voltava a ser
+        // reenviado pro banco mesmo a peça já tendo saído do veio.
+        item.data_entrada = null;
         item.substituidoPor = null;
         localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
         const agora = new Date().toLocaleDateString('pt-BR');
@@ -2635,7 +2716,20 @@ window.abrirFolhaoPorTipo = function(id) {
     // o folhão MCC4 (Molde/Bender) por engano — checklist errado. Os 3
     // grupos usam o mesmo checklist entre si (documento oficial), só
     // muda a tolerância de GAP e a lista de materiais.
-    if (tipo === 'Grupo 1' || tipo === 'Grupo 2' || tipo === 'Grupo 3') {
+    //
+    // 🔧 CORREÇÃO 2 (o "Concluir" não tirava a peça da Oficina/Reparo,
+    // mesmo pra peças de Grupo já reconhecidas aqui): o cadastro manual
+    // no Estoque Reserva usa o tipo "Segmento Grupo 1/2/3" (com a
+    // palavra "Segmento" na frente — ver as <option> em app.html), mas
+    // esta checagem só reconhecia "Grupo 1/2/3" (sem "Segmento"), que é
+    // como as peças ORIGINAIS da planilha ficam depois de traduzidas
+    // (traduzirTipo, em banco.js). Uma peça de Grupo cadastrada pelo
+    // técnico (e não importada da planilha original) nunca batia aqui,
+    // caía no fallback genérico (folhão de Molde/Bender, sem noção
+    // nenhuma de "concluir e voltar pra reserva" desse tipo de peça) —
+    // por isso o "Concluir" parecia não fazer nada.
+    if (tipo === 'Grupo 1' || tipo === 'Grupo 2' || tipo === 'Grupo 3' ||
+        tipo === 'Segmento Grupo 1' || tipo === 'Segmento Grupo 2' || tipo === 'Segmento Grupo 3') {
         if (typeof window.abrirFolhaoSegmentoGrupo === 'function') {
             window.abrirFolhaoSegmentoGrupo(id);
             return;
