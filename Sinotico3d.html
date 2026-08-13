@@ -468,6 +468,23 @@ function slotKeyDaPeca(peca) {
     return slotKeyDoIdFixo(peca.id);
 }
 
+// 🔧 CORREÇÃO ("Data de Entrada" vazia mesmo pra peças antigas/instaladas
+// há anos, ex: CAD-SUP-65-2F com milhares de dias na máquina): esta aba
+// roda isolada (sem acesso ao banco.js do app principal), então replica
+// aqui a MESMA estimativa que banco.js agora usa — peças sem
+// "data_entrada" real gravada (vieram da planilha original sem a coluna
+// ENTRADA preenchida, ou já estavam instaladas antes desse controle
+// existir) mostram uma data calculada a partir dos "dias" acumulados,
+// marcada com "~" pra deixar claro que é estimativa, não um registro
+// exato.
+function dataEntradaExibivel(peca) {
+    if (peca.data_entrada) return peca.data_entrada;
+    const instalada = peca.local && String(peca.local).includes('Veio') && !String(peca.local).includes('Oficina');
+    if (!instalada) return '—';
+    const ts = Date.now() - ((parseInt(peca.dias) || 0) * 24 * 60 * 60 * 1000);
+    return '~' + new Date(ts).toLocaleDateString('pt-BR');
+}
+
 // Monta um mapa { slotKeyCurto: peca } com todas as peças realmente
 // "Instaladas" no veio informado. Reconstruído a cada render (o
 // dataset é pequeno, ~250 peças) pra sempre refletir o estado mais
@@ -1365,7 +1382,7 @@ function abrirModalPeca(slot, peca) {
             <div class="campo"><span class="k">Status</span><span class="v">${peca.status || '—'}</span></div>
             <div class="campo"><span class="k">Tonelagem atual</span><span class="v">${ton.toLocaleString('pt-BR')}</span></div>
             <div class="campo"><span class="k">Meta de vida útil</span><span class="v">${meta.toLocaleString('pt-BR')}</span></div>
-            <div class="campo"><span class="k">Data de Entrada</span><span class="v">${peca.data_entrada || '—'}</span></div>
+            <div class="campo"><span class="k">Data de Entrada</span><span class="v">${dataEntradaExibivel(peca)}</span></div>
             <div class="campo"><span class="k">Dias em operação</span><span class="v">${peca.dias ?? '—'}</span></div>
 
             <div class="barra-wrap">
@@ -1578,7 +1595,7 @@ function pecasEmAlerta() {
 
         if (emFalha || pct >= 80) {
             const nivel = emFalha ? 'Manutenção / Falha' : (pct >= 100 ? 'Limite atingido' : 'Alerta');
-            linhas.push({ posicao: slot.label, tag: peca.tag_patrimonio || peca.id, dataEntrada: peca.data_entrada || null, ton, meta, pct, nivel });
+            linhas.push({ posicao: slot.label, tag: peca.tag_patrimonio || peca.id, dataEntrada: dataEntradaExibivel(peca), ton, meta, pct, nivel });
         }
     });
 

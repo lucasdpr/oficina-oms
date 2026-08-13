@@ -1437,7 +1437,13 @@ function renderizarResumoHistoricoIndividual(item) {
         iconeDias = "fa-tools";
         corDias = "#ef4444";
     } else if (item.dataEntradaVeio && item.local && !item.local.includes("Oficina")) {
-        cardEntrada = formatarData(item.dataEntradaVeio);
+        // 🔧 Ver correção "Prontuário sem Data de Entrada" em
+        // sincronizarAtivosReaisMCC4() (banco.js): quando não existe um
+        // registro real (peça antiga, anterior a esse controle), a data
+        // mostrada é uma ESTIMATIVA calculada a partir dos dias já
+        // acumulados — marca com "~" pra deixar isso claro, em vez de
+        // fingir ser uma data exata.
+        cardEntrada = (item.dataEntradaEstimada ? "~" : "") + formatarData(item.dataEntradaVeio);
         iconeDias = "fa-industry";
         corDias = "#22c55e";
     } else {
@@ -1457,7 +1463,7 @@ function renderizarResumoHistoricoIndividual(item) {
     container.innerHTML = `
         <div class="kpi-card" style="border-top:3px solid ${corDias};">
             <div class="kpi-icon" style="color:${corDias}; border-color:${corDias}33;"><i class="fas ${iconeDias}"></i></div>
-            <div class="kpi-data"><h4 style="font-size:1.3rem;">${cardEntrada}</h4><p>${item.local === "Oficina / Reparo" ? "Saiu do Veio em" : "Data de Entrada Atual"}</p></div>
+            <div class="kpi-data"><h4 style="font-size:1.3rem;">${cardEntrada}</h4><p>${item.local === "Oficina / Reparo" ? "Saiu do Veio em" : (item.dataEntradaEstimada ? "Data de Entrada (estimada)" : "Data de Entrada Atual")}</p></div>
         </div>
         <div class="kpi-card" style="border-top:3px solid ${corDias};">
             <div class="kpi-icon" style="color:${corDias}; border-color:${corDias}33;"><i class="fas fa-calendar-day"></i></div>
@@ -1559,7 +1565,17 @@ async function atualizarTabelaHistoricoComServidor(id) {
         if (ID_HISTORICO_ATUAL !== id) return;
 
         if (eventos.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">Nenhum evento registrado ainda.</td></tr>`;
+            // 🔧 Mensagem mais clara pra peças antigas (da importação
+            // original da planilha) que nunca passaram por uma ação
+            // registrada pelo sistema (Swap, Saque, cadastro...): em vez
+            // de parecer que "faltou registrar algo", explica que o
+            // histórico do sistema só começa a partir de quando essa peça
+            // passou a ser controlada por aqui.
+            const itemAtual = BANCO_ATIVOS.find(a => a.id === id);
+            const antigaJaInstalada = itemAtual && itemAtual.local && !itemAtual.local.includes("Oficina") && (itemAtual.dias || 0) > 0;
+            tbody.innerHTML = antigaJaInstalada
+                ? `<tr><td colspan="3" class="text-center text-muted">Sem eventos registrados pelo sistema — esta peça já estava instalada quando o controle digital começou (histórico anterior não é rastreado).</td></tr>`
+                : `<tr><td colspan="3" class="text-center text-muted">Nenhum evento registrado ainda.</td></tr>`;
             return;
         }
 

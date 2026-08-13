@@ -423,6 +423,28 @@ export async function sincronizarAtivosReaisMCC4() {
             // é a fonte confiável e tem prioridade sobre o cálculo pelo ID.
             const posicaoSalvaPeloSwap = (peca.posicao && peca.posicao !== peca.id) ? peca.posicao : null;
 
+            // 🔧 CORREÇÃO ("Prontuário sem Data de Entrada" pra peças
+            // antigas/originais, ex: CAD-SUP-65-2F com 2409 dias na
+            // máquina e "--" na entrada): existia um remendo parecido em
+            // renderAtivos() (script.js), mas ele só rodava se a aba
+            // "Ativos" fosse aberta pelo menos uma vez na sessão, e só
+            // gravava no localStorage (nunca no banco) — sumia de novo no
+            // próximo login/sincronização. Centralizando aqui, roda
+            // SEMPRE que os dados são carregados, em qualquer tela.
+            //
+            // Peças que nunca tiveram "data_entrada" real gravada (ex:
+            // vieram da planilha original sem a coluna ENTRADA
+            // preenchida, ou já estavam instaladas antes desse controle
+            // existir no sistema) recebem uma data ESTIMADA, calculada de
+            // trás pra frente a partir dos "dias" que a peça já acumula —
+            // só pra o Prontuário não ficar em branco. dataEntradaEstimada
+            // marca quando é estimativa (não um registro real), pra quem
+            // for exibir isso poder avisar o usuário.
+            const dataEntradaReal = parseDataBrParaTimestamp(peca.data_entrada);
+            const estaInstalada = peca.local && String(peca.local).includes("Veio") && !String(peca.local).includes("Oficina");
+            const dataEntradaVeioFinal = dataEntradaReal
+                || (estaInstalada ? (Date.now() - ((parseInt(peca.dias) || 0) * 24 * 60 * 60 * 1000)) : null);
+
             return {
                 id: peca.id,
                 tipo: tipoCanonico,
@@ -456,8 +478,10 @@ export async function sincronizarAtivosReaisMCC4() {
                 // que só existe de verdade a partir da correção em
                 // salvarPecaNoPython(), logo abaixo, que agora grava esse
                 // campo corretamente (antes ele nunca era enviado certo,
-                // então ficava sempre NULL no Postgres).
-                dataEntradaVeio: parseDataBrParaTimestamp(peca.data_entrada),
+                // então ficava sempre NULL no Postgres). Pra peça sem
+                // nenhum registro (ver nota acima), usa a estimativa.
+                dataEntradaVeio: dataEntradaVeioFinal,
+                dataEntradaEstimada: !dataEntradaReal && estaInstalada,
                 // 🔧 CORREÇÃO: sem isso, todo login "esquecia" quando a
                 // peça realmente entrou em Oficina/Reparo — dataReparo só
                 // existia localmente, então virava undefined aqui mesmo
