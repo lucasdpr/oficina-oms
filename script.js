@@ -580,30 +580,23 @@ async function registrarHistorico(tag, acao) {
     }
 }
 
-function renderHistorico() {
-    const tbody = document.getElementById("historico-table-body");
-    if (!tbody) return;
-
-    const matricula = (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula || "").toUpperCase();
-    if (!MATRICULAS_AUDITORIA.includes(matricula)) {
-        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Acesso restrito.</td></tr>`;
-        return;
-    }
-
-    const filtroData = document.getElementById("filtro-data-historico")?.value || '';
-    const laudos = getLaudosSalvos();
-
+// Monta o HTML das linhas da tabela de Auditoria a partir de uma lista
+// já pronta de "ações" (no formato {data, tag, acao, responsavel,
+// dataTimestamp}) + laudos. Extraído de renderHistorico() pra poder ser
+// reaproveitado tanto no render instantâneo (local) quanto depois que a
+// busca no servidor voltar — ver atualizarHistoricoGlobalComServidor().
+function montarLinhasHistorico(acoes, laudos, filtroData) {
     let todos = [
-        ...HISTORICO_ACOES.map(h => ({ 
-            ...h, 
+        ...acoes.map(h => ({
+            ...h,
             tipo: 'acao',
-            dataTimestamp: (() => {
+            dataTimestamp: h.dataTimestamp !== undefined ? h.dataTimestamp : (() => {
                 try {
                     const partes = h.data.split(' ');
                     const dataPartes = partes[0].split('/');
                     const dataStr = dataPartes[2] + '-' + dataPartes[1] + '-' + dataPartes[0];
                     return new Date(dataStr + 'T' + partes[1]).getTime();
-                } catch(e) { return 0; }
+                } catch (e) { return 0; }
             })()
         })),
         ...laudos.map(l => ({
@@ -631,11 +624,10 @@ function renderHistorico() {
     }
 
     if (todos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Nenhum registro encontrado.</td></tr>`;
-        return;
+        return `<tr><td colspan="4" class="text-center text-muted">Nenhum registro encontrado.</td></tr>`;
     }
 
-    tbody.innerHTML = todos.map(item => {
+    return todos.map(item => {
         if (item.tipo === 'laudo') {
             return `
                 <tr>
@@ -665,6 +657,70 @@ function renderHistorico() {
         }
     }).join("");
 }
+
+function renderHistorico() {
+    const tbody = document.getElementById("historico-table-body");
+    if (!tbody) return;
+
+    const matricula = (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula || "").toUpperCase();
+    if (!MATRICULAS_AUDITORIA.includes(matricula)) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Acesso restrito.</td></tr>`;
+        return;
+    }
+
+    const filtroData = document.getElementById("filtro-data-historico")?.value || '';
+
+    // Mostra na hora o que já tem local (resposta instantânea, cobre o
+    // caso sem internet) — a lista completa e oficial vem logo em
+    // seguida do servidor, ver abaixo.
+    tbody.innerHTML = montarLinhasHistorico(HISTORICO_ACOES, getLaudosSalvos(), filtroData);
+
+    // 🔧 CORREÇÃO CRÍTICA ("preciso que apareça TUDO pros dois
+    // moderadores, incluindo visitante"): esta função só usava
+    // HISTORICO_ACOES — um array que vive no localStorage DE CADA
+    // APARELHO. Um moderador abrindo a Auditoria no celular dele só via
+    // as ações feitas NAQUELE MESMO aparelho/sessão — qualquer coisa
+    // feita por um técnico (ou por um Visitante, que também já registra
+    // o nome digitado via registrarHistorico) em OUTRO aparelho nunca
+    // aparecia, mesmo estando salva certinho no banco. Agora busca a
+    // lista oficial e completa do servidor (mesma rota que o Prontuário
+    // individual e o Sinótico 3D já usam) e substitui a tabela por ela.
+    atualizarHistoricoGlobalComServidor(filtroData);
+}
+
+// Ver correção grande em renderHistorico() logo acima.
+async function atualizarHistoricoGlobalComServidor(filtroData) {
+    const tbody = document.getElementById("historico-table-body");
+    if (!tbody) return;
+    const matricula = (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula || "").toUpperCase();
+    if (!MATRICULAS_AUDITORIA.includes(matricula)) return;
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/historico_eventos?limite=500`, { cache: 'no-store' });
+        if (!resp.ok) return;
+        const eventosServidor = await resp.json();
+        if (!Array.isArray(eventosServidor)) return;
+
+        // Enquanto buscava, o moderador pode ter trocado o filtro de
+        // data — usa o valor mais atual do campo, não o que foi passado
+        // no início da busca.
+        const filtroAtual = document.getElementById("filtro-data-historico")?.value || '';
+
+        const acoesDoServidor = eventosServidor.map(e => ({
+            data: e.data_hora || '',
+            tag: e.peca_id || 'AUTENTICAÇÃO',
+            acao: e.acao || '',
+            responsavel: e.operador || 'Sistema',
+            dataTimestamp: e.data_hora ? new Date(e.data_hora.replace(' ', 'T')).getTime() : 0
+        }));
+
+        tbody.innerHTML = montarLinhasHistorico(acoesDoServidor, getLaudosSalvos(), filtroAtual);
+    } catch (e) {
+        console.error('⚠️ Não consegui buscar a Auditoria completa do servidor (mantendo só o que tinha local):', e);
+    }
+}
+
 
 // ==========================================
 // PAINEL DE TESTE DE FOLHÕES — só CBK3574 e CSP1869 podem ver
