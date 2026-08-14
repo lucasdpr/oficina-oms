@@ -11,7 +11,7 @@
 // usando a copia antiga guardada em cache.
 // ==============================================================
 
-const CACHE_VERSION = "oms-v13";
+const CACHE_VERSION = "oms-v14";
 
 // Arquivos baixados e guardados assim que o app é instalado.
 // (não inclui chamadas de API - essas nunca ficam em cache)
@@ -139,5 +139,50 @@ self.addEventListener("fetch", (event) => {
                 // arquivo pré-cacheado já serve de primeira, mesmo offline.
                 return caches.match(event.request, { ignoreSearch: true });
             })
+    );
+});
+
+// --------------------------------------------------------------
+// PUSH: recebe a notificação enviada pelo backend e exibe na tela,
+// mesmo com o app fechado ou o celular com a tela bloqueada.
+// --------------------------------------------------------------
+self.addEventListener("push", (event) => {
+    let dados = { titulo: "OMS CSN", corpo: "Você tem uma nova atualização.", url: "/" };
+    try {
+        if (event.data) dados = event.data.json();
+    } catch (e) {
+        console.warn("⚠️ Push recebido sem JSON válido, usando texto simples:", e);
+        if (event.data) dados.corpo = event.data.text();
+    }
+
+    event.waitUntil(
+        self.registration.showNotification(dados.titulo, {
+            body: dados.corpo,
+            icon: "./icon-192.png?v=2",
+            badge: "./icon-192.png?v=2",
+            data: { url: dados.url || "/" },
+            vibrate: [200, 100, 200],
+            tag: "oms-notificacao" // notificações novas substituem a anterior na tela
+        })
+    );
+});
+
+// --------------------------------------------------------------
+// CLIQUE NA NOTIFICAÇÃO: abre o app (ou foca a aba já aberta) na
+// tela correspondente.
+// --------------------------------------------------------------
+self.addEventListener("notificationclick", (event) => {
+    event.notification.close();
+    const url = event.notification.data && event.notification.data.url ? event.notification.data.url : "/";
+
+    event.waitUntil(
+        clients.matchAll({ type: "window", includeUncontrolled: true }).then((janelas) => {
+            for (const janela of janelas) {
+                if (janela.url.includes(self.location.origin) && "focus" in janela) {
+                    return janela.focus();
+                }
+            }
+            if (clients.openWindow) return clients.openWindow(url);
+        })
     );
 });
