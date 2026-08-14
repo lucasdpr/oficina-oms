@@ -22,6 +22,64 @@ import {
     salvarAjusteHidraulicaNoPython,
     resolverApiBase
 } from './banco.js?v=5';
+
+// ==========================================
+// 📲 PUSH NOTIFICATION (Web Push API)
+// ==========================================
+const VAPID_PUBLIC_KEY = "BKY36hQFqVrbfz1jSB2FhQs58OV6JNMHnug1V3mwhZMK-urLU0y5E_6dNoRZv8J89EalEAn4ItgqBT_pmiAMuF8";
+
+function urlBase64ToUint8Array(base64String) {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const rawData = window.atob(base64);
+    return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
+}
+
+window.ativarPushNotification = async function () {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+        console.warn("⚠️ Este navegador não suporta push notification.");
+        return false;
+    }
+    const permissao = await Notification.requestPermission();
+    if (permissao !== "granted") {
+        console.warn("⚠️ Usuário não concedeu permissão de notificação.");
+        return false;
+    }
+    try {
+        const registration = await navigator.serviceWorker.ready;
+        let subscription = await registration.pushManager.getSubscription();
+        if (!subscription) {
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+            });
+        }
+        const dados = subscription.toJSON();
+        const matricula = OPERADOR_LOGADO?.matricula || "";
+        if (!matricula) {
+            console.warn("⚠️ Nenhum operador logado — inscrição de push não vinculada.");
+            return false;
+        }
+        const apiBase = await resolverApiBase();
+        await fetch(`${apiBase}/api/push/subscribe`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                matricula,
+                endpoint: dados.endpoint,
+                p256dh: dados.keys.p256dh,
+                auth: dados.keys.auth
+            })
+        });
+        console.log("✅ Push notification ativado com sucesso.");
+        return true;
+    } catch (e) {
+        console.error("⚠️ Erro ao ativar push notification:", e);
+        return false;
+    }
+};
+
+
 // ==========================================================================
 // BANCO DE DADOS CORE - SISTEMA OMS
 // ==========================================================================
@@ -357,6 +415,7 @@ async function finalizarLogin(nome, cargo, matricula) {
         try { atualizarInterfaceUsuario(); } catch (e) { console.error('⚠️ Falha ao atualizar a interface (login prosseguiu mesmo assim):', e); }
     }
     if (typeof registrarHistorico === 'function') registrarHistorico("AUTENTICAÇÃO", `Login executado com sucesso.`);
+    window.ativarPushNotification();
 
     // 🔧 CORREÇÃO ("encerra o turno, loga de novo, continua com os dados
     // vazios/velhos até fechar e abrir o app"): antes, a sincronização com
