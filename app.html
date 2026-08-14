@@ -856,15 +856,16 @@
             </section>
 
             <section id="aba-historico" class="tab-content">
-                <div class="glass-panel" style="padding:24px;"><h2><i class="fas fa-history"></i> Auditoria Global</h2>
-
-            <!--
-                Painel de testes de folhão. Só aparece pra CBK3574 e CSP1869
-                (ver ativarPainelDevSeAutorizado em script.js) — não fica
-                escondido só via CSS, o próprio HTML dos equipamentos só é
-                montado se a matrícula bater, então não dá pra ver o
-                conteúdo nem inspecionando o HTML.
-            -->
+                <div class="glass-panel" style="padding:24px;">
+                    <h2><i class="fas fa-history"></i> Auditoria Global</h2>
+                    <p class="text-muted" style="font-size:13px;margin-bottom:16px;">Rastreabilidade completa de todas as operações e laudos.</p>
+                    <div class="mcc-filter-group" id="historico-filtro-acessos" style="margin-bottom:16px; display:inline-flex;">
+                        <button class="btn-filter-mcc active" onclick="window.filtrarHistoricoAcessos(false, this)">Todos os eventos</button>
+                        <button class="btn-filter-mcc" onclick="window.filtrarHistoricoAcessos(true, this)"><i class="fas fa-right-to-bracket"></i> Só Acessos (Login/Visitante)</button>
+                    </div>
+                    <div class="table-responsive"><table class="premium-table"><thead><tr><th>Horário</th><th>TAG / Módulo</th><th>Descrição da Ação</th><th>Responsável</th></tr></thead><tbody id="historico-table-body"></tbody></table></div>
+                </div>
+            </section>
             <section id="aba-dev-teste" class="tab-content">
                 <div class="glass-panel" style="padding:24px;">
                     <h2><i class="fas fa-flask"></i> Teste de Folhões (uso interno)</h2>

@@ -766,7 +766,7 @@ async function atualizarHistoricoGlobalComServidor(filtroData) {
         // no início da busca.
         const filtroAtual = document.getElementById("filtro-data-historico")?.value || '';
 
-        const acoesDoServidor = eventosServidor.map(e => ({
+        let acoesDoServidor = eventosServidor.map(e => ({
             data: e.data_hora || '',
             tag: e.peca_id || 'AUTENTICAÇÃO',
             acao: e.acao || '',
@@ -774,7 +774,13 @@ async function atualizarHistoricoGlobalComServidor(filtroData) {
             dataTimestamp: e.data_hora ? new Date(e.data_hora.replace(' ', 'T')).getTime() : 0
         }));
 
-        tbody.innerHTML = montarLinhasHistorico(acoesDoServidor, getLaudosSalvos(), filtroAtual);
+        // 🔍 Filtro "Só Acessos": mostra só logins e entradas de visitante,
+        // usando a mesma tag "AUTENTICAÇÃO" que já é salva em cada login.
+        if (typeof FILTRO_SO_ACESSOS !== 'undefined' && FILTRO_SO_ACESSOS) {
+            acoesDoServidor = acoesDoServidor.filter(a => a.tag === 'AUTENTICAÇÃO');
+        }
+
+        tbody.innerHTML = montarLinhasHistorico(acoesDoServidor, [], filtroAtual);
     } catch (e) {
         console.error('⚠️ Não consegui buscar a Auditoria completa do servidor (mantendo só o que tinha local):', e);
     }
@@ -1493,6 +1499,19 @@ function renderReparos() {
 
     repBody.innerHTML = htmlFinal;
 }
+
+// ==========================================
+// FILTRO "SÓ ACESSOS" NA AUDITORIA
+// ==========================================
+let FILTRO_SO_ACESSOS = false;
+
+window.filtrarHistoricoAcessos = function(soAcessos, botaoClicado) {
+    FILTRO_SO_ACESSOS = soAcessos;
+    document.querySelectorAll('#historico-filtro-acessos .btn-filter-mcc').forEach(b => b.classList.remove('active'));
+    if (botaoClicado) botaoClicado.classList.add('active');
+    const filtroData = document.getElementById("filtro-data-historico")?.value || '';
+    atualizarHistoricoGlobalComServidor(filtroData);
+};
 
 // ==========================================
 // FILTROS MCC
