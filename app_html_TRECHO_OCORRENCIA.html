@@ -1,0 +1,91 @@
+<!-- ==============================================================
+     EDIÇÃO 1 — ADICIONAR LINK NO MENU LATERAL
+     ==============================================================
+     Localizar no app.html (dentro de <nav class="sidebar-nav">):
+
+         <a href="#" id="nav-oficina" class="nav-link" onclick="window.abrirAba(event,'aba-oficina')"><i class="fas fa-clipboard-list"></i> Oficina</a>
+
+     Substituir por (adiciona o link novo logo depois):
+     ============================================================== -->
+
+<a href="#" id="nav-oficina" class="nav-link" onclick="window.abrirAba(event,'aba-oficina')"><i class="fas fa-clipboard-list"></i> Oficina</a>
+<a href="#" id="nav-ocorrencia" class="nav-link" style="color:#eab308;" onclick="window.abrirAba(event,'aba-ocorrencia')"><i class="fas fa-triangle-exclamation"></i> Registro de Ocorrência</a>
+
+
+<!-- ==============================================================
+     EDIÇÃO 2 — ADICIONAR A SEÇÃO DA ABA
+     ==============================================================
+     Localizar no app.html:
+
+         <section id="aba-oficina" class="tab-content">
+             ...
+         </section>
+
+     Colar a seção INTEIRA abaixo LOGO DEPOIS do </section> que fecha
+     "aba-oficina" (antes da seção "aba-historico").
+     ============================================================== -->
+
+<section id="aba-ocorrencia" class="tab-content">
+    <div class="glass-panel" style="padding:24px; margin-bottom:24px;">
+        <h2 style="color:#eab308;"><i class="fas fa-triangle-exclamation"></i> Registro de Ocorrência</h2>
+        <p class="text-muted" style="font-size:13px; margin-bottom:20px;">
+            Registre melhorias, intervenções, comentários ou atividades pendentes de qualquer equipamento —
+            com foto anexada, se precisar. Fica salvo no Prontuário do equipamento e nesta lista.
+        </p>
+
+        <div class="form-grid-4" style="margin-bottom:16px;">
+            <div class="input-group">
+                <label>Equipamento</label>
+                <select id="ocorrencia-equipamento" class="premium-select" style="width:100%;">
+                    <option value="">Selecione...</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Categoria</label>
+                <select id="ocorrencia-categoria" class="premium-select" style="width:100%;">
+                    <option value="Intervenção">🔧 Intervenção</option>
+                    <option value="Melhoria">✨ Melhoria</option>
+                    <option value="Comentário">💬 Comentário</option>
+                    <option value="Atividade Pendente">⏳ Atividade Pendente</option>
+                </select>
+            </div>
+            <div class="input-group" style="grid-column: span 2;">
+                <label>Descrição</label>
+                <textarea id="ocorrencia-texto" class="premium-textarea" rows="1" placeholder="Ex: Vazamento de graxa no rolo #4, precisa trocar o retentor..."></textarea>
+            </div>
+        </div>
+
+        <div class="input-group" style="margin-bottom:16px; max-width:320px;">
+            <label>Foto (opcional)</label>
+            <input type="file" id="ocorrencia-foto-input" accept="image/*" style="display:none;" onchange="window.processarFotoOcorrencia(event)">
+            <button type="button" class="btn-premium w-100" onclick="document.getElementById('ocorrencia-foto-input').click()">
+                <i class="fas fa-camera"></i> Tirar Foto / Anexar
+            </button>
+            <div id="ocorrencia-foto-preview-container" class="hidden" style="margin-top:10px; position:relative; display:inline-block;">
+                <img id="ocorrencia-foto-preview" src="" style="max-width:100%; max-height:200px; border-radius:8px; border:1px solid var(--border);">
+                <button type="button" onclick="window.removerFotoOcorrencia()" style="position:absolute; top:6px; right:6px; background:rgba(0,0,0,0.7); color:#fff; border:none; border-radius:50%; width:26px; height:26px; cursor:pointer;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <button class="btn-premium btn-success" onclick="window.confirmarOcorrencia()">
+            <i class="fas fa-check"></i> Salvar Registro
+        </button>
+    </div>
+
+    <!-- LISTA DE OCORRÊNCIAS JÁ REGISTRADAS -->
+    <div class="glass-panel" style="padding:24px;">
+        <div class="flex-between" style="margin-bottom:16px;">
+            <h3 style="color:var(--text-title); font-size:1rem;"><i class="fas fa-list"></i> Ocorrências Registradas</h3>
+            <div class="mcc-filter-group" id="ocorrencia-filtros">
+                <button class="btn-filter-mcc active" data-cat="" onclick="window.filtrarOcorrencias('', this)">Todas</button>
+                <button class="btn-filter-mcc" data-cat="Intervenção" onclick="window.filtrarOcorrencias('Intervenção', this)">🔧 Intervenção</button>
+                <button class="btn-filter-mcc" data-cat="Melhoria" onclick="window.filtrarOcorrencias('Melhoria', this)">✨ Melhoria</button>
+                <button class="btn-filter-mcc" data-cat="Comentário" onclick="window.filtrarOcorrencias('Comentário', this)">💬 Comentário</button>
+                <button class="btn-filter-mcc" data-cat="Atividade Pendente" onclick="window.filtrarOcorrencias('Atividade Pendente', this)">⏳ Pendente</button>
+            </div>
+        </div>
+        <div id="ocorrencia-lista-container"></div>
+    </div>
+</section>
