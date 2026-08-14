@@ -3149,6 +3149,7 @@ window.abrirAba = function(event, idAba) {
     if (idAba === "aba-fluxo" && typeof renderPainelVeios === 'function') renderPainelVeios();
     if (idAba === "aba-tecnico" && typeof renderPainelTecnico === 'function') renderPainelTecnico();
     if (idAba === "aba-oficina" && typeof carregarOficina === 'function') carregarOficina();
+    if (idAba === "aba-ocorrencia" && typeof window.renderAbaOcorrencia === 'function') window.renderAbaOcorrencia();
     
     if (idAba === "aba-producao") {
         if (typeof window.carregarHistoricoApontamentoGeral === 'function') window.carregarHistoricoApontamentoGeral();
