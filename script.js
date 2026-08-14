@@ -3060,7 +3060,7 @@ window.processarProducaoDiaria = async function() {
         const apiBase = await resolverApiBase();
         const resposta = await fetchComRetry(`${apiBase}/api/apontar_producao_geral`, {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ mcc2: prodMcc2, mcc3: prodMcc3, mcc4: prodMcc4, operador: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Sistema" })
+            body: JSON.stringify({ qtd_mcc2: prodMcc2, qtd_mcc3: prodMcc3, qtd_mcc4: prodMcc4, operador: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Sistema" })
         });
         const resultado = await resposta.json();
         
