@@ -2953,19 +2953,70 @@ window.carregarOficina = async function() {
     AREAS_OFICINA.forEach(a => {
         const el = document.getElementById(`oficina-area-contagem-${a.chave}`);
         if (!el) return;
-        const pendentes = OFICINA_ATIVIDADES_CACHE.filter(x => x.area === a.chave && x.status !== 'Concluído').length;
-        el.textContent = pendentes > 0 ? `${pendentes} em aberto` : 'Tudo em dia ✅';
-        el.style.color = pendentes > 0 ? 'var(--warning)' : 'var(--success)';
+        const doArea = OFICINA_ATIVIDADES_CACHE.filter(x => x.area === a.chave);
+        const pendentes = doArea.filter(x => x.status !== 'Concluído').length;
+        const atrasadas = doArea.filter(x => atividadeEstaAtrasada(x)).length;
+
+        if (atrasadas > 0) {
+            el.textContent = `${pendentes} em aberto · ${atrasadas} atrasada${atrasadas > 1 ? 's' : ''}`;
+            el.style.color = 'var(--danger)';
+        } else if (pendentes > 0) {
+            el.textContent = `${pendentes} em aberto`;
+            el.style.color = 'var(--warning)';
+        } else {
+            el.textContent = 'Tudo em dia ✅';
+            el.style.color = 'var(--success)';
+        }
     });
+
+    atualizarKpisOficina();
 
     if (OFICINA_AREA_ATUAL) renderizarAtividadesArea();
 };
+
+// Uma atividade está "atrasada" quando ainda não foi concluída, TEM um
+// prazo definido, e esse prazo já passou. Sem prazo definido, nunca
+// conta como atrasada (não dá pra saber isso sem uma data de referência).
+function atividadeEstaAtrasada(x) {
+    if (x.status === 'Concluído' || !x.prazo) return false;
+    const hoje = new Date().toISOString().slice(0, 10);
+    return x.prazo < hoje;
+}
+
+// --------------------------------------------------------------
+// KPIs GLOBAIS DA OFICINA (topo da aba, acima da grade de áreas)
+// --------------------------------------------------------------
+function atualizarKpisOficina() {
+    const hoje = new Date().toISOString().slice(0, 10);
+    const dataLimite7dias = (() => {
+        const d = new Date();
+        d.setDate(d.getDate() - 7);
+        return d.toISOString().slice(0, 10);
+    })();
+
+    const pendentes = OFICINA_ATIVIDADES_CACHE.filter(x => x.status === 'Pendente').length;
+    const emAndamento = OFICINA_ATIVIDADES_CACHE.filter(x => x.status === 'Em Andamento').length;
+    const atrasadas = OFICINA_ATIVIDADES_CACHE.filter(atividadeEstaAtrasada).length;
+    const concluidasRecentes = OFICINA_ATIVIDADES_CACHE.filter(x =>
+        x.status === 'Concluído' && x.concluido_em && x.concluido_em.slice(0, 10) >= dataLimite7dias
+    ).length;
+
+    const definirTexto = (id, valor) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = valor;
+    };
+    definirTexto('oficina-kpi-pendentes', pendentes);
+    definirTexto('oficina-kpi-andamento', emAndamento);
+    definirTexto('oficina-kpi-atrasadas', atrasadas);
+    definirTexto('oficina-kpi-concluidas', concluidasRecentes);
+}
 
 // Estado local do módulo de Oficina.
 let OFICINA_ATIVIDADES_CACHE = [];
 let OFICINA_AREA_ATUAL = null;
 let OFICINA_FILTRO_STATUS_ATUAL = '';
 let OFICINA_TIPO_ATIVIDADE_ATUAL = 'equipamento'; // 'equipamento' | 'avulsa'
+let OFICINA_FOTO_BASE64 = null;
 
 // --------------------------------------------------------------
 // ABRIR O MODAL DE UMA ÁREA (chamado ao clicar num card da grade)
@@ -2989,6 +3040,8 @@ window.abrirAreaOficina = function(chave) {
     document.getElementById('area-oficina-descricao').value = '';
     document.getElementById('area-oficina-responsavel').value = '';
     document.getElementById('area-oficina-prioridade').value = 'Normal';
+    document.getElementById('area-oficina-prazo').value = '';
+    window.removerFotoAtividadeOficina();
     window.alternarTipoAtividadeOficina('equipamento');
 
     const select = document.getElementById('area-oficina-equipamento');
@@ -3060,8 +3113,16 @@ function renderizarAtividadesArea() {
     const corStatus = { 'Pendente': 'var(--warning)', 'Em Andamento': 'var(--info)', 'Concluído': 'var(--success)' };
     const iconePrioridade = { 'Alta': '🔴', 'Baixa': '🔵' };
 
-    container.innerHTML = itens.map(x => `
+    container.innerHTML = itens.map(x => {
+        const atrasada = atividadeEstaAtrasada(x);
+        const prazoFormatado = x.prazo ? x.prazo.split('-').reverse().join('/') : null;
+        return `
         <div style="display:flex; justify-content:space-between; gap:12px; padding:12px 0; border-bottom:1px solid var(--border-color); align-items:flex-start;">
+            ${x.foto_base64 ? `
+                <img src="${x.foto_base64}"
+                     style="width:56px; height:56px; object-fit:cover; border-radius:8px; border:1px solid var(--border-color); cursor:pointer; flex-shrink:0;"
+                     onclick="window.open('${x.foto_base64}', '_blank')">
+            ` : ''}
             <div style="flex:1; min-width:0;">
                 <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
                     ${x.equipamento_id
@@ -3069,10 +3130,12 @@ function renderizarAtividadesArea() {
                         : `<span class="ind-card-tag bg-tag">Tarefa avulsa</span>`}
                     <span style="font-size:11px; color:${corStatus[x.status] || 'var(--text-muted)'}; font-weight:700;">${x.status}</span>
                     ${iconePrioridade[x.prioridade] ? `<span title="Prioridade ${x.prioridade}">${iconePrioridade[x.prioridade]}</span>` : ''}
+                    ${atrasada ? `<span style="font-size:10px; background:var(--danger); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">ATRASADA</span>` : ''}
                 </div>
                 <div style="font-size:13px; color:var(--text-body);">${x.descricao}</div>
                 <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
                     ${x.responsavel ? `${x.responsavel} · ` : ''}${x.criado_em || ''}
+                    ${prazoFormatado ? ` · Prazo: <span style="color:${atrasada ? 'var(--danger)' : 'var(--text-muted)'}; font-weight:${atrasada ? '700' : '400'};">${prazoFormatado}</span>` : ''}
                 </div>
             </div>
             <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
@@ -3086,7 +3149,8 @@ function renderizarAtividadesArea() {
                 </button>
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 // --------------------------------------------------------------
@@ -3099,6 +3163,7 @@ window.confirmarAtividadeOficina = async function() {
     const descricao = document.getElementById('area-oficina-descricao')?.value.trim();
     const responsavel = document.getElementById('area-oficina-responsavel')?.value.trim();
     const prioridade = document.getElementById('area-oficina-prioridade')?.value || 'Normal';
+    const prazo = document.getElementById('area-oficina-prazo')?.value || null;
     const equipamentoId = OFICINA_TIPO_ATIVIDADE_ATUAL === 'equipamento'
         ? document.getElementById('area-oficina-equipamento')?.value
         : null;
@@ -3121,6 +3186,8 @@ window.confirmarAtividadeOficina = async function() {
                 descricao,
                 responsavel: responsavel || null,
                 prioridade,
+                prazo,
+                foto_base64: OFICINA_FOTO_BASE64 || null,
                 operador
             })
         });
@@ -3142,6 +3209,8 @@ window.confirmarAtividadeOficina = async function() {
 
         document.getElementById('area-oficina-descricao').value = '';
         document.getElementById('area-oficina-responsavel').value = '';
+        document.getElementById('area-oficina-prazo').value = '';
+        window.removerFotoAtividadeOficina();
 
         await window.carregarOficina();
     } catch (e) {
@@ -3195,6 +3264,61 @@ window.excluirAtividadeOficina = async function(id) {
         console.error('⚠️ Erro ao excluir atividade da oficina:', e);
         alert('Não foi possível conectar ao servidor.');
     }
+};
+
+// --------------------------------------------------------------
+// FOTO DA ATIVIDADE (mesma lógica de compressão de Intervenção/Ocorrência)
+// --------------------------------------------------------------
+window.processarFotoAtividadeOficina = function(event) {
+    const arquivo = event.target.files[0];
+    if (!arquivo) return;
+
+    if (!arquivo.type.startsWith('image/')) {
+        alert('Por favor, escolha um arquivo de imagem.');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const MAX_LADO = 1280;
+            let largura = img.width;
+            let altura = img.height;
+
+            if (largura > altura && largura > MAX_LADO) {
+                altura = Math.round((altura * MAX_LADO) / largura);
+                largura = MAX_LADO;
+            } else if (altura > MAX_LADO) {
+                largura = Math.round((largura * MAX_LADO) / altura);
+                altura = MAX_LADO;
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = largura;
+            canvas.height = altura;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, largura, altura);
+
+            OFICINA_FOTO_BASE64 = canvas.toDataURL('image/jpeg', 0.7);
+
+            const preview = document.getElementById('area-oficina-foto-preview');
+            const container = document.getElementById('area-oficina-foto-preview-container');
+            if (preview) preview.src = OFICINA_FOTO_BASE64;
+            if (container) container.classList.remove('hidden');
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(arquivo);
+    event.target.value = '';
+};
+
+window.removerFotoAtividadeOficina = function() {
+    OFICINA_FOTO_BASE64 = null;
+    const preview = document.getElementById('area-oficina-foto-preview');
+    const container = document.getElementById('area-oficina-foto-preview-container');
+    if (preview) preview.src = '';
+    if (container) container.classList.add('hidden');
 };
 
 // --------------------------------------------------------------
