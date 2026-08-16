@@ -1854,8 +1854,22 @@
             </div>
 
             <div class="glass-panel" style="padding:16px; margin-bottom:20px;">
+                <h3 style="font-size:0.9rem; color:var(--text-title); margin-bottom:8px;">
+                    <i class="fas fa-boxes-stacked"></i> Materiais Técnicos da Área
+                </h3>
+                <div id="area-oficina-materiais-lista" style="margin-bottom:12px;"></div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <input type="text" id="area-oficina-material-codigo" class="premium-input" placeholder="Código" style="flex:1; min-width:90px;">
+                    <input type="text" id="area-oficina-material-descricao" class="premium-input" placeholder="Descrição do material" style="flex:3; min-width:160px;">
+                    <button class="btn-premium" style="padding:8px 16px;" onclick="window.adicionarMaterialAreaOficina()">
+                        <i class="fas fa-plus"></i> Adicionar
+                    </button>
+                </div>
+            </div>
+
+            <div class="glass-panel" style="padding:16px; margin-bottom:20px;">
                 <h3 style="font-size:0.9rem; color:var(--text-title); margin-bottom:12px;">
-                    <i class="fas fa-plus"></i> Nova Atividade
+                    <i class="fas fa-plus" id="area-oficina-form-icone"></i> <span id="area-oficina-form-titulo">Nova Atividade</span>
                 </h3>
 
                 <div class="mcc-filter-group oficina-toggle-tipo" style="margin-bottom:12px;">
@@ -1877,7 +1891,11 @@
                     </div>
                     <div class="input-group">
                         <label>Responsável</label>
-                        <input type="text" id="area-oficina-responsavel" class="premium-input" placeholder="Nome (opcional)">
+                        <select id="area-oficina-responsavel-select" class="premium-select" style="width:100%;" onchange="window.alternarResponsavelOficina()">
+                            <option value="">Selecione...</option>
+                            <option value="__outro__">Outro (digitar nome)</option>
+                        </select>
+                        <input type="text" id="area-oficina-responsavel-outro" class="premium-input hidden" style="width:100%; margin-top:6px;" placeholder="Nome">
                     </div>
                     <div class="input-group">
                         <label>Prioridade</label>
@@ -1893,6 +1911,7 @@
                     </div>
                 </div>
 
+
                 <div class="input-group" style="margin-bottom:12px;">
                     <label>Foto <span class="text-muted" style="font-weight:400;">(opcional)</span></label>
                     <input type="file" id="area-oficina-foto-input" accept="image/*" capture="environment" style="display:none;" onchange="window.processarFotoAtividadeOficina(event)">
@@ -1907,9 +1926,14 @@
                     </div>
                 </div>
 
-                <button class="btn-premium btn-success" onclick="window.confirmarAtividadeOficina()">
-                    <i class="fas fa-check"></i> Lançar Atividade
-                </button>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-premium btn-success" onclick="window.confirmarAtividadeOficina()" style="flex:1;">
+                        <i class="fas fa-check" id="area-oficina-btn-icone"></i> <span id="area-oficina-btn-texto">Lançar Atividade</span>
+                    </button>
+                    <button class="btn-outline-danger hidden" id="area-oficina-btn-cancelar" onclick="window.cancelarEdicaoAtividadeOficina()">
+                        Cancelar
+                    </button>
+                </div>
             </div>
 
             <div class="glass-panel" style="padding:16px;">

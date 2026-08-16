@@ -3017,6 +3017,8 @@ let OFICINA_AREA_ATUAL = null;
 let OFICINA_FILTRO_STATUS_ATUAL = '';
 let OFICINA_TIPO_ATIVIDADE_ATUAL = 'equipamento'; // 'equipamento' | 'avulsa'
 let OFICINA_FOTO_BASE64 = null;
+let OFICINA_EQUIPE_ATUAL = []; // equipe da área aberta no momento (usada no seletor de Responsável)
+let OFICINA_EDITANDO_ID = null; // null = criando atividade nova; número = editando essa atividade
 
 // --------------------------------------------------------------
 // ABRIR O MODAL DE UMA ÁREA (chamado ao clicar num card da grade)
@@ -3028,6 +3030,8 @@ window.abrirAreaOficina = function(chave) {
     OFICINA_AREA_ATUAL = chave;
     OFICINA_FILTRO_STATUS_ATUAL = '';
     OFICINA_TIPO_ATIVIDADE_ATUAL = 'equipamento';
+    OFICINA_EQUIPE_ATUAL = [];
+    window.cancelarEdicaoAtividadeOficina(); // garante que não fica "preso" numa edição de outra área
 
     document.getElementById('area-oficina-nome').textContent = area.nome;
     const icone = document.getElementById('area-oficina-icone');
@@ -3038,7 +3042,9 @@ window.abrirAreaOficina = function(chave) {
     document.querySelector('#area-oficina-filtros .btn-filter-mcc[data-status=""]')?.classList.add('active');
 
     document.getElementById('area-oficina-descricao').value = '';
-    document.getElementById('area-oficina-responsavel').value = '';
+    document.getElementById('area-oficina-responsavel-select').value = '';
+    document.getElementById('area-oficina-responsavel-outro').value = '';
+    document.getElementById('area-oficina-responsavel-outro').classList.add('hidden');
     document.getElementById('area-oficina-prioridade').value = 'Normal';
     document.getElementById('area-oficina-prazo').value = '';
     window.removerFotoAtividadeOficina();
@@ -3063,6 +3069,7 @@ window.abrirAreaOficina = function(chave) {
     renderizarAtividadesArea();
     carregarNotaAreaOficina(chave);
     carregarEquipeAreaOficina(chave);
+    carregarMateriaisAreaOficina(chave);
 
     document.getElementById('modal-area-oficina').classList.remove('hidden');
 };
@@ -3144,6 +3151,9 @@ function renderizarAtividadesArea() {
                         ${x.status === 'Pendente' ? 'Iniciar' : 'Concluir'}
                     </button>
                 ` : ''}
+                <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.editarAtividadeOficina(${x.id})">
+                    <i class="fas fa-pen"></i>
+                </button>
                 <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.excluirAtividadeOficina(${x.id})">
                     <i class="fas fa-trash"></i>
                 </button>
@@ -3161,7 +3171,7 @@ window.confirmarAtividadeOficina = async function() {
     if (!OFICINA_AREA_ATUAL) return;
 
     const descricao = document.getElementById('area-oficina-descricao')?.value.trim();
-    const responsavel = document.getElementById('area-oficina-responsavel')?.value.trim();
+    const responsavel = lerResponsavelFormOficina();
     const prioridade = document.getElementById('area-oficina-prioridade')?.value || 'Normal';
     const prazo = document.getElementById('area-oficina-prazo')?.value || null;
     const equipamentoId = OFICINA_TIPO_ATIVIDADE_ATUAL === 'equipamento'
@@ -3174,13 +3184,22 @@ window.confirmarAtividadeOficina = async function() {
     if (!descricao) return alert('Descreva a atividade.');
 
     const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
+    const editando = OFICINA_EDITANDO_ID !== null;
 
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/oficina/atividade`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+        const url = editando ? `${apiBase}/api/oficina/atividade/editar` : `${apiBase}/api/oficina/atividade`;
+        const corpo = editando
+            ? {
+                id: OFICINA_EDITANDO_ID,
+                equipamento_id: equipamentoId || null,
+                descricao,
+                responsavel: responsavel || null,
+                prioridade,
+                prazo,
+                foto_base64: OFICINA_FOTO_BASE64 || null
+              }
+            : {
                 area: OFICINA_AREA_ATUAL,
                 equipamento_id: equipamentoId || null,
                 descricao,
@@ -3189,16 +3208,21 @@ window.confirmarAtividadeOficina = async function() {
                 prazo,
                 foto_base64: OFICINA_FOTO_BASE64 || null,
                 operador
-            })
+              };
+
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(corpo)
         });
 
         if (!resp.ok) {
             const erro = await resp.json().catch(() => ({}));
-            alert(erro.detail || 'Não foi possível salvar a atividade.');
+            alert(erro.detail || `Não foi possível ${editando ? 'salvar a edição' : 'salvar a atividade'}.`);
             return;
         }
 
-        if (typeof registrarHistorico === 'function') {
+        if (!editando && typeof registrarHistorico === 'function') {
             const areaInfo = AREAS_OFICINA.find(a => a.chave === OFICINA_AREA_ATUAL);
             const nomeArea = areaInfo ? areaInfo.nome : OFICINA_AREA_ATUAL;
             registrarHistorico(
@@ -3208,13 +3232,16 @@ window.confirmarAtividadeOficina = async function() {
         }
 
         document.getElementById('area-oficina-descricao').value = '';
-        document.getElementById('area-oficina-responsavel').value = '';
+        document.getElementById('area-oficina-responsavel-select').value = '';
+        document.getElementById('area-oficina-responsavel-outro').value = '';
+        document.getElementById('area-oficina-responsavel-outro').classList.add('hidden');
         document.getElementById('area-oficina-prazo').value = '';
         window.removerFotoAtividadeOficina();
+        window.cancelarEdicaoAtividadeOficina();
 
         await window.carregarOficina();
     } catch (e) {
-        console.error('⚠️ Erro ao lançar atividade da oficina:', e);
+        console.error('⚠️ Erro ao salvar atividade da oficina:', e);
         alert('Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.');
     }
 };
@@ -3326,6 +3353,7 @@ window.removerFotoAtividadeOficina = function() {
 // --------------------------------------------------------------
 async function carregarEquipeAreaOficina(chave) {
     const container = document.getElementById('area-oficina-equipe-lista');
+    const selectResp = document.getElementById('area-oficina-responsavel-select');
     if (!container) return;
     container.innerHTML = `<div class="text-muted" style="font-size:12px;">Carregando...</div>`;
 
@@ -3333,13 +3361,24 @@ async function carregarEquipeAreaOficina(chave) {
         const apiBase = await resolverApiBase();
         const resp = await fetch(`${apiBase}/api/oficina/equipe/${encodeURIComponent(chave)}`, { cache: 'no-store' });
         const equipe = resp.ok ? await resp.json() : [];
+        OFICINA_EQUIPE_ATUAL = Array.isArray(equipe) ? equipe : [];
 
-        if (!Array.isArray(equipe) || equipe.length === 0) {
+        // Seletor de Responsável (no formulário de atividade) — lista a
+        // equipe real da área + opção "Outro" pra digitar um nome que
+        // não está no roster (ex: um supervisor, ou área ainda sem
+        // gente cadastrada na planilha do efetivo).
+        if (selectResp) {
+            selectResp.innerHTML = `<option value="">Selecione...</option>` +
+                OFICINA_EQUIPE_ATUAL.map(p => `<option value="${p.nome}">${p.nome}${p.cargo ? ` — ${p.cargo}` : ''}</option>`).join('') +
+                `<option value="__outro__">Outro (digitar nome)</option>`;
+        }
+
+        if (OFICINA_EQUIPE_ATUAL.length === 0) {
             container.innerHTML = `<div class="text-muted" style="font-size:12px;">Nenhum colaborador cadastrado nesta área ainda.</div>`;
             return;
         }
 
-        container.innerHTML = equipe.map(p => `
+        container.innerHTML = OFICINA_EQUIPE_ATUAL.map(p => `
             <div class="tecnico-item-linha" style="cursor:default;">
                 <div>
                     <span style="font-weight:700; color:var(--text-heading); font-size:13px;">${p.nome}</span>
@@ -3358,6 +3397,190 @@ async function carregarEquipeAreaOficina(chave) {
 // --------------------------------------------------------------
 // ANOTAÇÕES DA ÁREA (materiais/procedimento — provisório, texto livre)
 // --------------------------------------------------------------
+// --------------------------------------------------------------
+// TOGGLE do seletor de Responsável: mostra o campo de texto livre só
+// quando "Outro" é escolhido.
+// --------------------------------------------------------------
+window.alternarResponsavelOficina = function() {
+    const select = document.getElementById('area-oficina-responsavel-select');
+    const outro = document.getElementById('area-oficina-responsavel-outro');
+    if (!select || !outro) return;
+    outro.classList.toggle('hidden', select.value !== '__outro__');
+    if (select.value === '__outro__') outro.focus();
+};
+
+function lerResponsavelFormOficina() {
+    const select = document.getElementById('area-oficina-responsavel-select')?.value || '';
+    if (select === '__outro__') {
+        return document.getElementById('area-oficina-responsavel-outro')?.value.trim() || null;
+    }
+    return select || null;
+}
+
+// --------------------------------------------------------------
+// MATERIAIS TÉCNICOS DA ÁREA
+// --------------------------------------------------------------
+async function carregarMateriaisAreaOficina(chave) {
+    const container = document.getElementById('area-oficina-materiais-lista');
+    if (!container) return;
+    container.innerHTML = `<div class="text-muted" style="font-size:12px;">Carregando...</div>`;
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/materiais/${encodeURIComponent(chave)}`, { cache: 'no-store' });
+        const materiais = resp.ok ? await resp.json() : [];
+
+        if (!Array.isArray(materiais) || materiais.length === 0) {
+            container.innerHTML = `<div class="text-muted" style="font-size:12px;">Nenhum material cadastrado nesta área ainda — use o campo abaixo pra começar a lista.</div>`;
+            return;
+        }
+
+        container.innerHTML = `
+            <div style="max-height:220px; overflow-y:auto;">
+                ${materiais.map(m => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border-color);">
+                        <div style="min-width:0;">
+                            <span class="font-code" style="font-weight:700; color:var(--text-heading); font-size:12px;">${m.codigo}</span>
+                            <span style="font-size:12px; color:var(--text-body); margin-left:6px;">${m.descricao}</span>
+                        </div>
+                        <button class="btn-outline-danger" style="padding:3px 8px; font-size:11px; flex-shrink:0;" onclick="window.excluirMaterialAreaOficina(${m.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } catch (e) {
+        console.error('⚠️ Não consegui carregar os materiais da área:', e);
+        container.innerHTML = `<div class="text-muted" style="font-size:12px;">Não foi possível carregar. Verifique sua internet.</div>`;
+    }
+}
+
+window.adicionarMaterialAreaOficina = async function() {
+    if (!verificarAcesso()) return;
+    if (!OFICINA_AREA_ATUAL) return;
+
+    const codigoEl = document.getElementById('area-oficina-material-codigo');
+    const descricaoEl = document.getElementById('area-oficina-material-descricao');
+    const codigo = codigoEl?.value.trim();
+    const descricao = descricaoEl?.value.trim();
+
+    if (!codigo || !descricao) return alert('Preencha código e descrição do material.');
+
+    const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/materiais`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ area: OFICINA_AREA_ATUAL, codigo, descricao, operador })
+        });
+        if (!resp.ok) {
+            const erro = await resp.json().catch(() => ({}));
+            alert(erro.detail || 'Não foi possível salvar o material.');
+            return;
+        }
+        codigoEl.value = '';
+        descricaoEl.value = '';
+        await carregarMateriaisAreaOficina(OFICINA_AREA_ATUAL);
+    } catch (e) {
+        console.error('⚠️ Erro ao adicionar material:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+};
+
+window.excluirMaterialAreaOficina = async function(id) {
+    if (!verificarAcesso()) return;
+    if (!confirm('Excluir este material da lista da área?')) return;
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/materiais/excluir`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+        });
+        if (!resp.ok) {
+            alert('Não foi possível excluir.');
+            return;
+        }
+        await carregarMateriaisAreaOficina(OFICINA_AREA_ATUAL);
+    } catch (e) {
+        console.error('⚠️ Erro ao excluir material:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+};
+
+// --------------------------------------------------------------
+// EDITAR ATIVIDADE — reaproveita o formulário de "Nova Atividade".
+// Ao clicar em editar, o formulário é preenchido com os dados atuais
+// e o botão vira "Salvar Edição" até confirmar ou cancelar.
+// --------------------------------------------------------------
+window.editarAtividadeOficina = function(id) {
+    const atividade = OFICINA_ATIVIDADES_CACHE.find(x => x.id === id);
+    if (!atividade) return;
+
+    OFICINA_EDITANDO_ID = id;
+
+    // Tipo (equipamento x avulsa) + equipamento selecionado
+    window.alternarTipoAtividadeOficina(atividade.equipamento_id ? 'equipamento' : 'avulsa');
+    const selectEquip = document.getElementById('area-oficina-equipamento');
+    if (selectEquip && atividade.equipamento_id) selectEquip.value = atividade.equipamento_id;
+
+    document.getElementById('area-oficina-descricao').value = atividade.descricao || '';
+    document.getElementById('area-oficina-prioridade').value = atividade.prioridade || 'Normal';
+    document.getElementById('area-oficina-prazo').value = atividade.prazo || '';
+
+    // Responsável: tenta achar na equipe carregada; se não achar
+    // (pessoa não está no roster, ou já não existe mais), cai pro
+    // campo "Outro" com o nome tal como estava salvo.
+    const selectResp = document.getElementById('area-oficina-responsavel-select');
+    const respExiste = atividade.responsavel && OFICINA_EQUIPE_ATUAL.some(p => p.nome === atividade.responsavel);
+    if (selectResp) {
+        if (respExiste) {
+            selectResp.value = atividade.responsavel;
+            window.alternarResponsavelOficina();
+        } else if (atividade.responsavel) {
+            selectResp.value = '__outro__';
+            window.alternarResponsavelOficina();
+            document.getElementById('area-oficina-responsavel-outro').value = atividade.responsavel;
+        } else {
+            selectResp.value = '';
+            window.alternarResponsavelOficina();
+        }
+    }
+
+    // Foto: se já tinha uma, mostra no preview (mantém se não mexer)
+    OFICINA_FOTO_BASE64 = atividade.foto_base64 || null;
+    const preview = document.getElementById('area-oficina-foto-preview');
+    const previewContainer = document.getElementById('area-oficina-foto-preview-container');
+    if (OFICINA_FOTO_BASE64) {
+        if (preview) preview.src = OFICINA_FOTO_BASE64;
+        if (previewContainer) previewContainer.classList.remove('hidden');
+    } else {
+        if (preview) preview.src = '';
+        if (previewContainer) previewContainer.classList.add('hidden');
+    }
+
+    // Muda a cara do formulário pra deixar claro que é uma edição
+    document.getElementById('area-oficina-form-titulo').textContent = 'Editar Atividade';
+    document.getElementById('area-oficina-form-icone').className = 'fas fa-pen';
+    document.getElementById('area-oficina-btn-texto').textContent = 'Salvar Edição';
+    document.getElementById('area-oficina-btn-icone').className = 'fas fa-save';
+    document.getElementById('area-oficina-btn-cancelar').classList.remove('hidden');
+
+    document.getElementById('area-oficina-descricao')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+window.cancelarEdicaoAtividadeOficina = function() {
+    OFICINA_EDITANDO_ID = null;
+    document.getElementById('area-oficina-form-titulo').textContent = 'Nova Atividade';
+    document.getElementById('area-oficina-form-icone').className = 'fas fa-plus';
+    document.getElementById('area-oficina-btn-texto').textContent = 'Lançar Atividade';
+    document.getElementById('area-oficina-btn-icone').className = 'fas fa-check';
+    document.getElementById('area-oficina-btn-cancelar').classList.add('hidden');
+};
+
 async function carregarNotaAreaOficina(chave) {
     const textarea = document.getElementById('area-oficina-notas');
     const statusEl = document.getElementById('area-oficina-notas-status');
