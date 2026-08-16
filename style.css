@@ -3141,8 +3141,8 @@ h1, h2, h3, h4, h5, h6 {
 /* ================= OFICINA — GRADE DE ÁREAS ================= */
 .oficina-grade {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 12px;
 }
 
 .oficina-area-card {
@@ -3150,12 +3150,14 @@ h1, h2, h3, h4, h5, h6 {
     border: 1px solid var(--border-color);
     border-left: 4px solid transparent;
     border-radius: var(--radius-lg);
-    padding: 18px;
+    padding: 16px;
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     cursor: pointer;
     transition: all var(--transition-base);
+    min-height: 44px;
+    touch-action: manipulation;
 }
 
 .oficina-area-card:hover {
@@ -3163,22 +3165,31 @@ h1, h2, h3, h4, h5, h6 {
     box-shadow: var(--shadow-hover);
 }
 
+.oficina-area-card:active {
+    transform: scale(0.98);
+}
+
 .oficina-area-icone {
-    width: 46px;
-    height: 46px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     background: rgba(255, 255, 255, 0.05);
-    font-size: 18px;
+    font-size: 17px;
     flex-shrink: 0;
 }
 
+.oficina-area-info {
+    min-width: 0; /* permite o texto truncar em vez de estourar o card */
+}
+
 .oficina-area-info h4 {
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     color: var(--text-heading);
     margin: 0 0 4px 0;
+    overflow-wrap: break-word;
 }
 
 .oficina-area-info p {
@@ -3186,8 +3197,104 @@ h1, h2, h3, h4, h5, h6 {
     margin: 0;
 }
 
-@media (max-width: 600px) {
+/* ---- Toggle "Vinculada a Equipamento" / "Tarefa Avulsa" ----
+   No desktop fica lado a lado normal (herdado de .mcc-filter-group);
+   no celular vira dois botões de largura igual, mais fácil de acertar
+   com o polegar do que dois "pills" desalinhados quebrando linha. */
+.oficina-toggle-tipo {
+    display: flex;
+}
+.oficina-toggle-tipo .btn-filter-mcc {
+    flex: 1;
+    text-align: center;
+}
+
+/* ---- Linhas da lista de atividades (dentro do modal da área) ---- */
+#area-oficina-lista > div {
+    flex-wrap: wrap;
+}
+
+/* ---- Linhas da equipe (nome + cargo) ---- */
+#area-oficina-equipe-lista .tecnico-item-linha {
+    cursor: default;
+}
+
+@media (max-width: 992px) {
+    .oficina-grade {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    .oficina-area-card {
+        padding: 14px 12px;
+        gap: 10px;
+    }
+    .oficina-area-icone {
+        width: 38px;
+        height: 38px;
+        font-size: 15px;
+    }
+    .oficina-area-info h4 {
+        font-size: 0.82rem;
+    }
+    .oficina-area-info p {
+        font-size: 11px;
+    }
+
+    /* Botões de ação (Iniciar/Concluir/Excluir) das atividades passam
+       pra baixo da descrição em vez de espremer do lado — evita texto
+       cortado em telas estreitas (320–375px). */
+    #area-oficina-lista > div {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 10px;
+    }
+    #area-oficina-lista > div > div:last-child {
+        flex-direction: row !important;
+        justify-content: flex-end;
+    }
+    #area-oficina-lista .btn-premium,
+    #area-oficina-lista .btn-outline-danger {
+        min-height: 40px;
+    }
+
+    /* Nome + cargo empilham em vez de espremer numa linha só quando o
+       cargo é um texto longo (ex: "OPERADOR DE MAQUINA DE FERRAMENTA IV") */
+    #area-oficina-equipe-lista .tecnico-item-linha {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    #area-oficina-equipe-lista .tecnico-item-linha > div:last-child {
+        text-align: left !important;
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
     .oficina-grade {
         grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+    .oficina-area-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 14px 8px;
+    }
+    .oficina-area-info p {
+        font-size: 10.5px;
+    }
+}
+
+@media (max-width: 360px) {
+    /* Telas bem pequenas (ex: iPhone SE) — 1 card por linha fica mais
+       legível do que forçar 2 colunas apertadas. */
+    .oficina-grade {
+        grid-template-columns: 1fr;
+    }
+    .oficina-area-card {
+        flex-direction: row;
+        text-align: left;
     }
 }
