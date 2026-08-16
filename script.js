@@ -8,7 +8,8 @@ import {
     CHECKLIST_REVISAO, 
     CHECKLIST_HIDRAULICA, 
     CHECKLIST_FINAL, 
-    BIBLIOTECA_CHECKLISTS 
+    BIBLIOTECA_CHECKLISTS,
+    AREAS_OFICINA
 } from './dados.js';
 
 import {
@@ -2921,23 +2922,355 @@ function renderizarFeedAtividadeRecente() {
 }
 
 // ==========================================
-// CARREGAR DADOS DA OFICINA (MARCO ZERO)
+// OFICINA — GRADE DE ÁREAS (v1)
 // ==========================================
 window.carregarOficina = async function() {
     const container = document.getElementById('oficina-container');
     if (!container) return;
-    
-    container.innerHTML = `
-        <div class="empty-state">
-            <i class="fas fa-tools"></i>
-            <h3>Módulo de Gestão da Oficina em Desenvolvimento</h3>
-            <p>
-                Estamos estruturando uma solução completa para o controle centralizado das operações de manutenção.<br><br>
-                Em breve, a plataforma contará com indicadores avançados e acompanhamento dinâmico da porcentagem de finalização dos equipamentos em tempo real.
-            </p>
-            <p class="empty-tag">Próxima Atualização do Sistema</p>
+
+    container.innerHTML = `<div id="oficina-grade-areas" class="oficina-grade">
+        ${AREAS_OFICINA.map(a => `
+            <div class="oficina-area-card" style="border-left-color:${a.cor};" onclick="window.abrirAreaOficina('${a.chave}')">
+                <div class="oficina-area-icone" style="color:${a.cor};"><i class="fas ${a.icone}"></i></div>
+                <div class="oficina-area-info">
+                    <h4>${a.nome}</h4>
+                    <p id="oficina-area-contagem-${a.chave}" class="text-muted">Carregando...</p>
+                </div>
+            </div>
+        `).join('')}
+    </div>`;
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/atividades`, { cache: 'no-store' });
+        const todas = resp.ok ? await resp.json() : [];
+        OFICINA_ATIVIDADES_CACHE = Array.isArray(todas) ? todas : [];
+    } catch (e) {
+        console.error('⚠️ Não consegui carregar as atividades da oficina:', e);
+        OFICINA_ATIVIDADES_CACHE = [];
+    }
+
+    AREAS_OFICINA.forEach(a => {
+        const el = document.getElementById(`oficina-area-contagem-${a.chave}`);
+        if (!el) return;
+        const pendentes = OFICINA_ATIVIDADES_CACHE.filter(x => x.area === a.chave && x.status !== 'Concluído').length;
+        el.textContent = pendentes > 0 ? `${pendentes} em aberto` : 'Tudo em dia ✅';
+        el.style.color = pendentes > 0 ? 'var(--warning)' : 'var(--success)';
+    });
+
+    if (OFICINA_AREA_ATUAL) renderizarAtividadesArea();
+};
+
+// Estado local do módulo de Oficina.
+let OFICINA_ATIVIDADES_CACHE = [];
+let OFICINA_AREA_ATUAL = null;
+let OFICINA_FILTRO_STATUS_ATUAL = '';
+let OFICINA_TIPO_ATIVIDADE_ATUAL = 'equipamento'; // 'equipamento' | 'avulsa'
+
+// --------------------------------------------------------------
+// ABRIR O MODAL DE UMA ÁREA (chamado ao clicar num card da grade)
+// --------------------------------------------------------------
+window.abrirAreaOficina = function(chave) {
+    const area = AREAS_OFICINA.find(a => a.chave === chave);
+    if (!area) return;
+
+    OFICINA_AREA_ATUAL = chave;
+    OFICINA_FILTRO_STATUS_ATUAL = '';
+    OFICINA_TIPO_ATIVIDADE_ATUAL = 'equipamento';
+
+    document.getElementById('area-oficina-nome').textContent = area.nome;
+    const icone = document.getElementById('area-oficina-icone');
+    icone.className = `fas ${area.icone}`;
+    icone.style.color = area.cor;
+
+    document.querySelectorAll('#area-oficina-filtros .btn-filter-mcc').forEach(b => b.classList.remove('active'));
+    document.querySelector('#area-oficina-filtros .btn-filter-mcc[data-status=""]')?.classList.add('active');
+
+    document.getElementById('area-oficina-descricao').value = '';
+    document.getElementById('area-oficina-responsavel').value = '';
+    document.getElementById('area-oficina-prioridade').value = 'Normal';
+    window.alternarTipoAtividadeOficina('equipamento');
+
+    const select = document.getElementById('area-oficina-equipamento');
+    if (select) {
+        let disponiveis = [...BANCO_ATIVOS];
+        if (typeof area.filtro === 'function') {
+            disponiveis = disponiveis.filter(area.filtro);
+        }
+        disponiveis.sort((a, b) => (a.id || "").localeCompare(b.id || ""));
+
+        if (disponiveis.length === 0) {
+            select.innerHTML = `<option value="">Nenhum equipamento desse tipo cadastrado</option>`;
+        } else {
+            select.innerHTML = `<option value="">Selecione...</option>` +
+                disponiveis.map(a => `<option value="${a.id}">${a.id} — ${a.tipo} (${a.local || 'Sem local'})</option>`).join("");
+        }
+    }
+
+    renderizarAtividadesArea();
+    carregarNotaAreaOficina(chave);
+    carregarEquipeAreaOficina(chave);
+
+    document.getElementById('modal-area-oficina').classList.remove('hidden');
+};
+
+window.fecharAreaOficina = function() {
+    document.getElementById('modal-area-oficina').classList.add('hidden');
+    OFICINA_AREA_ATUAL = null;
+};
+
+// --------------------------------------------------------------
+// TOGGLE: atividade vinculada a equipamento x tarefa avulsa
+// --------------------------------------------------------------
+window.alternarTipoAtividadeOficina = function(tipo) {
+    OFICINA_TIPO_ATIVIDADE_ATUAL = tipo;
+    document.getElementById('area-oficina-tipo-equip').classList.toggle('active', tipo === 'equipamento');
+    document.getElementById('area-oficina-tipo-avulsa').classList.toggle('active', tipo === 'avulsa');
+    const wrap = document.getElementById('area-oficina-select-equip-wrap');
+    if (wrap) wrap.classList.toggle('hidden', tipo !== 'equipamento');
+};
+
+// --------------------------------------------------------------
+// FILTRO DE STATUS (dentro do modal da área)
+// --------------------------------------------------------------
+window.filtrarAtividadesArea = function(status, botaoClicado) {
+    OFICINA_FILTRO_STATUS_ATUAL = status;
+    document.querySelectorAll('#area-oficina-filtros .btn-filter-mcc').forEach(b => b.classList.remove('active'));
+    if (botaoClicado) botaoClicado.classList.add('active');
+    renderizarAtividadesArea();
+};
+
+// --------------------------------------------------------------
+// RENDERIZA A LISTA DE ATIVIDADES DA ÁREA ABERTA (usa o cache local)
+// --------------------------------------------------------------
+function renderizarAtividadesArea() {
+    const container = document.getElementById('area-oficina-lista');
+    if (!container || !OFICINA_AREA_ATUAL) return;
+
+    let itens = OFICINA_ATIVIDADES_CACHE.filter(x => x.area === OFICINA_AREA_ATUAL);
+    if (OFICINA_FILTRO_STATUS_ATUAL) {
+        itens = itens.filter(x => x.status === OFICINA_FILTRO_STATUS_ATUAL);
+    }
+
+    if (itens.length === 0) {
+        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhuma atividade encontrada.</div>`;
+        return;
+    }
+
+    const corStatus = { 'Pendente': 'var(--warning)', 'Em Andamento': 'var(--info)', 'Concluído': 'var(--success)' };
+    const iconePrioridade = { 'Alta': '🔴', 'Baixa': '🔵' };
+
+    container.innerHTML = itens.map(x => `
+        <div style="display:flex; justify-content:space-between; gap:12px; padding:12px 0; border-bottom:1px solid var(--border-color); align-items:flex-start;">
+            <div style="flex:1; min-width:0;">
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
+                    ${x.equipamento_id
+                        ? `<span class="font-code" style="font-weight:700; color:var(--text-heading);">${x.equipamento_id}</span>`
+                        : `<span class="ind-card-tag bg-tag">Tarefa avulsa</span>`}
+                    <span style="font-size:11px; color:${corStatus[x.status] || 'var(--text-muted)'}; font-weight:700;">${x.status}</span>
+                    ${iconePrioridade[x.prioridade] ? `<span title="Prioridade ${x.prioridade}">${iconePrioridade[x.prioridade]}</span>` : ''}
+                </div>
+                <div style="font-size:13px; color:var(--text-body);">${x.descricao}</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+                    ${x.responsavel ? `${x.responsavel} · ` : ''}${x.criado_em || ''}
+                </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
+                ${x.status !== 'Concluído' ? `
+                    <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, '${x.status === 'Pendente' ? 'Em Andamento' : 'Concluído'}')">
+                        ${x.status === 'Pendente' ? 'Iniciar' : 'Concluir'}
+                    </button>
+                ` : ''}
+                <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.excluirAtividadeOficina(${x.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
         </div>
-    `;
+    `).join('');
+}
+
+// --------------------------------------------------------------
+// CRIAR ATIVIDADE (vinculada a equipamento OU avulsa)
+// --------------------------------------------------------------
+window.confirmarAtividadeOficina = async function() {
+    if (!verificarAcesso()) return;
+    if (!OFICINA_AREA_ATUAL) return;
+
+    const descricao = document.getElementById('area-oficina-descricao')?.value.trim();
+    const responsavel = document.getElementById('area-oficina-responsavel')?.value.trim();
+    const prioridade = document.getElementById('area-oficina-prioridade')?.value || 'Normal';
+    const equipamentoId = OFICINA_TIPO_ATIVIDADE_ATUAL === 'equipamento'
+        ? document.getElementById('area-oficina-equipamento')?.value
+        : null;
+
+    if (OFICINA_TIPO_ATIVIDADE_ATUAL === 'equipamento' && !equipamentoId) {
+        return alert('Selecione o equipamento, ou troque para "Tarefa Avulsa".');
+    }
+    if (!descricao) return alert('Descreva a atividade.');
+
+    const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/atividade`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                area: OFICINA_AREA_ATUAL,
+                equipamento_id: equipamentoId || null,
+                descricao,
+                responsavel: responsavel || null,
+                prioridade,
+                operador
+            })
+        });
+
+        if (!resp.ok) {
+            const erro = await resp.json().catch(() => ({}));
+            alert(erro.detail || 'Não foi possível salvar a atividade.');
+            return;
+        }
+
+        if (typeof registrarHistorico === 'function') {
+            const areaInfo = AREAS_OFICINA.find(a => a.chave === OFICINA_AREA_ATUAL);
+            const nomeArea = areaInfo ? areaInfo.nome : OFICINA_AREA_ATUAL;
+            registrarHistorico(
+                equipamentoId || `OFICINA-${OFICINA_AREA_ATUAL.toUpperCase()}`,
+                `🧰 [${nomeArea}] ${descricao}`
+            );
+        }
+
+        document.getElementById('area-oficina-descricao').value = '';
+        document.getElementById('area-oficina-responsavel').value = '';
+
+        await window.carregarOficina();
+    } catch (e) {
+        console.error('⚠️ Erro ao lançar atividade da oficina:', e);
+        alert('Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.');
+    }
+};
+
+// --------------------------------------------------------------
+// MUDAR STATUS (Pendente -> Em Andamento -> Concluído)
+// --------------------------------------------------------------
+window.mudarStatusAtividadeOficina = async function(id, novoStatus) {
+    if (!verificarAcesso()) return;
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/atividade/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, status: novoStatus })
+        });
+        if (!resp.ok) {
+            alert('Não foi possível atualizar o status.');
+            return;
+        }
+        await window.carregarOficina();
+    } catch (e) {
+        console.error('⚠️ Erro ao atualizar status da atividade:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+};
+
+// --------------------------------------------------------------
+// EXCLUIR ATIVIDADE
+// --------------------------------------------------------------
+window.excluirAtividadeOficina = async function(id) {
+    if (!verificarAcesso()) return;
+    if (!confirm('Excluir esta atividade?')) return;
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/atividade/excluir`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+        });
+        if (!resp.ok) {
+            alert('Não foi possível excluir.');
+            return;
+        }
+        await window.carregarOficina();
+    } catch (e) {
+        console.error('⚠️ Erro ao excluir atividade da oficina:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+};
+
+// --------------------------------------------------------------
+// EQUIPE DA ÁREA (dados reais, vindos da planilha do efetivo)
+// --------------------------------------------------------------
+async function carregarEquipeAreaOficina(chave) {
+    const container = document.getElementById('area-oficina-equipe-lista');
+    if (!container) return;
+    container.innerHTML = `<div class="text-muted" style="font-size:12px;">Carregando...</div>`;
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/equipe/${encodeURIComponent(chave)}`, { cache: 'no-store' });
+        const equipe = resp.ok ? await resp.json() : [];
+
+        if (!Array.isArray(equipe) || equipe.length === 0) {
+            container.innerHTML = `<div class="text-muted" style="font-size:12px;">Nenhum colaborador cadastrado nesta área ainda.</div>`;
+            return;
+        }
+
+        container.innerHTML = equipe.map(p => `
+            <div class="tecnico-item-linha" style="cursor:default;">
+                <div>
+                    <span style="font-weight:700; color:var(--text-heading); font-size:13px;">${p.nome}</span>
+                </div>
+                <div style="text-align:right;">
+                    <span class="text-muted" style="font-size:11px;">${p.cargo || ''}</span>
+                </div>
+            </div>
+        `).join('');
+    } catch (e) {
+        console.error('⚠️ Não consegui carregar a equipe da área:', e);
+        container.innerHTML = `<div class="text-muted" style="font-size:12px;">Não foi possível carregar. Verifique sua internet.</div>`;
+    }
+}
+
+// --------------------------------------------------------------
+// ANOTAÇÕES DA ÁREA (materiais/procedimento — provisório, texto livre)
+// --------------------------------------------------------------
+async function carregarNotaAreaOficina(chave) {
+    const textarea = document.getElementById('area-oficina-notas');
+    const statusEl = document.getElementById('area-oficina-notas-status');
+    if (!textarea) return;
+    textarea.value = '';
+    if (statusEl) statusEl.textContent = '';
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/nota/${encodeURIComponent(chave)}`, { cache: 'no-store' });
+        if (!resp.ok) return;
+        const nota = await resp.json();
+        textarea.value = nota?.texto || '';
+        if (statusEl && nota?.atualizado_em) statusEl.textContent = `Última atualização: ${nota.atualizado_em}`;
+    } catch (e) {
+        console.error('⚠️ Não consegui carregar as anotações da área:', e);
+    }
+}
+
+window.salvarNotaAreaOficina = async function() {
+    if (!OFICINA_AREA_ATUAL) return;
+    const textarea = document.getElementById('area-oficina-notas');
+    const statusEl = document.getElementById('area-oficina-notas-status');
+    const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
+
+    try {
+        const apiBase = await resolverApiBase();
+        await fetch(`${apiBase}/api/oficina/nota`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ area: OFICINA_AREA_ATUAL, texto: textarea.value, operador })
+        });
+        if (statusEl) statusEl.textContent = `Salvo agora (${new Date().toLocaleTimeString('pt-BR')})`;
+    } catch (e) {
+        console.error('⚠️ Não consegui salvar as anotações da área:', e);
+        if (statusEl) statusEl.textContent = '⚠️ Não foi possível salvar — verifique sua internet.';
+    }
 };
 
 // ==========================================

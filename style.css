@@ -3137,3 +3137,57 @@ h1, h2, h3, h4, h5, h6 {
         min-height: 46px;
     }
 }
+
+/* ================= OFICINA — GRADE DE ÁREAS ================= */
+.oficina-grade {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+}
+
+.oficina-area-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-left: 4px solid transparent;
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.oficina-area-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+}
+
+.oficina-area-icone {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.oficina-area-info h4 {
+    font-size: 0.9rem;
+    color: var(--text-heading);
+    margin: 0 0 4px 0;
+}
+
+.oficina-area-info p {
+    font-size: 12px;
+    margin: 0;
+}
+
+@media (max-width: 600px) {
+    .oficina-grade {
+        grid-template-columns: 1fr 1fr;
+    }
+}

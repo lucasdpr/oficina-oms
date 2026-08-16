@@ -199,3 +199,71 @@ export const BIBLIOTECA_CHECKLISTS = {
         ]
     }
 };
+
+// ==========================================
+// AREAS DA OFICINA (v1)
+// ==========================================
+// Baseado na planilha real do efetivo (efetivo_oms.xlsx): "Segmento de
+// Grupo" e' um time so (nao separado em Grupo 2 / Grupo 3), e o time
+// chamado "Desempenadeira" na planilha e' quem cuida do equipamento
+// tipo "Cadeira" (o nome do folhao e "Desempenadeira", mas o tipo do
+// equipamento e "Cadeira Superior/Inferior" - por isso o alias).
+export const AREAS_OFICINA = [
+    // ---- AREAS DE SERVICO GERAL (atendem qualquer equipamento) ----
+    { chave: 'hidraulica',    nome: 'Hidráulica',    icone: 'fa-oil-can',        cor: '#38bdf8', filtro: null },
+    { chave: 'usinagem',      nome: 'Usinagem',       icone: 'fa-gear',           cor: '#a855f7', filtro: null },
+    { chave: 'caldeiraria',   nome: 'Caldeiraria',    icone: 'fa-fire',           cor: '#f97316', filtro: null },
+    { chave: 'jato',          nome: 'Jato',           icone: 'fa-spray-can',      cor: '#7c8aa5', filtro: null },
+    { chave: 'eletrica',      nome: 'Elétrica',       icone: 'fa-bolt',           cor: '#eab308', filtro: null },
+    { chave: 'adm',           nome: 'ADM',            icone: 'fa-file-lines',     cor: '#38bdf8', filtro: null },
+    { chave: 'logistica',     nome: 'Logística',      icone: 'fa-truck',         cor: '#a855f7', filtro: null },
+    { chave: 'ponte-rolante', nome: 'Ponte Rolante',  icone: 'fa-crane',         cor: '#3b82f6', filtro: null },
+    { chave: 'almoxarifado',  nome: 'Almoxarifado',   icone: 'fa-boxes-stacked', cor: '#22c55e', filtro: null },
+
+    // ---- BANCADAS FIXAS POR TIPO DE EQUIPAMENTO ----
+    { chave: 'cadeira', nome: 'Cadeira (Desempenadeira)', icone: 'fa-chair', cor: '#f97316',
+        filtro: (e) => (e.tipo || '').toUpperCase().includes('CADEIRA') },
+
+    { chave: 'zero', nome: 'Segmento Zero', icone: 'fa-circle-notch', cor: '#eab308',
+        filtro: (e) => (e.tipo || '').toUpperCase().includes('ZERO') },
+
+    { chave: 'segmento-grupo', nome: 'Segmento de Grupo (2 e 3)', icone: 'fa-layer-group', cor: '#22c55e',
+        filtro: (e) => (e.tipo || '').toUpperCase().includes('GRUPO') },
+
+    // MCC4 "geral": Bow, Horizontal e Straightener (a familia 4 que
+    // NAO tem area propria) - Molde e Bender ja tem area dedicada.
+    { chave: 'mcc4', nome: 'MCC4', icone: 'fa-server', cor: '#ec4899',
+        filtro: (e) => e.mcc_compat === '4' && e.tipo !== 'Molde' && e.tipo !== 'Bender' },
+
+    { chave: 'bender', nome: 'Bender', icone: 'fa-compress', cor: '#eab308',
+        filtro: (e) => e.tipo === 'Bender' },
+
+    { chave: 'molde-mcc4', nome: 'Molde MCC #4', icone: 'fa-cube', cor: '#ec4899',
+        filtro: (e) => e.tipo === 'Molde' && e.mcc_compat === '4' },
+
+    { chave: 'molde-mcc23', nome: 'Molde MCC #2,3', icone: 'fa-cubes', cor: '#3b82f6',
+        filtro: (e) => e.tipo === 'Molde' && e.mcc_compat === '2/3' },
+];
+
+// Mapa auxiliar: normaliza o texto da coluna "Equipe" da planilha do
+// efetivo (ex: "Molde MCC#2 e 3", "Desempenadeira") para a "chave" das
+// areas acima. Usado no back-end (importar_efetivo_oficina.py) - fica
+// aqui tambem so' de referencia, caso precise no front-end um dia.
+export const MAPA_EQUIPE_PARA_AREA = {
+    'hidraulica': 'hidraulica',
+    'usinagem': 'usinagem',
+    'caldeiraria': 'caldeiraria',
+    'jato': 'jato',
+    'eletrica': 'eletrica',
+    'adm': 'adm',
+    'logistica': 'logistica',
+    'ponte rolante': 'ponte-rolante',
+    'almoxarifado': 'almoxarifado',
+    'zero': 'zero',
+    'segmento de grupo': 'segmento-grupo',
+    'mcc#4': 'mcc4',
+    'bender': 'bender',
+    'molde mcc#4': 'molde-mcc4',
+    'molde mcc#2 e 3': 'molde-mcc23',
+    'desempenadeira': 'cadeira',
+};

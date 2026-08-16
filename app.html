@@ -1796,6 +1796,86 @@
         </div>
     </div>
 
+    <div id="modal-area-oficina" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 720px; max-height: 90vh; overflow-y: auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:10px;">
+                <h2 style="color:var(--text-heading);">
+                    <i id="area-oficina-icone" class="fas fa-toolbox"></i>
+                    <span id="area-oficina-nome">Área</span>
+                </h2>
+                <button class="btn-close-emergency" onclick="window.fecharAreaOficina()"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="mcc-filter-group" id="area-oficina-filtros" style="margin-bottom:16px;">
+                <button class="btn-filter-mcc active" data-status="" onclick="window.filtrarAtividadesArea('', this)">Todas</button>
+                <button class="btn-filter-mcc" data-status="Pendente" onclick="window.filtrarAtividadesArea('Pendente', this)">⏳ Pendente</button>
+                <button class="btn-filter-mcc" data-status="Em Andamento" onclick="window.filtrarAtividadesArea('Em Andamento', this)">🔧 Em Andamento</button>
+                <button class="btn-filter-mcc" data-status="Concluído" onclick="window.filtrarAtividadesArea('Concluído', this)">✅ Concluído</button>
+            </div>
+
+            <div id="area-oficina-lista" style="margin-bottom:20px;"></div>
+
+            <div class="glass-panel" style="padding:16px; margin-bottom:20px;">
+                <h3 style="font-size:0.9rem; color:var(--text-title); margin-bottom:8px;">
+                    <i class="fas fa-users"></i> Equipe da Área
+                </h3>
+                <div id="area-oficina-equipe-lista"></div>
+            </div>
+
+            <div class="glass-panel" style="padding:16px; margin-bottom:20px;">
+                <h3 style="font-size:0.9rem; color:var(--text-title); margin-bottom:12px;">
+                    <i class="fas fa-plus"></i> Nova Atividade
+                </h3>
+
+                <div class="mcc-filter-group" style="margin-bottom:12px;">
+                    <button type="button" class="btn-filter-mcc active" id="area-oficina-tipo-equip" onclick="window.alternarTipoAtividadeOficina('equipamento')">Vinculada a Equipamento</button>
+                    <button type="button" class="btn-filter-mcc" id="area-oficina-tipo-avulsa" onclick="window.alternarTipoAtividadeOficina('avulsa')">Tarefa Avulsa</button>
+                </div>
+
+                <div class="input-group" id="area-oficina-select-equip-wrap" style="margin-bottom:12px;">
+                    <label>Equipamento</label>
+                    <select id="area-oficina-equipamento" class="premium-select" style="width:100%;">
+                        <option value="">Selecione...</option>
+                    </select>
+                </div>
+
+                <div class="form-grid-4" style="margin-bottom:12px;">
+                    <div class="input-group" style="grid-column: span 2;">
+                        <label>Descrição</label>
+                        <textarea id="area-oficina-descricao" class="premium-textarea" rows="1" placeholder="Ex: Trocar retentor / 5S na bancada / Pintar guarda-corpo..."></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>Responsável</label>
+                        <input type="text" id="area-oficina-responsavel" class="premium-input" placeholder="Nome (opcional)">
+                    </div>
+                    <div class="input-group">
+                        <label>Prioridade</label>
+                        <select id="area-oficina-prioridade" class="premium-select" style="width:100%;">
+                            <option value="Normal">Normal</option>
+                            <option value="Alta">🔴 Alta</option>
+                            <option value="Baixa">🔵 Baixa</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn-premium btn-success" onclick="window.confirmarAtividadeOficina()">
+                    <i class="fas fa-check"></i> Lançar Atividade
+                </button>
+            </div>
+
+            <div class="glass-panel" style="padding:16px;">
+                <h3 style="font-size:0.9rem; color:var(--text-title); margin-bottom:8px;">
+                    <i class="fas fa-note-sticky"></i> Anotações da Área
+                    <span class="text-muted" style="font-weight:400; font-size:11px;">
+                        (materiais, procedimento — provisório, até esses módulos existirem)
+                    </span>
+                </h3>
+                <textarea id="area-oficina-notas" class="premium-textarea" rows="4" placeholder="Ex: materiais usados, procedimento..." onchange="window.salvarNotaAreaOficina()"></textarea>
+                <div id="area-oficina-notas-status" class="text-muted" style="font-size:11px; margin-top:4px;"></div>
+            </div>
+        </div>
+    </div>
+
     <div id="modal-historico-ativo" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 760px;">
             <div class="modal-header">
