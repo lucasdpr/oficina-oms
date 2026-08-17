@@ -907,6 +907,128 @@
                 </div>
             </section>
 
+    <section id="aba-area-oficina" class="tab-content">
+        <div class="glass-panel" style="padding:24px; max-width:900px; margin:0 auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:10px;">
+                <h2 style="color:var(--text-heading);">
+                    <i id="area-oficina-icone" class="fas fa-toolbox"></i>
+                    <span id="area-oficina-nome">Área</span>
+                </h2>
+                <button class="btn-close-emergency" onclick="window.fecharAreaOficina()" title="Voltar para a grade de áreas"><i class="fas fa-arrow-left"></i></button>
+            </div>
+
+            <div class="mcc-filter-group" id="area-oficina-filtros" style="margin-bottom:16px;">
+                <button class="btn-filter-mcc active" data-status="" onclick="window.filtrarAtividadesArea('', this)">Todas</button>
+                <button class="btn-filter-mcc" data-status="Pendente" onclick="window.filtrarAtividadesArea('Pendente', this)">⏳ Pendente</button>
+                <button class="btn-filter-mcc" data-status="Em Andamento" onclick="window.filtrarAtividadesArea('Em Andamento', this)">🔧 Em Andamento</button>
+                <button class="btn-filter-mcc" data-status="Concluído" onclick="window.filtrarAtividadesArea('Concluído', this)">✅ Concluído</button>
+            </div>
+
+            <div id="area-oficina-lista" style="margin-bottom:20px;"></div>
+
+            <div class="glass-panel" style="padding:16px; margin-bottom:20px;">
+                <h3 style="font-size:0.9rem; color:var(--text-title); margin-bottom:8px;">
+                    <i class="fas fa-users"></i> Equipe da Área
+                </h3>
+                <div id="area-oficina-equipe-lista"></div>
+            </div>
+
+            <div class="glass-panel" style="padding:16px; margin-bottom:20px;">
+                <h3 style="font-size:0.9rem; color:var(--text-title); margin-bottom:8px;">
+                    <i class="fas fa-boxes-stacked"></i> Materiais Técnicos da Área
+                </h3>
+                <div id="area-oficina-materiais-lista" style="margin-bottom:12px;"></div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <input type="text" id="area-oficina-material-codigo" class="premium-input" placeholder="Código" style="flex:1; min-width:90px;">
+                    <input type="text" id="area-oficina-material-descricao" class="premium-input" placeholder="Descrição do material" style="flex:3; min-width:160px;">
+                    <button class="btn-premium" style="padding:8px 16px;" onclick="window.adicionarMaterialAreaOficina()">
+                        <i class="fas fa-plus"></i> Adicionar
+                    </button>
+                </div>
+            </div>
+
+            <div class="glass-panel" style="padding:16px; margin-bottom:20px;">
+                <h3 style="font-size:0.9rem; color:var(--text-title); margin-bottom:12px;">
+                    <i class="fas fa-plus" id="area-oficina-form-icone"></i> <span id="area-oficina-form-titulo">Nova Atividade</span>
+                </h3>
+
+                <div class="mcc-filter-group oficina-toggle-tipo" style="margin-bottom:12px;">
+                    <button type="button" class="btn-filter-mcc active" id="area-oficina-tipo-equip" onclick="window.alternarTipoAtividadeOficina('equipamento')">Vinculada a Equipamento</button>
+                    <button type="button" class="btn-filter-mcc" id="area-oficina-tipo-avulsa" onclick="window.alternarTipoAtividadeOficina('avulsa')">Tarefa Avulsa</button>
+                </div>
+
+                <div class="input-group" id="area-oficina-select-equip-wrap" style="margin-bottom:12px;">
+                    <label>Equipamento</label>
+                    <select id="area-oficina-equipamento" class="premium-select" style="width:100%;">
+                        <option value="">Selecione...</option>
+                    </select>
+                </div>
+
+                <div class="form-grid-4" style="margin-bottom:12px;">
+                    <div class="input-group" style="grid-column: span 2;">
+                        <label>Descrição</label>
+                        <textarea id="area-oficina-descricao" class="premium-textarea" rows="1" placeholder="Ex: Trocar retentor / 5S na bancada / Pintar guarda-corpo..."></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>Responsável</label>
+                        <select id="area-oficina-responsavel-select" class="premium-select" style="width:100%;" onchange="window.alternarResponsavelOficina()">
+                            <option value="">Selecione...</option>
+                            <option value="__outro__">Outro (digitar nome)</option>
+                        </select>
+                        <input type="text" id="area-oficina-responsavel-outro" class="premium-input hidden" style="width:100%; margin-top:6px;" placeholder="Nome">
+                    </div>
+                    <div class="input-group">
+                        <label>Prioridade</label>
+                        <select id="area-oficina-prioridade" class="premium-select" style="width:100%;">
+                            <option value="Normal">Normal</option>
+                            <option value="Alta">🔴 Alta</option>
+                            <option value="Baixa">🔵 Baixa</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Prazo <span class="text-muted" style="font-weight:400;">(opcional)</span></label>
+                        <input type="date" id="area-oficina-prazo" class="premium-input" style="width:100%;">
+                    </div>
+                </div>
+
+
+                <div class="input-group" style="margin-bottom:12px;">
+                    <label>Foto <span class="text-muted" style="font-weight:400;">(opcional)</span></label>
+                    <input type="file" id="area-oficina-foto-input" accept="image/*" capture="environment" style="display:none;" onchange="window.processarFotoAtividadeOficina(event)">
+                    <button type="button" class="btn-premium" style="width:100%; justify-content:center; padding:10px;" onclick="document.getElementById('area-oficina-foto-input').click()">
+                        <i class="fas fa-camera"></i> Tirar Foto / Anexar
+                    </button>
+                    <div id="area-oficina-foto-preview-container" class="hidden" style="margin-top:10px; position:relative; display:inline-block;">
+                        <img id="area-oficina-foto-preview" src="" style="max-width:100%; max-height:200px; border-radius:8px; border:1px solid var(--border-color);">
+                        <button type="button" onclick="window.removerFotoAtividadeOficina()" style="position:absolute; top:6px; right:6px; background:rgba(0,0,0,0.7); color:#fff; border:none; border-radius:50%; width:26px; height:26px; cursor:pointer;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-premium btn-success" onclick="window.confirmarAtividadeOficina()" style="flex:1;">
+                        <i class="fas fa-check" id="area-oficina-btn-icone"></i> <span id="area-oficina-btn-texto">Lançar Atividade</span>
+                    </button>
+                    <button class="btn-outline-danger hidden" id="area-oficina-btn-cancelar" onclick="window.cancelarEdicaoAtividadeOficina()">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+
+            <div class="glass-panel" style="padding:16px;">
+                <h3 style="font-size:0.9rem; color:var(--text-title); margin-bottom:8px;">
+                    <i class="fas fa-note-sticky"></i> Anotações da Área
+                    <span class="text-muted" style="font-weight:400; font-size:11px;">
+                        (materiais, procedimento — provisório, até esses módulos existirem)
+                    </span>
+                </h3>
+                <textarea id="area-oficina-notas" class="premium-textarea" rows="4" placeholder="Ex: materiais usados, procedimento..." onchange="window.salvarNotaAreaOficina()"></textarea>
+                <div id="area-oficina-notas-status" class="text-muted" style="font-size:11px; margin-top:4px;"></div>
+            </div>
+        </div>
+    </section>
+
             <section id="aba-painel-adm" class="tab-content">
                 <div class="glass-panel" style="border-top:4px solid #38bdf8; padding:24px; margin-bottom:20px;">
                     <h2 style="color:#38bdf8;"><i class="fas fa-file-lines"></i> Painel — ADM</h2>
@@ -1621,7 +1743,7 @@
     <!-- SCRIPTS (consolidados)                   -->
     <!-- ========================================= -->
     <script type="module">
-        import './script.js?v=17';
+        import './script.js?v=18';
         import './ui.js?v=13';
         import './folhaoMolde4.js?v=6';
         import './folhao_bender.js?v=2';
@@ -1879,128 +2001,6 @@
             </div>
         </div>
     </div>
-
-    <section id="aba-area-oficina" class="tab-content">
-        <div class="glass-panel" style="padding:24px; max-width:900px; margin:0 auto;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:10px;">
-                <h2 style="color:var(--text-heading);">
-                    <i id="area-oficina-icone" class="fas fa-toolbox"></i>
-                    <span id="area-oficina-nome">Área</span>
-                </h2>
-                <button class="btn-close-emergency" onclick="window.fecharAreaOficina()" title="Voltar para a grade de áreas"><i class="fas fa-arrow-left"></i></button>
-            </div>
-
-            <div class="mcc-filter-group" id="area-oficina-filtros" style="margin-bottom:16px;">
-                <button class="btn-filter-mcc active" data-status="" onclick="window.filtrarAtividadesArea('', this)">Todas</button>
-                <button class="btn-filter-mcc" data-status="Pendente" onclick="window.filtrarAtividadesArea('Pendente', this)">⏳ Pendente</button>
-                <button class="btn-filter-mcc" data-status="Em Andamento" onclick="window.filtrarAtividadesArea('Em Andamento', this)">🔧 Em Andamento</button>
-                <button class="btn-filter-mcc" data-status="Concluído" onclick="window.filtrarAtividadesArea('Concluído', this)">✅ Concluído</button>
-            </div>
-
-            <div id="area-oficina-lista" style="margin-bottom:20px;"></div>
-
-            <div class="glass-panel" style="padding:16px; margin-bottom:20px;">
-                <h3 style="font-size:0.9rem; color:var(--text-title); margin-bottom:8px;">
-                    <i class="fas fa-users"></i> Equipe da Área
-                </h3>
-                <div id="area-oficina-equipe-lista"></div>
-            </div>
-
-            <div class="glass-panel" style="padding:16px; margin-bottom:20px;">
-                <h3 style="font-size:0.9rem; color:var(--text-title); margin-bottom:8px;">
-                    <i class="fas fa-boxes-stacked"></i> Materiais Técnicos da Área
-                </h3>
-                <div id="area-oficina-materiais-lista" style="margin-bottom:12px;"></div>
-                <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                    <input type="text" id="area-oficina-material-codigo" class="premium-input" placeholder="Código" style="flex:1; min-width:90px;">
-                    <input type="text" id="area-oficina-material-descricao" class="premium-input" placeholder="Descrição do material" style="flex:3; min-width:160px;">
-                    <button class="btn-premium" style="padding:8px 16px;" onclick="window.adicionarMaterialAreaOficina()">
-                        <i class="fas fa-plus"></i> Adicionar
-                    </button>
-                </div>
-            </div>
-
-            <div class="glass-panel" style="padding:16px; margin-bottom:20px;">
-                <h3 style="font-size:0.9rem; color:var(--text-title); margin-bottom:12px;">
-                    <i class="fas fa-plus" id="area-oficina-form-icone"></i> <span id="area-oficina-form-titulo">Nova Atividade</span>
-                </h3>
-
-                <div class="mcc-filter-group oficina-toggle-tipo" style="margin-bottom:12px;">
-                    <button type="button" class="btn-filter-mcc active" id="area-oficina-tipo-equip" onclick="window.alternarTipoAtividadeOficina('equipamento')">Vinculada a Equipamento</button>
-                    <button type="button" class="btn-filter-mcc" id="area-oficina-tipo-avulsa" onclick="window.alternarTipoAtividadeOficina('avulsa')">Tarefa Avulsa</button>
-                </div>
-
-                <div class="input-group" id="area-oficina-select-equip-wrap" style="margin-bottom:12px;">
-                    <label>Equipamento</label>
-                    <select id="area-oficina-equipamento" class="premium-select" style="width:100%;">
-                        <option value="">Selecione...</option>
-                    </select>
-                </div>
-
-                <div class="form-grid-4" style="margin-bottom:12px;">
-                    <div class="input-group" style="grid-column: span 2;">
-                        <label>Descrição</label>
-                        <textarea id="area-oficina-descricao" class="premium-textarea" rows="1" placeholder="Ex: Trocar retentor / 5S na bancada / Pintar guarda-corpo..."></textarea>
-                    </div>
-                    <div class="input-group">
-                        <label>Responsável</label>
-                        <select id="area-oficina-responsavel-select" class="premium-select" style="width:100%;" onchange="window.alternarResponsavelOficina()">
-                            <option value="">Selecione...</option>
-                            <option value="__outro__">Outro (digitar nome)</option>
-                        </select>
-                        <input type="text" id="area-oficina-responsavel-outro" class="premium-input hidden" style="width:100%; margin-top:6px;" placeholder="Nome">
-                    </div>
-                    <div class="input-group">
-                        <label>Prioridade</label>
-                        <select id="area-oficina-prioridade" class="premium-select" style="width:100%;">
-                            <option value="Normal">Normal</option>
-                            <option value="Alta">🔴 Alta</option>
-                            <option value="Baixa">🔵 Baixa</option>
-                        </select>
-                    </div>
-                    <div class="input-group">
-                        <label>Prazo <span class="text-muted" style="font-weight:400;">(opcional)</span></label>
-                        <input type="date" id="area-oficina-prazo" class="premium-input" style="width:100%;">
-                    </div>
-                </div>
-
-
-                <div class="input-group" style="margin-bottom:12px;">
-                    <label>Foto <span class="text-muted" style="font-weight:400;">(opcional)</span></label>
-                    <input type="file" id="area-oficina-foto-input" accept="image/*" capture="environment" style="display:none;" onchange="window.processarFotoAtividadeOficina(event)">
-                    <button type="button" class="btn-premium" style="width:100%; justify-content:center; padding:10px;" onclick="document.getElementById('area-oficina-foto-input').click()">
-                        <i class="fas fa-camera"></i> Tirar Foto / Anexar
-                    </button>
-                    <div id="area-oficina-foto-preview-container" class="hidden" style="margin-top:10px; position:relative; display:inline-block;">
-                        <img id="area-oficina-foto-preview" src="" style="max-width:100%; max-height:200px; border-radius:8px; border:1px solid var(--border-color);">
-                        <button type="button" onclick="window.removerFotoAtividadeOficina()" style="position:absolute; top:6px; right:6px; background:rgba(0,0,0,0.7); color:#fff; border:none; border-radius:50%; width:26px; height:26px; cursor:pointer;">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div style="display:flex; gap:10px;">
-                    <button class="btn-premium btn-success" onclick="window.confirmarAtividadeOficina()" style="flex:1;">
-                        <i class="fas fa-check" id="area-oficina-btn-icone"></i> <span id="area-oficina-btn-texto">Lançar Atividade</span>
-                    </button>
-                    <button class="btn-outline-danger hidden" id="area-oficina-btn-cancelar" onclick="window.cancelarEdicaoAtividadeOficina()">
-                        Cancelar
-                    </button>
-                </div>
-            </div>
-
-            <div class="glass-panel" style="padding:16px;">
-                <h3 style="font-size:0.9rem; color:var(--text-title); margin-bottom:8px;">
-                    <i class="fas fa-note-sticky"></i> Anotações da Área
-                    <span class="text-muted" style="font-weight:400; font-size:11px;">
-                        (materiais, procedimento — provisório, até esses módulos existirem)
-                    </span>
-                </h3>
-                <textarea id="area-oficina-notas" class="premium-textarea" rows="4" placeholder="Ex: materiais usados, procedimento..." onchange="window.salvarNotaAreaOficina()"></textarea>
-                <div id="area-oficina-notas-status" class="text-muted" style="font-size:11px; margin-top:4px;"></div>
-            </div>
-        </div>
-    </section>
 
     <div id="modal-historico-ativo" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 760px;">
