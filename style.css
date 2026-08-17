@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap');
 
 /* ==========================================
    VARIÁVEIS GLOBAIS - MODO ESCURO (PADRÃO INDUSTRIAL)
@@ -3297,4 +3298,212 @@ h1, h2, h3, h4, h5, h6 {
         flex-direction: row;
         text-align: left;
     }
+}
+
+/* ==============================================================
+   style-premium.css
+   ==============================================================
+   Camada de refinamento visual do OMS — carregada DEPOIS de
+   style.css, sem alterar nenhuma classe/ID usada pelo JavaScript.
+   Só eleva o acabamento: tipografia, profundidade, brilho e
+   microanimações. Se algo aqui não agradar, é só remover o <link>
+   no app.html/index.html que o site volta exatamente a como estava.
+
+   Direção: painel de telemetria industrial premium — pensado pra
+   ser usado num tablet no chão de fábrica, mas com o polimento de
+   um dashboard SaaS de ponta. A assinatura visual é o "pulso" nos
+   indicadores críticos, como um alarme de painel de controle real.
+   ============================================================== */
+
+
+:root {
+  --font-display: 'Space Grotesk', var(--font-family);
+}
+
+/* --------------------------------------------------------------
+   TIPOGRAFIA — títulos ganham a fonte de destaque, com leve
+   aperto no tracking pra parecer mais "instrumento de precisão"
+   e menos "documento de texto".
+   -------------------------------------------------------------- */
+.welcome-box h1,
+h2, h3,
+.kpi-data h4,
+.sidebar-header h2,
+.login-title,
+.folhao-header h2,
+.modal-content h2 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+.kpi-data h4 {
+  font-size: 2.1rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+/* --------------------------------------------------------------
+   FUNDO — textura sutil tipo blueprint/grid industrial, quase
+   imperceptível, só pra dar profundidade ao preto chapado.
+   -------------------------------------------------------------- */
+body {
+  background-image:
+    linear-gradient(rgba(56, 189, 248, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.025) 1px, transparent 1px);
+  background-size: 42px 42px;
+  background-attachment: fixed;
+}
+
+body.light-mode {
+  background-image:
+    linear-gradient(rgba(2, 132, 199, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(2, 132, 199, 0.03) 1px, transparent 1px);
+  background-size: 42px 42px;
+}
+
+/* --------------------------------------------------------------
+   GLASS PANELS — sombra mais rica e uma borda superior sutil em
+   gradiente, dando a sensação de painel iluminado por dentro.
+   -------------------------------------------------------------- */
+.glass-panel {
+  position: relative;
+  box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* --------------------------------------------------------------
+   WELCOME BOX — cabeçalho principal do Painel Geral ganha um brilho
+   ambiente sutil que acompanha o mouse (via CSS puro, um glow fixo
+   no canto), reforçando a ideia de "sistema vivo".
+   -------------------------------------------------------------- */
+.welcome-box {
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-box::before {
+  content: "";
+  position: absolute;
+  top: -60%;
+  right: -10%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.10) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.welcome-box h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------
+   BADGE "SISTEMA ONLINE" — o ponto ganha um pulso real de radar,
+   em vez do ícone estático.
+   -------------------------------------------------------------- */
+.plant-status-badge i {
+  animation: pulso-status 2s ease-in-out infinite;
+}
+
+@keyframes pulso-status {
+  0%, 100% { opacity: 1; text-shadow: 0 0 0 rgba(34, 197, 94, 0); }
+  50% { opacity: 0.55; text-shadow: 0 0 10px rgba(34, 197, 94, 0.9); }
+}
+
+/* --------------------------------------------------------------
+   KPI CARDS — mais profundidade, ícone com halo, e um pulso de
+   alarme real no card crítico (o elemento de assinatura da página).
+   -------------------------------------------------------------- */
+.kpi-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+}
+
+.kpi-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 40%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.kpi-card:hover {
+  transform: translateY(-4px);
+}
+
+.kpi-icon {
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.02);
+}
+
+.kpi-card.danger .kpi-icon {
+  box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.06);
+}
+.kpi-card.warning .kpi-icon {
+  box-shadow: 0 0 0 6px rgba(234, 179, 8, 0.06);
+}
+.kpi-card.success .kpi-icon {
+  box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.06);
+}
+
+/* O card de "Ativos Críticos" pulsa suavemente — assinatura visual
+   da página, um alarme discreto e constante, não um pisca-pisca. */
+.kpi-card.danger {
+  animation: alarme-critico 3s ease-in-out infinite;
+}
+
+@keyframes alarme-critico {
+  0%, 100% { box-shadow: var(--shadow-card); }
+  50% { box-shadow: var(--shadow-card), 0 0 26px rgba(239, 68, 68, 0.18); }
+}
+
+/* --------------------------------------------------------------
+   SIDEBAR — link ativo com o brilho um pouco mais desenhado, e
+   hover mais macio.
+   -------------------------------------------------------------- */
+.nav-link {
+  border-radius: var(--radius-md);
+}
+
+.nav-link.active {
+  background: linear-gradient(90deg, var(--info-bg), transparent);
+}
+
+.sidebar-header h2 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* --------------------------------------------------------------
+   TAGS TÉCNICAS (IDs de equipamento etc.) — reforça o caráter
+   "instrumento de precisão" da fonte mono já usada no sistema.
+   -------------------------------------------------------------- */
+.font-code, .ind-card-tag {
+  letter-spacing: 0.02em;
+}
+
+/* --------------------------------------------------------------
+   BOTÕES PRINCIPAIS — leve profundidade extra no hover.
+   -------------------------------------------------------------- */
+.btn-premium:hover,
+.btn-quick-action:hover {
+  transform: translateY(-2px);
+}
+
+/* --------------------------------------------------------------
+   ACESSIBILIDADE — respeita quem pediu menos movimento no sistema.
+   -------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .plant-status-badge i,
+  .kpi-card.danger,
+  .kpi-card:hover,
+  .btn-premium:hover,
+  .btn-quick-action:hover {
+    animation: none !important;
+    transform: none !important;
+  }
 }
