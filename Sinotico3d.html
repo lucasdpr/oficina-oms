@@ -344,6 +344,27 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 const URL_LOCAL = "http://localhost:8000";
 const URL_RENDER = "https://api-oms-csn.onrender.com";
 
+// ==========================================================================
+// MODO VISITANTE (somente leitura) — mesma checagem que o app.html
+// principal usa. O Sinótico 3D é uma página separada (abre em nova aba,
+// sem compartilhar estado JS com o app.html), mas ambos são do mesmo
+// domínio, então dá pra ler a mesma chave do localStorage
+// ("oms_operador_v32_local") que o login/modo visitante já grava lá.
+// Antes desta correção, esta página não checava login NENHUM: qualquer
+// pessoa (inclusive em Modo Visitante) conseguia editar observações e
+// até encaminhar uma peça pra Oficina direto pelo Sinótico 3D.
+// ==========================================================================
+function ehVisitante() {
+    try {
+        const operador = JSON.parse(localStorage.getItem("oms_operador_v32_local"));
+        return !!(operador && operador.visitante);
+    } catch (e) {
+        return false;
+    }
+}
+
+const AVISO_SOMENTE_LEITURA = "🔒 Modo Visitante: apenas visualização.\nFaça login com sua matrícula para criar, editar ou excluir.";
+
 function fetchComTimeout(url, opts = {}, ms = 1500) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), ms);
@@ -1394,25 +1415,27 @@ function abrirModalPeca(slot, peca) {
 
             <div class="acoes">
                 <button class="btn-prontuario" id="btn-prontuario">📖 Abrir Prontuário</button>
-                <button class="btn-oficina" id="btn-oficina">🔧 Encaminhar p/ Oficina</button>
+                <button class="btn-oficina" id="btn-oficina" ${ehVisitante() ? 'disabled title="Modo Visitante: apenas visualização"' : ''}>${ehVisitante() ? '🔒 Somente Leitura' : '🔧 Encaminhar p/ Oficina'}</button>
             </div>
 
             <div class="obs-wrap">
                 <label class="obs-label" for="obs-textarea">Observação</label>
-                <textarea id="obs-textarea" class="obs-textarea" placeholder="Anotações sobre esta peça (situação, pendências, avarias)...">${escaparHtml(peca.observacao || '')}</textarea>
+                <textarea id="obs-textarea" class="obs-textarea" placeholder="Anotações sobre esta peça (situação, pendências, avarias)..." ${ehVisitante() ? 'readonly' : ''}>${escaparHtml(peca.observacao || '')}</textarea>
                 <div class="obs-footer">
                     <span id="obs-status" class="obs-status"></span>
-                    <button class="btn-salvar-obs" id="btn-salvar-obs">💾 Salvar Observação</button>
+                    <button class="btn-salvar-obs" id="btn-salvar-obs" ${ehVisitante() ? 'disabled title="Modo Visitante: apenas visualização"' : ''}>${ehVisitante() ? '🔒 Somente Leitura' : '💾 Salvar Observação'}</button>
                 </div>
             </div>
         `;
 
         // 🆕 Observação: edita aqui e salva direto no Postgres via
         // /api/atualizar_peca (a mesma rota que agora sabe fazer upsert).
+        // Em Modo Visitante, os botões já saem "disabled" do HTML acima —
+        // não precisa nem tentar anexar os cliques de edição.
         const obsTextarea = modal.querySelector('#obs-textarea');
         const obsStatus = modal.querySelector('#obs-status');
         const btnSalvarObs = modal.querySelector('#btn-salvar-obs');
-        if (obsTextarea && obsStatus && btnSalvarObs) {
+        if (obsTextarea && obsStatus && btnSalvarObs && !ehVisitante()) {
             obsTextarea.addEventListener('input', () => {
                 obsStatus.textContent = '';
                 obsStatus.className = 'obs-status';
@@ -1458,6 +1481,7 @@ function abrirModalPeca(slot, peca) {
         });
 
         modal.querySelector('#btn-oficina').addEventListener('click', async () => {
+            if (ehVisitante()) { alert(AVISO_SOMENTE_LEITURA); return; }
             if (typeof window.iniciarSaque === 'function') {
                 window.iniciarSaque(peca.id);
                 fecharModal();
