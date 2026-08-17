@@ -3020,6 +3020,189 @@ let OFICINA_FOTO_BASE64 = null;
 let OFICINA_EQUIPE_ATUAL = []; // equipe da área aberta no momento (usada no seletor de Responsável)
 let OFICINA_EDITANDO_ID = null; // null = criando atividade nova; número = editando essa atividade
 
+// ==========================================
+// PAINÉIS ADMINISTRATIVOS (ADM, Almoxarifado, Ponte Rolante, Logística)
+// ==========================================
+// Ao contrário das 12 áreas técnicas (que abrem o modal genérico de
+// atividades vinculado a equipamento), essas 4 áreas não têm
+// equipamentos — só equipe e atividades soltas (e, no caso do
+// Almoxarifado, o estoque geral de materiais). Por isso ganham um
+// painel próprio, no estilo do Painel Geral, em vez do modal.
+//
+// Configuração de cada painel: nome de exibição, cor, ícone e se deve
+// (ou não) mostrar o resumo do estoque de materiais.
+const PAINEL_AREA_CONFIG = {
+    'adm':            { nome: 'ADM',            cor: '#38bdf8', estoque: false },
+    'almoxarifado':   { nome: 'Almoxarifado',   cor: '#22c55e', estoque: true  },
+    'ponte-rolante':  { nome: 'Ponte Rolante',  cor: '#3b82f6', estoque: false },
+    'logistica':      { nome: 'Logística',      cor: '#a855f7', estoque: false },
+};
+
+// Limite abaixo do qual um material é considerado "saldo baixo" no
+// resumo do painel do Almoxarifado. Ajustável aqui sem mexer no resto.
+const PAINEL_ALMOXARIFADO_LIMITE_BAIXO = 5;
+
+window.renderPainelAreaAdministrativa = async function(chave) {
+    const cfg = PAINEL_AREA_CONFIG[chave];
+    const container = document.getElementById(`painel-${chave}-container`);
+    if (!cfg || !container) return;
+
+    // Esqueleto fixo do painel — os números/listas são preenchidos
+    // depois, conforme cada chamada de API vai respondendo (não trava
+    // a tela esperando tudo de uma vez).
+    container.innerHTML = `
+        <div class="kpi-container" style="margin-bottom:20px;">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="color:${cfg.cor};"><i class="fas fa-users"></i></div>
+                <div class="kpi-data"><h4 id="painel-${chave}-kpi-equipe">–</h4><p>Equipe Ativa</p></div>
+            </div>
+            <div class="kpi-card warning">
+                <div class="kpi-icon glow-warning"><i class="fas fa-hourglass-half"></i></div>
+                <div class="kpi-data"><h4 id="painel-${chave}-kpi-pendentes">–</h4><p>Atividades Pendentes</p></div>
+            </div>
+            <div class="kpi-card danger">
+                <div class="kpi-icon glow-danger"><i class="fas fa-triangle-exclamation"></i></div>
+                <div class="kpi-data"><h4 id="painel-${chave}-kpi-atrasadas">–</h4><p>Atrasadas</p></div>
+            </div>
+            <div class="kpi-card success">
+                <div class="kpi-icon glow-success"><i class="fas fa-check-circle"></i></div>
+                <div class="kpi-data"><h4 id="painel-${chave}-kpi-concluidas">–</h4><p>Concluídas (7 dias)</p></div>
+            </div>
+        </div>
+
+        ${cfg.estoque ? `
+        <div class="glass-panel" style="padding:24px; margin-bottom:20px;">
+            <div class="flex-between" style="margin-bottom:12px;">
+                <h3 style="color:var(--text-title); font-size:1rem;"><i class="fas fa-boxes-stacked"></i> Resumo do Estoque</h3>
+                <button class="btn-xs-primary" onclick="window.abrirAba(null,'aba-almoxarifado')" style="color:var(--text-accent); background:rgba(59,130,246,0.1);">
+                    Ver Almoxarifado Completo <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+            <div class="kpi-container" style="margin-bottom:16px;">
+                <div class="kpi-card"><div class="kpi-data"><h4 id="painel-${chave}-kpi-itens-estoque">–</h4><p>Itens Cadastrados</p></div></div>
+                <div class="kpi-card danger"><div class="kpi-data"><h4 id="painel-${chave}-kpi-estoque-baixo">–</h4><p>Saldo Baixo (≤ ${PAINEL_ALMOXARIFADO_LIMITE_BAIXO})</p></div></div>
+            </div>
+            <div id="painel-${chave}-estoque-lista"></div>
+        </div>
+        ` : ''}
+
+        <div class="dashboard-main-grid">
+            <div class="glass-panel" style="padding:24px;">
+                <div class="flex-between" style="margin-bottom:16px;">
+                    <h3 style="color:var(--text-title); font-size:1rem;"><i class="fas fa-list"></i> Atividades Recentes</h3>
+                    <button class="btn-xs-primary" onclick="window.abrirAreaOficina('${chave}')" style="color:var(--text-accent); background:rgba(59,130,246,0.1);">
+                        <i class="fas fa-plus"></i> Lançar Atividade
+                    </button>
+                </div>
+                <div id="painel-${chave}-atividades-lista"></div>
+            </div>
+
+            <div class="glass-panel" style="padding:24px;">
+                <h3 style="color:var(--text-title); font-size:1rem; margin-bottom:16px;"><i class="fas fa-user-hard-hat"></i> Equipe da Área</h3>
+                <div id="painel-${chave}-equipe-lista"></div>
+            </div>
+        </div>
+    `;
+
+    // ---- EQUIPE ----
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/equipe/${encodeURIComponent(chave)}`, { cache: 'no-store' });
+        const equipe = resp.ok ? await resp.json() : [];
+
+        const kpiEquipe = document.getElementById(`painel-${chave}-kpi-equipe`);
+        if (kpiEquipe) kpiEquipe.textContent = equipe.length;
+
+        const listaEquipe = document.getElementById(`painel-${chave}-equipe-lista`);
+        if (listaEquipe) {
+            listaEquipe.innerHTML = equipe.length
+                ? equipe.map(p => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border);">
+                        <span style="color:var(--text-body);">${p.nome}</span>
+                        <span class="text-muted" style="font-size:12px;">${p.cargo || ''}</span>
+                    </div>
+                `).join('')
+                : `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhum colaborador cadastrado nesta área ainda.</div>`;
+        }
+    } catch (e) {
+        console.error(`⚠️ Não consegui carregar a equipe do painel [${chave}]:`, e);
+    }
+
+    // ---- ATIVIDADES ----
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/atividades?area=${encodeURIComponent(chave)}`, { cache: 'no-store' });
+        const atividades = resp.ok ? await resp.json() : [];
+
+        const pendentes = atividades.filter(a => a.status === 'Pendente').length;
+        const atrasadas = atividades.filter(a => atividadeEstaAtrasada(a)).length;
+        const dataLimite7dias = (() => {
+            const d = new Date();
+            d.setDate(d.getDate() - 7);
+            return d.toISOString().slice(0, 10);
+        })();
+        const concluidasRecentes = atividades.filter(a =>
+            a.status === 'Concluído' && a.concluido_em && a.concluido_em.slice(0, 10) >= dataLimite7dias
+        ).length;
+
+        const definir = (id, valor) => { const el = document.getElementById(id); if (el) el.textContent = valor; };
+        definir(`painel-${chave}-kpi-pendentes`, pendentes);
+        definir(`painel-${chave}-kpi-atrasadas`, atrasadas);
+        definir(`painel-${chave}-kpi-concluidas`, concluidasRecentes);
+
+        const listaAtividades = document.getElementById(`painel-${chave}-atividades-lista`);
+        if (listaAtividades) {
+            const recentes = [...atividades].sort((a, b) => (b.id || 0) - (a.id || 0)).slice(0, 10);
+            listaAtividades.innerHTML = recentes.length
+                ? recentes.map(a => {
+                    const atrasada = atividadeEstaAtrasada(a);
+                    const corStatus = a.status === 'Concluído' ? 'var(--success)' : (atrasada ? 'var(--danger)' : 'var(--warning)');
+                    return `
+                        <div style="padding:10px 0; border-bottom:1px solid var(--border);">
+                            <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+                                <span style="color:var(--text-body); font-size:13px;">${a.descricao || 'Sem descrição'}</span>
+                                <span style="font-size:11px; font-weight:700; color:${corStatus};">${atrasada ? 'ATRASADA' : (a.status || '').toUpperCase()}</span>
+                            </div>
+                            <div class="text-muted" style="font-size:11px; margin-top:2px;">${a.responsavel || 'Sem responsável'}${a.prazo ? ' · prazo ' + a.prazo.split('-').reverse().join('/') : ''}</div>
+                        </div>
+                    `;
+                }).join('')
+                : `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhuma atividade registrada nesta área ainda.</div>`;
+        }
+    } catch (e) {
+        console.error(`⚠️ Não consegui carregar as atividades do painel [${chave}]:`, e);
+    }
+
+    // ---- ESTOQUE (só Almoxarifado) ----
+    if (cfg.estoque) {
+        try {
+            const apiBase = await resolverApiBase();
+            const resp = await fetch(`${apiBase}/api/materiais`, { cache: 'no-store' });
+            const materiais = resp.ok ? await resp.json() : [];
+            const baixoEstoque = materiais.filter(m => Number(m.qtd) <= PAINEL_ALMOXARIFADO_LIMITE_BAIXO);
+
+            const definir = (id, valor) => { const el = document.getElementById(id); if (el) el.textContent = valor; };
+            definir(`painel-${chave}-kpi-itens-estoque`, materiais.length);
+            definir(`painel-${chave}-kpi-estoque-baixo`, baixoEstoque.length);
+
+            const listaEstoque = document.getElementById(`painel-${chave}-estoque-lista`);
+            if (listaEstoque) {
+                listaEstoque.innerHTML = baixoEstoque.length
+                    ? `<div class="text-muted" style="font-size:12px; margin-bottom:8px;">Itens com saldo baixo (≤ ${PAINEL_ALMOXARIFADO_LIMITE_BAIXO}):</div>` +
+                      baixoEstoque.slice(0, 10).map(m => `
+                        <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+                            <span style="color:var(--text-body); font-size:13px;">${m.descricao}</span>
+                            <span style="color:var(--danger); font-weight:700; font-size:13px;">${m.qtd}</span>
+                        </div>
+                    `).join('')
+                    : `<div class="text-muted" style="text-align:center; padding:12px 0;">Nenhum item com saldo baixo no momento ✅</div>`;
+            }
+        } catch (e) {
+            console.error('⚠️ Não consegui carregar o resumo do estoque no painel do Almoxarifado:', e);
+        }
+    }
+};
+
 // --------------------------------------------------------------
 // ABRIR O MODAL DE UMA ÁREA (chamado ao clicar num card da grade)
 // --------------------------------------------------------------
@@ -3027,29 +3210,31 @@ let OFICINA_EDITANDO_ID = null; // null = criando atividade nova; número = edit
 // ATALHO: abre direto a tela de uma área da Oficina a partir de um
 // link dedicado no menu lateral (nav-area-oficina), sem precisar
 // passar pela grade de cards da aba "Oficina" primeiro. Marca o link
-// clicado como ativo no menu (já que ele não corresponde a nenhuma
-// <section class="tab-content">, é só um atalho para dentro da aba
-// "aba-oficina" + abertura automática do modal daquela área).
+// clicado como ativo no menu.
 // --------------------------------------------------------------
 window.abrirAreaOficinaDireto = function(event, chave) {
     if (event) event.preventDefault();
 
-    window.abrirAba(event, 'aba-oficina');
+    // abrirAreaOficina() já chama abrirAba(null, 'aba-area-oficina')
+    // logo na primeira linha (de forma síncrona, antes de qualquer
+    // "await") — isso já limpa a classe "active" de todos os links do
+    // menu. Por isso marcamos ESTE link como ativo só depois de chamar
+    // a função, e não antes (senão essa marcação seria apagada).
+    if (typeof window.abrirAreaOficina === 'function') window.abrirAreaOficina(chave);
 
-    document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
     if (event && event.currentTarget) event.currentTarget.classList.add("active");
-
-    // Dá um respiro pro carregarOficina() (chamado dentro do abrirAba)
-    // terminar de buscar as atividades antes de abrir o modal da área
-    // — assim os contadores/lista já vêm certos na primeira abertura.
-    setTimeout(() => {
-        if (typeof window.abrirAreaOficina === 'function') window.abrirAreaOficina(chave);
-    }, 50);
 };
 
-window.abrirAreaOficina = function(chave) {
+window.abrirAreaOficina = async function(chave) {
     const area = AREAS_OFICINA.find(a => a.chave === chave);
     if (!area) return;
+
+    // Agora é uma aba de verdade (não mais um modal por cima da tela) —
+    // abrirAba() já cuida de esconder as outras abas e marcar esta como
+    // ativa. Chamado com event=null porque pode vir de vários lugares
+    // (card da grade, botão do painel administrativo, link direto do
+    // menu lateral).
+    window.abrirAba(null, 'aba-area-oficina');
 
     OFICINA_AREA_ATUAL = chave;
     OFICINA_FILTRO_STATUS_ATUAL = '';
@@ -3090,17 +3275,29 @@ window.abrirAreaOficina = function(chave) {
         }
     }
 
+    // Atualiza o cache de atividades antes de renderizar — necessário
+    // porque agora essa tela pode ser aberta direto (link do menu, ou
+    // botão "Lançar Atividade" de um painel administrativo), sem
+    // necessariamente ter passado pela grade da aba "Oficina" antes
+    // (que normalmente é quem carrega esse cache).
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/atividades`, { cache: 'no-store' });
+        const todas = resp.ok ? await resp.json() : [];
+        OFICINA_ATIVIDADES_CACHE = Array.isArray(todas) ? todas : [];
+    } catch (e) {
+        console.error('⚠️ Não consegui atualizar as atividades da oficina:', e);
+    }
+
     renderizarAtividadesArea();
     carregarNotaAreaOficina(chave);
     carregarEquipeAreaOficina(chave);
     carregarMateriaisAreaOficina(chave);
-
-    document.getElementById('modal-area-oficina').classList.remove('hidden');
 };
 
 window.fecharAreaOficina = function() {
-    document.getElementById('modal-area-oficina').classList.add('hidden');
     OFICINA_AREA_ATUAL = null;
+    window.abrirAba(null, 'aba-oficina');
 };
 
 // --------------------------------------------------------------
@@ -3873,6 +4070,10 @@ window.abrirAba = function(event, idAba) {
     if (idAba === "aba-tecnico" && typeof renderPainelTecnico === 'function') renderPainelTecnico();
     if (idAba === "aba-oficina" && typeof carregarOficina === 'function') carregarOficina();
     if (idAba === "aba-ocorrencia" && typeof window.renderAbaOcorrencia === 'function') window.renderAbaOcorrencia();
+    if (idAba === "aba-painel-adm" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('adm');
+    if (idAba === "aba-painel-almoxarifado" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('almoxarifado');
+    if (idAba === "aba-painel-ponte-rolante" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('ponte-rolante');
+    if (idAba === "aba-painel-logistica" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('logistica');
     
     if (idAba === "aba-producao") {
         if (typeof window.carregarHistoricoApontamentoGeral === 'function') window.carregarHistoricoApontamentoGeral();
