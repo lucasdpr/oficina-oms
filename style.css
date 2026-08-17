@@ -3351,7 +3351,6 @@ body {
     linear-gradient(rgba(56, 189, 248, 0.025) 1px, transparent 1px),
     linear-gradient(90deg, rgba(56, 189, 248, 0.025) 1px, transparent 1px);
   background-size: 42px 42px;
-  background-attachment: fixed;
 }
 
 body.light-mode {
