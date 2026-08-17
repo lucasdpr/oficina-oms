@@ -1016,11 +1016,18 @@
                 </div>
             </div>
 
+            <div class="glass-panel hidden" id="area-oficina-procedimentos-card" style="padding:16px;">
+                <h3 style="font-size:0.9rem; color:var(--text-title); margin-bottom:12px;">
+                    <i class="fas fa-clipboard-list"></i> Procedimentos Operacionais
+                </h3>
+                <div id="area-oficina-procedimentos-lista"></div>
+            </div>
+
             <div class="glass-panel" style="padding:16px;">
                 <h3 style="font-size:0.9rem; color:var(--text-title); margin-bottom:8px;">
                     <i class="fas fa-note-sticky"></i> Anotações da Área
                     <span class="text-muted" style="font-weight:400; font-size:11px;">
-                        (materiais, procedimento — provisório, até esses módulos existirem)
+                        (observações livres do dia a dia)
                     </span>
                 </h3>
                 <textarea id="area-oficina-notas" class="premium-textarea" rows="4" placeholder="Ex: materiais usados, procedimento..." onchange="window.salvarNotaAreaOficina()"></textarea>
@@ -1028,6 +1035,35 @@
             </div>
         </div>
     </section>
+
+    <div id="modal-procedimento" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width:720px; max-height:90vh; overflow-y:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; gap:10px;">
+                <div>
+                    <h2 style="color:var(--text-heading); margin-bottom:2px;" id="procedimento-titulo">Procedimento</h2>
+                    <div class="text-muted" style="font-size:11px;" id="procedimento-meta"></div>
+                </div>
+                <button class="btn-close-emergency" onclick="window.fecharModalProcedimento()"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="glass-panel" style="padding:14px; margin:14px 0; font-size:12.5px;" id="procedimento-info"></div>
+
+            <div class="glass-panel hidden" style="padding:14px; margin-bottom:14px;" id="procedimento-tabela-referencia"></div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span class="text-muted" style="font-size:12px;">Etapas</span>
+                <span id="procedimento-progresso" style="font-size:12px; font-weight:700; color:var(--text-accent);">0 / 0</span>
+            </div>
+            <div id="procedimento-etapas-lista"></div>
+
+            <div style="display:flex; gap:10px; margin-top:18px;">
+                <button class="btn-premium btn-success" style="flex:1;" onclick="window.concluirProcedimento()">
+                    <i class="fas fa-check-double"></i> Concluir Procedimento
+                </button>
+            </div>
+            <div class="text-muted" style="font-size:11px; margin-top:8px;" id="procedimento-ultima-execucao"></div>
+        </div>
+    </div>
 
             <section id="aba-painel-adm" class="tab-content">
                 <div class="glass-panel" style="border-top:4px solid #38bdf8; padding:24px; margin-bottom:20px;">
@@ -1743,7 +1779,8 @@
     <!-- SCRIPTS (consolidados)                   -->
     <!-- ========================================= -->
     <script type="module">
-        import './script.js?v=18';
+        import './script.js?v=19';
+        import './procedimentosOficina.js?v=1';
         import './ui.js?v=13';
         import './folhaoMolde4.js?v=6';
         import './folhao_bender.js?v=2';

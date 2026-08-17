@@ -11,7 +11,7 @@
 // usando a copia antiga guardada em cache.
 // ==============================================================
 
-const CACHE_VERSION = "oms-v26";
+const CACHE_VERSION = "oms-v27";
 
 // Arquivos baixados e guardados assim que o app é instalado.
 // (não inclui chamadas de API - essas nunca ficam em cache)
@@ -24,6 +24,7 @@ const ARQUIVOS_PARA_CACHE = [
     "./ui.js",
     "./banco.js",
     "./dados.js",
+    "./procedimentosOficina.js",
     "./dadosMateriaisSegmentoGrupo.js",
     "./folhaoMolde4.js",
     "./folhaoMolde23.js",

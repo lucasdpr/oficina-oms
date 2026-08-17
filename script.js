@@ -3293,6 +3293,7 @@ window.abrirAreaOficina = async function(chave) {
     carregarNotaAreaOficina(chave);
     carregarEquipeAreaOficina(chave);
     carregarMateriaisAreaOficina(chave);
+    renderProcedimentosArea(chave);
 };
 
 window.fecharAreaOficina = function() {
@@ -3728,6 +3729,209 @@ window.excluirMaterialAreaOficina = async function(id) {
         await carregarMateriaisAreaOficina(OFICINA_AREA_ATUAL);
     } catch (e) {
         console.error('⚠️ Erro ao excluir material:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+};
+
+// ==============================================================
+// PROCEDIMENTOS OPERACIONAIS (checklist de etapas por área)
+// ==============================================================
+// Conteúdo dos procedimentos (passo a passo, EPIs, ferramentas) vem de
+// PROCEDIMENTOS_POR_AREA, definido em procedimentosOficina.js — este
+// arquivo só cuida de MOSTRAR isso e registrar cada execução no banco.
+let PROCEDIMENTO_ATUAL = null; // objeto do procedimento aberto no modal
+let PROCEDIMENTO_ETAPAS_MARCADAS = new Set(); // ids das etapas marcadas na execução atual
+
+// Lista, dentro da tela da área, quais procedimentos existem pra ela
+// (card só aparece se houver pelo menos 1 cadastrado).
+function renderProcedimentosArea(chave) {
+    const card = document.getElementById('area-oficina-procedimentos-card');
+    const lista = document.getElementById('area-oficina-procedimentos-lista');
+    if (!card || !lista) return;
+
+    const procedimentos = (window.PROCEDIMENTOS_POR_AREA && window.PROCEDIMENTOS_POR_AREA[chave]) || [];
+    if (procedimentos.length === 0) {
+        card.classList.add('hidden');
+        return;
+    }
+
+    card.classList.remove('hidden');
+    lista.innerHTML = procedimentos.map(p => `
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border-color);">
+            <div style="min-width:0;">
+                <div style="font-weight:700; color:var(--text-heading); font-size:13px;">${p.nome}</div>
+                <div class="text-muted" style="font-size:11px;">Nº ${p.id} · Rev. ${p.revisao || '-'} · ${p.frequencia || ''}</div>
+            </div>
+            <button class="btn-premium" style="flex-shrink:0; padding:8px 14px; font-size:12px;" onclick="window.abrirProcedimento('${chave}','${p.id}')">
+                <i class="fas fa-clipboard-check"></i> Abrir
+            </button>
+        </div>
+    `).join('');
+}
+window.renderProcedimentosArea = renderProcedimentosArea;
+
+// Abre o modal com o procedimento completo (EPIs, ferramentas, checklist
+// de etapas). Também busca a última execução registrada, só pra mostrar
+// "última vez feito por Fulano em tal data" como referência.
+window.abrirProcedimento = async function(chave, procedimentoId) {
+    const procedimentos = (window.PROCEDIMENTOS_POR_AREA && window.PROCEDIMENTOS_POR_AREA[chave]) || [];
+    const procedimento = procedimentos.find(p => p.id === procedimentoId);
+    if (!procedimento) return;
+
+    PROCEDIMENTO_ATUAL = { ...procedimento, area: chave };
+    PROCEDIMENTO_ETAPAS_MARCADAS = new Set();
+
+    document.getElementById('procedimento-titulo').textContent = procedimento.nome;
+    document.getElementById('procedimento-meta').textContent =
+        `Nº ${procedimento.id} · Revisão ${procedimento.revisao || '-'} (${procedimento.dataRevisao || ''}) · Frequência: ${procedimento.frequencia || '-'}`;
+
+    const info = document.getElementById('procedimento-info');
+    info.innerHTML = `
+        ${procedimento.objetivo ? `<p style="margin-bottom:10px;"><strong>Objetivo:</strong> ${procedimento.objetivo}</p>` : ''}
+        ${procedimento.responsavel ? `<p style="margin-bottom:10px;"><strong>Responsável:</strong> ${procedimento.responsavel}</p>` : ''}
+        ${(procedimento.seguranca || []).length ? `<p style="margin-bottom:6px;"><strong>EPIs:</strong> ${procedimento.seguranca.join(', ')}</p>` : ''}
+        ${(procedimento.ferramentas || []).length ? `<p style="margin-bottom:6px;"><strong>Ferramentas:</strong> ${procedimento.ferramentas.join(', ')}</p>` : ''}
+        ${(procedimento.recomendacoes || []).length ? `<p style="margin-top:10px; color:var(--warning);"><strong><i class="fas fa-triangle-exclamation"></i> Recomendações de segurança:</strong><br>${procedimento.recomendacoes.join('<br>')}</p>` : ''}
+    `;
+
+    // 📏 Tabela de referência anexa (ex: valores de aferição de
+    // Pass-Line por rolo) — só renderiza se o procedimento tiver uma.
+    const containerTabela = document.getElementById('procedimento-tabela-referencia');
+    if (containerTabela) {
+        const tabela = procedimento.tabelaReferencia;
+        if (tabela) {
+            containerTabela.classList.remove('hidden');
+            containerTabela.innerHTML = `
+                <div style="font-weight:700; color:var(--text-accent); font-size:12px; margin-bottom:6px;">
+                    <i class="fas fa-ruler"></i> ${tabela.titulo}
+                </div>
+                ${tabela.diametroApoios ? `<div class="text-muted" style="font-size:11.5px; margin-bottom:8px;">${tabela.diametroApoios}</div>` : ''}
+                <div class="table-responsive">
+                    <table class="premium-table" style="font-size:11.5px;">
+                        <thead><tr>${tabela.colunas.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+                        <tbody>
+                            ${tabela.linhas.map(linha => `<tr>${linha.map(v => `<td>${v}</td>`).join('')}</tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        } else {
+            containerTabela.classList.add('hidden');
+            containerTabela.innerHTML = '';
+        }
+    }
+
+    renderizarEtapasProcedimento();
+
+    const modal = document.getElementById('modal-procedimento');
+    if (modal) modal.classList.remove('hidden');
+
+    // Busca a última execução — só informativo, não bloqueia nada.
+    const statusEl = document.getElementById('procedimento-ultima-execucao');
+    if (statusEl) statusEl.textContent = '';
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/procedimento/historico/${encodeURIComponent(chave)}?procedimento_id=${encodeURIComponent(procedimentoId)}&limite=1`, { cache: 'no-store' });
+        const listaExec = resp.ok ? await resp.json() : [];
+        if (statusEl && Array.isArray(listaExec) && listaExec.length > 0) {
+            const ultima = listaExec[0];
+            statusEl.textContent = ultima.concluido
+                ? `Última execução concluída por ${ultima.operador || 'alguém'} em ${ultima.data_hora}`
+                : `Última execução (parcial) por ${ultima.operador || 'alguém'} em ${ultima.data_hora}`;
+        }
+    } catch (e) {
+        console.error('⚠️ Não consegui buscar o histórico do procedimento:', e);
+    }
+};
+
+function renderizarEtapasProcedimento() {
+    const container = document.getElementById('procedimento-etapas-lista');
+    if (!container || !PROCEDIMENTO_ATUAL) return;
+
+    const etapasReais = PROCEDIMENTO_ATUAL.etapas.filter(e => !e.secao);
+    container.innerHTML = PROCEDIMENTO_ATUAL.etapas.map(e => {
+        if (e.secao) {
+            return `<div style="font-weight:700; color:var(--text-accent); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; margin:14px 0 6px 0;">${e.titulo}</div>`;
+        }
+        const marcada = PROCEDIMENTO_ETAPAS_MARCADAS.has(e.id);
+        return `
+            <label style="display:flex; gap:10px; align-items:flex-start; padding:10px; border-radius:8px; background:${marcada ? 'var(--success-bg)' : 'var(--bg-td)'}; margin-bottom:6px; cursor:pointer; transition:background 0.15s;">
+                <input type="checkbox" ${marcada ? 'checked' : ''} onchange="window.marcarEtapaProcedimento('${e.id}', this.checked)" style="margin-top:3px; width:18px; height:18px; flex-shrink:0;">
+                <div style="flex:1; min-width:0;">
+                    <div style="font-size:13px; color:var(--text-heading); font-weight:600;">${e.id} — ${e.texto}</div>
+                    ${e.pontosChave ? `<div class="text-muted" style="font-size:11.5px; margin-top:3px;"><i class="fas fa-wrench" style="opacity:0.6;"></i> ${e.pontosChave}</div>` : ''}
+                    ${e.seguranca ? `<div style="font-size:11.5px; margin-top:3px; color:var(--warning);"><i class="fas fa-triangle-exclamation"></i> ${e.seguranca}</div>` : ''}
+                </div>
+            </label>
+        `;
+    }).join('');
+
+    atualizarProgressoProcedimento(etapasReais.length);
+}
+
+function atualizarProgressoProcedimento(totalEtapas) {
+    const el = document.getElementById('procedimento-progresso');
+    if (el) el.textContent = `${PROCEDIMENTO_ETAPAS_MARCADAS.size} / ${totalEtapas}`;
+}
+
+window.marcarEtapaProcedimento = function(etapaId, marcada) {
+    if (marcada) PROCEDIMENTO_ETAPAS_MARCADAS.add(etapaId);
+    else PROCEDIMENTO_ETAPAS_MARCADAS.delete(etapaId);
+    const totalEtapas = PROCEDIMENTO_ATUAL ? PROCEDIMENTO_ATUAL.etapas.filter(e => !e.secao).length : 0;
+    atualizarProgressoProcedimento(totalEtapas);
+};
+
+window.fecharModalProcedimento = function() {
+    const modal = document.getElementById('modal-procedimento');
+    if (modal) modal.classList.add('hidden');
+    PROCEDIMENTO_ATUAL = null;
+    PROCEDIMENTO_ETAPAS_MARCADAS = new Set();
+};
+
+window.concluirProcedimento = async function() {
+    if (!verificarAcesso()) return;
+    if (!PROCEDIMENTO_ATUAL) return;
+
+    const etapasReais = PROCEDIMENTO_ATUAL.etapas.filter(e => !e.secao);
+    const totalEtapas = etapasReais.length;
+    const marcadas = PROCEDIMENTO_ETAPAS_MARCADAS.size;
+
+    if (marcadas < totalEtapas) {
+        const continuar = confirm(`Só ${marcadas} de ${totalEtapas} etapas foram marcadas. Concluir mesmo assim?`);
+        if (!continuar) return;
+    }
+
+    const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/procedimento/executar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                area: PROCEDIMENTO_ATUAL.area,
+                procedimento_id: PROCEDIMENTO_ATUAL.id,
+                procedimento_nome: PROCEDIMENTO_ATUAL.nome,
+                etapas_marcadas: Array.from(PROCEDIMENTO_ETAPAS_MARCADAS),
+                total_etapas: totalEtapas,
+                concluido: true,
+                operador
+            })
+        });
+
+        if (!resp.ok) {
+            alert('Não foi possível registrar a conclusão do procedimento.');
+            return;
+        }
+
+        if (typeof registrarHistorico === 'function') {
+            registrarHistorico(`OFICINA-${PROCEDIMENTO_ATUAL.area.toUpperCase()}`, `📋 Procedimento concluído: ${PROCEDIMENTO_ATUAL.nome} (${marcadas}/${totalEtapas} etapas).`);
+        }
+
+        alert(`✅ Procedimento "${PROCEDIMENTO_ATUAL.nome}" concluído!`);
+        window.fecharModalProcedimento();
+    } catch (e) {
+        console.error('⚠️ Erro ao registrar conclusão do procedimento:', e);
         alert('Não foi possível conectar ao servidor.');
     }
 };
