@@ -3023,6 +3023,30 @@ let OFICINA_EDITANDO_ID = null; // null = criando atividade nova; número = edit
 // --------------------------------------------------------------
 // ABRIR O MODAL DE UMA ÁREA (chamado ao clicar num card da grade)
 // --------------------------------------------------------------
+// --------------------------------------------------------------
+// ATALHO: abre direto a tela de uma área da Oficina a partir de um
+// link dedicado no menu lateral (nav-area-oficina), sem precisar
+// passar pela grade de cards da aba "Oficina" primeiro. Marca o link
+// clicado como ativo no menu (já que ele não corresponde a nenhuma
+// <section class="tab-content">, é só um atalho para dentro da aba
+// "aba-oficina" + abertura automática do modal daquela área).
+// --------------------------------------------------------------
+window.abrirAreaOficinaDireto = function(event, chave) {
+    if (event) event.preventDefault();
+
+    window.abrirAba(event, 'aba-oficina');
+
+    document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
+    if (event && event.currentTarget) event.currentTarget.classList.add("active");
+
+    // Dá um respiro pro carregarOficina() (chamado dentro do abrirAba)
+    // terminar de buscar as atividades antes de abrir o modal da área
+    // — assim os contadores/lista já vêm certos na primeira abertura.
+    setTimeout(() => {
+        if (typeof window.abrirAreaOficina === 'function') window.abrirAreaOficina(chave);
+    }, 50);
+};
+
 window.abrirAreaOficina = function(chave) {
     const area = AREAS_OFICINA.find(a => a.chave === chave);
     if (!area) return;
@@ -3829,7 +3853,7 @@ window.abrirAba = function(event, idAba) {
     document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
 
     if (event && event.currentTarget) {
-        document.getElementById(event.currentTarget.id).classList.add("active");
+        event.currentTarget.classList.add("active");
     }
     
     const abaDestino = document.getElementById(idAba);

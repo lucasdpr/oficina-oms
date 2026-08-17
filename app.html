@@ -326,6 +326,21 @@
                 <a href="#" id="nav-hidraulica" class="nav-link highlight-hidraulica" onclick="window.abrirAba(event,'aba-hidraulica')"><i class="fas fa-oil-can"></i> Hidráulica</a>
                 <a href="#" id="nav-almoxarifado" class="nav-link highlight-almoxarifado" onclick="window.abrirAba(event,'aba-almoxarifado')"><i class="fas fa-pallet"></i> Almoxarifado Central</a>
                 <a href="#" id="nav-oficina" class="nav-link" onclick="window.abrirAba(event,'aba-oficina')"><i class="fas fa-clipboard-list"></i> Oficina</a>
+
+                <div class="nav-divider">Áreas da Oficina</div>
+                <a href="#" class="nav-link nav-area-oficina" style="color:#38bdf8;" onclick="window.abrirAreaOficinaDireto(event,'hidraulica')"><i class="fas fa-oil-can"></i> Hidráulica</a>
+                <a href="#" class="nav-link nav-area-oficina" style="color:#a855f7;" onclick="window.abrirAreaOficinaDireto(event,'usinagem')"><i class="fas fa-gear"></i> Usinagem</a>
+                <a href="#" class="nav-link nav-area-oficina" style="color:#f97316;" onclick="window.abrirAreaOficinaDireto(event,'caldeiraria')"><i class="fas fa-fire"></i> Caldeiraria</a>
+                <a href="#" class="nav-link nav-area-oficina" style="color:#7c8aa5;" onclick="window.abrirAreaOficinaDireto(event,'jato')"><i class="fas fa-spray-can"></i> Jato</a>
+                <a href="#" class="nav-link nav-area-oficina" style="color:#eab308;" onclick="window.abrirAreaOficinaDireto(event,'eletrica')"><i class="fas fa-bolt"></i> Elétrica</a>
+                <a href="#" class="nav-link nav-area-oficina" style="color:#f97316;" onclick="window.abrirAreaOficinaDireto(event,'cadeira')"><i class="fas fa-chair"></i> Cadeira (Desempenadeira)</a>
+                <a href="#" class="nav-link nav-area-oficina" style="color:#eab308;" onclick="window.abrirAreaOficinaDireto(event,'zero')"><i class="fas fa-circle-notch"></i> Segmento Zero</a>
+                <a href="#" class="nav-link nav-area-oficina" style="color:#22c55e;" onclick="window.abrirAreaOficinaDireto(event,'segmento-grupo')"><i class="fas fa-layer-group"></i> Segmento de Grupo</a>
+                <a href="#" class="nav-link nav-area-oficina" style="color:#ec4899;" onclick="window.abrirAreaOficinaDireto(event,'mcc4')"><i class="fas fa-server"></i> MCC4</a>
+                <a href="#" class="nav-link nav-area-oficina" style="color:#eab308;" onclick="window.abrirAreaOficinaDireto(event,'bender')"><i class="fas fa-compress"></i> Bender</a>
+                <a href="#" class="nav-link nav-area-oficina" style="color:#ec4899;" onclick="window.abrirAreaOficinaDireto(event,'molde-mcc4')"><i class="fas fa-cube"></i> Molde MCC #4</a>
+                <a href="#" class="nav-link nav-area-oficina" style="color:#3b82f6;" onclick="window.abrirAreaOficinaDireto(event,'molde-mcc23')"><i class="fas fa-cubes"></i> Molde MCC #2,3</a>
+
                 <a href="#" id="nav-ocorrencia" class="nav-link" style="color:#eab308;" onclick="window.abrirAba(event,'aba-ocorrencia')"><i class="fas fa-triangle-exclamation"></i> Registro de Ocorrência</a>
                 <a href="#" id="nav-historico" class="nav-link hidden" onclick="window.abrirAba(event,'aba-historico')"><i class="fas fa-history"></i> Auditoria</a>
 
@@ -1568,7 +1583,7 @@
     <!-- SCRIPTS (consolidados)                   -->
     <!-- ========================================= -->
     <script type="module">
-        import './script.js?v=14';
+        import './script.js?v=15';
         import './ui.js?v=13';
         import './folhaoMolde4.js?v=6';
         import './folhao_bender.js?v=2';
