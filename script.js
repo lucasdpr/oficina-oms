@@ -3792,6 +3792,14 @@ window.abrirProcedimento = async function(chave, procedimentoId) {
         ${(procedimento.seguranca || []).length ? `<p style="margin-bottom:6px;"><strong>EPIs:</strong> ${procedimento.seguranca.join(', ')}</p>` : ''}
         ${(procedimento.ferramentas || []).length ? `<p style="margin-bottom:6px;"><strong>Ferramentas:</strong> ${procedimento.ferramentas.join(', ')}</p>` : ''}
         ${(procedimento.recomendacoes || []).length ? `<p style="margin-top:10px; color:var(--warning);"><strong><i class="fas fa-triangle-exclamation"></i> Recomendações de segurança:</strong><br>${procedimento.recomendacoes.join('<br>')}</p>` : ''}
+        ${(procedimento.atencao || []).length ? `
+            <div style="margin-top:14px; padding:12px; border-radius:8px; background:var(--danger-bg); border:1px solid var(--danger);">
+                <strong style="color:var(--danger);"><i class="fas fa-ban"></i> O que NÃO deve ser feito:</strong>
+                <ul style="margin:8px 0 0 18px; padding:0;">
+                    ${procedimento.atencao.map(a => `<li style="margin-bottom:6px; color:var(--text-body);">${a}</li>`).join('')}
+                </ul>
+            </div>
+        ` : ''}
     `;
 
     // 📏 Tabela de referência anexa (ex: valores de aferição de
