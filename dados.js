@@ -1,193 +1,271 @@
-// ==============================================================
-// procedimentosOficina.js
-// ==============================================================
-// Procedimentos operacionais oficiais (documentos CSN/OMS), estruturados
-// pra virar checklist interativo dentro da tela de cada área da Oficina.
-// Cada procedimento aqui é digitado a partir do PDF original — o texto
-// (títulos, pontos-chave, EPIs) é reproduzido conforme o documento.
-//
-// Pra adicionar uma área nova: só criar mais uma chave no objeto
-// PROCEDIMENTOS_POR_AREA abaixo, com a mesma estrutura.
-// ==============================================================
-
-export const PROCEDIMENTOS_POR_AREA = {
-
-    // ==========================================================
-    // BENDER
-    // ==========================================================
-    'bender': [
-        {
-            id: '603088',
-            nome: 'Mont/Desmont Rolos Bender MCC#4',
-            revisao: '03',
-            dataRevisao: '28/10/2024',
-            frequencia: 'Semanal',
-            responsavel: 'Mecânico líder de manutenção',
-            objetivo: 'Estabelecer diretrizes para as atividades incluídas na montagem e desmontagem dos conjuntos de rolos do Bender da MCC#4 no interior da OMS.',
-            seguranca: ['Luva de vaqueta', 'Capacete com jugular', 'Óculos de Segurança', 'Protetor Auricular', 'Bota de segurança'],
-            recomendacoes: [
-                'Não ficar sob carga suspensa.',
-                'Para execução desta atividade o funcionário deverá ser treinado neste padrão.'
-            ],
-            ferramentas: ['Chave Allen 4 mm', 'Micrômetro 125 mm a 150 mm', 'Relógio comparador', 'Paquímetro 150 mm'],
-            etapas: [
-                { id: '1', titulo: '1. Desmontagem', secao: true },
-                { id: '1.1', texto: 'Posicionar o conjunto de rolo em cima da bancada', pontosChave: 'Com auxílio de talha giratória. Para transportar o conjunto use a cinta, e para efetuar a desmontagem dos rolos utilize o eletroímã. Em caso de equipamento com resíduo de "Break out", realizar limpeza utilizando maçarico para atividades de oxicorte.', seguranca: 'Risco de impacto por rompimento da cinta e queda do rolo. Somente efetuar a tarefa com cintas em bom estado de conservação. Ter postura defensiva e ficar fora do raio de ação de carga suspensa.' },
-                { id: '1.2', texto: 'Soltar os frenos da porca de segurança', pontosChave: 'Utilizar chave allen 4 mm. Retirar a porca de segurança com chave unha.' },
-                { id: '1.3', texto: 'Aferir o diâmetro dos rolos', pontosChave: 'Utilizar micrômetro externo de 125 a 150 mm e protocolar medidas na planilha de controle de reparo.' },
-                { id: '1.4', texto: 'Retirar os rolos e posicionar sobre a bancada', pontosChave: 'Com auxílio da talha giratória e o eletroímã.', seguranca: 'Risco de queda e aprisionamento das mãos.' },
-                { id: '1.5', texto: 'Retirar o pino elástico do mancal fixo', pontosChave: 'Utilizar martelo ou marreta e saca pino.', seguranca: 'Risco de ferida corto contusa, ter atenção ao executar a tarefa.' },
-                { id: '1.6', texto: 'Retirar a graxa existente na parte interna dos eixos', seguranca: 'Cobrir o solo com plástico para não haver contaminação do solo.' },
-                { id: '1.7', texto: 'Efetuar limpeza nos eixos', pontosChave: 'Utilizar solvente e toalha industrial.', seguranca: 'Risco de contaminação via cutânea e respiratória — fazer uso de luva de cano longo em PVC e respirador compatível com o risco.' },
-                { id: '1.8', texto: 'Efetuar aferição do eixo diâmetro e empeno', pontosChave: 'Com auxílio da talha giratória, estropar o eixo e colocá-lo no cavalete de aferição. Utilizar micrômetro de 50mm a 75mm e relógio comparador. Tolerância do Ø do eixo mínima de 74,94 mm. Aferir empeno do eixo com tolerância ±0,3mm. Se o eixo apresentar empeno maior que a tolerância, levar para prensa vertical e efetuar o desempeno.', seguranca: 'Travar os cavaletes de aferição com um Grampo Fixo. Obs.: o empeno do eixo pode desalinhar os cavaletes e ocasionar a queda do eixo. Risco de queda e aprisionamento das mãos.' },
-                { id: '1.9', texto: 'Sacar os rolamentos e tubos espaçadores dos rolos', pontosChave: 'Com auxílio da talha giratória e o eletroímã, estropar o rolo e levar na prensa horizontal e sacar os rolamentos e tubos espaçadores.', seguranca: 'Risco de queda e aprisionamento das mãos ao utilizar prensa.' },
-                { id: '1.10', texto: 'Inspecionar todos os sobressalentes do conjunto de rolo já desmontados', pontosChave: 'Os rolos com problemas vão para o cavalete de reparo geral. Rolos de 500 mm com trincas na extremidade devem ser sucatados. Diâmetro mínimo permissível para reutilizar é 147,00 mm.', seguranca: 'Risco de queda e aprisionamento das mãos ao utilizar prensa.' },
-                { id: '1.11', texto: 'Efetuar limpeza dos rolos que estiverem em boas condições interna e externa', pontosChave: 'Colocar os rolos no cavalete e utilizar solvente e toalha industrial.', seguranca: 'Risco de contaminação via cutânea e respiratória — fazer uso de luva de cano longo em PVC e respirador compatível com o risco.' },
-
-                { id: '2', titulo: '2. Montagem', secao: true },
-                { id: '2.1', texto: 'Montar rolos', pontosChave: 'Efetuar limpeza interna. Montar os conjuntos com rolos que possuem os diâmetros externos iguais ou próximos.', seguranca: 'Risco de corte em rebarba no Ø interno do rolo.' },
-                { id: '2.2', texto: 'Montar tubos espaçadores e espaçadores de encosto de rolamento nos rolos', pontosChave: 'Montar manualmente tubos espaçadores. Empurrar espaçadores de encosto de rolamento com auxílio do dispositivo e marreta.', seguranca: 'Risco de batida contra.' },
-                { id: '2.3', texto: 'Pré-montar rolamento no rolo', pontosChave: 'Fazer uso de martelo de borracha para realizar a montagem.', seguranca: 'Risco de batida contra. Aprisionamento de mãos.' },
-                { id: '2.4', texto: 'Prensar rolos', pontosChave: 'Com auxílio da talha giratória e eletroímã, estropar o rolo e levar para a prensa hidráulica. Empurrar o rolamento até encostar no espaçador.', seguranca: 'Risco de aprisionamento das mãos. Ter atenção ao utilizar a prensa hidráulica. Risco de queda.' },
-                { id: '2.5', texto: 'Efetuar o término da montagem do rolamento, espaçador e bucha de bronze', pontosChave: 'Atentar para pressão da prensa no máx. 5 Kg. Com rolo na bancada, fazer montagem manual.', seguranca: 'Risco de rebarba.' },
-                { id: '2.6', texto: 'Posicionar o eixo sobre a bancada e montar o mancal e anel elástico, posicionar o eixo no dispositivo e efetuar a montagem dos rolos', pontosChave: 'Utilizar talha e eletroímã ou cinta.', seguranca: 'Risco de queda. Risco de aprisionamento.' },
-                { id: '2.7', texto: 'Apertar a porca de segurança e observando se os rolos estão girando livremente, e os mancais estão travados, frenar a porca de segurança, lubrificar os rolos', pontosChave: 'Utilizar chave de unha allen 4 mm. Utilizar bomba de graxa pneumática. Lubrificar os rolos.' },
-                { id: '2.8', texto: 'Anotar numeração dos rolos e diâmetro na Planilha de Controle de Segmento Bender' }
-            ]
-        },
-        {
-            id: '603090',
-            nome: 'Aferição Régua Base Bender MCC#4',
-            revisao: '03',
-            dataRevisao: '28/10/2024',
-            frequencia: 'Semanal',
-            responsavel: 'Mecânico líder de manutenção',
-            objetivo: 'Estabelecer diretrizes para as atividades incluídas na aferição de régua da base do bender da MCC#4 no interior da OMS.',
-            seguranca: ['Luva de vaqueta', 'Capacete com jugular', 'Óculos de Segurança', 'Protetor Auricular', 'Bota de segurança'],
-            recomendacoes: [
-                'Não ficar sob carga suspensa.',
-                'Para execução desta atividade o funcionário deverá ser treinado neste padrão.'
-            ],
-            ferramentas: ['Soquete 24mm', 'Chave "T" 24mm', 'Chave Allen 4 mm'],
-            etapas: [
-                { id: '1', texto: 'Apertar todos os parafusos da base inferior e superior e transportar a base para o stand de aferição', pontosChave: 'Utilizar máquina pneumática e soquete 24 mm para apertar todos os parafusos. Utilizar PR 221 ou 146 para transportar a base superior ou inferior.', seguranca: 'Risco de aprisionamento. Risco de carga suspensa — verificar condições de uso dos estropos.' },
-                { id: '1.1', texto: 'Aferir com a régua o Pass-line, respeitando base superior e inferior', pontosChave: 'Colocar a régua para aferição no stand. Utilizar paquímetro T para aferição. Registrar as informações na planilha de aferição de Pass-line.', seguranca: 'Risco de queda por diferença de nível.' },
-                { id: '1.2', texto: 'Calcular e separar os calços para cada rolo, de acordo com as medidas encontradas', pontosChave: 'Utilizar micrômetro ou paquímetro.', seguranca: 'Ter atenção ao manusear os calços, risco de corte nas mãos.' },
-                { id: '1.3', texto: 'Soltar os parafusos, levantar o rolo e colocar os calços', pontosChave: 'Utilizar máquina pneumática para soltar os parafusos. Utilizar talha elétrica e estropos ou cinta para levantar os rolos.', seguranca: 'Risco de aprisionamento das mãos. Risco de rompimento de estropos e cintas — utilizar somente estropos e cintas em boas condições de uso.' },
-                { id: '1.4', texto: 'Apertar os parafusos, aferir conforme o 1.1 novamente', pontosChave: 'Utilizar máquina pneumática, soquete de 24 mm para apertar os parafusos. Utilizar paquímetro T para aferir. Se estiverem na medida conforme a planilha de aferição de Pass-Line base inferior, protocolar e torquear os parafusos com 200Nm. Se não estiver dentro da medida, repetir o processo.', seguranca: 'Ter atenção ao manusear os calços, risco de corte nas mãos. Risco de aprisionamento das mãos. Risco de queda devido diferença de nível.' },
-                { id: '2', texto: 'Alinhamento da base superior', pontosChave: 'Executar as mesmas atividades de execução da base superior. Respeitar as diferenças apresentadas nas planilhas de aferição de passe-line superior e inferior.' }
-            ],
-            // 📏 Ficha de referência anexa ao procedimento (Aferição de
-            // Pass-Line) — usada durante a etapa 1.1/1.4 pra saber o valor
-            // esperado de cada rolo (tolerância ±0.15mm) e o diâmetro
-            // esperado dos apoios (Ø 205 - 0,30 mm).
-            tabelaReferencia: {
-                titulo: 'Aferição de Pass-Line — valores de referência (Conjunto de rolo, tolerância ±0,15mm)',
-                diametroApoios: 'Valor: Ø 205 - 0,30 mm',
-                colunas: ['Rolo', 'Base Superior (mm)', 'Base Inferior (mm)'],
-                linhas: [
-                    ['1', '149,97', '149,97'],
-                    ['2', '149,95', '149,95'],
-                    ['3', '149,92', '149,92'],
-                    ['4', '149,91', '149,90'],
-                    ['5', '149,89', '149,89'],
-                    ['6', '149,90', '149,86'],
-                    ['7', '150,06', '149,63'],
-                    ['8', '150,83', '148,73'],
-                    ['9', '152,81', '146,53'],
-                    ['10', '156,63', '142,41'],
-                    ['11', '162,91', '135,74'],
-                    ['12', '172,29', '125,92'],
-                    ['13', '185,28', '112,46'],
-                    ['14', '202,24', '95,06'],
-                    ['15', '223,26', '73,66']
-                ]
-            }
-        }
-    ],
-
-    // ==========================================================
-    // CADEIRA (DESEMPENADEIRA)
-    // ==========================================================
-    'cadeira': [
-        {
-            id: '603969',
-            nome: 'Procedimento de Oxi-Corte na Oficina da OMS',
-            revisao: '01',
-            dataRevisao: '19/02/2026',
-            frequencia: 'Diário',
-            responsavel: 'Mecânico, líder de manutenção e técnicos',
-            objetivo: 'Estabelecer diretrizes para as atividades de oxi-corte na oficina de reparo de moldes e segmento OMS.',
-            seguranca: [
-                'Capacete com jugular', 'Bota de segurança', 'Protetor auricular', 'Luva de raspa (cano longo)',
-                'Óculos escuro com lente adequada para atividade ou máscara e solda', 'Capuz', 'Avental de raspa',
-                'Blusão ou paletó de raspa', 'Perneira de raspa', 'Máscara pff2'
-            ],
-            recomendacoes: [
-                'Não ficar sob carga suspensa.',
-                'Para execução desta atividade o funcionário deverá ser treinado neste padrão.',
-                'Remover ou proteger todos os materiais de fácil combustão que estejam dentro do raio de ação das chamas ou centelhas ao operar o maçarico.'
-            ],
-            ferramentas: [
-                'Maçarico de corte 90 ou 180 graus', 'Chuveirão aquecimento', 'Bicos de corte', 'Isqueiro de fricção',
-                'Agulheiro', 'Mangueiras para acetileno/gás natural e oxigênio', 'Braçadeiras', 'Chave inglesa 08, 12mm', 'Chave de fenda'
-            ],
-            // ⚠️ Anexo 2 do documento original — lista do que NUNCA fazer
-            // ao operar o maçarico. Mostrado em destaque no topo do
-            // procedimento, antes das etapas, por ser crítico de segurança.
-            atencao: [
-                'Limpar o bico do maçarico na luva como se tivesse esfregando — se houver não conformidade na luva (um furo, por exemplo), o gás pode entrar e se alojar dentro, causando uma atmosfera inflamável.',
-                'Limpar o bico com os gases abertos — caso tenha alguma fagulha, pode fechar o triângulo do fogo e gerar a "explosão".',
-                'Limpar o bico com o maçarico pressurizado e/ou jateando — mesmo risco de explosão.',
-                'Limpar o bico do maçarico sem luvas — o gás pode ir para dentro da blusa, podendo gerar atmosfera explosiva.',
-                'Acender o maçarico sem as luvas — proteção do colaborador em caso de "explosão".',
-                'Acender o maçarico na caloria da peça — não é possível definir a criticidade da atmosfera quanto aos gases.',
-                'Nunca acender o maçarico somente com o gás combustível (na maioria das vezes Acetileno) — aumenta a sujeira do bico de corte.'
-            ],
-            etapas: [
-                { id: '8.1', texto: 'Preencher o checklist CSN-2207 (exemplo anexo 1) para atividade de oxi-corte', pontosChave: 'Analisar com cautela todos os itens de acordo com o descrito no checklist. Caso haja não conformidade com equipamento, favor acionar liderança/supervisão.', seguranca: 'Somente iniciar a atividade após cumprir todas as obrigações do checklist.' },
-                { id: '8.2', texto: 'Preencher permissão de serviço a quente (PSQ)', pontosChave: 'Para atividades na oficina de moldes e segmento, a permissão de serviço a quente é permanente.', seguranca: 'Somente iniciar a atividade após a liberação da PSQ.' },
-                { id: '8.3', texto: 'Verificar se não há vazamentos nas conexões (válvulas, manômetros, mangueiras)', pontosChave: 'Utilizar bucha ou pincel encharcado com sabão nos locais para inspeção de formação de bolhas.', seguranca: 'Somente utilizar o maçarico em caso que não haja vazamento.' },
-                { id: '8.4', texto: 'Trocar caneta de aquecimento (chuveirão e maçaricos de 90° e 180°)', pontosChave: 'Caso necessário trocar a caneta: despressurize a linha, solte as abraçadeiras com uso de chave de fenda e desconecte o espigão das mangueiras retirando a caneta danificada. Realize o acoplamento das mangueiras no espigão da nova caneta e fixe a abraçadeira com chave de fenda.', seguranca: 'Risco de queimadura — despressurizar as linhas de gás e oxigênio antes de realizar qualquer intervenção no maçarico/chuveiro.' },
-                { id: '8.5', texto: 'Troca ou instalação do bico de aquecimento', pontosChave: 'Caso necessário trocar o bico: despressurize a linha, utilize chave de boca ou inglesa para soltar e apertar a porca de fixação do bico — o bico aplicado será de acordo com a espessura do material a ser cortado. Atentar-se ao gás usado: acetileno (cilindro) usa bico série nº 1502; gás GN (da rede) usa série nº 1503.', seguranca: 'Risco de queimadura — despressurizar as linhas de gás e oxigênio antes de realizar qualquer intervenção no maçarico/chuveiro.' },
-                { id: '8.6', texto: 'Verificar se o vigia está com os EPIs apropriados para acompanhamento da atividade', pontosChave: 'Todo auxiliando e/ou acompanhando, com exposição similar à do soldador/maçariqueiro, obrigatoriamente deverá usar óculos de segurança com lentes especiais e máscara pff2.', seguranca: 'Permanecer atento à atividade e ao ambiente, e ficar fora do raio de ação das fagulhas do corte.' },
-                { id: '8.7', texto: 'Preparar a área ou superfície a ser cortada ou aquecida', pontosChave: 'Verificar se estão limpas e isentas de graxa/óleo antes de iniciar a atividade.', seguranca: 'Somente iniciar a atividade quando não houver graxa — risco de incêndio e queimadura.' },
-                { id: '8.8', texto: 'Executar corte', pontosChave: 'Iniciar com aquecimento da região a ser cortada por uma borda ou fazer um furo na chapa/peça. Quando o material em volta desse ponto inicial estiver na temperatura adequada (avermelhado), abrir o oxigênio de corte (O2) e iniciar o processo deslocando o maçarico. Veja o Anexo 2 acima para o que NÃO fazer.', seguranca: 'Risco de queimadura — despressurizar as linhas de gás e oxigênio antes de qualquer intervenção. Garantir que não haja ninguém no raio de ação do corte. A atividade só pode ser iniciada com a presença do vigia.' },
-                { id: '8.9', texto: 'Após a atividade, recolher e limpar mangueiras e realizar 5S na área', seguranca: 'Garantir que todo o sistema foi despressurizado antes de iniciar a atividade de limpeza e armazenamento.' }
-            ]
-        }
-    ],
-
-    // ==========================================================
-    // FERRAMENTARIA
-    // ==========================================================
-    'ferramentaria': [
-        {
-            id: '606067',
-            nome: 'Inspeção de Ferramentas Manuais de Impacto',
-            revisao: '03',
-            dataRevisao: '23/05/2025',
-            frequencia: 'Diária',
-            responsavel: 'Colaborador da ferramentaria (inspeciona no ato de entrega e recebimento)',
-            objetivo: 'Estabelecer diretrizes para inspeção de ferramentas manuais de impacto.',
-            seguranca: ['Óculos de Segurança', 'Capacete', 'Protetor auricular', 'Bota de segurança', 'Luvas de Proteção (Vaqueta)'],
-            recomendacoes: [
-                'Cuidado no manuseio das ferramentas avariadas, devido ao risco de corte causados por rebarbas, cabos rachados e lascados.'
-            ],
-            ferramentas: ['Marretas', 'Chaves de impacto', 'Marombas', 'Talhadeiras', 'Martelos em geral', 'Alavancas', 'E outras ferramentas de impacto'],
-            etapas: [
-                { id: '8.1a', texto: 'Inspecionar as ferramentas', pontosChave: 'Avaliar se a quantidade é suficiente para atender as necessidades das atividades da oficina.' },
-                { id: '8.1b', texto: 'Substituir as ferramentas com anomalias', pontosChave: 'Deformações, rebarbas, trincas, desgaste, encunhamento duplo no cabo de madeira, cabos rachados e/ou lascados, ausência de dispositivo de segurança. Solicitar junto à supervisão a reposição das mesmas.' },
-                { id: '8.1c', texto: 'Inutilizar ferramentas com anomalias' },
-                { id: '8.1d', texto: 'Manter as ferramentas em locais e recipientes apropriados após a utilização' },
-                { id: '8.1e', texto: 'Manter a área de trabalho sempre limpa e organizada' },
-                { id: '8.1f', texto: 'Manter as características originais das ferramentas', pontosChave: 'Orientar colaboradores sobre a importância da conservação.' },
-                { id: '8.1g', texto: 'Inserir as ferramentas produzidas na CSN no manual de ferramentas da gerência', pontosChave: 'Com as características específicas: tipo de material utilizado, dimensões, finalidade, entre outras.' }
-            ]
-        }
-    ]
-
+export const MOTIVOS_RETIRO = {
+    "Molde": ["Desgaste de placa", "Ranhura de placa", "Falha no cilindro", "Fim de vida", "Trava da bender", "Alarme de B.O", "B.O", "Rolete travado", "Outros"],
+    "Segmento Horizontal": ["Blackout", "Fim de vida", "Vazamento de graxa", "Placa na linha", "Transpordo", "Vazão", "Rolo travado", "Outros"],
+    "Horizontal": ["Blackout", "Fim de vida", "Vazamento de graxa", "Placa na linha", "Transpordo", "Vazão", "Rolo travado", "Outros"],
+    "Bow": ["Blackout", "Fim de vida", "Vazamento de graxa", "Placa na linha", "Transpordo", "Vazão", "Rolo travado", "Outros"],
+    "Straightener": ["Blackout", "Fim de vida", "Vazamento de graxa", "Placa na linha", "Transpordo", "Vazão", "Rolo travado", "Outros"],
+    "Bender": ["Blackout", "Fim de vida", "Vazamento de graxa", "Placa na linha", "Transpordo", "Vazão", "Rolo travado", "Outros"],
+    "Segmento Zero": ["Blackout", "Fim de vida", "Vazamento de graxa", "Placa na linha", "Transpordo", "Vazão", "Rolo travado", "Outros"],
+    "Cadeira Superior": ["Empeno", "Desgaste", "Rolo quebrado", "Vazamento de cilindro", "Vazamento de graxa", "Refrigeração", "Trinca", "Fim de vida", "Outros"],
+    "Cadeira Inferior": ["Empeno", "Desgaste", "Rolo quebrado", "Vazamento de cilindro", "Vazamento de graxa", "Refrigeração", "Trinca", "Fim de vida", "Outros"],
+    "Outros": ["Fim de vida", "Quebra", "Manutenção Preventiva", "Outros"]
 };
 
-window.PROCEDIMENTOS_POR_AREA = PROCEDIMENTOS_POR_AREA;
-console.log("✅ procedimentosOficina.js carregado — procedimentos de Bender, Cadeira e Ferramentaria disponíveis.");
+export const CHECKLIST_RECEBIMENTO = [
+    "Os engates rápidos do sistema hidráulico e nitrogênio estão completos e em perfeitas condições?",
+    "Os flexíveis das faces estreitas e spray estão amassados e/ou danificados?",
+    "Verificar se existe alguma tubulação hidráulica amassada e/ou danificada?",
+    "Teste de água com pressão de 10 KGF/cm2 c/ tempo de 30 minutos conforme?",
+    "Sensor vuhz se encontra em perfeitas condições?",
+    "Verificar se todos os conectores de termopares estão em perfeitas condições e funcionando?",
+    "As cangalhas de spray estão em perfeitas condições, sem avarias?",
+    "Proteções sanfonadas encontram-se em perfeitas condições?",
+    "Tampas e réguas guias das placas estão em perfeitas condições?",
+    "Os foot-roll e roletes das guias laterais estão em perfeitas condições?",
+    "O sistema de lubrificação possui alguma avaria?",
+    "As placas de cobre possuem ferimentos e/ou arranhões profundos na face de trabalho?",
+    "As juntas de expansão das placas principais estão em perfeitas condições?",
+    "Parafusos de fixação do molde no stand estão completos e em perfeitas condições?",
+    "(ELÉTRICA) Conectores do detector de break-out das faces larga estão tampados e em perfeitas condições?",
+    "(ELÉTRICA) Cabos elétricos dos termopares do detector de break-out das faces estreitas estão em perfeitas condições?"
+];
+
+export const CHECKLIST_REVISAO = [
+    "Inspeção das proteções sanfonadas dos cilindros das faces estreitas, substituindo as que estiverem danificadas.",
+    "Inspeção das proteções sanfonadas dos fusos dos castelos quadrados, substituindo as danificadas.",
+    "Inspeção, reparo (se necessário) e lubrificação dos conjuntos de porcas e contra porcas.",
+    "Inspeção, reparo (se necessário) e lubrificação dos conjuntos do castelo quadrado.",
+    "Inspeção das hastes dos cilindros das faces estreitas, verificando avarias e vazamentos de óleo.",
+    "Inspeção dos cilindros do clamp de abertura da face larga, substituindo os com vazamento.",
+    "Inspeção do filtro de óleo do sistema hidráulico, verificando se não está sujo.",
+    "Inspeção e lubrificação nos olhais e nas chavetas de fixação das placas laterais.",
+    "Inspeção, revisão e lubrificação dos eixos e mancais deslizantes (caixa louca).",
+    "Inspeção em todo sistema de lubrificação, corrigindo anomalias. Testar válvulas de graxa.",
+    "Inspeção das condições dos flexíveis de água, substituindo os danificados.",
+    "Inspeção, revisão e lubrificação dos parafusos de fixação do molde no stand.",
+    "Inspeção das tubulações hidráulicas (conferir aperto das conexões).",
+    "Alinhar os fusos dos castelos quadrados na medida padrão de 210mm.",
+    "Lubrificar e amaciar os fusos do ajuste mecânico.",
+    "Inspeção das juntas de expansão (trocar se necessário)."
+];
+
+export const CHECKLIST_HIDRAULICA = [
+    "Check dos cilindros de ajuste de largura do molde.",
+    "Verificar vazamento de graxa nas conexões.",
+    "Verificar vazamento de óleo nas conexões.",
+    "Inspecionar o elemento filtrante da linha de pressão hidráulica e trocar se necessário.",
+    "Lubrificação geral de componentes.",
+    "Verificar vazamento em mangueiras e dosador, substituir se necessário.",
+    "Efetuar a limpeza dos engates hidráulicos.",
+    "Embalar engates hidráulicos."
+];
+
+export const CHECKLIST_FINAL = [
+    "Indicadores de pressão de ajuste das molas da placa lado móvel estão completos e alinhados?",
+    "Tampa de proteção do molde NÃO está tocando sobre a tubulação de sangria das placas?",
+    "Placas de proteção estão calafetadas com fita, desempenadas, alinhadas e fixadas?",
+    "Posicionamento dos flexíveis superiores e inferiores estão conformes?",
+    "Teste de água com pressão de 10 KGF/cm2 c/ tempo de 30 minutos conforme?",
+    "Proteções sanfonadas estão fixadas?",
+    "Foot-roll e roletes das guias laterais estão lubrificados e girando normalmente?",
+    "Alinhamento dos bicos de spray das faces largas e estreitas?",
+    "Parafusos de fixação do molde na máquina estão completos e lubrificados?",
+    "Sensor Vuhz está montado corretamente e testado?",
+    "A precisão de movimento das faces estreitas estão conforme?",
+    "Funcionamento correto das válvulas distribuidoras de graxa, conexões marcadas?",
+    "Réguas do ajuste mecânico estão livres e lubrificadas corretamente?",
+    "Folga na aresta das faces das placas estreitas e largas (<= 0,35mm)?",
+    "Cavidade interna do molde limpa?",
+    "Centro do molde está identificado na placa norte e visível ao operador?",
+    "Conectores dos termopares das placas estão limpos e tampados?",
+    "Teste de profundidade está conforme?",
+    "Engates rápidos (hidráulico, N2, graxa) com vedações completas, apertados e limpos?",
+    "Base de vedação do molde está limpa e lixada?",
+    "Os conectores dos DBO estão todos tamponados e protegidos?"
+];
+// ==========================================
+// NOVOS CHECKLISTS INTELIGENTES POR EQUIPAMENTO
+// ==========================================
+// ==========================================
+// BIBLIOTECA INTELIGENTE DE CHECKLISTS POR EQUIPAMENTO
+// ==========================================
+// ==========================================
+// BIBLIOTECA INTELIGENTE DE CHECKLISTS E CATEGORIAS
+// ==========================================
+export const BIBLIOTECA_CHECKLISTS = {
+    // ---- EQUIPAMENTOS DA FAMÍLIA 4 ----
+    "Bender": {
+        "1. INSPEÇÃO DE CHEGADA": [
+            "LUBRIFICAÇÃO: Sistema isento de vazamentos.",
+            "LUBRIFICAÇÃO: Tubulação amassada.",
+            "LUBRIFICAÇÃO: Distribuidores funcionando corretamente.",
+            "LUBRIFICAÇÃO: Flexíveis perfeitos, sem avarias.",
+            "LUBRIFICAÇÃO: Tubulações Inox/Cobre danificadas.",
+            "REFRIGERAÇÃO: Resfriadores completos e alinhados.",
+            "REFRIGERAÇÃO: Bicos completos e desobstruídos.",
+            "REFRIGERAÇÃO: Flexíveis isentos de vazamentos.",
+            "REFRIGERAÇÃO: Tubulações isentas de empenos ou furos.",
+            "ESTRUTURA: Rolos lubrificados, girando normalmente.",
+            "ESTRUTURA: Proteções isentas de avarias.",
+            "ESTRUTURA: Estrutura com break-out.",
+            "ESTRUTURA: Rolamentos quebrados ou Rolos travados.",
+            "ESTRUTURA: Parafusos dos mancais todos apertados.",
+            "ESTRUTURA: Conexões apertadas."
+        ],
+        "2. CHECKLIST DE MANUTENÇÃO (EXECUÇÃO)": [
+            "Limpeza e lavagem de Break Out.",
+            "Soltar uniões das cangalhas, retirar chavetas e remover cangalhas.",
+            "Posicionar segmento na horizontal e aferir GAP de chegada.",
+            "Içar e separar a base superior da base inferior.",
+            "Desconectar tubulação de graxa, parafusos e retirar conjuntos de rolos.",
+            "Preparar base superior e inferior para jateamento/pintura.",
+            "Preparação e Testes de refrigeração nas cangalhas.",
+            "Montar válvulas de graxa nas bases e testar lubrificação.",
+            "Instalar conjuntos de rolos na base, apertando os parafusos M16 (com graxa).",
+            "Aferir Pass Line com régua na base inferior e superior.",
+            "Conectar e testar tubos de lubrificação, montar proteções dos rolos.",
+            "Transportar base superior, montar calços e fechar o segmento.",
+            "Conferir o GAP de Saída e registrar.",
+            "Montar cangalhas, resfriadores e mangueiras de lubrificação.",
+            "Efetuar teste final de resfriadores e lubrificação."
+        ]
+    },
+    // ---- EQUIPAMENTOS DA FAMÍLIA 2 E 3 ----
+    "Molde": {
+        "1. INSPEÇÃO DE RECEBIMENTO": [
+            "Os engates rápidos para abertura da face móvel estão completos e em perfeitas condições?",
+            "Os engates rápidos para o sistema de lubrificação estão completos e em perfeitas condições?",
+            "Os flexíveis das guias laterais estão amassados e/ou danificados?",
+            "As tubulações hidráulicas e de lubrificação estão em perfeitas condições?",
+            "Os protetores sanfonados dos fusos e tubos telescópicos das placas laterais estão danificados?",
+            "As cangalhas de spray estão 'OK' sem avarias?",
+            "Há avarias nas mangueiras e tubulação de lubrificação dos foot rolls e guias laterais?",
+            "As réguas de guia das placas laterais estão em perfeitas condições?",
+            "Ao executar o teste de movimentação das laterais houve ruídos?",
+            "Ao realizar o teste hidrostático nas placas foi identificados vazamentos?",
+            "Ao realizar o teste de spray, ocorreu obstrução de bicos?"
+        ],
+        "2. INSPEÇÃO ELÉTRICA (RECEBIMENTO)": [
+            "Os conectores do detector de break-out das faces larga estão tampados e em perfeitas condições?",
+            "Os cabos elétricos dos termopares do detector de break-out das faces estreitas estão em perfeitas condições?"
+        ],
+        "3. REVISÃO DO MOLDE": [
+            "Retirar os parafusos de fixação dos foot rolls e guias laterais; fazer acabamento e recondicionar roscas.",
+            "Ajustar chavetas das guias dos rolos laterais e bases dos foot-rolls.",
+            "Desmontar réguas guias das laterais, lixar, desempenar e recompor c/ solda se necessário.",
+            "Calibrar com 0.40mm a folga da arruela dos parafusos de fixação da face larga móvel.",
+            "Desobstruir dreno na tampa das hastes do cilindro do clamp.",
+            "Ajustar as 04 porcas castelo da haste do cilindro de clamp da face larga móvel.",
+            "Limpar e ajustar os parafusos de alinhamento das bases (guias laterais).",
+            "Limpar faces de apoio das placas largas e estreitas e montar o'ring.",
+            "Fazer inspeção visual em todo o sistema hidráulico e relatar anomalias.",
+            "Verificar e reparar pinos travas dos eixos KARDANS, lubrificar, ajustar estrias e pintá-los.",
+            "Desmontar proteção sanfonada dos fusos, inspecionar e lubrificar os mesmos (substituir se danificada).",
+            "Limpar e ajustar calços para alinhamento dos foot roll.",
+            "Ajustar e lubrificar o parafuso excêntrico de alinhamento do molde na máquina.",
+            "Fixar e ajustar placa suporte do parafuso de fixação do molde na máquina, com 1mm.",
+            "Inspecionar folgas nas caixas de engrenagem das placas laterais.",
+            "Lubrificar total, verificando o perfeito funcionamento das válvulas distribuidoras de graxa.",
+            "Fazer inspeção nas roscas para fixação das placas laterais (back up).",
+            "Verificar torque de aperto dos parafusos tipo feno dos eixos cardans - 25 Nm."
+        ],
+        "4. INSPEÇÃO FINAL": [
+            "Esquadramento das faces estreitas está na tolerância de 0.1mm?",
+            "Alinhamento do molde em relação ao gabarito do stand está correto?",
+            "A folga nas arruelas dos parafusos de fixação da placa móvel estão entre 0.3mm a 0.5mm?",
+            "A folga máxima entre as placas laterais e largas é de 0.25mm?",
+            "Os encaixes dos eixos cardans nos motores foram feitos sem interferência?",
+            "As marcações dos centros das placas largas estão legíveis?",
+            "Tubos telescópios sem vazamentos? (Teste de casamento com 7kgf/cm2).",
+            "Os protetores sanfonados estão em bom estado de conservação?",
+            "Os engates rápidos estão apertados e protegidos?",
+            "Os eixos cardan estão limpos, lubrificados e protegidos?",
+            "Os leques dos sprays estão corretamente alinhados e sem obstrução?",
+            "Não houve vazamento durante o teste hidrostático com 10 bar durante 30min?",
+            "Foot Rolls e roletes das guias laterais estão lubrificados e girando normalmente?",
+            "As tampas de proteção dos parafusos do foot roll estão montadas?",
+            "Os parafusos M36 alinhados (c/ contra porca) na elevação de 1640mm ~3mm a partir do pé do molde?",
+            "Cavidade interna do molde e rolos limpos?",
+            "Cilindros hidráulicos do sistema do clamp foi feito sangria?"
+        ],
+        "5. CHECK LIST HIDRÁULICO E ELÉTRICO": [
+            "CHECK DOS CILINDROS DO CLAMP",
+            "VERIFICAR VAZAMENTO DE GRAXA NAS CONEXÕES",
+            "VERIFICAR VAZAMENTO DE ÓLEO NAS CONEXÕES",
+            "INSPECIONAR ELEMENTO FILTRANTE (LINHA DE PRESSÃO) E TROCAR SE NECESSÁRIO",
+            "LUBRIFICAÇÃO (Verificar mangueiras e dosador)",
+            "EFETUAR LIMPEZA E EMBALAR ENGATES HIDRÁULICOS",
+            "OS CONECTORES DO DBO E VUHZ ESTÃO LIMPOS, TAMPONADOS E PROTEGIDOS?"
+        ]
+    }
+};
+
+// ==========================================
+// AREAS DA OFICINA (v1)
+// ==========================================
+// Baseado na planilha real do efetivo (efetivo_oms.xlsx): "Segmento de
+// Grupo" e' um time so (nao separado em Grupo 2 / Grupo 3), e o time
+// chamado "Desempenadeira" na planilha e' quem cuida do equipamento
+// tipo "Cadeira" (o nome do folhao e "Desempenadeira", mas o tipo do
+// equipamento e "Cadeira Superior/Inferior" - por isso o alias).
+export const AREAS_OFICINA = [
+    // ---- AREAS DE SERVICO GERAL (atendem qualquer equipamento) ----
+    { chave: 'hidraulica',    nome: 'Hidráulica',    icone: 'fa-oil-can',        cor: '#38bdf8', filtro: null },
+    { chave: 'usinagem',      nome: 'Usinagem',       icone: 'fa-gear',           cor: '#a855f7', filtro: null },
+    { chave: 'caldeiraria',   nome: 'Caldeiraria',    icone: 'fa-fire',           cor: '#f97316', filtro: null },
+    { chave: 'jato',          nome: 'Jato',           icone: 'fa-spray-can',      cor: '#7c8aa5', filtro: null },
+    { chave: 'eletrica',      nome: 'Elétrica',       icone: 'fa-bolt',           cor: '#eab308', filtro: null },
+    { chave: 'adm',           nome: 'ADM',            icone: 'fa-file-lines',     cor: '#38bdf8', filtro: null },
+    { chave: 'logistica',     nome: 'Logística',      icone: 'fa-truck',         cor: '#a855f7', filtro: null },
+    { chave: 'ponte-rolante', nome: 'Ponte Rolante',  icone: 'fa-crane',         cor: '#3b82f6', filtro: null },
+    { chave: 'almoxarifado',  nome: 'Almoxarifado',   icone: 'fa-boxes-stacked', cor: '#22c55e', filtro: null },
+    { chave: 'ferramentaria', nome: 'Ferramentaria',  icone: 'fa-toolbox',       cor: '#f59e0b', filtro: null },
+
+    // ---- BANCADAS FIXAS POR TIPO DE EQUIPAMENTO ----
+    { chave: 'cadeira', nome: 'Cadeira (Desempenadeira)', icone: 'fa-chair', cor: '#f97316',
+        filtro: (e) => (e.tipo || '').toUpperCase().includes('CADEIRA') },
+
+    { chave: 'zero', nome: 'Segmento Zero', icone: 'fa-circle-notch', cor: '#eab308',
+        filtro: (e) => (e.tipo || '').toUpperCase().includes('ZERO') },
+
+    { chave: 'segmento-grupo', nome: 'Segmento de Grupo (2 e 3)', icone: 'fa-layer-group', cor: '#22c55e',
+        filtro: (e) => (e.tipo || '').toUpperCase().includes('GRUPO') },
+
+    // MCC4 "geral": Bow, Horizontal e Straightener (a familia 4 que
+    // NAO tem area propria) - Molde e Bender ja tem area dedicada.
+    { chave: 'mcc4', nome: 'MCC4', icone: 'fa-server', cor: '#ec4899',
+        filtro: (e) => e.mcc_compat === '4' && e.tipo !== 'Molde' && e.tipo !== 'Bender' },
+
+    { chave: 'bender', nome: 'Bender', icone: 'fa-compress', cor: '#eab308',
+        filtro: (e) => e.tipo === 'Bender' },
+
+    { chave: 'molde-mcc4', nome: 'Molde MCC #4', icone: 'fa-cube', cor: '#ec4899',
+        filtro: (e) => e.tipo === 'Molde' && e.mcc_compat === '4' },
+
+    { chave: 'molde-mcc23', nome: 'Molde MCC #2,3', icone: 'fa-cubes', cor: '#3b82f6',
+        filtro: (e) => e.tipo === 'Molde' && e.mcc_compat === '2/3' },
+];
+
+// Mapa auxiliar: normaliza o texto da coluna "Equipe" da planilha do
+// efetivo (ex: "Molde MCC#2 e 3", "Desempenadeira") para a "chave" das
+// areas acima. Usado no back-end (importar_efetivo_oficina.py) - fica
+// aqui tambem so' de referencia, caso precise no front-end um dia.
+export const MAPA_EQUIPE_PARA_AREA = {
+    'hidraulica': 'hidraulica',
+    'usinagem': 'usinagem',
+    'caldeiraria': 'caldeiraria',
+    'jato': 'jato',
+    'eletrica': 'eletrica',
+    'adm': 'adm',
+    'logistica': 'logistica',
+    'ponte rolante': 'ponte-rolante',
+    'almoxarifado': 'almoxarifado',
+    'ferramentaria': 'ferramentaria',
+    'zero': 'zero',
+    'segmento de grupo': 'segmento-grupo',
+    'mcc#4': 'mcc4',
+    'bender': 'bender',
+    'molde mcc#4': 'molde-mcc4',
+    'molde mcc#2 e 3': 'molde-mcc23',
+    'desempenadeira': 'cadeira',
+};
