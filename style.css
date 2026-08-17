@@ -262,9 +262,12 @@ h1, h2, h3, h4, h5, h6 {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(2, 6, 23, 0.82);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(2, 6, 23, 0.94);
+  /* 🔧 backdrop-filter removido: mesmo bug do iOS (Safari/Chrome no
+     iPhone usam o motor WebKit) descrito em .sidebar — position:fixed
+     + backdrop-filter no MESMO elemento faz o iOS tratar como
+     position:static, quebrando modais no celular. Fundo mais opaco
+     (0.94 em vez de 0.82) compensa a perda do desfoque. */
   z-index: 9000;
   display: flex;
   justify-content: center;
@@ -2032,9 +2035,11 @@ h1, h2, h3, h4, h5, h6 {
     z-index: 4000;
     border-bottom: 1px solid var(--border-color);
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
-    background: var(--bg-card);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    /* 🔧 CORREÇÃO (mesmo bug do iOS descrito em .sidebar acima): sem
+       backdrop-filter, precisa de um fundo bem opaco pra não deixar o
+       conteúdo por trás transparecer feio — por isso troquei de
+       --bg-card (que é semi-transparente) pra --bg-main sólido. */
+    background: var(--bg-main);
   }
 
   .hidden-desktop {
@@ -2084,6 +2089,21 @@ h1, h2, h3, h4, h5, h6 {
        chegar neles (existiam no HTML, só não apareciam visualmente). */
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    /* 🔧 CORREÇÃO CRÍTICA (iOS Safari/Chrome, motor WebKit): a regra
+       base ".sidebar" (desktop) aplica backdrop-filter (efeito de
+       vidro fosco). Isso não é redefinido aqui, então continuava
+       "vazando" pro modo mobile — e o WebKit tem um bug conhecido:
+       backdrop-filter + position:fixed NO MESMO elemento faz o iOS
+       tratar esse elemento como se fosse position:static, ou seja, o
+       menu passava a rolar junto com a página em vez de ficar fixo
+       por cima dela. Só acontecia no iPhone (Safari e Chrome, que no
+       iOS usam o mesmo motor por exigência da Apple) — por isso não
+       aparecia em teste de desktop/Android. Removendo o blur aqui, o
+       fundo sólido (--bg-sidebar) já é escuro o bastante pra manter
+       a legibilidade, e o position:fixed volta a funcionar direito. */
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--bg-main);
   }
 
   .sidebar.open {
@@ -2097,9 +2117,10 @@ h1, h2, h3, h4, h5, h6 {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(4, 6, 10, 0.6);
-    -webkit-backdrop-filter: blur(2px);
-    backdrop-filter: blur(2px);
+    background: rgba(4, 6, 10, 0.75);
+    /* 🔧 backdrop-filter removido — mesmo bug do iOS descrito em
+       .sidebar acima. Fundo mais escuro (0.75 em vez de 0.6) compensa
+       a perda do desfoque. */
     z-index: 4500; /* abaixo da sidebar (5000), acima do resto do conteúdo */
     opacity: 0;
     transition: opacity 0.25s ease;
@@ -2326,9 +2347,9 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
     gap: 8px;
     padding: 10px 20px;
-    background: rgba(255, 255, 255, 0.06);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(20, 24, 34, 0.85);
+    /* 🔧 backdrop-filter removido — mesmo bug do iOS descrito em
+       .sidebar acima. Fundo mais opaco compensa a perda do desfoque. */
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 30px;
     color: var(--text-title, #ffffff);
