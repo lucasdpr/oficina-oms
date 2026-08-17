@@ -3382,11 +3382,24 @@ body.light-mode {
 }
 
 /* --------------------------------------------------------------
-   GLASS PANELS — sombra mais rica e uma borda superior sutil em
-   gradiente, dando a sensação de painel iluminado por dentro.
+   GLASS PANELS — sombra mais rica, dando a sensação de painel
+   iluminado por dentro.
+   -------------------------------------------------------------- */
+/* 🔧 CORREÇÃO CRÍTICA (causa real do menu mobile "não ficar fixo"):
+   esta regra tinha "position: relative;" — como o menu lateral usa
+   class="sidebar glass-panel" (as duas juntas), e esta regra aparece
+   DEPOIS da regra ".sidebar { position: fixed; ... }" do mobile (lá
+   em cima, dentro de @media max-width:992px), o CSS aplica a ÚLTIMA
+   declaração pro empate de especificidade — ou seja, isso
+   SOBRESCREVIA position:fixed de volta pra position:relative. O menu
+   continuava com height:100vh (essa propriedade não era afetada),
+   então parecia certo numa foto parada, mas ao rolar a página de
+   verdade ele saía do lugar e rolava junto — exatamente o bug
+   relatado ("o que era pra ficar em cima, fica embaixo"). Removido o
+   position: relative (não era necessário aqui; nenhum ::before/::after
+   deste elemento depende disso).
    -------------------------------------------------------------- */
 .glass-panel {
-  position: relative;
   box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
