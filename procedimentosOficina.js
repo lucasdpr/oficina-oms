@@ -107,9 +107,530 @@ export const PROCEDIMENTOS_POR_AREA = {
     ],
 
     // ==========================================================
-    // CADEIRA (DESEMPENADEIRA)
+    // CADEIRA (MCC#2 e 3 — Desempenadeira)
     // ==========================================================
     'cadeira': [
+        {
+            id: '603109',
+            nome: 'Desmontagem de Cadeiras Superiores e Inferiores',
+            revisao: '03',
+            dataRevisao: '28/02/2025',
+            frequencia: 'Diário',
+            responsavel: 'Mecânico e líder de manutenção',
+            objetivo: 'Estabelecer diretrizes para as atividades incluídas na desmontagem de cadeiras inferiores e superiores das MCC\'s # 2 E 3.',
+            seguranca: ['Luva', 'Capacete com jugular', 'Óculos de Segurança', 'Protetor auricular', 'Bota de segurança'],
+            recomendacoes: [
+                'Não ficar sob carga suspensa.',
+                'Para execução desta atividade o funcionário deverá ser treinado neste padrão.'
+            ],
+            ferramentas: ['Chave unha', 'Maromba 3 kg', 'Chave Allen 8 e 17mm', 'Chave Catraca', 'Chave de Gancho (unha)', 'Chave combinada 17, 19 e 22mm', 'Chave Soquete 55mm', 'Lixadeiras', 'Martelo', 'Alavanca', 'Macete', 'Talhadeira', 'Parafusadeira', 'Espátula'],
+            etapas: [
+                { id: '1', titulo: '1. Desmontagem das cadeiras inferiores', secao: true },
+                { id: '1.1', texto: 'Posicionar cadeira no poço com auxílio da ponte rolante e realizar limpeza', pontosChave: 'Utilizando espátula, pincel e trapo para retirar os excessos de graxa e sujeiras. Caso necessário utilizar solvente para auxiliar limpeza.', seguranca: 'Risco de carga suspensa e aprisionamento das mãos — posicionar-se fora do raio de ação da carga, sinalizar corretamente para o operador e utilizar extensor. Utilizar luvas de PVC e jaleco para atividade de limpeza.' },
+                { id: '1.2', texto: 'Em caso de cadeiras inferiores acionadas, posicionar a mesma na prensa hidráulica com auxílio da ponte rolante e desmontar acoplamento', pontosChave: 'Caso necessário aquecer o acoplamento para facilitar desmontagem.', seguranca: 'Risco de carga suspensa e aprisionamento das mãos. Risco de queimadura proveniente da execução de atividades com oxi-corte — utilizar os EPI\'s adequados.' },
+                { id: '1.3', texto: 'Posicionar cadeira na bancada de desmontagem com auxílio da ponte rolante', seguranca: 'Risco de carga suspensa e aprisionamento das mãos — posicionar-se fora do raio de ação da carga, sinalizar corretamente e utilizar extensor.' },
+                { id: '1.4', texto: 'Retirar as proteções dos mancais', pontosChave: 'Utilizar chave combinada 17mm e chave catraca com estampa de 17mm para soltar os parafusos de fixação. Caso necessário utilizar oxi-corte para cortar os parafusos.', seguranca: 'Risco de queimadura proveniente da execução de atividades com oxi-corte — utilizar EPI\'s adequados e biombos para barreira de projeção de fagulhas.' },
+                { id: '1.5', texto: 'Retirar as duas tampas externas dos mancais', pontosChave: 'Utilizar chave soquete allen 17mm com a parafusadeira pneumática para soltar os parafusos de fixação da tampa.', seguranca: 'Risco de impacto por escape de peças ou ferramentas — atenção ao manusear as mesmas.' },
+                { id: '1.6', texto: 'Retirar os anéis de trava das porcas de fixação do rolamento', pontosChave: 'Utilizar martelo, macete e talhadeira.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.7', texto: 'Soltar as porcas da manga do rolo', pontosChave: 'Utilizar chave de gancho ou unha, martelo e talhadeira para soltar porcas.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.8', texto: 'Reposicionar as duas tampas externas dos mancais', pontosChave: 'Utilizar chave soquete allen 17mm com a parafusadeira pneumática para aperto dos parafusos de fixação da tampa.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.9', texto: 'Retirar do rolo os conjuntos de caixa de mancal (mancal, rolamento, espaçador) e posicionar sobre a bancada com auxílio da PR ou talha', pontosChave: 'Caso necessário utilizar alavanca ou maromba para remover conjunto. Obs.: em caso de quebra de rolamento, deformações na manga do rolo e outras situações que impedem a retirada completa, a atividade deve ser realizada de forma segmentada dos componentes.', seguranca: 'Risco de impacto por escape de peças ou ferramentas. Risco de carga suspensa e aprisionamento das mãos.' },
+                { id: '1.10', texto: 'Desmontar os conjuntos de caixa de mancal, removendo tampas externas, espaçadores, travas, porcas, rolamentos 24032 e tampas internas', pontosChave: 'Utilizar marreta, macete e talhadeira para auxílio na desmontagem.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.11', texto: 'Limpar os sobressalentes: rolo, mancais, tampas externas, espaçadores, travas, porcas, rolamentos e tampas internas', pontosChave: 'Utilizar espátula, pincel e trapo para retirar os excessos de graxa e sujeiras. Caso necessário utilizar o decantador e solvente.', seguranca: 'Utilizar luvas de PVC e jaleco para atividade de limpeza.' },
+                { id: '1.12', texto: 'Inspecionar os sobressalentes: rolo, mancais, tampas externas, espaçadores, travas, porcas, rolamentos e tampas internas', pontosChave: 'Repostar as informações do rolo na planilha de desmontagem para atividades de reparo.' },
+                { id: '1.13', texto: 'Armazenar e organizar os sobressalentes que serão reutilizados', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.14', texto: 'Reposicionar porcas nas mangas do rolo', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.15', texto: 'Posicionar rolo na área de transição para envio de reparo', seguranca: 'Risco de carga suspensa e aprisionamento das mãos.' },
+
+                { id: '2', titulo: '2. Desmontagem das cadeiras superiores', secao: true },
+                { id: '2.1', texto: 'Posicionar cadeira no poço com auxílio da ponte rolante e realizar limpeza', pontosChave: 'Utilizando espátula, pincel e trapo. Caso necessário utilizar solvente.', seguranca: 'Risco de carga suspensa e aprisionamento das mãos. Utilizar luvas de PVC e jaleco.' },
+                { id: '2.2', texto: 'Posicionar cadeira na área de desmontagem com auxílio da ponte rolante', pontosChave: 'Manter os estropos levemente tencionados para auxílio na desmontagem da estrutura superior.', seguranca: 'Risco de carga suspensa e aprisionamento das mãos.' },
+                { id: '2.3', texto: 'Retirar os contra pinos e espaçadores', pontosChave: 'Utilizar marreta, macete e talhadeira.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '2.4', texto: 'Retirar os pinos de união dos mancais com a estrutura superior', pontosChave: 'Utilizar marreta, maromba. Caso necessário utilizar oxi-corte para aquecer os olhais do mancal.', seguranca: 'Risco de impacto por escape de peças. Risco de queimadura — utilizar EPI\'s adequados e biombos.' },
+                { id: '2.5', texto: 'Posicionar estrutura superior da cadeira na bancada com auxílio da ponte rolante ou talha', seguranca: 'Risco de carga suspensa e aprisionamento das mãos.' },
+                { id: '2.6', texto: 'Despressurizar e drenar o óleo das tubulações e cilindros para desmontagem', pontosChave: 'Utilizar trapos, baldes ou baias para contenção. Utilizar chave combinada 17, 19 e 22mm.', seguranca: 'Risco de impacto por rompimento dos flexíveis e projeção de óleo — manter postura defensiva e ficar fora do raio de ação.' },
+                { id: '2.7', texto: 'Retirar as tubulações de óleo da estrutura superior da cadeira', pontosChave: 'Soltar os "stauffs" de fixação das tubulações.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '2.8', texto: 'Retirar as porcas dos parafusos e desmontar os mancais de fixação dos cilindros hidráulicos', pontosChave: 'Utilizar parafusadeira com soquete 55mm ou chave de impacto 55mm. Caso necessário utilizar oxi-corte para aquecer e facilitar desmontagem da porca.', seguranca: 'Risco de impacto por escape de peças. Risco de queimadura — utilizar EPI\'s adequados e biombos.' },
+                { id: '2.9', texto: 'Retirar os cilindros e posicioná-los para teste e reparo', seguranca: 'Risco de carga suspensa e aprisionamento das mãos.' },
+                { id: '2.10', texto: 'Encaminhar estrutura superior para área de jateamento em pintura', seguranca: 'Risco de carga suspensa e aprisionamento das mãos.' },
+                { id: '2.11', texto: 'Desmontar os conjuntos de caixa de mancal (mancal, rolamento, espaçador) e posicionar sobre a bancada com auxílio da PR ou talha', pontosChave: 'Para realizar as atividades, repetir as operações: 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 1.10, 1.11, 1.12, 1.14 e 1.15.' }
+            ],
+            tabelaReferencia: {
+                titulo: 'Tabela de "Line" aplicados nas cadeiras das MCC#2 e 3',
+                colunas: ['Cadeiras', 'Line'],
+                linhas: [
+                    ['43 @ 47', '10 mm'],
+                    ['48 @ 53', '10 mm'],
+                    ['54 @ 65', '20 mm'],
+                    ['66 @ 79', '30 mm']
+                ]
+            }
+        },
+        {
+            id: '603111',
+            nome: 'Montagem de Cadeiras Inferiores',
+            revisao: '03',
+            dataRevisao: '28/02/2025',
+            frequencia: 'Diário',
+            responsavel: 'Mecânico e líder de manutenção',
+            objetivo: 'Estabelecer diretrizes para as atividades incluídas na montagem das cadeiras inferiores das MCC\'s # 2 E 3.',
+            seguranca: ['Luva', 'Capacete com jugular', 'Óculos de Segurança', 'Protetor auricular', 'Bota de segurança'],
+            recomendacoes: [
+                'Não ficar sob carga suspensa.',
+                'Para execução desta atividade o funcionário deverá ser treinado neste padrão.'
+            ],
+            ferramentas: ['Maromba', 'Chave Allen 8 e 17mm', 'Chave Catraca', 'Chave de Gancho (unha)', 'Chave combinada 11, 13, 17, 19 e 22mm', 'Chave Soquete 17, 19 e 55mm', 'Lixadeira', 'Martelo', 'Macete', 'Talhadeira', 'Parafusadeira', 'Micrômetro', 'Paquímetro'],
+            etapas: [
+                { id: '1.1', texto: 'Posicionar rolo com auxílio da ponte rolante ou talha na bancada de reparo', seguranca: 'Risco de carga suspensa e aprisionamento das mãos — posicionar-se fora do raio de ação da carga, sinalizar corretamente e utilizar extensor.' },
+                { id: '1.2', texto: 'Realizar limpeza nas duas mangas do rolo', pontosChave: 'Caso necessário utilizar solvente e trapos.', seguranca: 'Utilizar luvas de PVC e jaleco.' },
+                { id: '1.3', texto: 'Aferir as medidas das mangas do rolo', pontosChave: 'Utilizar micrômetro e paquímetro para aferir medidas da manga e garantir montagem. Avaliar furos de refrigeração do rolo.' },
+                { id: '1.4', texto: 'Preparar juntas e montar nas tampas externas e internas', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.5', texto: 'Montar os 04 retentores nas tampas externas e internas', pontosChave: 'Utilizar macete para auxiliar na montagem. Ver desenho esquemático.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.6', texto: 'Montar os 02 anéis o\'rings nas 02 luvas' },
+                { id: '1.7', texto: 'Montar as 02 luvas na parte interna das mangas do rolo', pontosChave: 'Montagem livre. Ver desenho esquemático.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.8', texto: 'Montar as 02 tampas na parte interna das mangas do rolo', pontosChave: 'Montagem livre. Ver desenho esquemático.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.9', texto: 'Passar lubrificante ou vaselina nas mangas do rolo para formar uma película', pontosChave: 'Utilizar pincel para espalhar o lubrificante.' },
+                { id: '1.10', texto: 'Montar os rolamentos autocompensador', pontosChave: 'Montagem livre (caso necessário utilizar macete de bronze para posicionar o rolamento).', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.11', texto: 'Montar o par de espaçadores (interno/externo) nas mangas do rolo', pontosChave: 'Montagem livre. Ver desenho esquemático. Nota: para cadeira inferior 48, realizar a montagem com o par de espaçadores (interno/externo) + o rolamento NU 1032 nas duas mangas.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.12', texto: 'Montar outros espaçadores nas mangas do rolo', pontosChave: 'Montagem livre. Ver desenho esquemático.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.13', texto: 'Montar as arruelas de segurança (aranha) e anéis o\'ring nas mangas do rolo', pontosChave: 'Montagem livre. Ver desenho esquemático.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.14', texto: 'Apertar as porcas até ajustar os espaçadores e travar com arruela de segurança (aranha)', pontosChave: 'Utilizar chave unha e maromba e talhadeira para travar arruela de segurança. Nota: o Padrão SKF para arruela de segurança é realizar um bom aperto e retornar 18º para o travamento.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.15', texto: 'Posicionar os mancais com talha ou ponte rolante na bancada e preparar para montagem', pontosChave: 'Lixar e realizar limpeza dos mancais (bases de apoio e alojamento de rolamento). Utilizar micrometro interno para aferir medidas do diâmetro de alojamento do rolamento e reportar informações para planilha de acompanhamento. Caso necessário avaliar a substituição das buchas dos mancais.', seguranca: 'Risco de carga suspensa e aprisionamento das mãos.' },
+                { id: '1.16', texto: 'Montar os mancais com talha ou ponte rolante na manga do rolo', pontosChave: 'Montagem livre.', seguranca: 'Risco de carga suspensa e aprisionamento das mãos.' },
+                { id: '1.17', texto: 'Posicionar as tampas internas e externas com parafuso e apertá-los', pontosChave: 'Utilizar chave catraca ou pneumática com soquete 17mm.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.18', texto: 'Montar os "lines" nas laterais dos mancais', pontosChave: 'Atenção para montagem dos "lines" do lado fixo e lado livre.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.19', texto: 'Montar as proteções dos mancais', pontosChave: 'Utilizar chave catraca ou pneumática com soquete 17mm.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.20', texto: 'Montar as juntas rotativas no furo de refrigeração do rolo', pontosChave: 'Utilizar chave catraca ou pneumática com soquete 19mm. Limpar o furo de refrigeração antes da montagem.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.21', texto: 'Realizar lubrificação dos mancais', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.22', texto: 'Montar o acoplamento caso rolo seja acionado', pontosChave: 'Aquecer acoplamento aproximadamente 140ºC para montagem. Ajustar chaveta e alojamento para montagem do acoplamento.', seguranca: 'Risco de carga suspensa e aprisionamento das mãos. Risco de queimadura — utilizar EPI\'s adequados.' },
+                { id: '1.23', texto: 'Preparar cadeira para envio' }
+            ],
+            tabelaReferencia: {
+                titulo: 'Tabela de "Line" aplicados nas cadeiras das MCC#2 e 3',
+                colunas: ['Cadeiras', 'Line'],
+                linhas: [
+                    ['43 @ 47', '10 mm'],
+                    ['48 @ 53', '10 mm'],
+                    ['54 @ 65', '20 mm'],
+                    ['66 @ 79', '30 mm']
+                ]
+            }
+        },
+        {
+            id: '603110',
+            nome: 'Montagem de Cadeiras Superiores',
+            revisao: '03',
+            dataRevisao: '28/02/2025',
+            frequencia: 'Diário',
+            responsavel: 'Mecânico e líder de manutenção',
+            objetivo: 'Estabelecer diretrizes para as atividades incluídas na montagem das cadeiras superiores das MCC\'s # 2 E 3.',
+            seguranca: ['Luva', 'Capacete com jugular', 'Óculos de Segurança', 'Protetor auricular', 'Bota de segurança'],
+            recomendacoes: [
+                'Não ficar sob carga suspensa.',
+                'Para execução desta atividade o funcionário deverá ser treinado neste padrão.'
+            ],
+            ferramentas: ['Maromba', 'Chave Allen 8 e 17mm', 'Chave Catraca', 'Chave de Gancho (unha)', 'Chave combinada 11, 13, 17, 19 e 22mm', 'Chave Soquete 17, 19 e 55mm', 'Lixadeira', 'Martelo', 'Macete', 'Talhadeira', 'Parafusadeira', 'Micrômetro', 'Paquímetro'],
+            etapas: [
+                { id: '1.1', texto: 'Posicionar rolo com auxílio da ponte rolante ou talha na bancada de reparo', seguranca: 'Risco de carga suspensa e aprisionamento das mãos.' },
+                { id: '1.2', texto: 'Realizar limpeza nas duas mangas do rolo', pontosChave: 'Caso necessário utilizar solvente e trapos.', seguranca: 'Utilizar luvas de PVC e jaleco.' },
+                { id: '1.3', texto: 'Aferir as medidas das mangas do rolo', pontosChave: 'Utilizar micrômetro e paquímetro. Avaliar os furos de refrigeração do rolo.' },
+                { id: '1.4', texto: 'Preparar juntas e montar nas tampas externas e internas', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.5', texto: 'Montar os 04 retentores nas tampas externas e internas', pontosChave: 'Utilizar macete para auxiliar na montagem. Ver desenho esquemático.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.6', texto: 'Montar os 02 anéis o\'rings nas 02 luvas' },
+                { id: '1.7', texto: 'Montar as 02 luvas na parte interna das mangas do rolo', pontosChave: 'Montagem livre. Ver desenho esquemático.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.8', texto: 'Montar as 02 tampas na parte interna das mangas do rolo', pontosChave: 'Montagem livre. Ver desenho esquemático.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.9', texto: 'Passar lubrificante ou vaselina nas mangas do rolo para formar uma película', pontosChave: 'Utilizar pincel para espalhar o lubrificante.' },
+                { id: '1.10', texto: 'Montar os rolamentos autocompensador', pontosChave: 'Montagem livre (caso necessário utilizar macete de bronze).', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.11', texto: 'Montar o par de espaçadores (interno/externo) nas mangas do rolo', pontosChave: 'Montagem livre. Ver desenho esquemático.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.12', texto: 'Montar os rolamentos NU 1032', pontosChave: 'Montagem livre. Ver desenho esquemático.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.13', texto: 'Montar outros espaçadores nas mangas do rolo', pontosChave: 'Montagem livre. Ver desenho esquemático.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.14', texto: 'Montar as arruelas de segurança (aranha) e anéis o\'ring nas mangas do rolo', pontosChave: 'Montagem livre. Ver desenho esquemático.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.15', texto: 'Apertar as porcas até ajustar os espaçadores e travar com arruela de segurança (aranha)', pontosChave: 'Utilizar chave unha, maromba e talhadeira. Nota: o Padrão SKF é realizar um bom aperto e retornar 18º para o travamento.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.16', texto: 'Posicionar os mancais com talha ou ponte rolante na bancada e preparar para montagem', pontosChave: 'Lixar e limpar os mancais (bases de apoio e alojamento de rolamento). Utilizar micrometro interno para aferir e reportar na planilha de acompanhamento. Caso necessário avaliar substituição das buchas dos mancais.', seguranca: 'Risco de carga suspensa e aprisionamento das mãos.' },
+                { id: '1.17', texto: 'Montar os mancais com talha ou ponte rolante na manga do rolo', pontosChave: 'Montagem livre.', seguranca: 'Risco de carga suspensa e aprisionamento das mãos.' },
+                { id: '1.18', texto: 'Posicionar as tampas internas e externas com parafuso e apertá-los', pontosChave: 'Utilizar chave catraca ou pneumática com soquete 17mm.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.19', texto: 'Montar os "lines" nas laterais dos mancais', pontosChave: 'Atenção para montagem dos "lines" do lado fixo e lado livre.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.20', texto: 'Montar as proteções dos mancais', pontosChave: 'Utilizar chave catraca ou pneumática com soquete 17mm.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.21', texto: 'Montar as juntas rotativas no furo de refrigeração do rolo', pontosChave: 'Utilizar chave catraca ou pneumática com soquete 19mm. Limpar o furo de refrigeração antes da montagem.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.22', texto: 'Realizar lubrificação dos mancais', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.23', texto: 'Retirar conjunto de rolo montado na bancada com ponte rolante e posicionar sobre calços no piso', pontosChave: 'Utilizar dormentes de madeira como calço.', seguranca: 'Risco de carga suspensa e aprisionamento das mãos.' },
+                { id: '1.24', texto: 'Posicionar estrutura superior com ponte rolante na área de reparo', seguranca: 'Risco de carga suspensa e aprisionamento das mãos.' },
+                { id: '1.25', texto: 'Inspecionar e reparar as tubulações de água e óleo da estrutura caso necessário', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.26', texto: 'Inspecionar e substituir caso necessário os "stauff" de fixação das tubulações', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.27', texto: 'Montar os cilindros na estrutura da cadeira', pontosChave: 'Preparar os mancais de fixação do munhão dos cilindros. Apertar os parafusos dos mancais para fixação do cilindro na estrutura.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.28', texto: 'Posicionar estrutura de cadeira com talha ou ponte sobre o conjunto de rolo já preparado', seguranca: 'Risco de carga suspensa e aprisionamento das mãos.' },
+                { id: '1.29', texto: 'Montar os pinos para união dos mancais do conjunto de rolo com os olhais dos cilindros da estrutura', pontosChave: 'Utilizar maromba para posicionar os pinos.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.30', texto: 'Lubrificar olhal dos cilindros' },
+                { id: '1.31', texto: 'Montar arruelas e travas nos pinos', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.32', texto: 'Preparar cadeira para envio' }
+            ],
+            tabelaReferencia: {
+                titulo: 'Tabela de "Line" aplicados nas cadeiras das MCC#2 e 3',
+                colunas: ['Cadeiras', 'Line'],
+                linhas: [
+                    ['43 @ 47', '10 mm'],
+                    ['48 @ 53', '10 mm'],
+                    ['54 @ 65', '20 mm'],
+                    ['66 @ 79', '30 mm']
+                ]
+            }
+        },
+        {
+            id: '606156',
+            nome: 'Operação da Talha Central MCC#2 e 3',
+            revisao: '00',
+            dataRevisao: '14/10/2024',
+            frequencia: 'Sempre que houver necessidade de operação com a talha elétrica',
+            responsavel: 'Líderes, mecânicos, técnicos de manutenção e/ou pessoas capacitadas para operação do equipamento',
+            objetivo: 'Realizar a operação da talha elétrica central da desempenadeira das máquinas de lingotamento contínuo 2 e 3 de maneira segura e correta.',
+            seguranca: ['Bota cano curto anti torção (EPI 8001)', 'Capacete de segurança cinza (EPI 1000)', 'Protetor auricular concha ou plug (EPI 3007/3002)', 'Óculos panorâmico único incolor (EPI 2016)', 'Luva seg. em raspa único BR/CZ (EPI 6024)'],
+            recomendacoes: [
+                'Certificar-se de que todos os alarmes audiovisuais da talha elétrica e da PR#189 estejam funcionando corretamente; se algum estiver inoperante, não realizar operação até que seja normalizado.',
+                'O colaborador deverá estar de posse da carteirinha de operação de talha elétrica dentro da validade.',
+                'Somente pessoas habilitadas e com carteirinha válida podem operar a talha elétrica.'
+            ],
+            ferramentas: [],
+            etapas: [
+                { id: '7.1', texto: 'Após a chegada da equipe de manutenção, o líder que irá utilizar a talha deve ir até a cabine de operação da PR189, testar a comunicação via rádio e coletar a chave de bloqueio da botoeira', pontosChave: 'Manter comunicação direta com o operador da PR#189 durante todo o uso da talha. Testar rádio e manter na frequência exclusiva.', seguranca: 'Risco de impacto da PR#189 com a talha elétrica durante a execução das atividades.' },
+                { id: '7.2', texto: 'Realizar checklist da talha elétrica', pontosChave: 'Verificar se todos os itens do formulário estão em perfeito estado. Se identificar não conformidade, não iniciar a atividade até resolver.' },
+                { id: '7.3', texto: 'Solicitar ao operador da PR#189 que ligue o disjuntor para habilitar o alarme audiovisual da cabine da PR', pontosChave: 'Certificar-se de que o disjuntor foi ligado corretamente.', seguranca: 'Risco de impacto da PR#189 com a talha elétrica.' },
+                { id: '7.4', texto: 'Operador da PR#189 translada até o atuador (instalado na viga de rolamento) para certificar que o alarme está funcionando', pontosChave: 'Durante os testes com a PR#189 a talha elétrica deve permanecer desligada e na garagem (próxima à cadeira 48).', seguranca: 'Risco de colisão PR#189 com a talha de reparo. Manter comunicação entre operador da PR#189 e responsável pela manutenção.' },
+                { id: '7.5', texto: 'Após certificar todos os alarmes, liberar a talha para a equipe iniciar as atividades', pontosChave: 'Verificar se as documentações das atividades estão liberadas.', seguranca: 'Cumprir normas e padrões de segurança. Somente pessoas habilitadas e com carteirinha válida podem operar a talha.' },
+                { id: '7.6', texto: 'Ao final das atividades, posicionar a talha elétrica na garagem (próxima à cadeira 48)', pontosChave: 'Certificar-se de que o cabo de aço do guincho está todo enrolado.' },
+                { id: '7.7', texto: 'Comunicar via rádio ao operador da PR#189 o encerramento das atividades', pontosChave: 'Liberar a PR#189 para operação normal.' },
+                { id: '7.8', texto: 'Guardar a botoeira na caixa de bloqueio e fechar o cadeado, ir até a cabine da PR189, recolher o rádio e devolver a chave de bloqueio da talha elétrica', pontosChave: 'Liberar a PR#189 para operação normal. Manter comunicação entre operador da PR#189 e responsável pela manutenção.' }
+            ],
+            acoesCorretivas: 'Caso algum alarme não esteja funcionando, interromper de imediato a operação com a talha elétrica até que o problema seja resolvido.'
+        },
+        {
+            id: '603923',
+            nome: 'Reparo do Conjunto do Rolo Sólido das Mesas de Transferência da MCC#2 e 3',
+            revisao: '01',
+            dataRevisao: '19/02/2026',
+            frequencia: 'Diário',
+            responsavel: 'Mecânico líder de manutenção',
+            objetivo: 'Estabelecer diretrizes para as atividades incluídas no reparo do conjunto do rolo sólido das mesas de transferência das MCC#2 e 3 no interior da OMS.',
+            seguranca: ['Luva de mecânico', 'Capacete com jugular', 'Óculos de Segurança', 'Protetor auricular', 'Bota de segurança com biqueira de aço'],
+            recomendacoes: [
+                'Verificar se as ferramentas estão em boas condições de uso.',
+                'Não permanecer sob cargas suspensas.',
+                'Verificar as condições dos estropos, correntes ou cintas.'
+            ],
+            ferramentas: ['Lixadeira', 'Chaves combinada', 'Chave soquete', 'Maromba', 'Chave Unha', 'Par de estropo ¼" x 1m ou 1 1/2m', 'Paquímetro', 'Micrômetro', 'Espátula'],
+            etapas: [
+                { id: '1', titulo: '1. Desmontagem', secao: true },
+                { id: '1.1', texto: 'Posicionar rolo sólido sobre o cavalete de reparo (bancada)', pontosChave: 'Utilizar as PR\'s 146 e 221.', seguranca: 'Risco de impacto por queda do rolo — utilizar estropos/cabos/cintas em bom estado.' },
+                { id: '1.2', texto: 'Desamassar chapa trava para liberar a cabeça sextavada do parafuso do espelho', pontosChave: 'Utilizar martelo bola e uma talhadeira.', seguranca: 'Risco de impacto do martelo nas mãos.' },
+                { id: '1.3', texto: 'Sacar a engrenagem do rolo e retirar a chaveta', pontosChave: 'Utilizar a unidade hidráulica móvel.', seguranca: 'Risco de aprisionamento das mãos. Risco de impacto por escape da chave e dos pinos da prensa.' },
+                { id: '1.4', texto: 'Soltar os parafusos dos mancais lado móvel e fixo e os parafusos do espelho', pontosChave: 'Utilizar chave combinada 24mm e 30mm ou soquete 24mm e 30mm / pneumática.', seguranca: 'Risco de impacto por escape da chave. Risco de perda auditiva — usar protetor auricular.' },
+                { id: '1.5', texto: 'Aquecer o espaçador para sacar o mesmo (e o acoplamento, se houver)', pontosChave: 'Utilizar maçarico para dar calor. Utilizar a prensa se necessário.', seguranca: 'Risco de impacto por escape do macete, maromba e martelo. Risco de queimadura por oxi-corte — usar EPI\'s adequados (blusão de raspa, avental, capuz de lona, perneira, luva de raspa cano longo, óculos de maçariqueiro).' },
+                { id: '1.6', texto: 'Retirar as tampas externas dos mancais', pontosChave: 'Utilizar chave combinada 30 e 24, soquete e pneumática.', seguranca: 'Risco de impacto por queda da tampa. Risco de aprisionamento das mãos. Risco de escape da chave.' },
+                { id: '1.7', texto: 'Soltar arruela e porca de segurança', pontosChave: 'Utilizar talhadeira sem fio de corte.', seguranca: 'Risco de impacto por escape do martelo e por queda da porca.' },
+                { id: '1.8', texto: 'Sacar os mancais móveis e fixo', pontosChave: 'Utilizar talha e maromba.', seguranca: 'Risco de impacto por queda do mancal.' },
+                { id: '1.9', texto: 'Transportar para a bancada de reparo os mancais e tampas', pontosChave: 'Utilizar talha, PR 146 ou PR 221.', seguranca: 'Risco de impacto por rompimento de cabos de aço e estropos. Risco de aprisionamento das mãos.' },
+                { id: '1.10', texto: 'Sacar rolamento da manga do rolo e a tampa interna junto com piston ring', pontosChave: 'Utilizar maçarico se necessário.', seguranca: 'Risco de queimaduras — usar EPI\'s adequados (blusão de raspa, avental, capuz de lona, perneira, luva de raspa cano longo, máscara de solda).' },
+                { id: '1.11', texto: 'Limpar e inspecionar todas as peças que compõem o conjunto de rolo (inclusive mangas e piston)', pontosChave: 'Utilizar solvente. Utilizar maçarico se necessário.', seguranca: 'Contato com produto químico — usar luva de cano longo em PVC e respirador compatível. Risco de queimadura.' },
+                { id: '1.12', texto: 'Medir os mancais, engrenagens e mangas do rolo' },
+
+                { id: '2', titulo: '2. Montagem', secao: true },
+                { id: '2.1', texto: 'Montar os pistons o\'ring nas mangas do rolo', pontosChave: 'Montagem livre, ajustar pistons o\'ring, se necessário utilizar esmeril ou maquita.', seguranca: 'Risco de impacto por quebra da peça. Risco de aprisionamento das mãos.' },
+                { id: '2.2', texto: 'Montar as tampas sobre os pistons ring', pontosChave: 'Atentar para o lado móvel e fixo.', seguranca: 'Risco de impacto por escape da chave. Risco de queda das tampas.' },
+                { id: '2.3', texto: 'Aquecer rolamento no aquecedor indutivo', pontosChave: '80º a 120ºC.', seguranca: 'Risco de queimadura — utilizar luva para alta caloria.' },
+                { id: '2.4', texto: 'Montar a arruela e a porca de segurança na manga do rolo lado do mancal fixo', pontosChave: 'Apertar com auxílio de um martelo de bola e uma talhadeira.', seguranca: 'Risco de impacto por escape de chave.' },
+                { id: '2.5', texto: 'Montar mancais nas mangas dos rolos', pontosChave: 'Estropar os mancais (móvel e fixo). Utilizar talha ou PR\'s 146 ou 221.', seguranca: 'Risco de impacto por queda da peça — utilizar cabos/estropos e cintas em bom estado.' },
+                { id: '2.6', texto: 'Montar o espaçador no mancal fixo' },
+                { id: '2.7', texto: 'Colocar os parafusos, arruelas de pressão e porcas nos mancais e apertá-los', seguranca: 'Risco de impacto por escape da chave.' },
+                { id: '2.8', texto: 'Montar o piston ring no espaçador', pontosChave: 'Montagem livre.' },
+                { id: '2.9', texto: 'Montar o espaçador na manga do rolo', pontosChave: 'Montagem livre. Utilizar o maçarico.', seguranca: 'Risco de queimadura — utilizar luvas para alta temperatura e EPI\'s de solda.' },
+                { id: '2.10', texto: 'Aquecer a engrenagem e montar na ponta do rolo', pontosChave: 'Utilizar maçarico por um período de 20 a 30 minutos. Não esquecer de alinhar o rasgo de chaveta da engrenagem com o rasgo de chaveta do rolo. Ao dar calor, nunca direcionar o jato da chama direto nos dentes das engrenagens, e sim no centro.', seguranca: 'Risco de queimadura por oxi-corte — usar EPI\'s adequados (blusão de raspa, avental, capuz de lona, perneira, luva de raspa cano longo, óculos de maçariqueiro).' },
+                { id: '2.11', texto: 'Ajustar e montar no rasgo de chaveta do eixo com engrenagem', pontosChave: 'Utilizar maromba se necessário.', seguranca: 'Risco de impacto por escape da maromba.' },
+                { id: '2.12', texto: 'Montar a chapa trava, o espelho e os parafusos de fixação do espelho', pontosChave: 'Utilizar martelo e talhadeira.', seguranca: 'Risco de aprisionamento das mãos.' },
+                { id: '2.13', texto: 'Dobrar a chapa trava para travar os parafusos (e montar o acoplamento, se o rolo tiver)', pontosChave: 'Utilizar martelo e talhadeira.', seguranca: 'Risco de aprisionamento das mãos.' },
+                { id: '2.14', texto: 'Dar acabamento na engrenagem e pintar os mancais de cor cinza', seguranca: 'Contato com produto químico — usar luva de cano longo em PVC e respirador compatível.' },
+                { id: '2.15', texto: 'Lubrificar os mancais', pontosChave: 'Não esquecer de travar o mancal móvel com solda. Utilizar máquina de solda para travar os mancais no rolo.', seguranca: 'Risco de queimadura por solda — usar EPI\'s adequados (blusão de raspa, avental, capuz de lona, perneira, luva de raspa cano longo, máscara de solda).' }
+            ]
+        },
+        {
+            id: '603112',
+            nome: 'Reparo do Eixo do Sistema de Transferência de Placas',
+            revisao: '03',
+            dataRevisao: '28/02/2025',
+            frequencia: 'Semanal',
+            responsavel: 'Mecânico e líder de manutenção',
+            objetivo: 'Estabelecer diretrizes para as atividades incluídas no reparo do eixo do sistema de transferência de placas das MCC\'s # 2 E 3.',
+            seguranca: ['Luva', 'Capacete com jugular', 'Óculos de Segurança', 'Protetor auricular', 'Bota de segurança'],
+            recomendacoes: [
+                'Não ficar sob carga suspensa.',
+                'Para execução desta atividade o funcionário deverá ser treinado neste padrão.'
+            ],
+            ferramentas: ['Maromba', 'Chave Allen 8 e 17mm', 'Chave Catraca', 'Chave combinada 11, 13, 17, 19 e 22mm', 'Chave Soquete 17, 19 e 55mm', 'Lixadeira', 'Martelo', 'Macete', 'Talhadeira', 'Parafusadeira', 'Micrômetro', 'Paquímetro'],
+            etapas: [
+                { id: '1', titulo: '1. Desmontagem', secao: true },
+                { id: '1.1', texto: 'Posicionar eixo "Line shaft" no cavalete com auxílio da PR146, 221 ou talha elétrica', seguranca: 'Risco de carga suspensa e aprisionamento das mãos — posicionar-se fora do raio de ação da carga, sinalizar corretamente e utilizar extensor.' },
+                { id: '1.2', texto: 'Caso necessário, realizar limpeza do eixo para remover graxa e sujeiras', pontosChave: 'Utilizar espátula e solvente para limpar.', seguranca: 'Contato com produto químico — usar luva de cano longo em PVC e respirador compatível.' },
+                { id: '1.3', texto: 'Soltar as aranhas e buchas dos rolamentos e tentar sacar o mesmo', pontosChave: 'Caso seja necessário, cortar os rolamentos com auxílio do maçarico.', seguranca: 'Risco de impacto por escape de peças. Risco de queimadura por oxi-corte — usar EPI\'s adequados.' },
+                { id: '1.4', texto: 'Retirar os batentes da engrenagem', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.5', texto: 'Retirar os espaçadores das chavetas', pontosChave: 'Utilizar chave combinada 13mm, talhadeira e martelo bola.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.6', texto: 'Retirar as chavetas cônicas da engrenagem', pontosChave: 'Utilizar talhadeira e maromba. Caso necessário cortar as chavetas com maçarico.', seguranca: 'Risco de impacto por escape de peças. Risco de queimadura por oxi-corte.' },
+                { id: '1.7', texto: 'Soltar o espelho do acoplamento', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '1.8', texto: 'Posicionar o eixo com auxílio da PR na prensa hidráulica horizontal e sacar acoplamento, engrenagens e rolamento do eixo', pontosChave: 'Caso haja necessidade, utilizar maçarico para dar calor no acoplamento e engrenagem.', seguranca: 'Risco de carga suspensa e aprisionamento das mãos. Risco de queimadura por oxi-corte.' },
+                { id: '1.9', texto: 'Posicionar os itens (acoplamento, engrenagens e eixo) com auxílio de PR na área de desmontagem', seguranca: 'Risco de carga suspensa e aprisionamento das mãos.' },
+                { id: '1.10', texto: 'Realizar limpeza dos itens desmontados (acoplamento, eixo e engrenagens)', pontosChave: 'Utilizar espátula e solvente. Caso necessário utilizar poço de lavagem de peças.', seguranca: 'Contato com produto químico — usar luva de cano longo em PVC e respirador compatível.' },
+                { id: '1.11', texto: 'Inspecionar acoplamento e engrenagens', pontosChave: 'Avaliar desgaste e medir encubação, caso necessário descartar. Utilizar micrometro interno para medir o diâmetro do furo do acoplamento e das engrenagens.' },
+                { id: '1.12', texto: 'Posicionar o eixo no cavalete de giro e inspecionar com auxílio da PR', pontosChave: 'Utilizar micrometro para medir o diâmetro do eixo no local de montagem dos rolamentos e engrenagens. Utilizar relógio comparador para inspecionar empeno. Caso necessário, descartar o eixo.', seguranca: 'Risco de carga suspensa e aprisionamento das mãos.' },
+
+                { id: '2', titulo: '2. Montagem', secao: true },
+                { id: '2.1', texto: 'Verificar os desenhos referente ao conjunto a ser montado', pontosChave: 'Avaliar se as informações estão corretas nos documentos de trabalho, pois o desenho é a referência de montagem.' },
+                { id: '2.2', texto: 'Posicionar o eixo com auxílio de PR no cavalete de montagem', seguranca: 'Risco de carga suspensa e aprisionamento das mãos.' },
+                { id: '2.3', texto: 'Inspecionar eixo conforme desenho', pontosChave: 'Utilizar micrometro para medir o diâmetro do eixo no local de montagem. Utilizar relógio comparador para inspecionar empeno.' },
+                { id: '2.4', texto: 'Ajustar e preparar chavetas, batentes, espaçadores, engrenagens e encubações de rolamentos e engrenagens' },
+                { id: '2.5', texto: 'Montar o batente de encosto da engrenagem no eixo', pontosChave: 'Seguir croqui de montagem da engrenagem e batente.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '2.6', texto: 'Aquecer a engrenagem com auxílio de maçarico e montar até encostar no batente', pontosChave: 'A engrenagem deve ser aquecida até 120ºC e seu manuseio deve ser realizado com luva apropriada. A montagem das engrenagens deve ser realizada do centro para a extremidade.', seguranca: 'Risco de queimadura por oxi-corte — usar EPI\'s adequados.' },
+                { id: '2.7', texto: 'Montar chaveta cônica na engrenagem', pontosChave: 'Utilizar maromba para realizar aperto da chaveta.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '2.8', texto: 'Ajustar e montar o espaçador da chaveta', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '2.9', texto: 'Montagem da bucha cônica, rolamento, arruela de trava e porca', pontosChave: 'A montagem deve ser realizada de forma livre, pois os apertos devem ser concluídos na área de aplicação.', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '2.10', texto: 'Acompanhar a sequência de montagem entre engrenagem e rolamento conforme desenho' },
+                { id: '2.11', texto: 'Realizar a proteção dos rolamentos', pontosChave: 'A proteção do rolamento é para evitar a contaminação com água e particulados.' },
+                { id: '2.12', texto: 'Para eixo com acoplamento rígido: montar acoplamento com ajuste de chaveta e fixar com espelho no eixo', pontosChave: 'O acoplamento deve ser aquecido até 120ºC e seu manuseio deve ser realizado com luva apropriada.', seguranca: 'Risco de impacto por escape de peças. Risco de queimadura por oxi-corte.' },
+                { id: '2.13', texto: 'Para eixo com mancal de encosto: montar pista externa do rolamento + espaçador no mancal de encosto, primeira pista interna + espaçador na ponta do eixo, unir as etapas, montar segunda pista interna do rolamento no eixo, montar o espelho na ponta do eixo e montar a tampa do mancal de encosto', seguranca: 'Risco de impacto por escape de peças ou ferramentas.' },
+                { id: '2.14', texto: 'Embalar e preparar para envio' }
+            ]
+        }
+    ],
+
+    // ==========================================================
+    // HIDRÁULICA
+    // ==========================================================
+    'hidraulica': [
+        {
+            id: '606052',
+            nome: 'Teste de Spray e Hidrostático das MCC\'s #2 e 3',
+            revisao: '04',
+            dataRevisao: '14/10/2024',
+            frequencia: 'Semanal',
+            responsavel: 'Líder de manutenção e mecânicos',
+            objetivo: 'Estabelecer diretrizes para as atividades de teste de spray e hidrostático das MCC\'S#2 e 3 na OMS.',
+            seguranca: ['Luva de vaqueta', 'Capacete com jugular', 'Óculos de Segurança', 'Protetor auricular', 'Bota de segurança'],
+            recomendacoes: [
+                'Não ficar sob carga suspensa.',
+                'Para execução desta atividade o funcionário deverá ser treinado neste padrão.'
+            ],
+            ferramentas: ['Chave inglesa de 8" e 15"', 'Chave de estria de 30 x 32mm', 'Chave de estria de 30mm', 'Chave de extensão com estampa de 15/16"', 'Chave de impacto estriada de 2 ¾"'],
+            etapas: [
+                { id: '8.1', titulo: '8.1 Teste Hidrostático', secao: true },
+                { id: '8.1', texto: 'Posicionar e fixar o molde no Stand principal de alinhamento das MCC\'s 2 e 3, utilizando 6 (seis) parafusos para aperto', pontosChave: 'Utilizar chave de impacto estriada de 2 ¾" ou ferramenta pneumática com soquete 2 ¾" para aperto.', seguranca: 'Risco de carga suspensa e aprisionamento — ficar fora do raio de ação da carga e manter postura defensiva durante o manuseio do molde.' },
+                { id: '8.1.1', texto: 'Verificar se os registros das tubulações Ø12mm de dreno e sangria das placas largas estão abertos', pontosChave: 'Caso não esteja, abrir os registros.' },
+                { id: '8.1.2', texto: 'Abrir os 4 registros de entrada de água das placas do molde, localizados no stand' },
+                { id: '8.1.3', texto: 'Fechar os 4 registros de retorno de água das placas do molde, localizados no stand' },
+                { id: '8.1.4', texto: 'Abrir o registro da linha alimentação da rede principal de água para o stand do molde' },
+                { id: '8.1.5', texto: 'Realizar sangria, aguardando a saída de ar das tubulações de dreno e fechar os registros', pontosChave: 'Após fechar os registros de sangria, o circuito fica pressurizado com aproximadamente 5kgf/cm² (pressão da rede de alimentação de água).' },
+                { id: '8.1.6', texto: 'Fechar o registro de água da rede alimentação principal e ligar a bomba de pressurização de água no stand até atingir o valor de referência de 10kgf/cm²', pontosChave: 'A pressão de teste de 10kgf/cm² deve ser ajustada através da válvula de saída da bomba.' },
+                { id: '8.1.7', texto: 'O circuito deve permanecer pressurizado por 20 minutos (teste hidrostático) para realizar a inspeção de vazamentos', pontosChave: 'Caso o circuito não consiga manter a pressão de teste (10kgf/cm²), identificar o local da fuga (vazamentos e passagem). Reportar resultados no checklist dos moldes da MCC\'s #2 e 3.' },
+                { id: '8.1.8', texto: 'Inspeção visual de vazamentos na face de trabalho, no topo e base das placas largas e estreitas' },
+                { id: '8.1.9', texto: 'Inspeção visual de vazamentos nos flexíveis, conexões, juntas de expansão, tubulações e válvulas' },
+
+                { id: '8.2', titulo: '8.2 Teste dos Bicos de Spray', secao: true },
+                { id: '8.2', texto: 'Teste dos bicos de spray', pontosChave: 'O bico padrão aplicado nas faces estreitas e largas do molde é o modelo 1485.' },
+                { id: '8.2.1', texto: 'Teste dos bicos das faces estreitas. Abrir o registro de água de spray das faces estreitas e fechar os demais localizados no stand' },
+                { id: '8.2.2', texto: 'Inspecionar a formação do leque que sai dos bicos', pontosChave: 'Verificar se os bicos estão totalmente desobstruídos, caso contrário desmontar os bicos, realizar a limpeza e testar novamente. Verificar se o leque está projetando água com passagem livre entre os roletes laterais e a base das placas.' },
+                { id: '8.2.3', texto: 'Teste dos bicos das faces largas. Abrir o registro de água de spray das faces largas e fechar os demais localizados no stand' },
+                { id: '8.2.4', texto: 'Inspecionar a formação do leque que sai dos bicos (faces largas)', pontosChave: 'Verificar se os bicos estão totalmente desobstruídos, caso contrário desmontar, limpar e testar novamente. Verificar se o leque está projetando água com passagem livre entre os roletes do foot roll e a base das placas.' },
+                { id: '8.2.5', texto: 'Reportar resultados', pontosChave: 'Reportar resultados no checklist dos moldes da MCC\'s #2 e 3.' }
+            ]
+        },
+        {
+            id: '606056',
+            nome: 'Reparo de Cilindros (Fluxo Externo)',
+            revisao: '03',
+            dataRevisao: '28/10/2024',
+            frequencia: 'Diariamente',
+            responsavel: 'Planejador, inspetor, líder e mecânico',
+            objetivo: 'Estabelecer o fluxo para o reparo externo dos cilindros hidropneumáticos da oficina de moldes e segmentos da GMLC aplicados nas máquinas de corrida contínua #2, 3 e 4, garantindo a continuidade do processo de recuperação dos cilindros nos contratos.',
+            seguranca: ['Capacete com jugular', 'Óculos de segurança', 'Luva de vaqueta', 'Botina de segurança com biqueira de aço', 'Protetor auricular'],
+            recomendacoes: [
+                'Risco de carga suspensa, devido ao grande fluxo de movimentação dos cilindros.',
+                'Todo resíduo gerado deve ser armazenado nos locais de segregação, acondicionado corretamente, identificado e descartado em local apropriado, conforme PP 501537 (Gestão de Resíduos Industriais) e PP 503450 (Gestão de Resíduos Sociais).',
+                'Qualquer anormalidade encontrada deve ser comunicada ao Supervisor imediato.'
+            ],
+            ferramentas: [],
+            etapas: [
+                { id: '8.1', texto: 'Receber o cilindro conforme desenho das máquinas de corrida contínua #2, 3 e 4, e executar as conferências necessárias ao equipamento' },
+                { id: '8.2', texto: 'Verificar o peso do cilindro junto ao desenho' },
+                { id: '8.3', texto: 'Desmontagem de todos os componentes do conjunto', pontosChave: 'Ter todos os cuidados para não causar dano físico aos componentes.' },
+                { id: '8.4', texto: 'Lavagem de todos os componentes do conjunto', pontosChave: 'Eliminando graxas, óleos ou outros contaminantes.' },
+                { id: '8.5', texto: 'Peritagem de todos os componentes através de medição e inspeção visual', pontosChave: 'Registrar em planilhas próprias. Emissão de laudos técnicos quando necessário.' },
+                { id: '8.6', texto: 'Montagem do conjunto com todos os componentes envolvidos', pontosChave: 'Tomar precauções para não danificá-los, principalmente as guias e vedações.' },
+                { id: '8.7', texto: 'Armazenagem dos conjuntos montados', pontosChave: 'Mantê-los identificados conforme requisição de serviço, de forma organizada na área própria para embarque.' },
+                { id: '8.8', texto: 'Embarque dos conjuntos montados, identificados', pontosChave: 'Assegurando a conformidade com a Ordem de Embarque e Encomenda de Reparo da GPMA.' }
+            ]
+        },
+        {
+            id: '604066',
+            nome: 'Teste das Porcas Hidráulicas do Segmento 1@6 da MCC#2e3',
+            revisao: '01',
+            dataRevisao: '19/02/2026',
+            frequencia: 'Diário',
+            responsavel: 'Inspetor, líder de manutenção e mecânicos',
+            objetivo: 'Estabelecer diretrizes para as atividades de teste das porcas hidráulicas dos Segmentos 1@6 da MCC#2e3 na OMS.',
+            seguranca: ['Luva de vaqueta', 'Capacete com jugular', 'Óculos de Segurança', 'Protetor auricular', 'Bota de segurança'],
+            recomendacoes: [
+                'Não ficar sob carga suspensa.',
+                'Para execução desta atividade o funcionário deverá ser treinado neste padrão.'
+            ],
+            ferramentas: ['Chave Combinada 08 a 36mm e 7/8"', 'Chave de Grife 08, 12, 14 e 48mm', 'Chave Allen 03 a 19mm e polegadas', 'Chave inglesa 10 e 12"', 'Chaves de fenda', 'Micrômetro interno e externo', 'Paquímetro', 'Lixadeira pneumática', 'Parafusadeira ½" e ¾"', 'Mini mestre', 'Martelo, macete e marreta'],
+            etapas: [
+                { id: '8.1', texto: 'Posicionar porca hidráulica na bancada de teste', pontosChave: 'Nota: as porcas hidráulicas da MCC#2e3 possuem bancada própria de teste.', seguranca: 'Risco de queda da carga durante movimentação — verificar condição de uso do olhal e rosca (isentos de amassamento e espanada). Fixar toda a extensão da rosca do olhal na porca hidráulica.' },
+                { id: '8.2', texto: 'Conectar as mangueiras de alimentação para linha de pressão e linha de piloto', pontosChave: 'Utilizar engates rápidos para conexão das mangueiras.', seguranca: 'Risco de projeção de óleo — verificar se as mangueiras estão em boas condições de uso, isentas de vazamento ou deformação.' },
+                { id: '8.3a', texto: 'Conectar o manômetro na linha de treno para acompanhamento de teste', pontosChave: 'Utilizar tomador de pressão no manômetro.', seguranca: 'Risco de projeção de óleo — verificar mangueiras.' },
+                { id: '8.3b', texto: 'Com a porca fechada, ajustar a abertura do batente no dispositivo de teste', pontosChave: 'Utilizar paquímetro para ajuste de altura: porca grupo #1e2 (altura 115mm) — abertura de 20mm; porca grupo #3 (altura 100mm) — abertura de 10mm.' },
+                { id: '8.4', texto: 'Fechar a válvula de alívio da porca hidráulica', pontosChave: 'Utilizar chave allen de 4mm e chave combinada 13mm.' },
+                { id: '8.5', texto: 'Ligar sistema hidráulico e iniciar pressurização da porca hidráulica', pontosChave: 'A pressão inicial de teste dos cilindros e porcas é 5Kgf/cm². Os cilindros e porcas devem estar limpos para melhor visualização de vazamentos. A pressão deve ser ampliada de forma escalonada em 50Kgf/cm² até atingir a pressão final de teste conforme Anexo 1.', seguranca: 'Risco de projeção de óleo — ficar fora do raio de ação e manter postura defensiva durante os testes.' },
+                { id: '8.6', texto: 'Realizar o teste com a pressão final na porca hidráulica', pontosChave: 'A pressão final de teste deve seguir a tabela do Anexo 1 e permanecer por 5 minutos. Critério de aceitação: +/- 5Kgf/cm² em relação à pressão final do anexo.', seguranca: 'Risco de projeção de óleo — isolar a área, manter mangueiras desenroladas, ficar fora do raio de ação e manter postura defensiva.' },
+                { id: '8.7', texto: 'Verificar ocorrência de passagem interna e vazamentos (conexões, êmbolo, válvula alívio, válvula de retenção e plugs) nos testes', pontosChave: 'Caso ocorra anomalia, preencher o relatório de não conformidade de cilindros e comunicar a área técnica e supervisão para providenciar devolução do equipamento.' },
+                { id: '8.8', texto: 'Despressurizar porca hidráulica', pontosChave: 'Pilotar a porca utilizando a botoeira do sistema hidráulico, invertendo a pressão da linha de alimentação com a linha piloto.' },
+                { id: '8.9', texto: 'Pressurizar novamente o sistema hidráulico até 370Kgf/cm²', pontosChave: 'Utilizando a botoeira, invertendo a pressão da linha de piloto com a linha de alimentação.', seguranca: 'Risco de projeção de óleo — isolar a área, mangueiras desenroladas, ficar fora do raio de ação e postura defensiva.' },
+                { id: '8.10', texto: 'Ajustar a válvula de alívio para 350Kgf/cm², monitorando a queda de pressão no manômetro', pontosChave: 'Utilizar chave allen 4mm e chave combinada 13mm até a pressão estabilizar com tolerância de +/- 5Kgf/cm².' },
+                { id: '8.11', texto: 'Despressurizar porca hidráulica', pontosChave: 'Pilotar invertendo a pressão da linha de alimentação com a linha piloto.' },
+                { id: '8.12', texto: 'Pressurizar novamente o conjunto, para teste da regulagem realizada com 350Kgf/cm² da válvula de alívio', pontosChave: 'Observar que a pressão não pode ultrapassar 355Kgf/cm² para alívio da porca. Travar a regulagem da válvula sem alterar o ajuste.', seguranca: 'Risco de projeção de óleo — isolar área, mangueiras desenroladas, postura defensiva.' },
+                { id: '8.13', texto: 'Despressurizar porca hidráulica', pontosChave: 'Pilotar invertendo a pressão da linha de alimentação.' },
+                { id: '8.14', texto: 'Pressurizar novamente o conjunto na linha de pressão até atingir 320kgf/cm² no manômetro da porca hidráulica para teste de estanquidade', pontosChave: 'Manter a porca pressurizada por 15 minutos. Durante esse tempo a pressão mínima é de 300kgf/cm².', seguranca: 'Risco de projeção de óleo — isolar área, mangueiras desenroladas, postura defensiva.' },
+                { id: '8.15', texto: 'Despressurizar porca hidráulica', pontosChave: 'Pilotar invertendo a pressão da linha de alimentação.', seguranca: 'Risco de projeção de óleo — isolar área, mangueiras desenroladas, postura defensiva.' },
+                { id: '8.16', texto: 'Desligar unidade hidráulica' },
+                { id: '8.17', texto: 'Desconectar o manômetro de teste', pontosChave: 'A unidade hidráulica deve permanecer desligada.' },
+                { id: '8.18', texto: 'Fechar a porca hidráulica de forma manual através do dispositivo de ajuste', pontosChave: 'A unidade hidráulica deve permanecer desligada.' },
+                { id: '8.19', texto: 'Desconectar engates e mangueiras hidráulicas de pressão de linha e piloto', pontosChave: 'A unidade hidráulica deve permanecer desligada.' },
+                { id: '8.20', texto: 'Plugar as entradas e saída da porca hidráulica' }
+            ],
+            tabelaReferencia: {
+                titulo: 'Anexo 1 — Tabela de teste de pressão dos cilindros e porcas hidráulicas',
+                colunas: ['Teste', 'Pressão Inicial (Kgf/cm²)', 'Pressão de trabalho (Kgf/cm²)', 'Pressão Final (Kgf/cm²)'],
+                linhas: [
+                    ['Cilindro de cadeira', '0', '210', '315'],
+                    ['Cilindro de Grupo 1, 2 & 3', '0', '210', '315'],
+                    ['Cilindro puxador da MCC#4', '0', '160', '250'],
+                    ['Cilindro de elevação da estrutura da MCC#4', '0', '160', '250'],
+                    ['Porca hidráulica MCC#4', '0', '160', '250'],
+                    ['Porca de hidráulica da MCC#1, 2 & 3', '0', '300', '450']
+                ]
+            }
+        },
+        {
+            id: '605563',
+            nome: 'Montar Cilindros de Ajuste de Largura',
+            revisao: '01',
+            dataRevisao: '09/09/2025',
+            frequencia: 'Rotineira (atividades da OMS)',
+            responsavel: 'Técnico de Manutenção, Inspetor, Líder de Manutenção (modalidade Elétrica) e Eletricista',
+            objetivo: 'Estabelecer os conceitos, critérios e a sistemática na montagem dos cilindros de ajuste de largura, visando assegurar uma boa performance operacional destes equipamentos nas MCC\'s# 2, 3.',
+            seguranca: ['Bota antitorção cano longo com biqueira de composite (EPI-8048)', 'Capacete de segurança cinza aba frontal classe B (EPI-1000/1015)', 'Protetor auricular concha ou plug (EPI-3007/3002)', 'Óculos de segurança panorâmico (EPI-2013/2016)', 'Óculos de segurança com grau (EPI-2025)', 'Blusão de proteção contra arco elétrico classe de risco 2 (EPI-5034)', 'Calça de proteção contra arco elétrico classe de risco 2 (EPI-7030)', 'Luva contra agente (8326283)', 'Luva de vaqueta (8016934)'],
+            recomendacoes: [
+                'A atividade de extrair e inserir disjuntores só pode ser executada por profissionais treinados neste procedimento e com NR-10 SEP.',
+                'Proibido iniciar qualquer atividade sem a Reunião Relâmpago (proc. 600714) e sem abrir a APSE identificando os riscos.',
+                'É proibido o uso de adornos pessoais (anel, pulseira, relógio, colar); crachás com partes metálicas devem ser guardados.',
+                'Para serviços acima de 2,0m de altura: capacitação NR-35, cinto de segurança e medidas do procedimento 503578.',
+                'Ferramentas, EPI\'s e equipamentos de medição devem ser inspecionados antes do uso — ferramentas isoladas tipo VDE (NR-10).',
+                'Proibido portar celular durante a atividade (proc. 600769).',
+                'Cumprir as diretrizes de segurança e Regras de Aço nº1 a nº6 da GGMA.'
+            ],
+            ferramentas: ['Chave combinada 19, 22 e 46mm', 'Chave Allen 4, 5, 6 e 10mm', 'Chave de fenda', 'Alicate Universal, alicate de corte e alicate de bico', 'Multi-teste e fita isolante'],
+            etapas: [
+                { id: '1', texto: 'Abrir APSE identificando todos os riscos da atividade', pontosChave: 'Se a atividade não for segura de executar, pare e a torne segura.', seguranca: 'Certificar-se de que todos os colaboradores envolvidos estão treinados e assinarão a APSE. Garantir que o responsável ou supervisão está ciente e assinou. Se a atividade for "crítica" ou com circuito energizado, garantir avaliação pelo profissional de maior nível hierárquico presente.' },
+                { id: '2', texto: 'Preparação para execução da atividade', pontosChave: 'Verificar se o trabalhador possui capacitação e autorização conforme NR-10. Inspecionar o local e identificar riscos adicionais.', seguranca: 'É proibida a execução do serviço por pessoas não capacitadas segundo a NR-10.' },
+                { id: '3', texto: 'Preencher documentação', pontosChave: 'Verificar se a atividade tem procedimento e ordem de manutenção com passo a passo x riscos x medidas de controle. Verificar necessidade de abertura de PTR/PSQ. Preencher checklist de ferramentas e cinto de segurança.', seguranca: 'Na ausência de procedimento, a ordem de serviço + PTR + APSE pode ser utilizada.' },
+                { id: '4', texto: 'Montar caixa de proteção', pontosChave: 'Colocar vedação ao redor da caixa e passar silicone para fixação da vedação.', seguranca: 'Prensamento — não expor partes do corpo em local de prensamento. Corte — atenção a partes cortantes na estrutura e nos cabos. Queda de nível diferente — posicionar guarda-corpo no stand de manutenção do molde.' },
+                { id: '5', texto: 'Montar caixa no local', pontosChave: 'Montar parafusos e fixar a caixa no cilindro.', seguranca: 'Mesmos riscos: prensamento, corte e queda de nível diferente.' },
+                { id: '6', texto: 'Colocar junta de vedação', pontosChave: 'Ao colocar a vedação, posicionar os parafusos como guia e passar silicone para fixação.', seguranca: 'Prensamento, corte e queda de nível diferente.' },
+                { id: '7', texto: 'Montar transdutores de pressão', pontosChave: 'Remover a proteção do tomador de pressão, posicionar o transdutor fazendo o aperto no sentido horário. Montar transdutores na linha "A" e na linha "B".', seguranca: 'Prensamento, corte e queda de nível diferente.' },
+                { id: '8', texto: 'Montar transdutores de posição', pontosChave: 'Remover o tampão do cilindro e introduzir o transdutor de posição girando em sentido horário para fixação. Atentar ao o\'ring de vedação. Torquear com 40Nm.', seguranca: 'Prensamento, corte, queda de nível diferente. Contaminação — usar luvas apropriadas ao manusear óleo/graxa, evitar contato com rosto e olhos.' },
+                { id: '9', texto: 'Montar os cabos', pontosChave: 'Na montagem dos conectores, atenção às posições de encaixe, fazendo o aperto no sentido horário. Efetuar limpeza das conexões com limpa-contato.', seguranca: 'Queda de nível diferente e corte.' },
+                { id: '10', texto: 'Teste do sistema', pontosChave: 'Ligar cabos de alimentação no molde e reconhecer as falhas no wamboy ao ligar o painel.', seguranca: 'Queda de nível diferente — posicionar guarda-corpo no stand.' },
+                { id: '11', texto: 'Ligar painel', pontosChave: 'Após painel ligado, checar o reconhecimento dos cilindros.', seguranca: 'Queda de nível diferente — posicionar guarda-corpo no stand.' }
+            ],
+            anomalias: [
+                { anomalia: 'Cilindros não movimentam.', acao: 'Verificar e refazer conexões dos cabos.' },
+                { anomalia: 'Molde não apresenta indicação de pressão.', acao: 'Verificar montagem dos transdutores de pressão.' },
+                { anomalia: 'Cilindros não reconhecem.', acao: 'Verificar a montagem dos cabos e conexões.' }
+            ]
+        },
+        {
+            id: '605564',
+            nome: 'Desmontar Cilindros de Ajuste de Largura',
+            revisao: '01',
+            dataRevisao: '09/09/2025',
+            frequencia: 'Rotineira (atividades da OMS)',
+            responsavel: 'Técnico de Manutenção, Inspetor, Líder de Manutenção (modalidade Elétrica) e Eletricista',
+            objetivo: 'Estabelecer os conceitos, critérios e a sistemática na desmontagem dos cilindros de ajuste de largura, visando assegurar uma boa performance operacional destes equipamentos nas MCC\'s# 2, 3.',
+            seguranca: ['Bota antitorção cano longo com biqueira de composite (EPI-8048)', 'Capacete de segurança cinza aba frontal classe B (EPI-1000/1015)', 'Protetor auricular concha ou plug (EPI-3007/3002)', 'Óculos de segurança panorâmico (EPI-2013/2016)', 'Óculos de segurança com grau (EPI-2025)', 'Blusão de proteção contra arco elétrico classe de risco 2 (EPI-5034)', 'Calça de proteção contra arco elétrico classe de risco 2 (EPI-7030)', 'Luva contra agente (8326283)', 'Luva de vaqueta (8016934)'],
+            recomendacoes: [
+                'A atividade de extrair e inserir disjuntores só pode ser executada por profissionais treinados neste procedimento e com NR-10 SEP.',
+                'Proibido iniciar qualquer atividade sem a Reunião Relâmpago (proc. 600714) e sem abrir a APSE identificando os riscos.',
+                'É proibido o uso de adornos pessoais; crachás com partes metálicas devem ser guardados.',
+                'Para serviços acima de 2,0m de altura: capacitação NR-35, cinto de segurança e medidas do procedimento 503578.',
+                'Ferramentas, EPI\'s e equipamentos de medição devem ser inspecionados antes do uso — ferramentas isoladas tipo VDE (NR-10).',
+                'Proibido portar celular durante a atividade (proc. 600769).'
+            ],
+            ferramentas: ['Chave combinada 19, 22 e 46mm', 'Chave Allen 4, 5, 6 e 10mm', 'Chave de fenda', 'Alicate Universal', 'Alicate de corte', 'Multi-teste', 'Fita isolante'],
+            etapas: [
+                { id: '1', texto: 'Abrir APSE identificando todos os riscos da atividade', pontosChave: 'Se a atividade não for segura de executar, pare e a torne segura.', seguranca: 'Certificar-se de que todos os colaboradores estão treinados e assinarão a APSE. Se atividade "crítica" ou energizada, garantir avaliação pelo profissional de maior nível hierárquico.' },
+                { id: '2', texto: 'Preparação para execução da atividade', pontosChave: 'Verificar capacitação/autorização conforme NR10. Inspecionar o local e identificar riscos adicionais.', seguranca: 'É proibida a execução do serviço por pessoas não capacitadas segundo a NR-10.' },
+                { id: '3', texto: 'Preencher documentação', pontosChave: 'Verificar procedimento, ordem de manutenção (passo a passo x riscos x medidas de controle), necessidade de PTR/PSQ. Preencher checklist de ferramentas e cinto de segurança.', seguranca: 'Na ausência de procedimento, ordem de serviço + PTR + APSE pode ser utilizada.' },
+                { id: '4', texto: 'Remoção das tampas', pontosChave: 'Retirar tampas de proteção das válvulas utilizando chaves allen 4 e 6.', seguranca: 'Queda de nível diferente — guarda-corpo no stand. Corte e perfuração — atenção a partes cortantes. Prensamento — não expor partes do corpo.' },
+                { id: '5', texto: 'Remoção dos cabos', pontosChave: 'Retirar os conectores girando sentido anti-horário, desconectando os cabos de comunicação. Depois de retirados, isolar os cabos.', seguranca: 'Queda de nível diferente, corte e perfuração, prensamento.' },
+                { id: '6', texto: 'Remoção dos transdutores de pressão', pontosChave: 'Utilizar chaves combinadas 19 e 22mm. Após a retirada, colocar os transdutores em local adequado.', seguranca: 'Queda de nível diferente, corte e perfuração, prensamento.' },
+                { id: '7', texto: 'Remoção dos transdutores de posição instalados na estrutura', pontosChave: 'Retirar toda a pressão do sistema, utilizar chave para retirar o sensor de posição de 46mm ou chave combinada 46mm. Depois de retirado, colocar em local adequado e tamponar o local onde foi retirado o transdutor.', seguranca: 'Queda de nível diferente, corte e perfuração, prensamento.' }
+            ],
+            anomalias: [
+                { anomalia: 'Cabos danificados ou com emendas.', acao: 'Efetuar a substituição dos cabos danificados.' },
+                { anomalia: 'Transdutor de posição queimado ou com marcas de excesso de calor.', acao: 'Descartar transdutor de posição.' },
+                { anomalia: 'Tampas de proteção danificadas ou com a proteção contra calor danificada.', acao: 'Descartar tampas e substituir por novas.' },
+                { anomalia: 'Conectores danificados.', acao: 'Substituir cabos.' }
+            ]
+        },
+        {
+            id: '605965',
+            nome: 'Teste de Cilindros e Porcas Hidráulicas',
+            revisao: '01',
+            dataRevisao: '19/02/2026',
+            frequencia: 'Diário',
+            responsavel: 'Inspetor, líder de manutenção e mecânicos',
+            objetivo: 'Estabelecer diretrizes para as atividades de teste de cilindros e porcas hidráulicas na OMS.',
+            seguranca: ['Luva de vaqueta', 'Capacete com jugular', 'Óculos de Segurança', 'Protetor auricular', 'Bota de segurança'],
+            recomendacoes: [
+                'Não ficar sob carga suspensa.',
+                'Para execução desta atividade o funcionário deverá ser treinado neste padrão.'
+            ],
+            ferramentas: ['Chave Combinada 08 a 36mm e 7/8"', 'Chave de Grife 08, 12, 14 e 48mm', 'Chave Allen 03 a 19mm e polegadas', 'Chave inglesa 10 e 12"', 'Chaves de fenda', 'Micrômetro interno e externo', 'Paquímetro', 'Lixadeira pneumática', 'Parafusadeira ½" e ¾"', 'Mini mestre', 'Martelo, macete e marreta', 'Pneumática ½", ¾" e 1"'],
+            etapas: [
+                { id: '8.1', texto: 'Posicionar cilindro/porca hidráulica na bancada de teste', pontosChave: 'Nota: as porcas hidráulicas da MCC#2e3 possuem bancada própria de teste e procedimento específico.', seguranca: 'Risco de queda da carga durante movimentação — verificar condição de uso do olhal e rosca. Fixar toda a extensão da rosca do olhal na porca hidráulica.' },
+                { id: '8.2', texto: 'Conectar as mangueiras de alimentação para linha de pressão e linha de retorno', pontosChave: 'Utilizar engates rápidos para conexão das mangueiras.', seguranca: 'Risco de projeção de óleo — verificar se as mangueiras estão em boas condições de uso.' },
+                { id: '8.3', texto: 'Ligar sistema hidráulico e pressurizar', pontosChave: 'A pressão inicial de teste dos cilindros hidráulicos e porcas é 5Kgf/cm². Os cilindros e porcas devem estar limpos para melhor visualização de vazamentos. A pressão deve ser ampliada de forma escalonada em 50Kgf/cm² até atingir a pressão final de teste conforme Anexo 1.', seguranca: 'Risco de projeção de óleo — ficar fora do raio de ação e manter postura defensiva.' },
+                { id: '8.4', texto: 'Realizar o teste de pressão nos cilindros/porca hidráulica', pontosChave: 'A pressão final de teste deve seguir a tabela do Anexo 1. Critério de aceitação: +/- 5Kgf/cm². Realizar a movimentação da haste do cilindro entre o cabeçote inferior e superior com o tempo de 20 minutos.', seguranca: 'Risco de projeção de óleo — ficar fora do raio de ação e manter postura defensiva.' },
+                { id: '8.5', texto: 'Verificar ocorrência de passagem interna e vazamentos (conexões, tampas de cabeçote, êmbolo, válvula alívio, válvula de retenção e plugs) nos testes', pontosChave: 'Caso ocorra anomalia, preencher o relatório de não conformidade de cilindros e comunicar a área técnica e supervisão para providenciar devolução do equipamento.' },
+                { id: '8.6', texto: 'Despressurizar e desligar a unidade hidráulica', pontosChave: 'Deixar o cilindro na posição com a haste avançada.', seguranca: 'Risco de projeção de óleo — ficar fora do raio de ação e manter postura defensiva.' },
+                { id: '8.7', texto: 'Desconectar mangueira hidráulica do cabeçote superior e conectar a mangueira de ar comprimido', pontosChave: 'A unidade hidráulica deve permanecer desligada.' },
+                { id: '8.8', texto: 'Acionar cilindro/porca hidráulica com a pressão do ar comprimido e movimentar o mesmo para drenar óleo', pontosChave: 'A unidade hidráulica deve permanecer desligada.' },
+                { id: '8.9', texto: 'Desconectar a mangueira hidráulica e ar comprimido', pontosChave: 'A unidade hidráulica deve permanecer desligada.' },
+                { id: '8.10', texto: 'Plugar as entradas e saída do cilindro/porca hidráulica' }
+            ],
+            tabelaReferencia: {
+                titulo: 'Anexo 1 — Tabela de teste de pressão dos cilindros e porcas hidráulicas',
+                colunas: ['Teste', 'Pressão Inicial (Kgf/cm²)', 'Pressão de trabalho (Kgf/cm²)', 'Pressão Final (Kgf/cm²)'],
+                linhas: [
+                    ['Cilindro de cadeira', '0', '210', '315'],
+                    ['Cilindro de Grupo 1, 2 & 3', '0', '210', '315'],
+                    ['Cilindro puxador da MCC#4', '0', '160', '250'],
+                    ['Cilindro de elevação da estrutura da MCC#4', '0', '160', '250'],
+                    ['Porca hidráulica MCC#4', '0', '160', '250'],
+                    ['Porca de hidráulica da MCC#1, 2 & 3', '0', '300', '450']
+                ]
+            }
+        }
+    ],
+
+    // ==========================================================
+    // CALDEIRARIA
+    // ==========================================================
+    'caldeiraria': [
         {
             id: '603969',
             nome: 'Procedimento de Oxi-Corte na Oficina da OMS',
