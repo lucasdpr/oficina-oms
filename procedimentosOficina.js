@@ -853,7 +853,506 @@ export const PROCEDIMENTOS_POR_AREA = {
         }
     ]
 
+    ,
+    // ==========================================================
+    // SEGMENTO ZERO (MCC's #2 e #3)
+    // ==========================================================
+    'zero': [
+        {
+            id: '603099',
+            nome: 'Desmontagem do Segmento Zero das MCC\'s #2 e 3',
+            revisao: '03',
+            dataRevisao: '28/02/2025',
+            frequencia: 'Diário',
+            responsavel: 'Mecânico e líder de manutenção',
+            objetivo: 'Estabelecer diretrizes para as atividades incluídas na desmontagem do segmento zero das MCC\'S #2 e 3 na OMS.',
+            seguranca: ['Luva', 'Capacete com jugular', 'Óculos de Segurança', 'Protetor auricular', 'Bota de segurança'],
+            recomendacoes: [
+                'Não ficar sob carga suspensa.',
+                'Para execução desta atividade o funcionário deverá ser treinado neste padrão.'
+            ],
+            ferramentas: ['Parafusadeira pneumática de ¾", ½" e 1"', 'Chaves combinada de 11, 13, 14, 17, 19, 22, 23, 24mm', 'Soquetes de 19x½", 55x1" e 95x1"', 'Chaves impacto 55 e 95mm', 'Grife 36"', 'Relógio comparador para medir Gap (Robocop)', 'Micrômetro 250 a 275mm', 'Paquímetro de 0 a 300mm', 'Martelo', 'Marreta 1, 2 e 5kg'],
+            etapas: [
+                { id: '8.1', titulo: '8.1 Desmontagem e abertura do segmento', secao: true },
+                { id: '1.1', texto: 'Receber segmento e enviá-lo ao Box de lavagem para retirar excesso de pó', pontosChave: 'Posicionar calço (caneco) para o nivelamento do equipamento. Ver desenho esquemático em anexo.', seguranca: 'Risco de queda com diferença de nível — atenção ao acessar poço do stand. Risco de carga suspensa e aprisionamento das mãos — posicionar-se fora do raio de ação da carga, sinalizar corretamente para o operador e utilizar extensor.' },
+                { id: '1.2', texto: 'Iniciar inspeção visual do segmento e verificação dos itens citados na planilha de inspeção de chegada', pontosChave: 'Fazer as medições do GAP e reportar informações para folha de registro do segmento. Utilizar relógio comparador (robocop) e micrômetro 250 e 275mm para as medições.' },
+                { id: '1.3', texto: 'Posicionar o segmento zero no cavalete ou dispositivo de virar segmento com auxílio das PR\'s 146 a 221', pontosChave: 'No transporte do segmento é necessária a utilização do contra pino para fixação do JIG.', seguranca: 'Risco de carga suspensa e aprisionamento das mãos — posicionar-se fora do raio de ação da carga, sinalizar corretamente para o operador e utilizar extensor.' },
+                { id: '1.4', texto: 'Soltar tubulações de refrigeração 2" fixada na estrutura lateral', pontosChave: 'Utilizando chave combinada 19 mm e grife 36".' },
+                { id: '1.5', texto: 'Soltar flexíveis 3/8" de graxa da ligação das laterais', pontosChave: 'Utilizando chaves combinada 19, 22 e 23 mm.', seguranca: 'Risco de ferimento nas mãos durante o manuseio dos flexíveis devido às rebarbas das mangueiras. Fazer uso de luvas durante o manuseio.' },
+                { id: '1.6', texto: 'Soltar todos os parafusos M64 das laterais para abrir o segmento', pontosChave: 'Utilizando chaves de impacto 95 mm e marreta 5 kg.', seguranca: 'Risco de impacto por escape da chave — manter postura defensiva para que não haja projeção de material ou ferramenta.' },
+                { id: '1.7', texto: 'Abrir o segmento, separando a base superior da inferior, virando-a e posicionando sobre cavaletes', pontosChave: 'Com auxílio da PR, JIG, 02 estropos de 1" e 02 anilhas de 1".', seguranca: 'Risco de carga suspensa e aprisionamento das mãos — posicionar-se fora do raio de ação da carga, sinalizar corretamente para o operador e utilizar extensor.' },
+                { id: '1.8', texto: 'Desmontar proteções dos mancais dos rolos Ø200mm das bases superior e inferior', pontosChave: 'Utilizando soquete 19mm x ½" e máquina pneumática saída ½".' },
+                { id: '1.9', texto: 'Desconectar todas as tubulações ¼" de graxa dos mancais dos rolos de Ø200mm e Ø140mm das bases superior e inferior', pontosChave: 'Utilizando chaves combinada 9/16" e ½", 13 e 14 mm.' },
+                { id: '1.10', texto: 'Medir empeno dos conjuntos de rolos de 200 mm e 140 mm com relógio comparador', pontosChave: 'Fazer as medições e reportar informações para folha de registro do segmento.' },
+
+                { id: '8.2', titulo: '8.2 Desmontar os conjuntos de rolo das bases inferior e superior', secao: true },
+                { id: '2.1', texto: 'Soltar os parafusos M16 dos mancais dos rolos de Ø200mm e soltar parafusos M36 aos rolos de Ø140mm da base inferior', pontosChave: 'Utilizar chave de impacto 55mm, marreta 2Kg, soquete 55mm e parafusadeira pneumática ¾". Utilizar oxi-corte para corte dos parafusos de fixação dos mancais, caso não consiga soltá-los.', seguranca: 'Fazer inspeção visual para verificar a presença de produtos inflamáveis próximos ao local de projeção das fagulhas. Risco de queimadura ao usar oxi-corte — utilizar EPIs adequados e biombos para barreiras de projeção de fagulhas.' },
+                { id: '2.2', texto: 'Retirar conjuntos de rolos da base inferior com auxílio da talha giratória e posicioná-los sobre a bancada para desmontagem e inspeção dos conjuntos', pontosChave: 'Utilizar 02 estropos de 3/8"x3000mm e olhais. Reportar informações para planilha e folha de registro do segmento.', seguranca: 'Risco de carga suspensa e aprisionamento das mãos — posicionar-se fora do raio de ação da carga e utilizar extensor.' },
+                { id: '2.3', texto: 'Retirar os calços da base, inspecioná-los e guardá-los na prateleira de calços de acordo com a espessura' },
+                { id: '2.4', texto: 'Com a PR 221 virar a base inferior, posicioná-la sobre cavaletes', seguranca: 'Risco de carga suspensa e aprisionamento das mãos — posicionar-se fora do raio de ação da carga, sinalizar corretamente para o operador e utilizar extensor.' },
+                { id: '2.5', texto: 'Soltar todas as grades de refrigeração e posicioná-las sobre gabarito de alinhamento', seguranca: 'Risco de impacto por escape da chave — manter postura defensiva para que não haja projeção de material ou ferramenta.' },
+                { id: '2.6', texto: 'Efetuar limpeza superficial na base inferior e enviar para jateamento' },
+                { id: '2.7', texto: 'Soltar parafusos M64 com chave 95 mm e marreta 5 kg da base superior', seguranca: 'Risco de impacto por escape da chave — manter postura defensiva para que não haja projeção de material ou ferramenta.' },
+                { id: '2.8', texto: 'Retirar estruturas laterais lado leste e oeste, e repetir toda a operação de desmontagem de conjuntos na base superior', seguranca: 'Risco de carga suspensa e aprisionamento das mãos — posicionar-se fora do raio de ação da carga, sinalizar corretamente para o operador e utilizar extensor.' },
+
+                { id: '8.3', titulo: '8.3 Desmontar conjuntos de rolo', secao: true },
+                { id: '3.1', texto: 'Com auxílio da pneumática, retirar os parafusos da tampa dos rolos de Ø200mm na bancada' },
+                { id: '3.2', texto: 'Retirar os espelhos lado móvel e fixo, sendo que do lado fixo retirar o espaçador' },
+                { id: '3.3', texto: 'Retirar o mancal do rolo junto com o rolamento' },
+                { id: '3.4', texto: 'Retirar o rolamento do mancal na bancada com auxílio do saca pino' },
+                { id: '3.5', texto: 'Retirar os retentores das tampas com auxílio do saca pino' },
+                { id: '3.6', texto: 'Retirar as buchas dos rolos' },
+                { id: '3.7', texto: 'Realizar limpeza em todas as peças, inclusive nos rolamentos, e realizar inspeção', pontosChave: 'Em caso de reparo parcial nos rolamentos, posicionar e reaproveitar. As que estiverem danificadas, verificar se cabe reparo, caso negativo sucatear.' },
+                { id: '3.8', texto: 'Realizar inspeção da mesa dos rolos, mangas, e preencher ficha de reparo' },
+                { id: '3.9', texto: 'Desmontar os rolos Ø140mm, iniciar retirando os pinos elásticos dos mancais', pontosChave: 'Utilizar marreta e saca pino.' },
+                { id: '3.10', texto: 'Retirar os mancais dos eixos' },
+                { id: '3.11', texto: 'Retirar os mancais (carretel) do eixo' },
+                { id: '3.12', texto: 'Retirar os anéis elásticos dos rolos' },
+                { id: '3.13', texto: 'Retirar os rolos dos eixos', pontosChave: 'Utilizar talha e cinta de 1m com capacidade maior que 1 ton.' },
+                { id: '3.14', texto: 'Retirar os espaçadores (labirinto, anel espaçador) e rolamentos dos rolos com auxílio dos saca rolamento' },
+                { id: '3.15', texto: 'Inspecionar e lavar as peças e rolamentos' },
+                { id: '3.16', texto: 'Realizar limpeza dos rolos e realizar as inspeções e medições' }
+            ]
+        },
+        {
+            id: '603100',
+            nome: 'Montagem do Segmento Zero das MCC\'s #2 e 3',
+            revisao: '03',
+            dataRevisao: '28/02/2025',
+            frequencia: 'Diário',
+            responsavel: 'Mecânico e líder de manutenção',
+            objetivo: 'Estabelecer diretrizes para as atividades incluídas na montagem do segmento zero das MCC\'S #2 e 3 na OMS.',
+            seguranca: ['Luva', 'Capacete com jugular', 'Óculos de Segurança', 'Protetor auricular', 'Bota de segurança'],
+            recomendacoes: [
+                'Não ficar sob carga suspensa.',
+                'Para execução desta atividade o funcionário deverá ser treinado neste padrão.'
+            ],
+            ferramentas: ['Parafusadeira pneumática de ¾" e 1"', 'Lixadeira', 'Curvador de tubos ¼"', 'Cortador de tubo', 'Extensor 150mmx3/4"', 'Calibrador de folga', 'Micrômetro 0 a 300mm', 'Paquímetro 0 a 300mm', 'Chaves combinada de 11, ½", 13, 14, 9/16", 18, 17, 19, 21, 22, 24mm', 'Soquetes de 19x½", 24x3/4", 55x3/4", 55x1" e 95x1", 2"3/16"x1", 2"3/16"x3/4"', 'Chaves impacto 55 e 95mm', 'Grife 14", 18" e 24"', 'Martelo', 'Marreta 1 e 5kg'],
+            etapas: [
+                { id: '8.1', titulo: '8.1 Montagem dos conjuntos de rolo Ø200mm e 140mm', secao: true },
+                { id: '1.1', titulo: 'Montagem dos rolos Ø200mm', secao: true },
+                { id: '1.2', texto: 'Posicionar os rolos sobre a bancada e realizar inspeção de chegada', pontosChave: 'Colocar cunhas nos rolos para travamento.', seguranca: 'Risco de aprisionamento das mãos ao posicionar os rolos e carga suspensa — utilizar extensor e ficar fora do raio de ação da carga.' },
+                { id: '1.3', texto: 'Preparar as tampas dos mancais com auxílio da lixadeira', pontosChave: 'Atenção ao empilhamento das tampas e posicionar de forma segura.' },
+                { id: '1.4', texto: 'Preparar os mancais dos rolos Ø200mm e realizar a montagem dos rolamentos', pontosChave: 'Lixar os mancais e inspecionar. Rolamento com número de identificação para lado externo e para cima. Nota: lado fixo do mancal montado com espaçadores.' },
+                { id: '1.5', texto: 'Preparar as juntas para as tampas e montar os retentores nas tampas' },
+                { id: '1.6', texto: 'Montar as buchas nos rolos' },
+                { id: '1.7', texto: 'Montar as tampas do lado interno com retentores nos rolos' },
+                { id: '1.8', texto: 'Montar os mancais com os rolamentos nos rolos' },
+                { id: '1.9', texto: 'Montar os espelhos nos rolos', pontosChave: 'Utilizar parafusadeira de ½" e soquete 1/2x19mm e parafusos M12x30mm.' },
+                { id: '1.10', texto: 'Montar tampa de fechamento dos mancais', pontosChave: 'Utilizar parafusadeira de ½" e soquete 1/2x19mm e parafusos M12x110mm.' },
+                { id: '1.11', texto: 'Pintar os mancais', seguranca: 'Risco de produtos químicos — utilizar máscara contra fumos e luva de látex.' },
+
+                { id: '1.12', titulo: 'Montagem dos rolos Ø140mm', secao: true },
+                { id: '1.13', texto: 'Posicionar e inspecionar os rolos Ø140mm sobre a bancada', pontosChave: 'Colocar cunhas nos rolos para travamento.' },
+                { id: '1.14', texto: 'Montar anel espaçador interno no 1º rolo' },
+                { id: '1.15', texto: 'Montar as molas nos rolos', pontosChave: 'Utilizar martelo de teflon na montagem.' },
+                { id: '1.16', texto: 'Montar rolamento' },
+                { id: '1.17', texto: 'Montar espaçador externo (labirinto)' },
+                { id: '1.18', texto: 'Montar anel elástico', pontosChave: 'Utilizar alicate para anéis.' },
+                { id: '1.19', texto: 'Preparar eixos e inspecionar para avaliar empeno, dimensões, furos e rosca' },
+                { id: '1.20', texto: 'Montar o eixo no mancal', pontosChave: 'Montar mancal central (carretel de centro).' },
+                { id: '1.21', texto: 'Montar as molas no eixo', pontosChave: 'Utilizar chave unha para abrir as molas. Montar os tubos espaçadores para auxiliar o posicionamento das molas.' },
+                { id: '1.22', texto: 'Montar os rolos no eixo' },
+                { id: '1.23', texto: 'Fixar o eixo no mancal com pino elástico' },
+                { id: '1.24', texto: 'Lubrificar os rolos com graxa' },
+                { id: '1.25', texto: 'Pintar mancais', seguranca: 'Risco de produtos químicos — utilizar máscara contra fumos e luva de látex.' },
+
+                { id: '8.2', titulo: '8.2 Preparar base inferior', secao: true },
+                { id: '2.1', texto: 'Preparar calços, sendo no mínimo 5mm para os rolos de Ø200mm e 2mm para os rolos de Ø140mm', pontosChave: 'Realizar limpeza na estrutura e lixar as bases de apoio dos mancais.' },
+                { id: '2.2', texto: 'Posicionar calços na sede dos rolos de Ø200mm e Ø140mm, verificar altura do calço em relação à chaveta', pontosChave: 'Caso necessário, trocar chaveta até atingir abertura máxima de 5 mm entre mancais e chavetas.' },
+                { id: '2.3', texto: 'Posicionar os parafusos M16 e M36 nos furos da base de apoio dos mancais e em seguida montar os rolos de Ø200mm e Ø140mm na base inferior', seguranca: 'Risco de aprisionamento das mãos ao posicionar os rolos e carga suspensa — utilizar extensor e ficar fora do raio de ação da carga.' },
+                { id: '2.4', texto: 'Apertar todos os parafusos M16 para os rolos de Ø200mm e M36 para os rolos de Ø140mm', pontosChave: 'M16: soquete 24 mm, extensão ¾"x150mm com parafusadeira de ¾". M36: soquete 2e3/16" ou 2e1/8", 55x3/4" e 55x1".' },
+                { id: '2.5', texto: 'Posicionar a base inferior no stand e executar passagem de régua e ajustes', pontosChave: 'Fazer alinhamento do "pass line" (conforme padrão) e reportar informações.', seguranca: 'Risco de aprisionamento das mãos ao posicionar a base e carga suspensa — utilizar extensor e ficar fora do raio de ação da carga.' },
+                { id: '2.6', texto: 'Montar as proteções dos mancais nos rolos de Ø200mm', pontosChave: 'Utilizando chave catraca e soquete 19 mm.' },
+                { id: '2.7', texto: 'Confeccionar e conectar as tubulações de graxa nos mancais dos rolos de Ø200mm e nos eixos dos rolos de Ø140mm, isolar tubulações ¼" e retornar base inferior para cavalete', pontosChave: 'Utilizando chave combinada 14 mm, 11 mm, 13 mm. Utilizar fita de aramida 1" ou 1½" de espessura.' },
+
+                { id: '8.3', titulo: '8.3 Preparar base superior', secao: true },
+                { id: '3.1', texto: 'Repetir as operações 8.2.1, 8.2.2, 8.2.3, 8.2.4, 8.2.6 e 8.2.7' },
+                { id: '3.2', texto: 'Transportar as estruturas laterais leste e oeste para área de teste de refrigeração', pontosChave: 'Utilizar PR para movimentação e inspecionar condição dos olhais, manilhas e estropos (1/2"x3metros).', seguranca: 'Risco de aprisionamento das mãos ao posicionar a base e carga suspensa — utilizar extensor e ficar fora do raio de ação da carga. Verificar se o piso não está escorregadio antes de posicionar as estruturas.' },
+                { id: '3.3', texto: 'Encher laterais de água e deixá-las sob pressão de 5 kg/cm de referência para verificar se há vazamentos', pontosChave: 'Caso apresentem, esvaziar caixa e eliminar o vazamento com reparo por soldagem.' },
+                { id: '3.4', texto: 'Soldar chapa de inox de 4 mm de espessura nas laterais do lado interno das estruturas laterais' },
+                { id: '3.5', texto: 'Montar as estruturas laterais lado leste e oeste na base superior e fixá-las com parafusos M64', pontosChave: 'Antes de montar, passar fina camada de graxa na superfície de montagem. Utilizar chave de impacto 95mm e marreta 5kg ou parafusadeira de 1" com soquete de 1"x95mm.', seguranca: 'Risco de aprisionamento das mãos ao posicionar as estruturas laterais e carga suspensa — utilizar extensor e ficar fora do raio de ação da carga.' },
+
+                { id: '8.4', titulo: '8.4 Montar segmento (unir base superior e inferior)', secao: true },
+                { id: '4.1', texto: 'Utilizando a PR 221 para virar base superior e montá-la na base inferior, fixando-as com parafuso M64', pontosChave: 'Utilizar Jig (balancinho), estropos de 1¼" e manilhas de 1" para a atividade de unir as bases.', seguranca: 'Risco de aprisionamento das mãos ao posicionar as bases e carga suspensa — utilizar extensor e ficar fora do raio de ação da carga.' },
+                { id: '4.2', texto: 'Montar os flexíveis de lubrificação, ligando linhas das válvulas de distribuição' },
+                { id: '4.3', texto: 'Fazer teste de vazamento de graxa no sistema de lubrificação, com pressão de referência (90 a 110kgf/cm2 em cada linha)', pontosChave: 'Observar existência de vazamentos nos blocos e castelos, mantendo o sistema pressurizado por 15 minutos. Caso haja vazamento, corrigi-lo imediatamente.', seguranca: 'Risco de impacto por rompimento da mangueira por alta pressão. Atenção ao soltar os engates das mangueiras — retirar a pressão delas conferindo os manômetros.' },
+                { id: '4.4', texto: 'Posicionar segmento no stand de alinhamento e efetuar ajuste dos lines (chavetas) de apoio', pontosChave: 'Fazer alinhamento dos "lines" chaveta de apoio (conforme padrão) e reportar informações.' },
+                { id: '4.5', texto: 'Retirar segmento do stand, montar as cangalhas de spray inferior e superior e posicioná-lo na área de teste', pontosChave: 'Verificar se a cangalha de spray inferior está montada na tubulação principal uniões de 2".', seguranca: 'Verificar se o piso não está escorregadio; caso esteja, limpar local antes de posicionar as estruturas para teste.' },
+                { id: '4.6', texto: 'Efetuar teste de refrigeração com pressão de referência de 5kgf/cm2 durante 5 minutos', pontosChave: 'Verificar alinhamento e observar existência de vazamento, corrigindo sempre que necessário.' },
+                { id: '4.7', texto: 'Confeccionar 06 chapas de 15 mm de largura, 200 mm de comprimento, 3 mm de espessura em aço inox e soldar nos mancais dos 1º rolos de Ø140mm da base superior e inferior', pontosChave: 'Para fixação da chapa de proteção do segmento zero.' },
+                { id: '4.8', texto: 'Limpar rolos, removendo o excesso de graxa e preparar para embarque' },
+                { id: '4.9', texto: 'Fazer inspeção final e registrar conforme planilha' }
+            ]
+        },
+        {
+            id: '603101',
+            nome: 'Ajuste de Pass Line no Segmento Zero da MCC\'s #2 e 3',
+            revisao: '03',
+            dataRevisao: '28/02/2025',
+            frequencia: 'Diário',
+            responsavel: 'Mecânico e líder de manutenção',
+            objetivo: 'Estabelecer diretrizes para as atividades incluídas no ajuste de "pass line" no segmento zero das MCC\'s # 2 e 3 na OMS.',
+            seguranca: ['Luva', 'Capacete com jugular', 'Óculos de Segurança', 'Protetor auricular', 'Bota de segurança'],
+            recomendacoes: [
+                'Não ficar sob carga suspensa.',
+                'Para execução desta atividade o funcionário deverá ser treinado neste padrão.'
+            ],
+            ferramentas: ['Paquímetro de 150mm', 'Parafusadeira pneumática de ¾" ou ½"', 'Extensão 150x¾", 150x½"', 'Soquetes de 24x¾", 24x½", 2 3/16"x¾", 2 3/16"x½"', 'Calibrador de folga'],
+            etapas: [
+                { id: '8.1', texto: 'Efetuar limpeza nas bases de apoio (pés) da estrutura inferior do segmento', pontosChave: 'Utilizar lixadeira.', seguranca: 'Risco de contaminação via respiratória por poeira — fazer uso de protetor facial e respirador compatível com o risco.' },
+                { id: '8.2', texto: 'Transportar e posicionar a base inferior no stand de aferição de "Pass Line"', pontosChave: 'Utilizar cabo com 4 pontas de fixação e inspecionar todos os olhais. Nota: verificar desenho esquemático.', seguranca: 'Risco de aprisionamento das mãos ao posicionar a base e carga suspensa — utilizar extensor e ficar fora do raio de ação da carga.' },
+                { id: '8.3', texto: 'Fixar os pés do segmento na base do stand' },
+                { id: '8.4', texto: 'Verificar folga entre base de apoio do segmento e a base do stand utilizando calibre de folga (apalpador)', pontosChave: 'Verificar a folga ≤0,3mm.' },
+                { id: '8.5', texto: 'Posicionar as réguas no suporte de apoio do stand', pontosChave: 'Posicionar as réguas nos pilares de apoio do stand com talha ou PR. As réguas devem estar apoiadas totalmente nos pilares do stand para não gerar leitura falsa.', seguranca: 'Risco de aprisionamento das mãos ao posicionar a régua e carga suspensa — utilizar extensor e ficar fora do raio de ação da carga.' },
+                { id: '8.6', texto: 'Utilizar o calibrador de folga para verificar o espaçamento entre o rolo e a régua', pontosChave: 'Verificar a folga entre a régua padrão e o rolo do conjunto. A folga (1±0,05mm) deverá estar entre 0,95mm e 1,05mm.' },
+                { id: '8.7', texto: 'Colocar e retirar calço entre a base e o mancal (ajuste dos rolos)', pontosChave: 'Caso a medida esteja fora da desejada, içar o rolo com auxílio da talha corrente ou PR e cinta, calcular os calços necessários e reapertar os parafusos. Conferir a folga novamente e repetir a operação até atingir a medida desejada. Reportar informações para a planilha de acompanhamento de reparo.', seguranca: 'Risco de aprisionamento das mãos ao posicionar o rolo e carga suspensa — utilizar extensor e ficar fora do raio de ação da carga.' },
+                { id: '8.8', texto: 'Soltar os parafusos da base de fixação do segmento no stand e retirar chaveta', pontosChave: 'Utilizar parafusadeira pneumática ¾" e soquete 2 3/16"x¾".' },
+                { id: '8.9', texto: 'Efetuar retirada das réguas', pontosChave: 'Utilizar talha ou PR para movimentação.', seguranca: 'Risco de aprisionamento das mãos ao posicionar a régua e carga suspensa — utilizar extensor e ficar fora do raio de ação da carga.' }
+            ]
+        },
+        {
+            id: '603102',
+            nome: 'Ajuste de Gap no Segmento Zero das MCC\'s #2 e 3',
+            revisao: '03',
+            dataRevisao: '28/02/2025',
+            frequencia: 'Diário',
+            responsavel: 'Mecânico e líder de manutenção',
+            objetivo: 'Estabelecer diretrizes para as atividades incluídas no ajuste de "Gap" no segmento zero das MCC\'s # 2 e 3 na OMS.',
+            seguranca: ['Luva', 'Capacete com jugular', 'Óculos de Segurança', 'Protetor auricular', 'Bota de segurança'],
+            recomendacoes: [
+                'Não ficar sob carga suspensa.',
+                'Para execução desta atividade o funcionário deverá ser treinado neste padrão.'
+            ],
+            ferramentas: ['Parafusadeira pneumática de ¾"', 'Chaves combinada de 24mm', 'Extensão ¾"x150mm', 'Soquete de 24mm', 'Soquete de 2, 3/16", 24mm', 'Relógio comparador para medir Gap (Robocop)', 'Micrômetro 250 a 275mm'],
+            etapas: [
+                { id: '8.1', texto: 'Posicionar o segmento zero na área sobre cavaletes', pontosChave: 'Utilizar Jig (balancinho) para movimentação do segmento.', seguranca: 'Risco de aprisionamento das mãos ao posicionar segmento e carga suspensa — utilizar extensor e ficar fora do raio de ação da carga.' },
+                { id: '8.2', texto: 'Preparar o relógio comparador para realizar as medições', pontosChave: 'Utilizar micrômetro externo de 250 a 275mm para ajustar o relógio comparador de medir "Gap" (robocop) em 265mm.' },
+                { id: '8.3', texto: 'Realizar as medidas de espaçamento entre rolos "Gap" com referência (261,5-0,1mm)', pontosChave: 'Caso a medida esteja fora do valor desejado (entre 261,40 a 261,50) ajustar os calços da base superior.' },
+                { id: '8.4', texto: 'Caso necessário, ajustar o espaçamento entre rolos "Gap" conforme padrão, remover ou acrescentar calços entre o mancal e a base de apoio da estrutura superior', pontosChave: 'Utilizar parafusadeira pneumática para desapertar e apertar os parafusos M16 e M36 de fixação dos rolos Ø200mm e Ø140mm e ajustar os calços. Utilizar extensor ¾"x150mm, soquetes 24mmx3/4", 2/3/16x3/4". Aferir novamente as medidas e repetir a operação quantas vezes for necessário para atingir (261,5-0,1mm). Reportar informações para a planilha de acompanhamento de reparo.', seguranca: 'Risco de aprisionamento das mãos ao movimentar rolos e carga suspensa — utilizar extensor e ficar fora do raio de ação da carga.' }
+            ]
+        },
+        {
+            id: '603103',
+            nome: 'Ajuste do Line de Apoio (Chaveta) no Segmento Zero da MCC\'s #2 e 3',
+            revisao: '03',
+            dataRevisao: '28/02/2025',
+            frequencia: 'Diário',
+            responsavel: 'Mecânico e líder de manutenção',
+            objetivo: 'Estabelecer diretrizes para as atividades incluídas no ajuste de "line" de apoio do segmento zero das MCC\'s # 2 e 3 na OMS.',
+            seguranca: ['Luva', 'Capacete com jugular', 'Óculos de Segurança', 'Protetor auricular', 'Bota de segurança'],
+            recomendacoes: [
+                'Não ficar sob carga suspensa.',
+                'Para execução desta atividade o funcionário deverá ser treinado neste padrão.'
+            ],
+            ferramentas: ['Paquímetro de 150mm', 'Parafusadeira pneumática de ¾"', 'Chaveta padrão (passa não passa)', 'Soquete de 55mmx¾", 24mmx¾"', 'Chave combinada 24mm', 'Calibrador de folga'],
+            etapas: [
+                { id: '8.1', texto: 'Lixar "lines" de apoio do segmento', pontosChave: 'Utilizar lixadeira.', seguranca: 'Risco de contaminação via respiratória por poeira — fazer uso de protetor facial e respirador compatível com o risco.' },
+                { id: '8.2', texto: 'Posicionar o segmento zero no stand e apertar os parafusos de fixação', pontosChave: 'Utilizar jig (balancinho) para movimentação do segmento. Utilizar parafusadeira pneumática de ¾" e soquete de 55mmx¾" para fixar base de apoio no stand, observando apoio uniforme das bases do stand e pés do segmento.', seguranca: 'Risco de aprisionamento das mãos ao posicionar o segmento e carga suspensa — utilizar extensor e ficar fora do raio de ação da carga.' },
+                { id: '8.3', texto: 'Verificar a folga entre os pés e o apoio da base inferior no stand', pontosChave: 'Utilizar calibrador para avaliar a folga ≤0,3mm.' },
+                { id: '8.4', texto: 'Ajustar "Line" da chaveta de apoio do segmento', pontosChave: 'Utilizar a chaveta padrão (passa não passa) detalhe "A" do desenho esquemático e ajustar folga entre base do segmento e base do stand em (±0,5mm). Nota: verificar desenho esquemático.' },
+                { id: '8.5', texto: 'Ajustar deslocamento do "Line" da chaveta de apoio do segmento', pontosChave: 'Utilizar a chaveta padrão (passa não passa) detalhe "A" do desenho esquemático e ajustar espaçamento conforme detalhe "B" utilizando o paquímetro com medida desejada de (6±0,5mm). Nota: verificar desenho esquemático.' },
+                { id: '8.6', texto: 'Caso necessário, soltar os parafusos M16x90mm do "line" e refazer atividades de ajuste', pontosChave: 'Utilizar chave combinada 24mm, parafusadeira pneumática ¾" e soquete 24mmx¾".' }
+            ]
+        }
+    ]
+
+
+    ,
+    // ==========================================================
+    // USINAGEM
+    // ==========================================================
+    'usinagem': [
+        {
+            id: '605800',
+            nome: 'Operação de Fresadora',
+            revisao: '00',
+            dataRevisao: '10/12/2025',
+            frequencia: 'Rotineira (OMS — oficina de moldes e segmentos)',
+            responsavel: 'Técnico de Manutenção, Operador de Máquinas e Ferramentas e Mecânico',
+            objetivo: 'Estabelecer um procedimento padronizado e seguro para a operação da fresadora ferramenteira Clark 2VM, garantindo a integridade do operador, do equipamento e a qualidade do serviço executado.',
+            seguranca: ['Bota antitorção cano longo com biqueira de composite', 'Capacete de segurança classe B', 'Protetor auricular concha ou plug', 'Óculos de segurança panorâmico', 'Óculos de segurança com grau (se necessário)', 'Luva contra agente', 'Luva de vaqueta', 'Luva malha de aço único'],
+            recomendacoes: [
+                'Realizar atividade com a camisa para dentro da calça.',
+                'Antes de iniciar as atividades, passar creme de proteção para as mãos.',
+                'Evitar roupas largas, correntes ou mangas soltas durante a operação.',
+                'Nunca deixar a máquina em funcionamento sem supervisão.',
+                'Respeitar os dispositivos NR12 da máquina durante toda a utilização.',
+                'É proibido remover limalhas com o equipamento em rotação.',
+                'É proibido usar adornos (pulseiras, cordão, brincos e outros).'
+            ],
+            ferramentas: ['Fresadora Clark 2VM', 'Mandris, castanhas', 'Ferramentas de corte', 'Brocas', 'Lubrificante', 'Instrumentos de medição (paquímetro, micrômetro)'],
+            etapas: [
+                { id: '1', texto: 'Verificar as condições do equipamento e sua limpeza', pontosChave: 'Efetuar o check list diário do equipamento.', seguranca: 'Antes de iniciar as atividades, passar creme de proteção para as mãos. Carga suspensa: ficar atento a sinais sonoros e não se expor ao raio de ação de cargas suspensas. Queda de mesmo nível: atenção a desníveis/buracos no piso, isolar locais ou utilizar proteções contra desníveis.' },
+                { id: '2', texto: 'Verificar se a fresadora está desligada antes de qualquer ajuste', pontosChave: 'Garantir que a fresadora está desligada e com o botão de emergência acionado, garantindo o não funcionamento do equipamento durante o ajuste.', seguranca: 'Evitar roupas largas, correntes ou mangas soltas. Nunca deixar a máquina em funcionamento sem supervisão. Respeitar dispositivos NR12 da máquina durante toda a utilização.' },
+                { id: '3', texto: 'Posicionamento da peça', pontosChave: 'Fixar a peça com firmeza na mesa (em morsa ou garras), garantindo que não se desloque durante a atividade. Verificar a centralização da peça em relação ao curso. Colocar a broca/suportes e apertar bem.', seguranca: 'Evitar roupas largas, correntes ou mangas soltas. Nunca deixar a máquina em funcionamento sem supervisão. Carga suspensa e queda de mesmo nível — atenção a desníveis. Corte: utilizar luvas durante o ajuste, centralização e fixação. Prensamento: não expor partes do corpo em local de prensamento.' },
+                { id: '4', texto: 'Ajuste da fresadora para a atividade', pontosChave: 'Instalar e ajustar a ferramenta com altura e inclinação adequadas. Escolher a velocidade apropriada no seletor (178 a 4200rpm). Confirmar o sentido de corte e retorno da ferramenta.', seguranca: 'Prensamento: não expor partes do corpo em pontos de prensamento. Corte: ficar atento a pontos cortantes e perfurantes. Evitar roupas largas. Não utilizar luvas ou blusões durante a execução. Nunca deixar a máquina em funcionamento sem supervisão. Respeitar dispositivos NR12.' },
+                { id: '5', texto: 'Ligar fresadora', pontosChave: 'Acionar a máquina no modo manual para testar movimentos. Iniciar operação com avanço leve, monitorando vibração e esforço. Usar refrigeração (se houver) ou aplicar óleo de corte manualmente. Realizar múltiplos passes se necessário, ajustando altura e avanço.', seguranca: 'Nunca tocar na peça ou na ferramenta com a máquina em movimento. Corte: retirar cavacos apenas com escova ou pincel, jamais com as mãos. Ser atingido por material cortante/perfurante — utilizar proteções NR12 e biombo se necessário. Não utilizar luvas ou blusões durante a execução. É proibido remover limalhas com a máquina em rotação. É proibido usar adornos. Respeitar dispositivos NR12.', meioAmbiente: 'Destinar resíduos (óleo de corte e cavacos do processo de usinagem) em local adequado.' },
+                { id: '6', texto: 'Finalização da atividade', pontosChave: 'Após a operação, retornar o torpedo ao início. Desligar a máquina e aguardar a parada total. Limpar a peça, a mesa e a ferramenta.', seguranca: 'Corte: retirar cavacos apenas com escova ou pincel, jamais com as mãos. Prensamento: não expor partes do corpo em local de prensamento. Utilizar luvas durante o processo de limpeza da peça e da fresadora.' }
+            ],
+            anormalidades: [
+                { anomalia: 'Fresadora não liga', acao: 'Acionar equipe elétrica para testes e correção.' },
+                { anomalia: 'Manutenção na PR 146', acao: 'Isolar e sinalizar toda a área da usinagem e impedir acesso.' },
+                { anomalia: 'Dispositivo NR12 danificado ou inexistente', acao: 'Providenciar a correção ou confecção do dispositivo.' },
+                { anomalia: 'Manutenção na PR 146 e 221', acao: 'Efetuar o isolamento e paralisação das atividades na área de usinagem.' },
+                { anomalia: 'Dificuldades de corte', acao: 'Efetuar a troca do inserto.' },
+                { anomalia: 'Dificuldade de fixação do inserto', acao: 'Efetuar a troca da ferramenta.' }
+            ]
+        },
+        {
+            id: '605804',
+            nome: 'Operação de Torno Convencional Romi S-20',
+            revisao: '00',
+            dataRevisao: '10/12/2025',
+            frequencia: 'Rotineira (OMS — oficina de moldes e segmentos)',
+            responsavel: 'Técnico de Manutenção, Inspetor, Líder de Manutenção (modalidade mecânica) e Mecânico',
+            objetivo: 'Estabelecer diretrizes seguras e padronizadas para a operação do torno convencional, garantindo a qualidade do serviço e a segurança do operador.',
+            seguranca: ['Bota antitorção cano longo com biqueira de composite', 'Capacete de segurança classe B', 'Protetor auricular concha ou plug', 'Óculos de segurança panorâmico', 'Óculos de segurança com grau', 'Luva contra agente', 'Luva de vaqueta', 'Luva malha de aço único'],
+            recomendacoes: [
+                'Realizar atividade com a camisa para dentro da calça.',
+                'Nunca operar o torno com roupas largas, gravatas ou mangas soltas.',
+                'Manter cabelos presos.',
+                'Não fazer uso de luvas ou blusões durante o funcionamento da máquina.',
+                'Nunca deixar a máquina funcionando sem supervisão.',
+                'Interromper imediatamente o trabalho em caso de ruído ou vibração anormal.',
+                'Sempre fazer uso de todo dispositivo NR12 das máquinas operatrizes.'
+            ],
+            ferramentas: ['Torno mecânico convencional Romi S-20', 'Lunetas, mandris, castanhas', 'Ferramentas de corte (bitolas, pastilhas, suportes)', 'Lubrificante', 'Instrumentos de medição (paquímetro, micrômetro)'],
+            etapas: [
+                { id: '1', texto: 'Verificar as condições do equipamento e sua limpeza', pontosChave: 'Efetuar o check list diário do equipamento. Verificar lubrificação do equipamento. Verificar folgas nos eixos e barramentos.', seguranca: 'Corte: ao verificar folgas nos eixos e barramentos, ficar atento a pontos cortantes e perfurantes. Prensamento: não expor partes do corpo em locais de prensamento.' },
+                { id: '2', texto: 'Checar todos os acionamentos da máquina', pontosChave: 'Girar manivela do eixo longitudinal e carro superior. Girar manivela do contraponto. Checar alavancas de avanço e de rosqueamento. Checar botões de liga/desliga e alavancas de operação. Antes de qualquer acionamento, certificar-se de que o movimento a ser executado seja no sentido correto — se não estiver, parar e comunicar a manutenção.', seguranca: 'Corte e prensamento: não expor partes do corpo em local de prensamento. Carga suspensa: atenção aos sinais sonoros da ponte, não ficar no raio de ação das cargas. Não usar luvas ou blusões durante acionamento de máquinas rotativas. Nunca deixar a máquina em funcionamento sem supervisão.' },
+                { id: '3', texto: 'Verificar se o torno está desligado antes de qualquer ajuste', pontosChave: 'Garantir que o torno está desligado e com o botão de emergência acionado, garantindo o não funcionamento durante o ajuste.', seguranca: 'Evitar roupas largas, correntes ou mangas soltas. Respeitar dispositivos NR12. Carga suspensa: ficar fora do raio de ação da movimentação. Prensamento: não expor partes do corpo em pontos de prensamento e usar luvas durante a fixação.' },
+                { id: '4', texto: 'Conferir a fixação da peça no mandril ou dispositivo de fixação', pontosChave: 'Abrir as castanhas da placa de acordo com o diâmetro da peça. Se necessário, utilizar ponte rolante ou talha para posicionamento. Usar relógio comparador ou apalpador para auxiliar na centralização. Usar chave sextavada tipo T quadrada e conferir aperto.', seguranca: 'Carga suspensa: ficar atento aos sinais sonoros e fora do raio de ação da movimentação, usar acessos seguros e isolar/sinalizar a área abaixo da PR durante manutenção. Bater contra: ao fixar o mandril, efetuar o aperto no sentido oposto do corpo, evitando que a chave escape e atinja partes do corpo. Prensamento: usar luvas durante a fixação.' },
+                { id: '5', texto: 'Selecionar a ferramenta de corte adequada', pontosChave: 'Fixar ferramenta adequada ao trabalho utilizando chave de encaixe quadrado.', seguranca: 'Corte: utilizar luvas durante o posicionamento e a fixação, não expor partes do corpo a pontos cortantes/perfurantes. Prensamento: não expor partes do corpo em local de prensamento. Carga suspensa: mesmos cuidados de acesso e isolamento de PR.' },
+                { id: '6', texto: 'Ajuste do ponto rotativo', pontosChave: 'Acionar a alavanca do mangote no sentido de encontro da peça e travar a alavanca de fixação do mangote. Atenção se o parafuso de fixação do mangote está frouxo.', seguranca: 'Prensamento e corte: atenção a pontos cortantes e de prensamento. Carga suspensa: mesmos cuidados. Nunca operar com roupas largas, gravatas ou mangas soltas. Manter cabelos presos. Não usar luvas/blusões durante o funcionamento. Nunca deixar a máquina funcionando sem supervisão. Interromper imediatamente em caso de ruído ou vibração anormal.' },
+                { id: '7', texto: 'Ligar o torno com atenção ao som e comportamento da máquina', pontosChave: 'Sempre usinar com o desenho da peça e as ferramentas adequadas. Sempre usinar utilizando ordem de serviço. Havendo anomalia durante a operação, acionar o botão de emergência ou o cabo de segurança NR12.', seguranca: 'Nunca operar com roupas largas, gravatas ou mangas soltas. Manter cabelos presos. Não usar luvas/blusões durante o funcionamento. Nunca deixar a máquina funcionando sem supervisão. Interromper imediatamente em caso de ruído/vibração anormal. Ergonomia: atenção à postura, realizar pausas. Prensamento e carga suspensa: mesmos cuidados.', meioAmbiente: 'Fluidos e cavacos gerados durante a retirada de material podem contaminar água e solo, além de causar problemas de pele — usar luva adequada e notificar imediatamente qualquer vazamento constatado.' },
+                { id: '8', texto: 'Realizar cortes leves inicialmente, ajustando conforme necessário', pontosChave: 'Nunca deixar a chave de mandril acoplada antes de ligar a máquina.', seguranca: 'Mesmos cuidados de roupas, cabelos e supervisão. Ser atingido por materiais da usinagem — usar proteções NR12 e biombo se necessário. Corte: não expor partes do corpo a materiais cortantes/perfurantes e não posicionar mãos sobre a peça para remoção de limalhas e cavacos durante o funcionamento. Carga suspensa: mesmos cuidados.' },
+                { id: '9', texto: 'Remover cavacos presos na peça, caso necessário', pontosChave: 'Utilizar ferramenta para remover cavacos ou ar comprimido. Desligar a rotação da placa do torno para remoção dos cavacos.', seguranca: 'Em nenhuma hipótese utilizar as mãos diretamente para retirada do cavaco. Manter cabelos presos. Interromper imediatamente em caso de ruído/vibração anormal. Corte: utilizar luvas anticorte. Queimadura: não posicionar mãos sobre a peça quente após a usinagem — aguardar resfriamento e verificar temperatura com termômetro. Prensamento: não expor partes do corpo em local de prensamento. Carga suspensa: mesmos cuidados.' },
+                { id: '10', texto: 'Acompanhar a operação mantendo distância segura', pontosChave: 'Fazer uso do lubrificante e monitorar o desgaste da ferramenta e da peça.', seguranca: 'Mesmos cuidados de roupas, cabelos e supervisão. Sempre usar todo dispositivo NR12 das máquinas operatrizes. Projeção de materiais: manter distância segura e usar as proteções NR12. Carga suspensa: mesmos cuidados.' },
+                { id: '11', texto: 'Realizar ajustes e medições', pontosChave: 'Nunca realizar ajustes e medições com a máquina ligada.', seguranca: 'Mesmos cuidados de roupas, cabelos e supervisão. Queimadura: não posicionar mãos sobre a peça quente — aguardar resfriamento e verificar temperatura com termômetro. Prensamento: não expor partes do corpo em local de prensamento. Corte: usar luvas anticorte.', meioAmbiente: 'Fluidos e cavacos gerados durante a atividade podem contaminar água e solo — usar luva adequada.' },
+                { id: '12', texto: 'Remover a peça do torno', pontosChave: 'Efetuar a desmontagem do mandril para remoção da peça.', seguranca: 'Queimadura: aguardar resfriamento da peça, verificar temperatura com termômetro. Prensamento: não expor partes do corpo em local de prensamento. Corte: usar luvas anticorte. Carga suspensa: mesmos cuidados. Ergonomia: não carregar peso maior que o suportado — usar ponte ou talha se necessário.' },
+                { id: '13', texto: 'Desligar máquina (torno)', pontosChave: 'Desligar o torno após o término da usinagem, efetuar a limpeza do torno e da área ao redor, guardar ferramentas e instrumentos em locais adequados.', seguranca: 'Corte: não expor mãos e braços em locais perfurantes/cortantes. Queda de mesmo nível: utilizar acessos seguros e atenção a desníveis no piso. Em nenhuma hipótese utilizar as mãos diretamente para retirada do cavaco.', meioAmbiente: 'Fluidos e cavacos gerados durante a atividade podem contaminar água e solo — usar luva adequada.' }
+            ],
+            anormalidades: [
+                { anomalia: 'Torno Horizontal Convencional reprovado na inspeção de pré-uso (checklist)', acao: 'Paralisar a atividade e comunicar o responsável para realizar as intervenções necessárias.' },
+                { anomalia: 'Manutenção na PR 146', acao: 'Isolar e sinalizar toda a área da usinagem e impedir acesso.' },
+                { anomalia: 'Dispositivo NR12 danificado ou inexistente', acao: 'Providenciar a correção ou confecção do dispositivo.' },
+                { anomalia: 'Dificuldade de corte', acao: 'Efetuar a troca do inserto.' },
+                { anomalia: 'Dificuldade de fixação do inserto', acao: 'Efetuar a troca da ferramenta.' }
+            ]
+        }
+    ]
+
+
+    ,
+    // ==========================================================
+    // LOGÍSTICA
+    // ==========================================================
+    'logistica': [
+        {
+            id: '603750',
+            nome: 'Posicionamento e Movimentação dos Equipamentos das Máquinas 2, 3 e 4 pela OMS com a Carreta Rebaixada',
+            revisao: '02',
+            dataRevisao: '28/01/2026',
+            frequencia: 'Diário',
+            responsavel: 'Planejamento e logística, através da equipe de movimentação dos equipamentos',
+            objetivo: 'Estabelecer diretrizes para as atividades de posicionamento e movimentação de equipamentos para a carreta rebaixada, mantendo a segurança e integridade dos executantes e das cargas a serem transportadas.',
+            seguranca: ['Luva de vaqueta', 'Capacete com jugular', 'Óculos de Segurança incolor', 'Protetor auricular', 'Calçado de segurança com biqueira de aço', 'Colete refletivo'],
+            recomendacoes: [
+                'Utilizar somente EPIs fornecidos pela CSN.',
+                'Não ficar sob carga suspensa, manter-se afastado.',
+                'Para execução desta atividade o funcionário deverá ser treinado neste padrão.',
+                'Verificar os riscos inerentes da área onde irá acontecer a movimentação dos equipamentos.',
+                'Ao subir na carreta rebaixada, redobrar os cuidados, verificar sempre as condições ao redor, manter postura defensiva, nunca andar de costas, atenção com cabos ou outros meios que possam levar ao tropeço.',
+                'Conhecer as ferramentas necessárias para execução do serviço — não é permitido improviso nem utilização de ferramentas danificadas.',
+                'Utilizar suportes para transporte de equipamentos na parte central da carreta.',
+                'Utilizar protetor de cantos sempre que estropos/cintas forem usados em contato com cantos vivos.',
+                'A sinalização para ponte rolante só deve ser feita por colaboradores treinados e identificados com tarjeta verde no capacete.',
+                'Proibido movimentar os equipamentos com pessoas sobre a prancha.'
+            ],
+            ferramentas: ['Gancho prolongado para direcionar a carga', 'Cordas ou cintas catracas para amarrar a carga', 'Manilhas', 'Jig', 'Estropo', 'Cintas', 'Escada de acesso'],
+            etapas: [
+                { id: '8.1.1', texto: 'Solicitar ao motorista o acesso com a carreta na entrada da OMS, sendo auxiliado pelos mecânicos GMLC', pontosChave: 'Verificar o sinal sonoro da locomotiva. Atenção ao trânsito de pessoas, veículos e locomotiva. Sinalizar e auxiliar o motorista quanto ao posicionamento da carreta na entrada da OMS.', seguranca: 'Risco de colisão entre a locomotiva, carros, pessoas e a carreta rebaixada — sinalizar e orientar as pessoas/veículos ao redor e avisar o operador da locomotiva.' },
+                { id: '8.1.2', texto: 'Solicitar ao operador de ponte rolante PR146, PR221 ou PR14 da OMS, via rádio comunicador na faixa 5, o atendimento para posicionar o suporte', pontosChave: 'Os suportes se encontram na área de suportes OMS. É de responsabilidade do mecânico treinado/habilitado a sinalização para o operador. Os mecânicos devem estropar o suporte e sinalizar para a carga ser posicionada na carreta, com auxílio do extensor, no centro (parte rebaixada). A carreta não pode sair da OMS sem o suporte para transporte (exceto segmento horizontal e straightner).', seguranca: 'Ter postura defensiva. Utilizar o extensor. Realizar check list das cintas, cabos e estropos. Utilizar rádio comunicador.' },
+                { id: '8.1.3', texto: 'Movimentação e posicionamento do suporte e molde na carreta (parte rebaixada)', pontosChave: 'Solicitar ao operador da PR146 ou PR221, via rádio na faixa 5, o atendimento para pegar a cinta de 4 pontas (área de reparos de moldes). Estropar o molde com a cinta de 4 pontas. Sinalizar e direcionar os pés do molde no apoio do suporte (MCC#4) ou travar os pinos de fixação (MCC#2,3). Soltar a cinta e liberar a ponte. Solicitar ao motorista fixar a carga sobre a carreta.', seguranca: 'Atenção ao posicionamento dos ganchos da cinta no olhal antes de tensionar. Postura defensiva. Risco de aprisionamento de membros. Utilizar escada de acesso à carreta rebaixada. Realizar check list de cabos, cintas e estropos. Utilizar rádio comunicador.' },
+                { id: '8.1.4', texto: 'Movimentação e posicionamento do suporte e segmentos na carreta (parte rebaixada)', pontosChave: 'Solicitar via rádio (faixa 5) o atendimento para posicionar o suporte do segmento (exceto horizontal e straightner) na parte central (rebaixada) da carreta. Estropar o suporte e sinalizar o posicionamento. Soltar o cabo de aço e liberar a ponte. Solicitar ao motorista fixar a carga. Para segmentos bow, horizontal e straightner, utilizar a PR14 e posicionar sobre a viga da carreta.', seguranca: 'Atenção ao posicionamento dos pinos de travamento antes de tensionar o cabo do Jig. Postura defensiva. Risco de aprisionamento de membros. Utilizar escada de acesso. Realizar check list de cabos, cintas e estropos. Utilizar rádio comunicador.' },
+                { id: '8.1.5', texto: 'Movimentação e posicionamento do suporte e cadeiras na carreta (parte rebaixada)', pontosChave: 'Solicitar via rádio (faixa 5) o posicionamento do suporte de cadeiras no centro (parte rebaixada) da carreta, conforme demarcação. Soltar o cabo de aço e liberar a ponte. Estropar as cadeiras com cabo de aço e posicionar no suporte. Solicitar ao motorista fixar a carga.', seguranca: 'Postura defensiva. Risco de aprisionamento de membros. Utilizar escada de acesso. Realizar check list de cabos, cintas e estropos. Utilizar rádio comunicador.' },
+                { id: '8.2.1', texto: 'Solicitar ao motorista sair com a carreta da OMS, sendo auxiliado pelos mecânicos GMLC', pontosChave: 'Verificar sinal sonoro da locomotiva. Atenção ao trânsito de pessoas, veículos e locomotiva. Sinalizar e auxiliar o motorista quanto ao posicionamento na rua lateral à OMS.', seguranca: 'Risco de colisão entre locomotiva, carros, pessoas e carreta rebaixada — sinalizar e orientar pessoas/veículos ao redor.' },
+                { id: '8.2.2', texto: 'Solicitar a passagem pela linha férrea do carro torpedo', pontosChave: 'Solicitar ao operador da locomotiva do carro torpedo a passagem, atenção ao alarme sonoro. Verificar luz de sinalização: vermelha aguardar, verde solicitar autorização para acessar.', seguranca: 'Risco de colisão entre a locomotiva e a carreta rebaixada.' },
+                { id: '8.2.3', texto: 'Após passar pela linha férrea do carro torpedo, aguardar com a carreta ao lado da proteção do RH e solicitar ao Líder GAC o bloqueio para entrada no vão', pontosChave: 'Estacionar em local seguro para evitar projeção de material quente caso o RH esteja em funcionamento. Atenção aos equipamentos móveis na Ala de corrida 1 e 2. Caso o piso esteja desnivelado, solicitar retroescavadeira (raspador).', seguranca: 'Postura defensiva. Posicionar a carreta de forma que todos tenham visibilidade.' },
+                { id: '8.4.1', texto: 'Etiquetar o acionamento do carro RH para que não haja possibilidade de movimentação', pontosChave: 'Solicitar ao líder GAC o bloqueio do carro e verificar se está sem acionamento. O bloqueio deve ser realizado na CABINE NORTE.' },
+                { id: '8.4.2', texto: 'Após o equipamento etiquetado, estacionar a carreta na torre do carro panela (poço da máquina 3, veio E)', pontosChave: 'Solicitar a PR389, PR353 ou PR188 (equipe GLA) para retirada do equipamento. Pegar a cinta ou jig correto para estropagem e realizar a retirada do equipamento da carreta.', seguranca: 'Risco de queda do equipamento da ponte rolante — manter postura defensiva, ficar longe do raio de ação, utilizar cabos extensores ou corda conforme necessidade.' },
+                { id: '8.4.3', texto: 'Descarregar o equipamento da carreta rebaixada para o terceiro piso na garagem da GLA', pontosChave: 'Com a Ponte Rolante, coletar o molde ou segmento na torre do carro RH (poço da máquina 3, veio E). Usar cinta ou jig correto para estropagem e retirada.', seguranca: 'Risco de projeção de material quente. Postura defensiva.' },
+                { id: '8.4.4', texto: 'Carregar a carreta com o equipamento para a OMS', pontosChave: 'Com a Ponte Rolante, coletar o segmento ou molde na garagem da GLA e posicionar na carreta na torre do carro RH (poço da máquina 3, veio E).', seguranca: 'Risco de projeção de material quente. Postura defensiva.' },
+                { id: '8.4.5', texto: 'Retirar a carreta do vão do RH', pontosChave: 'Verificar se não há manobra de equipamento ou transição de Ponte Rolante com panela antes de movimentar. Retirar a carreta da torre do RH e estacionar ao lado da proteção do RH.', seguranca: 'Risco de colisão ou de projeção de material quente.' },
+                { id: '8.4.6', texto: 'Retirar a etiqueta de bloqueio do carro RH', pontosChave: 'Comunicar ao líder GAC para que efetue o desbloqueio do carro do RH.' },
+                { id: '8.4.7', texto: 'Solicitar a passagem pela linha férrea do carro torpedo', pontosChave: 'Solicitar ao operador da locomotiva do carro torpedo a passagem, atenção ao alarme sonoro.', seguranca: 'Risco de colisão entre a locomotiva e a carreta rebaixada.' },
+                { id: '8.4.8', texto: 'Solicitar ao motorista o acesso com a carreta na entrada da OMS, sendo auxiliado pelos mecânicos GMLC', pontosChave: 'Verificar sinal sonoro da locomotiva. Atenção ao trânsito. Sinalizar e auxiliar o motorista.', seguranca: 'Risco de colisão entre locomotiva, carros, pessoas e carreta — sinalizar e orientar ao redor.' },
+                { id: '8.4.9', texto: 'Estacionar a carreta na OMS' },
+                { id: '8.4.10', texto: 'Solicitar a PR146, PR221 ou PR14 para retirada do equipamento da carreta rebaixada', pontosChave: 'Atenção à capacidade de carga da ponte rolante. Utilizar JIG ou cabo de aço conforme o peso do equipamento, respeitando as normas CSN para trabalho com carga suspensa.', seguranca: 'Risco de queda do equipamento da ponte rolante — manter postura defensiva, ficar longe do raio de ação, utilizar cabos extensores ou corda conforme necessidade.' },
+                { id: '8.5.1', texto: 'Entrada pela Máquina 2 — verificar se o acesso ao galpão está desobstruído', pontosChave: 'Verificar se o local por onde a carreta irá passar está desobstruído.', seguranca: 'Risco de impacto da carreta com materiais ao redor, risco de atropelamento de pessoas.' },
+                { id: '8.5.2', texto: 'Realizar o deslocamento da carretinha sentido norte e descarregar os equipamentos na área de destino', pontosChave: 'Ir até o painel de movimentação da carreta e movimentar até o local desejado.', seguranca: 'Risco de impacto por/contra — manter postura defensiva, saindo do raio de ação da carretinha.' },
+                { id: '8.5.3', texto: 'Retirar a carreta do galpão e retornar para a OMS', pontosChave: 'Atenção ao sair do galpão pela linha férrea se a locomotiva está a caminho.', seguranca: 'Risco de colisão entre a carreta e a locomotiva — atenção aos alarmes sonoros e avisar o operador.' },
+                { id: '8.6.1', texto: 'Entrada da carreta pelo Veio "E" — verificar passagem pela lateral do RH', pontosChave: 'Verificar obstrução por máquina ferramenta ou limpeza de panela; se houver, solicitar à GAC ou GOS.', seguranca: 'Risco de projeção de material a quente — postura defensiva. Risco de colisão entre a carreta e equipamentos móveis em trânsito nas alas de corrida 1 e 2.' },
+                { id: '8.6.2', texto: 'Estacionar a carreta rebaixada ao lado da cabine da GLA do Veio "E"', pontosChave: 'Solicitar ao pessoal da GLA o operador de ponte PR189 para retirar o equipamento. Verificar se não há trânsito de pessoas ou materiais obstruindo a passagem.' },
+                { id: '8.6.3', texto: 'Solicitar a PR189 para transportar os equipamentos sentido leste para a garagem na máquina 2', pontosChave: 'Verificar condições dos estropos e cintas utilizados.', seguranca: 'Postura defensiva ao subir e descer da carreta e ao manusear o equipamento. Utilizar ganchos extensores e cordas para guiar o equipamento.' },
+                { id: '8.6.4', texto: 'Carregar equipamentos na carreta rebaixada no Veio "E"', pontosChave: 'Solicitar a PR189 para transportar as cadeiras que precisam ser reparadas na OMS, colocar no suporte da carreta usando os estropos, cintas ou jigs corretos.', seguranca: 'Postura defensiva ao subir e descer, utilizar ganchos extensores e cordas, utilizar suporte de transporte de cadeiras.' },
+                { id: '8.6.5', texto: 'Retirar a carreta rebaixada do Veio "E" vindo para a oficina OMS', pontosChave: 'Verificar se o caminho está livre; se não, solicitar à GAC ou GOS. Atenção ao transitar pelo vão do RH e vãos "H"/"I".', seguranca: 'Risco de projeção de material a quente. Risco de colisão com equipamentos móveis nas alas de corrida 1 e 2.' },
+                { id: '8.7', texto: 'Solicitar ao motorista o acesso com a carreta na entrada da OMS, sendo auxiliado pelos mecânicos GMLC', pontosChave: 'Verificar sinal sonoro da locomotiva. Sinalizar e auxiliar o motorista.', seguranca: 'Risco de colisão entre locomotiva, carros, pessoas e carreta — sinalizar e orientar ao redor.' },
+                { id: '8.7.1', texto: 'Estacionar a carreta na OMS' },
+                { id: '8.7.2', texto: 'Solicitar a PR146, PR221 ou PR14 para retirada do equipamento da carreta rebaixada', pontosChave: 'Atenção à capacidade de carga da ponte rolante. Utilizar JIG ou cabo de aço conforme o peso, respeitando as normas CSN.', seguranca: 'Risco de queda do equipamento da ponte rolante — manter postura defensiva e distância do raio de ação.' }
+            ],
+            anexos: {
+                titulo: 'Tabela de peso dos equipamentos OMS (limite PR146: 25 toneladas)',
+                tabela: [
+                    { descricao: 'Molde MCC#2 e 3', pesoT: 14.6, pesoJigT: 0, pesoTotalT: 14.6 },
+                    { descricao: 'Molde MCC#4', pesoT: 18.3, pesoJigT: 0, pesoTotalT: 18.3 },
+                    { descricao: 'Cadeiras MCC#2,3', pesoT: 3, pesoJigT: 0, pesoTotalT: 3 },
+                    { descricao: 'Bender MCC#4', pesoT: 25, pesoJigT: 4.6, pesoTotalT: 29.6 },
+                    { descricao: 'Segmento Bow MCC#4', pesoT: 38.3, pesoJigT: 4.6, pesoTotalT: 42.9 },
+                    { descricao: 'Segmento Straightner R MCC#4', pesoT: 49.4, pesoJigT: 4.6, pesoTotalT: 54 },
+                    { descricao: 'Segmento Horizontal MCC#4', pesoT: 49.4, pesoJigT: 4.6, pesoTotalT: 54 },
+                    { descricao: 'Segmento Zero MCC#2 e 3', pesoT: 18.1, pesoJigT: 0.9, pesoTotalT: 19 },
+                    { descricao: 'Segmento Grupo 1 MCC#2 e 3', pesoT: 22.1, pesoJigT: 1.2, pesoTotalT: 23.3 },
+                    { descricao: 'Segmento Grupo 2 MCC#2 e 3', pesoT: 26.4, pesoJigT: 1.2, pesoTotalT: 27.6 },
+                    { descricao: 'Segmento Grupo 3 MCC#2 e 3', pesoT: 32.5, pesoJigT: 1.2, pesoTotalT: 33.7 }
+                ]
+            }
+        },
+        {
+            id: '603946',
+            nome: 'Posicionamento e Movimentação dos Materiais com o Caminhão Munk',
+            revisao: '01',
+            dataRevisao: '19/02/2026',
+            frequencia: 'Diário',
+            responsavel: 'Planejamento e logística, através do time de movimentação dos materiais',
+            objetivo: 'Estabelecer diretrizes para as atividades de posicionamento e movimentação de rolos e placas para o caminhão munk, mantendo a segurança e integridade dos executantes e das cargas a serem transportadas.',
+            seguranca: ['Luva de vaqueta', 'Capacete com jugular', 'Óculos de Segurança incolor', 'Protetor auricular', 'Calçado de segurança com biqueira de aço', 'Colete refletivo'],
+            recomendacoes: [
+                'Utilizar somente EPIs fornecidos pela CSN.',
+                'Não ficar sob carga suspensa, manter-se afastado.',
+                'Para execução desta atividade o funcionário deverá ser treinado neste padrão.',
+                'Verificar os riscos inerentes da área onde irá acontecer a movimentação dos materiais.',
+                'Ao subir na carroceria do caminhão munk, redobrar os cuidados, manter postura defensiva, nunca andar de costas, atenção com cabos ou meios que possam causar tropeço.',
+                'Não é permitido improviso nem uso de ferramentas danificadas.',
+                'Utilizar suportes para transporte de materiais na carroceria conforme orientação do motorista.',
+                'Ao subir e descer escadas do caminhão, manter o corpo de frente para as escadas com uso das mãos no corrimão.',
+                'Utilizar protetor de cantos sempre que estropos/cintas forem usados em contato com cantos vivos.',
+                'A sinalização para ponte rolante só deve ser feita por colaboradores treinados e identificados com tarjeta verde no capacete.',
+                'Proibido movimentar os materiais com pessoas sobre a carroceria. Proibido patolar o caminhão com pessoas sobre a carroceria.'
+            ],
+            ferramentas: ['Gancho prolongado para direcionar a carga', 'Cordas ou cintas catracas para amarrar a carga', 'Manilhas', 'Jig', 'Estropo', 'Cintas'],
+            etapas: [
+                { id: '8.1.1', texto: 'Solicitar ao motorista o acesso com o caminhão munk na entrada da OMS ou OMR, sendo auxiliado pelos mecânicos GMLC', pontosChave: 'Verificar sinal sonoro da locomotiva. Atenção ao trânsito de pessoas, veículos e locomotiva. Sinalizar e auxiliar o motorista.', seguranca: 'Risco de colisão entre locomotiva, carros, pessoas e caminhão — sinalizar e orientar ao redor, avisar o operador da locomotiva.' },
+                { id: '8.1.2', texto: 'Solicitar ao operador de ponte rolante PR146, PR221, PR14 da OMS ou PR248, via rádio na faixa 5, o atendimento para posicionar o suporte dos rolos e placas', pontosChave: 'Os suportes se encontram na área de suportes OMS e OMR. É responsabilidade do mecânico treinado/habilitado a sinalização para o operador. Estropar o suporte e posicionar na carroceria com auxílio do extensor. O caminhão só deve sair da oficina com os suportes de rolos ou placas, conforme a movimentação.', seguranca: 'Postura defensiva. Utilizar o extensor. Realizar check list de cintas, cabos e estropos. Utilizar rádio comunicador.' },
+                { id: '8.1.3', texto: 'Movimentação e posicionamento dos rolos (segmento zero / segmento grupo das MCCs 2,3 / desempenadeira das MCCs 2,3 / sistema de saída / moldes / bender e segmentos da MCC#4)', pontosChave: 'Solicitar ao operador PR146/PR221 (OMS) ou PR248 (OMR), via rádio faixa 5, o atendimento para pegar rolos. Sinalizar e direcionar os rolos no suporte da carroceria do caminhão. Soltar cinta/cabo e liberar a ponte. Solicitar ao motorista fixar a carga.', seguranca: 'Atenção ao posicionamento dos ganchos da cinta no olhal antes de tensionar. Postura defensiva. Risco de aprisionamento de membros. Utilizar escada de acesso. Realizar check list de cabos, cintas e estropos. Utilizar rádio comunicador e quebra-quina em uso de cintas.' },
+                { id: '8.1.4', texto: 'Movimentação e posicionamento das placas dos moldes MCCs 2,3 e 4', pontosChave: 'Solicitar via rádio (faixa 5) o posicionamento das placas com suporte na carroceria, no local orientado pelo motorista. Estropar o suporte e as placas e sinalizar. Soltar cinta/cabo e liberar a ponte. Solicitar ao motorista fixar a carga.', seguranca: 'Atenção ao posicionamento das placas com o suporte na carroceria. Postura defensiva. Risco de aprisionamento de membros. Utilizar escada de acesso. Realizar check list. Utilizar rádio comunicador.' },
+                { id: '8.1.5', texto: 'Movimentação e posicionamento dos materiais de rotina do abastecimento (motor, redutora, motoredutor, eixos, rolos, chapas)', pontosChave: 'Solicitar via rádio (faixa 5) o atendimento para posicionar os materiais na carroceria conforme orientação do motorista. Estropar e sinalizar. Soltar cinta/cabo e liberar a ponte. Solicitar ao motorista fixar a carga.', seguranca: 'Atenção ao posicionamento dos materiais com o suporte na carroceria. Utilizar manilhas ao estropar no olhal de motor, motoredutor, redutora e materiais com olhal. Postura defensiva. Risco de aprisionamento de membros. Utilizar escada de acesso. Realizar check list. Utilizar rádio comunicador.' },
+                { id: '8.2.1', texto: 'Solicitar ao motorista sair com o caminhão da OMS/OMR, sendo auxiliado pelos mecânicos GMLC', pontosChave: 'Verificar sinal sonoro da locomotiva. Sinalizar e auxiliar o motorista quanto à saída das oficinas.', seguranca: 'Risco de colisão entre locomotiva, carros, pessoas e a carreta — sinalizar e orientar ao redor.' },
+                { id: '8.2.2', texto: 'Para acessar o lingotamento contínuo, solicitar a passagem pela linha férrea do carro torpedo', pontosChave: 'Solicitar ao operador da locomotiva do carro torpedo a passagem, atenção ao alarme sonoro. Verificar luz de sinalização (vermelha aguardar, verde solicitar autorização).', seguranca: 'Risco de colisão entre a locomotiva e o caminhão munk.' },
+                { id: '8.4.1', texto: 'Entrada pela Máquina 2 — verificar se o acesso ao galpão está desobstruído', pontosChave: 'Verificar se o local por onde o caminhão irá passar está desobstruído.', seguranca: 'Risco de impacto do caminhão com os materiais ao redor. Risco de atropelamento de pessoas.' },
+                { id: '8.4.2', texto: 'Realizar o deslocamento da carretinha sentido norte e descarregar os equipamentos na área de destino', pontosChave: 'Ir até o painel de movimentação da carreta e movimentar até o local desejado.', seguranca: 'Risco de impacto por/contra — manter postura defensiva, saindo do raio de ação da carretinha.' },
+                { id: '8.5.3', texto: 'Retirar o caminhão e retornar para a OMS', pontosChave: 'Atenção ao sair do galpão pela linha férrea se a locomotiva está a caminho.', seguranca: 'Risco de colisão entre a carreta e a locomotiva — atenção aos alarmes sonoros e avisar o operador.' },
+                { id: '8.6', texto: 'Entrada do caminhão pelo Veio "E"', pontosChave: 'Atenção com movimentação de pessoas, equipamentos móveis e movimentação de panelas/cargas suspensas com as PRs.', seguranca: 'Risco de atropelamento de pessoas. Manter-se fora do raio de ação da carga suspensa. Risco de colisão entre o caminhão e equipamentos móveis em trânsito nas alas de corrida 1 e 2.' },
+                { id: '8.6.1', texto: 'Verificar a passagem pela lateral do RH quanto a obstrução de máquina ferramenta ou limpeza de panela', pontosChave: 'Verificar se o caminho está livre; se não, solicitar à GAC ou GOS. Atenção ao transitar pelo vão do RH e vãos "H"/"I".', seguranca: 'Risco de projeção de material a quente — postura defensiva. Risco de colisão com equipamentos móveis nas alas de corrida 1 e 2.' },
+                { id: '8.6.2', texto: 'Estacionar o caminhão munk ao lado da cabine da GLA do Veio "E"', pontosChave: 'Solicitar ao pessoal da GLA o operador de ponte PR189 para retirar o material. Verificar se não há trânsito de pessoas ou materiais obstruindo a passagem.' },
+                { id: '8.6.3', texto: 'Solicitar a PR189 para transportar os materiais', pontosChave: 'Utilizar rádio comunicador na faixa 3. Verificar condições dos estropos e cintas. Posicionar os materiais na carroceria conforme orientação do motorista.', seguranca: 'Postura defensiva ao subir/descer e manusear o equipamento. Utilizar ganchos extensores e cordas. Manter-se fora do raio de ação da carga suspensa.' },
+                { id: '8.6.4', texto: 'Retirar o caminhão munk do Veio "E"', pontosChave: 'Verificar se o caminho está livre; se não, solicitar à GAC ou GOS. Atenção ao transitar pelo vão do RH e vãos "H"/"I" e à movimentação da locomotiva na linha férrea.', seguranca: 'Risco de projeção de material a quente. Risco de colisão com equipamentos móveis nas alas de corrida 1 e 2.' },
+                { id: '8.7', texto: 'Entrada do caminhão pelo empilhador 4', pontosChave: 'Verificar se o local está desobstruído e se há placas quentes ao redor.', seguranca: 'Risco de impacto do caminhão com materiais ao redor. Risco de atropelamento. Risco de danos ao caminhão por alta temperatura.' },
+                { id: '8.7.1', texto: 'Solicitar a PR351 ou PR352 para transportar os materiais', pontosChave: 'Utilizar rádio comunicador na faixa 3. Verificar condições dos estropos e cintas. Posicionar os materiais conforme orientação do motorista.', seguranca: 'Postura defensiva ao subir/descer e manusear. Utilizar ganchos extensores e cordas. Manter-se fora do raio de ação da carga suspensa.' },
+                { id: '8.7.2', texto: 'Retirar o caminhão munk do acesso do empilhador 4', pontosChave: 'Verificar se o caminho está livre; se não, solicitar à GPA. Atenção à movimentação das PRs transportando placas e da locomotiva na linha férrea.', seguranca: 'Risco de impacto com materiais ao redor, atropelamento, danos por alta temperatura, colisão com locomotiva.' },
+                { id: '8.8', texto: 'Entrada do caminhão pelo pátio R4', pontosChave: 'Verificar se o local está desobstruído e se há placas quentes ao redor. Atenção ao sinal sonoro e luminoso da locomotiva.', seguranca: 'Risco de impacto, atropelamento, danos por alta temperatura, colisão com a locomotiva.' },
+                { id: '8.8.1', texto: 'Solicitar a PR316 ou PR317 para transportar os materiais', pontosChave: 'Utilizar rádio comunicador na faixa 3. Verificar condições dos estropos e cintas. Posicionar os materiais conforme orientação do motorista.', seguranca: 'Postura defensiva ao subir/descer e manusear. Utilizar ganchos extensores e cordas. Manter-se fora do raio de ação da carga suspensa.' },
+                { id: '8.8.2', texto: 'Retirar o caminhão munk do acesso do pátio R4', pontosChave: 'Verificar se o caminho está livre; se não, solicitar à GPA. Atenção à movimentação das PRs e da locomotiva na linha férrea.', seguranca: 'Risco de impacto, atropelamento, danos por alta temperatura, colisão com locomotiva.' },
+                { id: '8.9', texto: 'Movimentação de materiais nos depósitos', pontosChave: 'É responsabilidade dos assistentes de materiais da GEAL realizar a movimentação e posicionamento na carroceria conforme orientação do motorista. Fazer sinalização ao motorista quanto ao acesso e saída dos galpões.', seguranca: 'Manter-se fora do raio de ação de carga suspensa. Risco de impacto do caminhão, atropelamento de pessoas, queda de material e impacto por/contra.' }
+            ]
+        },
+        {
+            id: '606068',
+            nome: 'Procedimento Operacional Padrão — Ponte Rolante PR146',
+            revisao: '05',
+            dataRevisao: null,
+            frequencia: 'Rotineira (OMS — oficina de moldes e segmentos)',
+            responsavel: 'Operadores e colaboradores habilitados a operar (Staff, Supervisor, Técnico de Manutenção, Líder, Mecânico e Operadores de Ponte Rolante)',
+            objetivo: 'Padronizar as atividades de forma a garantir segurança e qualidade nos atendimentos das movimentações e içamentos de carga, garantindo a segurança e integridade dos operadores e colaboradores da oficina.',
+            seguranca: ['Bota antitorção cano longo com biqueira de composite', 'Capacete de segurança classe B', 'Protetor auricular concha ou plug', 'Óculos de segurança panorâmico', 'Óculos de segurança com grau', 'Luva contra agente', 'Luva de vaqueta', 'Cinturão para-quedista único', 'Talabarte em Y único'],
+            recomendacoes: [
+                'A operação da ponte rolante somente pode ser executada por profissionais treinados e autorizados, conforme NR-11 e NR-12.',
+                'É proibido o uso de adornos pessoais (brincos, anéis, pulseiras, colares, relógios) durante a operação ou em áreas de movimentação de carga.',
+                'Antes de iniciar a operação, inspecionar visualmente cabos, ganchos, botoeiras, limitadores, freios e demais dispositivos, além de cintos e talabartes. Qualquer anomalia deve ser comunicada imediatamente à manutenção ou supervisão.',
+                'É proibido o transporte de pessoas utilizando o gancho ou a carga.',
+                'A carga deve ser içada de forma vertical, evitando arrastos.',
+                'Nunca ultrapassar a capacidade de peso da ponte rolante. Evitar movimentos bruscos que possam causar balanço da carga.',
+                'É expressamente proibido permanecer sob cargas suspensas ou permitir que terceiros permaneçam nessa área durante a operação.',
+                'Após a operação: estacionar na garagem correta, suspender o gancho em altura segura, desligar a alimentação elétrica e registrar no checklist diário.'
+            ],
+            ferramentas: ['Ponte rolante PR146 (guincho principal 25 toneladas; guincho auxiliar não aplicável)'],
+            especificacoes: [
+                'Altura do piso ao centro do dromo: 10 metros.',
+                'Limite admissível para operação com carga em ângulo: 3,5 graus ou ±0,5m — não é permitido operar com a carga em ângulo (ex.: arrastar peças ao solo).',
+                'Durante a movimentação, acionar a sirene de forma intermitente para alertar pessoas no raio de ação da carga.',
+                'A própria ponte rolante se caracteriza como carga suspensa.'
+            ],
+            etapas: [
+                { id: '1', texto: 'Ter como item obrigatório', pontosChave: 'Colaborador treinado em NR11 (categoria B), NR12 e NR35 para trabalhos em altura. Treinado no procedimento 503600 (ISE30) — atividades em pontes rolantes, pórticos, semipórticos e talhas. Treinado no procedimento 601595 (ISE20) — estropagem, sinalização e movimentação de cargas. Portar habilitação (Formulário CSN-1155). Estar com o checklist (Formulário CSN-1747) e checklist de cintos/talabartes em mãos ou na cabine. Teste de prontidão realizado no dia.' },
+                { id: '2', texto: 'Realizar inspeção prévia da ponte rolante', pontosChave: 'Fazer reunião relâmpago de segurança antes de iniciar. Verificar estado geral da ponte, cabos de aço, gancho, botoeira, limitadores e freios. Observar ausência de etiquetas/cadeados de segurança nas chaves gerais e manetes de comando. Ao subir, garantir acesso fechado por dentro. Testar comandos sem carga. Conferir sinalização de área livre. Verificar se há colaboradores abaixo da ponte antes da operação ou manutenção.', seguranca: 'Queda de carga: não operar com cabos danificados ou ganchos deformados. Queda de nível diferente: usar corrimão ao subir/descer escadas e cinto de segurança se necessário. Choque elétrico: não tocar em painéis energizados, manter portas trancadas. Prensagem: manter distância de partes móveis. Falha nos comandos: manter comunicação via rádio com equipe de solo. Queda de objetos: liberar operação após garantir isolamento total em manutenção sob a PR.' },
+                { id: '3', texto: 'Içar carga com segurança', pontosChave: 'Centralizar o gancho sobre o centro de gravidade da carga. Elevar lentamente até poucos centímetros do solo para teste de equilíbrio. Confirmar amarração correta. Atenção à carga das peças, dentro da capacidade do guincho (25 toneladas). Atenção ao transladar a ponte para não colidir com outras pontes ou materiais estropados.', seguranca: 'Queda de carga: não ultrapassar capacidade nominal, não ficar no raio de ação. Prensagem: manter afastamento do corpo e das mãos. Falta de comunicação: manter contato visual e/ou via rádio com o sinaleiro. Manter postura defensiva. Utilizar sinal sonoro intermitente ao transitar. Não efetuar comando até garantir transporte seguro. Utilizar acessos seguros.' },
+                { id: '4', texto: 'Transportar carga em deslocamento horizontal', pontosChave: 'Movimentar a carga de forma suave, sem trancos. Manter altura mínima necessária durante o deslocamento. Observar o trajeto livre de obstáculos.', seguranca: 'Balanço de carga: evitar movimentos bruscos. Colisão: verificar área livre e sinalizada. Atropelamento: manter pessoas afastadas da rota da carga. Sinal sonoro intermitente. Não efetuar comando sem garantir segurança. Utilizar acessos seguros.' },
+                { id: '5', texto: 'Baixar carga com segurança', pontosChave: 'Baixar lentamente até o ponto de apoio. Garantir estabilidade antes de soltar o gancho. Remover dispositivos de içamento após a descarga.', seguranca: 'Prensagem: não colocar mãos entre carga e superfície. Queda de carga: não permanecer sob carga suspensa. Comunicação: confirmar finalização segura com a equipe. Sinal sonoro intermitente. Utilizar acessos seguros.' },
+                { id: '6', texto: 'Estacionar a PR na garagem', pontosChave: 'Parar a ponte na garagem sem carga estropada. Verificar o desligamento dos comandos e energia do painel da PR. Trancar o portão de acesso e posicioná-lo sobre o claviculário na sala da supervisão.', seguranca: 'Carga suspensa: garantir que a ponte esteja sem carga estropada e suspensa. Risco de colisão: designar a PR na garagem para não haver colisão e circulação de pessoas abaixo.' }
+            ],
+            anormalidades: [
+                { anomalia: 'Corte de energia ou parada súbita do equipamento', acao: 'O operador deve acionar o botão de emergência, sinalizar com a bandeira "PERIGO", solicitar isolamento da área e comunicar a supervisão imediata (via rádio), aguardando orientação.' },
+                { anomalia: 'PR221 para manutenção ou preventiva', acao: 'Efetuar o isolamento do local e seu raio de ação, garantir o preenchimento de toda a documentação para liberação da área; após manutenção, o operador deve permanecer para efetuar todos os testes.' },
+                { anomalia: 'Item não conforme com o check list', acao: 'Paralisar a PR e comunicar a supervisão e inspeção do equipamento.' }
+            ],
+            observacoes: 'Todas as ligas e jigues utilizados na oficina de moldes e segmento devem estar posicionados em cavaletes para que a ponte rolante consiga realizar o içamento; o auxílio ao operador da PR deve ser apenas com o extensor caso necessário.'
+        },
+        {
+            id: '606069',
+            nome: 'Procedimento Operacional da Ponte Rolante PR#221',
+            revisao: '04',
+            dataRevisao: null,
+            frequencia: 'Rotineira (OMS — oficina de moldes e segmentos)',
+            responsavel: 'Operadores e colaboradores habilitados a operar (Staff, Supervisor, Técnico de Manutenção, Líder, Mecânico e Operadores de Ponte Rolante)',
+            objetivo: 'Padronizar as atividades de forma a garantir segurança e qualidade nos atendimentos das movimentações e içamentos de carga, garantindo a segurança e integridade dos operadores e colaboradores da oficina.',
+            seguranca: ['Bota antitorção cano longo com biqueira de composite', 'Capacete de segurança classe B', 'Protetor auricular concha ou plug', 'Óculos de segurança panorâmico', 'Óculos de segurança com grau', 'Luva contra agente', 'Luva de vaqueta', 'Cinturão para-quedista único', 'Talabarte em Y único'],
+            recomendacoes: [
+                'A operação da ponte rolante somente pode ser executada por profissionais treinados e autorizados, conforme NR-11 e NR-12.',
+                'É proibido o uso de adornos pessoais (brincos, anéis, pulseiras, colares, relógios) durante a operação ou em áreas de movimentação de carga.',
+                'Antes de iniciar a operação, inspecionar visualmente cabos, ganchos, botoeiras, limitadores, freios e demais dispositivos, além de cintos e talabartes. Qualquer anomalia deve ser comunicada imediatamente à manutenção ou supervisão.',
+                'É proibido o transporte de pessoas utilizando o gancho ou a carga.',
+                'A carga deve ser içada de forma vertical, evitando arrastos.',
+                'Nunca ultrapassar a capacidade de peso da ponte rolante. Evitar movimentos bruscos que possam causar balanço da carga.',
+                'É expressamente proibido permanecer sob cargas suspensas ou permitir que terceiros permaneçam nessa área durante a operação.',
+                'Após a operação: estacionar na garagem correta, suspender o gancho em altura segura, desligar a alimentação elétrica e registrar no checklist diário.'
+            ],
+            ferramentas: ['Ponte rolante PR221 (guincho principal 40 toneladas; guincho auxiliar 10 toneladas)'],
+            especificacoes: [
+                'Altura do piso ao centro do dromo: 10 metros.',
+                'Limite admissível para operação com carga em ângulo: 3,5 graus ou ±0,5m — não é permitido operar com a carga em ângulo (ex.: arrastar peças ao solo).',
+                'Durante a movimentação, acionar a sirene de forma intermitente para alertar pessoas no raio de ação da carga.',
+                'A própria ponte rolante se caracteriza como carga suspensa.',
+                'Além do sinal sonoro, a PR221 possui sinal visual com RED SPOT instalado, sinalizando o raio de ação do trânsito das cargas em movimentação.'
+            ],
+            etapas: [
+                { id: '1', texto: 'Ter como item obrigatório', pontosChave: 'Colaborador treinado em NR11 (categoria B), NR12 e NR35 para trabalhos em altura. Treinado no procedimento 503600 (ISE30) — atividades em pontes rolantes, pórticos, semipórticos e talhas. Treinado no procedimento 601595 (ISE20) — estropagem, sinalização e movimentação de cargas. Portar habilitação (Formulário CSN-1155). Estar com o checklist (Formulário CSN-1747) e checklist de cintos/talabartes em mãos ou na cabine. Teste de prontidão realizado no dia.' },
+                { id: '2', texto: 'Realizar inspeção prévia da ponte rolante', pontosChave: 'Fazer reunião relâmpago de segurança antes de iniciar. Verificar estado geral da ponte, cabos de aço, gancho, botoeira, limitadores e freios. Observar ausência de etiquetas/cadeados de segurança nas chaves gerais e manetes de comando. Ao subir, garantir acesso fechado por dentro. Testar comandos sem carga. Conferir sinalização de área livre. Verificar se há colaboradores abaixo da ponte antes da operação ou manutenção.', seguranca: 'Queda de carga: não operar com cabos danificados ou ganchos deformados. Queda de nível diferente: usar corrimão ao subir/descer escadas e cinto de segurança se necessário. Choque elétrico: não tocar em painéis energizados, manter portas trancadas. Prensagem: manter distância de partes móveis. Falha nos comandos: manter comunicação via rádio com equipe de solo. Queda de objetos: liberar operação após garantir isolamento total em manutenção sob a PR.' },
+                { id: '3', texto: 'Içar carga com segurança', pontosChave: 'Centralizar o gancho sobre o centro de gravidade da carga. Elevar lentamente até poucos centímetros do solo para teste de equilíbrio. Confirmar amarração correta. Atenção à carga das peças, dentro da capacidade do guincho principal (40 toneladas) e auxiliar (10 toneladas). Atenção ao transladar a ponte para não colidir com outras pontes ou materiais estropados.', seguranca: 'Queda de carga: não ultrapassar capacidade nominal, não ficar no raio de ação. Prensagem: manter afastamento do corpo e das mãos. Falta de comunicação: manter contato visual e/ou via rádio com o sinaleiro. Manter postura defensiva. Utilizar sinal sonoro intermitente ao transitar. Não efetuar comando até garantir transporte seguro. Utilizar acessos seguros.' },
+                { id: '4', texto: 'Transportar carga em deslocamento horizontal', pontosChave: 'Movimentar a carga de forma suave, sem trancos. Manter altura mínima necessária durante o deslocamento. Observar o trajeto livre de obstáculos.', seguranca: 'Balanço de carga: evitar movimentos bruscos. Colisão: verificar área livre e sinalizada. Atropelamento: manter pessoas afastadas da rota da carga. Sinal sonoro intermitente. Não efetuar comando sem garantir segurança. Utilizar acessos seguros.' },
+                { id: '5', texto: 'Baixar carga com segurança', pontosChave: 'Baixar lentamente até o ponto de apoio. Garantir estabilidade antes de soltar o gancho. Remover dispositivos de içamento após a descarga.', seguranca: 'Prensagem: não colocar mãos entre carga e superfície. Queda de carga: não permanecer sob carga suspensa. Comunicação: confirmar finalização segura com a equipe. Sinal sonoro intermitente. Utilizar acessos seguros.' },
+                { id: '6', texto: 'Estacionar a PR na garagem', pontosChave: 'Parar a ponte na garagem sem carga estropada. Verificar o desligamento dos comandos e energia do painel da PR. Trancar o portão de acesso e posicioná-lo sobre o claviculário na sala da supervisão.', seguranca: 'Carga suspensa: garantir que a ponte esteja sem carga estropada e suspensa. Risco de colisão: designar a PR na garagem para não haver colisão e circulação de pessoas abaixo.' }
+            ],
+            anormalidades: [
+                { anomalia: 'Corte de energia ou parada súbita do equipamento', acao: 'O operador deve acionar o botão de emergência, sinalizar com a bandeira "PERIGO", solicitar isolamento da área e comunicar a supervisão imediata (via rádio), aguardando orientação.' },
+                { anomalia: 'PR221 para manutenção ou preventiva', acao: 'Efetuar o isolamento do local e seu raio de ação, garantir o preenchimento de toda a documentação para liberação da área; após manutenção, o operador deve permanecer para efetuar todos os testes.' },
+                { anomalia: 'Item não conforme com o check list', acao: 'Paralisar a PR e comunicar a supervisão e inspeção do equipamento.' }
+            ],
+            observacoes: 'Todas as ligas e jigues utilizados na oficina de moldes e segmento devem estar posicionados em cavaletes para que a ponte rolante consiga realizar o içamento; o auxílio ao operador da PR deve ser apenas com o extensor caso necessário.'
+        }
+    ]
+
 };
 
 window.PROCEDIMENTOS_POR_AREA = PROCEDIMENTOS_POR_AREA;
-console.log("✅ procedimentosOficina.js carregado — procedimentos de Bender, Cadeira, Ferramentaria e Jato disponíveis.");
+console.log("✅ procedimentosOficina.js carregado — procedimentos de Bender, Cadeira, Ferramentaria, Jato, Segmento Zero, Usinagem e Logística disponíveis.");
