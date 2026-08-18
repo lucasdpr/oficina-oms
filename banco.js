@@ -547,6 +547,9 @@ export async function sincronizarAtivosReaisMCC4() {
                 dataReparo: peca.data_reparo ? new Date(peca.data_reparo).getTime() : null,
                 substituidoPor: peca.substituido_por || null,
                 observacao: peca.observacao || "",
+                // 🆕 Rolos travados: mantém a string JSON como veio do
+                // banco (quem lê/escreve o conteúdo é o Sinótico 3D).
+                rolos_travados: peca.rolos_travados || null,
                 status: peca.status || "Instalado"
             };
         });
@@ -640,7 +643,11 @@ export async function salvarPecaNoPython(peca) {
                 // voltava a mostrar um valor antigo/congelado.
                 data_reparo: peca.dataReparo ? new Date(peca.dataReparo).toISOString() : null,
                 substituido_por: peca.substituidoPor || null,
-                observacao: peca.observacao ?? null
+                observacao: peca.observacao ?? null,
+                // 🆕 Rolos travados: string JSON (ex: '["S-4","I-2"]'),
+                // gravada direto pelo grid no modal do Sinótico 3D. Aqui
+                // só repassa o que já veio pronto, sem processar nada.
+                rolos_travados: peca.rolos_travados ?? null
             })
         }, { tentativas: 2 });
 

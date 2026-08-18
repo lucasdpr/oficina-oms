@@ -250,6 +250,38 @@ export const AREAS_OFICINA = [
 // efetivo (ex: "Molde MCC#2 e 3", "Desempenadeira") para a "chave" das
 // areas acima. Usado no back-end (importar_efetivo_oficina.py) - fica
 // aqui tambem so' de referencia, caso precise no front-end um dia.
+// ==========================================
+// LAYOUT DE ROLOS POR TIPO DE EQUIPAMENTO
+// ==========================================
+// Cada equipamento com rolos tem uma base Superior e uma base Inferior,
+// cada uma com "porBase" rolos numerados de 1 a N. "acionados" marca
+// (em qual posição, dentro da base) fica o rolo acionado — ele sempre
+// fica na mesma posição física, por isso é fixo aqui (não varia peça a
+// peça). Rolos acionados também podem travar, então continuam clicáveis
+// no grid — só ganham um visual diferente pra indicar que são o motor.
+//
+// Números confirmados com a operação real da oficina:
+//   Horizontal: 14 rolos (7 por base), acionado sempre no meio (pos 4)
+//   Bender: 30 rolos (15 por base)
+//   Segmento Zero: 20 rolos (10 por base)
+//   Segmento de Grupo (1, 2 ou 3): 10 rolos (5 por base)
+//   Bow: 14 rolos "bipartido" (7 por base)
+export const LAYOUT_ROLOS_POR_TIPO = [
+    { chave: 'horizontal', match: (t) => t.includes('HORIZONTAL'), porBase: 7,  acionados: [4], basesNomes: ['Superior', 'Inferior'] },
+    { chave: 'bender',     match: (t) => t.includes('BENDER'),     porBase: 15, acionados: [],  basesNomes: ['Superior', 'Inferior'] },
+    { chave: 'zero',       match: (t) => t.includes('ZERO'),       porBase: 10, acionados: [],  basesNomes: ['Superior', 'Inferior'] },
+    { chave: 'grupo',      match: (t) => t.includes('GRUPO'),      porBase: 5,  acionados: [],  basesNomes: ['Superior', 'Inferior'] },
+    { chave: 'bow',        match: (t) => t.includes('BOW'),        porBase: 7,  acionados: [],  basesNomes: ['Superior', 'Inferior'] },
+];
+
+// Retorna o layout de rolos do tipo informado, ou null se esse tipo de
+// equipamento não tem rolos individuais pra acompanhar (ex: Molde,
+// Cadeira, Straightener).
+export function getLayoutRolos(tipo) {
+    const t = (tipo || '').toUpperCase();
+    return LAYOUT_ROLOS_POR_TIPO.find(l => l.match(t)) || null;
+}
+
 export const MAPA_EQUIPE_PARA_AREA = {
     'hidraulica': 'hidraulica',
     'usinagem': 'usinagem',

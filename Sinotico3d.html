@@ -242,6 +242,38 @@
     #modal .btn-salvar-obs:hover { opacity: 0.88; }
     #modal .btn-salvar-obs:disabled { opacity: 0.5; cursor: default; }
 
+    /* ===== 🆕 GRID DE ROLOS (marcar/ver rolos travados) ===== */
+    #modal .rolos-base { margin-bottom: 10px; }
+    #modal .rolos-base:last-child { margin-bottom: 0; }
+    #modal .rolos-base-titulo {
+        font-size: 10.5px; color: var(--text-muted); text-transform: uppercase;
+        letter-spacing: 0.06em; margin-bottom: 6px;
+    }
+    #modal .rolos-linha { display: flex; flex-wrap: wrap; gap: 6px; }
+    #modal .rolo-btn {
+        width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--border);
+        background: var(--bg-panel-2); color: var(--text-muted); font-family: var(--mono);
+        font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center;
+        justify-content: center; transition: all 0.15s ease; padding: 0;
+    }
+    #modal .rolo-btn:hover { border-color: var(--accent); color: var(--text-heading); }
+    #modal .rolo-btn.acionado { border-style: dashed; border-color: #eab308; color: #eab308; }
+    #modal .rolo-btn.travado {
+        background: rgba(239,68,68,0.18); border-color: #ef4444; color: #fca5a5; border-style: solid;
+    }
+    #modal .rolo-btn.travado.acionado { border-color: #ef4444; }
+    #modal .rolos-legenda {
+        display: flex; gap: 14px; flex-wrap: wrap; font-size: 10.5px; color: var(--text-muted);
+        margin-top: 10px;
+    }
+    #modal .rolos-legenda span { display: inline-flex; align-items: center; gap: 5px; }
+    #modal .rolos-legenda i {
+        width: 10px; height: 10px; border-radius: 50%; display: inline-block; border: 1.5px solid var(--border);
+    }
+    #modal .rolos-legenda .li-livre { background: var(--bg-panel-2); }
+    #modal .rolos-legenda .li-acionado { border-style: dashed; border-color: #eab308; }
+    #modal .rolos-legenda .li-travado { background: rgba(239,68,68,0.18); border-color: #ef4444; }
+
     /* ===== TOOLTIP DE HOVER ===== */
     #tooltip {
         position: fixed; z-index: 60; pointer-events: none;
@@ -336,6 +368,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { getLayoutRolos } from './dados.js';
 
 // ==========================================================================
 // CONFIGURAÇÃO DA API — mesma lógica usada no banco.js: detecta local vs
@@ -1378,6 +1411,82 @@ async function salvarObservacaoPeca(id, valor, botaoEl, statusEl) {
     }
 }
 
+// ==============================================================
+// 🆕 ROLOS TRAVADOS — grid clicável (Horizontal, Bender, Zero,
+// Segmento de Grupo, Bow). Layout de cada tipo vem de dados.js
+// (LAYOUT_ROLOS_POR_TIPO), aqui só desenha e salva.
+// ==============================================================
+function parseRolosTravados(peca) {
+    try {
+        const lista = JSON.parse(peca.rolos_travados || '[]');
+        return new Set(Array.isArray(lista) ? lista : []);
+    } catch {
+        return new Set();
+    }
+}
+
+function renderGridRolos(layout, travadosSet) {
+    const bases = [
+        { chave: 'S', nome: layout.basesNomes[0] || 'Superior' },
+        { chave: 'I', nome: layout.basesNomes[1] || 'Inferior' }
+    ];
+    const blocosBase = bases.map(base => {
+        let botoes = '';
+        for (let pos = 1; pos <= layout.porBase; pos++) {
+            const chaveRolo = `${base.chave}-${pos}`;
+            const isAcionado = layout.acionados.includes(pos);
+            const isTravado = travadosSet.has(chaveRolo);
+            botoes += `<button type="button" class="rolo-btn ${isAcionado ? 'acionado' : ''} ${isTravado ? 'travado' : ''}" data-rolo="${chaveRolo}" title="${base.nome} #${pos}${isAcionado ? ' (acionado)' : ''}">${pos}</button>`;
+        }
+        return `<div class="rolos-base"><div class="rolos-base-titulo">Base ${base.nome}</div><div class="rolos-linha">${botoes}</div></div>`;
+    }).join('');
+
+    return `
+        <div class="obs-wrap" id="rolos-wrap">
+            <label class="obs-label">Rolos — clique para marcar travado</label>
+            ${blocosBase}
+            <div class="rolos-legenda">
+                <span><i class="li-livre"></i> Livre</span>
+                ${layout.acionados.length ? '<span><i class="li-acionado"></i> Acionado</span>' : ''}
+                <span><i class="li-travado"></i> Travado</span>
+            </div>
+            <div class="obs-footer">
+                <span id="rolos-status" class="obs-status"></span>
+                <button class="btn-salvar-obs" id="btn-salvar-rolos" ${ehVisitante() ? 'disabled title="Modo Visitante: apenas visualização"' : ''}>${ehVisitante() ? '🔒 Somente Leitura' : '💾 Salvar Rolos'}</button>
+            </div>
+        </div>
+    `;
+}
+
+async function salvarRolosTravados(id, travadosSet, botaoEl, statusEl) {
+    botaoEl.disabled = true;
+    statusEl.textContent = 'Salvando...';
+    statusEl.className = 'obs-status';
+    try {
+        const valor = JSON.stringify(Array.from(travadosSet));
+        const apiBase = await resolverApiBase();
+        const resposta = await fetch(`${apiBase}/api/atualizar_peca`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, rolos_travados: valor })
+        });
+        const resultado = await resposta.json();
+        if (resposta.ok && resultado.sucesso) {
+            if (piecesById[id]) piecesById[id].rolos_travados = valor;
+            statusEl.textContent = '✅ Salvo no banco.';
+            statusEl.className = 'obs-status ok';
+        } else {
+            throw new Error(resultado.detail || 'A API não confirmou o salvamento.');
+        }
+    } catch (erro) {
+        console.error('❌ Erro ao salvar rolos travados:', erro);
+        statusEl.textContent = '❌ Não salvou — confira a conexão com a API.';
+        statusEl.className = 'obs-status err';
+    } finally {
+        botaoEl.disabled = false;
+    }
+}
+
 function abrirModalPeca(slot, peca) {
     if (!peca) {
         modal.innerHTML = `
@@ -1393,6 +1502,12 @@ function abrirModalPeca(slot, peca) {
         const ton = parseFloat(peca.tonelagem) || 0;
         const pct = meta > 0 ? (ton / meta) * 100 : 0;
         const corBarra = corHexParaCss(corPorPeca(peca));
+
+        // 🆕 Se este tipo de equipamento tem rolos (Horizontal, Bender,
+        // Zero, Segmento de Grupo, Bow), monta o grid clicável.
+        const layoutRolos = getLayoutRolos(peca.tipo);
+        const travadosAtuais = layoutRolos ? parseRolosTravados(peca) : new Set();
+        const htmlGridRolos = layoutRolos ? renderGridRolos(layoutRolos, travadosAtuais) : '';
 
         modal.innerHTML = `
             <div class="modal-top">
@@ -1426,6 +1541,8 @@ function abrirModalPeca(slot, peca) {
                     <button class="btn-salvar-obs" id="btn-salvar-obs" ${ehVisitante() ? 'disabled title="Modo Visitante: apenas visualização"' : ''}>${ehVisitante() ? '🔒 Somente Leitura' : '💾 Salvar Observação'}</button>
                 </div>
             </div>
+
+            ${htmlGridRolos}
         `;
 
         // 🆕 Observação: edita aqui e salva direto no Postgres via
@@ -1443,6 +1560,34 @@ function abrirModalPeca(slot, peca) {
             btnSalvarObs.addEventListener('click', () => {
                 salvarObservacaoPeca(peca.id, obsTextarea.value, btnSalvarObs, obsStatus);
             });
+        }
+
+        // 🆕 Grid de rolos: clique em cada bolinha alterna travado/livre
+        // (só visualmente, em memória) — o botão "Salvar Rolos" é quem
+        // manda pro banco de verdade.
+        if (layoutRolos) {
+            const btnSalvarRolos = modal.querySelector('#btn-salvar-rolos');
+            const rolosStatus = modal.querySelector('#rolos-status');
+            if (!ehVisitante()) {
+                modal.querySelectorAll('.rolo-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const chave = btn.dataset.rolo;
+                        if (travadosAtuais.has(chave)) {
+                            travadosAtuais.delete(chave);
+                            btn.classList.remove('travado');
+                        } else {
+                            travadosAtuais.add(chave);
+                            btn.classList.add('travado');
+                        }
+                        if (rolosStatus) { rolosStatus.textContent = ''; rolosStatus.className = 'obs-status'; }
+                    });
+                });
+                if (btnSalvarRolos && rolosStatus) {
+                    btnSalvarRolos.addEventListener('click', () => {
+                        salvarRolosTravados(peca.id, travadosAtuais, btnSalvarRolos, rolosStatus);
+                    });
+                }
+            }
         }
 
         modal.querySelector('#btn-prontuario').addEventListener('click', async () => {
