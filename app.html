@@ -837,6 +837,19 @@
                     </div>
                 </div>
 
+                <div class="glass-panel" style="padding:24px; margin-bottom:24px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+                        <h2 style="margin:0;"><i class="fas fa-boxes-stacked"></i> Catálogo de Materiais por Área</h2>
+                        <div class="login-input-wrapper" style="position:relative; width:280px; max-width:100%;">
+                            <input type="text" id="busca-material-oficina" placeholder="Buscar código, descrição ou área..." onkeyup="window.renderCatalogoMateriaisOficina()" style="height:40px; border-radius:6px; padding-left:40px;">
+                            <i class="fas fa-search login-input-icon" style="top:11px; font-size:14px; color:#a855f7;"></i>
+                        </div>
+                    </div>
+                    <div id="catalogo-materiais-oficina-lista" style="max-height:360px; overflow-y:auto;">
+                        <div class="text-muted" style="font-size:12px;">Carregando...</div>
+                    </div>
+                </div>
+
                 <div class="glass-panel" style="padding:24px;"><h2><i class="fas fa-clipboard-list"></i> Atividades da Oficina</h2><div id="oficina-container" style="margin-top:20px;">
                     <div class="skeleton-row"><div class="skeleton skeleton-circle"></div><div style="flex:1;"><div class="skeleton skeleton-line" style="width:60%;"></div><div class="skeleton skeleton-line"></div></div></div>
                     <div class="skeleton-row"><div class="skeleton skeleton-circle"></div><div style="flex:1;"><div class="skeleton skeleton-line" style="width:45%;"></div><div class="skeleton skeleton-line"></div></div></div>

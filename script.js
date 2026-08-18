@@ -2922,6 +2922,63 @@ function renderizarFeedAtividadeRecente() {
 }
 
 // ==========================================
+// OFICINA — CATÁLOGO GERAL DE MATERIAIS (todas as áreas juntas)
+// ==========================================
+let CATALOGO_MATERIAIS_OFICINA_CACHE = [];
+
+async function carregarCatalogoMateriaisOficina() {
+    const container = document.getElementById('catalogo-materiais-oficina-lista');
+    if (!container) return;
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/materiais_todos`, { cache: 'no-store' });
+        CATALOGO_MATERIAIS_OFICINA_CACHE = resp.ok ? await resp.json() : [];
+    } catch (e) {
+        console.error('⚠️ Não consegui carregar o catálogo de materiais:', e);
+        CATALOGO_MATERIAIS_OFICINA_CACHE = [];
+    }
+    window.renderCatalogoMateriaisOficina();
+}
+
+window.renderCatalogoMateriaisOficina = function() {
+    const container = document.getElementById('catalogo-materiais-oficina-lista');
+    if (!container) return;
+
+    const busca = (document.getElementById('busca-material-oficina')?.value || '').toLowerCase().trim();
+
+    let itens = CATALOGO_MATERIAIS_OFICINA_CACHE;
+    if (busca) {
+        itens = itens.filter(m => {
+            const info = AREAS_OFICINA.find(a => a.chave === m.area);
+            const nomeArea = info ? info.nome.toLowerCase() : m.area.toLowerCase();
+            return (m.codigo || '').toLowerCase().includes(busca)
+                || (m.descricao || '').toLowerCase().includes(busca)
+                || nomeArea.includes(busca);
+        });
+    }
+
+    if (itens.length === 0) {
+        container.innerHTML = `<div class="text-muted" style="font-size:12px; padding:12px 0;">Nenhum material encontrado.</div>`;
+        return;
+    }
+
+    container.innerHTML = itens.map(m => {
+        const info = AREAS_OFICINA.find(a => a.chave === m.area);
+        const nomeArea = info ? info.nome : m.area;
+        const corArea = info ? info.cor : 'var(--text-muted)';
+        return `
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 4px; border-bottom:1px solid var(--border-color);">
+                <div style="min-width:0; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <span class="font-code" style="font-weight:700; color:var(--text-heading); font-size:12px;">${m.codigo}</span>
+                    <span style="font-size:12.5px; color:var(--text-body);">${m.descricao}</span>
+                </div>
+                <span style="flex-shrink:0; font-size:11px; font-weight:700; padding:3px 10px; border-radius:999px; white-space:nowrap; color:${corArea}; background:color-mix(in srgb, ${corArea} 16%, transparent);">${nomeArea}</span>
+            </div>
+        `;
+    }).join('');
+};
+
+// ==========================================
 // OFICINA — GRADE DE ÁREAS (v1)
 // ==========================================
 window.carregarOficina = async function() {
@@ -2930,7 +2987,7 @@ window.carregarOficina = async function() {
 
     container.innerHTML = `<div id="oficina-grade-areas" class="oficina-grade">
         ${AREAS_OFICINA.map(a => `
-            <div class="oficina-area-card" style="border-left-color:${a.cor};" onclick="window.abrirAreaOficina('${a.chave}')">
+            <div class="oficina-area-card" style="--area-color:${a.cor};" onclick="window.abrirAreaOficina('${a.chave}')">
                 <div class="oficina-area-icone" style="color:${a.cor};"><i class="fas ${a.icone}"></i></div>
                 <div class="oficina-area-info">
                     <h4>${a.nome}</h4>
@@ -4280,7 +4337,10 @@ window.abrirAba = function(event, idAba) {
     if (idAba === "aba-ativos" && typeof renderAtivos === 'function') renderAtivos();
     if (idAba === "aba-fluxo" && typeof renderPainelVeios === 'function') renderPainelVeios();
     if (idAba === "aba-tecnico" && typeof renderPainelTecnico === 'function') renderPainelTecnico();
-    if (idAba === "aba-oficina" && typeof carregarOficina === 'function') carregarOficina();
+    if (idAba === "aba-oficina" && typeof carregarOficina === 'function') {
+        carregarOficina();
+        if (typeof carregarCatalogoMateriaisOficina === 'function') carregarCatalogoMateriaisOficina();
+    }
     if (idAba === "aba-ocorrencia" && typeof window.renderAbaOcorrencia === 'function') window.renderAbaOcorrencia();
     if (idAba === "aba-painel-adm" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('adm');
     if (idAba === "aba-painel-almoxarifado" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('almoxarifado');
