@@ -1031,6 +1031,148 @@ export const PROCEDIMENTOS_POR_AREA = {
                 { id: '1.32', texto: 'Efetuar inspeção visual final e liberar segmento', pontosChave: 'Realizar liberação do equipamento após preenchimento de todos os documentos de reparo.' }
             ],
             observacoes: 'Tabela de faixa aceitável de vazão para bicos de spray (pressão de teste 7,00 e 3,00 Kgf/cm²): bico 1480 — 21,10 a 22,30 lpm (7,0) / 13,80 a 14,60 lpm (3,0), ângulo 80°; bico 1780 — 26,70 a 28,30 lpm (7,0) / 17,50 a 18,50 lpm (3,0), ângulo 80°; bico 1285 — 18,30 a 19,30 lpm (7,0) / 12,00 a 12,60 lpm (3,0), ângulo 90°; bico 1485 — 21,40 a 22,60 lpm (7,0) / 14,00 a 14,80 lpm (3,0), ângulo 90°. Anexo: desenho esquemático do segmento de grupo.'
+        },
+        {
+            id: '603107',
+            nome: 'Ajuste de Pass Line dos Seg. Grupo 1, 2 ou 3 das MCC\'s #2 e 3',
+            revisao: '03',
+            dataRevisao: '28/02/2025',
+            frequencia: 'Diário',
+            responsavel: 'Mecânico e líder de manutenção',
+            objetivo: 'Estabelecer diretrizes para as atividades do ajuste de "pass line" dos segmentos de grupo 1, 2 ou 3 das MCC\'s #2 e 3 na OMS.',
+            seguranca: ['Luva', 'Capacete com jugular', 'Óculos de Segurança', 'Protetor auricular', 'Bota de segurança'],
+            recomendacoes: [
+                'Não ficar sob carga suspensa.',
+                'Para execução desta atividade o funcionário deverá ser treinado neste padrão.'
+            ],
+            ferramentas: ['Paquímetro de 0 a 150mm', 'Parafusadeira pneumática de ¾", ½" e 1"', 'Chaves combinada de 11, 13, 14, 17, 18, 19, 22, 23, 24, 26, 27, 28, 30, 32, 36, 46mm', 'Soquetes de 19x½", 19x¾", 30x¾", 36x¾", 55x1"', 'Calibrador de folga', 'Extensão 150x¾", 150x½"'],
+            etapas: [
+                { id: '1.1', texto: 'Efetuar limpeza na base de apoio da estrutura inferior do segmento', pontosChave: 'Fazer uso de lixadeira pneumática.', seguranca: 'Risco de inalação de partículas sólidas — fazer uso de protetor facial e respirador compatível com o risco.' },
+                { id: '1.2', texto: 'Transportar e posicionar a base inferior no stand de aferição de "Pass Line"', pontosChave: 'Utilizar JIG (balancinho) e PR para movimentação. Verificar desenho esquemático em anexo.', seguranca: 'Risco de aprisionamento das mãos ao posicionar a base e carga suspensa — utilizar extensor e ficar fora do raio de ação da carga.' },
+                { id: '1.3', texto: 'Fixar as chavetas e apertar os parafusos', pontosChave: 'Observar a limpeza da base de apoio do stand de segmento. Fazer uso da máquina pneumática e chave soquete de 55mm para aperto.', seguranca: 'Risco de corte e aprisionamento das mãos — manter postura defensiva e utilizar luvas.' },
+                { id: '1.4', texto: 'Verificar folga entre base de apoio do segmento e a base do stand utilizando calibre de folga (apalpador)', pontosChave: 'Verificar a folga ≤0,3mm.' },
+                { id: '1.5', texto: 'Posicionar as réguas no suporte de apoio do segmento', pontosChave: 'Posicionar as réguas nos pilares de apoio do stand com talha ou PR. As réguas devem estar apoiadas totalmente nos pilares do stand para não gerar uma leitura falsa.', seguranca: 'Risco de aprisionamento das mãos ao posicionar a régua e carga suspensa — utilizar extensor e ficar fora do raio de ação da carga.' },
+                { id: '1.6', texto: 'Utilizar o calibrador de folga para verificar o espaçamento entre o rolo e a régua', pontosChave: 'Verificar a folga entre a régua padrão e o rolo do conjunto. A folga (1±0,05mm) deverá estar entre 0,95mm a 1,05mm.' },
+                { id: '1.7', texto: 'Colocar e retirar calço entre a base e o mancal (ajuste dos rolos)', pontosChave: 'Caso a medida esteja fora da desejada, içar o rolo com auxílio da talha corrente ou PR e cinta, calcular os calços necessários e reapertar os parafusos. Conferir a folga novamente e repetir a operação até atingir a medida desejada. Reportar as informações para a planilha de acompanhamento de reparo.', seguranca: 'Risco de aprisionamento das mãos ao posicionar o rolo e carga suspensa — utilizar extensor e ficar fora do raio de ação da carga.' },
+                { id: '1.8', texto: 'Soltar os parafusos da base de fixação do segmento no stand', pontosChave: 'Utilizar máquina pneumática e soquete de 55mm para soltar fusos.', seguranca: 'Risco de corte e aprisionamento das mãos — manter postura defensiva e utilizar luvas.' },
+                { id: '1.9', texto: 'Efetuar retirada das réguas', pontosChave: 'Utilizar talha ou PR para movimentação.', seguranca: 'Risco de aprisionamento das mãos ao posicionar a régua e carga suspensa — utilizar extensor e ficar fora do raio de ação da carga.' }
+            ],
+            observacoes: 'Anexo: desenho esquemático do "pass line" na base inferior do segmento de grupo (comparação com gabarito/schablone e alinhamento dos rolos da base inferior do segmento, cotas de referência do stand de alinhamento).'
+        },
+        {
+            id: '603108',
+            nome: 'Ajuste de Gap dos Seg. Grupo 1, 2 ou 3 das MCC\'s #2 e 3',
+            revisao: '03',
+            dataRevisao: '28/02/2025',
+            frequencia: 'Diário',
+            responsavel: 'Mecânico e líder de manutenção',
+            objetivo: 'Estabelecer diretrizes para as atividades incluídas no ajuste de "gap" dos segmentos do grupo 1, 2 ou 3 das MCC\'s #2 e 3 na OMS.',
+            seguranca: ['Luva', 'Capacete com jugular', 'Óculos de Segurança', 'Protetor auricular', 'Bota de segurança'],
+            recomendacoes: [
+                'Não ficar sob carga suspensa.',
+                'Para execução desta atividade o funcionário deverá ser treinado neste padrão.'
+            ],
+            ferramentas: ['Parafusadeira pneumática de ¾", ½"', 'Chaves combinada de 30mm', 'Soquetes de 30x½", 30x¾"', 'Allen 10x½", 10x¾"', 'Chaves catraca ½"', 'Relógio comparador para medir Gap (Robocop)', 'Micrômetro 250 a 275mm e 0 a 25mm', 'Extensão 300x½", 150x¾", 300x¾"'],
+            etapas: [
+                { id: '1.1', texto: 'Posicionar segmento na área de teste hidráulico', pontosChave: 'Para transportar o segmento de grupo 1: PR 221 ou 146. Para transportar o segmento de grupo 2 e 3: PR221.', seguranca: 'Risco de aprisionamento das mãos ao posicionar segmento e carga suspensa — utilizar extensor e ficar fora do raio de ação da carga.' },
+                { id: '1.2', texto: 'Conectar os flexíveis do sistema hidráulico na linha de pressão e piloto no segmento e efetuar teste', seguranca: 'Risco de queda com diferença de nível — utilizar escada ou plataforma para acessar o segmento.' },
+                { id: '1.3', texto: 'Ligar o sistema hidráulico e certificar que as porcas hidráulicas estão pressurizadas (330 kgf/cm²)', pontosChave: 'Verificar possíveis vazamentos nas porcas, tubulações, conexão e flexíveis.', seguranca: 'Risco de impacto contra — manter-se fora do raio de ação dos flexíveis no caso de rompimento.' },
+                { id: '1.4', texto: 'Certificar se as 04 chavetas da porca hidráulica estão fixas', pontosChave: 'Utilizar martelo de 5Kg para bater nas chavetas verificando se as mesmas estão fixas.' },
+                { id: '1.5', texto: 'Efetuar teste de pressão nas porcas hidráulicas com 330 kgf/cm² durante 15 minutos pressurizada', pontosChave: 'Certificar que as porcas hidráulicas não estão apresentando grandes passagens e mantendo pressão de referência.', seguranca: 'Risco de impacto contra — manter-se fora do raio de ação dos flexíveis no caso de rompimento.' },
+                { id: '1.6', texto: 'Verificar se os parafusos de fixação dos mancais estão apertados', pontosChave: 'Utilizar parafusadeira pneumática, extensão e soquetes 30x½" ou 30x¾".', seguranca: 'Risco de impacto por escape da chave durante aperto e solta dos parafusos dos mancais — utilizar luvas e manter postura defensiva.' },
+                { id: '1.7', texto: 'Efetuar limpeza dos rolos' },
+                { id: '1.8', texto: 'Preparar o relógio comparador para realizar as medições', pontosChave: 'Utilizar micrômetro externo de 250 a 275mm para ajustar o relógio comparador de medir "Gap" (robocop) em 265mm.' },
+                { id: '1.9', texto: 'Aferir medidas de espaçamento entre os rolos com Relógio comparador para medir Gap (Robocop)', pontosChave: 'Referência de medidas: ±45cm da extremidade do rolo. Ajustar espaçamento "gap" conforme tabela em anexo. Reportar as informações para a planilha de acompanhamento de reparo.' },
+                { id: '1.10', texto: 'Caso necessário ajustar o espaçamento entre rolos "Gap" conforme padrão, remover ou acrescentar calços entre o mancal e a base de apoio da estrutura superior', pontosChave: 'Para realizar a atividade de ajuste dos calços, o sistema hidráulico deve estar desligado.', seguranca: 'Risco de impacto por escape da chave durante aperto e solta dos parafusos dos mancais. Risco de aprisionamento das mãos ao posicionar segmento e carga suspensa — utilizar extensor e ficar fora do raio de ação da carga.' },
+                { id: '1.11', texto: 'Reapertar parafusos dos mancais da base superior', pontosChave: 'Utilizar parafusadeira pneumática, extensão e soquetes 30x½" ou 30x¾".', seguranca: 'Risco de impacto por escape da chave durante aperto e solta dos parafusos dos mancais — utilizar luvas e manter postura defensiva.' },
+                { id: '1.12', texto: 'Refazer as atividades dos itens 1.2, 1.3, 1.4 e 1.5' },
+                { id: '1.13', texto: 'Refazer atividade de medição conforme item 1.9', pontosChave: 'Repetir o ajuste quantas vezes for necessário para atingir os valores da tabela em anexo.' }
+            ],
+            observacoes: 'Tabela de espaçamento de rolos "gap" das MCC#2 e 3 (oficina): Molde — 261,50mm; Zero — 261,50mm; Segmento 1 (Grupo #1) — 261,50mm +0,0/-0,1; Segmento 2,3 (Grupo #2) — 261,00mm +0,0/-0,1; Segmento 4,5 e 6 (Grupo #3) — 260,50mm +0,0/-0,1; Cadeiras 43 — 260,50mm; Cadeiras 44/45 — 260,00mm; Cadeiras 46@50 — 259,50mm; Cadeiras 51@54 — 259,00mm; Cadeiras 55@58 — 258,50mm; Cadeiras 59@62 — 258,00mm; Cadeiras 63@66 — 257,50mm; Cadeiras 67@70 — 257,00mm; Cadeiras 71@74 — 256,50mm; Cadeiras 75@79 — 256,00mm. Anexo: desenho esquemático do "gap" do segmento de grupo.'
+        },
+        {
+            id: '606052',
+            nome: 'Teste de Spray e Hidrostático das MCC\'s #2 e 3',
+            revisao: '04',
+            dataRevisao: '14/10/2024',
+            frequencia: 'Semanal',
+            responsavel: 'Líder de manutenção e mecânicos',
+            objetivo: 'Estabelecer diretrizes para as atividades de teste de spray e hidrostático das MCC\'S#2 e 3 na OMS.',
+            seguranca: ['Luva de vaqueta', 'Capacete com jugular', 'Óculos de Segurança', 'Protetor auricular', 'Bota de segurança'],
+            recomendacoes: [
+                'Não ficar sob carga suspensa.',
+                'Para execução desta atividade o funcionário deverá ser treinado neste padrão.'
+            ],
+            ferramentas: ['Chave inglesa de 8" e 15"', 'Chave de estria de 30 x 32mm', 'Chave de estria de 30mm', 'Chave de extensão com estampa de 15/16"', 'Chave de impacto estriada de 2 ¾"'],
+            etapas: [
+                { id: '1', texto: 'Posicionar e fixar o molde no Stand principal de alinhamento das MCC\'s 2 e 3, utilizando 6 parafusos para aperto', pontosChave: 'Utilizar chave de impacto estriada de 2 ¾" ou ferramenta pneumática com soquete 2 ¾" para aperto.', seguranca: 'Risco de carga suspensa e aprisionamento — ficar fora do raio de ação da carga e manter postura defensiva durante a atividade no manuseio do molde.' },
+                { id: '1.1.1', texto: 'Verificar se os registros das tubulações Ø12mm de dreno e sangria das placas largas estão abertos', pontosChave: 'Caso não esteja, abrir os registros.' },
+                { id: '1.1.2', texto: 'Abrir os 4 registros de entrada de água das placas do molde, localizados no stand' },
+                { id: '1.1.3', texto: 'Fechar os 4 registros de retorno de água das placas do molde, localizados no stand' },
+                { id: '1.1.4', texto: 'Abrir o registro da linha de alimentação da rede principal de água para o stand do molde' },
+                { id: '1.1.5', texto: 'Realizar sangria, aguardando a saída de ar das tubulações de dreno e fechar os registros', pontosChave: 'Após fechar os registros de sangria, o circuito fica pressurizado com aproximadamente 5kgf/cm² (pressão da rede de alimentação de água).' },
+                { id: '1.1.6', texto: 'Fechar o registro de água da rede de alimentação principal e ligar a bomba de pressurização de água no stand até atingir o valor de referência de 10kgf/cm²', pontosChave: 'A pressão de teste de 10kgf/cm² deve ser ajustada através da válvula de saída da bomba.' },
+                { id: '1.1.7', texto: 'O circuito deve permanecer pressurizado por 20 minutos (teste hidrostático) para realizar a inspeção de vazamentos', pontosChave: 'Caso o circuito não consiga manter a pressão de teste (10kgf/cm²), identificar o local da fuga (vazamentos e passagem). Reportar resultados no checklist dos moldes da MCC\'s #2 e 3.' },
+                { id: '1.1.8', texto: 'Inspeção visual de vazamentos na face de trabalho, no topo e base das placas largas e estreitas' },
+                { id: '1.1.9', texto: 'Inspeção visual de vazamentos nos flexíveis, conexões, juntas de expansão, tubulações e válvulas' },
+                { id: '1.2', texto: 'Teste dos bicos de spray', pontosChave: 'O bico padrão aplicado nas faces estreitas e largas do molde é o modelo 1485.', secao: true },
+                { id: '1.2.1', texto: 'Teste dos bicos das faces estreitas — abrir o registro de água de spray das faces estreitas e fechar os demais localizados no stand' },
+                { id: '1.2.2', texto: 'Inspecionar a formação do leque que sai dos bicos', pontosChave: 'Verificar se os bicos estão totalmente desobstruídos; caso contrário, desmontar os bicos, realizar a limpeza e testar novamente. Verificar se o leque está projetando água com passagem livre entre os roletes laterais e base das placas.' },
+                { id: '1.2.3', texto: 'Teste dos bicos das faces largas — abrir o registro de água de spray das faces largas e fechar os demais localizados no stand' },
+                { id: '1.2.4', texto: 'Inspecionar a formação do leque que sai dos bicos', pontosChave: 'Verificar se os bicos estão totalmente desobstruídos; caso contrário, desmontar os bicos, realizar a limpeza e testar novamente. Verificar se o leque está projetando água com passagem livre entre os roletes do foot roll e base das placas.' },
+                { id: '1.2.5', texto: 'Reportar resultados', pontosChave: 'Reportar resultados no checklist dos moldes da MCC\'s #2 e 3.' }
+            ],
+            observacoes: 'Anexos: croqui das cangalhas de resfriamento da face estreita e larga (spray lateral lado oeste, spray lateral lado leste, cangalha lado fixo, cangalha lado móvel).'
+        },
+        {
+            id: '606081',
+            nome: 'Mont./Desm. do Garfo na Mesa Osciladora',
+            revisao: '03',
+            dataRevisao: '28/02/2025',
+            frequencia: 'Uma vez por mês; após resultado da análise do laudo da Baumann; após a troca de cadeira; após ajuste do pass line',
+            responsavel: 'Mecânico líder de manutenção',
+            objetivo: 'Estabelecer diretrizes para as atividades incluídas na montagem e desmontagem do garfo na mesa osciladora das MCC#s 2 e 3 no interior da OMS.',
+            seguranca: ['Luva de vaqueta cano curto', 'Capacete com jugular', 'Óculos de Segurança', 'Protetor Auricular tipo plugue', 'Bota de segurança com biqueira de aço', 'Protetor facial', 'Luva de PVC', 'Blusão de raspa', 'Avental de raspa', 'Capuz de lona', 'Perneira em raspa', 'Luva de raspa cano longo', 'Óculos de maçariqueiro'],
+            recomendacoes: [
+                'É obrigatório o uso dos EPI\'s: luva de mecânico, botina de segurança com biqueira de aço, capacete com jugular e protetor auricular tipo plugue.',
+                'Verificar se as ferramentas estão em boas condições de uso.',
+                'Não permanecer sob cargas suspensas.',
+                'Verificar as condições dos estropos, correntes ou cintas antes de usá-las.',
+                'Ao utilizar a lixadeira, fazer uso de protetor facial, protetor auditivo e respirador contra poeiras tóxicas.'
+            ],
+            ferramentas: ['Nível', 'Pneumática', 'Par de estropo de ¼x1m, 5/16x6m, 5/8x6m', 'Chave de Grife', 'Lixadeira', 'Maromba ± 3 e 5Kg', 'Espátula', 'Chave combinadas de 24, 30mm ou soquete', 'Alicate universal', 'Alicate de pressão', 'Alicate de bico reto', 'Rodolixa', 'Chave de fenda', 'Macaco hidráulico', 'Jigle de 4 cabos', 'Graxa', 'Thinner', 'Solvente', 'Ponte Rolante', 'Talha', 'Máquina de solda', 'Maçarico'],
+            etapas: [
+                { id: '1', texto: 'Desmontagem', secao: true },
+                { id: '1.1', texto: 'Transportar o conjunto de mesa osciladora e garfo para área de montagem de conjunto', pontosChave: 'Com auxílio das PR\'s 146 ou 221.', seguranca: 'Risco de impacto por rompimento do estropo — utilizar estropo e cabos conforme peso da carga. Não permanecer sob carga suspensa.' },
+                { id: '1.2', texto: 'Efetuar limpeza parcial no conjunto de mesa e garfo', pontosChave: 'Efetuar lavagem no poço.', seguranca: 'Risco de queda em mesmo nível — ficar atento para piso molhado.' },
+                { id: '1.3', texto: 'Desmontagem da mesa', secao: true },
+                { id: '1.3.1', texto: 'Estropar a mesa osciladora com auxílio das PR\'s 146 ou 221', seguranca: 'Risco de impacto por escape da chave. Risco de perda auditiva — fazer uso do protetor auricular.' },
+                { id: '1.3.2', texto: 'Soldar cantoneiras ou vigas para apoiá-la', seguranca: 'Risco de queimadura pela execução de atividades com oxicorte — usar blusão de raspa, avental de raspa, capuz de lona, perneira em raspa, luva de raspa cano longo, óculos de maçariqueiro.' },
+                { id: '1.3.3', texto: 'Retirar as travas dos pinos da mesa' },
+                { id: '1.3.4', texto: 'Retirar os pinos de fixação da mesa com haste do garfo', pontosChave: 'Utilizar macaco hidráulico apropriado para retirada do pino, com parafuso tirante e um espaçador.' },
+                { id: '1.3.5', texto: 'Retirar flanges da mesa com chave de 30mm', seguranca: 'Risco de impacto por escape da chave.' },
+                { id: '1.3.6', texto: 'Transportar mesa osciladora para o poço de efetuar limpeza' },
+                { id: '1.3.7', texto: 'Após limpeza e desmontagem, enviar para o depósito setorial, aguardar envio da mesa para reparo externo via CSN', pontosChave: 'Obs.: poderá desmontar a mesa utilizando o próprio flange com o pivô.' },
+                { id: '1.4', texto: 'Desmontagem do garfo', secao: true },
+                { id: '1.4.1', texto: 'Retirar espaçadores, travas e rótulas da haste do garfo' },
+                { id: '1.4.2', texto: 'Transportar garfo para o poço de limpeza e limpar o mesmo' },
+                { id: '1.4.3', texto: 'Transportar o mesmo para reparo externo' },
+                { id: '2', texto: 'Montagem da mesa no garfo', secao: true },
+                { id: '2.1', texto: 'Transportar o garfo para área de montagem de conjunto', seguranca: 'Risco de aprisionamento das mãos. Ficar atento ao se posicionar sob a mesa. Uso correto de EPIs.' },
+                { id: '2.2', texto: 'Nivelar o garfo', seguranca: 'Risco de aprisionamento das mãos. Ficar atento ao se posicionar sob a mesa. Uso correto de EPIs.' },
+                { id: '2.3', texto: 'Montar rótulas, travas e espaçadores na haste do garfo', seguranca: 'Risco de aprisionamento das mãos. Risco de impacto por escape da chave. Ficar atento ao se posicionar sob a mesa. Uso correto de EPIs.' },
+                { id: '2.4', texto: 'Transportar a mesa para montar no garfo', seguranca: 'Ficar atento ao se posicionar sob a mesa. Risco de impacto por escape da chave.' },
+                { id: '2.5', texto: 'Posicionar o furo da mesa juntamente com o furo da haste do garfo', seguranca: 'Risco de aprisionamento das mãos. Ficar atento ao se posicionar sob a mesa. Risco de impacto por escape da chave. Uso correto de EPIs.' },
+                { id: '2.6', texto: 'Montar retentor nos 4 espaçadores', seguranca: 'Risco de aprisionamento das mãos. Ficar atento ao se posicionar sob a mesa. Risco de impacto por escape da chave. Uso correto de EPIs.' },
+                { id: '2.7', texto: 'Montar flange no pino e o espaçador', seguranca: 'Risco de aprisionamento das mãos. Ficar atento ao se posicionar sob a mesa. Risco de impacto por escape da chave. Uso correto de EPIs.' },
+                { id: '2.8', texto: 'Montar o conjunto na mesa e na rótula da haste do garfo', seguranca: 'Risco de aprisionamento das mãos. Ficar atento ao se posicionar sob a mesa. Risco de impacto por escape da chave.' },
+                { id: '2.9', texto: 'Bater o pino com maromba até a mesma encostar junto ao flange e a mesa', seguranca: 'Risco de aprisionamento das mãos. Ficar atento ao se posicionar sob a mesa. Uso correto de EPIs.' },
+                { id: '2.10', texto: 'Parafusar o flange, chave 30mm', seguranca: 'Risco de aprisionamento das mãos. Ficar atento ao se posicionar sob a mesa. Risco de impacto por escape da chave. Uso correto de EPIs.' },
+                { id: '2.11', texto: 'Parafusar o trava do pino, chave 24mm', seguranca: 'Risco de aprisionamento das mãos. Ficar atento ao se posicionar sob a mesa. Risco de impacto por escape da chave. Uso correto de EPIs.' },
+                { id: '2.12', texto: 'Nivelar a mesa, garfo e travar a mesma', seguranca: 'Risco de aprisionamento das mãos. Ficar atento ao se posicionar sob a mesa. Risco de impacto por escape da chave. Uso correto de EPIs.' },
+                { id: '2.13', texto: 'Soldar cantoneiras (pés) para transportar o conjunto mesa e garfo', seguranca: 'Risco de aprisionamento das mãos. Risco de impacto por escape da chave. Risco de queimadura pela execução de atividades com oxicorte — usar blusão de raspa, avental de raspa, capuz de lona, perneira em raspa, luva de raspa cano longo, óculos de maçariqueiro.' },
+                { id: '2.14', texto: 'Lubrificar pino', seguranca: 'Risco de aprisionamento das mãos. Ficar atento ao se posicionar sob a mesa. Risco de impacto por escape da chave. Uso correto de EPIs.' }
+            ]
         }
     ]
 
