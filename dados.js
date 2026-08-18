@@ -208,42 +208,79 @@ export const BIBLIOTECA_CHECKLISTS = {
 // chamado "Desempenadeira" na planilha e' quem cuida do equipamento
 // tipo "Cadeira" (o nome do folhao e "Desempenadeira", mas o tipo do
 // equipamento e "Cadeira Superior/Inferior" - por isso o alias).
+// ==========================================
+// ÁREAS DO SISTEMA (Oficina + Administrativas)
+// ==========================================
+// Config única e declarativa: cada área carrega seu tipo, ícone, cor,
+// filtro (só oficina) e a lista de ABAS que ela usa dentro do módulo
+// (Nível 3). Isso é o que torna as abas "modulares" — uma área que não
+// precisa de "Materiais" simplesmente não declara essa aba, e uma que
+// usa outro nome pra ela (ex: "Peças") sobrescreve só o label/ícone,
+// sem duplicar HTML nem lógica nova por área.
+//
+// Estrutura de cada aba: { chave, label, icone }
+//   chave -> bate com a seção genérica no HTML (area-oficina-secao-<chave>)
+//   label/icone -> só o que aparece no botão da aba
+//
+// tipo: 'oficina'         -> abre o módulo genérico de área (Nível 3)
+//       'administrativo'  -> abre a tela própria já existente (aba-painel-*)
+export const ABAS_PADRAO_OFICINA = [
+    { chave: 'atividades',    label: 'Atividades',    icone: 'fa-clipboard-list' },
+    { chave: 'materiais',     label: 'Materiais',     icone: 'fa-boxes-stacked' },
+    { chave: 'equipe',        label: 'Equipe',        icone: 'fa-users' },
+    { chave: 'procedimentos', label: 'Procedimentos', icone: 'fa-list-check' },
+    { chave: 'notas',         label: 'Anotações',     icone: 'fa-note-sticky' },
+];
+
 export const AREAS_OFICINA = [
     // ---- AREAS DE SERVICO GERAL (atendem qualquer equipamento) ----
-    { chave: 'hidraulica',    nome: 'Hidráulica',    icone: 'fa-oil-can',        cor: '#38bdf8', filtro: null },
-    { chave: 'usinagem',      nome: 'Usinagem',       icone: 'fa-gear',           cor: '#a855f7', filtro: null },
-    { chave: 'caldeiraria',   nome: 'Caldeiraria',    icone: 'fa-fire',           cor: '#f97316', filtro: null },
-    { chave: 'jato',          nome: 'Jato',           icone: 'fa-spray-can',      cor: '#7c8aa5', filtro: null },
-    { chave: 'eletrica',      nome: 'Elétrica',       icone: 'fa-bolt',           cor: '#eab308', filtro: null },
-    { chave: 'adm',           nome: 'ADM',            icone: 'fa-file-lines',     cor: '#38bdf8', filtro: null },
-    { chave: 'logistica',     nome: 'Logística',      icone: 'fa-truck',         cor: '#a855f7', filtro: null },
-    { chave: 'ponte-rolante', nome: 'Ponte Rolante',  icone: 'fa-crane',         cor: '#3b82f6', filtro: null },
-    { chave: 'almoxarifado',  nome: 'Almoxarifado',   icone: 'fa-boxes-stacked', cor: '#22c55e', filtro: null },
-    { chave: 'ferramentaria', nome: 'Ferramentaria',  icone: 'fa-toolbox',       cor: '#f59e0b', filtro: null },
+    { chave: 'hidraulica',    nome: 'Hidráulica',    icone: 'fa-oil-can',        cor: '#38bdf8', filtro: null, tipo: 'oficina' },
+    { chave: 'usinagem',      nome: 'Usinagem',       icone: 'fa-gear',           cor: '#a855f7', filtro: null, tipo: 'oficina' },
+    { chave: 'caldeiraria',   nome: 'Caldeiraria',    icone: 'fa-fire',           cor: '#f97316', filtro: null, tipo: 'oficina' },
+    { chave: 'jato',          nome: 'Jato',           icone: 'fa-spray-can',      cor: '#7c8aa5', filtro: null, tipo: 'oficina' },
+    { chave: 'eletrica',      nome: 'Elétrica',       icone: 'fa-bolt',           cor: '#eab308', filtro: null, tipo: 'oficina' },
+    { chave: 'ferramentaria', nome: 'Ferramentaria',  icone: 'fa-toolbox',       cor: '#f59e0b', filtro: null, tipo: 'oficina',
+        abas: [
+            { chave: 'atividades',    label: 'Atividades',    icone: 'fa-clipboard-list' },
+            { chave: 'materiais',     label: 'Ferramentas',   icone: 'fa-screwdriver-wrench' },
+            { chave: 'equipe',        label: 'Equipe',        icone: 'fa-users' },
+            { chave: 'notas',         label: 'Anotações',     icone: 'fa-note-sticky' },
+        ] },
 
     // ---- BANCADAS FIXAS POR TIPO DE EQUIPAMENTO ----
-    { chave: 'cadeira', nome: 'Cadeira (Desempenadeira)', icone: 'fa-chair', cor: '#f97316',
+    { chave: 'cadeira', nome: 'Cadeira (Desempenadeira)', icone: 'fa-chair', cor: '#f97316', tipo: 'oficina',
         filtro: (e) => (e.tipo || '').toUpperCase().includes('CADEIRA') },
 
-    { chave: 'zero', nome: 'Segmento Zero', icone: 'fa-circle-notch', cor: '#eab308',
+    { chave: 'zero', nome: 'Segmento Zero', icone: 'fa-circle-notch', cor: '#eab308', tipo: 'oficina',
         filtro: (e) => (e.tipo || '').toUpperCase().includes('ZERO') },
 
-    { chave: 'segmento-grupo', nome: 'Segmento de Grupo (2 e 3)', icone: 'fa-layer-group', cor: '#22c55e',
+    { chave: 'segmento-grupo', nome: 'Segmento de Grupo (2 e 3)', icone: 'fa-layer-group', cor: '#22c55e', tipo: 'oficina',
         filtro: (e) => (e.tipo || '').toUpperCase().includes('GRUPO') },
 
     // MCC4 "geral": Bow, Horizontal e Straightener (a familia 4 que
     // NAO tem area propria) - Molde e Bender ja tem area dedicada.
-    { chave: 'mcc4', nome: 'MCC4', icone: 'fa-server', cor: '#ec4899',
+    { chave: 'mcc4', nome: 'MCC4', icone: 'fa-server', cor: '#ec4899', tipo: 'oficina',
         filtro: (e) => e.mcc_compat === '4' && e.tipo !== 'Molde' && e.tipo !== 'Bender' },
 
-    { chave: 'bender', nome: 'Bender', icone: 'fa-compress', cor: '#eab308',
+    { chave: 'bender', nome: 'Bender', icone: 'fa-compress', cor: '#eab308', tipo: 'oficina',
         filtro: (e) => e.tipo === 'Bender' },
 
-    { chave: 'molde-mcc4', nome: 'Molde MCC #4', icone: 'fa-cube', cor: '#ec4899',
+    { chave: 'molde-mcc4', nome: 'Molde MCC #4', icone: 'fa-cube', cor: '#ec4899', tipo: 'oficina',
         filtro: (e) => e.tipo === 'Molde' && e.mcc_compat === '4' },
 
-    { chave: 'molde-mcc23', nome: 'Molde MCC #2,3', icone: 'fa-cubes', cor: '#3b82f6',
+    { chave: 'molde-mcc23', nome: 'Molde MCC #2,3', icone: 'fa-cubes', cor: '#3b82f6', tipo: 'oficina',
         filtro: (e) => e.tipo === 'Molde' && e.mcc_compat === '2/3' },
+
+    // ---- PAINÉIS ADMINISTRATIVOS ----
+    // tipo 'administrativo' -> a Central de Áreas abre a tela própria já
+    // existente (aba-painel-*) em vez do módulo genérico de área; não têm
+    // atividades/materiais no mesmo modelo de dados da Oficina, então
+    // entram na Central só como card de acesso rápido (sem status
+    // calculado a partir de atividades, que não existem pra eles hoje).
+    { chave: 'adm',           nome: 'ADM',           icone: 'fa-file-lines',    cor: '#38bdf8', tipo: 'administrativo', abaDestino: 'aba-painel-adm' },
+    { chave: 'almoxarifado',  nome: 'Almoxarifado',  icone: 'fa-boxes-stacked', cor: '#22c55e', tipo: 'administrativo', abaDestino: 'aba-painel-almoxarifado' },
+    { chave: 'ponte-rolante', nome: 'Ponte Rolante', icone: 'fa-crane',        cor: '#3b82f6', tipo: 'administrativo', abaDestino: 'aba-painel-ponte-rolante' },
+    { chave: 'logistica',     nome: 'Logística',     icone: 'fa-truck',       cor: '#a855f7', tipo: 'administrativo', abaDestino: 'aba-painel-logistica' },
 ];
 
 // Mapa auxiliar: normaliza o texto da coluna "Equipe" da planilha do

@@ -9,7 +9,8 @@ import {
     CHECKLIST_HIDRAULICA, 
     CHECKLIST_FINAL, 
     BIBLIOTECA_CHECKLISTS,
-    AREAS_OFICINA
+    AREAS_OFICINA,
+    ABAS_PADRAO_OFICINA
 } from './dados.js';
 
 import {
@@ -2979,23 +2980,130 @@ window.renderCatalogoMateriaisOficina = function() {
 };
 
 // ==========================================
-// OFICINA — GRADE DE ÁREAS (v1)
+// CENTRAL DE ÁREAS — Grid único (Oficina + Administrativo)
 // ==========================================
+// Calcula o status operacional de uma área de Oficina a partir das
+// atividades em aberto (não existe sensor real — é a melhor proxy que
+// temos hoje a partir do que já é lançado no sistema).
+//   🔴 Crítico   -> tem atividade atrasada
+//   🟠 Restrição -> 5+ atividades pendentes/andamento (fila grande)
+//   🟡 Atenção   -> 1 a 4 pendentes/andamento
+//   🟢 Normal    -> tudo concluído / nada pendente
+function calcularStatusArea(chave) {
+    const doArea = OFICINA_ATIVIDADES_CACHE.filter(x => x.area === chave);
+    const pendentes = doArea.filter(x => x.status === 'Pendente').length;
+    const andamento = doArea.filter(x => x.status === 'Em Andamento').length;
+    const atrasadas = doArea.filter(x => atividadeEstaAtrasada(x)).length;
+    const emAberto = pendentes + andamento;
+
+    let status;
+    if (atrasadas > 0) status = { emoji: '🔴', label: 'Crítico', cor: 'var(--danger)' };
+    else if (emAberto >= 5) status = { emoji: '🟠', label: 'Restrição', cor: 'var(--limit)' };
+    else if (emAberto >= 1) status = { emoji: '🟡', label: 'Atenção', cor: 'var(--warning)' };
+    else status = { emoji: '🟢', label: 'Normal', cor: 'var(--success)' };
+
+    return { ...status, pendentes, andamento, atrasadas, emAberto };
+}
+
+let CENTRAL_AREAS_FILTRO_STATUS = '';
+let CENTRAL_AREAS_BUSCA = '';
+
+window.filtrarCentralAreas = function(statusLabel, botao) {
+    CENTRAL_AREAS_FILTRO_STATUS = statusLabel;
+    document.querySelectorAll('#central-areas-filtros .btn-filter-mcc').forEach(b => b.classList.remove('active'));
+    if (botao) botao.classList.add('active');
+    renderizarGridCentralAreas();
+};
+
+window.buscarCentralAreas = function(valor) {
+    CENTRAL_AREAS_BUSCA = (valor || '').toLowerCase().trim();
+    renderizarGridCentralAreas();
+};
+
+function renderizarGridCentralAreas() {
+    const grid = document.getElementById('oficina-grade-areas');
+    if (!grid) return;
+
+    const areasOficina = AREAS_OFICINA.filter(a => a.tipo === 'oficina');
+    const areasAdmin = AREAS_OFICINA.filter(a => a.tipo === 'administrativo');
+
+    let visiveis = areasOficina.map(a => ({ area: a, status: calcularStatusArea(a.chave) }));
+
+    if (CENTRAL_AREAS_BUSCA) {
+        visiveis = visiveis.filter(v => v.area.nome.toLowerCase().includes(CENTRAL_AREAS_BUSCA));
+    }
+    if (CENTRAL_AREAS_FILTRO_STATUS) {
+        visiveis = visiveis.filter(v => v.status.label === CENTRAL_AREAS_FILTRO_STATUS);
+    }
+
+    const cardsOficina = visiveis.map(({ area: a, status: s }) => `
+        <div class="oficina-area-card" style="--area-color:${a.cor};" onclick="window.abrirAreaOficina('${a.chave}')">
+            <div class="oficina-area-topo">
+                <div class="oficina-area-icone" style="color:${a.cor};"><i class="fas ${a.icone}"></i></div>
+                <span class="oficina-area-status-badge" style="color:${s.cor};">${s.emoji} ${s.label}</span>
+            </div>
+            <h4>${a.nome}</h4>
+            <div class="oficina-area-resumo">
+                <span title="Pendentes"><i class="fas fa-hourglass-half"></i> ${s.pendentes}</span>
+                <span title="Em andamento"><i class="fas fa-person-running"></i> ${s.andamento}</span>
+                ${s.atrasadas > 0 ? `<span title="Atrasadas" style="color:var(--danger);"><i class="fas fa-triangle-exclamation"></i> ${s.atrasadas}</span>` : ''}
+            </div>
+            <button class="oficina-area-acessar" style="color:${a.cor};">Acessar Área <i class="fas fa-arrow-right"></i></button>
+        </div>
+    `).join('');
+
+    let cardsAdmin = '';
+    if (!CENTRAL_AREAS_FILTRO_STATUS) {
+        let admVisiveis = areasAdmin;
+        if (CENTRAL_AREAS_BUSCA) admVisiveis = admVisiveis.filter(a => a.nome.toLowerCase().includes(CENTRAL_AREAS_BUSCA));
+        if (admVisiveis.length > 0) {
+            cardsAdmin = `
+                <div class="central-areas-secao-titulo">Painéis Administrativos</div>
+                <div id="oficina-grade-areas-admin" class="oficina-grade">
+                    ${admVisiveis.map(a => `
+                        <div class="oficina-area-card oficina-area-card-admin" style="--area-color:${a.cor};" onclick="window.abrirAba(null,'${a.abaDestino}')">
+                            <div class="oficina-area-topo">
+                                <div class="oficina-area-icone" style="color:${a.cor};"><i class="fas ${a.icone}"></i></div>
+                            </div>
+                            <h4>${a.nome}</h4>
+                            <button class="oficina-area-acessar" style="color:${a.cor};">Acessar Painel <i class="fas fa-arrow-right"></i></button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+    }
+
+    if (visiveis.length === 0 && !cardsAdmin) {
+        grid.outerHTML = `<div id="oficina-grade-areas" class="area-oficina-vazio" style="padding:40px 0;">
+            <i class="fas fa-magnifying-glass"></i>
+            <p>Nenhuma área encontrada com esse filtro/busca.</p>
+        </div>`;
+        return;
+    }
+
+    grid.outerHTML = `<div id="oficina-grade-areas" class="oficina-grade">${cardsOficina}</div>${cardsAdmin}`;
+}
+
 window.carregarOficina = async function() {
     const container = document.getElementById('oficina-container');
     if (!container) return;
 
-    container.innerHTML = `<div id="oficina-grade-areas" class="oficina-grade">
-        ${AREAS_OFICINA.map(a => `
-            <div class="oficina-area-card" style="--area-color:${a.cor};" onclick="window.abrirAreaOficina('${a.chave}')">
-                <div class="oficina-area-icone" style="color:${a.cor};"><i class="fas ${a.icone}"></i></div>
-                <div class="oficina-area-info">
-                    <h4>${a.nome}</h4>
-                    <p id="oficina-area-contagem-${a.chave}" class="text-muted">Carregando...</p>
-                </div>
+    container.innerHTML = `
+        <div class="central-areas-toolbar">
+            <div class="login-input-wrapper" style="position:relative; flex:1; min-width:200px;">
+                <input type="text" id="central-areas-busca" placeholder="Buscar área..." oninput="window.buscarCentralAreas(this.value)" style="height:38px; border-radius:6px; padding-left:38px; width:100%;">
+                <i class="fas fa-search login-input-icon" style="top:10px; font-size:13px; color:#a855f7;"></i>
             </div>
-        `).join('')}
-    </div>`;
+            <div class="mcc-filter-group" id="central-areas-filtros">
+                <button class="btn-filter-mcc active" onclick="window.filtrarCentralAreas('', this)">Todas</button>
+                <button class="btn-filter-mcc" onclick="window.filtrarCentralAreas('Crítico', this)">🔴 Crítico</button>
+                <button class="btn-filter-mcc" onclick="window.filtrarCentralAreas('Restrição', this)">🟠 Restrição</button>
+                <button class="btn-filter-mcc" onclick="window.filtrarCentralAreas('Atenção', this)">🟡 Atenção</button>
+            </div>
+        </div>
+        <div id="oficina-grade-areas" class="oficina-grade"></div>
+    `;
 
     try {
         const apiBase = await resolverApiBase();
@@ -3007,25 +3115,9 @@ window.carregarOficina = async function() {
         OFICINA_ATIVIDADES_CACHE = [];
     }
 
-    AREAS_OFICINA.forEach(a => {
-        const el = document.getElementById(`oficina-area-contagem-${a.chave}`);
-        if (!el) return;
-        const doArea = OFICINA_ATIVIDADES_CACHE.filter(x => x.area === a.chave);
-        const pendentes = doArea.filter(x => x.status !== 'Concluído').length;
-        const atrasadas = doArea.filter(x => atividadeEstaAtrasada(x)).length;
-
-        if (atrasadas > 0) {
-            el.textContent = `${pendentes} em aberto · ${atrasadas} atrasada${atrasadas > 1 ? 's' : ''}`;
-            el.style.color = 'var(--danger)';
-        } else if (pendentes > 0) {
-            el.textContent = `${pendentes} em aberto`;
-            el.style.color = 'var(--warning)';
-        } else {
-            el.textContent = 'Tudo em dia ✅';
-            el.style.color = 'var(--success)';
-        }
-    });
-
+    CENTRAL_AREAS_FILTRO_STATUS = '';
+    CENTRAL_AREAS_BUSCA = '';
+    renderizarGridCentralAreas();
     atualizarKpisOficina();
 
     if (OFICINA_AREA_ATUAL) renderizarAtividadesArea();
@@ -3282,6 +3374,32 @@ window.abrirAreaOficinaDireto = function(event, chave) {
     if (event && event.currentTarget) event.currentTarget.classList.add("active");
 };
 
+// ==============================================================
+// ÁREA DA OFICINA — NAVEGAÇÃO POR ABAS (Atividades/Materiais/Equipe/
+// Procedimentos/Notas) — antes tudo ficava num scroll único gigante.
+// ==============================================================
+window.trocarAbaAreaOficina = function(event, secao) {
+    document.querySelectorAll('#area-oficina-tabs .folhao-tab').forEach(b => b.classList.remove('active'));
+    if (event && event.currentTarget) event.currentTarget.classList.add('active');
+
+    ['atividades', 'materiais', 'equipe', 'procedimentos', 'notas'].forEach(s => {
+        const el = document.getElementById(`area-oficina-secao-${s}`);
+        if (el) el.classList.toggle('hidden', s !== secao);
+    });
+};
+
+// Formulário de "Nova Atividade" começa fechado — abre só quando o
+// usuário realmente quer lançar algo, em vez de ocupar a tela toda.
+window.alternarFormAtividadeOficina = function() {
+    const card = document.getElementById('area-oficina-form-card');
+    const textoBtn = document.getElementById('area-oficina-btn-toggle-form-texto');
+    if (!card) return;
+    const vaiAbrir = card.classList.contains('hidden');
+    card.classList.toggle('hidden', !vaiAbrir);
+    if (textoBtn) textoBtn.textContent = vaiAbrir ? 'Fechar Formulário' : 'Nova Atividade';
+    if (vaiAbrir) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+};
+
 window.abrirAreaOficina = async function(chave) {
     const area = AREAS_OFICINA.find(a => a.chave === chave);
     if (!area) return;
@@ -3293,6 +3411,35 @@ window.abrirAreaOficina = async function(chave) {
     // menu lateral).
     window.abrirAba(null, 'aba-area-oficina');
 
+    // ABAS MODULARES: cada área declara sua própria lista de abas em
+    // dados.js (area.abas). Quem não declara usa o padrão de 5 abas.
+    // Isso é o que permite, por exemplo, a Ferramentaria não ter
+    // "Procedimentos" e chamar sua aba de materiais de "Ferramentas",
+    // sem precisar de HTML/lógica duplicada por área.
+    const abasDaArea = area.abas || ABAS_PADRAO_OFICINA;
+    const tabsContainer = document.getElementById('area-oficina-tabs');
+    if (tabsContainer) {
+        tabsContainer.innerHTML = abasDaArea.map((aba, i) => `
+            <button class="folhao-tab ${i === 0 ? 'active' : ''}" onclick="window.trocarAbaAreaOficina(event,'${aba.chave}')">
+                <i class="fas ${aba.icone}"></i> ${aba.label}
+            </button>
+        `).join('');
+    }
+    // Esconde as seções que essa área não usa; mostra a 1ª por padrão.
+    ['atividades', 'materiais', 'equipe', 'procedimentos', 'notas'].forEach(s => {
+        const usaEssaAba = abasDaArea.some(ab => ab.chave === s);
+        document.getElementById(`area-oficina-secao-${s}`)?.classList.toggle('hidden', !(usaEssaAba && s === abasDaArea[0].chave));
+    });
+    // Renomeia labels dentro da própria seção "Materiais" quando a área
+    // usa outro nome pra ela (ex: "Ferramentas"), sem duplicar seção.
+    const abaMateriais = abasDaArea.find(ab => ab.chave === 'materiais');
+    const tituloMateriais = document.getElementById('area-oficina-materiais-titulo-label');
+    if (tituloMateriais) tituloMateriais.textContent = abaMateriais ? abaMateriais.label : 'Materiais';
+
+    document.getElementById('area-oficina-form-card')?.classList.add('hidden');
+    const textoBtn = document.getElementById('area-oficina-btn-toggle-form-texto');
+    if (textoBtn) textoBtn.textContent = 'Nova Atividade';
+
     OFICINA_AREA_ATUAL = chave;
     OFICINA_FILTRO_STATUS_ATUAL = '';
     OFICINA_TIPO_ATIVIDADE_ATUAL = 'equipamento';
@@ -3303,6 +3450,20 @@ window.abrirAreaOficina = async function(chave) {
     const icone = document.getElementById('area-oficina-icone');
     icone.className = `fas ${area.icone}`;
     icone.style.color = area.cor;
+    // Setado na section inteira (não só nas abas) porque os chips de
+    // material e os avatares da equipe, mais abaixo na tela, também
+    // usam essa variável e não são descendentes do bloco de abas.
+    document.getElementById('aba-area-oficina')?.style.setProperty('--area-color', area.cor);
+
+    // Status calculado a partir das atividades em aberto (mesma lógica
+    // da Central de Áreas) + timestamp de quando essa tela carregou.
+    const s = calcularStatusArea(chave);
+    const badge = document.getElementById('area-oficina-status-badge');
+    if (badge) { badge.textContent = `${s.emoji} ${s.label}`; badge.style.color = s.cor; }
+    const ts = document.getElementById('area-oficina-timestamp');
+    if (ts) ts.textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const respEl = document.getElementById('area-oficina-responsavel-turno');
+    if (respEl) respEl.textContent = 'Sem responsável definido'; // atualizado depois que a equipe carrega
 
     document.querySelectorAll('#area-oficina-filtros .btn-filter-mcc').forEach(b => b.classList.remove('active'));
     document.querySelector('#area-oficina-filtros .btn-filter-mcc[data-status=""]')?.classList.add('active');
@@ -3386,24 +3547,43 @@ function renderizarAtividadesArea() {
     const container = document.getElementById('area-oficina-lista');
     if (!container || !OFICINA_AREA_ATUAL) return;
 
-    let itens = OFICINA_ATIVIDADES_CACHE.filter(x => x.area === OFICINA_AREA_ATUAL);
+    const todasDaArea = OFICINA_ATIVIDADES_CACHE.filter(x => x.area === OFICINA_AREA_ATUAL);
+    let itens = todasDaArea;
     if (OFICINA_FILTRO_STATUS_ATUAL) {
         itens = itens.filter(x => x.status === OFICINA_FILTRO_STATUS_ATUAL);
     }
 
+    const qtdPendente = todasDaArea.filter(x => x.status === 'Pendente').length;
+    const qtdAndamento = todasDaArea.filter(x => x.status === 'Em Andamento').length;
+    const qtdAtrasada = todasDaArea.filter(x => atividadeEstaAtrasada(x)).length;
+
+    const statsHtml = `
+        <div class="area-oficina-stats">
+            <div class="area-oficina-stat"><strong style="color:var(--warning);">${qtdPendente}</strong><span>Pendentes</span></div>
+            <div class="area-oficina-stat"><strong style="color:var(--info);">${qtdAndamento}</strong><span>Em Andamento</span></div>
+            <div class="area-oficina-stat"><strong style="color:${qtdAtrasada > 0 ? 'var(--danger)' : 'var(--success)'};">${qtdAtrasada}</strong><span>Atrasadas</span></div>
+        </div>
+    `;
+
     if (itens.length === 0) {
-        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhuma atividade encontrada.</div>`;
+        container.innerHTML = statsHtml + `
+            <div class="area-oficina-vazio">
+                <i class="fas fa-clipboard-check"></i>
+                <p>Nenhuma atividade encontrada${OFICINA_FILTRO_STATUS_ATUAL ? ' com esse filtro' : ' nesta área ainda'}.</p>
+            </div>
+        `;
         return;
     }
 
     const corStatus = { 'Pendente': 'var(--warning)', 'Em Andamento': 'var(--info)', 'Concluído': 'var(--success)' };
     const iconePrioridade = { 'Alta': '🔴', 'Baixa': '🔵' };
 
-    container.innerHTML = itens.map(x => {
+    container.innerHTML = statsHtml + itens.map(x => {
         const atrasada = atividadeEstaAtrasada(x);
         const prazoFormatado = x.prazo ? x.prazo.split('-').reverse().join('/') : null;
+        const corBorda = atrasada ? 'var(--danger)' : (corStatus[x.status] || 'var(--text-muted)');
         return `
-        <div style="display:flex; justify-content:space-between; gap:12px; padding:12px 0; border-bottom:1px solid var(--border-color); align-items:flex-start;">
+        <div class="atividade-card" style="--card-accent:${corBorda};">
             ${x.foto_base64 ? `
                 <img src="${x.foto_base64}"
                      style="width:56px; height:56px; object-fit:cover; border-radius:8px; border:1px solid var(--border-color); cursor:pointer; flex-shrink:0;"
@@ -3642,6 +3822,9 @@ async function carregarEquipeAreaOficina(chave) {
         const equipe = resp.ok ? await resp.json() : [];
         OFICINA_EQUIPE_ATUAL = Array.isArray(equipe) ? equipe : [];
 
+        const respTurno = document.getElementById('area-oficina-responsavel-turno');
+        if (respTurno) respTurno.textContent = OFICINA_EQUIPE_ATUAL.length > 0 ? OFICINA_EQUIPE_ATUAL[0].nome : 'Sem responsável definido';
+
         // Seletor de Responsável (no formulário de atividade) — lista a
         // equipe real da área + opção "Outro" pra digitar um nome que
         // não está no roster (ex: um supervisor, ou área ainda sem
@@ -3653,20 +3836,27 @@ async function carregarEquipeAreaOficina(chave) {
         }
 
         if (OFICINA_EQUIPE_ATUAL.length === 0) {
-            container.innerHTML = `<div class="text-muted" style="font-size:12px;">Nenhum colaborador cadastrado nesta área ainda.</div>`;
+            container.innerHTML = `
+                <div class="area-oficina-vazio">
+                    <i class="fas fa-users"></i>
+                    <p>Nenhum colaborador cadastrado nesta área ainda.</p>
+                </div>
+            `;
             return;
         }
 
-        container.innerHTML = OFICINA_EQUIPE_ATUAL.map(p => `
-            <div class="tecnico-item-linha" style="cursor:default;">
-                <div>
-                    <span style="font-weight:700; color:var(--text-heading); font-size:13px;">${p.nome}</span>
-                </div>
-                <div style="text-align:right;">
-                    <span class="text-muted" style="font-size:11px;">${p.cargo || ''}</span>
+        container.innerHTML = OFICINA_EQUIPE_ATUAL.map(p => {
+            const iniciais = p.nome.trim().split(/\s+/).slice(0, 2).map(n => n[0]).join('').toUpperCase();
+            return `
+            <div class="equipe-card">
+                <div class="equipe-avatar">${iniciais}</div>
+                <div style="min-width:0;">
+                    <div style="font-weight:700; color:var(--text-heading); font-size:13px;">${p.nome}</div>
+                    ${p.cargo ? `<div class="text-muted" style="font-size:11px;">${p.cargo}</div>` : ''}
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     } catch (e) {
         console.error('⚠️ Não consegui carregar a equipe da área:', e);
         container.innerHTML = `<div class="text-muted" style="font-size:12px;">Não foi possível carregar. Verifique sua internet.</div>`;
@@ -3699,6 +3889,8 @@ function lerResponsavelFormOficina() {
 // --------------------------------------------------------------
 // MATERIAIS TÉCNICOS DA ÁREA
 // --------------------------------------------------------------
+let MATERIAIS_AREA_OFICINA_CACHE = [];
+
 async function carregarMateriaisAreaOficina(chave) {
     const container = document.getElementById('area-oficina-materiais-lista');
     if (!container) return;
@@ -3707,32 +3899,62 @@ async function carregarMateriaisAreaOficina(chave) {
     try {
         const apiBase = await resolverApiBase();
         const resp = await fetch(`${apiBase}/api/oficina/materiais/${encodeURIComponent(chave)}`, { cache: 'no-store' });
-        const materiais = resp.ok ? await resp.json() : [];
+        MATERIAIS_AREA_OFICINA_CACHE = resp.ok ? await resp.json() : [];
+    } catch (e) {
+        console.error('⚠️ Não consegui carregar os materiais da área:', e);
+        MATERIAIS_AREA_OFICINA_CACHE = [];
+        container.innerHTML = `<div class="text-muted" style="font-size:12px;">Não foi possível carregar. Verifique sua internet.</div>`;
+        return;
+    }
+    const busca = document.getElementById('area-oficina-busca-material');
+    if (busca) busca.value = '';
+    window.filtrarMateriaisAreaOficina();
+}
 
-        if (!Array.isArray(materiais) || materiais.length === 0) {
-            container.innerHTML = `<div class="text-muted" style="font-size:12px;">Nenhum material cadastrado nesta área ainda — use o campo abaixo pra começar a lista.</div>`;
-            return;
-        }
+window.filtrarMateriaisAreaOficina = function() {
+    const container = document.getElementById('area-oficina-materiais-lista');
+    if (!container) return;
 
+    const termo = (document.getElementById('area-oficina-busca-material')?.value || '').toLowerCase().trim();
+    let materiais = MATERIAIS_AREA_OFICINA_CACHE;
+    if (termo) {
+        materiais = materiais.filter(m =>
+            (m.codigo || '').toLowerCase().includes(termo) ||
+            (m.descricao || '').toLowerCase().includes(termo)
+        );
+    }
+
+    const tabBtn = document.querySelector('#area-oficina-tabs .folhao-tab:nth-child(2)');
+    if (tabBtn) tabBtn.innerHTML = `<i class="fas fa-boxes-stacked"></i> Materiais${MATERIAIS_AREA_OFICINA_CACHE.length ? ` (${MATERIAIS_AREA_OFICINA_CACHE.length})` : ''}`;
+
+    if (materiais.length === 0) {
         container.innerHTML = `
-            <div style="max-height:220px; overflow-y:auto;">
-                ${materiais.map(m => `
-                    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border-color);">
+            <div class="area-oficina-vazio">
+                <i class="fas fa-boxes-stacked"></i>
+                <p>${termo ? 'Nenhum material encontrado.' : 'Nenhum material cadastrado nesta área ainda — use o campo abaixo pra começar a lista.'}</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = `
+        <div style="max-height:320px; overflow-y:auto;">
+            ${materiais.map(m => `
+                <div class="material-chip">
+                    <div style="min-width:0; display:flex; align-items:center; gap:10px;">
+                        <i class="fas fa-cube" style="color:var(--area-color, var(--text-accent)); font-size:13px; flex-shrink:0;"></i>
                         <div style="min-width:0;">
                             <span class="font-code" style="font-weight:700; color:var(--text-heading); font-size:12px;">${m.codigo}</span>
                             <span style="font-size:12px; color:var(--text-body); margin-left:6px;">${m.descricao}</span>
                         </div>
-                        <button class="btn-outline-danger" style="padding:3px 8px; font-size:11px; flex-shrink:0;" onclick="window.excluirMaterialAreaOficina(${m.id})">
-                            <i class="fas fa-trash"></i>
-                        </button>
                     </div>
-                `).join('')}
-            </div>
-        `;
-    } catch (e) {
-        console.error('⚠️ Não consegui carregar os materiais da área:', e);
-        container.innerHTML = `<div class="text-muted" style="font-size:12px;">Não foi possível carregar. Verifique sua internet.</div>`;
-    }
+                    <button class="btn-outline-danger" style="padding:3px 8px; font-size:11px; flex-shrink:0;" onclick="window.excluirMaterialAreaOficina(${m.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `).join('')}
+        </div>
+    `;
 }
 
 window.adicionarMaterialAreaOficina = async function() {
@@ -3802,24 +4024,27 @@ let PROCEDIMENTO_ETAPAS_MARCADAS = new Set(); // ids das etapas marcadas na exec
 // Lista, dentro da tela da área, quais procedimentos existem pra ela
 // (card só aparece se houver pelo menos 1 cadastrado).
 function renderProcedimentosArea(chave) {
-    const card = document.getElementById('area-oficina-procedimentos-card');
+    const tabBtn = document.getElementById('area-oficina-tab-btn-procedimentos');
     const lista = document.getElementById('area-oficina-procedimentos-lista');
-    if (!card || !lista) return;
+    if (!tabBtn || !lista) return;
 
     const procedimentos = (window.PROCEDIMENTOS_POR_AREA && window.PROCEDIMENTOS_POR_AREA[chave]) || [];
     if (procedimentos.length === 0) {
-        card.classList.add('hidden');
+        tabBtn.classList.add('hidden');
         return;
     }
 
-    card.classList.remove('hidden');
+    tabBtn.classList.remove('hidden');
     lista.innerHTML = procedimentos.map(p => `
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border-color);">
-            <div style="min-width:0;">
-                <div style="font-weight:700; color:var(--text-heading); font-size:13px;">${p.nome}</div>
-                <div class="text-muted" style="font-size:11px;">Nº ${p.id} · Rev. ${p.revisao || '-'} · ${p.frequencia || ''}</div>
+        <div class="procedimento-card">
+            <div style="min-width:0; display:flex; align-items:center; gap:10px;">
+                <i class="fas fa-file-shield" style="color:var(--area-color, var(--text-accent)); font-size:14px; flex-shrink:0;"></i>
+                <div style="min-width:0;">
+                    <div style="font-weight:700; color:var(--text-heading); font-size:13px;">${p.nome}</div>
+                    <div class="text-muted" style="font-size:11px;">Nº ${p.id} · Rev. ${p.revisao || '-'} · ${p.frequencia || ''}</div>
+                </div>
             </div>
-            <button class="btn-premium" style="flex-shrink:0; padding:8px 14px; font-size:12px;" onclick="window.abrirProcedimento('${chave}','${p.id}')">
+            <button class="btn-premium" style="flex-shrink:0; padding:6px 12px; font-size:11.5px;" onclick="window.abrirProcedimento('${chave}','${p.id}')">
                 <i class="fas fa-clipboard-check"></i> Abrir
             </button>
         </div>
