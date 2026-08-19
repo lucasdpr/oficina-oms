@@ -337,7 +337,7 @@ export const AREAS_OFICINA = [
 //     onde a peça menor vem antes ou depois dependendo da posição).
 //     Posições que não aparecem no mapa continuam inteiras (1 parte).
 export const LAYOUT_ROLOS_POR_TIPO = [
-    { chave: 'horizontal', match: (t, id) => t.includes('HORIZONTAL'), porBase: 7,  acionadosPorBase: { S: [4], I: [4] }, reparticao: null, basesNomes: ['Superior', 'Inferior'] },
+    { chave: 'horizontal', match: (t, id) => t.includes('HORIZONTAL'), porBase: 7,  acionadosPorBase: { S: [4], I: [4] }, reparticao: null, mancais: 4, basesNomes: ['Superior', 'Inferior'] },
     // 🆕 R1/R2 (Straightener) não tinha entrada nenhuma aqui, por isso
     // o grid de rolos nunca aparecia pra essas peças. Layout idêntico
     // ao Horizontal.
@@ -348,8 +348,15 @@ export const LAYOUT_ROLOS_POR_TIPO = [
     // "STR-1-..." / "STR-2-..." (confirmado no print: ID de sistema
     // "STR-1-4H", "STR-2-4H"). Se bater em QUALQUER um dos dois
     // (tipo OU id), já é reconhecido como Straightener.
-    { chave: 'straightener', match: (t, id) => t.includes('STRAIGHTENER') || t.includes('ENDIREITADOR') || (id || '').includes('STR-'), porBase: 7, acionadosPorBase: { S: [4], I: [4] }, reparticao: null, basesNomes: ['Superior', 'Inferior'] },
+    { chave: 'straightener', match: (t, id) => t.includes('STRAIGHTENER') || t.includes('ENDIREITADOR') || (id || '').includes('STR-'), porBase: 7, acionadosPorBase: { S: [4], I: [4] }, reparticao: null, mancais: 4, basesNomes: ['Superior', 'Inferior'] },
     { chave: 'bender',     match: (t, id) => t.includes('BENDER'),     porBase: 15, acionadosPorBase: { S: [], I: [] },
+        // 🆕 Bender: mancais=4 também. Como TODO rolo já é repartido em
+        // 3 partes iguais, os 2 mancais internos caem sozinhos nas 2
+        // junções da repartição (as "extremidades" entre os 3 pedaços)
+        // — não precisa de nenhuma posição especial pro Bender, o
+        // cálculo genérico (getPosicoesInternasMancal, no Sinótico 3D)
+        // já resolve isso a partir do "reparticao" abaixo.
+        mancais: 4,
         reparticao: { todas: [1 / 3, 1 / 3, 1 / 3] },
         basesNomes: ['Superior', 'Inferior'] },
     { chave: 'zero',       match: (t, id) => t.includes('ZERO'),       porBase: 10, acionadosPorBase: { S: [], I: [] },
@@ -360,15 +367,23 @@ export const LAYOUT_ROLOS_POR_TIPO = [
     // vier primeiro na lista captura o Grupo 1 também e o layout com o
     // acionado certo nunca é usado.
     //
-    // 🆕 MANCAIS: "temMancais: true" liga os 2 mancais (rolamentos) nas
-    // pontas de CADA rolo dessa base — mancal A (esquerda) e mancal B
+    // 🆕 MANCAIS: "mancais: 2" liga os 2 mancais (rolamentos) EXTERNOS
+    // de CADA rolo dessa base — mancal A (esquerda) e mancal B
     // (direita), sempre nessa ordem, independente do veio em que a
-    // peça está instalada. Cada mancal é clicável e registra ocorrência
-    // (quebra de rolamento / vazamento de graxa) separado do
-    // travamento do rolo em si.
-    { chave: 'grupo1',     match: (t, id) => t.includes('GRUPO 1'),    porBase: 5,  acionadosPorBase: { S: [3], I: [3] }, reparticao: null, temMancais: true, basesNomes: ['Superior', 'Inferior'] },
-    { chave: 'grupo',      match: (t, id) => t.includes('GRUPO'),      porBase: 5,  acionadosPorBase: { S: [3], I: [] },  reparticao: null, temMancais: true, basesNomes: ['Superior', 'Inferior'] },
+    // peça está instalada. "mancais: 4" (ver Bow, abaixo) acrescenta
+    // mais 2 mancais INTERNOS (perto da junção da repartição, ou perto
+    // do centro no rolo inteiro/acionado). Cada mancal é clicável e
+    // registra ocorrência (quebra de rolamento / vazamento de graxa)
+    // separado do travamento do rolo em si.
+    { chave: 'grupo1',     match: (t, id) => t.includes('GRUPO 1'),    porBase: 5,  acionadosPorBase: { S: [3], I: [3] }, reparticao: null, mancais: 2, basesNomes: ['Superior', 'Inferior'] },
+    { chave: 'grupo',      match: (t, id) => t.includes('GRUPO'),      porBase: 5,  acionadosPorBase: { S: [3], I: [] },  reparticao: null, mancais: 2, basesNomes: ['Superior', 'Inferior'] },
     { chave: 'bow',        match: (t, id) => t.includes('BOW'),        porBase: 7,  acionadosPorBase: { S: [4], I: [4] },
+        // 🆕 Bow: TODO rolo tem 4 mancais (2 externos A/B + 2 internos)
+        // — nos 6 rolos bipartidos, os internos ficam na junção das
+        // duas partes; no #4 (inteiro e acionado), os internos ficam
+        // perto do centro, já que o cardam do acionamento precisa de
+        // apoio extra ali.
+        mancais: 4,
         // 🔧 Intercalado nos 6 rolos bipartidos (#4 fica de fora — é
         // inteiro e acionado). A alternância continua contando só as
         // posições que SÃO bipartidas, pulando o #4: #1(menor,maior),
