@@ -337,7 +337,11 @@ export const AREAS_OFICINA = [
 //     onde a peça menor vem antes ou depois dependendo da posição).
 //     Posições que não aparecem no mapa continuam inteiras (1 parte).
 export const LAYOUT_ROLOS_POR_TIPO = [
-    { chave: 'horizontal', match: (t, id) => t.includes('HORIZONTAL'), porBase: 7,  acionadosPorBase: { S: [4], I: [4] }, reparticao: null, mancais: 4, basesNomes: ['Superior', 'Inferior'] },
+    // 🆕 "ocorrenciasMancal": quais opções aparecem no painel ao clicar
+    // num mancal. "Vazamento de água" só existe no Horizontal, R1/R2 e
+    // Bow — nos demais tipos (Bender, Zero, Segmento de Grupo) só tem
+    // "quebra de rolamento" e "vazamento de graxa".
+    { chave: 'horizontal', match: (t, id) => t.includes('HORIZONTAL'), porBase: 7,  acionadosPorBase: { S: [4], I: [4] }, reparticao: null, mancais: 4, ocorrenciasMancal: ['rolamento', 'graxa', 'agua'], basesNomes: ['Superior', 'Inferior'] },
     // 🆕 R1/R2 (Straightener) não tinha entrada nenhuma aqui, por isso
     // o grid de rolos nunca aparecia pra essas peças. Layout idêntico
     // ao Horizontal.
@@ -348,7 +352,7 @@ export const LAYOUT_ROLOS_POR_TIPO = [
     // "STR-1-..." / "STR-2-..." (confirmado no print: ID de sistema
     // "STR-1-4H", "STR-2-4H"). Se bater em QUALQUER um dos dois
     // (tipo OU id), já é reconhecido como Straightener.
-    { chave: 'straightener', match: (t, id) => t.includes('STRAIGHTENER') || t.includes('ENDIREITADOR') || (id || '').includes('STR-'), porBase: 7, acionadosPorBase: { S: [4], I: [4] }, reparticao: null, mancais: 4, basesNomes: ['Superior', 'Inferior'] },
+    { chave: 'straightener', match: (t, id) => t.includes('STRAIGHTENER') || t.includes('ENDIREITADOR') || (id || '').includes('STR-'), porBase: 7, acionadosPorBase: { S: [4], I: [4] }, reparticao: null, mancais: 4, ocorrenciasMancal: ['rolamento', 'graxa', 'agua'], basesNomes: ['Superior', 'Inferior'] },
     { chave: 'bender',     match: (t, id) => t.includes('BENDER'),     porBase: 15, acionadosPorBase: { S: [], I: [] },
         // 🆕 Bender: mancais=4 também. Como TODO rolo já é repartido em
         // 3 partes iguais, os 2 mancais internos caem sozinhos nas 2
@@ -357,9 +361,16 @@ export const LAYOUT_ROLOS_POR_TIPO = [
         // cálculo genérico (getPosicoesInternasMancal, no Sinótico 3D)
         // já resolve isso a partir do "reparticao" abaixo.
         mancais: 4,
+        ocorrenciasMancal: ['rolamento', 'graxa'],
         reparticao: { todas: [1 / 3, 1 / 3, 1 / 3] },
         basesNomes: ['Superior', 'Inferior'] },
+    // 🆕 Zero: "mancais: 3" = A externo, B externo + só 1 mancal
+    // INTERNO no meio (chamado de "C", já que não é par A/B como no
+    // Bow) — nos rolos #1-#4 (bipartidos), fica na junção da
+    // repartição; nos rolos #5-#10 (inteiros), fica bem no centro.
     { chave: 'zero',       match: (t, id) => t.includes('ZERO'),       porBase: 10, acionadosPorBase: { S: [], I: [] },
+        mancais: 3,
+        ocorrenciasMancal: ['rolamento', 'graxa'],
         reparticao: { porPosicao: { 1: [0.4, 0.6], 2: [0.6, 0.4], 3: [0.4, 0.6], 4: [0.6, 0.4] } },
         basesNomes: ['Superior', 'Inferior'] },
     // 🔧 Grupo 1 precisa ser checado ANTES do "grupo" genérico (Grupo
@@ -375,8 +386,8 @@ export const LAYOUT_ROLOS_POR_TIPO = [
     // do centro no rolo inteiro/acionado). Cada mancal é clicável e
     // registra ocorrência (quebra de rolamento / vazamento de graxa)
     // separado do travamento do rolo em si.
-    { chave: 'grupo1',     match: (t, id) => t.includes('GRUPO 1'),    porBase: 5,  acionadosPorBase: { S: [3], I: [3] }, reparticao: null, mancais: 2, basesNomes: ['Superior', 'Inferior'] },
-    { chave: 'grupo',      match: (t, id) => t.includes('GRUPO'),      porBase: 5,  acionadosPorBase: { S: [3], I: [] },  reparticao: null, mancais: 2, basesNomes: ['Superior', 'Inferior'] },
+    { chave: 'grupo1',     match: (t, id) => t.includes('GRUPO 1'),    porBase: 5,  acionadosPorBase: { S: [3], I: [3] }, reparticao: null, mancais: 2, ocorrenciasMancal: ['rolamento', 'graxa'], basesNomes: ['Superior', 'Inferior'] },
+    { chave: 'grupo',      match: (t, id) => t.includes('GRUPO'),      porBase: 5,  acionadosPorBase: { S: [3], I: [] },  reparticao: null, mancais: 2, ocorrenciasMancal: ['rolamento', 'graxa'], basesNomes: ['Superior', 'Inferior'] },
     { chave: 'bow',        match: (t, id) => t.includes('BOW'),        porBase: 7,  acionadosPorBase: { S: [4], I: [4] },
         // 🆕 Bow: TODO rolo tem 4 mancais (2 externos A/B + 2 internos)
         // — nos 6 rolos bipartidos, os internos ficam na junção das
@@ -384,6 +395,7 @@ export const LAYOUT_ROLOS_POR_TIPO = [
         // perto do centro, já que o cardam do acionamento precisa de
         // apoio extra ali.
         mancais: 4,
+        ocorrenciasMancal: ['rolamento', 'graxa', 'agua'],
         // 🔧 Intercalado nos 6 rolos bipartidos (#4 fica de fora — é
         // inteiro e acionado). A alternância continua contando só as
         // posições que SÃO bipartidas, pulando o #4: #1(menor,maior),

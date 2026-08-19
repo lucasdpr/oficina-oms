@@ -319,7 +319,7 @@
     /* ===== 🆕 MANCAIS (rolamentos nas pontas do rolo) =====
        Um botão em cada ponta da barra: mancal A (esquerda) e mancal B
        (direita), sempre nessa ordem. Clique abre o painel de ocorrência
-       (quebra de rolamento / vazamento de graxa) logo abaixo da lista. */
+       (quebra de rolamento / vazamento de graxa / vazamento de água) logo abaixo da lista. */
     #modal .mancal-btn {
         flex: 0 0 22px; height: 24px; border-radius: 5px; border: 2px solid #22c55e;
         background: rgba(34,197,94,0.12); color: #22c55e; font-family: var(--mono);
@@ -330,6 +330,7 @@
     #modal .mancal-btn.selecionado { outline: 2px solid var(--accent); outline-offset: 1px; }
     #modal .mancal-btn.rolamento { border-color: #ef4444; background: rgba(239,68,68,0.22); color: #fca5a5; }
     #modal .mancal-btn.graxa { border-color: #eab308; background: rgba(234,179,8,0.22); color: #fde68a; }
+    #modal .mancal-btn.agua { border-color: #3b82f6; background: rgba(59,130,246,0.22); color: #93c5fd; }
 
     /* 🆕 Mancais internos (Bow: mancais=4) — ficam DENTRO da barra,
        na junção da repartição (ou no centro, se o rolo for inteiro).
@@ -356,6 +357,7 @@
     #modal .painel-mancal button:hover { border-color: var(--accent); }
     #modal .painel-mancal button.opt-rolamento:hover { border-color: #ef4444; color: #fca5a5; }
     #modal .painel-mancal button.opt-graxa:hover { border-color: #eab308; color: #fde68a; }
+    #modal .painel-mancal button.opt-agua:hover { border-color: #3b82f6; color: #93c5fd; }
     #modal .painel-mancal button.opt-limpar { color: var(--text-muted); font-size: 11.5px; }
 
     /* ===== TOOLTIP DE HOVER ===== */
@@ -1587,7 +1589,7 @@ function renderGridRolos(layout, travadosSet, mancaisMap) {
                 const chaveB = `${base.chave}-${pos}-B`;
                 const estadoA = mancaisMap[chaveA] || '';
                 const estadoB = mancaisMap[chaveB] || '';
-                const rotuloEstado = (e) => e === 'rolamento' ? ' — QUEBRA DE ROLAMENTO' : e === 'graxa' ? ' — VAZAMENTO DE GRAXA' : ' — ok';
+                const rotuloEstado = (e) => e === 'rolamento' ? ' — QUEBRA DE ROLAMENTO' : e === 'graxa' ? ' — VAZAMENTO DE GRAXA' : e === 'agua' ? ' — VAZAMENTO DE ÁGUA' : ' — ok';
                 mancalEsquerdo = `<button type="button" class="mancal-btn ${estadoA}" data-mancal="${chaveA}" title="${base.nome} #${pos} — Mancal A (externo)${rotuloEstado(estadoA)}">A</button>`;
                 mancalDireito = `<button type="button" class="mancal-btn ${estadoB}" data-mancal="${chaveB}" title="${base.nome} #${pos} — Mancal B (externo)${rotuloEstado(estadoB)}">B</button>`;
 
@@ -1633,11 +1635,21 @@ function renderGridRolos(layout, travadosSet, mancaisMap) {
                     const chaveBI = `${base.chave}-${pos}-B-int`;
                     const estadoAI = mancaisMap[chaveAI] || '';
                     const estadoBI = mancaisMap[chaveBI] || '';
-                    const offsetA = juncaoA === juncaoB ? '- 19px' : '- 8px'; // colados quando é a mesma junção, centralizados quando são junções distintas
-                    const offsetB = juncaoA === juncaoB ? '+ 3px' : '- 8px';
+                    const offsetA = juncaoA === juncaoB ? '- 24px' : '- 8px'; // mais espaçados quando é a mesma junção (rolo inteiro), centralizados quando são junções distintas
+                    const offsetB = juncaoA === juncaoB ? '+ 8px' : '- 8px';
                     mancaisInternosHtml = `
                         <button type="button" class="mancal-btn mancal-interno ${estadoAI}" data-mancal="${chaveAI}" style="left: calc(${juncaoA}% ${offsetA});" title="${base.nome} #${pos} — Mancal A (interno)${rotuloEstado(estadoAI)}">A</button>
                         <button type="button" class="mancal-btn mancal-interno ${estadoBI}" data-mancal="${chaveBI}" style="left: calc(${juncaoB}% ${offsetB});" title="${base.nome} #${pos} — Mancal B (interno)${rotuloEstado(estadoBI)}">B</button>
+                    `;
+                } else if (layout.mancais === 3) {
+                    // 🆕 Zero: só 1 mancal interno (não par A/B) — chamado
+                    // de "C". Fica na junção da bipartição (rolos #1-#4)
+                    // ou bem no centro, se o rolo for inteiro (#5-#10).
+                    const juncaoUnica = partes.length > 1 ? (partes[0] * 100) : 50;
+                    const chaveC = `${base.chave}-${pos}-C`;
+                    const estadoC = mancaisMap[chaveC] || '';
+                    mancaisInternosHtml = `
+                        <button type="button" class="mancal-btn mancal-interno ${estadoC}" data-mancal="${chaveC}" style="left: calc(${juncaoUnica}% - 8px);" title="${base.nome} #${pos} — Mancal C (meio)${rotuloEstado(estadoC)}">C</button>
                     `;
                 }
             }
@@ -1685,8 +1697,11 @@ function renderGridRolos(layout, travadosSet, mancaisMap) {
             <div class="painel-mancal" id="painel-mancal">
                 <div class="painel-mancal-titulo" id="painel-mancal-titulo">Mancal —</div>
                 <div class="painel-mancal-botoes">
-                    <button type="button" class="opt-rolamento" data-tipo="rolamento">🔴 Quebra de rolamento</button>
-                    <button type="button" class="opt-graxa" data-tipo="graxa">🟡 Vazamento de graxa</button>
+                    ${(layout.ocorrenciasMancal || ['rolamento', 'graxa']).map(tipoOcorrencia => {
+                        const rotulosBotao = { rolamento: ['opt-rolamento', '🔴 Quebra de rolamento'], graxa: ['opt-graxa', '🟡 Vazamento de graxa'], agua: ['opt-agua', '🔵 Vazamento de água'] };
+                        const [classe, texto] = rotulosBotao[tipoOcorrencia] || ['', tipoOcorrencia];
+                        return `<button type="button" class="${classe}" data-tipo="${tipoOcorrencia}">${texto}</button>`;
+                    }).join('')}
                     <button type="button" class="opt-limpar" data-tipo="">✅ Sem ocorrência (limpar)</button>
                 </div>
             </div>` : ''}
@@ -1748,7 +1763,7 @@ async function salvarMancalOcorrencia(id, chaveMancal, tipo, mancaisMap, botaoEl
     if (tipo) mancaisMap[chaveMancal] = tipo; else delete mancaisMap[chaveMancal];
 
     if (botaoEl) {
-        botaoEl.classList.remove('rolamento', 'graxa');
+        botaoEl.classList.remove('rolamento', 'graxa', 'agua');
         if (tipo) botaoEl.classList.add(tipo);
     }
 
@@ -1764,12 +1779,13 @@ async function salvarMancalOcorrencia(id, chaveMancal, tipo, mancaisMap, botaoEl
         if (resposta.ok && resultado.sucesso) {
             if (piecesById[id]) piecesById[id].mancais_ocorrencias = valor;
             if (typeof window.registrarHistorico === 'function') {
-                const rotulos = { rolamento: '🔴 Quebra de rolamento', graxa: '🟡 Vazamento de graxa' };
-                // chaveMancal ex: "S-3-A" (externo) ou "S-4-A-int" (interno)
+                const rotulos = { rolamento: '🔴 Quebra de rolamento', graxa: '🟡 Vazamento de graxa', agua: '🔵 Vazamento de água' };
+                // chaveMancal ex: "S-3-A" (externo), "S-4-A-int" (interno par) ou "S-5-C" (meio único, Zero)
                 const ehInterno = chaveMancal.endsWith('-int');
                 const partes = chaveMancal.split('-');
                 const letraMancal = ehInterno ? partes[partes.length - 2] : partes[partes.length - 1];
-                const rotuloMancal = `${letraMancal} (${ehInterno ? 'interno' : 'externo'})`;
+                const tipoMancal = letraMancal === 'C' ? 'meio' : (ehInterno ? 'interno' : 'externo');
+                const rotuloMancal = `${letraMancal} (${tipoMancal})`;
                 const mensagem = tipo
                     ? `${rotulos[tipo]} registrado no Mancal ${rotuloMancal} (rolo ${chaveMancal}).`
                     : `✅ Ocorrência do Mancal ${rotuloMancal} (rolo ${chaveMancal}) foi limpa.`;
@@ -1784,7 +1800,7 @@ async function salvarMancalOcorrencia(id, chaveMancal, tipo, mancaisMap, botaoEl
         // que na verdade não foi salvo no banco.
         if (anterior) mancaisMap[chaveMancal] = anterior; else delete mancaisMap[chaveMancal];
         if (botaoEl) {
-            botaoEl.classList.remove('rolamento', 'graxa');
+            botaoEl.classList.remove('rolamento', 'graxa', 'agua');
             if (anterior) botaoEl.classList.add(anterior);
         }
         alert(`❌ Não consegui salvar a ocorrência do mancal.\n\nMotivo: ${erro.message}`);
@@ -1906,13 +1922,14 @@ function abrirModalPeca(slot, peca) {
                             if (mancalBtnAtual) mancalBtnAtual.classList.remove('selecionado');
                             mancalBtnAtual = btn;
                             btn.classList.add('selecionado');
-                            const chave = btn.dataset.mancal; // ex: "S-3-A" (externo) ou "S-4-A-int" (interno)
+                            const chave = btn.dataset.mancal; // ex: "S-3-A" (externo), "S-4-A-int" (interno par), ou "S-5-C" (meio único, Zero)
                             const partesChave = chave.split('-'); // [base, pos, letra, (opcional) 'int']
                             const ehInterno = partesChave[partesChave.length - 1] === 'int';
                             const letra = ehInterno ? partesChave[partesChave.length - 2] : partesChave[partesChave.length - 1];
                             const posNum = ehInterno ? partesChave[partesChave.length - 3] : partesChave[partesChave.length - 2];
                             const nomeBase = partesChave[0] === 'S' ? (layoutRolos.basesNomes[0] || 'Superior') : (layoutRolos.basesNomes[1] || 'Inferior');
-                            painelMancalTitulo.textContent = `Mancal ${letra} (${ehInterno ? 'interno' : 'externo'}) — Base ${nomeBase} #${posNum}`;
+                            const rotuloTipo = letra === 'C' ? 'meio' : (ehInterno ? 'interno' : 'externo');
+                            painelMancalTitulo.textContent = `Mancal ${letra} (${rotuloTipo}) — Base ${nomeBase} #${posNum}`;
                             painelMancal.classList.add('show');
                             painelMancal.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                         });
