@@ -359,8 +359,15 @@ export const LAYOUT_ROLOS_POR_TIPO = [
     // 2/3): como o match do genérico é só t.includes('GRUPO'), se ele
     // vier primeiro na lista captura o Grupo 1 também e o layout com o
     // acionado certo nunca é usado.
-    { chave: 'grupo1',     match: (t, id) => t.includes('GRUPO 1'),    porBase: 5,  acionadosPorBase: { S: [3], I: [3] }, reparticao: null, basesNomes: ['Superior', 'Inferior'] },
-    { chave: 'grupo',      match: (t, id) => t.includes('GRUPO'),      porBase: 5,  acionadosPorBase: { S: [3], I: [] },  reparticao: null, basesNomes: ['Superior', 'Inferior'] },
+    //
+    // 🆕 MANCAIS: "temMancais: true" liga os 2 mancais (rolamentos) nas
+    // pontas de CADA rolo dessa base — mancal A (esquerda) e mancal B
+    // (direita), sempre nessa ordem, independente do veio em que a
+    // peça está instalada. Cada mancal é clicável e registra ocorrência
+    // (quebra de rolamento / vazamento de graxa) separado do
+    // travamento do rolo em si.
+    { chave: 'grupo1',     match: (t, id) => t.includes('GRUPO 1'),    porBase: 5,  acionadosPorBase: { S: [3], I: [3] }, reparticao: null, temMancais: true, basesNomes: ['Superior', 'Inferior'] },
+    { chave: 'grupo',      match: (t, id) => t.includes('GRUPO'),      porBase: 5,  acionadosPorBase: { S: [3], I: [] },  reparticao: null, temMancais: true, basesNomes: ['Superior', 'Inferior'] },
     { chave: 'bow',        match: (t, id) => t.includes('BOW'),        porBase: 7,  acionadosPorBase: { S: [4], I: [4] },
         // 🔧 Intercalado nos 6 rolos bipartidos (#4 fica de fora — é
         // inteiro e acionado). A alternância continua contando só as

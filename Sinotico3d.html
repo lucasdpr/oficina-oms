@@ -276,7 +276,7 @@
         background: var(--bg-th); border: 1px solid var(--border); border-radius: 8px;
         padding: 10px 14px;
     }
-    #modal .rolos-seta { color: var(--accent); font-size: 15px; line-height: 1; opacity: 0.85; }
+    #modal .rolos-seta { color: #ef4444; font-size: 20px; line-height: 1; opacity: 0.95; text-shadow: 0 0 6px rgba(239,68,68,0.5); }
     #modal .rolos-coluna { width: 100%; display: flex; flex-direction: column; gap: 6px; }
     #modal .rolo-linha { display: flex; align-items: center; gap: 10px; width: 100%; }
     #modal .rolo-linha .rolo-num {
@@ -315,6 +315,41 @@
     #modal .rolos-legenda .li-livre { background: var(--bg-panel-2); }
     #modal .rolos-legenda .li-acionado { background: rgba(234,179,8,0.16); border: 2px dashed #eab308; }
     #modal .rolos-legenda .li-travado { background: rgba(239,68,68,0.22); border-color: #ef4444; }
+
+    /* ===== 🆕 MANCAIS (rolamentos nas pontas do rolo) =====
+       Um botão em cada ponta da barra: mancal A (esquerda) e mancal B
+       (direita), sempre nessa ordem. Clique abre o painel de ocorrência
+       (quebra de rolamento / vazamento de graxa) logo abaixo da lista. */
+    #modal .mancal-btn {
+        flex: 0 0 22px; height: 24px; border-radius: 5px; border: 2px solid #22c55e;
+        background: rgba(34,197,94,0.12); color: #22c55e; font-family: var(--mono);
+        font-size: 10px; font-weight: 800; cursor: pointer; transition: all 0.15s ease;
+        display: flex; align-items: center; justify-content: center; padding: 0;
+    }
+    #modal .mancal-btn:hover { filter: brightness(1.25); transform: scale(1.05); }
+    #modal .mancal-btn.selecionado { outline: 2px solid var(--accent); outline-offset: 1px; }
+    #modal .mancal-btn.rolamento { border-color: #ef4444; background: rgba(239,68,68,0.22); color: #fca5a5; }
+    #modal .mancal-btn.graxa { border-color: #eab308; background: rgba(234,179,8,0.22); color: #fde68a; }
+
+    #modal .painel-mancal {
+        margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 8px;
+        background: var(--bg-th); display: none;
+    }
+    #modal .painel-mancal.show { display: block; }
+    #modal .painel-mancal .painel-mancal-titulo {
+        font-size: 11px; font-weight: 700; color: var(--text-heading); margin-bottom: 8px;
+        text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    #modal .painel-mancal .painel-mancal-botoes { display: flex; flex-direction: column; gap: 6px; }
+    #modal .painel-mancal button {
+        text-align: left; padding: 9px 12px; border-radius: 6px; border: 1px solid var(--border);
+        background: var(--bg-panel-2); color: var(--text-body); font-size: 12.5px; cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    #modal .painel-mancal button:hover { border-color: var(--accent); }
+    #modal .painel-mancal button.opt-rolamento:hover { border-color: #ef4444; color: #fca5a5; }
+    #modal .painel-mancal button.opt-graxa:hover { border-color: #eab308; color: #fde68a; }
+    #modal .painel-mancal button.opt-limpar { color: var(--text-muted); font-size: 11.5px; }
 
     /* ===== TOOLTIP DE HOVER ===== */
     #tooltip {
@@ -1481,7 +1516,19 @@ function parseRolosTravados(peca) {
     }
 }
 
-function renderGridRolos(layout, travadosSet) {
+// 🆕 MANCAIS: mapa { "S-1-A": "rolamento", "I-3-B": "graxa" }. Guardado
+// num campo separado do rolos_travados, porque um mancal com ocorrência
+// não significa que o rolo está travado (são problemas diferentes).
+function parseMancais(peca) {
+    try {
+        const obj = JSON.parse(peca.mancais_ocorrencias || '{}');
+        return (obj && typeof obj === 'object') ? obj : {};
+    } catch {
+        return {};
+    }
+}
+
+function renderGridRolos(layout, travadosSet, mancaisMap) {
     // 🔧 "acionadosPorBase" marca só o(s) rolo(s) com cardam/motor de
     // cada base (Superior "S" / Inferior "I") — é só visual (mostra um
     // ícone de engrenagem), NÃO restringe quem pode travar: qualquer
@@ -1518,13 +1565,31 @@ function renderGridRolos(layout, travadosSet) {
                 htmlPartes += `<button type="button" class="rolo-parte ${isTravado ? 'travado' : ''}" data-rolo="${chaveParte}" style="flex: ${tamanho} 1 0;" title="${titulo}"></button>`;
             });
 
+            // 🆕 Mancais (rolamentos): 1 na ponta esquerda (A) e 1 na
+            // ponta direita (B) de CADA rolo — não depende de o rolo ser
+            // repartido ou não, porque o mancal é do eixo inteiro, não
+            // de um pedaço específico do revestimento.
+            let mancalEsquerdo = '';
+            let mancalDireito = '';
+            if (layout.temMancais) {
+                const chaveA = `${base.chave}-${pos}-A`;
+                const chaveB = `${base.chave}-${pos}-B`;
+                const estadoA = mancaisMap[chaveA] || '';
+                const estadoB = mancaisMap[chaveB] || '';
+                const rotuloEstado = (e) => e === 'rolamento' ? ' — QUEBRA DE ROLAMENTO' : e === 'graxa' ? ' — VAZAMENTO DE GRAXA' : ' — ok';
+                mancalEsquerdo = `<button type="button" class="mancal-btn ${estadoA}" data-mancal="${chaveA}" title="${base.nome} #${pos} — Mancal A${rotuloEstado(estadoA)}">A</button>`;
+                mancalDireito = `<button type="button" class="mancal-btn ${estadoB}" data-mancal="${chaveB}" title="${base.nome} #${pos} — Mancal B${rotuloEstado(estadoB)}">B</button>`;
+            }
+
             linhas += `
                 <div class="rolo-linha ${isAcionado ? 'acionado' : ''}">
                     <span class="rolo-num">${pos}</span>
+                    ${mancalEsquerdo}
                     <div class="rolo-barra-grupo">
                         ${htmlPartes}
-                        ${isAcionado ? '<span class="rolo-cardam-flutuante"><i class="fas fa-cog"></i></span>' : ''}
+                        ${isAcionado ? '<span class="rolo-cardam-flutuante">⚙</span>' : ''}
                     </div>
+                    ${mancalDireito}
                 </div>
             `;
         }
@@ -1532,9 +1597,9 @@ function renderGridRolos(layout, travadosSet) {
             <div class="rolos-base">
                 <div class="rolos-base-titulo">Base ${base.nome}</div>
                 <div class="rolos-vista-topo">
-                    <i class="fas fa-chevron-down rolos-seta"></i>
+                    <span class="rolos-seta">▼</span>
                     <div class="rolos-coluna">${linhas}</div>
-                    <i class="fas fa-chevron-down rolos-seta"></i>
+                    <span class="rolos-seta">▼</span>
                 </div>
             </div>
         `;
@@ -1549,10 +1614,20 @@ function renderGridRolos(layout, travadosSet) {
             ${blocosBase}
             <div class="rolos-legenda">
                 <span><i class="li-livre"></i> Livre</span>
-                ${temAlgumAcionado ? '<span><i class="li-acionado"></i> Acionado <i class="fas fa-cog" style="font-size:9px;color:#eab308;"></i></span>' : ''}
+                ${temAlgumAcionado ? '<span><i class="li-acionado"></i> Acionado <span style="font-size:10px;color:#eab308;">⚙</span></span>' : ''}
                 <span><i class="li-travado"></i> Travado</span>
                 ${temAlgumRepartido ? '<span>▮▮ Rolo repartido — cada parte trava sozinha</span>' : ''}
+                ${layout.temMancais ? '<span><span style="display:inline-block;width:16px;height:14px;border-radius:3px;border:2px solid #22c55e;background:rgba(34,197,94,0.12);"></span> Mancal (A/B) — clique pra registrar ocorrência</span>' : ''}
             </div>
+            ${layout.temMancais ? `
+            <div class="painel-mancal" id="painel-mancal">
+                <div class="painel-mancal-titulo" id="painel-mancal-titulo">Mancal —</div>
+                <div class="painel-mancal-botoes">
+                    <button type="button" class="opt-rolamento" data-tipo="rolamento">🔴 Quebra de rolamento</button>
+                    <button type="button" class="opt-graxa" data-tipo="graxa">🟡 Vazamento de graxa</button>
+                    <button type="button" class="opt-limpar" data-tipo="">✅ Sem ocorrência (limpar)</button>
+                </div>
+            </div>` : ''}
             <div class="obs-footer">
                 <span id="rolos-status" class="obs-status"></span>
                 <button class="btn-salvar-obs" id="btn-salvar-rolos" ${ehVisitante() ? 'disabled title="Modo Visitante: apenas visualização"' : ''}>${ehVisitante() ? '🔒 Somente Leitura' : '💾 Salvar Rolos'}</button>
@@ -1601,6 +1676,54 @@ async function salvarRolosTravados(id, travadosSet, botaoEl, statusEl) {
     }
 }
 
+// 🆕 MANCAIS: salva a ocorrência de UM mancal por vez (assim que o
+// usuário escolhe a opção no painel — não precisa clicar em "Salvar"
+// separado). Sempre registra no histórico, porque quebra de rolamento
+// e vazamento de graxa são eventos importantes de rastrear, mesmo que
+// a ocorrência seja "limpa" depois (o log da limpeza também fica).
+async function salvarMancalOcorrencia(id, chaveMancal, tipo, mancaisMap, botaoEl) {
+    const anterior = mancaisMap[chaveMancal] || '';
+    if (tipo) mancaisMap[chaveMancal] = tipo; else delete mancaisMap[chaveMancal];
+
+    if (botaoEl) {
+        botaoEl.classList.remove('rolamento', 'graxa');
+        if (tipo) botaoEl.classList.add(tipo);
+    }
+
+    try {
+        const valor = JSON.stringify(mancaisMap);
+        const apiBase = await resolverApiBase();
+        const resposta = await fetch(`${apiBase}/api/atualizar_peca`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, mancais_ocorrencias: valor })
+        });
+        const resultado = await resposta.json();
+        if (resposta.ok && resultado.sucesso) {
+            if (piecesById[id]) piecesById[id].mancais_ocorrencias = valor;
+            if (typeof window.registrarHistorico === 'function') {
+                const rotulos = { rolamento: '🔴 Quebra de rolamento', graxa: '🟡 Vazamento de graxa' };
+                const mensagem = tipo
+                    ? `${rotulos[tipo]} registrado no Mancal ${chaveMancal.split('-').pop()} (rolo ${chaveMancal}).`
+                    : `✅ Ocorrência do Mancal ${chaveMancal.split('-').pop()} (rolo ${chaveMancal}) foi limpa.`;
+                window.registrarHistorico(id, mensagem);
+            }
+        } else {
+            throw new Error(resultado.detail || 'A API não confirmou o salvamento.');
+        }
+    } catch (erro) {
+        console.error('❌ Erro ao salvar ocorrência do mancal:', erro);
+        // Reverte visualmente se a API falhar, pra não mostrar um estado
+        // que na verdade não foi salvo no banco.
+        if (anterior) mancaisMap[chaveMancal] = anterior; else delete mancaisMap[chaveMancal];
+        if (botaoEl) {
+            botaoEl.classList.remove('rolamento', 'graxa');
+            if (anterior) botaoEl.classList.add(anterior);
+        }
+        alert(`❌ Não consegui salvar a ocorrência do mancal.\n\nMotivo: ${erro.message}`);
+    }
+}
+
 function abrirModalPeca(slot, peca) {
     if (!peca) {
         modal.innerHTML = `
@@ -1621,7 +1744,8 @@ function abrirModalPeca(slot, peca) {
         // Zero, Segmento de Grupo, Bow), monta o grid clicável.
         const layoutRolos = getLayoutRolos(peca.tipo, peca.id);
         const travadosAtuais = layoutRolos ? parseRolosTravados(peca) : new Set();
-        const htmlGridRolos = layoutRolos ? renderGridRolos(layoutRolos, travadosAtuais) : '';
+        const mancaisAtuais = layoutRolos ? parseMancais(peca) : {};
+        const htmlGridRolos = layoutRolos ? renderGridRolos(layoutRolos, travadosAtuais, mancaisAtuais) : '';
 
         modal.innerHTML = `
             <div class="modal-top">
@@ -1699,6 +1823,41 @@ function abrirModalPeca(slot, peca) {
                 if (btnSalvarRolos && rolosStatus) {
                     btnSalvarRolos.addEventListener('click', () => {
                         salvarRolosTravados(peca.id, travadosAtuais, btnSalvarRolos, rolosStatus);
+                    });
+                }
+
+                // 🆕 Mancais: clicar num mancal (A ou B) abre o painel logo
+                // abaixo da lista, com as 2 opções de ocorrência + limpar.
+                // Escolher uma opção já salva na hora (não depende do botão
+                // "Salvar Rolos", que é só pro travamento).
+                const painelMancal = modal.querySelector('#painel-mancal');
+                const painelMancalTitulo = modal.querySelector('#painel-mancal-titulo');
+                let mancalBtnAtual = null;
+                if (painelMancal) {
+                    modal.querySelectorAll('.mancal-btn').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            if (mancalBtnAtual) mancalBtnAtual.classList.remove('selecionado');
+                            mancalBtnAtual = btn;
+                            btn.classList.add('selecionado');
+                            const chave = btn.dataset.mancal; // ex: "S-3-A"
+                            const partesChave = chave.split('-'); // [base, pos, letra]
+                            const letra = partesChave[partesChave.length - 1];
+                            const posNum = partesChave[partesChave.length - 2];
+                            const nomeBase = partesChave[0] === 'S' ? (layoutRolos.basesNomes[0] || 'Superior') : (layoutRolos.basesNomes[1] || 'Inferior');
+                            painelMancalTitulo.textContent = `Mancal ${letra} — Base ${nomeBase} #${posNum}`;
+                            painelMancal.classList.add('show');
+                            painelMancal.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        });
+                    });
+                    painelMancal.querySelectorAll('button[data-tipo]').forEach(btnOpcao => {
+                        btnOpcao.addEventListener('click', () => {
+                            if (!mancalBtnAtual) return;
+                            const tipo = btnOpcao.dataset.tipo; // '', 'rolamento' ou 'graxa'
+                            salvarMancalOcorrencia(peca.id, mancalBtnAtual.dataset.mancal, tipo, mancaisAtuais, mancalBtnAtual);
+                            painelMancal.classList.remove('show');
+                            mancalBtnAtual.classList.remove('selecionado');
+                            mancalBtnAtual = null;
+                        });
                     });
                 }
             }
