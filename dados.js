@@ -298,25 +298,105 @@ export const AREAS_OFICINA = [
 // no grid — só ganham um visual diferente pra indicar que são o motor.
 //
 // Números confirmados com a operação real da oficina:
-//   Horizontal: 14 rolos (7 por base), acionado sempre no meio (pos 4)
-//   Bender: 30 rolos (15 por base)
-//   Segmento Zero: 20 rolos (10 por base)
-//   Segmento de Grupo (1, 2 ou 3): 10 rolos (5 por base)
-//   Bow: 14 rolos "bipartido" (7 por base)
+//   Horizontal e Straightener R1/R2: 14 rolos (7 por base), acionado
+//     (tem cardam/motor) sempre no meio (pos 4). R1/R2 tem exatamente
+//     o mesmo layout do Horizontal.
+//   Bender: 30 rolos (15 por base), TODOS livres (nenhum acionado).
+//     TODO rolo do Bender é fisicamente dividido em 3 partes do MESMO
+//     tamanho (2 repartições por rolo) — cada parte trava separada.
+//   Segmento Zero: 20 rolos (10 por base), NENHUM acionado. Os 4
+//     PRIMEIROS rolos (#1 a #4) são bipartidos (2 partes desiguais),
+//     mas a ORDEM de qual parte vem primeiro alterna por posição:
+//       #1: menor, depois maior
+//       #2: maior, depois menor
+//       #3: menor, depois maior
+//       #4: maior, depois menor
+//     Os rolos #5 a #10 são inteiros. Mesmo padrão nas duas bases.
+//   Segmento de Grupo 1: 10 rolos (5 por base) — o #3 é acionado nas
+//     DUAS bases (Superior e Inferior).
+//   Segmento de Grupo 2 e 3: 10 rolos (5 por base) — o #3 é acionado
+//     SÓ na base Superior; a Inferior não tem acionado nenhum.
+//   Bow: 14 rolos (7 por base). Intercalado, começando no menor:
+//       #1: menor, depois maior
+//       #2: maior, depois menor
+//       #3: menor, depois maior (termina no maior — é o último bipartido)
+//     O #4 é acionado E INTEIRO (não é bipartido). #5 a #7 inteiros.
+//
+// 🔧 "acionado" = tem cardam/motor (só ele puxa o material). TODOS os
+// outros rolos da base, mesmo sem cardam, ainda podem travar
+// (emperrar) — travar não depende de ter motor. "acionadosPorBase" só
+// controla o visual (ícone de cardam), não o travamento.
+//
+// 🆕 REPARTIÇÃO: "reparticao" descreve quando um rolo NÃO é uma peça
+// única, e sim dividido fisicamente em partes que travam
+// independentemente. Duas formas de declarar:
+//   - "todas": array de tamanhos (soma = 1) aplicado a TODAS as
+//     posições da base (caso do Bender: 3 partes iguais em tudo).
+//   - "porPosicao": mapa { posição: [tamanhos] } pra quando cada
+//     posição tem uma ordem/tamanho diferente (caso do Zero e do Bow,
+//     onde a peça menor vem antes ou depois dependendo da posição).
+//     Posições que não aparecem no mapa continuam inteiras (1 parte).
 export const LAYOUT_ROLOS_POR_TIPO = [
-    { chave: 'horizontal', match: (t) => t.includes('HORIZONTAL'), porBase: 7,  acionados: [4], basesNomes: ['Superior', 'Inferior'] },
-    { chave: 'bender',     match: (t) => t.includes('BENDER'),     porBase: 15, acionados: [],  basesNomes: ['Superior', 'Inferior'] },
-    { chave: 'zero',       match: (t) => t.includes('ZERO'),       porBase: 10, acionados: [],  basesNomes: ['Superior', 'Inferior'] },
-    { chave: 'grupo',      match: (t) => t.includes('GRUPO'),      porBase: 5,  acionados: [],  basesNomes: ['Superior', 'Inferior'] },
-    { chave: 'bow',        match: (t) => t.includes('BOW'),        porBase: 7,  acionados: [],  basesNomes: ['Superior', 'Inferior'] },
+    { chave: 'horizontal', match: (t, id) => t.includes('HORIZONTAL'), porBase: 7,  acionadosPorBase: { S: [4], I: [4] }, reparticao: null, basesNomes: ['Superior', 'Inferior'] },
+    // 🆕 R1/R2 (Straightener) não tinha entrada nenhuma aqui, por isso
+    // o grid de rolos nunca aparecia pra essas peças. Layout idêntico
+    // ao Horizontal.
+    // 🔧 CORREÇÃO: pra não depender só do texto exato salvo no campo
+    // "tipo" (que pode variar: "Straightener", "Straightener R1",
+    // "Endireitador", com ou sem acento...), o match agora também
+    // reconhece pelo ID da peça, que segue um padrão fixo e confiável:
+    // "STR-1-..." / "STR-2-..." (confirmado no print: ID de sistema
+    // "STR-1-4H", "STR-2-4H"). Se bater em QUALQUER um dos dois
+    // (tipo OU id), já é reconhecido como Straightener.
+    { chave: 'straightener', match: (t, id) => t.includes('STRAIGHTENER') || t.includes('ENDIREITADOR') || (id || '').includes('STR-'), porBase: 7, acionadosPorBase: { S: [4], I: [4] }, reparticao: null, basesNomes: ['Superior', 'Inferior'] },
+    { chave: 'bender',     match: (t, id) => t.includes('BENDER'),     porBase: 15, acionadosPorBase: { S: [], I: [] },
+        reparticao: { todas: [1 / 3, 1 / 3, 1 / 3] },
+        basesNomes: ['Superior', 'Inferior'] },
+    { chave: 'zero',       match: (t, id) => t.includes('ZERO'),       porBase: 10, acionadosPorBase: { S: [], I: [] },
+        reparticao: { porPosicao: { 1: [0.4, 0.6], 2: [0.6, 0.4], 3: [0.4, 0.6], 4: [0.6, 0.4] } },
+        basesNomes: ['Superior', 'Inferior'] },
+    // 🔧 Grupo 1 precisa ser checado ANTES do "grupo" genérico (Grupo
+    // 2/3): como o match do genérico é só t.includes('GRUPO'), se ele
+    // vier primeiro na lista captura o Grupo 1 também e o layout com o
+    // acionado certo nunca é usado.
+    { chave: 'grupo1',     match: (t, id) => t.includes('GRUPO 1'),    porBase: 5,  acionadosPorBase: { S: [3], I: [3] }, reparticao: null, basesNomes: ['Superior', 'Inferior'] },
+    { chave: 'grupo',      match: (t, id) => t.includes('GRUPO'),      porBase: 5,  acionadosPorBase: { S: [3], I: [] },  reparticao: null, basesNomes: ['Superior', 'Inferior'] },
+    { chave: 'bow',        match: (t, id) => t.includes('BOW'),        porBase: 7,  acionadosPorBase: { S: [4], I: [4] },
+        // 🔧 Intercalado nos 6 rolos bipartidos (#4 fica de fora — é
+        // inteiro e acionado). A alternância continua contando só as
+        // posições que SÃO bipartidas, pulando o #4: #1(menor,maior),
+        // #2(maior,menor), #3(menor,maior), #5(maior,menor),
+        // #6(menor,maior), #7(maior,menor) — por isso o #7 termina no
+        // maior primeiro / menor depois, como confirmado na oficina.
+        reparticao: { porPosicao: {
+            1: [0.4, 0.6], 2: [0.6, 0.4], 3: [0.4, 0.6],
+            5: [0.6, 0.4], 6: [0.4, 0.6], 7: [0.6, 0.4]
+        } },
+        basesNomes: ['Superior', 'Inferior'] },
 ];
 
 // Retorna o layout de rolos do tipo informado, ou null se esse tipo de
 // equipamento não tem rolos individuais pra acompanhar (ex: Molde,
-// Cadeira, Straightener).
-export function getLayoutRolos(tipo) {
+// Cadeira). Recebe também o "id" da peça como reforço de identificação
+// (alguns tipos, como Straightener, são reconhecidos pelo padrão do ID
+// além do texto do campo "tipo" — ver comentário na entrada
+// "straightener" acima).
+export function getLayoutRolos(tipo, id) {
     const t = (tipo || '').toUpperCase();
-    return LAYOUT_ROLOS_POR_TIPO.find(l => l.match(t)) || null;
+    const i = (id || '').toUpperCase();
+    return LAYOUT_ROLOS_POR_TIPO.find(l => l.match(t, i)) || null;
+}
+
+// Retorna as partes do rolo "pos" (dentro de uma base), na ORDEM
+// visual esquerda->direita, cada uma com seu tamanho relativo. Se a
+// posição não é repartida, devolve 1 parte de tamanho 1 (rolo
+// inteiro).
+export function getPartesDoRolo(layout, pos) {
+    const rep = layout.reparticao;
+    if (!rep) return [1];
+    if (rep.porPosicao && rep.porPosicao[pos]) return rep.porPosicao[pos];
+    if (rep.todas) return rep.todas;
+    return [1];
 }
 
 export const MAPA_EQUIPE_PARA_AREA = {
