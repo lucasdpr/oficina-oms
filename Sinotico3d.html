@@ -1767,30 +1767,52 @@ async function salvarMancalOcorrencia(id, chaveMancal, tipo, mancaisMap, botaoEl
         if (tipo) botaoEl.classList.add(tipo);
     }
 
+    // Monta a mensagem ANTES de chamar a API, porque ela vai tanto pro
+    // histórico (registrarHistorico) quanto pro push notification —
+    // são o mesmo texto, só que o push só dispara quando "tipo" existe
+    // (ocorrência nova), não quando o mancal é limpo.
+    const rotulos = { rolamento: '🔴 Quebra de rolamento', graxa: '🟡 Vazamento de graxa', agua: '🔵 Vazamento de água' };
+    // chaveMancal ex: "S-3-A" (externo), "S-4-A-int" (interno par) ou "S-5-C" (meio único, Zero)
+    const ehInterno = chaveMancal.endsWith('-int');
+    const partesChave = chaveMancal.split('-');
+    const letraMancal = ehInterno ? partesChave[partesChave.length - 2] : partesChave[partesChave.length - 1];
+    const tipoMancalRotulo = letraMancal === 'C' ? 'meio' : (ehInterno ? 'interno' : 'externo');
+    const rotuloMancal = `${letraMancal} (${tipoMancalRotulo})`;
+    const mensagem = tipo
+        ? `${rotulos[tipo]} registrado no Mancal ${rotuloMancal} (rolo ${chaveMancal}).`
+        : `✅ Ocorrência do Mancal ${rotuloMancal} (rolo ${chaveMancal}) foi limpa.`;
+
+    // 🆕 Localização (veio) da peça, pra avisar exatamente onde procurar
+    // — a mesma informação que agora também aparece como selo no card
+    // do Sequenciamento de Veios (ver renderPainelVeios, em script.js).
+    const pecaAtual = piecesById[id] || {};
+    const localizacao = pecaAtual.veio ? `Veio ${pecaAtual.veio}` : (pecaAtual.local || '');
+
     try {
         const valor = JSON.stringify(mancaisMap);
+        const corpoRequisicao = { id, mancais_ocorrencias: valor };
+        if (tipo) {
+            // Só manda os campos de push quando é uma ocorrência NOVA
+            // (não numa limpeza) — ver comentário no PecaUpdate (main.py).
+            corpoRequisicao.mancal_evento_titulo = `⚠️ ${rotulos[tipo]}`;
+            corpoRequisicao.mancal_evento_corpo = `${id} (${pecaAtual.tipo || ''}) — Mancal ${rotuloMancal}${localizacao ? ' — ' + localizacao : ''}.`;
+        }
         const apiBase = await resolverApiBase();
         const resposta = await fetch(`${apiBase}/api/atualizar_peca`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id, mancais_ocorrencias: valor })
+            body: JSON.stringify(corpoRequisicao)
         });
         const resultado = await resposta.json();
         if (resposta.ok && resultado.sucesso) {
             if (piecesById[id]) piecesById[id].mancais_ocorrencias = valor;
             if (typeof window.registrarHistorico === 'function') {
-                const rotulos = { rolamento: '🔴 Quebra de rolamento', graxa: '🟡 Vazamento de graxa', agua: '🔵 Vazamento de água' };
-                // chaveMancal ex: "S-3-A" (externo), "S-4-A-int" (interno par) ou "S-5-C" (meio único, Zero)
-                const ehInterno = chaveMancal.endsWith('-int');
-                const partes = chaveMancal.split('-');
-                const letraMancal = ehInterno ? partes[partes.length - 2] : partes[partes.length - 1];
-                const tipoMancal = letraMancal === 'C' ? 'meio' : (ehInterno ? 'interno' : 'externo');
-                const rotuloMancal = `${letraMancal} (${tipoMancal})`;
-                const mensagem = tipo
-                    ? `${rotulos[tipo]} registrado no Mancal ${rotuloMancal} (rolo ${chaveMancal}).`
-                    : `✅ Ocorrência do Mancal ${rotuloMancal} (rolo ${chaveMancal}) foi limpa.`;
                 window.registrarHistorico(id, mensagem);
             }
+            // 🆕 Atualiza o painel de Sequenciamento de Veios na hora (se
+            // estiver aberto), pra o selo de ocorrência aparecer/sumir
+            // sem precisar trocar de aba e voltar.
+            if (typeof window.renderPainelVeios === 'function') window.renderPainelVeios();
         } else {
             throw new Error(resultado.detail || 'A API não confirmou o salvamento.');
         }

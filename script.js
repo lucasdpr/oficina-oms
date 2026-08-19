@@ -1255,12 +1255,28 @@ function renderPainelVeios() {
             const pctDisplay = pct.toFixed(1);
             const dias = calcularDias(pecaEncontrada);
 
+            // 🆕 Selo de ocorrência de mancal: se a peça tem QUALQUER
+            // mancal marcado (quebra de rolamento / vazamento de graxa
+            // ou água — gravado em "mancais_ocorrencias", ver
+            // Sinotico3d.html), mostra um aviso vermelho piscando no
+            // card, pra dar pra ver de longe que tem algo errado sem
+            // precisar abrir a peça uma por uma.
+            let temOcorrenciaMancal = false;
+            try {
+                const mapaOcorrencias = JSON.parse(pecaEncontrada.mancais_ocorrencias || '{}');
+                temOcorrenciaMancal = Object.values(mapaOcorrencias).some(v => !!v);
+            } catch (e) { /* campo vazio/inválido — trata como sem ocorrência */ }
+
             htmlSlots += `
-                <div class="ind-card" style="border-top: 3px solid var(--${corClass}); min-width: 260px; max-width: 300px; background: var(--bg-td); border-radius: var(--radius-md); padding: 16px 18px; transition: all var(--transition-base);">
+                <div class="ind-card" style="border-top: 3px solid var(--${corClass}); min-width: 260px; max-width: 300px; background: var(--bg-td); border-radius: var(--radius-md); padding: 16px 18px; transition: all var(--transition-base); ${temOcorrenciaMancal ? 'box-shadow: 0 0 0 2px var(--danger);' : ''}">
                     <div class="flex-between" style="margin-bottom: 4px;">
                         <span class="font-code" style="font-size: 0.9rem; font-weight: 700; color: var(--text-heading);">${pecaEncontrada.id}</span>
                         <span class="bg-tag" style="font-size: 0.55rem;">${pecaEncontrada.tipo}</span>
                     </div>
+                    ${temOcorrenciaMancal ? `
+                    <div style="display:flex; align-items:center; gap:5px; background: var(--danger-bg); color: var(--danger); border-radius: 4px; padding: 4px 8px; font-size: 0.65rem; font-weight: 700; margin-bottom: 8px;">
+                        <i class="fas fa-triangle-exclamation"></i> Ocorrência em mancal — ver Prontuário
+                    </div>` : ''}
                     <div class="flex-between" style="margin-bottom: 8px;">
                         <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fas fa-layer-group"></i> ${slot.nome}</span>
                         <span style="font-weight: 700; font-family: var(--font-mono); font-size: 1.1rem; color: var(--${corClass});">${pctDisplay}%</span>
