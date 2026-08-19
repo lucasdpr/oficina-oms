@@ -4957,6 +4957,19 @@ if (typeof renderHistorico !== 'undefined') window.renderHistorico = renderHisto
 if (typeof carregarOficina !== 'undefined') window.carregarOficina = carregarOficina;
 if (typeof renderizarGraficosMCC !== 'undefined') window.renderizarGraficosMCC = renderizarGraficosMCC;
 if (typeof atualizarPainelCompleto !== 'undefined') window.atualizarPainelCompleto = atualizarPainelCompleto;
+// 🔧 CORREÇÃO: renderAtivos, renderReparos e renderPainelVeios eram
+// definidos aqui em cima, mas nunca chegavam a virar window.X —
+// diferente de calcularKpisGlobais (linha abaixo), que já tinha essa
+// atribuição. Como o resto do sistema todo chama essas 3 funções via
+// "if (typeof window.renderX === 'function') window.renderX()" (em
+// mais de 10 lugares, incluindo depois de excluir peça, cadastrar,
+// saque, swap...), essa checagem sempre dava falso e a tela de
+// Ativos/Reparos/Painel de Veios nunca era re-renderizada sozinha
+// depois dessas ações — só atualizava se a página fosse recarregada
+// na mão. Agora ficam expostas certinho, igual as outras.
+if (typeof renderAtivos !== 'undefined') window.renderAtivos = renderAtivos;
+if (typeof renderReparos !== 'undefined') window.renderReparos = renderReparos;
+if (typeof renderPainelVeios !== 'undefined') window.renderPainelVeios = renderPainelVeios;
 if (typeof verificarAcesso !== 'undefined') window.verificarAcesso = verificarAcesso;
 if (typeof entrarComoVisitante !== 'undefined') window.entrarComoVisitante = entrarComoVisitante;
 if (typeof processarAutenticacaoHome !== 'undefined') window.processarAutenticacaoHome = processarAutenticacaoHome;
