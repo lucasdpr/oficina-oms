@@ -1441,6 +1441,20 @@ async function salvarObservacaoPeca(id, valor, botaoEl, statusEl) {
             if (piecesById[id]) piecesById[id].observacao = valor;
             statusEl.textContent = '✅ Salvo no banco.';
             statusEl.className = 'obs-status ok';
+            // 🔧 CORREÇÃO ("o prontuário que fiz no Sinótico 3D não
+            // apareceu no Sequenciamento de Veio"): salvar a
+            // observação aqui gravava só o campo no banco
+            // (/api/atualizar_peca), mas nunca registrava a ação no
+            // histórico compartilhado (window.registrarHistorico) —
+            // que é o mesmo histórico usado pelo Prontuário, pela
+            // Auditoria e por outras telas do sistema, incluindo o
+            // Sequenciamento de Veios. Por isso a anotação feita aqui
+            // nunca aparecia em nenhum outro lugar. Agora registra
+            // igual ao resto do sistema já faz (ver ui.js).
+            if (typeof window.registrarHistorico === 'function') {
+                const resumo = valor.trim() ? `"${valor.trim()}"` : '(observação removida)';
+                window.registrarHistorico(id, `📝 Observação atualizada no Sinótico 3D: ${resumo}`);
+            }
         } else {
             throw new Error(resultado.detail || 'A API não confirmou o salvamento.');
         }
@@ -1564,6 +1578,17 @@ async function salvarRolosTravados(id, travadosSet, botaoEl, statusEl) {
             if (piecesById[id]) piecesById[id].rolos_travados = valor;
             statusEl.textContent = '✅ Salvo no banco.';
             statusEl.className = 'obs-status ok';
+            // 🔧 CORREÇÃO ("o prontuário que fiz no Sinótico 3D não
+            // apareceu no Sequenciamento de Veio"): mesma causa do
+            // salvarObservacaoPeca — gravava no banco mas nunca
+            // registrava no histórico compartilhado. Agora registra,
+            // listando quais rolos ficaram travados (ou avisando que
+            // todos foram liberados).
+            if (typeof window.registrarHistorico === 'function') {
+                const lista = Array.from(travadosSet);
+                const resumo = lista.length ? lista.join(', ') : '(nenhum — todos liberados)';
+                window.registrarHistorico(id, `🔒 Rolos travados atualizados no Sinótico 3D: ${resumo}`);
+            }
         } else {
             throw new Error(resultado.detail || 'A API não confirmou o salvamento.');
         }
