@@ -16,6 +16,7 @@
     <meta name="apple-mobile-web-app-title" content="OMS CSN">
     <!-- ========================================================================= -->
 
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
     <style>
         /* ===== RESET E VARIÁVEIS (identidade CSN) ===== */
@@ -40,7 +41,112 @@
             --radius-lg: 20px;
             --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            --glow-primary: 0 0 40px rgba(245, 158, 11, 0.35);
+            --glow-secondary: 0 0 40px rgba(59, 130, 246, 0.3);
         }
+
+        /* ===== CAMADA PREMIUM: ruído/grão sutil + aurora animada ===== */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+            opacity: 0.02;
+            mix-blend-mode: overlay;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        }
+
+        .aurora-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .aurora-bg span {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.12;
+            animation: auroraFloat 26s ease-in-out infinite;
+        }
+        .aurora-bg span:nth-child(1) {
+            width: 520px; height: 520px;
+            top: -10%; left: -8%;
+            background: var(--primary);
+            animation-delay: 0s;
+        }
+        .aurora-bg span:nth-child(2) {
+            width: 460px; height: 460px;
+            top: 30%; right: -10%;
+            background: var(--secondary);
+            animation-delay: -7s;
+        }
+        .aurora-bg span:nth-child(3) {
+            width: 400px; height: 400px;
+            bottom: -12%; left: 30%;
+            background: #ec4899;
+            opacity: 0.10;
+            animation-delay: -14s;
+        }
+        @keyframes auroraFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(40px, -30px) scale(1.08); }
+            66% { transform: translate(-30px, 20px) scale(0.95); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .aurora-bg span { animation: none; }
+        }
+
+        /* ===== Scroll reveal ===== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal.in-view {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ===== Shimmer no botão primário ===== */
+        .btn-primary {
+            position: relative;
+            overflow: hidden;
+            isolation: isolate;
+        }
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -60%;
+            width: 40%; height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255,255,255,0.55), transparent);
+            transform: skewX(-20deg);
+            z-index: -1;
+            transition: left 0.7s ease;
+        }
+        .btn-primary:hover::after {
+            left: 130%;
+        }
+        .btn-primary:hover {
+            box-shadow: var(--glow-primary), 0 8px 30px rgba(245, 158, 11, 0.3);
+        }
+
+        /* ===== Glow sutil em badges ===== */
+        .badge {
+            box-shadow: 0 0 24px rgba(245, 158, 11, 0.12);
+        }
+        .badge-csn { box-shadow: 0 0 24px rgba(59, 130, 246, 0.12); }
+        .badge-rosa { box-shadow: 0 0 24px rgba(236, 72, 153, 0.12); }
+
+        /* ===== Navbar com leve profundidade extra ===== */
+        .navbar {
+            box-shadow: 0 1px 0 rgba(255,255,255,0.03), 0 20px 40px -20px rgba(0,0,0,0.5);
+        }
+
+        /* Garante que o conteúdo fique acima da aurora */
+        .navbar, .hero, section, footer { position: relative; z-index: 1; }
 
         html {
             scroll-behavior: smooth;
@@ -78,6 +184,26 @@
             color: inherit;
         }
 
+        /* ===== FOCO VISÍVEL (a11y) — obrigatório pra navegação por teclado ===== */
+        a:focus-visible,
+        button:focus-visible,
+        .btn-primary:focus-visible,
+        .btn-outline:focus-visible,
+        .btn-ghost:focus-visible,
+        .btn-login:focus-visible,
+        .nav-links a:focus-visible,
+        .mcc-card:focus-visible,
+        [tabindex]:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 3px;
+            border-radius: 4px;
+        }
+        /* Remove o outline padrão só quando o usuário usa mouse (mantém no teclado) */
+        a:focus:not(:focus-visible),
+        button:focus:not(:focus-visible) {
+            outline: none;
+        }
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -104,7 +230,7 @@
             border-radius: 8px;
             font-weight: 700;
             font-size: 14px;
-            transition: all var(--transition);
+            transition: all var(--transition), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             border: none;
             cursor: pointer;
             display: inline-flex;
@@ -188,8 +314,8 @@
             align-items: center;
             padding: 16px 5%;
             background: rgba(10, 14, 23, 0.92);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             position: fixed;
             width: 100%;
             top: 0;
@@ -448,6 +574,199 @@
         }
         .hero-content h1 span {
             color: var(--primary);
+            text-shadow: 0 0 20px rgba(245, 158, 11, 0.25);
+        }
+
+        /* ===== APPLE-STYLE: entrada em blur+fade escalonada no hero ===== */
+        .hero-content .badge,
+        .hero-content .live-pill,
+        .hero-content h1,
+        .hero-content p,
+        .hero-content > div[style],
+        .hero-content .hero-stats {
+            opacity: 0;
+            filter: blur(8px);
+            transform: translateY(24px);
+            animation: heroIn 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .hero-content .badge { animation-delay: 0.05s; }
+        .hero-content .live-pill { animation-delay: 0.15s; }
+        .hero-content h1 { animation-delay: 0.25s; }
+        .hero-content p { animation-delay: 0.4s; }
+        .hero-content > div[style] { animation-delay: 0.55s; }
+        .hero-content .hero-stats { animation-delay: 0.7s; }
+        @keyframes heroIn {
+            to { opacity: 1; filter: blur(0); transform: translateY(0); }
+        }
+
+        .hero-image-wrapper {
+            opacity: 0;
+            filter: blur(10px);
+            transform: translateY(30px) scale(0.96);
+            animation: heroIn 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation-delay: 0.35s;
+            perspective: 1200px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .hero-content .badge, .hero-content .live-pill, .hero-content h1,
+            .hero-content p, .hero-content > div[style], .hero-content .hero-stats,
+            .hero-image-wrapper {
+                animation: none; opacity: 1; filter: none; transform: none;
+            }
+        }
+
+        /* ===== APPLE-STYLE: tilt 3D no mockup ===== */
+        .dashboard-mockup {
+            transform-style: preserve-3d;
+            will-change: transform;
+        }
+
+        /* ===== APPLE-STYLE: spotlight que segue o cursor nos cards ===== */
+        .diff-card, .recurso-card, .mcc-card, .servico-item {
+            position: relative;
+        }
+        .diff-card::after, .recurso-card::after, .mcc-card::after, .servico-item::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: radial-gradient(200px circle at var(--mx, 50%) var(--my, 50%), rgba(245, 158, 11, 0.08), transparent 70%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+        }
+        .diff-card:hover::after, .recurso-card:hover::after,
+        .mcc-card:hover::after, .servico-item:hover::after {
+            opacity: 1;
+        }
+
+        /* ===== APPLE-STYLE: parallax de fundo no scroll ===== */
+        .aurora-bg span {
+            will-change: transform;
+        }
+
+
+
+        /* ===== NOVA SEÇÃO: ANTES → OMS → DEPOIS ===== */
+        .antes-depois { padding: 80px 5%; background: var(--bg-base); text-align: center; border-top: 1px solid var(--border); }
+        .antes-depois h2 { color: var(--text-title); font-size: clamp(26px, 5vw, 40px); margin-bottom: 48px; }
+        .antes-depois-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .ad-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px 24px;
+            text-align: left;
+            transition: all var(--transition);
+        }
+        .ad-card:hover { transform: translateY(-4px); }
+        .ad-oms { border-color: rgba(245, 158, 11, 0.35); background: rgba(245, 158, 11, 0.04); }
+        .ad-icon {
+            width: 44px; height: 44px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.05); margin-bottom: 16px;
+            color: var(--text-muted); font-size: 18px;
+        }
+        .ad-oms .ad-icon { background: rgba(245, 158, 11, 0.15); color: var(--primary); }
+        .ad-depois .ad-icon { background: rgba(59, 130, 246, 0.15); color: var(--secondary); }
+        .ad-card h3 { color: var(--text-title); font-size: 18px; margin-bottom: 14px; }
+        .ad-card ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+        .ad-card li { color: var(--text-body); font-size: 14px; padding-left: 18px; position: relative; }
+        .ad-antes li::before { content: '–'; position: absolute; left: 0; color: var(--text-muted); }
+        .ad-oms li::before { content: '✓'; position: absolute; left: 0; color: var(--primary); }
+        .ad-depois li::before { content: '↑'; position: absolute; left: 0; color: var(--secondary); }
+
+        /* ===== NOVA SEÇÃO: PILARES (Operação / Manutenção / Gestão) ===== */
+        .pilares { padding: 80px 5%; background: var(--bg-surface); text-align: center; border-top: 1px solid var(--border); }
+        .pilares h2 { color: var(--text-title); font-size: clamp(26px, 5vw, 40px); margin-bottom: 12px; }
+        .pilares > p { max-width: 640px; margin: 0 auto 48px; font-size: 16px; }
+        .pilares-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            max-width: 1100px;
+            margin: 0 auto;
+            text-align: left;
+        }
+        .pilar-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px 26px;
+            transition: all var(--transition);
+        }
+        .pilar-card:hover { border-color: var(--primary); transform: translateY(-4px); }
+        .pilar-icon {
+            width: 48px; height: 48px; border-radius: 12px;
+            background: rgba(245, 158, 11, 0.12);
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 18px; color: var(--primary); font-size: 20px;
+        }
+        .pilar-card h3 { color: var(--text-title); font-size: 19px; margin-bottom: 14px; }
+        .pilar-card ul { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+        .pilar-card li { color: var(--text-body); font-size: 14px; padding-left: 16px; position: relative; }
+        .pilar-card li::before { content: '•'; position: absolute; left: 0; color: var(--primary); }
+
+        /* ===== NOVA SEÇÃO: COMO FUNCIONA (timeline) ===== */
+        .como-funciona { padding: 80px 5%; background: var(--bg-base); text-align: center; border-top: 1px solid var(--border); }
+        .como-funciona h2 { color: var(--text-title); font-size: clamp(26px, 5vw, 40px); margin-bottom: 48px; }
+        .ciclo-timeline {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 12px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .ciclo-step {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 22px 14px;
+            transition: all var(--transition);
+        }
+        .ciclo-step:hover { border-color: var(--secondary); transform: translateY(-3px); }
+        .ciclo-num { display: block; font-size: 22px; font-weight: 800; color: var(--secondary); margin-bottom: 8px; }
+        .ciclo-step h3 { color: var(--text-title); font-size: 14px; margin-bottom: 6px; }
+        .ciclo-step p { color: var(--text-muted); font-size: 12px; }
+        @media (max-width: 900px) {
+            .ciclo-timeline { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 560px) {
+            .ciclo-timeline, .pilares-grid, .antes-depois-grid { grid-template-columns: 1fr; }
+        }
+
+        /* ===== NOVA SEÇÃO: EVOLUÇÃO DO OMS ===== */
+        .evolucao { padding: 70px 5%; background: var(--bg-surface); text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        .evolucao h2 { color: var(--text-title); font-size: clamp(22px, 4.5vw, 34px); margin-bottom: 40px; line-height: 1.35; }
+        .evolucao-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .evolucao-flow i { color: var(--text-muted); font-size: 13px; }
+        .evolucao-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-body);
+            font-weight: 700;
+            font-size: 14px;
+            padding: 10px 20px;
+            border-radius: 30px;
+        }
+        .evolucao-final { background: rgba(245, 158, 11, 0.12); border-color: var(--primary); color: var(--primary); }
+        .hero-content h1 {
+            text-shadow: 0 2px 24px rgba(0,0,0,0.3);
         }
 
         .hero-content p {
@@ -502,7 +821,12 @@
             border: 1px solid var(--border);
             border-radius: var(--radius-lg);
             padding: 16px;
-            box-shadow: var(--shadow);
+            box-shadow: var(--shadow), 0 0 0 1px rgba(255,255,255,0.03) inset;
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease;
+        }
+        .hero-image-wrapper:hover .dashboard-mockup {
+            transform: translateY(-6px) rotateX(2deg);
+            box-shadow: var(--shadow), var(--glow-primary);
         }
 
         .mockup-header {
@@ -865,7 +1189,7 @@
             font-size: 20px;
             color: var(--secondary);
         }
-        .recurso-card h4 {
+        .recurso-card h3 {
             color: var(--text-title);
             font-size: 16px;
             font-weight: 700;
@@ -1007,7 +1331,7 @@
             margin-bottom: 16px;
             display: inline-block;
         }
-        .servico-item h4 {
+        .servico-item h3 {
             color: var(--text-title);
             font-size: 18px;
             margin-bottom: 8px;
@@ -1099,7 +1423,7 @@
             display: block;
             margin-bottom: 8px;
         }
-        .mcc-card h4 {
+        .mcc-card h3 {
             color: var(--text-title);
             font-size: 18px;
             margin-bottom: 4px;
@@ -1190,7 +1514,7 @@
         .history-card.blue i { color: var(--secondary); background: rgba(59, 130, 246, 0.1); }
         .history-card.green i { color: #10b981; background: rgba(16, 185, 129, 0.1); }
 
-        .history-card h4 {
+        .history-card h3 {
             color: var(--text-title);
             font-size: 16px;
             font-weight: 700;
@@ -1436,10 +1760,11 @@
     </style>
 </head>
 <body>
+    <div class="aurora-bg" aria-hidden="true"><span></span><span></span><span></span></div>
 
     <nav class="navbar">
-        <a href="#" class="logo">
-            <i class="fas fa-layer-group"></i> OMS <span>| CSN</span>
+        <a href="#" class="logo" aria-label="OMS — Oficina de Moldes e Segmentos, CSN — voltar ao topo">
+            <i class="fas fa-layer-group" aria-hidden="true"></i> OMS <span>| CSN</span>
         </a>
         <div class="nav-links">
             <a href="#proposito">Nosso Propósito</a>
@@ -1452,17 +1777,17 @@
         </div>
         <div class="nav-actions">
             <span class="conn-status online" id="conn-status">
-                <i class="fas fa-circle" style="font-size:8px;"></i> <span id="conn-status-text">On-line</span>
+                <i class="fas fa-circle" style="font-size:8px;" aria-hidden="true"></i> <span id="conn-status-text">On-line</span>
             </span>
             <button class="btn-ghost" id="btn-install-pwa" style="display:none;">
-                <i class="fas fa-mobile-alt"></i> <span class="btn-full-text-install">Instalar App</span>
+                <i class="fas fa-mobile-alt" aria-hidden="true"></i> <span class="btn-full-text-install">Instalar App</span>
             </button>
             <a href="app.html" class="btn-login">Entrar</a>
             <a href="app.html" class="btn-primary">
-                <i class="fas fa-rocket"></i> <span class="btn-full-text">Acessar Sistema</span>
+                <i class="fas fa-rocket" aria-hidden="true"></i> <span class="btn-full-text">Acessar Sistema</span>
             </a>
             <button class="nav-hamburger" id="nav-hamburger" aria-label="Abrir menu" aria-expanded="false">
-                <i class="fas fa-bars"></i>
+                <i class="fas fa-bars" aria-hidden="true"></i>
             </button>
         </div>
     </nav>
@@ -1471,58 +1796,57 @@
     <div class="mobile-drawer-overlay" id="mobile-drawer-overlay"></div>
     <div class="mobile-drawer" id="mobile-drawer">
         <button class="mobile-drawer-close" id="mobile-drawer-close" aria-label="Fechar menu">
-            <i class="fas fa-times"></i>
+            <i class="fas fa-times" aria-hidden="true"></i>
         </button>
-        <a href="#proposito"><i class="fas fa-bullseye"></i> Nosso Propósito</a>
-        <a href="#recursos"><i class="fas fa-layer-group"></i> Recursos do Sistema</a>
-        <a href="#diferenciais"><i class="fas fa-cogs"></i> Serviços</a>
-        <a href="#equipe"><i class="fas fa-users"></i> Time</a>
-        <a href="#diversidade"><i class="fas fa-venus-mars"></i> Diversidade</a>
-        <a href="#historia"><i class="fas fa-landmark"></i> História</a>
-        <a href="#mcc"><i class="fas fa-industry"></i> MCCs</a>
+        <a href="#proposito"><i class="fas fa-bullseye" aria-hidden="true"></i> Nosso Propósito</a>
+        <a href="#recursos"><i class="fas fa-layer-group" aria-hidden="true"></i> Recursos do Sistema</a>
+        <a href="#diferenciais"><i class="fas fa-cogs" aria-hidden="true"></i> Serviços</a>
+        <a href="#equipe"><i class="fas fa-users" aria-hidden="true"></i> Time</a>
+        <a href="#diversidade"><i class="fas fa-venus-mars" aria-hidden="true"></i> Diversidade</a>
+        <a href="#historia"><i class="fas fa-landmark" aria-hidden="true"></i> História</a>
+        <a href="#mcc"><i class="fas fa-industry" aria-hidden="true"></i> MCCs</a>
         <a href="app.html" class="btn-primary">
-            <i class="fas fa-rocket"></i> Acessar Sistema
+            <i class="fas fa-rocket" aria-hidden="true"></i> Acessar Sistema
         </a>
     </div>
 
     <section class="hero">
         <div class="hero-content">
-            <span class="badge">🏭 CSN – Volta Redonda</span>
+            <span class="badge">🏭 CSN – Volta Redonda · GMLC / GGMA</span>
             <div class="live-pill">
-                <span class="status-indicator"></span> Sistema operando em tempo real na Aciaria
+                <span class="status-indicator"></span> Sistema operando na Aciaria — MCC 2, 3 e 4
             </div>
-            <h1>Oficina de Moldes e <br><span>Segmentos</span></h1>
+            <h1>OMS — Gestão Inteligente<br>da <span>Manutenção</span></h1>
             <p>
-                Referência em manutenção e recuperação de moldes e segmentos para
-                o lingotamento contínuo. Tecnologia, precisão e compromisso com a
-                excelência operacional da CSN.
+                Digitalização, rastreabilidade e controle operacional de moldes
+                e segmentos. Do registro operacional à decisão baseada em dados.
             </p>
             <div style="display: flex; gap: 14px; flex-wrap: wrap;">
                 <a href="app.html" class="btn-primary">
-                    <i class="fas fa-arrow-right"></i> Entrar no Painel do Operador
+                    <i class="fas fa-arrow-right" aria-hidden="true"></i> Acessar OMS
                 </a>
-                <a href="#recursos" class="btn-outline">
-                    <i class="fas fa-chart-bar"></i> Ver Relatório de Disponibilidade
+                <a href="#como-funciona" class="btn-outline">
+                    <i class="fas fa-play-circle" aria-hidden="true"></i> Ver como funciona
                 </a>
             </div>
             <div class="hero-stats">
                 <div>
-                    <strong data-count="150" data-suffix="+">0</strong>
-                    <span>Profissionais capacitados</span>
+                    <strong>MCC 2 · 3 · 4</strong>
+                    <span>Cobertura completa da Aciaria</span>
                 </div>
                 <div>
-                    <strong data-count="15" data-suffix="+">0</strong>
-                    <span>Especialistas em manutenção</span>
+                    <strong>100%</strong>
+                    <span>Folhões digitais, sem papel</span>
                 </div>
                 <div>
-                    <strong>Laudos</strong>
-                    <span>100% digitais e rastreáveis</span>
+                    <strong>PWA</strong>
+                    <span>Instalável, com uso offline</span>
                 </div>
             </div>
         </div>
 
         <div class="hero-image-wrapper">
-            <span class="mockup-label">Sistema OMS</span>
+            <span class="mockup-label">Demonstração — Sistema OMS</span>
             <div class="dashboard-mockup">
                 <div class="mockup-header">
                     <div class="mockup-dot"></div>
@@ -1555,7 +1879,100 @@
         </div>
     </section>
 
-    <section id="proposito" class="proposito">
+    <!-- ===== NOVA SEÇÃO: ANTES → OMS → DEPOIS ===== -->
+    <section id="antes-depois" class="reveal antes-depois">
+        <span class="badge badge-csn">A Transformação</span>
+        <h2>Do controle manual ao fluxo digital único</h2>
+        <div class="antes-depois-grid">
+            <div class="ad-card ad-antes">
+                <div class="ad-icon"><i class="fas fa-file-alt" aria-hidden="true"></i></div>
+                <h3>Antes</h3>
+                <ul>
+                    <li>Papel</li>
+                    <li>Planilhas soltas</li>
+                    <li>Dados dispersos</li>
+                    <li>Busca manual</li>
+                    <li>Histórico fragmentado</li>
+                </ul>
+            </div>
+            <div class="ad-card ad-oms">
+                <div class="ad-icon"><i class="fas fa-microchip" aria-hidden="true"></i></div>
+                <h3>OMS</h3>
+                <ul>
+                    <li>Fluxo digital único</li>
+                    <li>Dados centralizados</li>
+                    <li>Folhões digitais</li>
+                    <li>Rastreabilidade por peça</li>
+                    <li>Auditoria de ações</li>
+                </ul>
+            </div>
+            <div class="ad-card ad-depois">
+                <div class="ad-icon"><i class="fas fa-chart-line" aria-hidden="true"></i></div>
+                <h3>Depois</h3>
+                <ul>
+                    <li>Mais controle</li>
+                    <li>Mais agilidade</li>
+                    <li>Mais rastreabilidade</li>
+                    <li>Dados para decisão</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== NOVA SEÇÃO: UM SISTEMA. TODA A OPERAÇÃO. ===== -->
+    <section id="pilares" class="reveal pilares">
+        <span class="badge">Arquitetura Funcional</span>
+        <h2>Um sistema. Toda a operação.</h2>
+        <p>Três pilares que conectam a oficina, a manutenção e a gestão em um único ecossistema.</p>
+        <div class="pilares-grid">
+            <div class="pilar-card">
+                <div class="pilar-icon"><i class="fas fa-cogs" aria-hidden="true"></i></div>
+                <h3>Operação</h3>
+                <ul>
+                    <li>Sequenciamento de Veios</li>
+                    <li>Swap Automático</li>
+                    <li>Sinótico Visual 3D</li>
+                    <li>Painel do Técnico</li>
+                </ul>
+            </div>
+            <div class="pilar-card">
+                <div class="pilar-icon"><i class="fas fa-tools" aria-hidden="true"></i></div>
+                <h3>Manutenção</h3>
+                <ul>
+                    <li>Folhões Digitais</li>
+                    <li>Checklists por Equipamento</li>
+                    <li>Laudos em PDF</li>
+                    <li>Prontuário por Peça</li>
+                </ul>
+            </div>
+            <div class="pilar-card">
+                <div class="pilar-icon"><i class="fas fa-chart-pie" aria-hidden="true"></i></div>
+                <h3>Gestão</h3>
+                <ul>
+                    <li>Auditoria Global</li>
+                    <li>Estoque Reserva</li>
+                    <li>Estoque de Materiais</li>
+                    <li>Rastreabilidade Completa</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== NOVA SEÇÃO: COMO FUNCIONA ===== -->
+    <section id="como-funciona" class="reveal como-funciona">
+        <span class="badge badge-csn">O Ciclo</span>
+        <h2>Como funciona</h2>
+        <div class="ciclo-timeline">
+            <div class="ciclo-step"><span class="ciclo-num">01</span><h3>Cadastro</h3><p>Peça entra no sistema</p></div>
+            <div class="ciclo-step"><span class="ciclo-num">02</span><h3>Alocação</h3><p>Instalação em um veio</p></div>
+            <div class="ciclo-step"><span class="ciclo-num">03</span><h3>Monitoramento</h3><p>Desgaste x meta em tempo real</p></div>
+            <div class="ciclo-step"><span class="ciclo-num">04</span><h3>Swap</h3><p>Troca guiada com a reserva</p></div>
+            <div class="ciclo-step"><span class="ciclo-num">05</span><h3>Manutenção</h3><p>Folhão e laudo em PDF</p></div>
+            <div class="ciclo-step"><span class="ciclo-num">06</span><h3>Retorno</h3><p>Peça volta pronta pra linha</p></div>
+        </div>
+    </section>
+
+    <section id="proposito" class="reveal proposito">
         <span class="badge">Nosso Propósito</span>
         <blockquote>
             Cuidar da vida é o que nos move: promovemos um ambiente seguro e
@@ -1569,7 +1986,7 @@
     </section>
 
     <!-- ===== NOVA SEÇÃO: RECURSOS DO SISTEMA ===== -->
-    <section id="recursos" class="recursos">
+    <section id="recursos" class="reveal recursos">
         <span class="badge badge-csn">Dentro do Sistema</span>
         <h2>Tudo que o OMS faz por você</h2>
         <p>
@@ -1580,57 +1997,57 @@
         <div class="recursos-grid">
             <div class="recurso-card">
                 <span class="recurso-tag">3D</span>
-                <div class="recurso-icon"><i class="fas fa-cube"></i></div>
-                <h4>Sinótico 3D</h4>
+                <div class="recurso-icon"><i class="fas fa-cube" aria-hidden="true"></i></div>
+                <h3>Sinótico 3D</h3>
                 <p>Visualização em 3D da posição real de cada equipamento nas MCCs, em tempo real.</p>
             </div>
             <div class="recurso-card">
-                <div class="recurso-icon"><i class="fas fa-clipboard-list"></i></div>
-                <h4>Folhões Digitais por Equipamento</h4>
+                <div class="recurso-icon"><i class="fas fa-clipboard-list" aria-hidden="true"></i></div>
+                <h3>Folhões Digitais por Equipamento</h3>
                 <p>Checklists específicos para Molde, Bow, Horizontal, R1/R2, Bender, Segmento Zero, Segmento de Grupo e Desempenadeira.</p>
             </div>
             <div class="recurso-card">
                 <span class="recurso-tag">Auto-save</span>
-                <div class="recurso-icon"><i class="fas fa-save"></i></div>
-                <h4>Progresso Salvo Automaticamente</h4>
+                <div class="recurso-icon"><i class="fas fa-save" aria-hidden="true"></i></div>
+                <h3>Progresso Salvo Automaticamente</h3>
                 <p>Se o folhão for fechado no meio do preenchimento, o progresso continua salvo — nada se perde.</p>
             </div>
             <div class="recurso-card">
-                <div class="recurso-icon"><i class="fas fa-exchange-alt"></i></div>
-                <h4>Swap Inteligente</h4>
+                <div class="recurso-icon"><i class="fas fa-exchange-alt" aria-hidden="true"></i></div>
+                <h3>Swap Inteligente</h3>
                 <p>Troca rápida de peças entre oficina e linha, com validação automática de posição e veio.</p>
             </div>
             <div class="recurso-card">
-                <div class="recurso-icon"><i class="fas fa-warehouse"></i></div>
-                <h4>Estoque e Materiais</h4>
+                <div class="recurso-icon"><i class="fas fa-warehouse" aria-hidden="true"></i></div>
+                <h3>Estoque e Materiais</h3>
                 <p>Controle de peças em reserva, rolos e materiais consumíveis com localização e valores.</p>
             </div>
             <div class="recurso-card">
-                <div class="recurso-icon"><i class="fas fa-chart-line"></i></div>
-                <h4>KPIs e Gráficos por MCC</h4>
+                <div class="recurso-icon"><i class="fas fa-chart-line" aria-hidden="true"></i></div>
+                <h3>KPIs e Gráficos por MCC</h3>
                 <p>Painéis com disponibilidade, tonelagem e dias em operação por veio e por MCC.</p>
             </div>
             <div class="recurso-card">
-                <div class="recurso-icon"><i class="fas fa-history"></i></div>
-                <h4>Histórico e Rastreabilidade</h4>
+                <div class="recurso-icon"><i class="fas fa-history" aria-hidden="true"></i></div>
+                <h3>Histórico e Rastreabilidade</h3>
                 <p>Cada ação fica registrada por equipamento, com data, autor e o que foi feito.</p>
             </div>
             <div class="recurso-card">
                 <span class="recurso-tag">PWA</span>
-                <div class="recurso-icon"><i class="fas fa-mobile-alt"></i></div>
-                <h4>Instalável no Celular</h4>
+                <div class="recurso-icon"><i class="fas fa-mobile-alt" aria-hidden="true"></i></div>
+                <h3>Instalável no Celular</h3>
                 <p>Funciona como app nativo no Android e iPhone, inclusive com uso offline.</p>
             </div>
             <div class="recurso-card">
-                <div class="recurso-icon"><i class="fas fa-adjust"></i></div>
-                <h4>Modo Claro e Escuro</h4>
+                <div class="recurso-icon"><i class="fas fa-adjust" aria-hidden="true"></i></div>
+                <h3>Modo Claro e Escuro</h3>
                 <p>Interface adaptada para qualquer ambiente da oficina, de dia ou à noite.</p>
             </div>
         </div>
     </section>
 
     <!-- ===== SEÇÃO: IMAGENS DA EQUIPE (já existente) ===== -->
-    <section id="equipe" class="equipe">
+    <section id="equipe" class="reveal equipe">
         <span class="badge badge-csn">Nosso Time</span>
         <h2>Mais de 150 profissionais capacitados</h2>
         <p>
@@ -1641,13 +2058,13 @@
 
         <div class="galeria-imagens">
             <div class="img-wrapper">
-                <img src="WhatsApp%20Image%202026-06-23%20at%2014.39.57.jpeg" alt="Oficina de Moldes e Segmentos - CSN" onerror="this.style.display='none'">
+                <img src="WhatsApp%20Image%202026-06-23%20at%2014.39.57.jpeg" alt="Oficina de Moldes e Segmentos - CSN" loading="lazy" decoding="async" onerror="this.style.display='none'">
                 <div class="legenda">
                     <strong>Oficina de Moldes e Segmentos</strong> — CSN Volta Redonda
                 </div>
             </div>
             <div class="img-wrapper">
-                <img src="WhatsApp%20Image%202026-06-23%20at%2014.40.12.jpeg" alt="Propósito OMS - GMLC/GGMA" onerror="this.style.display='none'">
+                <img src="WhatsApp%20Image%202026-06-23%20at%2014.40.12.jpeg" alt="Propósito OMS - GMLC/GGMA" loading="lazy" decoding="async" onerror="this.style.display='none'">
                 <div class="legenda">
                     <strong>Propósito OMS</strong> — GMLC / GGMA
                 </div>
@@ -1656,9 +2073,9 @@
     </section>
 
     <!-- ===== NOVA SEÇÃO: DESTAQUE FEMININO ===== -->
-    <section id="diversidade" class="diversidade">
+    <section id="diversidade" class="reveal diversidade">
         <span class="badge badge-rosa">
-            <i class="fas fa-venus-mars"></i> Diversidade que Transforma
+            <i class="fas fa-venus-mars" aria-hidden="true"></i> Diversidade que Transforma
         </span>
         <h2>O Maior Efetivo de Mulheres <br><span>das Oficina CSN</span></h2>
         <p>
@@ -1681,13 +2098,13 @@
 
         <div class="galeria-imagens">
             <div class="img-wrapper">
-                <img src="image.png" alt="Equipe feminina da OMS - CSN" onerror="this.style.display='none'">
+                <img src="image.png" alt="Equipe feminina da OMS - CSN" loading="lazy" decoding="async" onerror="this.style.display='none'">
                 <div class="legenda">
                     <div>
                         <strong style="color: var(--text-title);">Equipe feminina OMS</strong>
                     </div>
                     <div style="color: var(--text-muted); font-size: 13px;">
-                        <i class="fas fa-quote-left" style="color: var(--primary); opacity: 0.5;"></i>
+                        <i class="fas fa-quote-left" style="color: var(--primary); opacity: 0.5;" aria-hidden="true"></i>
                         Excelência com olhar feminino
                     </div>
                 </div>
@@ -1695,7 +2112,7 @@
         </div>
     </section>
 
-    <section id="diferenciais" class="diferenciais">
+    <section id="diferenciais" class="reveal diferenciais">
         <span class="badge">Excelência em Manutenção</span>
         <h2>O coração do lingotamento contínuo</h2>
         <p>
@@ -1706,7 +2123,7 @@
 
         <div class="diferenciais-grid">
             <div class="diff-card">
-                <i class="fas fa-cogs"></i>
+                <i class="fas fa-cogs" aria-hidden="true"></i>
                 <h3>Recuperação de Moldes</h3>
                 <p>
                     Serviço completo de inspeção, reparo e liberação de moldes,
@@ -1715,7 +2132,7 @@
             </div>
 
             <div class="diff-card">
-                <i class="fas fa-ruler-combined"></i>
+                <i class="fas fa-ruler-combined" aria-hidden="true"></i>
                 <h3>Manutenção de Segmentos</h3>
                 <p>
                     Atuação em todos os segmentos do lingotamento, incluindo
@@ -1724,7 +2141,7 @@
             </div>
 
             <div class="diff-card">
-                <i class="fas fa-clipboard-list"></i>
+                <i class="fas fa-clipboard-list" aria-hidden="true"></i>
                 <h3>Laudos Digitais (Folhões)</h3>
                 <p>
                     Cada equipamento liberado recebe um folhão digital completo,
@@ -1733,7 +2150,7 @@
             </div>
 
             <div class="diff-card">
-                <i class="fas fa-exchange-alt"></i>
+                <i class="fas fa-exchange-alt" aria-hidden="true"></i>
                 <h3>Swap Inteligente</h3>
                 <p>
                     Sistema integrado que permite a troca rápida de componentes
@@ -1742,7 +2159,7 @@
             </div>
 
             <div class="diff-card">
-                <i class="fas fa-warehouse"></i>
+                <i class="fas fa-warehouse" aria-hidden="true"></i>
                 <h3>Gestão de Estoque</h3>
                 <p>
                     Controle preciso de peças em reserva, rolos e materiais
@@ -1751,7 +2168,7 @@
             </div>
 
             <div class="diff-card">
-                <i class="fas fa-chart-bar"></i>
+                <i class="fas fa-chart-bar" aria-hidden="true"></i>
                 <h3>Análise de Desgaste</h3>
                 <p>
                     Acompanhamento contínuo da tonelagem e dias de operação,
@@ -1761,7 +2178,7 @@
         </div>
     </section>
 
-    <section id="servicos" class="servicos">
+    <section id="servicos" class="reveal servicos">
         <span class="badge badge-csn">Nossas Frentes</span>
         <h2>O que fazemos</h2>
         <p>
@@ -1771,29 +2188,29 @@
 
         <div class="servicos-grid">
             <div class="servico-item">
-                <i class="fas fa-clipboard-check"></i>
-                <h4>Inspeção de Chegada</h4>
+                <i class="fas fa-clipboard-check" aria-hidden="true"></i>
+                <h3>Inspeção de Chegada</h3>
                 <p>Análise crítica de cada componente, com checklists padronizados.</p>
             </div>
             <div class="servico-item">
-                <i class="fas fa-tools"></i>
-                <h4>Execução de Reparo</h4>
+                <i class="fas fa-tools" aria-hidden="true"></i>
+                <h3>Execução de Reparo</h3>
                 <p>Intervenções mecânicas, hidráulicas e elétricas com alta qualidade.</p>
             </div>
             <div class="servico-item">
-                <i class="fas fa-ruler"></i>
-                <h4>Aferição Pass-Line</h4>
+                <i class="fas fa-ruler" aria-hidden="true"></i>
+                <h3>Aferição Pass-Line</h3>
                 <p>Medições precisas para garantir o alinhamento e desempenho.</p>
             </div>
             <div class="servico-item">
-                <i class="fas fa-check-double"></i>
-                <h4>Liberação Final</h4>
+                <i class="fas fa-check-double" aria-hidden="true"></i>
+                <h3>Liberação Final</h3>
                 <p>Laudo completo e envio do equipamento à reserva ou linha.</p>
             </div>
         </div>
     </section>
 
-    <section id="mcc" class="sobre-mcc">
+    <section id="mcc" class="reveal sobre-mcc">
         <span class="badge">Lingotamento Contínuo</span>
         <h2>Atuação nas 3 MCCs</h2>
         <p>
@@ -1804,7 +2221,7 @@
         <div class="mcc-grid">
             <div class="mcc-card" data-mcc="2" tabindex="0" role="button" aria-expanded="false">
                 <span class="numero">MCC 2</span>
-                <h4>Veios C e D</h4>
+                <h3>Veios C e D</h3>
                 <span>Moldes, segmentos e cadeiras</span>
                 <div class="mcc-detalhe">
                     <span class="mcc-chip">Molde</span>
@@ -1815,7 +2232,7 @@
             </div>
             <div class="mcc-card" data-mcc="3" tabindex="0" role="button" aria-expanded="false">
                 <span class="numero">MCC 3</span>
-                <h4>Veios E e F</h4>
+                <h3>Veios E e F</h3>
                 <span>Moldes, segmentos e cadeiras</span>
                 <div class="mcc-detalhe">
                     <span class="mcc-chip">Molde</span>
@@ -1826,7 +2243,7 @@
             </div>
             <div class="mcc-card" data-mcc="4" tabindex="0" role="button" aria-expanded="false">
                 <span class="numero">MCC 4</span>
-                <h4>Veios G e H</h4>
+                <h3>Veios G e H</h3>
                 <span>Moldes, bender, bow, straightener e horizontais</span>
                 <div class="mcc-detalhe">
                     <span class="mcc-chip">Molde</span>
@@ -1838,10 +2255,10 @@
                 </div>
             </div>
         </div>
-        <p class="mcc-dica"><i class="fas fa-hand-pointer"></i> Toque em uma MCC para ver os equipamentos atendidos.</p>
+        <p class="mcc-dica"><i class="fas fa-hand-pointer" aria-hidden="true"></i> Toque em uma MCC para ver os equipamentos atendidos.</p>
     </section>
 
-    <section id="historia" class="historia">
+    <section id="historia" class="reveal historia">
         <div class="historia-header">
             <span class="badge badge-csn">Nossa Origem</span>
             <h2>A Força por Trás da Aciaria</h2>
@@ -1858,25 +2275,25 @@
                 </p>
 
                 <div class="history-card">
-                    <i class="fas fa-users-cog"></i>
+                    <i class="fas fa-users-cog" aria-hidden="true"></i>
                     <div>
-                        <h4>Vasta experiência na operação</h4>
+                        <h3>Vasta experiência na operação</h3>
                         <p>Engenheiros e mecânicos que vivem a siderurgia na prática, garantindo que o sistema funcione na realidade do chão de fábrica.</p>
                     </div>
                 </div>
 
                 <div class="history-card blue">
-                    <i class="fas fa-shield-alt"></i>
+                    <i class="fas fa-shield-alt" aria-hidden="true"></i>
                     <div>
-                        <h4>Segurança e rastreabilidade</h4>
+                        <h3>Segurança e rastreabilidade</h3>
                         <p>Cada laudo, check-list e medição é salvo em nuvem com assinatura digital, garantindo 100% de integridade nos processos.</p>
                     </div>
                 </div>
 
                 <div class="history-card green">
-                    <i class="fas fa-sync-alt"></i>
+                    <i class="fas fa-sync-alt" aria-hidden="true"></i>
                     <div>
-                        <h4>Evolução contínua</h4>
+                        <h3>Evolução contínua</h3>
                         <p>As atualizações do sistema acompanham as reais necessidades dos operadores, supervisores e líderes da CSN.</p>
                     </div>
                 </div>
@@ -1884,26 +2301,43 @@
 
             <div class="photo-grid">
                 <div class="photo-item">
-                    <img src="USINAGEM.jpg" alt="Mecânico operando torno na Usinagem" onerror="this.style.display='none'">
+                    <img src="USINAGEM.jpg" alt="Mecânico operando torno na Usinagem" loading="lazy" decoding="async" onerror="this.style.display='none'">
                     <div class="photo-overlay">Usinagem de Precisão</div>
                 </div>
                 <div class="photo-item">
-                    <img src="ELETRICA.jpg" alt="Manutenção Elétrica CSN" onerror="this.style.display='none'">
+                    <img src="ELETRICA.jpg" alt="Manutenção Elétrica CSN" loading="lazy" decoding="async" onerror="this.style.display='none'">
                     <div class="photo-overlay">Manutenção Elétrica</div>
                 </div>
                 <div class="photo-item">
-                    <img src="SOLDA%20FOTO.jpg" alt="Soldador na manutenção" onerror="this.style.display='none'">
+                    <img src="SOLDA%20FOTO.jpg" alt="Soldador na manutenção" loading="lazy" decoding="async" onerror="this.style.display='none'">
                     <div class="photo-overlay">Soldagem e Caldeiraria</div>
                 </div>
                 <div class="photo-item">
-                    <img src="SILLAS%20IAMGEM%20%281%29.png" alt="Montagem de cilindro hidráulico" onerror="this.style.display='none'">
+                    <img src="SILLAS%20IAMGEM%20%281%29.png" alt="Montagem de cilindro hidráulico" loading="lazy" decoding="async" onerror="this.style.display='none'">
                     <div class="photo-overlay">Montagem Hidráulica</div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="cta-final">
+    <!-- ===== NOVA SEÇÃO: EVOLUÇÃO DO OMS ===== -->
+    <section id="evolucao" class="reveal evolucao">
+        <span class="badge badge-csn">Visão</span>
+        <h2>O OMS transforma dados operacionais<br>em informação para decisão</h2>
+        <div class="evolucao-flow">
+            <span class="evolucao-item">Operar</span>
+            <i class="fas fa-arrow-right" aria-hidden="true"></i>
+            <span class="evolucao-item">Controlar</span>
+            <i class="fas fa-arrow-right" aria-hidden="true"></i>
+            <span class="evolucao-item">Rastrear</span>
+            <i class="fas fa-arrow-right" aria-hidden="true"></i>
+            <span class="evolucao-item">Analisar</span>
+            <i class="fas fa-arrow-right" aria-hidden="true"></i>
+            <span class="evolucao-item evolucao-final">Decidir</span>
+        </div>
+    </section>
+
+    <section class="cta-final reveal">
         <span class="badge">Pronto para otimizar sua manutenção?</span>
         <h2>Acesse o sistema OMS</h2>
         <p>
@@ -1912,10 +2346,10 @@
         </p>
         <div class="cta-buttons">
             <a href="app.html" class="btn-primary">
-                <i class="fas fa-rocket"></i> Acessar Sistema
+                <i class="fas fa-rocket" aria-hidden="true"></i> Acessar Sistema
             </a>
             <a href="#proposito" class="btn-outline">
-                <i class="fas fa-info-circle"></i> Conheça a OMS
+                <i class="fas fa-info-circle" aria-hidden="true"></i> Conheça a OMS
             </a>
         </div>
     </section>
@@ -1937,8 +2371,132 @@
         </p>
     </footer>
 
-    <!-- ============ CONTADORES ANIMADOS + STATUS DE CONEXÃO + INSTALAÇÃO PWA ============ -->
+    <!-- ============ SCRIPTS DA HOME (consolidados em um único bloco no fim do <body>) ============ -->
     <script>
+        // ---- EFEITOS ESTILO APPLE: parallax, tilt 3D, spotlight, magnetismo ----
+
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
+
+        // Parallax de scroll: leve, funciona bem em qualquer dispositivo (não depende do mouse)
+        if (!prefersReducedMotion) {
+            (function () {
+                const blobs = document.querySelectorAll('.aurora-bg span');
+                if (!blobs.length) return;
+                let ticking = false;
+                function atualizar() {
+                    const y = window.scrollY;
+                    blobs.forEach((b, i) => {
+                        const velocidade = 0.04 + i * 0.02;
+                        b.style.transform = `translateY(${y * velocidade}px)`;
+                    });
+                    ticking = false;
+                }
+                window.addEventListener('scroll', () => {
+                    if (!ticking) {
+                        requestAnimationFrame(atualizar);
+                        ticking = true;
+                    }
+                }, { passive: true });
+            })();
+
+            // --- Navbar ganha mais profundidade conforme o scroll avança ---
+            (function () {
+                const nav = document.querySelector('.navbar');
+                if (!nav) return;
+                function atualizar() {
+                    if (window.scrollY > 40) {
+                        nav.style.background = 'rgba(10, 14, 23, 0.98)';
+                        nav.style.boxShadow = '0 1px 0 rgba(255,255,255,0.04), 0 24px 48px -20px rgba(0,0,0,0.65)';
+                    } else {
+                        nav.style.background = 'rgba(10, 14, 23, 0.92)';
+                        nav.style.boxShadow = '0 1px 0 rgba(255,255,255,0.03), 0 20px 40px -20px rgba(0,0,0,0.5)';
+                    }
+                }
+                window.addEventListener('scroll', atualizar, { passive: true });
+                atualizar();
+            })();
+        }
+
+        // Efeitos baseados em mousemove: só em dispositivos com ponteiro preciso
+        // (mouse/trackpad). Em touch, "mousemove" não dispara de forma útil e só
+        // gastaria ciclos de CPU/GPU à toa — por isso ficam fora do fluxo mobile.
+        if (!prefersReducedMotion && hasFinePointer) {
+            // --- Tilt 3D no mockup do dashboard, seguindo o mouse ---
+            (function () {
+                const wrapper = document.querySelector('.hero-image-wrapper');
+                const card = document.querySelector('.dashboard-mockup');
+                if (!wrapper || !card) return;
+
+                wrapper.addEventListener('mousemove', (e) => {
+                    const rect = wrapper.getBoundingClientRect();
+                    const px = (e.clientX - rect.left) / rect.width - 0.5;
+                    const py = (e.clientY - rect.top) / rect.height - 0.5;
+                    const rotY = px * 8;
+                    const rotX = -py * 8;
+                    card.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) translateZ(10px)`;
+                });
+                wrapper.addEventListener('mouseleave', () => {
+                    card.style.transform = 'rotateX(0deg) rotateY(0deg) translateZ(0)';
+                });
+            })();
+
+            // --- Spotlight que segue o cursor dentro dos cards ---
+            (function () {
+                const cards = document.querySelectorAll('.diff-card, .recurso-card, .mcc-card, .servico-item');
+                cards.forEach((c) => {
+                    c.addEventListener('mousemove', (e) => {
+                        const rect = c.getBoundingClientRect();
+                        c.style.setProperty('--mx', `${e.clientX - rect.left}px`);
+                        c.style.setProperty('--my', `${e.clientY - rect.top}px`);
+                    });
+                });
+            })();
+
+            // --- Botões magnéticos: seguem levemente o cursor ---
+            (function () {
+                const botoes = document.querySelectorAll('.btn-primary, .btn-outline');
+                botoes.forEach((btn) => {
+                    btn.addEventListener('mousemove', (e) => {
+                        const rect = btn.getBoundingClientRect();
+                        const x = (e.clientX - rect.left - rect.width / 2) * 0.12;
+                        const y = (e.clientY - rect.top - rect.height / 2) * 0.16;
+                        btn.style.transform = `translate(${x}px, ${y}px)`;
+                    });
+                    btn.addEventListener('mouseleave', () => {
+                        btn.style.transform = 'translate(0, 0)';
+                    });
+                });
+            })();
+        }
+    
+
+        // ---- SCROLL REVEAL (efeito premium ao rolar a página) ----
+
+        (function () {
+            const alvos = document.querySelectorAll('.reveal');
+            if (!alvos.length) return;
+
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                alvos.forEach((el) => el.classList.add('in-view'));
+                return;
+            }
+
+            const observer = new IntersectionObserver((entradas) => {
+                entradas.forEach((entrada) => {
+                    if (entrada.isIntersecting) {
+                        entrada.target.classList.add('in-view');
+                        observer.unobserve(entrada.target);
+                    }
+                });
+            }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+
+            alvos.forEach((el) => observer.observe(el));
+        })();
+    
+
+        // ---- CONTADORES ANIMADOS + STATUS DE CONEXÃO + INSTALAÇÃO PWA ----
+
         // --- Contadores animados (sobem de 0 até o valor real quando entram na tela) ---
         (function () {
             const els = document.querySelectorAll('[data-count]');
@@ -2036,11 +2594,10 @@
                 });
             });
         })();
-    </script>
-    <!-- ================================================================================== -->
+    
 
-    <!-- ============ MENU MOBILE: abrir/fechar drawer ============ -->
-    <script>
+        // ---- MENU MOBILE: abrir/fechar drawer ----
+
         (function () {
             const btnAbrir = document.getElementById('nav-hamburger');
             const btnFechar = document.getElementById('mobile-drawer-close');
@@ -2066,11 +2623,10 @@
             drawer?.querySelectorAll('a').forEach(a => a.addEventListener('click', fecharMenu));
             document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fecharMenu(); });
         })();
-    </script>
-    <!-- ============================================================== -->
+    
 
-    <!-- ============ PWA: registra o service worker (instalação + offline) ============ -->
-    <script>
+        // ---- PWA: registra o service worker (instalação + offline) ----
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('service-worker.js')
@@ -2078,7 +2634,9 @@
                     .catch((err) => console.warn('⚠️ Falha ao registrar service worker:', err));
             });
         }
+    
     </script>
+    <!-- ================================================================================================ -->
     <!-- ================================================================================ -->
 </body>
 </html>
