@@ -566,6 +566,12 @@ function abrirAba(event, idAba) {
     if (idAba === "aba-oficina") {
         if (typeof carregarOficina === 'function') carregarOficina();
     }
+    if (idAba === "aba-registro-recente") {
+        if (typeof window.renderRegistroRecenteCompleto === 'function') window.renderRegistroRecenteCompleto();
+    }
+    if (idAba === "aba-admin-colaboradores") {
+        if (typeof window.carregarAdminColaboradores === 'function') window.carregarAdminColaboradores();
+    }
     
     if (idAba === "aba-producao") {
         if (typeof window.carregarHistoricoApontamentoGeral === 'function') window.carregarHistoricoApontamentoGeral();
@@ -838,6 +844,11 @@ window.ativarAuditoriaSeAutorizado = ativarAuditoriaSeAutorizado;
 function ativarPainelDevSeAutorizado() {
     const link = document.getElementById("nav-dev-teste");
     const divisor = document.getElementById("nav-divider-dev");
+    // 🆕 Os dois links novos da Área Restrita (Registro Recente e
+    // Administração) usam a mesma checagem de matrícula que o Teste de
+    // Folhões — então ficam visíveis/escondidos junto com ele aqui.
+    const linkRegistroRecente = document.getElementById("nav-registro-recente");
+    const linkAdmin = document.getElementById("nav-admin-colaboradores");
     if (!link) return;
 
     const matricula = (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula || "").toUpperCase();
@@ -845,13 +856,27 @@ function ativarPainelDevSeAutorizado() {
 
     if (autorizado) {
         link.classList.remove("hidden");
+        if (linkRegistroRecente) linkRegistroRecente.classList.remove("hidden");
+        if (linkAdmin) linkAdmin.classList.remove("hidden");
         if (divisor) divisor.classList.remove("hidden");
         renderPainelDevTeste();
     } else {
         link.classList.add("hidden");
+        if (linkRegistroRecente) linkRegistroRecente.classList.add("hidden");
+        if (linkAdmin) linkAdmin.classList.add("hidden");
         if (divisor) divisor.classList.add("hidden");
         const corpo = document.getElementById("dev-teste-table-body");
         if (corpo) corpo.innerHTML = ""; // garante que não sobra nada renderizado de uma sessão anterior
+        // Se a pessoa estava numa dessas abas e outro operador loga por
+        // cima sem ser autorizado, tira ela de lá (mesmo princípio já
+        // usado em ativarAuditoriaSeAutorizado para a Auditoria).
+        const abaAtual = document.querySelector('.tab-content.active');
+        if (abaAtual && ['aba-registro-recente', 'aba-admin-colaboradores', 'aba-dev-teste'].includes(abaAtual.id)) {
+            const navPainel = document.getElementById("nav-painel");
+            if (navPainel && typeof window.abrirAba === 'function') {
+                window.abrirAba({ preventDefault(){}, currentTarget: navPainel }, "aba-painel");
+            }
+        }
     }
 }
 
@@ -2627,12 +2652,19 @@ function renderPainelTecnico() {
         }).join("");
     }
 
-    // ---- CRÍTICOS (≥80%, instalados) ----
-    const criticos = BANCO_ATIVOS
+    // 🔧 CORREÇÃO ("equipamento crítico no painel do técnico MUITO
+    // GRANDE"): antes mostrava TODOS os equipamentos ≥80%, sem limite —
+    // com muitos críticos ao mesmo tempo, a lista esticava a tela toda.
+    // Agora segue o mesmo padrão do Painel Geral (renderizarTopCriticos):
+    // mostra só os 5 mais críticos aqui, com um botão pra abrir a lista
+    // completa no modal que já existe (abrirCriticos()).
+    const criticosTodos = BANCO_ATIVOS
         .filter(a => a.local && a.local.includes("Veio") && !a.local.includes("Oficina"))
         .map(a => ({ ...a, pct: a.meta > 0 ? (a.ton / a.meta) * 100 : 0 }))
         .filter(a => a.pct >= 80)
         .sort((a, b) => b.pct - a.pct);
+
+    const criticos = criticosTodos.slice(0, 5);
 
     if (criticos.length === 0) {
         listaCriticos.innerHTML = linhaVazia("Nenhum equipamento crítico no momento. ✅");
@@ -2647,7 +2679,12 @@ function renderPainelTecnico() {
                     <span style="color:var(--danger); font-weight:700; font-size:13px;">${a.pct.toFixed(1)}%</span>
                     <i class="fas fa-chevron-right" style="margin-left:8px; color:var(--text-muted);"></i>
                 </div>
-            </div>`).join("");
+            </div>`).join("")
+            + (criticosTodos.length > 5
+                ? `<div class="tecnico-item-linha" style="justify-content:center; color:var(--text-accent); font-weight:700; cursor:pointer;" onclick="window.abrirCriticos()">
+                        Ver todos os ${criticosTodos.length} críticos <i class="fas fa-arrow-right" style="margin-left:6px;"></i>
+                   </div>`
+                : '');
     }
 
     // ---- RESERVAS PRONTAS PRA SWAP ----
@@ -2992,36 +3029,235 @@ function atualizarPainelCompleto() {
 }
 
 // ==========================================
-// FEED DE ATIVIDADE RECENTE (dados reais do histórico)
+// 🔧 "Registro Recente" (antes "Atividade Recente" no Painel Geral,
+// visível pra todo mundo) — a pedido do usuário, virou aba própria
+// dentro da Área Restrita (só as 2 matrículas admin), sem o limite de
+// 6 itens do widget antigo, e buscando a lista oficial do servidor —
+// mesmo princípio já usado na Auditoria (atualizarHistoricoGlobalComServidor):
+// o localStorage só reflete o que aconteceu NESTE aparelho, então
+// buscar do servidor garante ver o que outros técnicos fizeram em
+// outros aparelhos também.
+//
+// renderizarFeedAtividadeRecente() é mantida como um "atalho" (chamada
+// em vários pontos do código toda vez que uma ação é registrada) — ela
+// só repassa pra renderRegistroRecenteCompleto() se a aba nova estiver
+// aberta na hora, pra manter a lista atualizada em tempo real sem
+// precisar reabrir a aba.
 // ==========================================
 function renderizarFeedAtividadeRecente() {
-    const container = document.getElementById('home-timeline-feed');
-    if (!container) return;
+    const abaAtiva = document.getElementById('aba-registro-recente');
+    if (abaAtiva && abaAtiva.classList.contains('active') && typeof window.renderRegistroRecenteCompleto === 'function') {
+        window.renderRegistroRecenteCompleto();
+    }
+}
 
-    const itens = (HISTORICO_ACOES || []).slice(0, 6);
+window.renderRegistroRecenteCompleto = async function() {
+    const lista = document.getElementById('registro-recente-lista');
+    if (!lista) return;
 
-    if (itens.length === 0) {
-        container.innerHTML = `<li class="text-muted" style="text-align:center; padding: 10px 0;">Nenhuma atividade registrada ainda.</li>`;
+    const matricula = (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula || "").toUpperCase();
+    if (!MATRICULAS_TESTE_FOLHOES.includes(matricula)) {
+        lista.innerHTML = `<li class="text-muted" style="text-align:center; padding: 10px 0;">Acesso restrito.</li>`;
         return;
     }
 
-    container.innerHTML = itens.map(h => {
-        const tagUpper = (h.tag || '').toUpperCase();
-        let classe = '';
-        if (tagUpper.includes('EXCLU') || tagUpper.includes('ALERTA') || tagUpper.includes('CRÍTIC')) {
-            classe = 'alert';
-        } else if (tagUpper.includes('CONCLU') || tagUpper.includes('AUTENTIC') || tagUpper.includes('SUCESSO')) {
-            classe = 'success';
+    const montarItens = (itens) => {
+        if (itens.length === 0) {
+            return `<li class="text-muted" style="text-align:center; padding: 10px 0;">Nenhuma atividade registrada ainda.</li>`;
         }
-        return `
-            <li class="${classe}">
-                <span class="timeline-time">${h.data || '--'}</span>
-                <strong>${h.tag || 'Sistema'}:</strong> ${h.acao || ''}
-                ${h.responsavel ? `<br><small class="text-muted">${h.responsavel}</small>` : ''}
-            </li>
-        `;
-    }).join('');
-}
+        return itens.map(h => {
+            const tagUpper = (h.tag || '').toUpperCase();
+            let classe = '';
+            if (tagUpper.includes('EXCLU') || tagUpper.includes('ALERTA') || tagUpper.includes('CRÍTIC')) {
+                classe = 'alert';
+            } else if (tagUpper.includes('CONCLU') || tagUpper.includes('AUTENTIC') || tagUpper.includes('SUCESSO')) {
+                classe = 'success';
+            }
+            return `
+                <li class="${classe}">
+                    <span class="timeline-time">${h.data || '--'}</span>
+                    <strong>${h.tag || 'Sistema'}:</strong> ${h.acao || ''}
+                    ${h.responsavel ? `<br><small class="text-muted">${h.responsavel}</small>` : ''}
+                </li>
+            `;
+        }).join('');
+    };
+
+    // Mostra o que já tem local na hora, e substitui pela lista oficial
+    // do servidor assim que a busca voltar.
+    lista.innerHTML = montarItens((HISTORICO_ACOES || []).slice(0, 50));
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/historico_eventos?limite=50`, { cache: 'no-store' });
+        if (!resp.ok) return;
+        const eventos = await resp.json();
+        if (!Array.isArray(eventos)) return;
+
+        const itensServidor = eventos.map(e => ({
+            data: e.data_hora || '',
+            tag: e.peca_id || 'AUTENTICAÇÃO',
+            acao: e.acao || '',
+            responsavel: e.operador || 'Sistema'
+        }));
+        lista.innerHTML = montarItens(itensServidor);
+    } catch (e) {
+        console.error('⚠️ Não consegui buscar o Registro Recente completo do servidor (mantendo o que tinha local):', e);
+    }
+};
+
+// ==========================================
+// 🆕 ADMINISTRAÇÃO DE COLABORADORES (Área Restrita) — gerenciar acesso
+// (ativar/desativar), resetar senha e trocar cargo pelo app, sem
+// precisar rodar script no terminal (resetar_colaboradores.py,
+// restringir_acesso.py, reativartodos.py continuam existindo, mas
+// agora tem alternativa mais rápida pra ação pontual em 1 pessoa).
+// ==========================================
+let ADMIN_COLABORADORES_CACHE = [];
+
+window.carregarAdminColaboradores = async function() {
+    const tbody = document.getElementById('admin-colaboradores-table-body');
+    if (!tbody) return;
+
+    const matricula = (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula || "").toUpperCase();
+    if (!MATRICULAS_TESTE_FOLHOES.includes(matricula)) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Acesso restrito.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Carregando...</td></tr>`;
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/colaboradores/todos`, { cache: 'no-store' });
+        ADMIN_COLABORADORES_CACHE = resp.ok ? await resp.json() : [];
+    } catch (e) {
+        console.error('⚠️ Não consegui carregar a lista de colaboradores:', e);
+        ADMIN_COLABORADORES_CACHE = [];
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Não foi possível carregar. Verifique sua internet.</td></tr>`;
+        return;
+    }
+
+    window.filtrarAdminColaboradores();
+};
+
+window.filtrarAdminColaboradores = function() {
+    const tbody = document.getElementById('admin-colaboradores-table-body');
+    if (!tbody) return;
+
+    const termo = (document.getElementById('admin-colab-busca')?.value || '').toLowerCase().trim();
+    let lista = ADMIN_COLABORADORES_CACHE;
+    if (termo) {
+        lista = lista.filter(c =>
+            (c.matricula || '').toLowerCase().includes(termo) ||
+            (c.nome || '').toLowerCase().includes(termo) ||
+            (c.cargo || '').toLowerCase().includes(termo)
+        );
+    }
+
+    if (lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nenhum colaborador encontrado.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = lista.map(c => `
+        <tr style="${!c.ativo ? 'opacity:0.5;' : ''}">
+            <td class="font-code">${c.matricula}</td>
+            <td>${c.nome}</td>
+            <td>${c.cargo || '-'}</td>
+            <td>
+                ${c.ativo
+                    ? '<span style="color:var(--success); font-weight:700;">🟢 Ativo</span>'
+                    : '<span style="color:var(--danger); font-weight:700;">🔴 Inativo</span>'}
+                ${c.primeiro_acesso ? '<br><small class="text-muted">Primeiro acesso pendente</small>' : ''}
+            </td>
+            <td style="white-space:nowrap;">
+                <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarCargoColaborador('${c.matricula}', '${(c.cargo || '').replace(/'/g, "\\'")}')" title="Trocar cargo">
+                    <i class="fas fa-id-badge"></i>
+                </button>
+                <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.resetarSenhaColaborador('${c.matricula}', '${c.nome.replace(/'/g, "\\'")}')" title="Resetar senha">
+                    <i class="fas fa-key"></i>
+                </button>
+                <button class="${c.ativo ? 'btn-outline-danger' : 'btn-premium btn-success'}" style="padding:4px 10px; font-size:11px;" onclick="window.alternarAtivoColaborador('${c.matricula}', ${!c.ativo}, '${c.nome.replace(/'/g, "\\'")}')" title="${c.ativo ? 'Desativar acesso' : 'Reativar acesso'}">
+                    <i class="fas ${c.ativo ? 'fa-user-slash' : 'fa-user-check'}"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+};
+
+window.mudarCargoColaborador = async function(matricula, cargoAtual) {
+    if (!verificarAcesso()) return;
+    const novoCargo = prompt(`Novo cargo para ${matricula}:`, cargoAtual || '');
+    if (novoCargo === null) return; // cancelou
+    if (!novoCargo.trim()) return alert('O cargo não pode ficar vazio.');
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/colaboradores/mudar_cargo`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ matricula, cargo: novoCargo.trim() })
+        });
+        if (!resp.ok) {
+            const erro = await resp.json().catch(() => ({}));
+            alert(erro.detail || 'Não foi possível trocar o cargo.');
+            return;
+        }
+        await window.carregarAdminColaboradores();
+    } catch (e) {
+        console.error('⚠️ Erro ao trocar cargo:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+};
+
+window.resetarSenhaColaborador = async function(matricula, nome) {
+    if (!verificarAcesso()) return;
+    if (!confirm(`Resetar a senha de ${nome} (${matricula})?\n\nA senha temporária dela volta a ser a própria matrícula, e ela vai precisar criar uma senha nova no próximo login.`)) return;
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/colaboradores/resetar_senha`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ matricula })
+        });
+        if (!resp.ok) {
+            const erro = await resp.json().catch(() => ({}));
+            alert(erro.detail || 'Não foi possível resetar a senha.');
+            return;
+        }
+        alert(`✅ Senha de ${nome} resetada.`);
+        await window.carregarAdminColaboradores();
+    } catch (e) {
+        console.error('⚠️ Erro ao resetar senha:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+};
+
+window.alternarAtivoColaborador = async function(matricula, novoAtivo, nome) {
+    if (!verificarAcesso()) return;
+    const acao = novoAtivo ? 'reativar o acesso de' : 'desativar o acesso de';
+    if (!confirm(`Tem certeza que quer ${acao} ${nome} (${matricula})?`)) return;
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/colaboradores/alternar_ativo`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ matricula, ativo: novoAtivo })
+        });
+        if (!resp.ok) {
+            const erro = await resp.json().catch(() => ({}));
+            alert(erro.detail || 'Não foi possível atualizar o acesso.');
+            return;
+        }
+        await window.carregarAdminColaboradores();
+    } catch (e) {
+        console.error('⚠️ Erro ao atualizar acesso:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+};
 
 // ==========================================
 // OFICINA — CATÁLOGO GERAL DE MATERIAIS (todas as áreas juntas)
@@ -3520,8 +3756,20 @@ window.abrirAreaOficina = async function(chave) {
     const abasDaArea = area.abas || ABAS_PADRAO_OFICINA;
     const tabsContainer = document.getElementById('area-oficina-tabs');
     if (tabsContainer) {
+        // 🔧 CORREÇÃO CRÍTICA ("procedimento não aparece em NENHUMA
+        // área"): esses botões são recriados do zero toda vez que uma
+        // área é aberta, e não tinham "id" nenhum. renderProcedimentosArea()
+        // procura o botão de Procedimentos por
+        // getElementById('area-oficina-tab-btn-procedimentos') pra
+        // decidir se mostra ou esconde a aba — como o id nunca existia
+        // aqui, a busca sempre retornava null, e a função abortava ANTES
+        // de preencher a lista (return antecipado por "!tabBtn"). Por
+        // isso a aba Procedimentos sempre aparecia visível mas
+        // completamente vazia, em toda área, mesmo quando havia
+        // procedimento cadastrado. Agora cada botão leva um id previsível
+        // (area-oficina-tab-btn-<chave>), então a busca funciona de novo.
         tabsContainer.innerHTML = abasDaArea.map((aba, i) => `
-            <button class="folhao-tab ${i === 0 ? 'active' : ''}" onclick="window.trocarAbaAreaOficina(event,'${aba.chave}')">
+            <button class="folhao-tab ${i === 0 ? 'active' : ''}" id="area-oficina-tab-btn-${aba.chave}" onclick="window.trocarAbaAreaOficina(event,'${aba.chave}')">
                 <i class="fas ${aba.icone}"></i> ${aba.label}
             </button>
         `).join('');
@@ -3909,6 +4157,32 @@ window.removerFotoAtividadeOficina = function() {
     if (container) container.classList.add('hidden');
 };
 
+// 🔧 Remove acentos pra comparar cargo sem depender de a planilha ter
+// escrito "TÉCNICO" com acento — usado por carregarEquipeAreaOficina()
+// pra achar o líder de qualquer área, sem exceção.
+function normalizarTextoSemAcento(texto) {
+    return String(texto || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase()
+        .trim();
+}
+
+// Regra única de "quem é o líder da equipe da área", reaproveitada
+// tanto pro badge do topo (área-oficina-responsavel-turno) quanto pra
+// estrelinha na lista de Equipe — pra nunca ficar divergente entre os
+// dois lugares:
+//   1) Se só tem 1 pessoa na área, ela É a líder (não tem mais ninguém
+//      pra escolher — ex: Paula, sozinha na Ferramentaria).
+//   2) Senão, é quem tiver "TECNICO" no cargo (ignorando acento).
+//   3) Se ninguém bater nenhuma das duas regras, não tem líder definido
+//      (quem chama decide o fallback, ex: primeiro da lista).
+function encontrarLiderEquipe(equipe) {
+    if (!Array.isArray(equipe) || equipe.length === 0) return null;
+    if (equipe.length === 1) return equipe[0];
+    return equipe.find(p => normalizarTextoSemAcento(p.cargo).includes('TECNICO')) || null;
+}
+
 // --------------------------------------------------------------
 // EQUIPE DA ÁREA (dados reais, vindos da planilha do efetivo)
 // --------------------------------------------------------------
@@ -3924,8 +4198,35 @@ async function carregarEquipeAreaOficina(chave) {
         const equipe = resp.ok ? await resp.json() : [];
         OFICINA_EQUIPE_ATUAL = Array.isArray(equipe) ? equipe : [];
 
+        // 🔧 CORREÇÃO ("técnico da área ser o líder da equipe" — vale
+        // pra TODAS as áreas, não só uma): antes o "responsável" mostrado
+        // no topo da tela era simplesmente o PRIMEIRO nome em ordem
+        // alfabética da lista (a API devolve a equipe com ORDER BY
+        // nome) — um pick totalmente arbitrário, sem relação nenhuma
+        // com quem lidera a equipe de verdade. Agora procura primeiro
+        // alguém cujo cargo (vindo da planilha do efetivo) contenha a
+        // palavra "TECNICO" — que é quem exerce a liderança da equipe
+        // da área — e só cai pro primeiro da lista se ninguém tiver esse
+        // cargo cadastrado.
+        //
+        // A comparação ignora acento (normalizarTextoSemAcento) porque
+        // a planilha tem cargos como "TECNICO DE MANUTENCAO MECANICA"
+        // (sem acento) — comparar só com "TÉCNICO" (acentuado, cargo
+        // exato) nunca batia com esses cargos reais, e a busca sempre
+        // caía no fallback alfabético mesmo tendo um técnico na equipe.
+        //
+        // 🆕 Se a área tem só 1 pessoa cadastrada (ex: Paula, sozinha na
+        // Ferramentaria), essa pessoa É a líder por padrão — não faz
+        // sentido exigir o cargo "Técnico" quando não tem mais ninguém
+        // pra escolher.
         const respTurno = document.getElementById('area-oficina-responsavel-turno');
-        if (respTurno) respTurno.textContent = OFICINA_EQUIPE_ATUAL.length > 0 ? OFICINA_EQUIPE_ATUAL[0].nome : 'Sem responsável definido';
+        if (respTurno) {
+            const lider = encontrarLiderEquipe(OFICINA_EQUIPE_ATUAL);
+            const responsavel = lider || OFICINA_EQUIPE_ATUAL[0];
+            respTurno.textContent = responsavel
+                ? `${responsavel.nome}${lider ? ' (Líder)' : ''}`
+                : 'Sem responsável definido';
+        }
 
         // Seletor de Responsável (no formulário de atividade) — lista a
         // equipe real da área + opção "Outro" pra digitar um nome que
@@ -3947,13 +4248,15 @@ async function carregarEquipeAreaOficina(chave) {
             return;
         }
 
+        const liderDaArea = encontrarLiderEquipe(OFICINA_EQUIPE_ATUAL);
         container.innerHTML = OFICINA_EQUIPE_ATUAL.map(p => {
             const iniciais = p.nome.trim().split(/\s+/).slice(0, 2).map(n => n[0]).join('').toUpperCase();
+            const ehLider = !!liderDaArea && liderDaArea.matricula === p.matricula;
             return `
-            <div class="equipe-card">
+            <div class="equipe-card" style="${ehLider ? 'border-color:var(--area-color, var(--text-accent));' : ''}">
                 <div class="equipe-avatar">${iniciais}</div>
                 <div style="min-width:0;">
-                    <div style="font-weight:700; color:var(--text-heading); font-size:13px;">${p.nome}</div>
+                    <div style="font-weight:700; color:var(--text-heading); font-size:13px;">${p.nome} ${ehLider ? '<i class="fas fa-star" style="color:var(--warning); font-size:10px;" title="Líder da equipe"></i>' : ''}</div>
                     ${p.cargo ? `<div class="text-muted" style="font-size:11px;">${p.cargo}</div>` : ''}
                 </div>
             </div>

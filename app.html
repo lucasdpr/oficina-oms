@@ -246,7 +246,7 @@
             <div class="login-form-group">
                 <label>Matrícula (ex: CBK3574)</label>
                 <div class="login-input-wrapper">
-                    <input type="text" id="login-nome" placeholder="Digite sua matrícula" autocapitalize="characters" autocomplete="off" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()" onblur="this.value=this.value.toUpperCase()">
+                    <input type="text" id="login-nome" placeholder="Digite sua matrícula" autocapitalize="characters" autocomplete="off" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()" onblur="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter'){event.preventDefault(); document.getElementById('login-matricula').focus();}">
                     <i class="fas fa-id-badge login-input-icon"></i>
                 </div>
             </div>
@@ -255,7 +255,7 @@
             <div class="login-form-group">
                 <label>Senha (1º acesso = sua própria matrícula)</label>
                 <div class="login-input-wrapper">
-                    <input type="password" id="login-matricula" placeholder="Senha (ou matrícula no 1º acesso)" autocapitalize="characters" autocomplete="off" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()" onblur="this.value=this.value.toUpperCase()">
+                    <input type="password" id="login-matricula" placeholder="Senha (ou matrícula no 1º acesso)" autocapitalize="characters" autocomplete="off" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()" onblur="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.processarAutenticacaoHome();}">
                     <i class="fas fa-lock login-input-icon"></i>
                     <i class="fas fa-eye login-input-icon-toggle" id="toggle-senha-icon" onclick="window.alternarVisibilidadeSenha()" style="cursor:pointer; pointer-events:auto;"></i>
                 </div>
@@ -293,7 +293,7 @@
     <div id="container-sistema-oms" class="app-container no-print" style="display: none;">
         <!-- MOBILE HEADER -->
         <div class="mobile-header glass-panel">
-            <div class="mobile-logo flex-align-center gap-10"><div class="login-logo-factory" style="width:35px;height:35px;margin:0;box-shadow:none;"><svg viewBox="0 0 24 24" style="width:20px;height:20px;"><path d="M4,18V11.42L8.27,4H14V11H18V14H20V18H4M2,22V20H22V22H2M12,13H10V15H12V13M16,13H14V15H16V13M12,16H10V18H12V16M16,16H14V18H16V16Z"/></svg></div><strong style="color:var(--text-heading);font-size:16px;">OMS Mobile</strong></div>
+            <div class="mobile-logo flex-align-center gap-10" style="cursor:pointer;" onclick="window.abrirAba(null, 'aba-painel')" title="Voltar ao Painel Geral"><div class="login-logo-factory" style="width:35px;height:35px;margin:0;box-shadow:none;"><svg viewBox="0 0 24 24" style="width:20px;height:20px;"><path d="M4,18V11.42L8.27,4H14V11H18V14H20V18H4M2,22V20H22V22H2M12,13H10V15H12V13M16,13H14V15H16V13M12,16H10V18H12V16M16,16H14V18H16V16Z"/></svg></div><strong style="color:var(--text-heading);font-size:16px;">OMS Mobile</strong></div>
             <button class="btn-mobile-menu" onclick="window.toggleSidebar()"><i class="fas fa-bars"></i></button>
         </div>
 
@@ -314,22 +314,25 @@
             <nav class="sidebar-nav">
                 <a href="#" id="nav-painel" class="nav-link active" onclick="window.abrirAba(event,'aba-painel')"><i class="fas fa-chart-pie"></i> Painel Geral OMS</a>
                 <a href="#" id="nav-tecnico" class="nav-link" style="color:#22c55e;" onclick="window.abrirAba(event,'aba-tecnico')"><i class="fas fa-hard-hat"></i> Painel do Técnico</a>
+                <a href="#" id="nav-oficina" class="nav-link" onclick="window.abrirAba(event,'aba-oficina')"><i class="fas fa-industry"></i> 🏭 Central de Áreas</a>
+
+                <div class="nav-divider">Monitoramento de Máquinas</div>
                 <a href="#" id="nav-fluxo" class="nav-link" onclick="window.abrirAba(event,'aba-fluxo')"><i class="fas fa-stream"></i> Sequenciamento Veios</a>
                 <a href="Sinotico3d.html" id="nav-sinotico" class="nav-link" style="color:#22d3ee;" target="_blank" title="Abre em uma nova aba"><i class="fas fa-cube"></i> Sinótico 3D</a>
-                
                 <a href="#" id="nav-producao" class="nav-link" style="color: #3b82f6;" onclick="window.abrirAba(event,'aba-producao')"><i class="fas fa-calculator"></i> Lançamento de Produção</a>
-                
-                <div class="nav-divider">Oficina &amp; Log</div>
+                <a href="#" id="nav-ocorrencia" class="nav-link" style="color:#eab308;" onclick="window.abrirAba(event,'aba-ocorrencia')"><i class="fas fa-triangle-exclamation"></i> Registro de Ocorrência</a>
+
+                <div class="nav-divider">Oficina</div>
                 <a href="#" id="nav-reparos" class="nav-link highlight-warning" onclick="window.abrirAba(event,'aba-reparos')"><i class="fas fa-wrench"></i> Peças em Reparo</a>
                 <a href="#" id="nav-reservas" class="nav-link highlight-success" onclick="window.abrirAba(event,'aba-reservas')"><i class="fas fa-boxes"></i> Estoque Reserva</a>
                 <a href="#" id="nav-rolos" class="nav-link highlight-rolos" onclick="window.abrirAba(event,'aba-rolos')"><i class="fas fa-scroll"></i> Estoque de Rolos</a>
                 <a href="#" id="nav-hidraulica" class="nav-link highlight-hidraulica" onclick="window.abrirAba(event,'aba-hidraulica')"><i class="fas fa-oil-can"></i> Hidráulica</a>
                 <a href="#" id="nav-almoxarifado" class="nav-link highlight-almoxarifado" onclick="window.abrirAba(event,'aba-almoxarifado')"><i class="fas fa-pallet"></i> Almoxarifado Central</a>
-                <a href="#" id="nav-oficina" class="nav-link" onclick="window.abrirAba(event,'aba-oficina')"><i class="fas fa-industry"></i> 🏭 Central de Áreas</a>
-                <a href="#" id="nav-ocorrencia" class="nav-link" style="color:#eab308;" onclick="window.abrirAba(event,'aba-ocorrencia')"><i class="fas fa-triangle-exclamation"></i> Registro de Ocorrência</a>
-                <a href="#" id="nav-historico" class="nav-link hidden" onclick="window.abrirAba(event,'aba-historico')"><i class="fas fa-history"></i> Auditoria</a>
 
                 <div class="nav-divider nav-divider-dev hidden" id="nav-divider-dev"><i class="fas fa-lock"></i> Área Restrita</div>
+                <a href="#" id="nav-historico" class="nav-link hidden" onclick="window.abrirAba(event,'aba-historico')"><i class="fas fa-history"></i> Auditoria</a>
+                <a href="#" id="nav-registro-recente" class="nav-link nav-link-dev hidden" onclick="window.abrirAba(event,'aba-registro-recente')"><i class="fas fa-clock-rotate-left"></i> Registro Recente</a>
+                <a href="#" id="nav-admin-colaboradores" class="nav-link nav-link-dev hidden" onclick="window.abrirAba(event,'aba-admin-colaboradores')"><i class="fas fa-user-gear"></i> Administração</a>
                 <a href="#" id="nav-dev-teste" class="nav-link nav-link-dev hidden" onclick="window.abrirAba(event,'aba-dev-teste')"><i class="fas fa-flask"></i> Teste de Folhões</a>
             </nav>
         </aside>
@@ -457,18 +460,6 @@
                     <i class="fas fa-pallet"></i>
                     Almoxarifado
                 </button>
-            </div>
-
-            <!-- Feed de Monitoramento Simulado -->
-            <div class="timeline-widget">
-                <h3 style="color:var(--text-title); font-size:0.95rem; margin-bottom: 12px;">
-                    <i class="fas fa-history" style="color:var(--text-muted);"></i> Atividade Recente
-                </h3>
-                <ul class="timeline-feed" id="home-timeline-feed">
-                    <li style="padding: 8px 0;"><div class="skeleton skeleton-line" style="width:85%;"></div></li>
-                    <li style="padding: 8px 0;"><div class="skeleton skeleton-line" style="width:65%;"></div></li>
-                    <li style="padding: 8px 0;"><div class="skeleton skeleton-line" style="width:75%;"></div></li>
-                </ul>
             </div>
         </div>
     </div>
@@ -815,7 +806,22 @@
                     </div>
                 </div>
 
-                <div class="glass-panel" style="padding:24px; margin-bottom:24px;">
+                <!-- 🔧 CORREÇÃO ("central de áreas subir pro topo" + "inverter
+                     atividades da oficina pra cima e catálogo pra baixo"): este
+                     bloco (id="oficina-container") é populado via JS por
+                     carregarOficina() com a grade de cards de área — a Central
+                     de Áreas de verdade, com busca, filtros de status e um card
+                     por área (Hidráulica, Usinagem, etc). O título antigo
+                     "Atividades da Oficina" estava ERRADO: não lista atividades
+                     nenhuma, é a própria Central de Áreas. Corrigido o título
+                     e movido pra cima do Catálogo de Materiais. -->
+                <div class="glass-panel" style="padding:24px; margin-bottom:24px;"><h2><i class="fas fa-industry"></i> Central de Áreas</h2><div id="oficina-container" style="margin-top:20px;">
+                    <div class="skeleton-row"><div class="skeleton skeleton-circle"></div><div style="flex:1;"><div class="skeleton skeleton-line" style="width:60%;"></div><div class="skeleton skeleton-line"></div></div></div>
+                    <div class="skeleton-row"><div class="skeleton skeleton-circle"></div><div style="flex:1;"><div class="skeleton skeleton-line" style="width:45%;"></div><div class="skeleton skeleton-line"></div></div></div>
+                    <div class="skeleton-row"><div class="skeleton skeleton-circle"></div><div style="flex:1;"><div class="skeleton skeleton-line" style="width:70%;"></div><div class="skeleton skeleton-line"></div></div></div>
+                </div></div>
+
+                <div class="glass-panel" style="padding:24px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
                         <h2 style="margin:0;"><i class="fas fa-boxes-stacked"></i> Catálogo de Materiais por Área</h2>
                         <div class="login-input-wrapper" style="position:relative; width:280px; max-width:100%;">
@@ -827,12 +833,6 @@
                         <div class="text-muted" style="font-size:12px;">Carregando...</div>
                     </div>
                 </div>
-
-                <div class="glass-panel" style="padding:24px;"><h2><i class="fas fa-clipboard-list"></i> Atividades da Oficina</h2><div id="oficina-container" style="margin-top:20px;">
-                    <div class="skeleton-row"><div class="skeleton skeleton-circle"></div><div style="flex:1;"><div class="skeleton skeleton-line" style="width:60%;"></div><div class="skeleton skeleton-line"></div></div></div>
-                    <div class="skeleton-row"><div class="skeleton skeleton-circle"></div><div style="flex:1;"><div class="skeleton skeleton-line" style="width:45%;"></div><div class="skeleton skeleton-line"></div></div></div>
-                    <div class="skeleton-row"><div class="skeleton skeleton-circle"></div><div style="flex:1;"><div class="skeleton skeleton-line" style="width:70%;"></div><div class="skeleton skeleton-line"></div></div></div>
-                </div></div>
             </section>
 
             <section id="aba-ocorrencia" class="tab-content">
@@ -1122,6 +1122,50 @@
                     <div class="table-responsive"><table class="premium-table"><thead><tr><th>Horário</th><th>TAG / Módulo</th><th>Descrição da Ação</th><th>Responsável</th></tr></thead><tbody id="historico-table-body"></tbody></table></div>
                 </div>
             </section>
+
+            <!-- 🆕 "Registro Recente" — antes era o widget "Atividade Recente"
+                 dentro do Painel Geral OMS (visível pra todo mundo). Movido
+                 pra cá, como aba própria só da Área Restrita, a pedido do
+                 usuário. Mesmos dados (HISTORICO_ACOES), só que sem o limite
+                 de 6 itens do widget antigo — ver renderRegistroRecenteCompleto()
+                 em script.js. -->
+            <section id="aba-registro-recente" class="tab-content">
+                <div class="glass-panel" style="padding:24px;">
+                    <h2><i class="fas fa-clock-rotate-left"></i> Registro Recente</h2>
+                    <p class="text-muted" style="font-size:13px;margin-bottom:16px;">Últimas ações registradas no sistema, em ordem cronológica.</p>
+                    <ul class="timeline-feed" id="registro-recente-lista" style="max-height:none;">
+                        <li style="padding: 8px 0;"><div class="skeleton skeleton-line" style="width:85%;"></div></li>
+                        <li style="padding: 8px 0;"><div class="skeleton skeleton-line" style="width:65%;"></div></li>
+                        <li style="padding: 8px 0;"><div class="skeleton skeleton-line" style="width:75%;"></div></li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- 🆕 PAINEL DE ADMINISTRAÇÃO DE COLABORADORES — gerenciar
+                 acesso (ativar/desativar), resetar senha (volta a ser
+                 "primeiro acesso") e trocar cargo, tudo pelo app, sem
+                 precisar rodar script no terminal. Só as 2 matrículas
+                 admin enxergam esta aba (mesma checagem da Área Restrita). -->
+            <section id="aba-admin-colaboradores" class="tab-content">
+                <div class="glass-panel" style="padding:24px; margin-bottom:24px;">
+                    <h2><i class="fas fa-user-gear"></i> Administração de Colaboradores</h2>
+                    <p class="text-muted" style="font-size:13px;margin-bottom:16px;">
+                        Gerencie quem tem acesso ao sistema. "Resetar Senha" faz a pessoa voltar ao estado de
+                        primeiro acesso (a senha temporária volta a ser a própria matrícula).
+                    </p>
+                    <div class="login-input-wrapper" style="position:relative; max-width:340px; margin-bottom:16px;">
+                        <input type="text" id="admin-colab-busca" placeholder="Buscar por nome, matrícula ou cargo..." oninput="window.filtrarAdminColaboradores()" style="height:40px; border-radius:6px; padding-left:40px; width:100%;">
+                        <i class="fas fa-search login-input-icon" style="top:11px; font-size:14px; color:#a855f7;"></i>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="premium-table">
+                            <thead><tr><th>Matrícula</th><th>Nome</th><th>Cargo</th><th>Status</th><th>Ações</th></tr></thead>
+                            <tbody id="admin-colaboradores-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
             <section id="aba-dev-teste" class="tab-content">
                 <div class="glass-panel" style="padding:24px;">
                     <h2><i class="fas fa-flask"></i> Teste de Folhões (uso interno)</h2>
