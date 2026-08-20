@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
     <title>OMS | Oficina de Moldes e Segmentos – CSN</title>
 
-    <!-- ============ PWA: permite instalar o app no Android/iPhone ============ -->
+    <!-- ============ PWA ============ -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f59e0b">
     <link rel="icon" href="icon-192.png?v=2">
@@ -14,12 +14,21 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="OMS CSN">
-    <!-- ========================================================================= -->
+
+    <!-- ============ Import Map para Three.js ============ -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+            }
+        }
+    </script>
 
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
+
     <style>
-        /* ===== RESET E VARIÁVEIS (identidade CSN) ===== */
+        /* ===== RESET E VARIÁVEIS ===== */
         * {
             margin: 0;
             padding: 0;
@@ -30,9 +39,9 @@
             --bg-base: #0a0e17;
             --bg-surface: #111827;
             --bg-card: #1a2332;
-            --primary: #f59e0b;    /* Laranja CSN */
+            --primary: #f59e0b;
             --primary-hover: #d97706;
-            --secondary: #3b82f6;   /* Azul CSN */
+            --secondary: #3b82f6;
             --text-title: #ffffff;
             --text-body: #c8d2e0;
             --text-muted: #8a9bb5;
@@ -45,7 +54,7 @@
             --glow-secondary: 0 0 40px rgba(59, 130, 246, 0.3);
         }
 
-        /* ===== CAMADA PREMIUM: ruído/grão sutil + aurora animada ===== */
+        /* ===== CAMADA PREMIUM ===== */
         body::before {
             content: '';
             position: fixed;
@@ -99,7 +108,7 @@
             .aurora-bg span { animation: none; }
         }
 
-        /* ===== Scroll reveal ===== */
+        /* ===== SCROLL REVEAL ===== */
         .reveal {
             opacity: 0;
             transform: translateY(20px);
@@ -110,7 +119,7 @@
             transform: translateY(0);
         }
 
-        /* ===== Shimmer no botão primário ===== */
+        /* ===== SHIMMER ===== */
         .btn-primary {
             position: relative;
             overflow: hidden;
@@ -133,19 +142,15 @@
             box-shadow: var(--glow-primary), 0 8px 30px rgba(245, 158, 11, 0.3);
         }
 
-        /* ===== Glow sutil em badges ===== */
         .badge {
             box-shadow: 0 0 24px rgba(245, 158, 11, 0.12);
         }
         .badge-csn { box-shadow: 0 0 24px rgba(59, 130, 246, 0.12); }
         .badge-rosa { box-shadow: 0 0 24px rgba(236, 72, 153, 0.12); }
 
-        /* ===== Navbar com leve profundidade extra ===== */
         .navbar {
             box-shadow: 0 1px 0 rgba(255,255,255,0.03), 0 20px 40px -20px rgba(0,0,0,0.5);
         }
-
-        /* Garante que o conteúdo fique acima da aurora */
         .navbar, .hero, section, footer { position: relative; z-index: 1; }
 
         html {
@@ -161,20 +166,16 @@
             line-height: 1.6;
             overflow-x: hidden;
             max-width: 100%;
-            /* Trava o arrasto lateral (só deixa arrastar pra cima/baixo) */
             touch-action: pan-y;
-            /* Respeita a área segura em iPhones com notch/ilha dinâmica */
             padding-top: env(safe-area-inset-top);
             padding-left: env(safe-area-inset-left);
             padding-right: env(safe-area-inset-right);
         }
 
-        /* Compensa a navbar fixa ao clicar em links âncora (#proposito etc) */
         section[id] {
             scroll-margin-top: 84px;
         }
 
-        /* Tamanho mínimo de toque confortável em qualquer botão/link clicável */
         .btn-primary, .btn-outline, .btn-ghost, .btn-login, .nav-links a {
             min-height: 44px;
         }
@@ -184,7 +185,6 @@
             color: inherit;
         }
 
-        /* ===== FOCO VISÍVEL (a11y) — obrigatório pra navegação por teclado ===== */
         a:focus-visible,
         button:focus-visible,
         .btn-primary:focus-visible,
@@ -198,7 +198,6 @@
             outline-offset: 3px;
             border-radius: 4px;
         }
-        /* Remove o outline padrão só quando o usuário usa mouse (mantém no teclado) */
         a:focus:not(:focus-visible),
         button:focus:not(:focus-visible) {
             outline: none;
@@ -210,7 +209,6 @@
             padding: 0 24px;
         }
 
-        /* ===== SCROLLBAR ===== */
         ::-webkit-scrollbar {
             width: 6px;
         }
@@ -280,7 +278,6 @@
             transform: translateY(-2px);
         }
 
-        /* ===== BADGE ===== */
         .badge {
             display: inline-block;
             padding: 6px 18px;
@@ -386,7 +383,7 @@
             color: var(--primary);
         }
 
-        /* ===== MENU MOBILE (hambúrguer + drawer) ===== */
+        /* ===== MENU MOBILE ===== */
         .nav-hamburger {
             display: none;
             width: 44px;
@@ -506,7 +503,6 @@
             margin-bottom: 24px;
         }
 
-        /* Selo "ao vivo" com indicador pulsante */
         .live-pill {
             display: inline-flex;
             align-items: center;
@@ -541,7 +537,6 @@
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
 
-        /* Indicador de conexão PWA no navbar */
         .conn-status {
             display: flex;
             align-items: center;
@@ -556,7 +551,6 @@
         .conn-status.online { color: #10b981; }
         .conn-status.offline { color: var(--text-muted); }
 
-        /* Glassmorphism nos cards principais */
         .dashboard-mockup, .diff-card, .history-card, .recurso-card {
             background: rgba(26, 35, 50, 0.7);
             backdrop-filter: blur(12px);
@@ -577,7 +571,6 @@
             text-shadow: 0 0 20px rgba(245, 158, 11, 0.25);
         }
 
-        /* ===== APPLE-STYLE: entrada em blur+fade escalonada no hero ===== */
         .hero-content .badge,
         .hero-content .live-pill,
         .hero-content h1,
@@ -616,13 +609,11 @@
             }
         }
 
-        /* ===== APPLE-STYLE: tilt 3D no mockup ===== */
         .dashboard-mockup {
             transform-style: preserve-3d;
             will-change: transform;
         }
 
-        /* ===== APPLE-STYLE: spotlight que segue o cursor nos cards ===== */
         .diff-card, .recurso-card, .mcc-card, .servico-item {
             position: relative;
         }
@@ -641,14 +632,11 @@
             opacity: 1;
         }
 
-        /* ===== APPLE-STYLE: parallax de fundo no scroll ===== */
         .aurora-bg span {
             will-change: transform;
         }
 
-
-
-        /* ===== NOVA SEÇÃO: ANTES → OMS → DEPOIS ===== */
+        /* ===== SEÇÕES ===== */
         .antes-depois { padding: 80px 5%; background: var(--bg-base); text-align: center; border-top: 1px solid var(--border); }
         .antes-depois h2 { color: var(--text-title); font-size: clamp(26px, 5vw, 40px); margin-bottom: 48px; }
         .antes-depois-grid {
@@ -683,7 +671,6 @@
         .ad-oms li::before { content: '✓'; position: absolute; left: 0; color: var(--primary); }
         .ad-depois li::before { content: '↑'; position: absolute; left: 0; color: var(--secondary); }
 
-        /* ===== NOVA SEÇÃO: PILARES (Operação / Manutenção / Gestão) ===== */
         .pilares { padding: 80px 5%; background: var(--bg-surface); text-align: center; border-top: 1px solid var(--border); }
         .pilares h2 { color: var(--text-title); font-size: clamp(26px, 5vw, 40px); margin-bottom: 12px; }
         .pilares > p { max-width: 640px; margin: 0 auto 48px; font-size: 16px; }
@@ -714,7 +701,6 @@
         .pilar-card li { color: var(--text-body); font-size: 14px; padding-left: 16px; position: relative; }
         .pilar-card li::before { content: '•'; position: absolute; left: 0; color: var(--primary); }
 
-        /* ===== NOVA SEÇÃO: COMO FUNCIONA (timeline) ===== */
         .como-funciona { padding: 80px 5%; background: var(--bg-base); text-align: center; border-top: 1px solid var(--border); }
         .como-funciona h2 { color: var(--text-title); font-size: clamp(26px, 5vw, 40px); margin-bottom: 48px; }
         .ciclo-timeline {
@@ -742,7 +728,6 @@
             .ciclo-timeline, .pilares-grid, .antes-depois-grid { grid-template-columns: 1fr; }
         }
 
-        /* ===== NOVA SEÇÃO: EVOLUÇÃO DO OMS ===== */
         .evolucao { padding: 70px 5%; background: var(--bg-surface); text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
         .evolucao h2 { color: var(--text-title); font-size: clamp(22px, 4.5vw, 34px); margin-bottom: 40px; line-height: 1.35; }
         .evolucao-flow {
@@ -882,6 +867,7 @@
             display: grid;
             grid-template-rows: auto 1fr;
             gap: 12px;
+            height: 100%;
         }
         .mockup-kpi {
             display: grid;
@@ -904,22 +890,24 @@
             font-size: 10px;
             color: var(--text-muted);
         }
-        .mockup-chart {
-            background: #1a2332;
+
+        /* ===== Container Three.js ===== */
+        #three-container {
+            width: 100%;
+            height: 100%;
+            min-height: 100px;
+            background: #0a0e17;
             border-radius: 8px;
-            display: flex;
-            align-items: flex-end;
-            gap: 8px;
-            padding: 16px;
+            overflow: hidden;
+            position: relative;
         }
-        .mockup-chart i {
+        #three-container canvas {
             display: block;
-            flex: 1;
-            border-radius: 4px 4px 0 0;
-            background: linear-gradient(180deg, var(--primary), rgba(245,158,11,0.25));
+            width: 100% !important;
+            height: 100% !important;
         }
 
-        /* ===== SEÇÃO: PROPÓSITO (frase institucional) ===== */
+        /* ===== PROPÓSITO ===== */
         .proposito {
             position: relative;
             padding: 100px 5%;
@@ -930,13 +918,11 @@
             border-top: 1px solid var(--border);
             border-bottom: 1px solid var(--border);
         }
-
         .proposito .badge {
             margin-bottom: 24px;
             position: relative;
             z-index: 1;
         }
-
         .proposito blockquote {
             position: relative;
             z-index: 1;
@@ -949,7 +935,6 @@
             font-style: italic;
             padding: 0 20px;
         }
-
         .proposito blockquote::before {
             content: '"';
             font-size: clamp(26px, 5vw, 40px);
@@ -962,7 +947,6 @@
             color: var(--primary);
             opacity: 0.4;
         }
-
         .proposito .assinatura {
             position: relative;
             z-index: 1;
@@ -975,13 +959,12 @@
             color: var(--primary);
         }
 
-        /* ===== SEÇÃO: IMAGENS DA EQUIPE (existente) ===== */
+        /* ===== EQUIPE ===== */
         .equipe {
             padding: 80px 5%;
             background: var(--bg-base);
             text-align: center;
         }
-
         .equipe h2 {
             color: var(--text-title);
             font-size: clamp(26px, 5vw, 40px);
@@ -992,7 +975,6 @@
             margin: 0 auto 40px;
             font-size: 16px;
         }
-
         .galeria-imagens {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -1000,7 +982,6 @@
             max-width: 1000px;
             margin: 0 auto;
         }
-
         .galeria-imagens .img-wrapper {
             background: var(--bg-surface);
             border: 1px solid var(--border);
@@ -1012,14 +993,12 @@
             border-color: var(--primary);
             transform: translateY(-4px);
         }
-
         .galeria-imagens .img-wrapper img {
             width: 100%;
             height: 280px;
             object-fit: cover;
             display: block;
         }
-
         .galeria-imagens .img-wrapper .legenda {
             padding: 16px 20px;
             color: var(--text-body);
@@ -1031,7 +1010,7 @@
             color: var(--text-title);
         }
 
-        /* ===== SEÇÃO: DESTAQUE FEMININO (NOVA) ===== */
+        /* ===== DIVERSIDADE ===== */
         .diversidade {
             padding: 80px 5%;
             background: var(--bg-surface);
@@ -1039,11 +1018,9 @@
             border-top: 1px solid var(--border);
             border-bottom: 1px solid var(--border);
         }
-
         .diversidade .badge-rosa {
             margin-bottom: 24px;
         }
-
         .diversidade h2 {
             color: var(--text-title);
             font-size: clamp(26px, 5vw, 40px);
@@ -1057,7 +1034,6 @@
             margin: 0 auto 40px;
             font-size: 16px;
         }
-
         .diversidade-numero {
             display: flex;
             align-items: baseline;
@@ -1095,7 +1071,6 @@
             font-style: normal;
             color: var(--text-muted);
         }
-
         .diversidade .galeria-imagens {
             display: grid;
             grid-template-columns: 1fr;
@@ -1103,7 +1078,6 @@
             max-width: 800px;
             margin: 0 auto;
         }
-
         .diversidade .galeria-imagens .img-wrapper {
             background: var(--bg-surface);
             border: 1px solid var(--border);
@@ -1137,7 +1111,7 @@
             color: var(--text-title);
         }
 
-        /* ===== SEÇÃO: RECURSOS DO SISTEMA (NOVA) ===== */
+        /* ===== RECURSOS ===== */
         .recursos {
             padding: 80px 5%;
             background: var(--bg-base);
@@ -1213,14 +1187,13 @@
             letter-spacing: 0.5px;
         }
 
-        /* ===== SEÇÃO: DIFERENCIAIS ===== */
+        /* ===== DIFERENCIAIS ===== */
         .diferenciais {
             padding: 80px 5%;
             background: var(--bg-surface);
             text-align: center;
             border-top: 1px solid var(--border);
         }
-
         .diferenciais h2 {
             color: var(--text-title);
             font-size: clamp(26px, 5vw, 40px);
@@ -1231,7 +1204,6 @@
             margin: 0 auto 60px;
             font-size: 16px;
         }
-
         .diferenciais-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -1240,7 +1212,6 @@
             margin: 0 auto;
             text-align: left;
         }
-
         .diff-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
@@ -1286,14 +1257,13 @@
             font-size: 15px;
         }
 
-        /* ===== SEÇÃO: SERVIÇOS ===== */
+        /* ===== SERVIÇOS ===== */
         .servicos {
             padding: 80px 5%;
             background: var(--bg-base);
             text-align: center;
             border-top: 1px solid var(--border);
         }
-
         .servicos h2 {
             color: var(--text-title);
             font-size: clamp(26px, 5vw, 40px);
@@ -1304,7 +1274,6 @@
             margin: 0 auto 60px;
             font-size: 16px;
         }
-
         .servicos-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -1312,7 +1281,6 @@
             max-width: 1000px;
             margin: 0 auto;
         }
-
         .servico-item {
             background: var(--bg-card);
             border: 1px solid var(--border);
@@ -1341,14 +1309,13 @@
             color: var(--text-muted);
         }
 
-        /* ===== MCCs (lingotamento contínuo) ===== */
+        /* ===== MCCs ===== */
         .sobre-mcc {
             padding: 80px 5%;
             background: var(--bg-surface);
             text-align: center;
             border-top: 1px solid var(--border);
         }
-
         .sobre-mcc h2 {
             color: var(--text-title);
             font-size: clamp(26px, 5vw, 40px);
@@ -1359,7 +1326,6 @@
             margin: 0 auto 40px;
             font-size: 16px;
         }
-
         .mcc-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -1367,7 +1333,6 @@
             max-width: 900px;
             margin: 0 auto;
         }
-
         .mcc-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
@@ -1433,31 +1398,27 @@
             color: var(--text-muted);
         }
 
-        /* ===== HISTÓRIA E GALERIA ===== */
+        /* ===== HISTÓRIA ===== */
         .historia {
             padding: 100px 5%;
             background: var(--bg-base);
             border-top: 1px solid var(--border);
         }
-
         .historia-header {
             text-align: center;
             margin-bottom: 60px;
         }
-
         .historia-header h2 {
             font-size: clamp(26px, 5vw, 40px);
             color: var(--text-title);
             margin-bottom: 16px;
         }
-
         .historia-header p {
             max-width: 700px;
             margin: 0 auto;
             color: var(--text-muted);
             font-size: 16px;
         }
-
         .historia-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -1466,7 +1427,6 @@
             margin: 0 auto;
             align-items: center;
         }
-
         .historia-text .history-quote {
             font-size: 22px;
             font-weight: 700;
@@ -1474,13 +1434,11 @@
             margin-bottom: 24px;
             line-height: 1.4;
         }
-
         .historia-text > p {
             font-size: 15px;
             color: var(--text-muted);
             margin-bottom: 32px;
         }
-
         .history-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
@@ -1492,12 +1450,10 @@
             gap: 20px;
             transition: all var(--transition);
         }
-        
         .history-card:hover {
             border-color: var(--primary);
             transform: translateX(8px);
         }
-
         .history-card i {
             font-size: 24px;
             color: var(--primary);
@@ -1510,29 +1466,23 @@
             border-radius: 12px;
             flex-shrink: 0;
         }
-
         .history-card.blue i { color: var(--secondary); background: rgba(59, 130, 246, 0.1); }
         .history-card.green i { color: #10b981; background: rgba(16, 185, 129, 0.1); }
-
         .history-card h3 {
             color: var(--text-title);
             font-size: 16px;
             font-weight: 700;
             margin-bottom: 4px;
         }
-
         .history-card p {
             color: var(--text-muted);
             font-size: 14px;
         }
-
-        /* Galeria de fotos da oficina (grid 2x2, responsiva) */
         .photo-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 16px;
         }
-
         .photo-item {
             position: relative;
             border-radius: 16px;
@@ -1541,7 +1491,6 @@
             background: var(--bg-surface);
             aspect-ratio: 4 / 3;
         }
-
         .photo-item img {
             width: 100%;
             height: 100%;
@@ -1549,11 +1498,9 @@
             display: block;
             transition: transform 0.6s ease;
         }
-
         .photo-item:hover img {
             transform: scale(1.05);
         }
-
         .photo-overlay {
             position: absolute;
             bottom: 0;
@@ -1569,7 +1516,6 @@
             opacity: 0;
             transition: opacity 0.3s ease;
         }
-
         .photo-item:hover .photo-overlay {
             opacity: 1;
         }
@@ -1581,7 +1527,6 @@
             text-align: center;
             border-top: 1px solid var(--border);
         }
-
         .cta-final h2 {
             color: var(--text-title);
             font-size: clamp(26px, 5vw, 40px);
@@ -1864,22 +1809,15 @@
                             <div><strong data-count="14">0</strong><small>Em Reparo</small></div>
                             <div><strong data-count="96" data-suffix="%">0</strong><small>Disponível</small></div>
                         </div>
-                        <div class="mockup-chart">
-                            <i style="height:35%"></i>
-                            <i style="height:60%"></i>
-                            <i style="height:45%"></i>
-                            <i style="height:80%"></i>
-                            <i style="height:55%"></i>
-                            <i style="height:70%"></i>
-                            <i style="height:40%"></i>
-                        </div>
+                        <!-- ===== Container Three.js ===== -->
+                        <div id="three-container"></div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- ===== NOVA SEÇÃO: ANTES → OMS → DEPOIS ===== -->
+    <!-- ===== DEMAIS SEÇÕES (mantidas intactas) ===== -->
     <section id="antes-depois" class="reveal antes-depois">
         <span class="badge badge-csn">A Transformação</span>
         <h2>Do controle manual ao fluxo digital único</h2>
@@ -1919,7 +1857,6 @@
         </div>
     </section>
 
-    <!-- ===== NOVA SEÇÃO: UM SISTEMA. TODA A OPERAÇÃO. ===== -->
     <section id="pilares" class="reveal pilares">
         <span class="badge">Arquitetura Funcional</span>
         <h2>Um sistema. Toda a operação.</h2>
@@ -1958,7 +1895,6 @@
         </div>
     </section>
 
-    <!-- ===== NOVA SEÇÃO: COMO FUNCIONA ===== -->
     <section id="como-funciona" class="reveal como-funciona">
         <span class="badge badge-csn">O Ciclo</span>
         <h2>Como funciona</h2>
@@ -1985,7 +1921,6 @@
         </div>
     </section>
 
-    <!-- ===== NOVA SEÇÃO: RECURSOS DO SISTEMA ===== -->
     <section id="recursos" class="reveal recursos">
         <span class="badge badge-csn">Dentro do Sistema</span>
         <h2>Tudo que o OMS faz por você</h2>
@@ -1993,7 +1928,6 @@
             Um único sistema para acompanhar o ciclo completo de vida de cada
             equipamento — da chegada na oficina até a liberação para a linha.
         </p>
-
         <div class="recursos-grid">
             <div class="recurso-card">
                 <span class="recurso-tag">3D</span>
@@ -2046,7 +1980,6 @@
         </div>
     </section>
 
-    <!-- ===== SEÇÃO: IMAGENS DA EQUIPE (já existente) ===== -->
     <section id="equipe" class="reveal equipe">
         <span class="badge badge-csn">Nosso Time</span>
         <h2>Mais de 150 profissionais capacitados</h2>
@@ -2055,7 +1988,6 @@
             especialistas que atuam com excelência na recuperação de moldes
             e segmentos para as máquinas de lingotamento contínuo.
         </p>
-
         <div class="galeria-imagens">
             <div class="img-wrapper">
                 <img src="WhatsApp%20Image%202026-06-23%20at%2014.39.57.jpeg" alt="Oficina de Moldes e Segmentos - CSN" loading="lazy" decoding="async" onerror="this.style.display='none'">
@@ -2072,7 +2004,6 @@
         </div>
     </section>
 
-    <!-- ===== NOVA SEÇÃO: DESTAQUE FEMININO ===== -->
     <section id="diversidade" class="reveal diversidade">
         <span class="badge badge-rosa">
             <i class="fas fa-venus-mars" aria-hidden="true"></i> Diversidade que Transforma
@@ -2084,18 +2015,14 @@
             segmentos, rompendo barreiras e trazendo inovação, precisão e cuidado
             para cada serviço executado.
         </p>
-
-        <!-- 🔧 EDITE O NÚMERO ABAIXO com o percentual real do efetivo feminino da oficina -->
         <div class="diversidade-numero">
             <strong>+35%</strong>
             <span>do efetivo de manutenção da oficina</span>
         </div>
-
         <blockquote class="diversidade-quote">
             "Aqui a gente não pede espaço — a gente entrega resultado, e o respeito vem junto."
             <cite>— Equipe feminina da OMS</cite>
         </blockquote>
-
         <div class="galeria-imagens">
             <div class="img-wrapper">
                 <img src="image.png" alt="Equipe feminina da OMS - CSN" loading="lazy" decoding="async" onerror="this.style.display='none'">
@@ -2120,7 +2047,6 @@
             garantindo a máxima disponibilidade e qualidade dos equipamentos
             que fazem a diferença na produção de aço.
         </p>
-
         <div class="diferenciais-grid">
             <div class="diff-card">
                 <i class="fas fa-cogs" aria-hidden="true"></i>
@@ -2130,7 +2056,6 @@
                     com rastreabilidade total e laudos técnicos detalhados.
                 </p>
             </div>
-
             <div class="diff-card">
                 <i class="fas fa-ruler-combined" aria-hidden="true"></i>
                 <h3>Manutenção de Segmentos</h3>
@@ -2139,7 +2064,6 @@
                     Bender, Bow, Straightener e horizontais, com precisão métrica.
                 </p>
             </div>
-
             <div class="diff-card">
                 <i class="fas fa-clipboard-list" aria-hidden="true"></i>
                 <h3>Laudos Digitais (Folhões)</h3>
@@ -2148,7 +2072,6 @@
                     com checklists e medições de pass-line, hidráulica e elétrica.
                 </p>
             </div>
-
             <div class="diff-card">
                 <i class="fas fa-exchange-alt" aria-hidden="true"></i>
                 <h3>Swap Inteligente</h3>
@@ -2157,7 +2080,6 @@
                     entre a oficina e a linha de produção, com histórico automático.
                 </p>
             </div>
-
             <div class="diff-card">
                 <i class="fas fa-warehouse" aria-hidden="true"></i>
                 <h3>Gestão de Estoque</h3>
@@ -2166,7 +2088,6 @@
                     consumíveis, com alertas de nível mínimo.
                 </p>
             </div>
-
             <div class="diff-card">
                 <i class="fas fa-chart-bar" aria-hidden="true"></i>
                 <h3>Análise de Desgaste</h3>
@@ -2185,7 +2106,6 @@
             Da chegada do equipamento à liberação para a linha, cada etapa é
             executada com rigor técnico e documentada digitalmente.
         </p>
-
         <div class="servicos-grid">
             <div class="servico-item">
                 <i class="fas fa-clipboard-check" aria-hidden="true"></i>
@@ -2217,7 +2137,6 @@
             A OMS atende as três máquinas de lingotamento contínuo da CSN,
             garantindo a disponibilidade e a qualidade dos componentes críticos.
         </p>
-
         <div class="mcc-grid">
             <div class="mcc-card" data-mcc="2" tabindex="0" role="button" aria-expanded="false">
                 <span class="numero">MCC 2</span>
@@ -2264,7 +2183,6 @@
             <h2>A Força por Trás da Aciaria</h2>
             <p>O OMS não nasceu em um escritório convencional. Ele foi forjado no calor da operação, por engenheiros e mecânicos que vivem as dores reais do chão de fábrica todos os dias.</p>
         </div>
-
         <div class="historia-grid">
             <div class="historia-text">
                 <div class="history-quote">
@@ -2273,7 +2191,6 @@
                 <p>
                     Uma ferramenta que fala a língua da manutenção siderúrgica, elimina a burocracia do papel e foca no que realmente importa: a disponibilidade e a segurança dos ativos. Hoje, unimos a nossa vasta experiência técnica com a simplicidade digital.
                 </p>
-
                 <div class="history-card">
                     <i class="fas fa-users-cog" aria-hidden="true"></i>
                     <div>
@@ -2281,7 +2198,6 @@
                         <p>Engenheiros e mecânicos que vivem a siderurgia na prática, garantindo que o sistema funcione na realidade do chão de fábrica.</p>
                     </div>
                 </div>
-
                 <div class="history-card blue">
                     <i class="fas fa-shield-alt" aria-hidden="true"></i>
                     <div>
@@ -2289,7 +2205,6 @@
                         <p>Cada laudo, check-list e medição é salvo em nuvem com assinatura digital, garantindo 100% de integridade nos processos.</p>
                     </div>
                 </div>
-
                 <div class="history-card green">
                     <i class="fas fa-sync-alt" aria-hidden="true"></i>
                     <div>
@@ -2298,7 +2213,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="photo-grid">
                 <div class="photo-item">
                     <img src="USINAGEM.jpg" alt="Mecânico operando torno na Usinagem" loading="lazy" decoding="async" onerror="this.style.display='none'">
@@ -2320,7 +2234,6 @@
         </div>
     </section>
 
-    <!-- ===== NOVA SEÇÃO: EVOLUÇÃO DO OMS ===== -->
     <section id="evolucao" class="reveal evolucao">
         <span class="badge badge-csn">Visão</span>
         <h2>O OMS transforma dados operacionais<br>em informação para decisão</h2>
@@ -2371,14 +2284,254 @@
         </p>
     </footer>
 
-    <!-- ============ SCRIPTS DA HOME (consolidados em um único bloco no fim do <body>) ============ -->
-    <script>
-        // ---- EFEITOS ESTILO APPLE: parallax, tilt 3D, spotlight, magnetismo ----
+    <!-- ============ SCRIPTS ============ -->
+    <!-- Script Three.js (módulo) – Engrenagem 3D premium -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { RoomEnvironment } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/environments/RoomEnvironment.js';
 
+        const container = document.getElementById('three-container');
+        if (!container) {
+            console.warn('Container #three-container não encontrado.');
+        } else {
+            container.style.minHeight = '100px';
+            container.style.backgroundColor = '#0a0e17';
+
+            let width = container.clientWidth || 200;
+            let height = container.clientHeight || 120;
+
+            // --- Cena ---
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0e17);
+
+            // --- Câmera ---
+            const camera = new THREE.PerspectiveCamera(30, width / height, 0.1, 20);
+            camera.position.set(2.2, 1.2, 4.5);
+            camera.lookAt(0, 0, 0);
+
+            // --- Renderer ---
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            // --- Ambiente HDR ---
+            const pmremGenerator = new THREE.PMREMGenerator(renderer);
+            const envTexture = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+            scene.environment = envTexture;
+
+            // --- Iluminação de estúdio ---
+            const keyLight = new THREE.DirectionalLight(0xffeedd, 2.5);
+            keyLight.position.set(3, 4, 5);
+            keyLight.castShadow = true;
+            scene.add(keyLight);
+
+            const fillLight = new THREE.DirectionalLight(0x88aaff, 1.0);
+            fillLight.position.set(-4, 1, 2);
+            scene.add(fillLight);
+
+            const rimLight = new THREE.DirectionalLight(0xffaa44, 1.8);
+            rimLight.position.set(-1, -0.5, -5);
+            scene.add(rimLight);
+
+            const pointLight = new THREE.PointLight(0x88aaff, 0.6, 8);
+            pointLight.position.set(0, 2, 1);
+            scene.add(pointLight);
+
+            // --- Parâmetros da engrenagem ---
+            const numTeeth = 18;
+            const innerRadius = 1.2;
+            const outerRadius = 1.85;
+            const holeRadius = 0.45;
+            const numRays = 6;
+            const rayWidth = 0.22;
+            const toothTopWidth = 0.35;
+            const toothBaseWidth = 0.65;
+            const step = (Math.PI * 2) / numTeeth;
+            const halfStep = step / 2;
+
+            function createGearShape() {
+                const shape = new THREE.Shape();
+                const startAngle = -halfStep * 0.5;
+                for (let i = 0; i < numTeeth; i++) {
+                    const ang = i * step + startAngle;
+                    const angBaseStart = ang;
+                    const angBaseEnd = ang + step * toothBaseWidth;
+                    const angTopStart = ang + (step - step * toothTopWidth) / 2;
+                    const angTopEnd = angTopStart + step * toothTopWidth;
+                    const x1 = innerRadius * Math.cos(angBaseStart);
+                    const y1 = innerRadius * Math.sin(angBaseStart);
+                    const x4 = innerRadius * Math.cos(angBaseEnd);
+                    const y4 = innerRadius * Math.sin(angBaseEnd);
+                    const x2 = outerRadius * Math.cos(angTopStart);
+                    const y2 = outerRadius * Math.sin(angTopStart);
+                    const x3 = outerRadius * Math.cos(angTopEnd);
+                    const y3 = outerRadius * Math.sin(angTopEnd);
+                    if (i === 0) shape.moveTo(x1, y1);
+                    shape.lineTo(x2, y2);
+                    shape.lineTo(x3, y3);
+                    shape.lineTo(x4, y4);
+                }
+                shape.closePath();
+                return shape;
+            }
+
+            const mainShape = createGearShape();
+
+            // Furo central
+            const holePath = new THREE.Path();
+            const segments = 32;
+            for (let i = 0; i <= segments; i++) {
+                const theta = (i / segments) * Math.PI * 2;
+                const x = holeRadius * Math.cos(theta);
+                const y = holeRadius * Math.sin(theta);
+                if (i === 0) holePath.moveTo(x, y);
+                else holePath.lineTo(x, y);
+            }
+            mainShape.holes.push(holePath);
+
+            // Vãos entre raios
+            const rayAngleStep = (Math.PI * 2) / numRays;
+            const rayLengthInner = holeRadius + 0.06;
+            const rayLengthOuter = innerRadius - 0.06;
+            const avgRadius = (rayLengthInner + rayLengthOuter) / 2;
+            const angularWidth = rayWidth / avgRadius;
+            for (let i = 0; i < numRays; i++) {
+                const angleCenter = i * rayAngleStep + rayAngleStep / 2;
+                const angleStart = angleCenter - angularWidth / 2;
+                const angleEnd = angleCenter + angularWidth / 2;
+                const hole = new THREE.Path();
+                const r1 = rayLengthInner, r2 = rayLengthOuter;
+                const p1x = r1 * Math.cos(angleStart), p1y = r1 * Math.sin(angleStart);
+                hole.moveTo(p1x, p1y);
+                const p2x = r2 * Math.cos(angleStart), p2y = r2 * Math.sin(angleStart);
+                hole.lineTo(p2x, p2y);
+                const p3x = r2 * Math.cos(angleEnd), p3y = r2 * Math.sin(angleEnd);
+                hole.lineTo(p3x, p3y);
+                const p4x = r1 * Math.cos(angleEnd), p4y = r1 * Math.sin(angleEnd);
+                hole.lineTo(p4x, p4y);
+                hole.closePath();
+                mainShape.holes.push(hole);
+            }
+
+            // Extrusão com bevel
+            const extrudeSettings = {
+                depth: 0.45,
+                bevelEnabled: true,
+                bevelThickness: 0.08,
+                bevelSize: 0.04,
+                bevelSegments: 10,
+            };
+            const geometry = new THREE.ExtrudeGeometry(mainShape, extrudeSettings);
+            geometry.computeBoundingBox();
+            const box = geometry.boundingBox;
+            const centerX = (box.max.x + box.min.x) / 2;
+            const centerY = (box.max.y + box.min.y) / 2;
+            const centerZ = (box.max.z + box.min.z) / 2;
+            geometry.translate(-centerX, -centerY, -centerZ);
+
+            // Material premium (aço escovado com toque de bronze)
+            const material = new THREE.MeshPhysicalMaterial({
+                color: 0xccd0d8,
+                metalness: 0.98,
+                roughness: 0.18,
+                clearcoat: 0.4,
+                clearcoatRoughness: 0.15,
+                envMapIntensity: 1.8,
+                emissive: new THREE.Color(0x333344).multiplyScalar(0.06),
+                emissiveIntensity: 0.3,
+                side: THREE.DoubleSide,
+            });
+
+            const gear = new THREE.Mesh(geometry, material);
+            gear.castShadow = true;
+            gear.receiveShadow = true;
+            gear.rotation.x = 0.2;
+            gear.rotation.z = -0.1;
+            scene.add(gear);
+
+            // --- Eixo central (hub) ---
+            const hubGeo = new THREE.CylinderGeometry(holeRadius - 0.02, holeRadius - 0.02, 0.55, 32);
+            const hubMat = new THREE.MeshPhysicalMaterial({
+                color: 0xaaaac0,
+                metalness: 0.98,
+                roughness: 0.15,
+                emissive: new THREE.Color(0x334466).multiplyScalar(0.06),
+            });
+            const hub = new THREE.Mesh(hubGeo, hubMat);
+            hub.position.z = 0;
+            hub.rotation.x = Math.PI / 2;
+            gear.add(hub);
+
+            // --- Parafusos decorativos no hub ---
+            const screwMat = new THREE.MeshPhysicalMaterial({
+                color: 0x8888aa,
+                metalness: 0.9,
+                roughness: 0.25,
+            });
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI * 2;
+                const radius = holeRadius + 0.18;
+                const screw = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), screwMat);
+                screw.position.set(Math.cos(angle) * radius, Math.sin(angle) * radius, 0.1);
+                gear.add(screw);
+            }
+
+            // --- Interação com mouse ---
+            let targetRotX = 0.2, targetRotY = 0;
+            const handleMouseMove = (event) => {
+                const x = (event.clientX / window.innerWidth) * 2 - 1;
+                const y = -(event.clientY / window.innerHeight) * 2 + 1;
+                targetRotX = 0.2 + y * 0.15;
+                targetRotY = x * 0.25;
+            };
+            document.addEventListener('mousemove', handleMouseMove);
+
+            // --- Animação ---
+            function animate() {
+                requestAnimationFrame(animate);
+                gear.rotation.z += 0.004;
+                gear.rotation.x += (targetRotX - gear.rotation.x) * 0.04;
+                gear.rotation.y += (targetRotY - gear.rotation.y) * 0.04;
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            // --- Redimensionamento ---
+            function onResize() {
+                const w = container.clientWidth;
+                const h = container.clientHeight || 120;
+                if (w > 0 && h > 0) {
+                    camera.aspect = w / h;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(w, h);
+                }
+            }
+            const resizeObserver = new ResizeObserver(() => onResize());
+            resizeObserver.observe(container);
+            window.addEventListener('resize', onResize);
+            setTimeout(onResize, 200);
+
+            window.addEventListener('beforeunload', () => {
+                document.removeEventListener('mousemove', handleMouseMove);
+                renderer.dispose();
+                pmremGenerator.dispose();
+            });
+
+            console.log('✅ Engrenagem 3D premium inicializada.');
+        }
+    </script>
+
+    <!-- ============ SCRIPTS LEGACY (não-modulares) ============ -->
+    <script>
+        // ---- EFEITOS ESTILO APPLE ----
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
 
-        // Parallax de scroll: leve, funciona bem em qualquer dispositivo (não depende do mouse)
         if (!prefersReducedMotion) {
             (function () {
                 const blobs = document.querySelectorAll('.aurora-bg span');
@@ -2400,7 +2553,6 @@
                 }, { passive: true });
             })();
 
-            // --- Navbar ganha mais profundidade conforme o scroll avança ---
             (function () {
                 const nav = document.querySelector('.navbar');
                 if (!nav) return;
@@ -2418,16 +2570,11 @@
             })();
         }
 
-        // Efeitos baseados em mousemove: só em dispositivos com ponteiro preciso
-        // (mouse/trackpad). Em touch, "mousemove" não dispara de forma útil e só
-        // gastaria ciclos de CPU/GPU à toa — por isso ficam fora do fluxo mobile.
         if (!prefersReducedMotion && hasFinePointer) {
-            // --- Tilt 3D no mockup do dashboard, seguindo o mouse ---
             (function () {
                 const wrapper = document.querySelector('.hero-image-wrapper');
                 const card = document.querySelector('.dashboard-mockup');
                 if (!wrapper || !card) return;
-
                 wrapper.addEventListener('mousemove', (e) => {
                     const rect = wrapper.getBoundingClientRect();
                     const px = (e.clientX - rect.left) / rect.width - 0.5;
@@ -2441,7 +2588,6 @@
                 });
             })();
 
-            // --- Spotlight que segue o cursor dentro dos cards ---
             (function () {
                 const cards = document.querySelectorAll('.diff-card, .recurso-card, .mcc-card, .servico-item');
                 cards.forEach((c) => {
@@ -2453,7 +2599,6 @@
                 });
             })();
 
-            // --- Botões magnéticos: seguem levemente o cursor ---
             (function () {
                 const botoes = document.querySelectorAll('.btn-primary, .btn-outline');
                 botoes.forEach((btn) => {
@@ -2469,19 +2614,15 @@
                 });
             })();
         }
-    
 
-        // ---- SCROLL REVEAL (efeito premium ao rolar a página) ----
-
+        // ---- SCROLL REVEAL ----
         (function () {
             const alvos = document.querySelectorAll('.reveal');
             if (!alvos.length) return;
-
             if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
                 alvos.forEach((el) => el.classList.add('in-view'));
                 return;
             }
-
             const observer = new IntersectionObserver((entradas) => {
                 entradas.forEach((entrada) => {
                     if (entrada.isIntersecting) {
@@ -2490,24 +2631,18 @@
                     }
                 });
             }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
-
             alvos.forEach((el) => observer.observe(el));
         })();
-    
 
-        // ---- CONTADORES ANIMADOS + STATUS DE CONEXÃO + INSTALAÇÃO PWA ----
-
-        // --- Contadores animados (sobem de 0 até o valor real quando entram na tela) ---
+        // ---- CONTADORES ----
         (function () {
             const els = document.querySelectorAll('[data-count]');
             if (!els.length) return;
-
             function animar(el) {
                 const alvo = parseInt(el.dataset.count, 10) || 0;
                 const sufixo = el.dataset.suffix || '';
                 const duracao = 1200;
                 const inicio = performance.now();
-
                 function passo(agora) {
                     const progresso = Math.min((agora - inicio) / duracao, 1);
                     const valor = Math.floor(progresso * alvo);
@@ -2517,7 +2652,6 @@
                 }
                 requestAnimationFrame(passo);
             }
-
             const observer = new IntersectionObserver((entradas) => {
                 entradas.forEach((entrada) => {
                     if (entrada.isIntersecting) {
@@ -2526,16 +2660,14 @@
                     }
                 });
             }, { threshold: 0.4 });
-
             els.forEach((el) => observer.observe(el));
         })();
 
-        // --- Status de conexão (On-line / Off-line) para o modo PWA ---
+        // ---- STATUS DE CONEXÃO ----
         (function () {
             const pill = document.getElementById('conn-status');
             const texto = document.getElementById('conn-status-text');
             if (!pill || !texto) return;
-
             function atualizar() {
                 if (navigator.onLine) {
                     pill.classList.remove('offline');
@@ -2552,18 +2684,16 @@
             atualizar();
         })();
 
-        // --- Botão "Instalar App" (aparece só quando o navegador permite instalar o PWA) ---
+        // ---- INSTALAR PWA ----
         (function () {
             const btn = document.getElementById('btn-install-pwa');
             if (!btn) return;
             let promptEvento = null;
-
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 promptEvento = e;
                 btn.style.display = 'inline-flex';
             });
-
             btn.addEventListener('click', async () => {
                 if (!promptEvento) return;
                 promptEvento.prompt();
@@ -2571,12 +2701,12 @@
                 promptEvento = null;
                 btn.style.display = 'none';
             });
-
             window.addEventListener('appinstalled', () => {
                 btn.style.display = 'none';
             });
         })();
-        // --- Cards de MCC clicáveis (mostra os equipamentos atendidos) ---
+
+        // ---- CARDS MCC ----
         (function () {
             const cards = document.querySelectorAll('.mcc-card');
             cards.forEach((card) => {
@@ -2594,16 +2724,13 @@
                 });
             });
         })();
-    
 
-        // ---- MENU MOBILE: abrir/fechar drawer ----
-
+        // ---- MENU MOBILE ----
         (function () {
             const btnAbrir = document.getElementById('nav-hamburger');
             const btnFechar = document.getElementById('mobile-drawer-close');
             const overlay = document.getElementById('mobile-drawer-overlay');
             const drawer = document.getElementById('mobile-drawer');
-
             function abrirMenu() {
                 drawer.classList.add('open');
                 overlay.classList.add('open');
@@ -2616,27 +2743,21 @@
                 btnAbrir.setAttribute('aria-expanded', 'false');
                 document.body.style.overflow = '';
             }
-
             btnAbrir?.addEventListener('click', abrirMenu);
             btnFechar?.addEventListener('click', fecharMenu);
             overlay?.addEventListener('click', fecharMenu);
             drawer?.querySelectorAll('a').forEach(a => a.addEventListener('click', fecharMenu));
             document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fecharMenu(); });
         })();
-    
 
-        // ---- PWA: registra o service worker (instalação + offline) ----
-
+        // ---- SERVICE WORKER ----
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('service-worker.js')
-                    .then(() => console.log('✅ Service worker registrado - app instalável.'))
+                    .then(() => console.log('✅ Service worker registrado.'))
                     .catch((err) => console.warn('⚠️ Falha ao registrar service worker:', err));
             });
         }
-    
     </script>
-    <!-- ================================================================================================ -->
-    <!-- ================================================================================ -->
 </body>
 </html>
