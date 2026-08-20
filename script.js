@@ -1765,14 +1765,39 @@ async function atualizarTabelaHistoricoComServidor(id) {
             return { icone: "fa-circle-dot", cor: "var(--text-muted)" };
         };
 
+        // 🔧 CORREÇÃO ("registrei uma Atividade Pendente e não tem como
+        // concluir ela no Prontuário"): uma "Atividade Pendente" criada
+        // pelo modal de Intervenção vira só uma LINHA de texto no
+        // histórico (log_eventos) — diferente das atividades da aba
+        // Oficina, que têm status (Pendente/Em Andamento/Concluído) numa
+        // tabela própria. Aqui não dá pra adicionar um campo de status
+        // sem mudar o banco, então a solução é: quando o evento é da
+        // categoria "Atividade Pendente" e ainda não tem uma marcação de
+        // conclusão referenciando ele (procurando "(ref #ID)" nos outros
+        // eventos dessa peça), mostra um botão "Concluir" que registra um
+        // novo evento de conclusão, referenciando o id do original.
+        const idsConcluidos = new Set();
+        eventos.forEach(ev => {
+            const m = (ev.acao || '').match(/\(ref #(\d+)\)/);
+            if (m) idsConcluidos.add(Number(m[1]));
+        });
+
         // A API já devolve mais recente primeiro (ORDER BY id DESC),
         // igual à ordem que a tabela local usa (unshift a cada evento novo).
         tbody.innerHTML = eventos.map(e => {
             const { icone, cor } = iconePorEvento(e.acao);
+            const ehAtividadePendente = e.categoria === 'Atividade Pendente';
+            const jaConcluida = idsConcluidos.has(e.id);
+            let marcadorPendencia = '';
+            if (ehAtividadePendente) {
+                marcadorPendencia = jaConcluida
+                    ? `<span style="font-size:10px; color:#22c55e; font-weight:700; margin-left:8px; white-space:nowrap;"><i class="fas fa-check-circle"></i> Concluída</span>`
+                    : `<button class="btn-premium" style="padding:2px 8px; font-size:10px; margin-left:8px; white-space:nowrap;" onclick="window.concluirAtividadePendenteProntuario(${e.id}, '${id}')"><i class="fas fa-check"></i> Concluir</button>`;
+            }
             return `
             <tr>
                 <td style="font-size: 11px; white-space: nowrap; color: var(--text-muted);">${e.data_hora || '—'}</td>
-                <td style="font-size: 13px; color: var(--text-body);"><i class="fas ${icone}" style="color:${cor}; margin-right:8px;"></i>${e.acao || ''}</td>
+                <td style="font-size: 13px; color: var(--text-body);"><i class="fas ${icone}" style="color:${cor}; margin-right:8px;"></i>${e.acao || ''}${marcadorPendencia}</td>
                 <td style="font-size: 11px; color: var(--text-accent);">${e.operador || 'Sistema'}</td>
             </tr>`;
         }).join("");
@@ -1780,6 +1805,25 @@ async function atualizarTabelaHistoricoComServidor(id) {
         console.error('⚠️ Não consegui buscar o histórico do servidor pro Prontuário (mantendo o que tinha local):', e);
     }
 }
+
+// --------------------------------------------------------------
+// Marca uma "Atividade Pendente" (registrada via modal de Intervenção)
+// como concluída, direto no Prontuário do equipamento.
+// --------------------------------------------------------------
+window.concluirAtividadePendenteProntuario = async function(eventoId, equipamentoId) {
+    if (!verificarAcesso()) return;
+    if (!confirm('Marcar esta atividade pendente como concluída?')) return;
+
+    const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
+    await registrarHistorico(
+        equipamentoId,
+        `✅ <span style="color:#22c55e;">[ATIVIDADE CONCLUÍDA]</span> (ref #${eventoId})`
+    );
+
+    if (ID_HISTORICO_ATUAL === equipamentoId) {
+        atualizarTabelaHistoricoComServidor(equipamentoId);
+    }
+};
 
 function salvarRegistroManual() {
     if (!verificarAcesso() || !ID_HISTORICO_ATUAL) return;
@@ -2815,6 +2859,47 @@ window.confirmarIntervencao = async function() {
 };
 
 // --------------------------------------------------------------
+// 🔧 CORREÇÃO ("fotos anexadas não abrem, e não tem como saber quem
+// anexou"): as fotos são guardadas como data URL (base64), e o clique
+// nelas fazia window.open(dataUrl, '_blank'). A maioria dos navegadores
+// modernos (Chrome/Safari no celular principalmente) BLOQUEIA abrir uma
+// data: URL direto numa aba nova por segurança — o clique simplesmente
+// não fazia nada, sem erro nenhum visível. Além disso, quem tirou a
+// foto só aparecia no atributo "title" (tooltip) — que não existe no
+// toque do celular, só no hover do mouse no desktop.
+//
+// Esta função abre um lightbox (modal simples, criado na hora) com a
+// foto em tamanho grande e a legenda (data/operador) sempre visível
+// como texto, funcionando igual em desktop e celular.
+// --------------------------------------------------------------
+window.abrirFotoAmpliada = function(fotoBase64, legenda) {
+    let overlay = document.getElementById('lightbox-foto-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'lightbox-foto-overlay';
+        overlay.className = 'modal-overlay hidden';
+        overlay.style.zIndex = '10100';
+        overlay.innerHTML = `
+            <div style="max-width:95vw; max-height:92vh; display:flex; flex-direction:column; align-items:center; gap:10px;" onclick="event.stopPropagation()">
+                <img id="lightbox-foto-img" src="" style="max-width:95vw; max-height:80vh; border-radius:10px; object-fit:contain; box-shadow:0 20px 60px rgba(0,0,0,0.6);">
+                <div id="lightbox-foto-legenda" style="color:#fff; font-size:13px; text-align:center; background:rgba(0,0,0,0.55); padding:6px 14px; border-radius:20px;"></div>
+                <button class="btn-premium" style="padding:6px 16px;" onclick="window.fecharFotoAmpliada()"><i class="fas fa-times"></i> Fechar</button>
+            </div>
+        `;
+        overlay.addEventListener('click', window.fecharFotoAmpliada ? window.fecharFotoAmpliada : () => overlay.classList.add('hidden'));
+        document.body.appendChild(overlay);
+    }
+    document.getElementById('lightbox-foto-img').src = fotoBase64;
+    document.getElementById('lightbox-foto-legenda').innerText = legenda || '';
+    overlay.classList.remove('hidden');
+};
+
+window.fecharFotoAmpliada = function() {
+    const overlay = document.getElementById('lightbox-foto-overlay');
+    if (overlay) overlay.classList.add('hidden');
+};
+
+// --------------------------------------------------------------
 // Busca as fotos do equipamento e monta a mini-galeria no Prontuário.
 // --------------------------------------------------------------
 async function carregarFotosNoProntuario(id) {
@@ -2840,7 +2925,7 @@ async function carregarFotosNoProntuario(id) {
                 ${fotos.map(f => `
                     <img src="${f.foto_base64}"
                          style="width:90px; height:90px; object-fit:cover; border-radius:8px; border:1px solid var(--border-color); cursor:pointer; flex-shrink:0;"
-                         onclick="window.open('${f.foto_base64}', '_blank')"
+                         onclick="window.abrirFotoAmpliada('${f.foto_base64}', '${(f.operador || 'Sistema').replace(/'/g, "\\'")} — ${f.data_hora || ''}')"
                          title="${f.data_hora} — ${f.operador}">
                 `).join('')}
             </div>
@@ -3603,7 +3688,8 @@ function renderizarAtividadesArea() {
             ${x.foto_base64 ? `
                 <img src="${x.foto_base64}"
                      style="width:56px; height:56px; object-fit:cover; border-radius:8px; border:1px solid var(--border-color); cursor:pointer; flex-shrink:0;"
-                     onclick="window.open('${x.foto_base64}', '_blank')">
+                     onclick="window.abrirFotoAmpliada('${x.foto_base64}', '${(x.criado_por || 'Sistema').replace(/'/g, "\\'")} — ${x.criado_em || ''}')"
+                     title="${x.criado_por || 'Sistema'} — ${x.criado_em || ''}">
             ` : ''}
             <div style="flex:1; min-width:0;">
                 <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
@@ -5210,7 +5296,8 @@ window.carregarListaOcorrencias = async function() {
                 ${r.foto_base64 ? `
                     <img src="${r.foto_base64}"
                          style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border); cursor:pointer; flex-shrink:0;"
-                         onclick="window.open('${r.foto_base64}', '_blank')">
+                         onclick="window.abrirFotoAmpliada('${r.foto_base64}', '${(r.operador || 'Sistema').replace(/'/g, "\\'")} — ${r.data_hora || ''}')"
+                         title="${r.operador || 'Sistema'} — ${r.data_hora || ''}">
                 ` : `
                     <div style="width:70px; height:70px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--text-muted);">
                         <i class="fas fa-image" style="font-size:20px; opacity:0.4;"></i>

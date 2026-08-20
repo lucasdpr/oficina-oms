@@ -1485,19 +1485,33 @@ async function salvarObservacaoPeca(id, valor, botaoEl, statusEl) {
             if (piecesById[id]) piecesById[id].observacao = valor;
             statusEl.textContent = '✅ Salvo no banco.';
             statusEl.className = 'obs-status ok';
-            // 🔧 CORREÇÃO ("o prontuário que fiz no Sinótico 3D não
-            // apareceu no Sequenciamento de Veio"): salvar a
-            // observação aqui gravava só o campo no banco
-            // (/api/atualizar_peca), mas nunca registrava a ação no
-            // histórico compartilhado (window.registrarHistorico) —
-            // que é o mesmo histórico usado pelo Prontuário, pela
-            // Auditoria e por outras telas do sistema, incluindo o
-            // Sequenciamento de Veios. Por isso a anotação feita aqui
-            // nunca aparecia em nenhum outro lugar. Agora registra
-            // igual ao resto do sistema já faz (ver ui.js).
-            if (typeof window.registrarHistorico === 'function') {
+            // 🔧 CORREÇÃO ("observação do Sinótico 3D não aparece no
+            // Prontuário"): a tentativa anterior aqui checava
+            // `window.registrarHistorico`, mas essa função só existe em
+            // script.js/ui.js — arquivos que esta página (Sinótico 3D)
+            // NUNCA carrega (ela roda isolada, só com three.js e
+            // dados.js, ver <script type="module"> no topo do arquivo).
+            // Ou seja, o "if" nunca era verdadeiro e o evento nunca era
+            // gravado — silenciosamente, sem erro nenhum no console.
+            // A correção certa é chamar a API de eventos DIRETO (mesma
+            // rota que registrarHistorico usa por baixo dos panos:
+            // POST /api/registrar_evento), sem depender de nenhuma
+            // função só disponível no app principal.
+            try {
+                const operadorAtual = JSON.parse(localStorage.getItem("oms_operador_v32_local") || 'null');
+                const nomeOperador = (operadorAtual && operadorAtual.nome) ? operadorAtual.nome : 'Sistema';
                 const resumo = valor.trim() ? `"${valor.trim()}"` : '(observação removida)';
-                window.registrarHistorico(id, `📝 Observação atualizada no Sinótico 3D: ${resumo}`);
+                await fetch(`${apiBase}/api/registrar_evento`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        peca_id: id,
+                        acao: `📝 Observação atualizada no Sinótico 3D: ${resumo}`,
+                        operador: nomeOperador
+                    })
+                });
+            } catch (erroHistorico) {
+                console.error('⚠️ Observação salva, mas não consegui registrar no histórico/Prontuário:', erroHistorico);
             }
         } else {
             throw new Error(resultado.detail || 'A API não confirmou o salvamento.');

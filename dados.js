@@ -239,11 +239,17 @@ export const AREAS_OFICINA = [
     { chave: 'caldeiraria',   nome: 'Caldeiraria',    icone: 'fa-fire',           cor: '#f97316', filtro: null, tipo: 'oficina' },
     { chave: 'jato',          nome: 'Jato',           icone: 'fa-spray-can',      cor: '#7c8aa5', filtro: null, tipo: 'oficina' },
     { chave: 'eletrica',      nome: 'Elétrica',       icone: 'fa-bolt',           cor: '#eab308', filtro: null, tipo: 'oficina' },
+    // 🔧 CORREÇÃO ("procedimento não aparecendo"): a Ferramentaria tem
+    // procedimento cadastrado em procedimentosOficina.js (ex: "Inspeção
+    // de Ferramentas Manuais de Impacto"), mas a aba "Procedimentos"
+    // estava fora da lista de abas dessa área — o conteúdo existia no
+    // código, mas nunca aparecia pra ninguém abrir. Reincluída abaixo.
     { chave: 'ferramentaria', nome: 'Ferramentaria',  icone: 'fa-toolbox',       cor: '#f59e0b', filtro: null, tipo: 'oficina',
         abas: [
             { chave: 'atividades',    label: 'Atividades',    icone: 'fa-clipboard-list' },
             { chave: 'materiais',     label: 'Ferramentas',   icone: 'fa-screwdriver-wrench' },
             { chave: 'equipe',        label: 'Equipe',        icone: 'fa-users' },
+            { chave: 'procedimentos', label: 'Procedimentos', icone: 'fa-list-check' },
             { chave: 'notas',         label: 'Anotações',     icone: 'fa-note-sticky' },
         ] },
 
