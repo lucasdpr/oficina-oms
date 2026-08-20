@@ -197,27 +197,12 @@ function carregarTema() {
     }
 }
 
-function toggleTheme() {
-    const body = document.body;
-    const icon = document.getElementById("theme-icon");
-    const text = document.getElementById("theme-text");
-
-    body.classList.toggle("light-mode");
-
-    if (body.classList.contains("light-mode")) {
-        localStorage.setItem("oms_theme_local", "light");
-        if (icon) icon.className = "fas fa-moon";
-        if (text) text.innerText = "Modo Escuro";
-    } else {
-        localStorage.setItem("oms_theme_local", "dark");
-        if (icon) icon.className = "fas fa-sun";
-        if (text) text.innerText = "Modo Claro";
-    }
-}
-
-function toggleSidebar() {
-    document.getElementById('sidebar-menu').classList.toggle('open');
-}
+// (toggleTheme e toggleSidebar reais ficam definidas mais abaixo, como
+// window.toggleTheme / window.toggleSidebar — ver correção do bug do
+// abrirAba() duplicado: havia versões "mortas" destas duas funções
+// aqui, que nunca executavam de verdade porque não estavam presas ao
+// escopo global, e a versão real ficava só mais abaixo no arquivo.
+// Removidas pra não confundir de novo no futuro.)
 
 // ==========================================
 // MOSTRAR/OCULTAR SENHA NO LOGIN
@@ -451,17 +436,8 @@ async function finalizarLogin(nome, cargo, matricula) {
     }
 }
 
-function fazerLogout() {
-    if (confirm("Encerrar o turno?")) {
-        registrarHistorico("SISTEMA", "Turno encerrado.");
-        OPERADOR_LOGADO = null;
-        localStorage.removeItem("oms_operador_v32_local");
-        document.getElementById("container-sistema-oms").style.display = "none";
-        document.getElementById("tela-login-home").style.display = "flex";
-        if (typeof ativarPainelDevSeAutorizado === 'function') ativarPainelDevSeAutorizado();
-        if (typeof ativarAuditoriaSeAutorizado === 'function') ativarAuditoriaSeAutorizado();
-    }
-}
+// (fazerLogout real fica definida mais abaixo, como window.fazerLogout —
+// ver correção do bug do abrirAba() duplicado.)
 
 // ==========================================
 // MODO VISITANTE (somente leitura)
@@ -537,59 +513,6 @@ function verificarAcesso() {
 // ==========================================
 // ABRIR ABA - CORRIGIDA E BLINDADA
 // ==========================================
-function abrirAba(event, idAba) {
-    if (event) event.preventDefault();
-
-    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
-    document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
-
-    if (event) {
-        document.getElementById(event.currentTarget.id).classList.add("active");
-    }
-    document.getElementById(idAba).classList.add("active");
-
-    if (idAba === "aba-mcc2") renderizarGraficosMCC(2);
-    if (idAba === "aba-mcc3") renderizarGraficosMCC(3);
-    if (idAba === "aba-mcc4") renderizarGraficosMCC(4);
-    if (idAba === "aba-reparos") renderReparos();
-    if (idAba === "aba-reservas") renderReservas();
-    if (idAba === "aba-rolos") renderRolos();
-    if (idAba === "aba-hidraulica") renderHidraulica();
-    if (idAba === "aba-almoxarifado") carregarMateriaisDoBackend();
-    if (idAba === "aba-historico") renderHistorico();
-    if (idAba === "aba-painel") {
-        if (typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
-    }
-    if (idAba === "aba-ativos") renderAtivos();
-    if (idAba === "aba-fluxo") renderPainelVeios();
-    if (idAba === "aba-tecnico") { if (typeof renderPainelTecnico === 'function') renderPainelTecnico(); }
-    if (idAba === "aba-oficina") {
-        if (typeof carregarOficina === 'function') carregarOficina();
-    }
-    if (idAba === "aba-registro-recente") {
-        if (typeof window.renderRegistroRecenteCompleto === 'function') window.renderRegistroRecenteCompleto();
-    }
-    if (idAba === "aba-admin-colaboradores") {
-        if (typeof window.carregarAdminColaboradores === 'function') window.carregarAdminColaboradores();
-    }
-    
-    if (idAba === "aba-producao") {
-        if (typeof window.carregarHistoricoApontamentoGeral === 'function') window.carregarHistoricoApontamentoGeral();
-        if (typeof window.carregarHistoricoApontamentoMoldes === 'function') window.carregarHistoricoApontamentoMoldes();
-    }
-
-    const selVeios = document.getElementById("seletor-veios-container");
-    if (idAba === "aba-fluxo" || idAba === "aba-ativos") {
-        selVeios.classList.remove("hidden");
-    } else {
-        selVeios.classList.add("hidden");
-    }
-
-    if (window.innerWidth <= 992) {
-        document.getElementById('sidebar-menu').classList.remove('open');
-    }
-}
-
 // ==========================================
 // HISTÓRICO E AUDITORIA
 // ==========================================
@@ -1957,10 +1880,9 @@ async function executarSaqueFinal(id, laudo) {
 // ==========================================
 // CADASTRO DE NOVAS PEÇAS E ROLOS
 // ==========================================
-function toggleFormAdicionar() {
-    const form = document.getElementById("form-novo-equipamento");
-    if (form) form.classList.toggle("hidden");
-}
+// (toggleFormAdicionar real fica definida mais abaixo, como
+// window.toggleFormAdicionar — ver correção do bug do abrirAba()
+// duplicado.)
 
 window.atualizarPosicoesCadastro = function() {
     const tipo = document.getElementById("add-tipo").value;
@@ -3116,10 +3038,12 @@ window.renderRegistroRecenteCompleto = async function() {
 let ADMIN_COLABORADORES_CACHE = [];
 
 window.carregarAdminColaboradores = async function() {
+    console.log('🔎 [DIAGNÓSTICO] carregarAdminColaboradores() foi chamada.');
     const tbody = document.getElementById('admin-colaboradores-table-body');
-    if (!tbody) return;
+    if (!tbody) { console.log('🔎 [DIAGNÓSTICO] tbody NÃO encontrado no HTML — abortando.'); return; }
 
     const matricula = (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula || "").toUpperCase();
+    console.log('🔎 [DIAGNÓSTICO] matrícula logada:', matricula, '| autorizada?', MATRICULAS_TESTE_FOLHOES.includes(matricula));
     if (!MATRICULAS_TESTE_FOLHOES.includes(matricula)) {
         tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Acesso restrito.</td></tr>`;
         return;
@@ -3129,10 +3053,13 @@ window.carregarAdminColaboradores = async function() {
 
     try {
         const apiBase = await resolverApiBase();
+        console.log('🔎 [DIAGNÓSTICO] apiBase resolvida:', apiBase);
         const resp = await fetch(`${apiBase}/api/colaboradores/todos`, { cache: 'no-store' });
+        console.log('🔎 [DIAGNÓSTICO] status da resposta:', resp.status, resp.ok);
         ADMIN_COLABORADORES_CACHE = resp.ok ? await resp.json() : [];
+        console.log('🔎 [DIAGNÓSTICO] colaboradores recebidos:', ADMIN_COLABORADORES_CACHE.length);
     } catch (e) {
-        console.error('⚠️ Não consegui carregar a lista de colaboradores:', e);
+        console.error('🔎 [DIAGNÓSTICO] ERRO ao carregar a lista de colaboradores:', e);
         ADMIN_COLABORADORES_CACHE = [];
         tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Não foi possível carregar. Verifique sua internet.</td></tr>`;
         return;
@@ -4937,6 +4864,13 @@ window.fazerLogout = function() {
     const mensagem = ehVisitante ? null : "Tem certeza que deseja encerrar o turno?";
 
     if (ehVisitante || confirm(mensagem)) {
+        // 🔧 Resgatado de uma versão duplicada/morta desta função (ver
+        // correção do bug do abrirAba() duplicado, no mesmo commit) —
+        // registra o encerramento de turno na Auditoria, igual sempre
+        // deveria ter feito.
+        if (!ehVisitante && typeof registrarHistorico === 'function') {
+            registrarHistorico("SISTEMA", "Turno encerrado.");
+        }
         localStorage.removeItem("oms_operador_v32_local");
         window.location.reload();
     }
@@ -4961,8 +4895,21 @@ window.abrirAba = function(event, idAba) {
     if (idAba === "aba-reparos" && typeof renderReparos === 'function') renderReparos();
     if (idAba === "aba-reservas" && typeof renderReservas === 'function') renderReservas();
     if (idAba === "aba-rolos" && typeof renderRolos === 'function') renderRolos();
+    if (idAba === "aba-hidraulica" && typeof renderHidraulica === 'function') renderHidraulica();
     if (idAba === "aba-almoxarifado" && typeof carregarMateriaisDoBackend === 'function') carregarMateriaisDoBackend();
     if (idAba === "aba-historico" && typeof renderHistorico === 'function') renderHistorico();
+    // 🔧 CORREÇÃO CRÍTICA ("Registro Recente e Administração não
+    // abriam/carregavam nada"): existiam DUAS funções abrirAba() no
+    // arquivo — uma delas (mais antiga, sem "window." na declaração)
+    // nunca chegava a rodar de verdade, porque a segunda (esta aqui,
+    // definida depois) sobrescrevia window.abrirAba primeiro. Toda vez
+    // que eu editava a função errada (a de cima), a mudança nunca tinha
+    // efeito nenhum na tela — por isso as abas novas pareciam "mortas"
+    // mesmo com o código certo escrito. A duplicada foi removida, e os
+    // gatilhos que faltavam (Registro Recente e Administração) foram
+    // trazidos pra cá, na função que realmente executa.
+    if (idAba === "aba-registro-recente" && typeof window.renderRegistroRecenteCompleto === 'function') window.renderRegistroRecenteCompleto();
+    if (idAba === "aba-admin-colaboradores" && typeof window.carregarAdminColaboradores === 'function') window.carregarAdminColaboradores();
     if (idAba === "aba-painel" && typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
     if (idAba === "aba-ativos" && typeof renderAtivos === 'function') renderAtivos();
     if (idAba === "aba-fluxo" && typeof renderPainelVeios === 'function') renderPainelVeios();
