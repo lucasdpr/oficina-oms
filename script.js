@@ -26,6 +26,34 @@ import {
 } from './banco.js?v=5';
 
 // ==========================================
+// 🔧 CORREÇÃO ("depois do login a tela fica em branco, só o cabeçalho
+// aparece"): finalizarLogin() e entrarComoVisitante() chamam várias
+// funções de renderização em sequência. Se qualquer uma lançar um
+// erro, o JavaScript parava ali mesmo e tudo que vinha depois na fila
+// nunca rodava — inclusive a função que desenha o Painel Geral.
+// executarSeguro() isola cada chamada: se uma falhar, registra o erro
+// no console e deixa as próximas rodarem normalmente.
+// ==========================================
+function executarSeguro(fn, nomeParaLog) {
+    try {
+        return fn();
+    } catch (e) {
+        console.error(`⚠️ Falha ao executar "${nomeParaLog}" (o resto da tela continua carregando):`, e);
+        return undefined;
+    }
+}
+async function executarSeguroAsync(fn, nomeParaLog) {
+    try {
+        return await fn();
+    } catch (e) {
+        console.error(`⚠️ Falha ao executar "${nomeParaLog}" (o resto da tela continua carregando):`, e);
+        return undefined;
+    }
+}
+window.executarSeguro = executarSeguro;
+window.executarSeguroAsync = executarSeguroAsync;
+
+// ==========================================
 // 📲 PUSH NOTIFICATION (Web Push API)
 // ==========================================
 const VAPID_PUBLIC_KEY = "BKY36hQFqVrbfz1jSB2FhQs58OV6JNMHnug1V3mwhZMK-urLU0y5E_6dNoRZv8J89EalEAn4ItgqBT_pmiAMuF8";
@@ -413,18 +441,18 @@ async function finalizarLogin(nome, cargo, matricula) {
     // da página dava outra chance. Como o login que acabou de dar certo
     // já prova que o servidor está de pé, este é o melhor momento pra dar
     // mais uma tentativa real de sincronizar tudo, antes de desenhar a tela.
-    if (typeof window.carregarAtivosDoPython === 'function') await window.carregarAtivosDoPython();
-    if (typeof sincronizarRolosReais === 'function') await sincronizarRolosReais();
-    if (typeof sincronizarHidraulicaReal === 'function') await sincronizarHidraulicaReal();
+    if (typeof window.carregarAtivosDoPython === 'function') await executarSeguroAsync(() => window.carregarAtivosDoPython(), 'carregarAtivosDoPython');
+    if (typeof sincronizarRolosReais === 'function') await executarSeguroAsync(() => sincronizarRolosReais(), 'sincronizarRolosReais');
+    if (typeof sincronizarHidraulicaReal === 'function') await executarSeguroAsync(() => sincronizarHidraulicaReal(), 'sincronizarHidraulicaReal');
 
-    if (typeof calcularKpisGlobais === 'function') calcularKpisGlobais();
-    if (typeof renderPainelVeios === 'function') renderPainelVeios();
-    if (typeof renderAtivos === 'function') renderAtivos();
-    if (typeof renderReparos === 'function') renderReparos();
-    if (typeof renderReservas === 'function') renderReservas();
-    if (typeof renderRolos === 'function') renderRolos();
-    if (typeof carregarMateriaisDoBackend === 'function') carregarMateriaisDoBackend();
-    if (typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
+    if (typeof calcularKpisGlobais === 'function') executarSeguro(() => calcularKpisGlobais(), 'calcularKpisGlobais');
+    if (typeof renderPainelVeios === 'function') executarSeguro(() => renderPainelVeios(), 'renderPainelVeios');
+    if (typeof renderAtivos === 'function') executarSeguro(() => renderAtivos(), 'renderAtivos');
+    if (typeof renderReparos === 'function') executarSeguro(() => renderReparos(), 'renderReparos');
+    if (typeof renderReservas === 'function') executarSeguro(() => renderReservas(), 'renderReservas');
+    if (typeof renderRolos === 'function') executarSeguro(() => renderRolos(), 'renderRolos');
+    if (typeof carregarMateriaisDoBackend === 'function') executarSeguro(() => carregarMateriaisDoBackend(), 'carregarMateriaisDoBackend');
+    if (typeof atualizarPainelCompleto === 'function') executarSeguro(() => atualizarPainelCompleto(), 'atualizarPainelCompleto');
 
     // 🔧 Técnico entra direto no Painel do Técnico (visão simplificada e
     // com as ações do dia a dia), em vez do Painel Geral OMS — que é mais
@@ -483,18 +511,18 @@ async function entrarComoVisitante(nomeDigitado) {
     // 🔧 Mesma correção do login normal: força uma sincronização real
     // com o backend antes de desenhar a tela, em vez de só reaproveitar
     // o que já estava (ou não estava) carregado.
-    if (typeof window.carregarAtivosDoPython === 'function') await window.carregarAtivosDoPython();
-    if (typeof sincronizarRolosReais === 'function') await sincronizarRolosReais();
-    if (typeof sincronizarHidraulicaReal === 'function') await sincronizarHidraulicaReal();
+    if (typeof window.carregarAtivosDoPython === 'function') await executarSeguroAsync(() => window.carregarAtivosDoPython(), 'carregarAtivosDoPython');
+    if (typeof sincronizarRolosReais === 'function') await executarSeguroAsync(() => sincronizarRolosReais(), 'sincronizarRolosReais');
+    if (typeof sincronizarHidraulicaReal === 'function') await executarSeguroAsync(() => sincronizarHidraulicaReal(), 'sincronizarHidraulicaReal');
 
-    if (typeof calcularKpisGlobais === 'function') calcularKpisGlobais();
-    if (typeof renderPainelVeios === 'function') renderPainelVeios();
-    if (typeof renderAtivos === 'function') renderAtivos();
-    if (typeof renderReparos === 'function') renderReparos();
-    if (typeof renderReservas === 'function') renderReservas();
-    if (typeof renderRolos === 'function') renderRolos();
-    if (typeof carregarMateriaisDoBackend === 'function') carregarMateriaisDoBackend();
-    if (typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
+    if (typeof calcularKpisGlobais === 'function') executarSeguro(() => calcularKpisGlobais(), 'calcularKpisGlobais');
+    if (typeof renderPainelVeios === 'function') executarSeguro(() => renderPainelVeios(), 'renderPainelVeios');
+    if (typeof renderAtivos === 'function') executarSeguro(() => renderAtivos(), 'renderAtivos');
+    if (typeof renderReparos === 'function') executarSeguro(() => renderReparos(), 'renderReparos');
+    if (typeof renderReservas === 'function') executarSeguro(() => renderReservas(), 'renderReservas');
+    if (typeof renderRolos === 'function') executarSeguro(() => renderRolos(), 'renderRolos');
+    if (typeof carregarMateriaisDoBackend === 'function') executarSeguro(() => carregarMateriaisDoBackend(), 'carregarMateriaisDoBackend');
+    if (typeof atualizarPainelCompleto === 'function') executarSeguro(() => atualizarPainelCompleto(), 'atualizarPainelCompleto');
 }
 
 function verificarAcesso() {
@@ -2991,13 +3019,15 @@ function atualizarNovosKPIs() {
 }
 
 function atualizarPainelCompleto() {
+    // 🔧 Cada pedaço do Painel Geral roda isolado — se um card específico
+    // falhar, os outros continuam aparecendo normalmente.
     if (typeof calcularKpisGlobais === 'function') {
-        calcularKpisGlobais();
+        executarSeguro(() => calcularKpisGlobais(), 'calcularKpisGlobais (painel)');
     }
-    atualizarNovosKPIs();
-    atualizarKPIsAvancados();
-    renderizarTopCriticos();
-    renderizarFeedAtividadeRecente();
+    executarSeguro(() => atualizarNovosKPIs(), 'atualizarNovosKPIs');
+    executarSeguro(() => atualizarKPIsAvancados(), 'atualizarKPIsAvancados');
+    executarSeguro(() => renderizarTopCriticos(), 'renderizarTopCriticos');
+    executarSeguro(() => renderizarFeedAtividadeRecente(), 'renderizarFeedAtividadeRecente');
 }
 
 // ==========================================

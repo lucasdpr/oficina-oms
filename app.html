@@ -1,6 +1,43 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+    <!-- ==============================================================
+         🔧 CAPTURA DE ERROS VISÍVEL NA TELA — pega qualquer erro de
+         JavaScript não tratado e mostra numa faixa vermelha no topo,
+         com a mensagem, arquivo e linha. Não muda nada do funcionamento
+         normal; só aparece quando tem erro de verdade.
+    ============================================================== -->
+    <script>
+        (function () {
+            var jaMostrou = false;
+            function mostrarErroNaTela(mensagem) {
+                if (jaMostrou) return;
+                jaMostrou = true;
+                var faixa = document.createElement('div');
+                faixa.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999;' +
+                    'background:#7f1d1d;color:#fff;padding:12px 16px;font:13px/1.5 monospace;' +
+                    'white-space:pre-wrap;word-break:break-word;max-height:50vh;overflow:auto;' +
+                    'box-shadow:0 4px 20px rgba(0,0,0,0.5);';
+                faixa.innerHTML = '<strong>⚠️ ERRO NO APP — tire print desta faixa e envie:</strong><br><br>' +
+                    mensagem.replace(/</g, '&lt;') +
+                    '<br><br><span style="text-decoration:underline;cursor:pointer;" onclick="this.parentElement.remove()">[fechar]</span>';
+                document.documentElement.appendChild(faixa);
+            }
+            window.addEventListener('error', function (e) {
+                var msg = (e.message || 'Erro desconhecido') +
+                    '\narquivo: ' + (e.filename || '?') +
+                    '\nlinha: ' + (e.lineno || '?') + ':' + (e.colno || '?');
+                mostrarErroNaTela(msg);
+            });
+            window.addEventListener('unhandledrejection', function (e) {
+                var motivo = e.reason;
+                var msg = 'Promise rejeitada sem tratamento: ' +
+                    (motivo && motivo.stack ? motivo.stack : String(motivo));
+                mostrarErroNaTela(msg);
+            });
+        })();
+    </script>
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>OMS | Sistema de Gestão de Manutenção</title>
