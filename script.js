@@ -5636,64 +5636,103 @@ window.toggleFormAdicionar = function() {
     }
 };
 // ==========================================
-// 🆕 REGISTRO DE OS (Ordem de Serviço) — foto da OS em papel + status
-// (Em Andamento / Concluído). Segue o mesmo padrão de compressão de
-// foto já usado em Intervenção/Ocorrência (window.processarFotoOcorrencia).
+// 🆕 REGISTRO DE OS (Ordem de Serviço) — a OS real da CSN vem em várias
+// páginas (cabeçalho, EPIs/ferramentas/operações, confirmação — ver
+// exemplo real com 3 páginas), então o registro aceita VÁRIAS fotos por
+// OS, uma por página. Cada foto passa pela mesma compressão já usada em
+// Intervenção/Ocorrência (window.processarFotoOcorrencia).
 // ==========================================
-let FOTO_OS_BASE64 = null;
+let FOTOS_OS_BASE64 = []; // array de fotos (páginas) da OS sendo cadastrada
 let FILTRO_OS_ATUAL = '';
 let OS_CACHE = [];
 
-window.processarFotoOs = function(event) {
-    const arquivo = event.target.files[0];
-    if (!arquivo) return;
+function renderPreviewFotosOs() {
+    const container = document.getElementById('os-fotos-preview-container');
+    if (!container) return;
 
-    if (!arquivo.type.startsWith('image/')) {
-        alert('Por favor, escolha um arquivo de imagem.');
+    if (FOTOS_OS_BASE64.length === 0) {
+        container.classList.add('hidden');
+        container.innerHTML = '';
         return;
     }
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-            const MAX_LADO = 1280;
-            let largura = img.width;
-            let altura = img.height;
+    container.classList.remove('hidden');
+    container.innerHTML = FOTOS_OS_BASE64.map((foto, i) => `
+        <div style="position:relative; display:inline-block;">
+            <img src="${foto}" style="width:80px; height:80px; object-fit:cover; border-radius:8px; border:1px solid var(--border);">
+            <span style="position:absolute; bottom:2px; left:2px; background:rgba(0,0,0,0.7); color:#fff; font-size:10px; padding:1px 5px; border-radius:4px;">Pág. ${i + 1}</span>
+            <button type="button" onclick="window.removerFotoOs(${i})" style="position:absolute; top:2px; right:2px; background:rgba(0,0,0,0.7); color:#fff; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; font-size:11px; line-height:1;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `).join('');
+}
 
-            if (largura > altura && largura > MAX_LADO) {
-                altura = Math.round((altura * MAX_LADO) / largura);
-                largura = MAX_LADO;
-            } else if (altura > MAX_LADO) {
-                largura = Math.round((largura * MAX_LADO) / altura);
-                altura = MAX_LADO;
-            }
+// Comprime UM arquivo de imagem e devolve o data URL via Promise —
+// extraído pra poder ser usado em loop (várias fotos escolhidas de
+// uma vez, ex: múltiplas páginas selecionadas juntas na galeria).
+function comprimirFotoParaBase64(arquivo) {
+    return new Promise((resolve, reject) => {
+        if (!arquivo.type.startsWith('image/')) {
+            reject(new Error('Arquivo não é uma imagem.'));
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const MAX_LADO = 1280;
+                let largura = img.width;
+                let altura = img.height;
 
-            const canvas = document.createElement('canvas');
-            canvas.width = largura;
-            canvas.height = altura;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, largura, altura);
+                if (largura > altura && largura > MAX_LADO) {
+                    altura = Math.round((altura * MAX_LADO) / largura);
+                    largura = MAX_LADO;
+                } else if (altura > MAX_LADO) {
+                    largura = Math.round((largura * MAX_LADO) / altura);
+                    altura = MAX_LADO;
+                }
 
-            FOTO_OS_BASE64 = canvas.toDataURL('image/jpeg', 0.7);
-
-            const preview = document.getElementById('os-foto-preview');
-            const container = document.getElementById('os-foto-preview-container');
-            if (preview) preview.src = FOTO_OS_BASE64;
-            if (container) container.classList.remove('hidden');
+                const canvas = document.createElement('canvas');
+                canvas.width = largura;
+                canvas.height = altura;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, largura, altura);
+                resolve(canvas.toDataURL('image/jpeg', 0.7));
+            };
+            img.onerror = () => reject(new Error('Não consegui ler a imagem.'));
+            img.src = e.target.result;
         };
-        img.src = e.target.result;
-    };
-    reader.readAsDataURL(arquivo);
+        reader.onerror = () => reject(new Error('Não consegui ler o arquivo.'));
+        reader.readAsDataURL(arquivo);
+    });
+}
+
+window.processarFotoOs = async function(event) {
+    const arquivos = Array.from(event.target.files || []);
+    if (arquivos.length === 0) return;
+
+    for (const arquivo of arquivos) {
+        try {
+            const base64 = await comprimirFotoParaBase64(arquivo);
+            FOTOS_OS_BASE64.push(base64);
+        } catch (e) {
+            console.error('⚠️ Erro ao processar foto da OS:', e);
+            alert(`Não consegui processar uma das imagens (${arquivo.name}). Pulei ela.`);
+        }
+    }
+
+    renderPreviewFotosOs();
     event.target.value = '';
 };
 
-window.removerFotoOs = function() {
-    FOTO_OS_BASE64 = null;
-    const preview = document.getElementById('os-foto-preview');
-    const container = document.getElementById('os-foto-preview-container');
-    if (preview) preview.src = '';
-    if (container) container.classList.add('hidden');
+window.removerFotoOs = function(indice) {
+    if (typeof indice === 'number') {
+        FOTOS_OS_BASE64.splice(indice, 1);
+    } else {
+        FOTOS_OS_BASE64 = [];
+    }
+    renderPreviewFotosOs();
 };
 
 window.confirmarOrdemServico = async function() {
@@ -5702,7 +5741,7 @@ window.confirmarOrdemServico = async function() {
     const numero = document.getElementById('os-numero')?.value.trim();
     const descricao = document.getElementById('os-descricao')?.value.trim();
 
-    if (!FOTO_OS_BASE64) return alert('Tire ou anexe a foto da OS antes de registrar.');
+    if (FOTOS_OS_BASE64.length === 0) return alert('Tire ou anexe pelo menos 1 foto da OS antes de registrar.');
 
     const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
 
@@ -5714,7 +5753,7 @@ window.confirmarOrdemServico = async function() {
             body: JSON.stringify({
                 numero_os: numero || null,
                 descricao: descricao || null,
-                foto_base64: FOTO_OS_BASE64,
+                fotos_base64: FOTOS_OS_BASE64,
                 operador
             })
         });
@@ -5764,12 +5803,14 @@ window.carregarListaOrdensServico = async function() {
         container.innerHTML = OS_CACHE.map(os => {
             const concluida = os.status === 'Concluído';
             const corStatus = concluida ? 'var(--success)' : 'var(--warning)';
+            const totalFotos = os.total_fotos || 0;
             return `
             <div style="display:flex; gap:14px; padding:14px 0; border-bottom:1px solid var(--border); align-items:flex-start;">
-                ${os.foto_base64 ? `
-                    <img src="${os.foto_base64}"
-                         style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border); cursor:pointer; flex-shrink:0;"
-                         onclick="window.abrirFotoAmpliada('${os.foto_base64}', 'OS ${os.numero_os || '#' + os.id} — ${os.criado_por || 'Sistema'} — ${os.criado_em || ''}')">
+                ${os.foto_capa ? `
+                    <div style="position:relative; flex-shrink:0; cursor:pointer;" onclick="window.abrirGaleriaOs(${os.id}, '${os.numero_os ? `OS ${os.numero_os}` : `OS #${os.id}`}')">
+                        <img src="${os.foto_capa}" style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border);">
+                        ${totalFotos > 1 ? `<span style="position:absolute; bottom:2px; right:2px; background:rgba(0,0,0,0.75); color:#fff; font-size:10px; padding:1px 6px; border-radius:10px;"><i class="fas fa-images"></i> ${totalFotos}</span>` : ''}
+                    </div>
                 ` : `
                     <div style="width:70px; height:70px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--text-muted);">
                         <i class="fas fa-file-invoice" style="font-size:20px; opacity:0.4;"></i>
@@ -5800,6 +5841,61 @@ window.carregarListaOrdensServico = async function() {
     } catch (e) {
         console.error('⚠️ Erro ao carregar OS:', e);
         container.innerHTML = `<div class="text-muted" style="text-align:center; padding:30px 0;">Não foi possível carregar. Verifique sua internet.</div>`;
+    }
+};
+
+// --------------------------------------------------------------
+// Galeria de páginas de UMA OS — busca todas as fotos dela na hora do
+// clique (a lista principal só traz a foto de capa, pra não pesar) e
+// mostra num mini-visualizador com miniaturas; clicar numa miniatura
+// abre ela ampliada (reaproveita window.abrirFotoAmpliada).
+// --------------------------------------------------------------
+window.abrirGaleriaOs = async function(osId, titulo) {
+    let overlay = document.getElementById('lightbox-galeria-os-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'lightbox-galeria-os-overlay';
+        overlay.className = 'modal-overlay hidden';
+        overlay.style.zIndex = '10090';
+        overlay.innerHTML = `
+            <div class="modal-content" style="max-width:520px;" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h2 id="galeria-os-titulo"><i class="fas fa-file-invoice"></i> OS</h2>
+                    <button class="btn-close-modal" onclick="document.getElementById('lightbox-galeria-os-overlay').classList.add('hidden')"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body" id="galeria-os-corpo" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
+            </div>
+        `;
+        overlay.addEventListener('click', () => overlay.classList.add('hidden'));
+        document.body.appendChild(overlay);
+    }
+
+    document.getElementById('galeria-os-titulo').innerHTML = `<i class="fas fa-file-invoice"></i> ${titulo}`;
+    const corpo = document.getElementById('galeria-os-corpo');
+    corpo.innerHTML = `<div class="text-muted" style="padding:20px 0;">Carregando páginas...</div>`;
+    overlay.classList.remove('hidden');
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/ordens_servico/${osId}/fotos`, { cache: 'no-store' });
+        const fotos = resp.ok ? await resp.json() : [];
+
+        if (!Array.isArray(fotos) || fotos.length === 0) {
+            corpo.innerHTML = `<div class="text-muted" style="padding:20px 0;">Nenhuma foto encontrada.</div>`;
+            return;
+        }
+
+        corpo.innerHTML = fotos.map((f, i) => `
+            <div style="position:relative;">
+                <img src="${f.foto_base64}"
+                     style="width:110px; height:110px; object-fit:cover; border-radius:8px; border:1px solid var(--border-color); cursor:pointer;"
+                     onclick="window.abrirFotoAmpliada('${f.foto_base64}', '${titulo.replace(/'/g, "\\'")} — Página ${i + 1}')">
+                <span style="position:absolute; bottom:4px; left:4px; background:rgba(0,0,0,0.75); color:#fff; font-size:10px; padding:1px 6px; border-radius:10px;">Pág. ${i + 1}</span>
+            </div>
+        `).join('');
+    } catch (e) {
+        console.error('⚠️ Não consegui carregar as páginas da OS:', e);
+        corpo.innerHTML = `<div class="text-muted" style="padding:20px 0;">Não foi possível carregar.</div>`;
     }
 };
 
