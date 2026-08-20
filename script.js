@@ -711,7 +711,35 @@ async function atualizarHistoricoGlobalComServidor(filtroData) {
             acoesDoServidor = acoesDoServidor.filter(a => a.tag === 'AUTENTICAÇÃO');
         }
 
-        tbody.innerHTML = montarLinhasHistorico(acoesDoServidor, [], filtroAtual);
+        // 🔧 CORREÇÃO ("laudos sumiam da Auditoria assim que a busca do
+        // servidor terminava"): esta função sempre substituiu a tabela
+        // passando um array VAZIO de laudos pro montarLinhasHistorico —
+        // então mesmo quando os laudos eram só locais, eles apareciam só
+        // por um instante (na primeira renderização, antes desta busca
+        // terminar) e depois somiam. Agora busca os laudos oficiais do
+        // servidor também, do mesmo jeito que já faz com os eventos.
+        let laudosDoServidor = [];
+        try {
+            const respLaudos = await fetch(`${apiBase}/api/laudos?limite=200`, { cache: 'no-store' });
+            if (respLaudos.ok) {
+                const laudosBrutos = await respLaudos.json();
+                if (Array.isArray(laudosBrutos)) {
+                    laudosDoServidor = laudosBrutos.map(l => ({
+                        id: l.id,
+                        tag: l.peca_id,
+                        tipo: l.tipo,
+                        data: l.criado_em || '',
+                        responsavel: l.criado_por || 'Sistema',
+                        html: l.html,
+                        timestamp: l.criado_em ? new Date(l.criado_em.replace(' ', 'T')).getTime() : 0
+                    }));
+                }
+            }
+        } catch (eLaudos) {
+            console.error('⚠️ Não consegui buscar os laudos do servidor:', eLaudos);
+        }
+
+        tbody.innerHTML = montarLinhasHistorico(acoesDoServidor, laudosDoServidor, filtroAtual);
     } catch (e) {
         console.error('⚠️ Não consegui buscar a Auditoria completa do servidor (mantendo só o que tinha local):', e);
     }
@@ -5170,34 +5198,66 @@ window.desfazerApontamentoMolde = async function(id_log) {
 
 
 // ==============================================================
-// 4. HISTÓRICO DE LAUDOS E SWAP (PRESERVADOS)
+// 4. HISTÓRICO DE LAUDOS E SWAP
 // ==============================================================
-window.salvarLaudoNoHistorico = function(tag, tipo, htmlPDF) {
-    const laudos = JSON.parse(localStorage.getItem("oms_laudos_salvos")) || [];
-    const agora = new Date();
-    const id = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-    laudos.unshift({ id: id, tag: tag, tipo: tipo, data: agora.toLocaleDateString('pt-BR') + " " + agora.toLocaleTimeString('pt-BR'), timestamp: agora.getTime(), html: htmlPDF });
-    if (laudos.length > 200) laudos.pop();
-    localStorage.setItem("oms_laudos_salvos", JSON.stringify(laudos));
-    if (typeof window.renderHistorico === 'function') window.renderHistorico();
-    return id;
+// 🔧 CORREÇÃO ("laudos só existiam no localStorage de quem gerava"):
+// antes, o PDF do folhão ficava só no navegador de quem finalizava —
+// sumia se limpasse os dados, e nunca aparecia pra outro técnico em
+// outro aparelho, nem pra outro moderador na Auditoria. Agora persiste
+// no Neon (tabela "laudos"), igual todo o resto do histórico.
+window.salvarLaudoNoHistorico = async function(tag, tipo, htmlPDF) {
+    const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Sistema') : 'Sistema';
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/laudos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ peca_id: tag, tipo, html: htmlPDF, operador })
+        });
+        if (!resp.ok) throw new Error('A API não confirmou o salvamento do laudo.');
+        const resultado = await resp.json();
+        if (typeof window.renderHistorico === 'function') window.renderHistorico();
+        return resultado.id;
+    } catch (e) {
+        console.error('⚠️ Não consegui salvar o laudo no servidor:', e);
+        return null;
+    }
 };
 
-window.excluirLaudo = function(id) {
-    let laudos = JSON.parse(localStorage.getItem("oms_laudos_salvos")) || [];
-    laudos = laudos.filter(l => l.id !== id);
-    localStorage.setItem("oms_laudos_salvos", JSON.stringify(laudos));
-    if (typeof window.renderHistorico === 'function') window.renderHistorico();
+window.excluirLaudo = async function(id) {
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/laudos/excluir`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+        });
+        if (!resp.ok) {
+            alert('Não foi possível excluir o laudo.');
+            return;
+        }
+        if (typeof window.renderHistorico === 'function') window.renderHistorico();
+    } catch (e) {
+        console.error('⚠️ Erro ao excluir laudo:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
 };
 
-window.visualizarLaudo = function(id) {
-    const laudos = JSON.parse(localStorage.getItem("oms_laudos_salvos")) || [];
-    const laudo = laudos.find(l => l.id === id);
-    if (!laudo) return alert("Laudo não encontrado.");
-    const win = window.open('', '_blank', 'width=1100,height=800');
-    if (win) { win.document.write(laudo.html); win.document.close(); } 
-    else { const p = document.getElementById('print-content'); if (p) { p.innerHTML = laudo.html; window.print(); } }
+window.visualizarLaudo = async function(id) {
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/laudos/${id}`, { cache: 'no-store' });
+        if (!resp.ok) return alert('Laudo não encontrado.');
+        const laudo = await resp.json();
+        const win = window.open('', '_blank', 'width=1100,height=800');
+        if (win) { win.document.write(laudo.html); win.document.close(); }
+        else { const p = document.getElementById('print-content'); if (p) { p.innerHTML = laudo.html; window.print(); } }
+    } catch (e) {
+        console.error('⚠️ Erro ao carregar laudo:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
 };
+
 
 window.iniciarSwapAlocacao = async function(idReserva) {
     if (!window.verificarAcesso()) return;
@@ -5802,7 +5862,11 @@ window.carregarListaOrdensServico = async function() {
 
         container.innerHTML = OS_CACHE.map(os => {
             const concluida = os.status === 'Concluído';
-            const corStatus = concluida ? 'var(--success)' : 'var(--warning)';
+            const naoExecutada = os.status === 'Não Executada';
+            let corStatus = 'var(--warning)';
+            let iconeStatus = '🔧';
+            if (concluida) { corStatus = 'var(--success)'; iconeStatus = '✅'; }
+            else if (naoExecutada) { corStatus = 'var(--danger)'; iconeStatus = '🚫'; }
             const totalFotos = os.total_fotos || 0;
             return `
             <div style="display:flex; gap:14px; padding:14px 0; border-bottom:1px solid var(--border); align-items:flex-start;">
@@ -5819,20 +5883,26 @@ window.carregarListaOrdensServico = async function() {
                 <div style="flex:1; min-width:0;">
                     <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
                         <span class="font-code" style="font-weight:700; color:var(--text-heading);">${os.numero_os ? `OS ${os.numero_os}` : `#${os.id}`}</span>
-                        <span style="font-size:11px; font-weight:700; color:${corStatus};">${concluida ? '✅' : '🔧'} ${os.status}</span>
+                        <span style="font-size:11px; font-weight:700; color:${corStatus};">${iconeStatus} ${os.status}</span>
                     </div>
                     ${os.descricao ? `<div style="font-size:13px; color:var(--text-body); margin-bottom:4px;">${os.descricao}</div>` : ''}
+                    ${naoExecutada && os.motivo_nao_executada ? `
+                        <div style="font-size:12px; color:var(--danger); background:rgba(239,68,68,0.08); border-left:3px solid var(--danger); padding:5px 8px; border-radius:4px; margin-bottom:4px;">
+                            <strong>Motivo:</strong> ${os.motivo_nao_executada}
+                        </div>
+                    ` : ''}
                     <div style="font-size:11px; color:var(--text-accent);">
                         ${os.criado_por || 'Sistema'} · ${os.criado_em || ''}
                         ${concluida && os.concluido_por ? `<br>Concluída por ${os.concluido_por} · ${os.concluido_em || ''}` : ''}
+                        ${naoExecutada && os.encerrado_por ? `<br>Encerrada por ${os.encerrado_por} · ${os.encerrado_em || ''}` : ''}
                     </div>
                 </div>
                 <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
-                    <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusOrdemServico(${os.id}, '${concluida ? 'Em Andamento' : 'Concluído'}')">
-                        ${concluida ? 'Reabrir' : 'Concluir'}
-                    </button>
+                    ${!concluida ? `<button class="btn-premium btn-success" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusOrdemServico(${os.id}, 'Concluído')">Concluir</button>` : ''}
+                    ${!naoExecutada ? `<button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.marcarOsNaoExecutada(${os.id})">Não Executada</button>` : ''}
+                    ${(concluida || naoExecutada) ? `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusOrdemServico(${os.id}, 'Em Andamento')">Reabrir</button>` : ''}
                     <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.excluirOrdemServico(${os.id})">
-                        <i class="fas fa-trash"></i>
+                        <i class="fas fa-trash"></i> Excluir
                     </button>
                 </div>
             </div>
@@ -5899,7 +5969,7 @@ window.abrirGaleriaOs = async function(osId, titulo) {
     }
 };
 
-window.mudarStatusOrdemServico = async function(id, novoStatus) {
+window.mudarStatusOrdemServico = async function(id, novoStatus, motivo) {
     if (!verificarAcesso()) return;
     const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
 
@@ -5908,10 +5978,11 @@ window.mudarStatusOrdemServico = async function(id, novoStatus) {
         const resp = await fetch(`${apiBase}/api/ordens_servico/status`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id, status: novoStatus, operador })
+            body: JSON.stringify({ id, status: novoStatus, operador, motivo: motivo || null })
         });
         if (!resp.ok) {
-            alert('Não foi possível atualizar o status da OS.');
+            const erro = await resp.json().catch(() => ({}));
+            alert(erro.detail || 'Não foi possível atualizar o status da OS.');
             return;
         }
         await window.carregarListaOrdensServico();
@@ -5920,6 +5991,18 @@ window.mudarStatusOrdemServico = async function(id, novoStatus) {
         alert('Não foi possível conectar ao servidor.');
     }
 };
+
+// 🆕 "Não Executada" (bate com o campo do papel da OS real) — pede o
+// motivo/justificativa ANTES de marcar, porque o backend exige esse
+// campo preenchido pra esse status.
+window.marcarOsNaoExecutada = function(id) {
+    if (!verificarAcesso()) return;
+    const motivo = prompt('Motivo / Justificativa da OS não ter sido executada:');
+    if (motivo === null) return; // cancelou
+    if (!motivo.trim()) return alert('É preciso informar o motivo.');
+    window.mudarStatusOrdemServico(id, 'Não Executada', motivo.trim());
+};
+
 
 window.excluirOrdemServico = async function(id) {
     if (!verificarAcesso()) return;

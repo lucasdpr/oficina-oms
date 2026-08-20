@@ -912,11 +912,11 @@
 
                     <div class="form-grid-4" style="margin-bottom:16px;">
                         <div class="input-group">
-                            <label>Número da OS</label>
+                            <label>Número da OS (opcional)</label>
                             <input type="text" id="os-numero" class="premium-input" placeholder="Ex: 12345" style="width:100%;">
                         </div>
                         <div class="input-group" style="grid-column: span 3;">
-                            <label>Descrição</label>
+                            <label>Descrição (opcional)</label>
                             <textarea id="os-descricao" class="premium-textarea" rows="1" placeholder="Ex: Troca de rolamento no Bender..."></textarea>
                         </div>
                     </div>
@@ -942,6 +942,7 @@
                             <button class="btn-filter-mcc active" data-status="" onclick="window.filtrarOrdensServico('', this)">Todas</button>
                             <button class="btn-filter-mcc" data-status="Em Andamento" onclick="window.filtrarOrdensServico('Em Andamento', this)">🔧 Em Andamento</button>
                             <button class="btn-filter-mcc" data-status="Concluído" onclick="window.filtrarOrdensServico('Concluído', this)">✅ Concluído</button>
+                            <button class="btn-filter-mcc" data-status="Não Executada" onclick="window.filtrarOrdensServico('Não Executada', this)">🚫 Não Executada</button>
                         </div>
                     </div>
                     <div id="os-lista-container"></div>
@@ -1886,7 +1887,7 @@
     <!-- SCRIPTS (consolidados)                   -->
     <!-- ========================================= -->
     <script type="module">
-        import './script.js?v=25';
+        import './script.js?v=26';
         import './procedimentosOficina.js?v=1';
         import './ui.js?v=13';
         import './folhaoMolde4.js?v=6';
