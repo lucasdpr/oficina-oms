@@ -321,6 +321,7 @@
                 <a href="Sinotico3d.html" id="nav-sinotico" class="nav-link" style="color:#22d3ee;" target="_blank" title="Abre em uma nova aba"><i class="fas fa-cube"></i> Sinótico 3D</a>
                 <a href="#" id="nav-producao" class="nav-link" style="color: #3b82f6;" onclick="window.abrirAba(event,'aba-producao')"><i class="fas fa-calculator"></i> Lançamento de Produção</a>
                 <a href="#" id="nav-ocorrencia" class="nav-link" style="color:#eab308;" onclick="window.abrirAba(event,'aba-ocorrencia')"><i class="fas fa-triangle-exclamation"></i> Registro de Ocorrência</a>
+                <a href="#" id="nav-ordens-servico" class="nav-link" style="color:#f472b6;" onclick="window.abrirAba(event,'aba-ordens-servico')"><i class="fas fa-file-invoice"></i> Registro de OS</a>
 
                 <div class="nav-divider">Oficina</div>
                 <a href="#" id="nav-reparos" class="nav-link highlight-warning" onclick="window.abrirAba(event,'aba-reparos')"><i class="fas fa-wrench"></i> Peças em Reparo</a>
@@ -896,6 +897,59 @@
                         </div>
                     </div>
                     <div id="ocorrencia-lista-container"></div>
+                </div>
+            </section>
+
+            <!-- 🆕 REGISTRO DE OS (Ordem de Serviço) — foto da OS em papel +
+                 acompanhamento de status (Em Andamento / Concluído). -->
+            <section id="aba-ordens-servico" class="tab-content">
+                <div class="glass-panel" style="padding:24px; margin-bottom:24px;">
+                    <h2 style="color:#f472b6;"><i class="fas fa-file-invoice"></i> Registro de OS</h2>
+                    <p class="text-muted" style="font-size:13px; margin-bottom:20px;">
+                        Tire uma foto da OS em papel pra deixar ela registrada digitalmente. Acompanhe o status
+                        até marcar como concluída.
+                    </p>
+
+                    <div class="form-grid-4" style="margin-bottom:16px;">
+                        <div class="input-group">
+                            <label>Número da OS (opcional)</label>
+                            <input type="text" id="os-numero" class="premium-input" placeholder="Ex: 12345" style="width:100%;">
+                        </div>
+                        <div class="input-group" style="grid-column: span 3;">
+                            <label>Descrição (opcional)</label>
+                            <textarea id="os-descricao" class="premium-textarea" rows="1" placeholder="Ex: Troca de rolamento no Bender..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="input-group" style="margin-bottom:16px; max-width:320px;">
+                        <label>Foto da OS <span style="color:var(--danger);">*</span></label>
+                        <input type="file" id="os-foto-input" accept="image/*" style="display:none;" onchange="window.processarFotoOs(event)">
+                        <button type="button" class="btn-premium w-100" onclick="document.getElementById('os-foto-input').click()">
+                            <i class="fas fa-camera"></i> Tirar Foto / Anexar
+                        </button>
+                        <div id="os-foto-preview-container" class="hidden" style="margin-top:10px; position:relative; display:inline-block;">
+                            <img id="os-foto-preview" src="" style="max-width:100%; max-height:200px; border-radius:8px; border:1px solid var(--border);">
+                            <button type="button" onclick="window.removerFotoOs()" style="position:absolute; top:6px; right:6px; background:rgba(0,0,0,0.7); color:#fff; border:none; border-radius:50%; width:26px; height:26px; cursor:pointer;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button class="btn-premium btn-success" onclick="window.confirmarOrdemServico()">
+                        <i class="fas fa-check"></i> Registrar OS
+                    </button>
+                </div>
+
+                <div class="glass-panel" style="padding:24px;">
+                    <div class="flex-between" style="margin-bottom:16px;">
+                        <h3 style="color:var(--text-title); font-size:1rem;"><i class="fas fa-list"></i> OS Registradas</h3>
+                        <div class="mcc-filter-group" id="os-filtros">
+                            <button class="btn-filter-mcc active" data-status="" onclick="window.filtrarOrdensServico('', this)">Todas</button>
+                            <button class="btn-filter-mcc" data-status="Em Andamento" onclick="window.filtrarOrdensServico('Em Andamento', this)">🔧 Em Andamento</button>
+                            <button class="btn-filter-mcc" data-status="Concluído" onclick="window.filtrarOrdensServico('Concluído', this)">✅ Concluído</button>
+                        </div>
+                    </div>
+                    <div id="os-lista-container"></div>
                 </div>
             </section>
 
@@ -1837,7 +1891,7 @@
     <!-- SCRIPTS (consolidados)                   -->
     <!-- ========================================= -->
     <script type="module">
-        import './script.js?v=22';
+        import './script.js?v=24';
         import './procedimentosOficina.js?v=1';
         import './ui.js?v=13';
         import './folhaoMolde4.js?v=6';

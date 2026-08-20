@@ -2876,17 +2876,39 @@ async function carregarFotosNoProntuario(id) {
             return;
         }
 
+        // 🔧 CORREÇÃO ("a foto não fala qual comentário ela pertence"):
+        // a API /api/fotos/{id} já manda o texto do comentário/registro
+        // (campo "acao", ex: "teste 2") junto de cada foto — mas essa
+        // função nunca usava esse campo, só mostrava data e operador.
+        // Agora cada foto ganha uma legenda com o texto do registro
+        // logo abaixo da miniatura (sem precisar clicar pra ver), e o
+        // texto completo também aparece na foto ampliada.
+        //
+        // "acao" pode vir com tags HTML (ex: '<span style="...">[CATEGORIA]</span>
+        // texto'), usadas pra colorir a categoria no Prontuário — remove
+        // essas tags aqui porque o atributo "title" e o rodapé da miniatura
+        // não interpretam HTML (apareceria a tag escrita, igual o bug
+        // corrigido antes nas notificações push).
+        const textoSemHtml = (texto) => String(texto || '').replace(/<[^>]+>/g, '').trim();
+
         container.innerHTML = `
             <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">
                 <i class="fas fa-images"></i> Fotos anexadas (${fotos.length})
             </div>
-            <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px;">
-                ${fotos.map(f => `
-                    <img src="${f.foto_base64}"
-                         style="width:90px; height:90px; object-fit:cover; border-radius:8px; border:1px solid var(--border-color); cursor:pointer; flex-shrink:0;"
-                         onclick="window.abrirFotoAmpliada('${f.foto_base64}', '${(f.operador || 'Sistema').replace(/'/g, "\\'")} — ${f.data_hora || ''}')"
-                         title="${f.data_hora} — ${f.operador}">
-                `).join('')}
+            <div style="display:flex; gap:10px; overflow-x:auto; padding-bottom:8px;">
+                ${fotos.map(f => {
+                    const legendaCompleta = `${textoSemHtml(f.acao) || 'Sem descrição'} — ${f.operador || 'Sistema'} — ${f.data_hora || ''}`;
+                    const legendaCurta = textoSemHtml(f.acao) || 'Sem descrição';
+                    return `
+                    <div style="flex-shrink:0; width:90px;">
+                        <img src="${f.foto_base64}"
+                             style="width:90px; height:90px; object-fit:cover; border-radius:8px; border:1px solid var(--border-color); cursor:pointer; display:block;"
+                             onclick="window.abrirFotoAmpliada('${f.foto_base64}', '${legendaCompleta.replace(/'/g, "\\'")}')"
+                             title="${legendaCompleta}">
+                        <div class="text-muted" style="font-size:10px; margin-top:3px; line-height:1.3; max-height:2.6em; overflow:hidden; text-overflow:ellipsis;" title="${legendaCompleta}">${legendaCurta}</div>
+                    </div>
+                `;
+                }).join('')}
             </div>
         `;
     } catch (e) {
@@ -4919,6 +4941,7 @@ window.abrirAba = function(event, idAba) {
         if (typeof carregarCatalogoMateriaisOficina === 'function') carregarCatalogoMateriaisOficina();
     }
     if (idAba === "aba-ocorrencia" && typeof window.renderAbaOcorrencia === 'function') window.renderAbaOcorrencia();
+    if (idAba === "aba-ordens-servico" && typeof window.carregarListaOrdensServico === 'function') window.carregarListaOrdensServico();
     if (idAba === "aba-painel-adm" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('adm');
     if (idAba === "aba-painel-almoxarifado" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('almoxarifado');
     if (idAba === "aba-painel-ponte-rolante" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('ponte-rolante');
@@ -5610,5 +5633,216 @@ window.toggleFormAdicionar = function() {
         form.classList.toggle('hidden');
     } else {
         console.error("Formulário 'form-novo-equipamento' não encontrado no HTML!");
+    }
+};
+// ==========================================
+// 🆕 REGISTRO DE OS (Ordem de Serviço) — foto da OS em papel + status
+// (Em Andamento / Concluído). Segue o mesmo padrão de compressão de
+// foto já usado em Intervenção/Ocorrência (window.processarFotoOcorrencia).
+// ==========================================
+let FOTO_OS_BASE64 = null;
+let FILTRO_OS_ATUAL = '';
+let OS_CACHE = [];
+
+window.processarFotoOs = function(event) {
+    const arquivo = event.target.files[0];
+    if (!arquivo) return;
+
+    if (!arquivo.type.startsWith('image/')) {
+        alert('Por favor, escolha um arquivo de imagem.');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const MAX_LADO = 1280;
+            let largura = img.width;
+            let altura = img.height;
+
+            if (largura > altura && largura > MAX_LADO) {
+                altura = Math.round((altura * MAX_LADO) / largura);
+                largura = MAX_LADO;
+            } else if (altura > MAX_LADO) {
+                largura = Math.round((largura * MAX_LADO) / altura);
+                altura = MAX_LADO;
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = largura;
+            canvas.height = altura;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, largura, altura);
+
+            FOTO_OS_BASE64 = canvas.toDataURL('image/jpeg', 0.7);
+
+            const preview = document.getElementById('os-foto-preview');
+            const container = document.getElementById('os-foto-preview-container');
+            if (preview) preview.src = FOTO_OS_BASE64;
+            if (container) container.classList.remove('hidden');
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(arquivo);
+    event.target.value = '';
+};
+
+window.removerFotoOs = function() {
+    FOTO_OS_BASE64 = null;
+    const preview = document.getElementById('os-foto-preview');
+    const container = document.getElementById('os-foto-preview-container');
+    if (preview) preview.src = '';
+    if (container) container.classList.add('hidden');
+};
+
+window.confirmarOrdemServico = async function() {
+    if (!verificarAcesso()) return;
+
+    const numero = document.getElementById('os-numero')?.value.trim();
+    const descricao = document.getElementById('os-descricao')?.value.trim();
+
+    if (!FOTO_OS_BASE64) return alert('Tire ou anexe a foto da OS antes de registrar.');
+
+    const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/ordens_servico`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                numero_os: numero || null,
+                descricao: descricao || null,
+                foto_base64: FOTO_OS_BASE64,
+                operador
+            })
+        });
+
+        if (!resp.ok) {
+            const erro = await resp.json().catch(() => ({}));
+            alert(erro.detail || 'Não foi possível registrar a OS.');
+            return;
+        }
+
+        document.getElementById('os-numero').value = '';
+        document.getElementById('os-descricao').value = '';
+        window.removerFotoOs();
+        alert('✅ OS registrada com sucesso.');
+        await window.carregarListaOrdensServico();
+    } catch (e) {
+        console.error('⚠️ Erro ao registrar OS:', e);
+        alert('Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.');
+    }
+};
+
+window.filtrarOrdensServico = function(status, botaoClicado) {
+    FILTRO_OS_ATUAL = status;
+    document.querySelectorAll('#os-filtros .btn-filter-mcc').forEach(b => b.classList.remove('active'));
+    if (botaoClicado) botaoClicado.classList.add('active');
+    window.carregarListaOrdensServico();
+};
+
+window.carregarListaOrdensServico = async function() {
+    const container = document.getElementById('os-lista-container');
+    if (!container) return;
+
+    container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>`;
+
+    try {
+        const apiBase = await resolverApiBase();
+        const query = FILTRO_OS_ATUAL ? `?status=${encodeURIComponent(FILTRO_OS_ATUAL)}` : '';
+        const resp = await fetch(`${apiBase}/api/ordens_servico${query}`, { cache: 'no-store' });
+        if (!resp.ok) throw new Error('Falha ao buscar');
+        OS_CACHE = await resp.json();
+
+        if (!Array.isArray(OS_CACHE) || OS_CACHE.length === 0) {
+            container.innerHTML = `<div class="text-muted" style="text-align:center; padding:30px 0;">Nenhuma OS registrada${FILTRO_OS_ATUAL ? ' com esse filtro' : ' ainda'}.</div>`;
+            return;
+        }
+
+        container.innerHTML = OS_CACHE.map(os => {
+            const concluida = os.status === 'Concluído';
+            const corStatus = concluida ? 'var(--success)' : 'var(--warning)';
+            return `
+            <div style="display:flex; gap:14px; padding:14px 0; border-bottom:1px solid var(--border); align-items:flex-start;">
+                ${os.foto_base64 ? `
+                    <img src="${os.foto_base64}"
+                         style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border); cursor:pointer; flex-shrink:0;"
+                         onclick="window.abrirFotoAmpliada('${os.foto_base64}', 'OS ${os.numero_os || '#' + os.id} — ${os.criado_por || 'Sistema'} — ${os.criado_em || ''}')">
+                ` : `
+                    <div style="width:70px; height:70px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--text-muted);">
+                        <i class="fas fa-file-invoice" style="font-size:20px; opacity:0.4;"></i>
+                    </div>
+                `}
+                <div style="flex:1; min-width:0;">
+                    <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
+                        <span class="font-code" style="font-weight:700; color:var(--text-heading);">${os.numero_os ? `OS ${os.numero_os}` : `#${os.id}`}</span>
+                        <span style="font-size:11px; font-weight:700; color:${corStatus};">${concluida ? '✅' : '🔧'} ${os.status}</span>
+                    </div>
+                    ${os.descricao ? `<div style="font-size:13px; color:var(--text-body); margin-bottom:4px;">${os.descricao}</div>` : ''}
+                    <div style="font-size:11px; color:var(--text-accent);">
+                        ${os.criado_por || 'Sistema'} · ${os.criado_em || ''}
+                        ${concluida && os.concluido_por ? `<br>Concluída por ${os.concluido_por} · ${os.concluido_em || ''}` : ''}
+                    </div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
+                    <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusOrdemServico(${os.id}, '${concluida ? 'Em Andamento' : 'Concluído'}')">
+                        ${concluida ? 'Reabrir' : 'Concluir'}
+                    </button>
+                    <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.excluirOrdemServico(${os.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            `;
+        }).join('');
+    } catch (e) {
+        console.error('⚠️ Erro ao carregar OS:', e);
+        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:30px 0;">Não foi possível carregar. Verifique sua internet.</div>`;
+    }
+};
+
+window.mudarStatusOrdemServico = async function(id, novoStatus) {
+    if (!verificarAcesso()) return;
+    const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/ordens_servico/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, status: novoStatus, operador })
+        });
+        if (!resp.ok) {
+            alert('Não foi possível atualizar o status da OS.');
+            return;
+        }
+        await window.carregarListaOrdensServico();
+    } catch (e) {
+        console.error('⚠️ Erro ao atualizar status da OS:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+};
+
+window.excluirOrdemServico = async function(id) {
+    if (!verificarAcesso()) return;
+    if (!confirm('Excluir esta OS registrada? Essa ação não pode ser desfeita.')) return;
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/ordens_servico/excluir`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+        });
+        if (!resp.ok) {
+            alert('Não foi possível excluir a OS.');
+            return;
+        }
+        await window.carregarListaOrdensServico();
+    } catch (e) {
+        console.error('⚠️ Erro ao excluir OS:', e);
+        alert('Não foi possível conectar ao servidor.');
     }
 };
