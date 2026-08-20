@@ -42,6 +42,7 @@
             --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
         }
+
         /* ===== SCROLLBAR ===== */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg-base); }
@@ -185,9 +186,148 @@
         .form-grid-4 { grid-template-columns: repeat(4,1fr); }
         @media (max-width: 768px) { .form-grid-4 { grid-template-columns: 1fr 1fr; } }
         @media (max-width: 480px) { .form-grid-4 { grid-template-columns: 1fr; } }
+
+        /* ============ APPLE-STYLE: efeitos visuais — versão sóbria/industrial
+           (ajustado depois do feedback: menos neon, mais discreto) ============ */
+        /* ===== foco visível (a11y) — não existia em lugar nenhum ===== */
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        textarea:focus-visible,
+        [tabindex]:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+        a:focus:not(:focus-visible),
+        button:focus:not(:focus-visible) {
+            outline: none;
+        }
+
+        /* ===== entrada suave do dashboard ao carregar (1x, não é scroll-reveal) ===== */
+        @keyframes appleFadeIn {
+            from { opacity: 0; transform: translateY(14px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .welcome-box, .kpi-container, .dashboard-main-grid {
+            animation: appleFadeIn 0.5s ease-out both;
+        }
+        .kpi-container .kpi-card:nth-child(1) { animation-delay: 0.03s; }
+        .kpi-container .kpi-card:nth-child(2) { animation-delay: 0.08s; }
+        .kpi-container .kpi-card:nth-child(3) { animation-delay: 0.13s; }
+        .kpi-container .kpi-card:nth-child(4) { animation-delay: 0.18s; }
+        .kpi-card { animation: appleFadeIn 0.45s ease-out both; }
+
+        /* ===== fundo com leve textura de profundidade — bem discreto, sem neon ===== */
+        .apple-aurora {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .apple-aurora span {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(130px);
+            opacity: 0.05;
+            animation: apple-aurora-float 30s ease-in-out infinite;
+        }
+        .apple-aurora span:nth-child(1) {
+            width: 480px; height: 480px;
+            top: -14%; left: 10%;
+            background: var(--primary);
+        }
+        .apple-aurora span:nth-child(2) {
+            width: 420px; height: 420px;
+            bottom: -16%; right: 6%;
+            background: var(--secondary);
+            opacity: 0.035;
+            animation-delay: -12s;
+        }
+        @keyframes apple-aurora-float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, -20px); }
+        }
+        .sidebar, .welcome-box, .kpi-container, .dashboard-main-grid, main, .tab-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ===== cards com elevação discreta no hover — sem glow colorido ===== */
+        @media (pointer: fine) {
+            .kpi-card {
+                transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            }
+            .kpi-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 16px 32px -8px rgba(0,0,0,0.5);
+            }
+            .glass-panel {
+                transition: box-shadow 0.3s ease, border-color 0.3s ease;
+            }
+            .glass-panel:hover {
+                box-shadow: 0 16px 32px -8px rgba(0,0,0,0.45);
+            }
+        }
+
+        /* ===== indicador de item de menu ativo — barra sólida, sem glow ===== */
+        .nav-link.active {
+            position: relative;
+        }
+        .nav-link.active::before {
+            content: '';
+            position: absolute;
+            left: -1px; top: 50%;
+            transform: translateY(-50%);
+            width: 3px; height: 60%;
+            border-radius: 3px;
+            background: var(--primary);
+        }
+
+        /* ===== shimmer sutil no botão premium ao passar o mouse ===== */
+        .btn-premium {
+            isolation: isolate;
+        }
+        .btn-premium::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -60%;
+            width: 35%; height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255,255,255,0.25), transparent);
+            transform: skewX(-20deg);
+            transition: left 0.6s ease;
+            z-index: -1;
+            pointer-events: none;
+        }
+        .btn-premium:hover::before { left: 130%; }
+
+        /* ===== transição mais macia na troca de aba dos folhões e no menu ===== */
+        .folhao-tab {
+            position: relative;
+        }
+        .folhao-tab.active {
+            transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+        }
+        .nav-link {
+            transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+        }
+        .nav-link.active {
+            transition: background 0.25s ease, border-color 0.25s ease;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .welcome-box, .kpi-container, .dashboard-main-grid, .kpi-card {
+                animation: none !important;
+            }
+            .apple-aurora { display: none; }
+        }
     </style>
 </head>
 <body>
+
+    <div class="apple-aurora" aria-hidden="true"><span></span><span></span></div>
 
     <!-- TELA DE LOGIN AVANÇADA -->
 <div id="tela-login-home" class="login-home-container no-print">

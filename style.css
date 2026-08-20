@@ -933,7 +933,7 @@ h1, h2, h3, h4, h5, h6 {
 ========================================== */
 .tab-content {
   display: none;
-  animation: fadeIn 0.35s ease-out;
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .tab-content.active {
@@ -3608,7 +3608,10 @@ body.light-mode {
   .kpi-card.danger,
   .kpi-card:hover,
   .btn-premium:hover,
-  .btn-quick-action:hover {
+  .btn-quick-action:hover,
+  .tab-content,
+  .folhao-tab.active,
+  .nav-link {
     animation: none !important;
     transform: none !important;
   }
