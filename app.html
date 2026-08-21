@@ -65,24 +65,44 @@
                         ' z=' + cs.zIndex;
                 }
 
+                // 🔎 Lê DIRETO da CSSOM (as regras que o navegador realmente
+                // carregou e está usando) — em vez de confiar no arquivo de
+                // texto, isso mostra exatamente o que o motor do navegador
+                // enxerga, eliminando qualquer dúvida de cache/versão.
+                var regrasSidebar = [];
+                try {
+                    for (var s = 0; s < document.styleSheets.length; s++) {
+                        var sheet = document.styleSheets[s];
+                        var rules;
+                        try { rules = sheet.cssRules || sheet.rules; } catch (e) { continue; }
+                        if (!rules) continue;
+                        (function varrer(lista, mediaTexto) {
+                            for (var r = 0; r < lista.length; r++) {
+                                var regra = lista[r];
+                                if (regra.type === 4 || regra.constructor.name === 'CSSMediaRule') { // @media
+                                    var ativa = window.matchMedia(regra.conditionText || regra.media.mediaText).matches;
+                                    varrer(regra.cssRules, (regra.conditionText || regra.media.mediaText) + ' [ATIVA=' + ativa + ']');
+                                } else if (regra.selectorText && regra.selectorText.indexOf('sidebar') !== -1 && regra.selectorText.indexOf('sidebar-') === -1) {
+                                    regrasSidebar.push((mediaTexto ? '{' + mediaTexto + '} ' : '(fora de media) ') + regra.selectorText + ' { ' + regra.style.cssText + ' }');
+                                }
+                            }
+                        })(rules, null);
+                    }
+                } catch (e) {
+                    regrasSidebar.push('ERRO ao ler CSSOM: ' + e.message);
+                }
+
                 var linhas = [
                     'window.innerWidth=' + window.innerWidth + ' innerHeight=' + window.innerHeight,
                     'matchMedia(max-width:992px)=' + window.matchMedia('(max-width: 992px)').matches,
-                    'matchMedia(max-width:768px)=' + window.matchMedia('(max-width: 768px)').matches,
                     'style.css carregado=' + (document.querySelector('link[href*="style.css"]') ? document.querySelector('link[href*="style.css"]').getAttribute('href') : 'NÃO ENCONTRADO'),
-                    '#tela-login-home: ' + info(loginEl),
-                    '#container-sistema-oms: ' + info(appEl),
-                    '.mobile-header: ' + info(header),
-                    '.sidebar: ' + info(sidebar),
+                    '--- REGRAS .sidebar NA CSSOM (ordem real de aplicação) ---',
+                ].concat(regrasSidebar).concat([
+                    '--- fim das regras .sidebar ---',
+                    '.sidebar computado: ' + info(sidebar),
                     '.sidebar classList=' + (sidebar ? sidebar.className : '?'),
                     '.main-content: ' + info(main) + ' padding-top=' + (main ? getComputedStyle(main).paddingTop : '?'),
-                    '.welcome-box: ' + info(welcome),
-                    'window.scrollY=' + window.scrollY,
-                    'app-container computed: display=' + (appEl ? getComputedStyle(appEl).display : '?') +
-                        ' flexDirection=' + (appEl ? getComputedStyle(appEl).flexDirection : '?') +
-                        ' justifyContent=' + (appEl ? getComputedStyle(appEl).justifyContent : '?') +
-                        ' alignItems=' + (appEl ? getComputedStyle(appEl).alignItems : '?')
-                ];
+                ]);
 
                 var caixa = document.createElement('div');
                 caixa.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:999998;' +
