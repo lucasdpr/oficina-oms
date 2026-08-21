@@ -2648,37 +2648,11 @@ function atualizarKPIsAvancados() {
 // reserva, e ver os equipamentos críticos — sem precisar navegar pelo
 // menu lateral procurando cada coisa em aba separada.
 function renderPainelTecnico() {
-    const listaReparo = document.getElementById("tecnico-lista-reparo");
     const listaCriticos = document.getElementById("tecnico-lista-criticos");
     const listaReservas = document.getElementById("tecnico-lista-reservas");
-    if (!listaReparo || !listaCriticos || !listaReservas) return;
+    if (!listaCriticos || !listaReservas) return;
 
     const linhaVazia = (msg) => `<div class="text-muted" style="text-align:center; padding: 18px 0;">${msg}</div>`;
-
-    // ---- EM REPARO (toque abre o folhão direto) ----
-    const emReparoBruto = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reparo");
-    const { lista: emReparo, semArea } = filtrarPorAreaTecnico(emReparoBruto);
-
-    if (semArea) {
-        listaReparo.innerHTML = linhaVazia("⚠️ Sua área ainda não foi cadastrada. Fale com um ADM.");
-    } else if (emReparo.length === 0) {
-        listaReparo.innerHTML = linhaVazia("Nenhum equipamento em reparo agora. 🎉");
-    } else {
-        listaReparo.innerHTML = emReparo.map(a => {
-            const dias = calcularDias(a);
-            return `
-                <div class="tecnico-item-linha" onclick="window.abrirFolhaoPorTipo('${a.id}')">
-                    <div>
-                        <span class="font-code" style="font-weight:700; color:var(--text-heading);">${a.id}</span>
-                        <span class="ind-card-tag bg-tag" style="margin-left:6px;">${a.tipo}</span>
-                    </div>
-                    <div style="text-align:right;">
-                        <span style="color:var(--warning); font-weight:700; font-size:13px;">${dias} dias</span>
-                        <i class="fas fa-chevron-right" style="margin-left:8px; color:var(--text-muted);"></i>
-                    </div>
-                </div>`;
-        }).join("");
-    }
 
     // 🔧 CORREÇÃO ("equipamento crítico no painel do técnico MUITO
     // GRANDE"): antes mostrava TODOS os equipamentos ≥80%, sem limite —
@@ -2733,10 +2707,10 @@ function renderPainelTecnico() {
 window.renderPainelTecnico = renderPainelTecnico;
 
 // ==========================================
-// PAINEL DO TÉCNICO — abas "Iniciar Novo" x "Em Andamento"
+// ABA REPARO — abas "Iniciar Reparo" x "Reparo em Andamento"
 // ==========================================
-window.trocarAbaTecnicoReparo = function(evento, idAlvo) {
-    const abas = ["tecnico-sub-iniciar", "tecnico-sub-andamento"];
+window.trocarAbaReparo = function(evento, idAlvo) {
+    const abas = ["reparo-sub-iniciar", "reparo-sub-andamento"];
     abas.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = (id === idAlvo) ? "block" : "none";
@@ -2745,10 +2719,26 @@ window.trocarAbaTecnicoReparo = function(evento, idAlvo) {
         const container = evento.currentTarget.closest(".folhao-tabs");
         if (container) container.querySelectorAll(".folhao-tab").forEach(btn => btn.classList.remove("active"));
         evento.currentTarget.classList.add("active");
+    } else {
+        const container = document.querySelector('#aba-reparos .folhao-tabs');
+        if (container) {
+            container.querySelectorAll(".folhao-tab").forEach(btn => btn.classList.remove("active"));
+            const idx = abas.indexOf(idAlvo);
+            const btns = container.querySelectorAll(".folhao-tab");
+            if (btns[idx]) btns[idx].classList.add("active");
+        }
     }
-    if (idAlvo === "tecnico-sub-andamento" && typeof window.carregarAndamentoTecnico === "function") {
-        window.carregarAndamentoTecnico();
+    if (idAlvo === "reparo-sub-andamento" && typeof window.carregarReparosAndamento === "function") {
+        window.carregarReparosAndamento();
     }
+};
+
+// Navega direto pra aba de Reparo, já abrindo a sub-aba certa
+// ("iniciar" ou "andamento") — usado pelos atalhos do Painel do Técnico.
+window.abrirAbaReparo = function(subaba) {
+    window.abrirAba(null, "aba-reparos");
+    const idAlvo = subaba === "andamento" ? "reparo-sub-andamento" : "reparo-sub-iniciar";
+    window.trocarAbaReparo(null, idAlvo);
 };
 
 // ==========================================
@@ -2759,8 +2749,8 @@ window.trocarAbaTecnicoReparo = function(evento, idAlvo) {
 // onde outro parou — o rascunho é salvo por equipamento, não por
 // pessoa, então não existe "travar pra um só técnico".
 // ==========================================
-window.carregarAndamentoTecnico = async function() {
-    const listaAndamento = document.getElementById("tecnico-lista-andamento");
+window.carregarReparosAndamento = async function() {
+    const listaAndamento = document.getElementById("reparos-lista-andamento");
     if (!listaAndamento) return;
 
     const linhaVazia = (msg) => `<div class="text-muted" style="text-align:center; padding: 18px 0;">${msg}</div>`;
@@ -5112,6 +5102,7 @@ window.abrirAba = function(event, idAba) {
     if (idAba === "aba-mcc3" && typeof renderizarGraficosMCC === 'function') renderizarGraficosMCC(3);
     if (idAba === "aba-mcc4" && typeof renderizarGraficosMCC === 'function') renderizarGraficosMCC(4);
     if (idAba === "aba-reparos" && typeof renderReparos === 'function') renderReparos();
+    if (idAba === "aba-reparos" && typeof window.trocarAbaReparo === 'function') window.trocarAbaReparo(null, "reparo-sub-iniciar");
     if (idAba === "aba-reservas" && typeof renderReservas === 'function') renderReservas();
     if (idAba === "aba-rolos" && typeof renderRolos === 'function') renderRolos();
     if (idAba === "aba-hidraulica" && typeof renderHidraulica === 'function') renderHidraulica();

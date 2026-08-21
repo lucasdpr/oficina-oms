@@ -737,57 +737,14 @@
 
                 <!-- ATALHOS RÁPIDOS -->
                 <div class="tecnico-atalhos-grid">
-                    <button class="tecnico-atalho-btn" style="border-color:#f59e0b;" onclick="window.abrirAba(null,'aba-reparos')">
+                    <button class="tecnico-atalho-btn" style="border-color:#f59e0b;" onclick="window.abrirAbaReparo('iniciar')">
                         <i class="fas fa-wrench" style="color:#f59e0b;"></i>
-                        <span>Folhão / Reparo</span>
+                        <span>Iniciar Reparo</span>
                     </button>
-                    <button class="tecnico-atalho-btn" style="border-color:#22c55e;" onclick="window.abrirAba(null,'aba-reservas')">
-                        <i class="fas fa-exchange-alt" style="color:#22c55e;"></i>
-                        <span>Sacar / Swap</span>
+                    <button class="tecnico-atalho-btn" style="border-color:#38bdf8;" onclick="window.abrirAbaReparo('andamento')">
+                        <i class="fas fa-hourglass-half" style="color:#38bdf8;"></i>
+                        <span>Reparo em Andamento</span>
                     </button>
-                    <button class="tecnico-atalho-btn" style="border-color:#ef4444;" onclick="window.abrirCriticos()">
-                        <i class="fas fa-radiation" style="color:#ef4444;"></i>
-                        <span>Críticos</span>
-                    </button>
-                    <button class="tecnico-atalho-btn" style="border-color:#a855f7;" onclick="window.abrirAba(null,'aba-almoxarifado')">
-                        <i class="fas fa-pallet" style="color:#a855f7;"></i>
-                        <span>Almoxarifado</span>
-                    </button>
-                    <button class="tecnico-atalho-btn" style="border-color:#38bdf8;" onclick="window.abrirAba(null,'aba-rolos')">
-                        <i class="fas fa-scroll" style="color:#38bdf8;"></i>
-                        <span>Rolos</span>
-                    </button>
-                    <button class="tecnico-atalho-btn" style="border-color:#f97316;" onclick="window.abrirAba(null,'aba-hidraulica')">
-                        <i class="fas fa-oil-can" style="color:#f97316;"></i>
-                        <span>Hidráulica</span>
-                    </button>
-                    <button class="tecnico-atalho-btn" style="border-color:#eab308;" onclick="window.abrirModalIntervencao()">
-                        <i class="fas fa-screwdriver-wrench" style="color:#eab308;"></i>
-                        <span>Registrar Intervenção</span>
-                    </button>
-                    <button class="tecnico-atalho-btn" style="border-color:#06b6d4;" onclick="window.abrirModalRelatorioDiario()">
-                        <i class="fas fa-clipboard-list" style="color:#06b6d4;"></i>
-                        <span>Relatório Diário</span>
-                    </button>
-                </div>
-
-                <!-- EQUIPAMENTOS EM REPARO (pra abrir o folhão direto) -->
-                <div class="glass-panel" style="padding: 18px; margin-top: 20px;">
-                    <h3 style="color:var(--text-title); font-size:1rem; margin-bottom: 12px;">
-                        <i class="fas fa-tools" style="color:#f59e0b;"></i> Reparo
-                    </h3>
-                    <div class="folhao-tabs">
-                        <button class="folhao-tab active" onclick="window.trocarAbaTecnicoReparo(event, 'tecnico-sub-iniciar')">Iniciar Novo</button>
-                        <button class="folhao-tab" onclick="window.trocarAbaTecnicoReparo(event, 'tecnico-sub-andamento')">Em Andamento</button>
-                    </div>
-                    <div id="tecnico-sub-iniciar" class="folhao-content">
-                        <p class="text-muted" style="font-size:12px; margin-bottom:10px;">Toque num equipamento pra abrir o folhão e começar o reparo.</p>
-                        <div id="tecnico-lista-reparo"></div>
-                    </div>
-                    <div id="tecnico-sub-andamento" class="folhao-content" style="display:none;">
-                        <p class="text-muted" style="font-size:12px; margin-bottom:10px;">Folhões que já foram iniciados (por você ou por outro técnico) e ainda não foram concluídos.</p>
-                        <div id="tecnico-lista-andamento"></div>
-                    </div>
                 </div>
 
                 <!-- EQUIPAMENTOS CRÍTICOS -->
@@ -876,7 +833,20 @@
                         <div><h2 style="color:#f59e0b;"><i class="fas fa-tools"></i> Setor de Manutenção (Reparo)</h2><p class="text-muted" style="font-size:13px;">Equipamentos que precisam de intervenção mecânica.</p></div>
                        
                     </div>
-                    <div class="table-responsive"><table class="premium-table tabela-mobile-cards" id="tabela-reparos"><thead><tr><th>TAG</th><th>Tipo</th><th>Desgaste</th><th>Dias em Reparo</th><th>Ações</th></tr></thead><tbody id="reparos-table-body"></tbody></table></div>
+
+                    <div class="folhao-tabs">
+                        <button class="folhao-tab active" onclick="window.trocarAbaReparo(event, 'reparo-sub-iniciar')">Iniciar Reparo</button>
+                        <button class="folhao-tab" onclick="window.trocarAbaReparo(event, 'reparo-sub-andamento')">Reparo em Andamento</button>
+                    </div>
+
+                    <div id="reparo-sub-iniciar" class="folhao-content">
+                        <div class="table-responsive"><table class="premium-table tabela-mobile-cards" id="tabela-reparos"><thead><tr><th>TAG</th><th>Tipo</th><th>Desgaste</th><th>Dias em Reparo</th><th>Ações</th></tr></thead><tbody id="reparos-table-body"></tbody></table></div>
+                    </div>
+
+                    <div id="reparo-sub-andamento" class="folhao-content" style="display:none;">
+                        <p class="text-muted" style="font-size:12px; margin-bottom:10px;">Folhões que já foram iniciados (por você ou por outro técnico) e ainda não foram concluídos.</p>
+                        <div id="reparos-lista-andamento"></div>
+                    </div>
                 </div>
             </section>
 
