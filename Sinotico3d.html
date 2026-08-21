@@ -360,6 +360,117 @@
     #modal .painel-mancal button.opt-agua:hover { border-color: #3b82f6; color: #93c5fd; }
     #modal .painel-mancal button.opt-limpar { color: var(--text-muted); font-size: 11.5px; }
 
+    /* ===== 🆕 BARRA TRANSVERSAL (cilindros de elevação + mangueiras
+       hidráulicas) =====
+       Só aparece pra Bow, Horizontal e Straightener (R1/R2) — MCC4 menos
+       Molde e Bender. Cada equipamento tem 4 cilindros de elevação e 8
+       mangueiras hidráulicas (2 por cilindro). Clicar num componente
+       abre o painel de ocorrência logo abaixo, com os mesmos campos de
+       checklist hidráulico (vazamento, aquecimento, qualidade do
+       fluido...) — cada campo cicla Verde -> Amarelo -> Vermelho a cada
+       clique. O estado mostrado na grade (Livre/Avariado/Crítico) é
+       calculado sozinho a partir do pior campo já registrado naquele
+       componente — igual à lógica dos rolos, só que aplicada aos
+       cilindros/mangueiras em vez do travamento do rolo. */
+    #modal .bt-wrap { margin-top: 18px; }
+    /* 🆕 Desenho esquemático (SVG) — dá noção espacial de onde fica cada
+       cilindro/mangueira antes de clicar. Os elementos do desenho usam
+       a MESMA classe/data-bt dos botões da lista abaixo, então os dois
+       ficam sempre sincronizados (clicar em qualquer um dos dois marca
+       os dois). */
+    #modal .bt-diagrama {
+        background: var(--bg-th); border: 1px solid var(--border); border-radius: 10px;
+        padding: 10px 6px 6px; margin-bottom: 14px;
+    }
+    /* 🔧 CORREÇÃO ("aumenta essa parte"): o container tinha uma altura
+       mínima FIXA (min-height) maior do que a altura que o desenho
+       realmente ocupava na tela — sobrava um espaço em branco enorme
+       embaixo dos cilindros, deixando o desenho pequeno "boiando" no
+       topo de uma caixa grande. Agora o container acompanha o
+       "aspect-ratio" exato do viewBox do SVG, então ele sempre preenche
+       100% da largura disponível sem sobrar (nem faltar) espaço — o
+       desenho fica o maior possível, sem buraco embaixo. */
+    #modal .bt-diagrama-svg { width: 100%; height: auto; display: block; aspect-ratio: 760 / 760; }
+    #modal .bt-svg-viga { fill: #2a3346; stroke: var(--border); stroke-width: 1; }
+    #modal .bt-svg-legenda-eixo { font-family: var(--mono); font-size: 12px; fill: var(--text-muted); letter-spacing: 0.06em; }
+    #modal .bt-svg-shape { cursor: pointer; }
+    #modal .bt-svg-shape .bt-svg-corpo { fill: rgba(34,197,94,0.14); stroke: #22c55e; stroke-width: 3; transition: all 0.15s ease; }
+    #modal .bt-svg-shape .bt-svg-haste { fill: #4b5568; stroke: var(--border); stroke-width: 1.5; }
+    #modal .bt-svg-shape .bt-svg-mangueira-tubo { fill: none; stroke: #22c55e; stroke-width: 6; stroke-linecap: round; transition: all 0.15s ease; }
+    #modal .bt-svg-shape .bt-svg-mangueira-corpo { fill: rgba(34,197,94,0.14); stroke: #22c55e; stroke-width: 3; transition: all 0.15s ease; }
+    #modal .bt-svg-shape .bt-svg-rotulo { font-family: var(--mono); font-size: 18px; font-weight: 800; fill: #d6f5e3; }
+    #modal .bt-svg-shape .bt-svg-rotulo-mng { font-family: var(--mono); font-size: 14px; font-weight: 800; fill: #d6f5e3; }
+    #modal .bt-svg-shape .bt-svg-rotulo-mng-num { font-family: var(--mono); font-size: 9px; font-weight: 700; fill: rgba(214,245,227,0.75); }
+    /* 🆕 Referência fixa "Sentido do Veio" — sempre no mesmo canto e
+       apontando pro mesmo lado, pra nunca confundir avanço/retorno
+       trocando de veio (mesma referência usada no desenho da oficina). */
+    #modal .bt-svg-referencia-label { font-family: var(--mono); font-size: 11px; font-weight: 700; fill: var(--accent); letter-spacing: 0.03em; }
+    #modal .bt-svg-referencia-linha { stroke: var(--accent); stroke-width: 2.5; }
+    #modal .bt-svg-referencia-seta { fill: var(--accent); }
+    #modal .bt-svg-coluna-label { font-family: var(--mono); font-size: 13px; font-weight: 800; letter-spacing: 0.04em; }
+    #modal .bt-svg-coluna-retorno { fill: #93c5fd; }
+    #modal .bt-svg-coluna-avanco { fill: #fbbf24; }
+    #modal .bt-svg-shape:hover .bt-svg-corpo,
+    #modal .bt-svg-shape:hover .bt-svg-mangueira-corpo { filter: brightness(1.3); stroke: var(--accent); }
+    #modal .bt-svg-shape:hover .bt-svg-mangueira-tubo { stroke: var(--accent); }
+    #modal .bt-svg-shape.avariado .bt-svg-corpo,
+    #modal .bt-svg-shape.avariado .bt-svg-mangueira-corpo { fill: rgba(234,179,8,0.22); stroke: #eab308; }
+    #modal .bt-svg-shape.avariado .bt-svg-mangueira-tubo { stroke: #eab308; }
+    #modal .bt-svg-shape.critico .bt-svg-corpo,
+    #modal .bt-svg-shape.critico .bt-svg-mangueira-corpo { fill: rgba(239,68,68,0.28); stroke: #ef4444; }
+    #modal .bt-svg-shape.critico .bt-svg-mangueira-tubo { stroke: #ef4444; }
+    #modal .bt-svg-shape.selecionado .bt-svg-corpo,
+    #modal .bt-svg-shape.selecionado .bt-svg-mangueira-corpo { stroke: var(--accent); stroke-width: 3; filter: drop-shadow(0 0 5px rgba(56,189,248,0.7)); }
+
+    #modal .bt-grupo { margin-bottom: 14px; }
+    #modal .bt-grupo-titulo {
+        font-size: 11px; color: var(--text-heading); text-transform: uppercase;
+        letter-spacing: 0.06em; margin-bottom: 8px; font-weight: 700;
+    }
+    #modal .bt-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    #modal .bt-item {
+        flex: 0 0 auto; min-width: 76px; padding: 11px 14px; border-radius: 8px;
+        border: 2px solid #22c55e; background: rgba(34,197,94,0.12); color: #86efac;
+        font-family: var(--mono); font-size: 14px; font-weight: 800; text-align: center;
+        cursor: pointer; transition: all 0.15s ease;
+    }
+    #modal .bt-item:hover { filter: brightness(1.2); transform: translateY(-1px); }
+    #modal .bt-item.selecionado { outline: 2px solid var(--accent); outline-offset: 1px; }
+    #modal .bt-item.avariado { border-color: #eab308; background: rgba(234,179,8,0.18); color: #fde68a; }
+    #modal .bt-item.critico { border-color: #ef4444; background: rgba(239,68,68,0.24); color: #fca5a5; }
+    #modal .bt-legenda {
+        display: flex; gap: 14px; flex-wrap: wrap; font-size: 10.5px; color: var(--text-muted);
+        margin-top: 10px;
+    }
+    #modal .bt-legenda span { display: inline-flex; align-items: center; gap: 5px; }
+    #modal .bt-legenda i { width: 16px; height: 11px; border-radius: 3px; display: inline-block; border: 1.5px solid var(--border); }
+    #modal .bt-legenda .li-livre { background: rgba(34,197,94,0.12); border-color: #22c55e; }
+    #modal .bt-legenda .li-avariado { background: rgba(234,179,8,0.18); border-color: #eab308; }
+    #modal .bt-legenda .li-critico { background: rgba(239,68,68,0.24); border-color: #ef4444; }
+
+    #modal .painel-bt {
+        margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 8px;
+        background: var(--bg-th); display: none;
+    }
+    #modal .painel-bt.show { display: block; }
+    #modal .painel-bt-titulo {
+        font-size: 11px; font-weight: 700; color: var(--text-heading); margin-bottom: 10px;
+        text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    #modal .painel-bt-campo {
+        display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-body);
+    }
+    #modal .painel-bt-campo:last-of-type { border-bottom: none; }
+    #modal .painel-bt-toggle {
+        font-family: var(--mono); font-size: 13px; font-weight: 800; padding: 7px 14px;
+        border-radius: 6px; border: 1.5px solid #22c55e; background: rgba(34,197,94,0.14); color: #86efac;
+        cursor: pointer; transition: all 0.15s ease; min-width: 88px; text-align: center; flex-shrink: 0;
+    }
+    #modal .painel-bt-toggle.amarelo { border-color: #eab308; background: rgba(234,179,8,0.18); color: #fde68a; }
+    #modal .painel-bt-toggle.vermelho { border-color: #ef4444; background: rgba(239,68,68,0.22); color: #fca5a5; }
+    #modal .painel-bt-toggle:hover { filter: brightness(1.15); }
+
     /* ===== TOOLTIP DE HOVER ===== */
     #tooltip {
         position: fixed; z-index: 60; pointer-events: none;
@@ -457,7 +568,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { getLayoutRolos, getPartesDoRolo } from './dados.js';
+import { getLayoutRolos, getPartesDoRolo, getLayoutBarraTransversal, CAMPOS_OCORRENCIA_BARRA_TRANSVERSAL } from './dados.js';
 
 // ==========================================================================
 // CONFIGURAÇÃO DA API — mesma lógica usada no banco.js: detecta local vs
@@ -1846,6 +1957,251 @@ async function salvarMancalOcorrencia(id, chaveMancal, tipo, mancaisMap, botaoEl
     }
 }
 
+// ==========================================================================
+// 🆕 BARRA TRANSVERSAL (cilindros de elevação + mangueiras hidráulicas)
+// ==========================================================================
+// Guardado num único campo JSON no banco: { "CIL-1": { vazamento: "amarelo",
+// aquecimento: "verde", ... }, "MNG-3": { ... } }. Cada campo do checklist
+// cicla entre 3 estados (verde -> amarelo -> vermelho); o estado mostrado
+// na grade de cada componente é sempre o PIOR campo já registrado nele.
+const ESTADOS_CAMPO_BT = ['verde', 'amarelo', 'vermelho'];
+
+function parseBarraTransversal(peca) {
+    try {
+        const obj = JSON.parse(peca.barra_transversal || '{}');
+        return (obj && typeof obj === 'object') ? obj : {};
+    } catch {
+        return {};
+    }
+}
+
+// Pior estado registrado num componente -> classe visual da grade
+// ('' = livre/ok, 'avariado' ou 'critico'). Sem nenhum campo marcado (ou
+// tudo verde) o componente aparece como livre.
+function estadoComponenteBT(registro) {
+    if (!registro) return '';
+    const valores = Object.values(registro).filter(v => ESTADOS_CAMPO_BT.includes(v));
+    if (valores.includes('vermelho')) return 'critico';
+    if (valores.includes('amarelo')) return 'avariado';
+    return '';
+}
+
+function rotuloEstadoBT(estado) {
+    if (estado === 'critico') return 'CRÍTICO';
+    if (estado === 'avariado') return 'AVARIADO';
+    return 'Livre / OK';
+}
+
+// 🆕 Diagrama esquemático (SVG) da barra transversal — vista frontal,
+// com os cilindros de elevação erguendo-se da barra e as mangueiras
+// hidráulicas saindo de cada cilindro (avanço + retorno). É só um
+// desenho de referência (não é escala real), pra dar noção espacial de
+// ONDE fica cada componente antes de clicar — os elementos do desenho
+// são clicáveis, exatamente como os botões da lista abaixo (mesmo
+// data-bt, então clicar em qualquer um dos dois abre o mesmo painel e
+// os dois ficam sincronizados).
+// 🆕 CORREÇÃO ("não dá pra identificar o lado, a referência nunca muda
+// 🆕 CORREÇÃO ("não dá pra identificar o lado, a referência nunca muda
+// nessa máquina"): antes as mangueiras só tinham número (1, 2, 3...),
+// sem indicar qual é a de AVANÇO e qual é a de RETORNO — e sem nenhuma
+// marcação de "Sentido do Veio" fixa, que é a referência real usada na
+// oficina (ver desenho: RETORNO sempre do lado esquerdo, AVANÇO sempre
+// do lado direito, com o Sentido do Veio marcado dos dois lados e que
+// NUNCA muda, independente de qual veio/posição é essa peça). Agora o
+// desenho mostra essa referência fixa no topo, e cada mangueira já
+// nasce rotulada AV (avanço) ou RE (retorno) em vez de só um número.
+//
+// 🆕 "aumente e coloca 2 em cima e 2 embaixo": os cilindros agora ficam
+// nos 4 "cantos" da barra transversal (2 acima, 2 abaixo), igual à
+// disposição física real — não mais numa fileira única — e o desenho
+// inteiro ficou bem maior.
+function renderDiagramaBarraTransversal(layout, statusMap) {
+    const nCil = layout.cilindros;
+    const nMangPorCil = layout.mangueirasPorCilindro;
+    const largura = 760, altura = 760;
+    const beamY = 410, beamH = 24, margemX = 90;
+
+    const bodyLen = 160, rodLen = 32, hoseLen = 54, hoseBoxH = 32;
+
+    let svg = '';
+
+    // Referência fixa "Sentido do Veio" — sempre no mesmo lugar,
+    // apontando pro mesmo lado, não muda com o veio selecionado (G/H).
+    svg += `
+        <defs>
+            <marker id="bt-seta" markerWidth="10" markerHeight="10" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" class="bt-svg-referencia-seta" />
+            </marker>
+        </defs>
+        <g class="bt-svg-referencia">
+            <text x="${margemX - 30}" y="26" class="bt-svg-referencia-label" text-anchor="start">← Sentido do Veio (referência fixa)</text>
+            <line x1="${margemX - 30}" y1="38" x2="${margemX + 150}" y2="38" class="bt-svg-referencia-linha" marker-end="url(#bt-seta)" />
+        </g>
+    `;
+
+    // Cabeçalhos fixos RETORNO (esquerda) / AVANÇO (direita) — as duas
+    // colunas onde ficam os cilindros, igual ao desenho de referência.
+    svg += `<text x="${margemX + 40}" y="${beamY - bodyLen - rodLen - hoseLen - hoseBoxH - 14}" class="bt-svg-coluna-label bt-svg-coluna-retorno" text-anchor="middle">← LADO RETORNO</text>`;
+    svg += `<text x="${largura - margemX - 40}" y="${beamY - bodyLen - rodLen - hoseLen - hoseBoxH - 14}" class="bt-svg-coluna-label bt-svg-coluna-avanco" text-anchor="middle">LADO AVANÇO →</text>`;
+
+    // Viga central (barra transversal) — os cilindros nascem dela, 2 pra
+    // cima e 2 pra baixo, um em cada coluna (esquerda/direita).
+    svg += `<rect x="${margemX - 12}" y="${beamY}" width="${largura - (margemX - 12) * 2}" height="${beamH}" rx="6" class="bt-svg-viga" />`;
+    svg += `<text x="${largura / 2}" y="${beamY + beamH / 2 + 5}" class="bt-svg-legenda-eixo" text-anchor="middle">Barra Transversal</text>`;
+
+    const colXs = [margemX + 40, largura - margemX - 40];
+    // Ordem: #1 e #2 em cima (esquerda/direita), #3 e #4 embaixo
+    // (esquerda/direita) — 2 cilindros acima da viga, 2 abaixo.
+    const posicoes = [];
+    for (let pos = 1; pos <= nCil; pos++) {
+        const emCima = pos <= Math.ceil(nCil / 2);
+        const idxNaLinha = emCima ? (pos - 1) : (pos - 1 - Math.ceil(nCil / 2));
+        const cx = colXs[idxNaLinha % colXs.length];
+        posicoes.push({ pos, cx, dir: emCima ? -1 : 1 });
+    }
+
+    let numMangueira = 0;
+    posicoes.forEach(({ pos, cx, dir }) => {
+        const chaveCil = `CIL-${pos}`;
+        const estadoCil = estadoComponenteBT(statusMap[chaveCil]);
+        const rotuloCil = `Cilindro de Elevação #${pos}`;
+
+        // dir = -1 (cima): corpo sobe a partir da viga, haste no topo.
+        // dir = +1 (baixo): corpo desce a partir da viga, haste embaixo
+        // (tudo espelhado verticalmente).
+        const bodyNear = beamY + (dir === 1 ? beamH : 0);           // borda do corpo colada na viga
+        const bodyFar = bodyNear + dir * bodyLen;                    // outra borda do corpo
+        const rodNear = bodyFar;
+        const rodFar = rodNear + dir * rodLen;                       // ponta da haste
+        const bodyTop = Math.min(bodyNear, bodyFar);
+        const rodTop = Math.min(rodNear, rodFar);
+        const labelY = (bodyNear + bodyFar) / 2 + 5;
+
+        svg += `
+            <g class="bt-clicavel bt-svg-shape ${estadoCil}" data-bt="${chaveCil}" data-bt-tipo="cilindro" data-bt-rotulo="${rotuloCil}" tabindex="0" role="button">
+                <rect x="${cx - 24}" y="${bodyTop}" width="48" height="${bodyLen}" rx="9" class="bt-svg-corpo" />
+                <rect x="${cx - 8}" y="${rodTop}" width="16" height="${rodLen}" rx="3" class="bt-svg-haste" />
+                <text x="${cx}" y="${labelY}" class="bt-svg-rotulo" text-anchor="middle">CIL ${pos}</text>
+            </g>
+        `;
+
+        // Mangueiras deste cilindro, penduradas na ponta da haste (longe
+        // da viga, pra não brigar com o desenho do cilindro vizinho).
+        // Índice 0 = RETORNO (fica mais perto do "Lado Retorno"),
+        // índice 1 = AVANÇO — convenção fixa, não depende do veio.
+        const hosePontaY = dir === -1 ? rodTop : rodTop + rodLen;
+        const offsets = [];
+        for (let m = 0; m < nMangPorCil; m++) offsets.push((m - (nMangPorCil - 1) / 2) * 40);
+
+        offsets.forEach((offset, idx) => {
+            numMangueira++;
+            const chaveMng = `MNG-${numMangueira}`;
+            const estadoMng = estadoComponenteBT(statusMap[chaveMng]);
+            const mx = cx + offset;
+            const ladoFixo = idx === 0 ? 'RETORNO' : 'AVANÇO';
+            const siglaLado = ladoFixo === 'RETORNO' ? 'RE' : 'AV';
+            const rotuloMng = `Mangueira de ${ladoFixo} — Cilindro #${pos} (#${numMangueira})`;
+            const meio1Y = hosePontaY + dir * (hoseLen * 0.4);
+            const meio2Y = hosePontaY + dir * (hoseLen * 0.75);
+            const pontaY = hosePontaY + dir * hoseLen;
+            const boxY = dir === -1 ? pontaY - hoseBoxH : pontaY;
+            const numY = dir === -1 ? boxY - 6 : boxY + hoseBoxH + 16;
+
+            svg += `
+                <g class="bt-clicavel bt-svg-shape ${estadoMng}" data-bt="${chaveMng}" data-bt-tipo="mangueira" data-bt-rotulo="${rotuloMng}" tabindex="0" role="button">
+                    <path d="M ${mx} ${hosePontaY} C ${mx - 6} ${meio1Y}, ${mx + 6} ${meio2Y}, ${mx} ${pontaY}" class="bt-svg-mangueira-tubo" />
+                    <rect x="${mx - 18}" y="${boxY}" width="36" height="${hoseBoxH}" rx="7" class="bt-svg-mangueira-corpo" />
+                    <text x="${mx}" y="${boxY + hoseBoxH / 2 + 5}" class="bt-svg-rotulo-mng" text-anchor="middle">${siglaLado}</text>
+                    <text x="${mx}" y="${numY}" class="bt-svg-rotulo-mng-num" text-anchor="middle">#${numMangueira}</text>
+                </g>
+            `;
+        });
+    });
+
+    return `
+        <svg viewBox="0 0 ${largura} ${altura}" class="bt-diagrama-svg" xmlns="http://www.w3.org/2000/svg">
+            ${svg}
+        </svg>
+    `;
+}
+
+function renderGridBarraTransversal(layout, statusMap) {
+    const nCil = layout.cilindros;
+    const nMangPorCil = layout.mangueirasPorCilindro;
+
+    const htmlDiagrama = renderDiagramaBarraTransversal(layout, statusMap);
+
+    let cilindrosHtml = '';
+    for (let pos = 1; pos <= nCil; pos++) {
+        const chave = `CIL-${pos}`;
+        const estado = estadoComponenteBT(statusMap[chave]);
+        cilindrosHtml += `<button type="button" class="bt-clicavel bt-item ${estado}" data-bt="${chave}" data-bt-tipo="cilindro" data-bt-rotulo="Cilindro de Elevação #${pos}" title="Cilindro de Elevação #${pos} — ${rotuloEstadoBT(estado)}">CIL ${pos}</button>`;
+    }
+
+    let mangueirasHtml = '';
+    let numMangueira = 0;
+    for (let pos = 1; pos <= nCil; pos++) {
+        for (let m = 1; m <= nMangPorCil; m++) {
+            numMangueira++;
+            const chave = `MNG-${numMangueira}`;
+            const estado = estadoComponenteBT(statusMap[chave]);
+            mangueirasHtml += `<button type="button" class="bt-clicavel bt-item ${estado}" data-bt="${chave}" data-bt-tipo="mangueira" data-bt-rotulo="Mangueira Hidráulica #${numMangueira} (Cilindro ${pos})" title="Mangueira Hidráulica #${numMangueira} (Cilindro ${pos}) — ${rotuloEstadoBT(estado)}">MNG ${numMangueira}</button>`;
+        }
+    }
+
+    return `
+        <div class="bt-wrap" id="bt-wrap">
+            <label class="obs-label">Barra Transversal — cilindros de elevação e mangueiras hidráulicas (clique para registrar ocorrência)</label>
+            <div class="bt-diagrama">${htmlDiagrama}</div>
+            <div class="bt-grupo">
+                <div class="bt-grupo-titulo">Cilindros de Elevação (${nCil})</div>
+                <div class="bt-grid">${cilindrosHtml}</div>
+            </div>
+            <div class="bt-grupo">
+                <div class="bt-grupo-titulo">Mangueiras Hidráulicas (${numMangueira})</div>
+                <div class="bt-grid">${mangueirasHtml}</div>
+            </div>
+            <div class="bt-legenda">
+                <span><i class="li-livre"></i> Livre / OK</span>
+                <span><i class="li-avariado"></i> Avariado</span>
+                <span><i class="li-critico"></i> Crítico</span>
+                <span style="width:100%; margin-top:2px; padding-top:6px; border-top:1px solid var(--border); color:var(--text-muted);">O lado RETORNO (esquerda) e AVANÇO (direita) segue sempre a mesma referência fixa da oficina — não muda ao trocar de veio (G/H).</span>
+            </div>
+            <div class="painel-bt" id="painel-bt">
+                <div class="painel-bt-titulo" id="painel-bt-titulo">Componente —</div>
+                <div id="painel-bt-campos"></div>
+            </div>
+        </div>
+    `;
+}
+
+// Salva o JSON inteiro da Barra Transversal (todos os componentes) —
+// chamado sozinho, a cada clique num campo do checklist, igual ao mancal
+// (não depende de um botão "Salvar" separado).
+async function salvarBarraTransversal(id, statusMap, mensagemHistorico) {
+    try {
+        const valor = JSON.stringify(statusMap);
+        const apiBase = await resolverApiBase();
+        const resposta = await fetch(`${apiBase}/api/atualizar_peca`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, barra_transversal: valor })
+        });
+        const resultado = await resposta.json();
+        if (resposta.ok && resultado.sucesso) {
+            if (piecesById[id]) piecesById[id].barra_transversal = valor;
+            if (mensagemHistorico && typeof window.registrarHistorico === 'function') {
+                window.registrarHistorico(id, mensagemHistorico);
+            }
+        } else {
+            throw new Error(resultado.detail || 'A API não confirmou o salvamento.');
+        }
+    } catch (erro) {
+        console.error('❌ Erro ao salvar Barra Transversal:', erro);
+        alert(`❌ Não consegui salvar a ocorrência da Barra Transversal.\n\nMotivo: ${erro.message}`);
+    }
+}
+
 function abrirModalPeca(slot, peca) {
     if (!peca) {
         modal.innerHTML = `
@@ -1868,6 +2224,14 @@ function abrirModalPeca(slot, peca) {
         const travadosAtuais = layoutRolos ? parseRolosTravados(peca) : new Set();
         const mancaisAtuais = layoutRolos ? parseMancais(peca) : {};
         const htmlGridRolos = layoutRolos ? renderGridRolos(layoutRolos, travadosAtuais, mancaisAtuais) : '';
+
+        // 🆕 Barra Transversal (cilindros de elevação + mangueiras
+        // hidráulicas): vale pra toda a MCC4, MENOS Molde e Bender —
+        // getLayoutBarraTransversal já cuida disso sozinho (só reconhece
+        // Bow, Horizontal e Straightener).
+        const layoutBarra = getLayoutBarraTransversal(peca.tipo, peca.id);
+        const statusBarraAtual = layoutBarra ? parseBarraTransversal(peca) : {};
+        const htmlGridBarra = layoutBarra ? renderGridBarraTransversal(layoutBarra, statusBarraAtual) : '';
 
         modal.innerHTML = `
             <div class="modal-top">
@@ -1903,6 +2267,7 @@ function abrirModalPeca(slot, peca) {
             </div>
 
             ${htmlGridRolos}
+            ${htmlGridBarra}
         `;
 
         // 🆕 Observação: edita aqui e salva direto no Postgres via
@@ -1987,6 +2352,93 @@ function abrirModalPeca(slot, peca) {
             }
         }
 
+        // 🆕 Barra Transversal: clique num cilindro/mangueira abre o
+        // painel de ocorrência abaixo (mesmos campos de checklist
+        // hidráulico do Vazamento/Aquecimento/etc). Cada campo cicla
+        // Verde -> Amarelo -> Vermelho a cada clique e salva na hora —
+        // não tem botão "Salvar" separado, igual ao mancal dos rolos.
+        if (layoutBarra) {
+            const painelBt = modal.querySelector('#painel-bt');
+            const painelBtTitulo = modal.querySelector('#painel-bt-titulo');
+            const painelBtCampos = modal.querySelector('#painel-bt-campos');
+            const btWrap = modal.querySelector('#bt-wrap');
+            let chaveSelecionada = null;
+
+            // \U0001F195 Atualiza a classe visual (livre/avariado/critico +
+            // selecionado) em TODOS os elementos que representam este
+            // componente ao mesmo tempo \u2014 o \u00edcone do desenho (SVG) E o
+            // bot\u00e3o da lista abaixo dele, sempre sincronizados.
+            function atualizarVisualComponente(chave) {
+                const estado = estadoComponenteBT(statusBarraAtual[chave] || {});
+                btWrap.querySelectorAll(`[data-bt="${chave}"]`).forEach(el => {
+                    el.classList.remove('avariado', 'critico', 'selecionado');
+                    if (estado) el.classList.add(estado);
+                    if (chave === chaveSelecionada) el.classList.add('selecionado');
+                    const rotulo = el.dataset.btRotulo;
+                    if (el.tagName === 'BUTTON') el.title = `${rotulo} \u2014 ${rotuloEstadoBT(estado)}`;
+                });
+            }
+
+            if (btWrap && !ehVisitante()) {
+                // Delega o clique pro container inteiro \u2014 pega tanto os
+                // bot\u00f5es da lista (<button class="bt-item">) quanto as
+                // formas do desenho SVG (<g class="bt-svg-shape">), porque
+                // os dois usam a mesma classe "bt-clicavel" + data-bt.
+                btWrap.addEventListener('click', (ev) => {
+                    const alvo = ev.target.closest('.bt-clicavel');
+                    if (!alvo || !btWrap.contains(alvo)) return;
+
+                    const chave = alvo.dataset.bt;
+                    const tipoComponente = alvo.dataset.btTipo;
+                    const rotuloComponente = alvo.dataset.btRotulo;
+
+                    if (chaveSelecionada && chaveSelecionada !== chave) {
+                        const anteriorChave = chaveSelecionada;
+                        chaveSelecionada = null;
+                        atualizarVisualComponente(anteriorChave);
+                    }
+                    chaveSelecionada = chave;
+                    atualizarVisualComponente(chave);
+
+                    const registro = statusBarraAtual[chave] || {};
+                    const campos = CAMPOS_OCORRENCIA_BARRA_TRANSVERSAL.filter(c => tipoComponente === 'cilindro' ? !c.soMangueira : true);
+                    painelBtTitulo.textContent = rotuloComponente;
+                    painelBtCampos.innerHTML = campos.map(c => {
+                        const estadoAtual = registro[c.chave] || 'verde';
+                        const rotuloEstadoTxt = estadoAtual === 'vermelho' ? 'Vermelho' : estadoAtual === 'amarelo' ? 'Amarelo' : 'Verde';
+                        return `
+                            <div class="painel-bt-campo">
+                                <span>${c.rotulo}</span>
+                                <button type="button" class="painel-bt-toggle ${estadoAtual !== 'verde' ? estadoAtual : ''}" data-campo="${c.chave}" data-rotulo-campo="${c.rotulo}">${rotuloEstadoTxt}</button>
+                            </div>
+                        `;
+                    }).join('');
+
+                    painelBtCampos.querySelectorAll('.painel-bt-toggle').forEach(botaoCampo => {
+                        botaoCampo.addEventListener('click', () => {
+                            const campo = botaoCampo.dataset.campo;
+                            const rotuloCampo = botaoCampo.dataset.rotuloCampo;
+                            const atual = registro[campo] || 'verde';
+                            const proximo = ESTADOS_CAMPO_BT[(ESTADOS_CAMPO_BT.indexOf(atual) + 1) % ESTADOS_CAMPO_BT.length];
+                            registro[campo] = proximo;
+                            statusBarraAtual[chave] = registro;
+
+                            botaoCampo.classList.remove('amarelo', 'vermelho');
+                            if (proximo !== 'verde') botaoCampo.classList.add(proximo);
+                            botaoCampo.textContent = proximo === 'vermelho' ? 'Vermelho' : proximo === 'amarelo' ? 'Amarelo' : 'Verde';
+
+                            atualizarVisualComponente(chave);
+
+                            const emojiEstado = proximo === 'vermelho' ? '\U0001F534' : proximo === 'amarelo' ? '\U0001F7E1' : '\U0001F7E2';
+                            salvarBarraTransversal(peca.id, statusBarraAtual, `\U0001F6E2\uFE0F Barra Transversal \u2014 ${rotuloComponente}: ${rotuloCampo} = ${emojiEstado} ${proximo}.`);
+                        });
+                    });
+
+                    painelBt.classList.add('show');
+                    painelBt.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                });
+            }
+        }
         modal.querySelector('#btn-prontuario').addEventListener('click', async () => {
             if (typeof window.abrirHistoricoIndividual === 'function') {
                 window.abrirHistoricoIndividual(peca.id);

@@ -439,6 +439,51 @@ export function getPartesDoRolo(layout, pos) {
     return [1];
 }
 
+// ==========================================================================
+// 🆕 BARRA TRANSVERSAL — cilindros de elevação e mangueiras hidráulicas
+// ==========================================================================
+// Mesma lógica de "match por tipo/id" do LAYOUT_ROLOS_POR_TIPO logo acima,
+// só que pra acompanhar o estado dos cilindros de elevação e das
+// mangueiras hidráulicas da barra transversal de cada equipamento.
+//
+// Vale pra toda a MCC4, MENOS Molde e Bender — por isso as únicas
+// entradas aqui são Bow, Horizontal e Straightener (R1/R2), com o MESMO
+// critério de reconhecimento (match) já usado nos rolos.
+//
+// Cada equipamento tem 4 cilindros de elevação e 8 mangueiras hidráulicas
+// (2 mangueiras por cilindro: uma de avanço, uma de retorno).
+export const LAYOUT_BARRA_TRANSVERSAL_POR_TIPO = [
+    { chave: 'horizontal',   match: (t, id) => t.includes('HORIZONTAL'), cilindros: 4, mangueirasPorCilindro: 2 },
+    { chave: 'straightener', match: (t, id) => t.includes('STRAIGHTENER') || t.includes('ENDIREITADOR') || (id || '').includes('STR-'), cilindros: 4, mangueirasPorCilindro: 2 },
+    { chave: 'bow',          match: (t, id) => t.includes('BOW'), cilindros: 4, mangueirasPorCilindro: 2 },
+];
+
+// Retorna o layout de Barra Transversal do tipo informado, ou null se
+// esse equipamento não tem (Molde, Bender e tudo da MCC2/3 ficam de
+// fora). Mesma assinatura de getLayoutRolos, pelo mesmo motivo (o
+// Straightener também é reconhecido pelo padrão do ID, não só pelo
+// texto do campo "tipo").
+export function getLayoutBarraTransversal(tipo, id) {
+    const t = (tipo || '').toUpperCase();
+    const i = (id || '').toUpperCase();
+    return LAYOUT_BARRA_TRANSVERSAL_POR_TIPO.find(l => l.match(t, i)) || null;
+}
+
+// Campos de ocorrência registrados por componente (cilindro OU
+// mangueira) da Barra Transversal. Cada campo cicla entre 3 estados —
+// Verde (ok) -> Amarelo (atenção) -> Vermelho (crítico) — a cada clique.
+// "soMangueira: true" = campo que só faz sentido pra mangueira (não
+// aparece no painel de um cilindro).
+export const CAMPOS_OCORRENCIA_BARRA_TRANSVERSAL = [
+    { chave: 'vazamento',        rotulo: 'Vazamento' },
+    { chave: 'blecaute',         rotulo: 'Blecaute (Bobina)' },
+    { chave: 'aquecimento',      rotulo: 'Aquecimento (Temperatura Anormal)' },
+    { chave: 'qualidadeFluido',  rotulo: 'Qualidade do Fluido (Contaminação)' },
+    { chave: 'tempoVida',        rotulo: 'Tempo de Vida (Próximo ao Fim da Vida Útil)' },
+    { chave: 'vazamentoConexao', rotulo: 'Vazamento na Conexão (Cravamento/Rosca)', soMangueira: true },
+    { chave: 'furoMangueira',    rotulo: 'Furo na Mangueira (Rasgo/Dano)', soMangueira: true },
+];
+
 export const MAPA_EQUIPE_PARA_AREA = {
     'hidraulica': 'hidraulica',
     'usinagem': 'usinagem',
