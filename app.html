@@ -66,13 +66,18 @@
                 }
 
                 var linhas = [
+                    'window.innerWidth=' + window.innerWidth + ' innerHeight=' + window.innerHeight,
+                    'matchMedia(max-width:992px)=' + window.matchMedia('(max-width: 992px)').matches,
+                    'matchMedia(max-width:768px)=' + window.matchMedia('(max-width: 768px)').matches,
+                    'style.css carregado=' + (document.querySelector('link[href*="style.css"]') ? document.querySelector('link[href*="style.css"]').getAttribute('href') : 'NÃO ENCONTRADO'),
                     '#tela-login-home: ' + info(loginEl),
                     '#container-sistema-oms: ' + info(appEl),
                     '.mobile-header: ' + info(header),
                     '.sidebar: ' + info(sidebar),
+                    '.sidebar classList=' + (sidebar ? sidebar.className : '?'),
                     '.main-content: ' + info(main) + ' padding-top=' + (main ? getComputedStyle(main).paddingTop : '?'),
                     '.welcome-box: ' + info(welcome),
-                    'window.innerHeight=' + window.innerHeight + ' scrollY=' + window.scrollY,
+                    'window.scrollY=' + window.scrollY,
                     'app-container computed: display=' + (appEl ? getComputedStyle(appEl).display : '?') +
                         ' flexDirection=' + (appEl ? getComputedStyle(appEl).flexDirection : '?') +
                         ' justifyContent=' + (appEl ? getComputedStyle(appEl).justifyContent : '?') +
