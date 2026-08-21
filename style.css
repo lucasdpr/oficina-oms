@@ -2035,10 +2035,30 @@ h1, h2, h3, h4, h5, h6 {
     z-index: 4000;
     border-bottom: 1px solid var(--border-color);
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
-    /* 🔧 CORREÇÃO (mesmo bug do iOS descrito em .sidebar acima): sem
+    /* 🔧 CORREÇÃO CRÍTICA (a causa real do "conteúdo aparece bem lá
+       embaixo, com um espaço vazio enorme entre o cabeçalho e o
+       painel, e nem fechar o menu lateral resolve"): o comentário
+       abaixo já dizia "sem backdrop-filter", mas a propriedade que
+       de fato remove o backdrop-filter nunca tinha sido escrita —
+       só o comentário existia. Sem "backdrop-filter: none" aqui, o
+       .mobile-header continuava herdando "backdrop-filter: blur(16px)"
+       da classe .glass-panel (ele tem as duas classes:
+       class="mobile-header glass-panel"). No Safari/Chrome do iPhone
+       (mesmo motor WebKit), backdrop-filter + position:fixed NO MESMO
+       elemento faz o iOS tratar esse elemento como se fosse
+       position:static — EXATAMENTE o mesmo bug do WebKit já
+       documentado e corrigido aqui embaixo pra .sidebar. Sem o fixed
+       funcionando de verdade, o cabeçalho passava a ocupar espaço
+       normal dentro do .app-container (que é flex-direction:column
+       no celular), empurrando o .main-content pra baixo do tamanho
+       real do cabeçalho — ALÉM do padding-top que o .main-content já
+       reserva pensando num cabeçalho fixo (que não deveria ocupar
+       espaço nenhum). Dois espaços somados = o vazio gigante. Sem
        backdrop-filter, precisa de um fundo bem opaco pra não deixar o
-       conteúdo por trás transparecer feio — por isso troquei de
-       --bg-card (que é semi-transparente) pra --bg-main sólido. */
+       conteúdo por trás transparecer feio — por isso já estava com
+       --bg-main sólido. */
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     background: var(--bg-main);
   }
 
