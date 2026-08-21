@@ -38,6 +38,64 @@
         })();
     </script>
 
+    <!-- ==============================================================
+         🔧 DIAGNÓSTICO VISÍVEL — mede os elementos de layout reais
+         (não é chute, é o que o navegador calculou de verdade) e mostra
+         numa caixinha na tela, 2 segundos depois do login, pra achar a
+         causa exata do espaço em branco no mobile sem precisar de
+         DevTools. Some sozinho depois de aparecer; é só ler/print.
+    ============================================================== -->
+    <script>
+        (function () {
+            function medir() {
+                var loginEl = document.getElementById('tela-login-home');
+                var appEl = document.getElementById('container-sistema-oms');
+                if (!appEl || appEl.style.display === 'none') return; // ainda não logou, tenta de novo depois
+                var header = document.querySelector('.mobile-header');
+                var main = document.querySelector('.main-content');
+                var welcome = document.querySelector('.welcome-box');
+                var sidebar = document.querySelector('.sidebar');
+
+                function info(el) {
+                    if (!el) return 'não encontrado';
+                    var cs = getComputedStyle(el);
+                    var r = el.getBoundingClientRect();
+                    return 'display=' + cs.display + ' position=' + cs.position +
+                        ' top=' + Math.round(r.top) + ' height=' + Math.round(r.height) +
+                        ' z=' + cs.zIndex;
+                }
+
+                var linhas = [
+                    '#tela-login-home: ' + info(loginEl),
+                    '#container-sistema-oms: ' + info(appEl),
+                    '.mobile-header: ' + info(header),
+                    '.sidebar: ' + info(sidebar),
+                    '.main-content: ' + info(main) + ' padding-top=' + (main ? getComputedStyle(main).paddingTop : '?'),
+                    '.welcome-box: ' + info(welcome),
+                    'window.innerHeight=' + window.innerHeight + ' scrollY=' + window.scrollY,
+                    'app-container computed: display=' + (appEl ? getComputedStyle(appEl).display : '?') +
+                        ' flexDirection=' + (appEl ? getComputedStyle(appEl).flexDirection : '?') +
+                        ' justifyContent=' + (appEl ? getComputedStyle(appEl).justifyContent : '?') +
+                        ' alignItems=' + (appEl ? getComputedStyle(appEl).alignItems : '?')
+                ];
+
+                var caixa = document.createElement('div');
+                caixa.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:999998;' +
+                    'background:#0a3d0a;color:#c8ffc8;padding:10px 12px;font:10px/1.5 monospace;' +
+                    'white-space:pre-wrap;word-break:break-word;max-height:60vh;overflow:auto;' +
+                    'box-shadow:0 -4px 20px rgba(0,0,0,0.5);';
+                caixa.innerHTML = '<strong>📏 DIAGNÓSTICO (tire print e envie):</strong><br><br>' +
+                    linhas.join('<br>').replace(/</g, '&lt;') +
+                    '<br><br><span style="text-decoration:underline;cursor:pointer;" onclick="this.parentElement.remove()">[fechar]</span>';
+                document.documentElement.appendChild(caixa);
+            }
+            // roda 2s depois do carregamento (dá tempo do login/render terminarem)
+            // e também de novo quando a página terminar de carregar tudo
+            setTimeout(medir, 2000);
+            window.addEventListener('load', function () { setTimeout(medir, 500); });
+        })();
+    </script>
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>OMS | Sistema de Gestão de Manutenção</title>
