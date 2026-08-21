@@ -774,9 +774,20 @@
                 <!-- EQUIPAMENTOS EM REPARO (pra abrir o folhão direto) -->
                 <div class="glass-panel" style="padding: 18px; margin-top: 20px;">
                     <h3 style="color:var(--text-title); font-size:1rem; margin-bottom: 12px;">
-                        <i class="fas fa-tools" style="color:#f59e0b;"></i> Em Reparo — Toque pra abrir o Folhão
+                        <i class="fas fa-tools" style="color:#f59e0b;"></i> Reparo
                     </h3>
-                    <div id="tecnico-lista-reparo"></div>
+                    <div class="folhao-tabs">
+                        <button class="folhao-tab active" onclick="window.trocarAbaTecnicoReparo(event, 'tecnico-sub-iniciar')">Iniciar Novo</button>
+                        <button class="folhao-tab" onclick="window.trocarAbaTecnicoReparo(event, 'tecnico-sub-andamento')">Em Andamento</button>
+                    </div>
+                    <div id="tecnico-sub-iniciar" class="folhao-content">
+                        <p class="text-muted" style="font-size:12px; margin-bottom:10px;">Toque num equipamento pra abrir o folhão e começar o reparo.</p>
+                        <div id="tecnico-lista-reparo"></div>
+                    </div>
+                    <div id="tecnico-sub-andamento" class="folhao-content" style="display:none;">
+                        <p class="text-muted" style="font-size:12px; margin-bottom:10px;">Folhões que já foram iniciados (por você ou por outro técnico) e ainda não foram concluídos.</p>
+                        <div id="tecnico-lista-andamento"></div>
+                    </div>
                 </div>
 
                 <!-- EQUIPAMENTOS CRÍTICOS -->

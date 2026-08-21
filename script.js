@@ -125,6 +125,11 @@ const CADASTRO_MATRICULAS = {
     "061012": "Lucas (Desenvolvedor)"
 };
 
+// Matrículas com acesso total a todas as áreas da Oficina (mesma lista
+// do backend, em main.py). Usado no front pra decidir se o Painel do
+// Técnico mostra tudo (ADM) ou só a área da pessoa.
+const MATRICULAS_ADM = ["CBK3574", "CSP1869", "CSP6632"];
+
 let MODO_MODAL_RELATORIO = {};
 let ID_HISTORICO_ATUAL = null;
 
@@ -311,7 +316,7 @@ async function processarAutenticacaoHome() {
     try {
         // Acesso local de desenvolvedor (não depende do Neon estar no ar).
         if (CADASTRO_MATRICULAS[matriculaInput] && senhaInput.toUpperCase() === matriculaInput.toUpperCase()) {
-            finalizarLogin("Lucas", CADASTRO_MATRICULAS[matriculaInput], matriculaInput);
+            finalizarLogin("Lucas", CADASTRO_MATRICULAS[matriculaInput], matriculaInput, null, true);
             return;
         }
 
@@ -353,11 +358,11 @@ async function processarAutenticacaoHome() {
         }
 
         if (resultado.precisa_definir_senha) {
-            await fluxoDefinirNovaSenha(matriculaUpper, senhaInput, resultado.nome, resultado.cargo);
+            await fluxoDefinirNovaSenha(matriculaUpper, senhaInput, resultado.nome, resultado.cargo, resultado.area, resultado.is_adm);
             return;
         }
 
-        finalizarLogin(resultado.nome, resultado.cargo, matriculaUpper);
+        finalizarLogin(resultado.nome, resultado.cargo, matriculaUpper, resultado.area, resultado.is_adm);
     } catch (e) {
         console.error("Erro no login:", e);
         alert("Não foi possível conectar ao servidor mesmo após tentar novamente. Verifique sua internet e tente mais uma vez em alguns segundos.");
@@ -369,7 +374,7 @@ async function processarAutenticacaoHome() {
 // ==========================================
 // PRIMEIRO ACESSO: obriga a cadastrar uma senha definitiva
 // ==========================================
-async function fluxoDefinirNovaSenha(matricula, senhaAtual, nome, cargo) {
+async function fluxoDefinirNovaSenha(matricula, senhaAtual, nome, cargo, area, isAdm) {
     alert(`Bem-vindo(a), ${nome}!\nEste é seu primeiro acesso. Você precisa cadastrar uma senha definitiva (mínimo 4 caracteres).`);
 
     while (true) {
@@ -401,7 +406,7 @@ async function fluxoDefinirNovaSenha(matricula, senhaAtual, nome, cargo) {
                 continue;
             }
             alert("✅ Senha cadastrada! A partir de agora, use ela pra entrar.");
-            finalizarLogin(nome, cargo, matricula);
+            finalizarLogin(nome, cargo, matricula, area, isAdm);
             return;
         } catch (e) {
             console.error("Erro ao definir senha:", e);
@@ -414,8 +419,18 @@ async function fluxoDefinirNovaSenha(matricula, senhaAtual, nome, cargo) {
 // ==========================================
 // FINALIZA O LOGIN (comum a dev, colaborador e primeiro acesso)
 // ==========================================
-async function finalizarLogin(nome, cargo, matricula) {
-    OPERADOR_LOGADO = { matricula: matricula, nome: `${nome} [${cargo}]` };
+async function finalizarLogin(nome, cargo, matricula, area, isAdm) {
+    // 🆕 Área do técnico + flag de ADM (vêm do login no back-end; no
+    // acesso local de dev, is_adm é forçado true). Usado no Painel do
+    // Técnico pra filtrar "Em Reparo" / "Em Andamento" só pelos
+    // equipamentos da área da pessoa — ADM (as 3 matrículas fixas) vê
+    // tudo, sem filtro nenhum, em qualquer aba (mobile ou PC).
+    OPERADOR_LOGADO = {
+        matricula: matricula,
+        nome: `${nome} [${cargo}]`,
+        area: area || null,
+        isAdm: !!isAdm || MATRICULAS_ADM.includes(matricula)
+    };
     localStorage.setItem("oms_operador_v32_local", JSON.stringify(OPERADOR_LOGADO));
 
     document.getElementById("tela-login-home").style.display = "none";
@@ -2609,25 +2624,53 @@ function renderPainelTecnico() {
 
     const linhaVazia = (msg) => `<div class="text-muted" style="text-align:center; padding: 18px 0;">${msg}</div>`;
 
+    // 🆕 RESTRIÇÃO POR ÁREA: ADM (as 3 matrículas fixas) vê tudo, sem
+    // filtro. Quem não é ADM só vê equipamentos da própria área — a
+    // função `filtro` de cada área já vem pronta em AREAS_OFICINA
+    // (dados.js), então só precisamos achar a área da pessoa e aplicar
+    // o filtro dela em cima da lista de equipamentos em reparo.
+    const isAdm = !!(OPERADOR_LOGADO && OPERADOR_LOGADO.isAdm);
+    const areaTecnico = OPERADOR_LOGADO && OPERADOR_LOGADO.area;
+    const infoAreaTecnico = !isAdm && areaTecnico ? AREAS_OFICINA.find(ar => ar.chave === areaTecnico) : null;
+
     // ---- EM REPARO (toque abre o folhão direto) ----
-    const emReparo = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reparo");
-    if (emReparo.length === 0) {
-        listaReparo.innerHTML = linhaVazia("Nenhum equipamento em reparo agora. 🎉");
-    } else {
-        listaReparo.innerHTML = emReparo.map(a => {
-            const dias = calcularDias(a);
-            return `
-                <div class="tecnico-item-linha" onclick="window.abrirFolhaoPorTipo('${a.id}')">
-                    <div>
-                        <span class="font-code" style="font-weight:700; color:var(--text-heading);">${a.id}</span>
-                        <span class="ind-card-tag bg-tag" style="margin-left:6px;">${a.tipo}</span>
-                    </div>
-                    <div style="text-align:right;">
-                        <span style="color:var(--warning); font-weight:700; font-size:13px;">${dias} dias</span>
-                        <i class="fas fa-chevron-right" style="margin-left:8px; color:var(--text-muted);"></i>
-                    </div>
-                </div>`;
-        }).join("");
+    let emReparo = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reparo");
+
+    if (!isAdm) {
+        if (!areaTecnico) {
+            // Login existe, mas ninguém cadastrou a área dessa matrícula
+            // em equipe_oficina ainda — não mostramos nada em vez de
+            // arriscar mostrar equipamento de área errada.
+            listaReparo.innerHTML = linhaVazia("⚠️ Sua área ainda não foi cadastrada. Fale com um ADM.");
+            emReparo = [];
+        } else if (infoAreaTecnico && typeof infoAreaTecnico.filtro === "function") {
+            emReparo = emReparo.filter(infoAreaTecnico.filtro);
+        } else {
+            // Área "de serviço geral" (Hidráulica, Elétrica, Usinagem...)
+            // não tem filtro por tipo de equipamento — atende qualquer
+            // equipamento da fábrica, então não restringe a lista.
+        }
+    }
+
+    if (isAdm || areaTecnico) {
+        if (emReparo.length === 0) {
+            listaReparo.innerHTML = linhaVazia("Nenhum equipamento em reparo agora. 🎉");
+        } else {
+            listaReparo.innerHTML = emReparo.map(a => {
+                const dias = calcularDias(a);
+                return `
+                    <div class="tecnico-item-linha" onclick="window.abrirFolhaoPorTipo('${a.id}')">
+                        <div>
+                            <span class="font-code" style="font-weight:700; color:var(--text-heading);">${a.id}</span>
+                            <span class="ind-card-tag bg-tag" style="margin-left:6px;">${a.tipo}</span>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="color:var(--warning); font-weight:700; font-size:13px;">${dias} dias</span>
+                            <i class="fas fa-chevron-right" style="margin-left:8px; color:var(--text-muted);"></i>
+                        </div>
+                    </div>`;
+            }).join("");
+        }
     }
 
     // 🔧 CORREÇÃO ("equipamento crítico no painel do técnico MUITO
@@ -2681,6 +2724,96 @@ function renderPainelTecnico() {
     }
 }
 window.renderPainelTecnico = renderPainelTecnico;
+
+// ==========================================
+// PAINEL DO TÉCNICO — abas "Iniciar Novo" x "Em Andamento"
+// ==========================================
+window.trocarAbaTecnicoReparo = function(evento, idAlvo) {
+    const abas = ["tecnico-sub-iniciar", "tecnico-sub-andamento"];
+    abas.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = (id === idAlvo) ? "block" : "none";
+    });
+    if (evento && evento.currentTarget) {
+        const container = evento.currentTarget.closest(".folhao-tabs");
+        if (container) container.querySelectorAll(".folhao-tab").forEach(btn => btn.classList.remove("active"));
+        evento.currentTarget.classList.add("active");
+    }
+    if (idAlvo === "tecnico-sub-andamento" && typeof window.carregarAndamentoTecnico === "function") {
+        window.carregarAndamentoTecnico();
+    }
+};
+
+// ==========================================
+// "EM ANDAMENTO": folhões com rascunho salvo na nuvem (equipamento com
+// progresso salvo em folhoes_rascunho, ver /api/folhao/rascunhos/todos
+// no back-end), filtrado pela área do técnico igual à lista "Iniciar
+// Novo". Qualquer técnico da mesma área (ou ADM) pode continuar de
+// onde outro parou — o rascunho é salvo por equipamento, não por
+// pessoa, então não existe "travar pra um só técnico".
+// ==========================================
+window.carregarAndamentoTecnico = async function() {
+    const listaAndamento = document.getElementById("tecnico-lista-andamento");
+    if (!listaAndamento) return;
+
+    const linhaVazia = (msg) => `<div class="text-muted" style="text-align:center; padding: 18px 0;">${msg}</div>`;
+    listaAndamento.innerHTML = linhaVazia("Carregando...");
+
+    const isAdm = !!(OPERADOR_LOGADO && OPERADOR_LOGADO.isAdm);
+    const areaTecnico = OPERADOR_LOGADO && OPERADOR_LOGADO.area;
+
+    if (!isAdm && !areaTecnico) {
+        listaAndamento.innerHTML = linhaVazia("⚠️ Sua área ainda não foi cadastrada. Fale com um ADM.");
+        return;
+    }
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/folhao/rascunhos/todos`);
+        if (!resp.ok) throw new Error("Falha ao buscar rascunhos.");
+        const rascunhos = await resp.json();
+
+        // Cruza cada rascunho com o cadastro do equipamento (BANCO_ATIVOS)
+        // pra saber o tipo dele e poder aplicar o filtro de área.
+        const infoAreaTecnico = !isAdm && areaTecnico ? AREAS_OFICINA.find(ar => ar.chave === areaTecnico) : null;
+
+        let itens = rascunhos
+            .map(r => {
+                const equipamento = BANCO_ATIVOS.find(a => a.id === r.equipamento_id);
+                return equipamento ? { rascunho: r, equipamento } : null;
+            })
+            .filter(Boolean);
+
+        if (!isAdm && infoAreaTecnico && typeof infoAreaTecnico.filtro === "function") {
+            itens = itens.filter(x => infoAreaTecnico.filtro(x.equipamento));
+        }
+        // Áreas de serviço geral (sem filtro por tipo) mostram tudo,
+        // igual acontece na lista "Iniciar Novo".
+
+        if (itens.length === 0) {
+            listaAndamento.innerHTML = linhaVazia("Nenhum folhão em andamento no momento.");
+            return;
+        }
+
+        listaAndamento.innerHTML = itens.map(({ rascunho, equipamento }) => {
+            const atualizado = rascunho.atualizado_em ? new Date(rascunho.atualizado_em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
+            return `
+                <div class="tecnico-item-linha" onclick="window.abrirFolhaoPorTipo('${equipamento.id}')">
+                    <div>
+                        <span class="font-code" style="font-weight:700; color:var(--text-heading);">${equipamento.id}</span>
+                        <span class="ind-card-tag bg-tag" style="margin-left:6px;">${equipamento.tipo}</span>
+                    </div>
+                    <div style="text-align:right;">
+                        <span style="color:var(--text-accent); font-weight:600; font-size:11px;">Atualizado ${atualizado}</span>
+                        <i class="fas fa-chevron-right" style="margin-left:8px; color:var(--text-muted);"></i>
+                    </div>
+                </div>`;
+        }).join("");
+    } catch (e) {
+        console.error("Erro ao carregar folhões em andamento:", e);
+        listaAndamento.innerHTML = linhaVazia("❌ Não foi possível carregar. Verifique sua conexão.");
+    }
+};
 
 // ==========================================
 // 🔧 CORREÇÃO CRÍTICA: abrirCriticos() chamava abrirAba(null, 'aba-ativos'),
