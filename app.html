@@ -48,74 +48,83 @@
     <script>
         (function () {
             function medir() {
-                var loginEl = document.getElementById('tela-login-home');
                 var appEl = document.getElementById('container-sistema-oms');
-                if (!appEl || appEl.style.display === 'none') return; // ainda não logou, tenta de novo depois
-                var header = document.querySelector('.mobile-header');
-                var main = document.querySelector('.main-content');
-                var welcome = document.querySelector('.welcome-box');
+                if (!appEl || appEl.style.display === 'none') return;
                 var sidebar = document.querySelector('.sidebar');
+                if (!sidebar) return;
 
-                function info(el) {
-                    if (!el) return 'não encontrado';
-                    var cs = getComputedStyle(el);
-                    var r = el.getBoundingClientRect();
-                    return 'display=' + cs.display + ' position=' + cs.position +
-                        ' top=' + Math.round(r.top) + ' height=' + Math.round(r.height) +
-                        ' z=' + cs.zIndex;
+                // Percorre TODAS as folhas de estilo carregadas e acha, em
+                // ordem, toda regra que (a) bate de verdade no elemento
+                // .sidebar (via element.matches, não só texto parecido) e
+                // (b) define a propriedade "position". A ÚLTIMA da lista é
+                // a que o navegador realmente está usando.
+                var candidatas = [];
+                function varrer(lista, mediaCtx) {
+                    for (var r = 0; r < lista.length; r++) {
+                        var regra = lista[r];
+                        if (regra.type === 4) { // CSSMediaRule
+                            var condicao = regra.conditionText || (regra.media && regra.media.mediaText) || '?';
+                            var ativa = false;
+                            try { ativa = window.matchMedia(condicao).matches; } catch (e) {}
+                            varrer(regra.cssRules || [], condicao + ' [ativa=' + ativa + ']');
+                        } else if (regra.selectorText && regra.style && regra.style.position) {
+                            var bate = false;
+                            try { bate = sidebar.matches(regra.selectorText); } catch (e) {}
+                            if (bate) {
+                                candidatas.push({
+                                    seletor: regra.selectorText,
+                                    position: regra.style.position,
+                                    media: mediaCtx || '(sem media query)',
+                                    zIndex: regra.style.zIndex || '(não definido nessa regra)'
+                                });
+                            }
+                        }
+                    }
                 }
-
-                // 🔎 Lê DIRETO da CSSOM (as regras que o navegador realmente
-                // carregou e está usando) — em vez de confiar no arquivo de
-                // texto, isso mostra exatamente o que o motor do navegador
-                // enxerga, eliminando qualquer dúvida de cache/versão.
-                var regrasSidebar = [];
                 try {
                     for (var s = 0; s < document.styleSheets.length; s++) {
-                        var sheet = document.styleSheets[s];
                         var rules;
-                        try { rules = sheet.cssRules || sheet.rules; } catch (e) { continue; }
-                        if (!rules) continue;
-                        (function varrer(lista, mediaTexto) {
-                            for (var r = 0; r < lista.length; r++) {
-                                var regra = lista[r];
-                                if (regra.type === 4 || regra.constructor.name === 'CSSMediaRule') { // @media
-                                    var ativa = window.matchMedia(regra.conditionText || regra.media.mediaText).matches;
-                                    varrer(regra.cssRules, (regra.conditionText || regra.media.mediaText) + ' [ATIVA=' + ativa + ']');
-                                } else if (regra.selectorText && regra.selectorText.indexOf('sidebar') !== -1 && regra.selectorText.indexOf('sidebar-') === -1) {
-                                    regrasSidebar.push((mediaTexto ? '{' + mediaTexto + '} ' : '(fora de media) ') + regra.selectorText + ' { ' + regra.style.cssText + ' }');
-                                }
-                            }
-                        })(rules, null);
+                        try { rules = document.styleSheets[s].cssRules; } catch (e) { continue; }
+                        if (rules) varrer(rules, null);
                     }
-                } catch (e) {
-                    regrasSidebar.push('ERRO ao ler CSSOM: ' + e.message);
-                }
+                } catch (e) {}
 
-                var linhas = [
-                    'window.innerWidth=' + window.innerWidth + ' innerHeight=' + window.innerHeight,
-                    'matchMedia(max-width:992px)=' + window.matchMedia('(max-width: 992px)').matches,
-                    'style.css carregado=' + (document.querySelector('link[href*="style.css"]') ? document.querySelector('link[href*="style.css"]').getAttribute('href') : 'NÃO ENCONTRADO'),
-                    '--- REGRAS .sidebar NA CSSOM (ordem real de aplicação) ---',
-                ].concat(regrasSidebar).concat([
-                    '--- fim das regras .sidebar ---',
-                    '.sidebar computado: ' + info(sidebar),
-                    '.sidebar classList=' + (sidebar ? sidebar.className : '?'),
-                    '.main-content: ' + info(main) + ' padding-top=' + (main ? getComputedStyle(main).paddingTop : '?'),
-                ]);
+                var cs = getComputedStyle(sidebar);
+                var vencedora = candidatas.length ? candidatas[candidatas.length - 1] : null;
+
+                var resumo = [
+                    '🎯 RESULTADO FINAL:',
+                    'position REAL na tela agora = "' + cs.position + '"',
+                    '',
+                    '📋 Todas as regras de CSS que tentam definir "position" nesse elemento, em ordem (a ÚLTIMA é a que ganha):',
+                ];
+                if (candidatas.length === 0) {
+                    resumo.push('(nenhuma regra encontrada — algo muito estranho)');
+                } else {
+                    candidatas.forEach(function (c, i) {
+                        var marca = (i === candidatas.length - 1) ? '  ⬅️ ESTA GANHOU' : '';
+                        resumo.push((i + 1) + '. [' + c.media + '] ' + c.seletor + ' → position:' + c.position + marca);
+                    });
+                }
+                resumo.push('');
+                resumo.push('Total de folhas de estilo carregadas (document.styleSheets.length) = ' + document.styleSheets.length);
+                for (var k = 0; k < document.styleSheets.length; k++) {
+                    var href = document.styleSheets[k].href || '(estilo inline no HTML)';
+                    var qtdRegras = '?';
+                    try { qtdRegras = document.styleSheets[k].cssRules.length; } catch (e) { qtdRegras = 'bloqueado (CORS)'; }
+                    resumo.push('  folha ' + k + ': ' + href + ' — ' + qtdRegras + ' regras');
+                }
 
                 var caixa = document.createElement('div');
                 caixa.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:999998;' +
-                    'background:#0a3d0a;color:#c8ffc8;padding:10px 12px;font:10px/1.5 monospace;' +
-                    'white-space:pre-wrap;word-break:break-word;max-height:60vh;overflow:auto;' +
+                    'background:#0a3d0a;color:#c8ffc8;padding:10px 12px;font:11px/1.6 monospace;' +
+                    'white-space:pre-wrap;word-break:break-word;max-height:75vh;overflow:auto;' +
                     'box-shadow:0 -4px 20px rgba(0,0,0,0.5);';
-                caixa.innerHTML = '<strong>📏 DIAGNÓSTICO (tire print e envie):</strong><br><br>' +
-                    linhas.join('<br>').replace(/</g, '&lt;') +
+                caixa.innerHTML = '<strong>🎯 DIAGNÓSTICO FINAL (tire print e envie):</strong><br><br>' +
+                    resumo.join('<br>').replace(/</g, '&lt;') +
                     '<br><br><span style="text-decoration:underline;cursor:pointer;" onclick="this.parentElement.remove()">[fechar]</span>';
                 document.documentElement.appendChild(caixa);
             }
-            // roda 2s depois do carregamento (dá tempo do login/render terminarem)
-            // e também de novo quando a página terminar de carregar tudo
             setTimeout(medir, 2000);
             window.addEventListener('load', function () { setTimeout(medir, 500); });
         })();
