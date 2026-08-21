@@ -130,6 +130,31 @@ const CADASTRO_MATRICULAS = {
 // Técnico mostra tudo (ADM) ou só a área da pessoa.
 const MATRICULAS_ADM = ["CBK3574", "CSP1869", "CSP6632"];
 
+// ==========================================
+// 🆕 RESTRIÇÃO POR ÁREA — função única, reaproveitada em toda tela que
+// lista equipamentos em reparo (tabela geral "Peças em Reparo", card
+// de KPI, atalho do Painel do Técnico, e a lista "Iniciar Novo" dentro
+// do próprio Painel do Técnico). ADM (MATRICULAS_ADM) nunca é filtrado.
+// Áreas "de serviço geral" (Hidráulica, Elétrica...) têm filtro=null
+// em AREAS_OFICINA e continuam vendo qualquer equipamento — só quem
+// tem uma área "de bancada fixa" (Molde MCC4, Bender, Segmento Zero...)
+// é restrito à própria categoria.
+// ==========================================
+function filtrarPorAreaTecnico(lista) {
+    const isAdm = !!(OPERADOR_LOGADO && OPERADOR_LOGADO.isAdm);
+    if (isAdm) return { lista, isAdm, semArea: false };
+
+    const areaTecnico = OPERADOR_LOGADO && OPERADOR_LOGADO.area;
+    if (!areaTecnico) return { lista: [], isAdm, semArea: true };
+
+    const infoArea = AREAS_OFICINA.find(ar => ar.chave === areaTecnico);
+    if (infoArea && typeof infoArea.filtro === "function") {
+        return { lista: lista.filter(infoArea.filtro), isAdm, semArea: false };
+    }
+    // Área de serviço geral (filtro null) — não restringe por tipo.
+    return { lista, isAdm, semArea: false };
+}
+
 let MODO_MODAL_RELATORIO = {};
 let ID_HISTORICO_ATUAL = null;
 
@@ -1462,7 +1487,13 @@ function renderReparos() {
         localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
     }
 
-    const reparos = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reparo");
+    const reparosBrutos = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reparo");
+    const { lista: reparos, semArea } = filtrarPorAreaTecnico(reparosBrutos);
+
+    if (semArea) {
+        repBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">⚠️ Sua área ainda não foi cadastrada. Fale com um ADM.</td></tr>`;
+        return;
+    }
     if (reparos.length === 0) {
         repBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nenhum equipamento aguardando reparo.</td></tr>`;
         return;
@@ -2624,53 +2655,29 @@ function renderPainelTecnico() {
 
     const linhaVazia = (msg) => `<div class="text-muted" style="text-align:center; padding: 18px 0;">${msg}</div>`;
 
-    // 🆕 RESTRIÇÃO POR ÁREA: ADM (as 3 matrículas fixas) vê tudo, sem
-    // filtro. Quem não é ADM só vê equipamentos da própria área — a
-    // função `filtro` de cada área já vem pronta em AREAS_OFICINA
-    // (dados.js), então só precisamos achar a área da pessoa e aplicar
-    // o filtro dela em cima da lista de equipamentos em reparo.
-    const isAdm = !!(OPERADOR_LOGADO && OPERADOR_LOGADO.isAdm);
-    const areaTecnico = OPERADOR_LOGADO && OPERADOR_LOGADO.area;
-    const infoAreaTecnico = !isAdm && areaTecnico ? AREAS_OFICINA.find(ar => ar.chave === areaTecnico) : null;
-
     // ---- EM REPARO (toque abre o folhão direto) ----
-    let emReparo = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reparo");
+    const emReparoBruto = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reparo");
+    const { lista: emReparo, semArea } = filtrarPorAreaTecnico(emReparoBruto);
 
-    if (!isAdm) {
-        if (!areaTecnico) {
-            // Login existe, mas ninguém cadastrou a área dessa matrícula
-            // em equipe_oficina ainda — não mostramos nada em vez de
-            // arriscar mostrar equipamento de área errada.
-            listaReparo.innerHTML = linhaVazia("⚠️ Sua área ainda não foi cadastrada. Fale com um ADM.");
-            emReparo = [];
-        } else if (infoAreaTecnico && typeof infoAreaTecnico.filtro === "function") {
-            emReparo = emReparo.filter(infoAreaTecnico.filtro);
-        } else {
-            // Área "de serviço geral" (Hidráulica, Elétrica, Usinagem...)
-            // não tem filtro por tipo de equipamento — atende qualquer
-            // equipamento da fábrica, então não restringe a lista.
-        }
-    }
-
-    if (isAdm || areaTecnico) {
-        if (emReparo.length === 0) {
-            listaReparo.innerHTML = linhaVazia("Nenhum equipamento em reparo agora. 🎉");
-        } else {
-            listaReparo.innerHTML = emReparo.map(a => {
-                const dias = calcularDias(a);
-                return `
-                    <div class="tecnico-item-linha" onclick="window.abrirFolhaoPorTipo('${a.id}')">
-                        <div>
-                            <span class="font-code" style="font-weight:700; color:var(--text-heading);">${a.id}</span>
-                            <span class="ind-card-tag bg-tag" style="margin-left:6px;">${a.tipo}</span>
-                        </div>
-                        <div style="text-align:right;">
-                            <span style="color:var(--warning); font-weight:700; font-size:13px;">${dias} dias</span>
-                            <i class="fas fa-chevron-right" style="margin-left:8px; color:var(--text-muted);"></i>
-                        </div>
-                    </div>`;
-            }).join("");
-        }
+    if (semArea) {
+        listaReparo.innerHTML = linhaVazia("⚠️ Sua área ainda não foi cadastrada. Fale com um ADM.");
+    } else if (emReparo.length === 0) {
+        listaReparo.innerHTML = linhaVazia("Nenhum equipamento em reparo agora. 🎉");
+    } else {
+        listaReparo.innerHTML = emReparo.map(a => {
+            const dias = calcularDias(a);
+            return `
+                <div class="tecnico-item-linha" onclick="window.abrirFolhaoPorTipo('${a.id}')">
+                    <div>
+                        <span class="font-code" style="font-weight:700; color:var(--text-heading);">${a.id}</span>
+                        <span class="ind-card-tag bg-tag" style="margin-left:6px;">${a.tipo}</span>
+                    </div>
+                    <div style="text-align:right;">
+                        <span style="color:var(--warning); font-weight:700; font-size:13px;">${dias} dias</span>
+                        <i class="fas fa-chevron-right" style="margin-left:8px; color:var(--text-muted);"></i>
+                    </div>
+                </div>`;
+        }).join("");
     }
 
     // 🔧 CORREÇÃO ("equipamento crítico no painel do técnico MUITO
@@ -2775,20 +2782,19 @@ window.carregarAndamentoTecnico = async function() {
 
         // Cruza cada rascunho com o cadastro do equipamento (BANCO_ATIVOS)
         // pra saber o tipo dele e poder aplicar o filtro de área.
-        const infoAreaTecnico = !isAdm && areaTecnico ? AREAS_OFICINA.find(ar => ar.chave === areaTecnico) : null;
+        const equipamentosComRascunho = rascunhos
+            .map(r => BANCO_ATIVOS.find(a => a.id === r.equipamento_id))
+            .filter(Boolean);
+        const { lista: equipamentosFiltrados } = filtrarPorAreaTecnico(equipamentosComRascunho);
+        const idsPermitidos = new Set(equipamentosFiltrados.map(e => e.id));
 
         let itens = rascunhos
             .map(r => {
                 const equipamento = BANCO_ATIVOS.find(a => a.id === r.equipamento_id);
                 return equipamento ? { rascunho: r, equipamento } : null;
             })
-            .filter(Boolean);
-
-        if (!isAdm && infoAreaTecnico && typeof infoAreaTecnico.filtro === "function") {
-            itens = itens.filter(x => infoAreaTecnico.filtro(x.equipamento));
-        }
-        // Áreas de serviço geral (sem filtro por tipo) mostram tudo,
-        // igual acontece na lista "Iniciar Novo".
+            .filter(Boolean)
+            .filter(x => idsPermitidos.has(x.equipamento.id));
 
         if (itens.length === 0) {
             listaAndamento.innerHTML = linhaVazia("Nenhum folhão em andamento no momento.");

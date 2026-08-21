@@ -11,7 +11,7 @@
 // usando a copia antiga guardada em cache.
 // ==============================================================
 
-const CACHE_VERSION = "oms-v42";
+const CACHE_VERSION = "oms-v43";
 
 // Arquivos baixados e guardados assim que o app é instalado.
 // (não inclui chamadas de API - essas nunca ficam em cache)
