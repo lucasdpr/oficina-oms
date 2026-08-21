@@ -1495,9 +1495,9 @@ function renderReparos() {
                 const dias = calcularDias(a);
                 htmlFinal += `
                     <tr>
-                        <td class="font-code" style="padding-left: 45px;">${a.id}</td>
-                        <td><span class="ind-card-tag bg-tag">${a.tipo}</span></td>
-                        <td>
+                        <td class="font-code" data-label="TAG" style="padding-left: 45px;">${a.id}</td>
+                        <td data-label="Tipo"><span class="ind-card-tag bg-tag">${a.tipo}</span></td>
+                        <td data-label="Desgaste">
                             <div class="flex-align-center gap-10">
                                 <span class="font-code bold w-40" style="color: var(--text-heading);">${pctFixed}%</span>
                                 <div class="ind-gauge-bar premium-bar w-100px">
@@ -1505,8 +1505,8 @@ function renderReparos() {
                                 </div>
                             </div>
                         </td>
-                        <td style="font-weight:bold; color:var(--warning);">${dias} dias</td>
-                        <td>
+                        <td data-label="Dias em Reparo" style="font-weight:bold; color:var(--warning);">${dias} dias</td>
+                        <td data-label="Ações">
                             <div class="flex-align-center gap-10 action-buttons-mobile">
                                 <button class="btn-premium btn-warning" onclick="window.abrirFolhaoPorTipo('${a.id}')"><i class="fas fa-hammer"></i> Concluir</button>
                                 <button class="btn-premium" style="background:transparent; border-color:var(--text-accent); color:var(--text-accent); padding: 8px 12px;" onclick="abrirHistoricoIndividual('${a.id}')" title="Ver Prontuário"><i class="fas fa-book-open"></i></button>

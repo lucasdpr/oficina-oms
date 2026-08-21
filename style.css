@@ -3920,3 +3920,94 @@ textarea,
 
   .login-btn-submit { padding: 14px; font-size: 0.85rem; }
 }
+/* ==============================================================
+   TABELA -> CARDS NO MOBILE
+   ==============================================================
+   Tabelas normais (linhas/colunas) ficam ilegíveis em telas
+   estreitas porque o navegador só permite rolar de lado (scroll
+   horizontal), escondendo colunas. Abaixo de 768px, qualquer
+   <table class="tabela-mobile-cards"> vira uma lista de "cards":
+   cada <tr> de dado passa a ser um bloco empilhado, e cada <td>
+   ganha um rótulo (via atributo data-label definido no JS) no
+   lugar do cabeçalho da coluna, que fica escondido.
+
+   Linhas que são cabeçalho de grupo (ex: "MCC 4", "Bender") têm
+   um único <td colspan> e continuam como faixa colorida normal,
+   sem grid — o CSS abaixo só reformata linhas de DADO (2+ células
+   visíveis, jávisto pelo seletor "tr:has(td[data-label])").
+   ============================================================== */
+@media (max-width: 768px) {
+    table.tabela-mobile-cards thead {
+        display: none;
+    }
+
+    table.tabela-mobile-cards,
+    table.tabela-mobile-cards tbody {
+        display: block;
+        width: 100%;
+    }
+
+    /* Linhas de dado (têm data-label nas células) viram card */
+    table.tabela-mobile-cards tr:has(td[data-label]) {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        background: var(--bg-th);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin: 0 0 10px 0;
+    }
+
+    table.tabela-mobile-cards tr:has(td[data-label]) td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 2px 0 !important;
+        border: none !important;
+        text-align: right;
+    }
+
+    /* Rótulo (nome da coluna) antes do valor, alinhado à esquerda */
+    table.tabela-mobile-cards tr:has(td[data-label]) td[data-label]::before {
+        content: attr(data-label);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        text-align: left;
+        flex-shrink: 0;
+    }
+
+    /* A coluna "Ações" tem botões, então ela ocupa a largura toda
+       embaixo do card em vez de ficar espremida ao lado do rótulo */
+    table.tabela-mobile-cards tr:has(td[data-label="Ações"]) {
+        align-items: stretch;
+    }
+    table.tabela-mobile-cards td[data-label="Ações"] {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+    table.tabela-mobile-cards td[data-label="Ações"]::before {
+        margin-bottom: 4px;
+    }
+    table.tabela-mobile-cards td[data-label="Ações"] .action-buttons-mobile {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    /* Linhas de cabeçalho de grupo (MCC / Tipo) continuam faixa
+       cheia, sem virar card */
+    table.tabela-mobile-cards tr:not(:has(td[data-label])) {
+        display: block;
+        width: 100%;
+        margin-bottom: 6px;
+    }
+    table.tabela-mobile-cards tr:not(:has(td[data-label])) td {
+        display: block;
+        width: 100%;
+        padding-left: 14px !important;
+    }
+}
