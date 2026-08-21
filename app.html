@@ -38,97 +38,6 @@
         })();
     </script>
 
-    <!-- ==============================================================
-         🔧 DIAGNÓSTICO VISÍVEL — mede os elementos de layout reais
-         (não é chute, é o que o navegador calculou de verdade) e mostra
-         numa caixinha na tela, 2 segundos depois do login, pra achar a
-         causa exata do espaço em branco no mobile sem precisar de
-         DevTools. Some sozinho depois de aparecer; é só ler/print.
-    ============================================================== -->
-    <script>
-        (function () {
-            function medir() {
-                var appEl = document.getElementById('container-sistema-oms');
-                if (!appEl || appEl.style.display === 'none') return;
-                var sidebar = document.querySelector('.sidebar');
-                if (!sidebar) return;
-
-                // Percorre TODAS as folhas de estilo carregadas e acha, em
-                // ordem, toda regra que (a) bate de verdade no elemento
-                // .sidebar (via element.matches, não só texto parecido) e
-                // (b) define a propriedade "position". A ÚLTIMA da lista é
-                // a que o navegador realmente está usando.
-                var candidatas = [];
-                function varrer(lista, mediaCtx) {
-                    for (var r = 0; r < lista.length; r++) {
-                        var regra = lista[r];
-                        if (regra.type === 4) { // CSSMediaRule
-                            var condicao = regra.conditionText || (regra.media && regra.media.mediaText) || '?';
-                            var ativa = false;
-                            try { ativa = window.matchMedia(condicao).matches; } catch (e) {}
-                            varrer(regra.cssRules || [], condicao + ' [ativa=' + ativa + ']');
-                        } else if (regra.selectorText && regra.style && regra.style.position) {
-                            var bate = false;
-                            try { bate = sidebar.matches(regra.selectorText); } catch (e) {}
-                            if (bate) {
-                                candidatas.push({
-                                    seletor: regra.selectorText,
-                                    position: regra.style.position,
-                                    media: mediaCtx || '(sem media query)',
-                                    zIndex: regra.style.zIndex || '(não definido nessa regra)'
-                                });
-                            }
-                        }
-                    }
-                }
-                try {
-                    for (var s = 0; s < document.styleSheets.length; s++) {
-                        var rules;
-                        try { rules = document.styleSheets[s].cssRules; } catch (e) { continue; }
-                        if (rules) varrer(rules, null);
-                    }
-                } catch (e) {}
-
-                var cs = getComputedStyle(sidebar);
-                var vencedora = candidatas.length ? candidatas[candidatas.length - 1] : null;
-
-                var resumo = [
-                    '🎯 RESULTADO FINAL:',
-                    'position REAL na tela agora = "' + cs.position + '"',
-                    '',
-                    '📋 Todas as regras de CSS que tentam definir "position" nesse elemento, em ordem (a ÚLTIMA é a que ganha):',
-                ];
-                if (candidatas.length === 0) {
-                    resumo.push('(nenhuma regra encontrada — algo muito estranho)');
-                } else {
-                    candidatas.forEach(function (c, i) {
-                        var marca = (i === candidatas.length - 1) ? '  ⬅️ ESTA GANHOU' : '';
-                        resumo.push((i + 1) + '. [' + c.media + '] ' + c.seletor + ' → position:' + c.position + marca);
-                    });
-                }
-                resumo.push('');
-                resumo.push('Total de folhas de estilo carregadas (document.styleSheets.length) = ' + document.styleSheets.length);
-                for (var k = 0; k < document.styleSheets.length; k++) {
-                    var href = document.styleSheets[k].href || '(estilo inline no HTML)';
-                    var qtdRegras = '?';
-                    try { qtdRegras = document.styleSheets[k].cssRules.length; } catch (e) { qtdRegras = 'bloqueado (CORS)'; }
-                    resumo.push('  folha ' + k + ': ' + href + ' — ' + qtdRegras + ' regras');
-                }
-
-                var caixa = document.createElement('div');
-                caixa.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:999998;' +
-                    'background:#0a3d0a;color:#c8ffc8;padding:10px 12px;font:11px/1.6 monospace;' +
-                    'white-space:pre-wrap;word-break:break-word;max-height:75vh;overflow:auto;' +
-                    'box-shadow:0 -4px 20px rgba(0,0,0,0.5);';
-                caixa.innerHTML = '<strong>🎯 DIAGNÓSTICO FINAL (tire print e envie):</strong><br><br>' +
-                    resumo.join('<br>').replace(/</g, '&lt;') +
-                    '<br><br><span style="text-decoration:underline;cursor:pointer;" onclick="this.parentElement.remove()">[fechar]</span>';
-                document.documentElement.appendChild(caixa);
-            }
-            setTimeout(medir, 2000);
-            window.addEventListener('load', function () { setTimeout(medir, 500); });
-        })();
-    </script>
 
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -379,7 +288,21 @@
             0%, 100% { transform: translate(0, 0); }
             50% { transform: translate(30px, -20px); }
         }
-        .sidebar, .welcome-box, .kpi-container, .dashboard-main-grid, main, .tab-content {
+        /* 🎯 CAUSA RAIZ FINAL do "menu ocupa espaço e empurra tudo pra
+           baixo no celular" — confirmado por diagnóstico ao vivo no
+           navegador: esta regra dava "position: relative" pra um monte
+           de containers (pra ficarem por cima do efeito decorativo
+           "aurora" flutuante do fundo), mas incluía ".sidebar" nessa
+           mesma lista. Ela não tem media query — vale pra qualquer
+           tamanho de tela — e como esse <style> vem DEPOIS do
+           style.css no carregamento da página, ela ganhava a disputa
+           de cascata e desligava o "position: fixed" que o menu lateral
+           precisa pra funcionar como gaveta no mobile (sem isso, o menu
+           passava a ocupar espaço real da página, empurrando o resto
+           do conteúdo pra baixo da tela visível). Removido ".sidebar"
+           daqui — ele não precisa desse efeito de qualquer forma, já
+           que fica escondido fora da tela (left:-300px) quando fechado. */
+        .welcome-box, .kpi-container, .dashboard-main-grid, main, .tab-content {
             position: relative;
             z-index: 1;
         }
