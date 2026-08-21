@@ -390,26 +390,70 @@
        "aspect-ratio" exato do viewBox do SVG, então ele sempre preenche
        100% da largura disponível sem sobrar (nem faltar) espaço — o
        desenho fica o maior possível, sem buraco embaixo. */
-    #modal .bt-diagrama-svg { width: 100%; height: auto; display: block; aspect-ratio: 760 / 760; }
+    #modal .bt-diagrama-svg { width: 100%; height: auto; display: block; aspect-ratio: 760 / 1006; }
     #modal .bt-svg-viga { fill: #2a3346; stroke: var(--border); stroke-width: 1; }
-    #modal .bt-svg-legenda-eixo { font-family: var(--mono); font-size: 12px; fill: var(--text-muted); letter-spacing: 0.06em; }
+    #modal .bt-svg-legenda-eixo { font-family: var(--mono); font-size: 15px; font-weight: 700; fill: var(--text-muted); letter-spacing: 0.06em; }
     #modal .bt-svg-shape { cursor: pointer; }
     #modal .bt-svg-shape .bt-svg-corpo { fill: rgba(34,197,94,0.14); stroke: #22c55e; stroke-width: 3; transition: all 0.15s ease; }
     #modal .bt-svg-shape .bt-svg-haste { fill: #4b5568; stroke: var(--border); stroke-width: 1.5; }
     #modal .bt-svg-shape .bt-svg-mangueira-tubo { fill: none; stroke: #22c55e; stroke-width: 6; stroke-linecap: round; transition: all 0.15s ease; }
     #modal .bt-svg-shape .bt-svg-mangueira-corpo { fill: rgba(34,197,94,0.14); stroke: #22c55e; stroke-width: 3; transition: all 0.15s ease; }
-    #modal .bt-svg-shape .bt-svg-rotulo { font-family: var(--mono); font-size: 18px; font-weight: 800; fill: #d6f5e3; }
-    #modal .bt-svg-shape .bt-svg-rotulo-mng { font-family: var(--mono); font-size: 14px; font-weight: 800; fill: #d6f5e3; }
-    #modal .bt-svg-shape .bt-svg-rotulo-mng-num { font-family: var(--mono); font-size: 9px; font-weight: 700; fill: rgba(214,245,227,0.75); }
+    #modal .bt-svg-shape .bt-svg-rotulo { font-family: var(--mono); font-size: 21px; font-weight: 800; fill: #d6f5e3; }
+    #modal .bt-svg-shape .bt-svg-rotulo-mng { font-family: var(--mono); font-size: 17px; font-weight: 800; fill: #d6f5e3; }
+    #modal .bt-svg-shape .bt-svg-rotulo-mng-num { font-family: var(--mono); font-size: 12px; font-weight: 700; fill: rgba(214,245,227,0.85); }
     /* 🆕 Referência fixa "Sentido do Veio" — sempre no mesmo canto e
        apontando pro mesmo lado, pra nunca confundir avanço/retorno
        trocando de veio (mesma referência usada no desenho da oficina). */
-    #modal .bt-svg-referencia-label { font-family: var(--mono); font-size: 11px; font-weight: 700; fill: var(--accent); letter-spacing: 0.03em; }
+    #modal .bt-svg-referencia-label { font-family: var(--mono); font-size: 14px; font-weight: 700; fill: var(--accent); letter-spacing: 0.03em; }
     #modal .bt-svg-referencia-linha { stroke: var(--accent); stroke-width: 2.5; }
     #modal .bt-svg-referencia-seta { fill: var(--accent); }
-    #modal .bt-svg-coluna-label { font-family: var(--mono); font-size: 13px; font-weight: 800; letter-spacing: 0.04em; }
+    #modal .bt-svg-coluna-label { font-family: var(--mono); font-size: 17px; font-weight: 800; letter-spacing: 0.04em; }
     #modal .bt-svg-coluna-retorno { fill: #93c5fd; }
     #modal .bt-svg-coluna-avanco { fill: #fbbf24; }
+    /* 🆕 Os 2 "elos" da Barra Transversal em si (retorno/avanço) — o
+       componente real que fica no meio da barra, não só um rótulo. */
+    #modal .bt-svg-shape .bt-svg-elo { fill: rgba(56,189,248,0.12); stroke: var(--accent); stroke-width: 3; transition: all 0.15s ease; }
+    #modal .bt-svg-shape .bt-svg-rotulo-elo { font-family: var(--mono); font-size: 26px; font-weight: 800; fill: #eafbff; }
+    #modal .bt-svg-shape .bt-svg-rotulo-elo-sigla { font-family: var(--mono); font-size: 17px; font-weight: 800; fill: #7dd3fc; }
+    #modal .bt-svg-shape:hover .bt-svg-elo { filter: brightness(1.3); }
+    #modal .bt-svg-shape.avariado .bt-svg-elo { fill: rgba(234,179,8,0.22); stroke: #eab308; }
+    #modal .bt-svg-shape.critico .bt-svg-elo { fill: rgba(239,68,68,0.28); stroke: #ef4444; }
+    #modal .bt-svg-shape.selecionado .bt-svg-elo { stroke-width: 4; filter: drop-shadow(0 0 6px rgba(56,189,248,0.8)); }
+    /* 🆕 Caixa própria da Barra Transversal (só o que é dela: os 2
+       flexíveis + a faixa amarela) — os cilindros ficam sempre FORA
+       dela, encostados na borda de cima/baixo. */
+    #modal .bt-svg-caixa-transversal { fill: rgba(15,23,42,0.55); stroke: #e2e8f0; stroke-width: 2.5; }
+    #modal .bt-svg-faixa-hidraulica { fill: #eab308; opacity: 0.9; }
+    /* 🆕 Conectores finos (só decorativos, não clicáveis) mostrando a
+       ligação lógica de cada mangueira até o círculo RE/AV central —
+       ficam "atrás" dos cilindros/mangueiras no desenho (desenhados
+       antes deles), então não atrapalham o clique nos ícones reais. */
+    #modal .bt-svg-conector-flex { fill: none; stroke: #22c55e; stroke-width: 2; stroke-dasharray: 5 4; opacity: 0.45; }
+    #modal .bt-svg-legenda-hidraulica { font-family: var(--mono); font-size: 15px; font-weight: 800; fill: #fde68a; letter-spacing: 0.04em; }
+    /* 🆕 Setas vermelhas de fluxo do veio (topo/base) — diferente da
+       referência fina "Sentido do Veio": essa é o sentido do FLUXO. */
+    #modal .bt-svg-seta-fluxo { fill: #ef4444; stroke: #7f1d1d; stroke-width: 1.5; }
+    /* 🆕 Os 2 flexíveis (mangueiras) que ficam DENTRO da barra
+       transversal — RE (12,7 x 600) e AV (15,9 x 600). */
+    /* 🆕 Fundo azul do flexível — só decorativo/sinalização, NÃO é
+       clicável nem registrável (quem registra é o retângulo verde por
+       cima, com a mesma classe .bt-svg-mangueira-corpo usada em toda
+       mangueira do desenho). */
+    #modal .bt-svg-flexivel-fundo { fill: rgba(56,189,248,0.14); stroke: #38bdf8; stroke-width: 2.5; opacity: 0.85; }
+    /* 🆕 As 4 hastinhas verdes ligando a faixa amarela/base da caixa aos
+       círculos RE/AV centrais — só decorativas. */
+    #modal .bt-svg-hastinha-flex { stroke: #22c55e; stroke-width: 5; stroke-linecap: round; transition: all 0.15s ease; }
+    #modal .bt-svg-hastinha-ponta { fill: #22c55e; stroke: #16a34a; stroke-width: 1; transition: all 0.15s ease; }
+    #modal .bt-svg-shape:hover .bt-svg-hastinha-flex,
+    #modal .bt-svg-shape:hover .bt-svg-hastinha-ponta { stroke: var(--accent); filter: brightness(1.3); }
+    #modal .bt-svg-shape.avariado .bt-svg-hastinha-flex,
+    #modal .bt-svg-shape.avariado .bt-svg-hastinha-ponta { stroke: #eab308; }
+    #modal .bt-svg-shape.avariado .bt-svg-hastinha-ponta { fill: #eab308; }
+    #modal .bt-svg-shape.critico .bt-svg-hastinha-flex,
+    #modal .bt-svg-shape.critico .bt-svg-hastinha-ponta { stroke: #ef4444; }
+    #modal .bt-svg-shape.critico .bt-svg-hastinha-ponta { fill: #ef4444; }
+    #modal .bt-svg-shape.selecionado .bt-svg-hastinha-flex { stroke-width: 7; filter: drop-shadow(0 0 5px rgba(56,189,248,0.7)); }
+    #modal .bt-svg-rotulo-hastinha { font-family: var(--mono); font-size: 13px; font-weight: 800; fill: #86efac; }
     #modal .bt-svg-shape:hover .bt-svg-corpo,
     #modal .bt-svg-shape:hover .bt-svg-mangueira-corpo { filter: brightness(1.3); stroke: var(--accent); }
     #modal .bt-svg-shape:hover .bt-svg-mangueira-tubo { stroke: var(--accent); }
@@ -2015,18 +2059,67 @@ function rotuloEstadoBT(estado) {
 // nos 4 "cantos" da barra transversal (2 acima, 2 abaixo), igual à
 // disposição física real — não mais numa fileira única — e o desenho
 // inteiro ficou bem maior.
+// 🆕 CORREÇÃO ("as duas bolas no meio são a Barra Transversal, com
+// avanço e retorno, tá faltando elas"): o desenho antes só tinha uma
+// viga genérica escrito "Barra Transversal" no meio, sem nenhum
+// componente clicável ali — mas no desenho de referência da oficina,
+// o meio da barra transversal tem 2 conexões próprias (uma na linha de
+// RETORNO, outra na linha de AVANÇO), cada uma registrável igual aos
+// cilindros/mangueiras. Agora elas aparecem como 2 "elos" clicáveis
+// (TRV-RE e TRV-AV), sentados em cima da viga, um em cada coluna.
+// 🆕 CORREÇÃO ("quero a barra transversal desse tamanho, com 2
+// flexíveis dentro — um 12,7 x 600 (retorno) e outro 15,9 x 600
+// (avanço) — tira o cilindro de dentro da barra e coloca do lado de
+// fora, a seta vermelha é o fluxo do veio, e marca a linha amarela
+// onde fica o sistema hidráulico"): redesenho completo do diagrama.
+// Agora existe uma CAIXA própria pra Barra Transversal (com borda),
+// que contém só os 2 flexíveis (RE/AV, com a bitola e o comprimento
+// reais) e a faixa amarela sinalizando onde fica o sistema hidráulico.
+// Os 4 cilindros de elevação ficam TODOS do lado de fora dessa caixa
+// (2 encostados em cima, 2 encostados embaixo), nunca dentro dela. As
+// 2 setas vermelhas grandes (topo/base) marcam o fluxo do veio —
+// diferente da referência fina "Sentido do Veio" (essa é fixa e não
+// muda; a seta vermelha é só o sentido do fluxo/avanço do material).
+// 🆕 CORREÇÃO ("volta na versão anterior (com a caixa), só
+// adiciona 4 flexíveis saindo da bola azul do meio — eles que são o
+// flexível"): desfiz a remoção da caixa. A Barra Transversal volta a
+// ter uma moldura própria (com a faixa amarela do Sistema Hidráulico
+// dentro), os cilindros ficam do lado de fora dela, e cada bola azul
+// central (RE/AV) agora manda 2 mangueiras flexíveis curvas — uma pra
+// cima (rumo aos cilindros de cima) e uma pra baixo (rumo aos de
+// baixo) — total 4, saindo visualmente da própria bola.
 function renderDiagramaBarraTransversal(layout, statusMap) {
     const nCil = layout.cilindros;
     const nMangPorCil = layout.mangueirasPorCilindro;
-    const largura = 760, altura = 760;
-    const beamY = 410, beamH = 24, margemX = 90;
+    const largura = 760;
+    const margemX = 90;
 
-    const bodyLen = 160, rodLen = 32, hoseLen = 54, hoseBoxH = 32;
+    const bodyLen = 150, rodLen = 30, hoseLen = 50, hoseBoxH = 32;
+    const boxH = 200; // altura da caixa da Barra Transversal (só os flexíveis + linha amarela, sem cilindro dentro)
+    const setaAltura = 95, setaFolga = 18;
+
+    const topoConteudo = setaFolga + setaAltura + 26;
+    const boxTop = topoConteudo + hoseBoxH + hoseLen + rodLen + bodyLen;
+    const boxBottom = boxTop + boxH;
+    const alturaTotal = boxBottom + bodyLen + rodLen + hoseLen + hoseBoxH + setaFolga + setaAltura + 30;
+
+    const colXs = [margemX + 40, largura - margemX - 40];
+
+    function setaFluxo(cx, yTopo) {
+        const shaftW = 40, headW = 96, shaftH = setaAltura * 0.5;
+        const y1 = yTopo, y2 = yTopo + shaftH, y3 = yTopo + setaAltura;
+        return `
+            <polygon class="bt-svg-seta-fluxo" points="
+                ${cx - shaftW / 2},${y1} ${cx + shaftW / 2},${y1} ${cx + shaftW / 2},${y2}
+                ${cx + headW / 2},${y2} ${cx},${y3} ${cx - headW / 2},${y2}
+                ${cx - shaftW / 2},${y2}
+            " />
+        `;
+    }
 
     let svg = '';
 
-    // Referência fixa "Sentido do Veio" — sempre no mesmo lugar,
-    // apontando pro mesmo lado, não muda com o veio selecionado (G/H).
+    // Referência fixa "Sentido do Veio".
     svg += `
         <defs>
             <marker id="bt-seta" markerWidth="10" markerHeight="10" refX="6" refY="3" orient="auto">
@@ -2034,24 +2127,82 @@ function renderDiagramaBarraTransversal(layout, statusMap) {
             </marker>
         </defs>
         <g class="bt-svg-referencia">
-            <text x="${margemX - 30}" y="26" class="bt-svg-referencia-label" text-anchor="start">← Sentido do Veio (referência fixa)</text>
-            <line x1="${margemX - 30}" y1="38" x2="${margemX + 150}" y2="38" class="bt-svg-referencia-linha" marker-end="url(#bt-seta)" />
+            <text x="${margemX - 30}" y="20" class="bt-svg-referencia-label" text-anchor="start">← Sentido do Veio (referência fixa)</text>
+            <line x1="${margemX - 30}" y1="30" x2="${margemX + 150}" y2="30" class="bt-svg-referencia-linha" marker-end="url(#bt-seta)" />
         </g>
     `;
 
-    // Cabeçalhos fixos RETORNO (esquerda) / AVANÇO (direita) — as duas
-    // colunas onde ficam os cilindros, igual ao desenho de referência.
-    svg += `<text x="${margemX + 40}" y="${beamY - bodyLen - rodLen - hoseLen - hoseBoxH - 14}" class="bt-svg-coluna-label bt-svg-coluna-retorno" text-anchor="middle">← LADO RETORNO</text>`;
-    svg += `<text x="${largura - margemX - 40}" y="${beamY - bodyLen - rodLen - hoseLen - hoseBoxH - 14}" class="bt-svg-coluna-label bt-svg-coluna-avanco" text-anchor="middle">LADO AVANÇO →</text>`;
+    // Seta vermelha do topo: fluxo do veio entrando na barra transversal.
+    svg += setaFluxo(largura / 2, setaFolga + 34);
 
-    // Viga central (barra transversal) — os cilindros nascem dela, 2 pra
-    // cima e 2 pra baixo, um em cada coluna (esquerda/direita).
-    svg += `<rect x="${margemX - 12}" y="${beamY}" width="${largura - (margemX - 12) * 2}" height="${beamH}" rx="6" class="bt-svg-viga" />`;
-    svg += `<text x="${largura / 2}" y="${beamY + beamH / 2 + 5}" class="bt-svg-legenda-eixo" text-anchor="middle">Barra Transversal</text>`;
+    // Cabeçalhos fixos RETORNO (esquerda) / AVANÇO (direita).
+    const colLabelY = topoConteudo - 14;
+    svg += `<text x="${colXs[0]}" y="${colLabelY}" class="bt-svg-coluna-label bt-svg-coluna-retorno" text-anchor="middle">← LADO RETORNO</text>`;
+    svg += `<text x="${colXs[1]}" y="${colLabelY}" class="bt-svg-coluna-label bt-svg-coluna-avanco" text-anchor="middle">LADO AVANÇO →</text>`;
 
-    const colXs = [margemX + 40, largura - margemX - 40];
-    // Ordem: #1 e #2 em cima (esquerda/direita), #3 e #4 embaixo
-    // (esquerda/direita) — 2 cilindros acima da viga, 2 abaixo.
+    // --- CAIXA da Barra Transversal (só o que é DELA: os 2 flexíveis +
+    // a faixa amarela do sistema hidráulico — o cilindro fica de fora). ---
+    svg += `<rect x="${margemX - 12}" y="${boxTop}" width="${largura - (margemX - 12) * 2}" height="${boxH}" rx="12" class="bt-svg-caixa-transversal" />`;
+    svg += `<text x="${largura / 2}" y="${boxTop - 14}" class="bt-svg-legenda-eixo" text-anchor="middle">Barra Transversal</text>`;
+
+    // Faixa amarela: sinaliza onde fica o sistema hidráulico dentro da
+    // barra, pra identificar rápido de qual cilindro/lado estão falando.
+    const faixaY = boxTop + 26;
+    svg += `<rect x="${margemX + 4}" y="${faixaY}" width="${largura - (margemX + 4) * 2}" height="10" rx="5" class="bt-svg-faixa-hidraulica" />`;
+    svg += `<text x="${largura / 2}" y="${faixaY - 8}" class="bt-svg-legenda-hidraulica" text-anchor="middle">Sistema Hidráulico</text>`;
+
+    // 🔧 CORREÇÃO ("tira esse quadrado verde de dentro do círculo azul,
+    // ele não existe — os 4 fios pretos (haste) é que são o lugar do
+    // flexível"): as bolas azuis (RE/AV) voltam a ser só um marcador
+    // visual — sem nenhum retângulo verde clicável em cima, sem
+    // registrar nada. O flexível de verdade agora é a peça que fica
+    // entre o corpo do cilindro e a mangueira (antes era só uma haste
+    // cinza decorativa) — 4 no total, uma por cilindro, coloridas de
+    // verde e clicáveis/registráveis.
+    const cyFlex = boxTop + boxH * 0.52;
+    const distCentro = 85;
+    let numFlexCentral = 0;
+    [
+        { cx: largura / 2 - distCentro, sigla: 'RE' },
+        { cx: largura / 2 + distCentro, sigla: 'AV' },
+    ].forEach(f => {
+        // 🔧 CORREÇÃO ("esses 4 são flexível, preciso poder clicar neles
+        // e marcar avariado/crítico igual aos outros"): as 4 hastinhas
+        // (2 por bola: uma rotulada AV do lado da faixa amarela, outra
+        // rotulada RE do outro lado) agora são clicáveis/registráveis
+        // de verdade, com a mesma lógica de estado (livre/avariado/
+        // crítico) dos cilindros e mangueiras.
+        numFlexCentral++;
+        const chaveTopo = `FLEXC-${numFlexCentral}`;
+        const estadoTopo = estadoComponenteBT(statusMap[chaveTopo]);
+        const rotuloTopo = `Flexível Central AV — Bola ${f.sigla}`;
+        svg += `
+            <g class="bt-clicavel bt-svg-shape ${estadoTopo}" data-bt="${chaveTopo}" data-bt-tipo="flexivel" data-bt-rotulo="${rotuloTopo}" tabindex="0" role="button">
+                <line x1="${f.cx}" y1="${faixaY + 10}" x2="${f.cx}" y2="${cyFlex - 40}" class="bt-svg-hastinha-flex" />
+                <rect x="${f.cx - 6}" y="${faixaY + 4}" width="12" height="12" rx="2" class="bt-svg-hastinha-ponta" />
+                <text x="${f.cx + 18}" y="${(faixaY + 10 + cyFlex - 40) / 2 + 5}" class="bt-svg-rotulo-hastinha" text-anchor="start">AV</text>
+            </g>
+        `;
+
+        numFlexCentral++;
+        const chaveBase = `FLEXC-${numFlexCentral}`;
+        const estadoBase = estadoComponenteBT(statusMap[chaveBase]);
+        const rotuloBase = `Flexível Central RE — Bola ${f.sigla}`;
+        svg += `
+            <g class="bt-clicavel bt-svg-shape ${estadoBase}" data-bt="${chaveBase}" data-bt-tipo="flexivel" data-bt-rotulo="${rotuloBase}" tabindex="0" role="button">
+                <line x1="${f.cx}" y1="${cyFlex + 40}" x2="${f.cx}" y2="${boxBottom - 10}" class="bt-svg-hastinha-flex" />
+                <rect x="${f.cx - 6}" y="${boxBottom - 16}" width="12" height="12" rx="2" class="bt-svg-hastinha-ponta" />
+                <text x="${f.cx + 18}" y="${(cyFlex + 40 + boxBottom - 10) / 2 + 5}" class="bt-svg-rotulo-hastinha" text-anchor="start">RE</text>
+            </g>
+        `;
+
+        svg += `<circle cx="${f.cx}" cy="${cyFlex}" r="40" class="bt-svg-flexivel-fundo" />`;
+        svg += `<text x="${f.cx}" y="${cyFlex + 9}" class="bt-svg-rotulo-elo" text-anchor="middle">${f.sigla}</text>`;
+    });
+
+    // --- Cilindros de elevação: SEMPRE do lado de fora da caixa — 2
+    // encostados na borda de CIMA (empurrando pra cima) e 2 encostados
+    // na borda de BAIXO (empurrando pra baixo). ---
     const posicoes = [];
     for (let pos = 1; pos <= nCil; pos++) {
         const emCima = pos <= Math.ceil(nCil / 2);
@@ -2066,29 +2217,38 @@ function renderDiagramaBarraTransversal(layout, statusMap) {
         const estadoCil = estadoComponenteBT(statusMap[chaveCil]);
         const rotuloCil = `Cilindro de Elevação #${pos}`;
 
-        // dir = -1 (cima): corpo sobe a partir da viga, haste no topo.
-        // dir = +1 (baixo): corpo desce a partir da viga, haste embaixo
-        // (tudo espelhado verticalmente).
-        const bodyNear = beamY + (dir === 1 ? beamH : 0);           // borda do corpo colada na viga
-        const bodyFar = bodyNear + dir * bodyLen;                    // outra borda do corpo
+        // dir = -1 (cima): corpo encosta na borda de cima da caixa e
+        // sobe. dir = +1 (baixo): corpo encosta na borda de baixo e
+        // desce — espelhado.
+        const bordaCaixa = dir === -1 ? boxTop : boxBottom;
+        const bodyNear = bordaCaixa;
+        const bodyFar = bodyNear + dir * bodyLen;
         const rodNear = bodyFar;
-        const rodFar = rodNear + dir * rodLen;                       // ponta da haste
+        const rodFar = rodNear + dir * rodLen;
         const bodyTop = Math.min(bodyNear, bodyFar);
         const rodTop = Math.min(rodNear, rodFar);
         const labelY = (bodyNear + bodyFar) / 2 + 5;
 
+        // 🆕 O Flexível deste cilindro — ocupa exatamente o lugar que
+        // antes era a haste cinza decorativa (entre o corpo do cilindro
+        // e a mangueira). Agora é verde e clicável/registrável de
+        // verdade: chave FLEX-{pos}, 4 no total.
+        const chaveFlex = `FLEX-${pos}`;
+        const estadoFlex = estadoComponenteBT(statusMap[chaveFlex]);
+        const rotuloFlex = `Flexível — Cilindro #${pos}`;
+
         svg += `
             <g class="bt-clicavel bt-svg-shape ${estadoCil}" data-bt="${chaveCil}" data-bt-tipo="cilindro" data-bt-rotulo="${rotuloCil}" tabindex="0" role="button">
                 <rect x="${cx - 24}" y="${bodyTop}" width="48" height="${bodyLen}" rx="9" class="bt-svg-corpo" />
-                <rect x="${cx - 8}" y="${rodTop}" width="16" height="${rodLen}" rx="3" class="bt-svg-haste" />
                 <text x="${cx}" y="${labelY}" class="bt-svg-rotulo" text-anchor="middle">CIL ${pos}</text>
+            </g>
+            <g class="bt-clicavel bt-svg-shape ${estadoFlex}" data-bt="${chaveFlex}" data-bt-tipo="flexivel" data-bt-rotulo="${rotuloFlex}" tabindex="0" role="button">
+                <rect x="${cx - 8}" y="${rodTop}" width="16" height="${rodLen}" rx="3" class="bt-svg-mangueira-corpo" />
             </g>
         `;
 
         // Mangueiras deste cilindro, penduradas na ponta da haste (longe
-        // da viga, pra não brigar com o desenho do cilindro vizinho).
-        // Índice 0 = RETORNO (fica mais perto do "Lado Retorno"),
-        // índice 1 = AVANÇO — convenção fixa, não depende do veio.
+        // da caixa, pra não brigar visualmente com ela).
         const hosePontaY = dir === -1 ? rodTop : rodTop + rodLen;
         const offsets = [];
         for (let m = 0; m < nMangPorCil; m++) offsets.push((m - (nMangPorCil - 1) / 2) * 40);
@@ -2118,8 +2278,11 @@ function renderDiagramaBarraTransversal(layout, statusMap) {
         });
     });
 
+    // Seta vermelha da base: fluxo do veio saindo da barra transversal.
+    svg += setaFluxo(largura / 2, alturaTotal - setaFolga - setaAltura - 6);
+
     return `
-        <svg viewBox="0 0 ${largura} ${altura}" class="bt-diagrama-svg" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="0 0 ${largura} ${alturaTotal}" class="bt-diagrama-svg" xmlns="http://www.w3.org/2000/svg" style="aspect-ratio:${largura}/${alturaTotal};">
             ${svg}
         </svg>
     `;
@@ -2149,10 +2312,42 @@ function renderGridBarraTransversal(layout, statusMap) {
         }
     }
 
+    // 🔧 CORREÇÃO ("o quadrado verde dentro do círculo azul não existe;
+    // o flexível de verdade é onde tá a haste — os 4 fios pretos"):
+    // agora são 4 flexíveis, um por cilindro (FLEX-1..FLEX-4), no lugar
+    // da antiga haste decorativa. As bolas azuis RE/AV continuam no
+    // desenho só como referência visual, sem botão/clique associado.
+    let flexivelHtml = '';
+    for (let pos = 1; pos <= nCil; pos++) {
+        const chave = `FLEX-${pos}`;
+        const estado = estadoComponenteBT(statusMap[chave]);
+        flexivelHtml += `<button type="button" class="bt-clicavel bt-item ${estado}" data-bt="${chave}" data-bt-tipo="flexivel" data-bt-rotulo="Flexível — Cilindro #${pos}" title="Flexível — Cilindro #${pos} — ${rotuloEstadoBT(estado)}">FLEX ${pos}</button>`;
+    }
+
+    // 🆕 As 4 hastinhas AV/RE em volta das bolas centrais — também são
+    // flexível, clicáveis e registráveis (avariado/crítico) igual ao
+    // resto.
+    let flexCentralHtml = '';
+    const rotulosFlexCentral = ['AV — Bola RE', 'RE — Bola RE', 'AV — Bola AV', 'RE — Bola AV'];
+    for (let n = 1; n <= 4; n++) {
+        const chave = `FLEXC-${n}`;
+        const estado = estadoComponenteBT(statusMap[chave]);
+        const rotulo = `Flexível Central ${rotulosFlexCentral[n - 1]}`;
+        flexCentralHtml += `<button type="button" class="bt-clicavel bt-item ${estado}" data-bt="${chave}" data-bt-tipo="flexivel" data-bt-rotulo="${rotulo}" title="${rotulo} — ${rotuloEstadoBT(estado)}">${rotulosFlexCentral[n - 1]}</button>`;
+    }
+
     return `
         <div class="bt-wrap" id="bt-wrap">
             <label class="obs-label">Barra Transversal — cilindros de elevação e mangueiras hidráulicas (clique para registrar ocorrência)</label>
             <div class="bt-diagrama">${htmlDiagrama}</div>
+            <div class="bt-grupo">
+                <div class="bt-grupo-titulo">Flexíveis (${nCil}) — um por cilindro</div>
+                <div class="bt-grid">${flexivelHtml}</div>
+            </div>
+            <div class="bt-grupo">
+                <div class="bt-grupo-titulo">Flexíveis Centrais (4) — junto às bolas RE/AV</div>
+                <div class="bt-grid">${flexCentralHtml}</div>
+            </div>
             <div class="bt-grupo">
                 <div class="bt-grupo-titulo">Cilindros de Elevação (${nCil})</div>
                 <div class="bt-grid">${cilindrosHtml}</div>
