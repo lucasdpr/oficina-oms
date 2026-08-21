@@ -1,10 +1,16 @@
 // banco.js - O Coração de Dados do Sistema
 
-export let BANCO_ATIVOS = JSON.parse(localStorage.getItem("oms_ativos_v32_local"));
+// 🔧 CORREÇÃO CRÍTICA ("tela em branco depois do login, principalmente
+// em aparelho novo / aba anônima / cache limpo"): faltava o "|| []"
+// nestas linhas. Quando o localStorage está vazio, JSON.parse(null)
+// retorna null — não uma lista vazia — e qualquer função que rodasse
+// .forEach/.filter/.map nesses bancos quebrava na hora, travando a
+// tela (só o cabeçalho aparecia).
+export let BANCO_ATIVOS = JSON.parse(localStorage.getItem("oms_ativos_v32_local")) || [];
 export let HISTORICO_ACOES = JSON.parse(localStorage.getItem("oms_historico_v32_local")) || [];
-export let BANCO_ROLOS = JSON.parse(localStorage.getItem("oms_rolos_v32_local"));
-export let BANCO_HIDRAULICA = JSON.parse(localStorage.getItem("oms_hidraulica_v32_local"));
-export let BANCO_MATERIAIS = JSON.parse(localStorage.getItem("oms_materiais_v32_local"));
+export let BANCO_ROLOS = JSON.parse(localStorage.getItem("oms_rolos_v32_local")) || [];
+export let BANCO_HIDRAULICA = JSON.parse(localStorage.getItem("oms_hidraulica_v32_local")) || [];
+export let BANCO_MATERIAIS = JSON.parse(localStorage.getItem("oms_materiais_v32_local")) || [];
 export let OPERADOR_LOGADO = JSON.parse(localStorage.getItem("oms_operador_v32_local")) || null;
 export let VEIO_SELECIONADO_PAINEL = "C";
 

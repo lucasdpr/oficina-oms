@@ -310,6 +310,9 @@
             justify-content: space-between;
             align-items: center;
             padding: 16px 5%;
+            padding-top: calc(16px + env(safe-area-inset-top));
+            padding-left: calc(5% + env(safe-area-inset-left));
+            padding-right: calc(5% + env(safe-area-inset-right));
             background: rgba(10, 14, 23, 0.92);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
@@ -637,7 +640,7 @@
         }
 
         /* ===== SEÇÕES ===== */
-        .antes-depois { padding: 80px 5%; background: var(--bg-base); text-align: center; border-top: 1px solid var(--border); }
+        .antes-depois { padding: 80px 5%; background: var(--bg-base); text-align: center; }
         .antes-depois h2 { color: var(--text-title); font-size: clamp(26px, 5vw, 40px); margin-bottom: 48px; }
         .antes-depois-grid {
             display: grid;
@@ -671,7 +674,7 @@
         .ad-oms li::before { content: '✓'; position: absolute; left: 0; color: var(--primary); }
         .ad-depois li::before { content: '↑'; position: absolute; left: 0; color: var(--secondary); }
 
-        .pilares { padding: 80px 5%; background: var(--bg-surface); text-align: center; border-top: 1px solid var(--border); }
+        .pilares { padding: 80px 5%; background: var(--bg-base); text-align: center; }
         .pilares h2 { color: var(--text-title); font-size: clamp(26px, 5vw, 40px); margin-bottom: 12px; }
         .pilares > p { max-width: 640px; margin: 0 auto 48px; font-size: 16px; }
         .pilares-grid {
@@ -701,7 +704,7 @@
         .pilar-card li { color: var(--text-body); font-size: 14px; padding-left: 16px; position: relative; }
         .pilar-card li::before { content: '•'; position: absolute; left: 0; color: var(--primary); }
 
-        .como-funciona { padding: 80px 5%; background: var(--bg-base); text-align: center; border-top: 1px solid var(--border); }
+        .como-funciona { padding: 80px 5%; background: var(--bg-base); text-align: center; }
         .como-funciona h2 { color: var(--text-title); font-size: clamp(26px, 5vw, 40px); margin-bottom: 48px; }
         .ciclo-timeline {
             display: grid;
@@ -728,7 +731,7 @@
             .ciclo-timeline, .pilares-grid, .antes-depois-grid { grid-template-columns: 1fr; }
         }
 
-        .evolucao { padding: 70px 5%; background: var(--bg-surface); text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        .evolucao { padding: 70px 5%; background: var(--bg-base); text-align: center; }
         .evolucao h2 { color: var(--text-title); font-size: clamp(22px, 4.5vw, 34px); margin-bottom: 40px; line-height: 1.35; }
         .evolucao-flow {
             display: flex;
@@ -915,8 +918,6 @@
                 linear-gradient(180deg, rgba(10,14,23,0.88), rgba(10,14,23,0.93)),
                 url('WhatsApp%20Image%202026-06-08%20at%2014.06.56.jpeg') center/cover no-repeat;
             text-align: center;
-            border-top: 1px solid var(--border);
-            border-bottom: 1px solid var(--border);
         }
         .proposito .badge {
             margin-bottom: 24px;
@@ -1013,10 +1014,8 @@
         /* ===== DIVERSIDADE ===== */
         .diversidade {
             padding: 80px 5%;
-            background: var(--bg-surface);
+            background: var(--bg-base);
             text-align: center;
-            border-top: 1px solid var(--border);
-            border-bottom: 1px solid var(--border);
         }
         .diversidade .badge-rosa {
             margin-bottom: 24px;
@@ -1116,7 +1115,6 @@
             padding: 80px 5%;
             background: var(--bg-base);
             text-align: center;
-            border-top: 1px solid var(--border);
         }
         .recursos h2 {
             color: var(--text-title);
@@ -1190,9 +1188,8 @@
         /* ===== DIFERENCIAIS ===== */
         .diferenciais {
             padding: 80px 5%;
-            background: var(--bg-surface);
+            background: var(--bg-base);
             text-align: center;
-            border-top: 1px solid var(--border);
         }
         .diferenciais h2 {
             color: var(--text-title);
@@ -1262,7 +1259,6 @@
             padding: 80px 5%;
             background: var(--bg-base);
             text-align: center;
-            border-top: 1px solid var(--border);
         }
         .servicos h2 {
             color: var(--text-title);
@@ -1312,9 +1308,8 @@
         /* ===== MCCs ===== */
         .sobre-mcc {
             padding: 80px 5%;
-            background: var(--bg-surface);
+            background: var(--bg-base);
             text-align: center;
-            border-top: 1px solid var(--border);
         }
         .sobre-mcc h2 {
             color: var(--text-title);
@@ -1402,7 +1397,6 @@
         .historia {
             padding: 100px 5%;
             background: var(--bg-base);
-            border-top: 1px solid var(--border);
         }
         .historia-header {
             text-align: center;
@@ -1525,7 +1519,6 @@
             padding: 80px 5%;
             background: linear-gradient(135deg, var(--bg-base), var(--bg-surface));
             text-align: center;
-            border-top: 1px solid var(--border);
         }
         .cta-final h2 {
             color: var(--text-title);

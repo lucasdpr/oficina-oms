@@ -2035,10 +2035,30 @@ h1, h2, h3, h4, h5, h6 {
     z-index: 4000;
     border-bottom: 1px solid var(--border-color);
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
-    /* 🔧 CORREÇÃO (mesmo bug do iOS descrito em .sidebar acima): sem
+    /* 🔧 CORREÇÃO CRÍTICA (a causa real do "conteúdo aparece bem lá
+       embaixo, com um espaço vazio enorme entre o cabeçalho e o
+       painel, e nem fechar o menu lateral resolve"): o comentário
+       abaixo já dizia "sem backdrop-filter", mas a propriedade que
+       de fato remove o backdrop-filter nunca tinha sido escrita —
+       só o comentário existia. Sem "backdrop-filter: none" aqui, o
+       .mobile-header continuava herdando "backdrop-filter: blur(16px)"
+       da classe .glass-panel (ele tem as duas classes:
+       class="mobile-header glass-panel"). No Safari/Chrome do iPhone
+       (mesmo motor WebKit), backdrop-filter + position:fixed NO MESMO
+       elemento faz o iOS tratar esse elemento como se fosse
+       position:static — EXATAMENTE o mesmo bug do WebKit já
+       documentado e corrigido aqui embaixo pra .sidebar. Sem o fixed
+       funcionando de verdade, o cabeçalho passava a ocupar espaço
+       normal dentro do .app-container (que é flex-direction:column
+       no celular), empurrando o .main-content pra baixo do tamanho
+       real do cabeçalho — ALÉM do padding-top que o .main-content já
+       reserva pensando num cabeçalho fixo (que não deveria ocupar
+       espaço nenhum). Dois espaços somados = o vazio gigante. Sem
        backdrop-filter, precisa de um fundo bem opaco pra não deixar o
-       conteúdo por trás transparecer feio — por isso troquei de
-       --bg-card (que é semi-transparente) pra --bg-main sólido. */
+       conteúdo por trás transparecer feio — por isso já estava com
+       --bg-main sólido. */
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     background: var(--bg-main);
   }
 
@@ -2878,6 +2898,7 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 0.75rem; font-weight: 700; text-decoration: none; text-transform: uppercase;
     letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;
     -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); cursor: pointer; transition: all 0.3s ease;
+
 }
 .btn-visitante-top:hover {
     background: #f59e0b; color: #0a0e17;
@@ -2997,11 +3018,28 @@ h1, h2, h3, h4, h5, h6 {
     }
 
     /* Cabeçalho mobile fixo no topo, respeitando notch/status bar */
+    /* 🔧 CORREÇÃO CRÍTICA (a causa real do "só o cabeçalho aparece e
+       o resto fica bem lá embaixo, com um espaço em branco enorme no
+       meio"): esta regra sobrescrevia o .mobile-header lá de cima
+       (que é position:fixed) pra position:sticky, só nessa faixa de
+       tela (≤768px — ou seja, QUALQUER celular real). Só que o
+       .main-content, na mesma faixa de tela, tem
+       "padding-top: 80px" pra abrir espaço EXATAMENTE do tamanho do
+       cabeçalho — cálculo que só fecha a conta se o cabeçalho for
+       fixed (fora do fluxo normal da página, sem ocupar espaço
+       próprio). Com sticky, o cabeçalho volta a ocupar espaço normal
+       ALÉM desse padding-top — dobrando o espaço reservado e
+       empurrando todo o conteúdo pra bem mais embaixo da tela do que
+       cabe na tela, dando a impressão de "página em branco" (é só
+       rolar bastante que o conteúdo aparece, intacto, mais embaixo).
+       position:fixed aqui também evita abaixar o z-index do
+       cabeçalho (era 50 nessa regra vs 4000 na de cima — o header
+       podia ficar escondido atrás de outros elementos). */
     .mobile-header {
         padding-top: max(10px, env(safe-area-inset-top));
-        position: sticky;
+        position: fixed;
         top: 0;
-        z-index: 50;
+        z-index: 4000;
     }
 
     /* Sidebar ocupa a tela quase toda quando aberta, com respiro pro notch */
@@ -3749,4 +3787,136 @@ body.light-mode {
     border-radius: var(--radius-sm);
     padding: 9px 12px;
     margin-bottom: 6px;
+}
+
+/* ==========================================================
+   🔧 OTIMIZAÇÃO MOBILE — bloco final consolidado
+========================================================== */
+
+/* iOS: campo de formulário com menos de 16px de fonte faz a tela dar
+   zoom sozinha ao tocar pra digitar. Só em campos de texto de verdade. */
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"],
+input[type="email"],
+input[type="tel"],
+input[type="password"],
+input[type="search"],
+input:not([type]),
+select,
+textarea,
+.premium-select,
+.premium-input,
+.premium-textarea,
+.select-sm {
+  font-size: 16px !important;
+}
+
+@media (max-width: 768px) {
+  td .btn-premium,
+  td .btn-outline-danger {
+    min-height: 36px;
+  }
+
+  .modal-content,
+  .folhao-modal-content {
+    width: calc(100% - 24px) !important;
+    max-width: calc(100% - 24px) !important;
+    max-height: calc(100dvh - 24px) !important;
+    max-height: calc(100vh - 24px) !important;
+    margin: 12px auto !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-responsive {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .kpi-container,
+  .kpi-container-familia {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .kpi-container,
+  .kpi-container-familia {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@supports (padding: max(0px)) {
+  .mobile-header {
+    padding-top: max(10px, env(safe-area-inset-top)) !important;
+    padding-left: max(16px, env(safe-area-inset-left)) !important;
+    padding-right: max(16px, env(safe-area-inset-right)) !important;
+  }
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* ==========================================================================
+   TELA DE LOGIN - AJUSTE MOBILE (iPhone e telas pequenas)
+   Antes, Voltar / Conexão Segura / Modo Visitante ficavam com
+   position:absolute cravados nos 3 cantos por cima do card, brigando
+   por espaço em telas estreitas. Aqui eles viram uma fileira normal
+   no topo, o card ganha respiro pra respeitar a Dynamic Island do
+   iPhone, e o conteúdo pode rolar se não couber inteiro na tela.
+   ========================================================================== */
+@media (max-width: 480px) {
+  .login-home-container {
+    flex-wrap: wrap;
+    align-content: flex-start;
+    align-items: flex-start;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: calc(14px + env(safe-area-inset-top)) 14px calc(24px + env(safe-area-inset-bottom));
+    gap: 8px;
+  }
+
+  .btn-voltar-login,
+  .login-status-badge,
+  .btn-visitante-top {
+    position: static;
+    top: auto; left: auto; right: auto;
+    font-size: 0.68rem;
+    padding: 6px 10px;
+    white-space: nowrap;
+  }
+
+  .login-card-central {
+    padding: 26px 20px;
+    margin-top: 4px;
+    width: 100%;
+  }
+
+  .login-logo-factory {
+    width: 46px;
+    height: 46px;
+    margin-bottom: 12px;
+  }
+  .login-logo-factory svg { width: 24px; height: 24px; }
+
+  .login-card-header { margin-bottom: 16px; }
+  .login-card-header h1 { font-size: 1.3rem; }
+  .login-card-header p { font-size: 0.75rem; letter-spacing: 1px; }
+
+  .login-explicativo {
+    padding: 10px 12px;
+    margin-bottom: 16px;
+  }
+  .login-explicativo-passo { font-size: 0.72rem; }
+
+  .login-form-group { margin-bottom: 14px; }
+  .login-input-wrapper input { font-size: 0.85rem; padding: 12px 40px 12px 40px; }
+  .login-input-icon { left: 12px; font-size: 1rem; }
+  .login-input-icon-toggle { right: 12px; }
+  #login-matricula { padding-right: 38px; }
+
+  .login-btn-submit { padding: 14px; font-size: 0.85rem; }
 }

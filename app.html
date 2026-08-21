@@ -1,6 +1,44 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+    <!-- ==============================================================
+         🔧 CAPTURA DE ERROS VISÍVEL NA TELA — pega qualquer erro de
+         JavaScript não tratado e mostra numa faixa vermelha no topo,
+         com a mensagem, arquivo e linha. Não muda nada do funcionamento
+         normal; só aparece quando tem erro de verdade.
+    ============================================================== -->
+    <script>
+        (function () {
+            var jaMostrou = false;
+            function mostrarErroNaTela(mensagem) {
+                if (jaMostrou) return;
+                jaMostrou = true;
+                var faixa = document.createElement('div');
+                faixa.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999;' +
+                    'background:#7f1d1d;color:#fff;padding:12px 16px;font:13px/1.5 monospace;' +
+                    'white-space:pre-wrap;word-break:break-word;max-height:50vh;overflow:auto;' +
+                    'box-shadow:0 4px 20px rgba(0,0,0,0.5);';
+                faixa.innerHTML = '<strong>⚠️ ERRO NO APP — tire print desta faixa e envie:</strong><br><br>' +
+                    mensagem.replace(/</g, '&lt;') +
+                    '<br><br><span style="text-decoration:underline;cursor:pointer;" onclick="this.parentElement.remove()">[fechar]</span>';
+                document.documentElement.appendChild(faixa);
+            }
+            window.addEventListener('error', function (e) {
+                var msg = (e.message || 'Erro desconhecido') +
+                    '\narquivo: ' + (e.filename || '?') +
+                    '\nlinha: ' + (e.lineno || '?') + ':' + (e.colno || '?');
+                mostrarErroNaTela(msg);
+            });
+            window.addEventListener('unhandledrejection', function (e) {
+                var motivo = e.reason;
+                var msg = 'Promise rejeitada sem tratamento: ' +
+                    (motivo && motivo.stack ? motivo.stack : String(motivo));
+                mostrarErroNaTela(msg);
+            });
+        })();
+    </script>
+
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>OMS | Sistema de Gestão de Manutenção</title>
@@ -211,13 +249,13 @@
             to { opacity: 1; transform: translateY(0); }
         }
         .welcome-box, .kpi-container, .dashboard-main-grid {
-            animation: appleFadeIn 0.5s ease-out both;
+            animation: appleFadeIn 0.5s ease-out;
         }
         .kpi-container .kpi-card:nth-child(1) { animation-delay: 0.03s; }
         .kpi-container .kpi-card:nth-child(2) { animation-delay: 0.08s; }
         .kpi-container .kpi-card:nth-child(3) { animation-delay: 0.13s; }
         .kpi-container .kpi-card:nth-child(4) { animation-delay: 0.18s; }
-        .kpi-card { animation: appleFadeIn 0.45s ease-out both; }
+        .kpi-card { animation: appleFadeIn 0.45s ease-out; }
 
         /* ===== fundo com leve textura de profundidade — bem discreto, sem neon ===== */
         .apple-aurora {
@@ -250,7 +288,21 @@
             0%, 100% { transform: translate(0, 0); }
             50% { transform: translate(30px, -20px); }
         }
-        .sidebar, .welcome-box, .kpi-container, .dashboard-main-grid, main, .tab-content {
+        /* 🎯 CAUSA RAIZ FINAL do "menu ocupa espaço e empurra tudo pra
+           baixo no celular" — confirmado por diagnóstico ao vivo no
+           navegador: esta regra dava "position: relative" pra um monte
+           de containers (pra ficarem por cima do efeito decorativo
+           "aurora" flutuante do fundo), mas incluía ".sidebar" nessa
+           mesma lista. Ela não tem media query — vale pra qualquer
+           tamanho de tela — e como esse <style> vem DEPOIS do
+           style.css no carregamento da página, ela ganhava a disputa
+           de cascata e desligava o "position: fixed" que o menu lateral
+           precisa pra funcionar como gaveta no mobile (sem isso, o menu
+           passava a ocupar espaço real da página, empurrando o resto
+           do conteúdo pra baixo da tela visível). Removido ".sidebar"
+           daqui — ele não precisa desse efeito de qualquer forma, já
+           que fica escondido fora da tela (left:-300px) quando fechado. */
+        .welcome-box, .kpi-container, .dashboard-main-grid, main, .tab-content {
             position: relative;
             z-index: 1;
         }
@@ -337,10 +389,6 @@
         <i class="fas fa-arrow-left"></i> Voltar
     </a>
     
-    <div class="login-status-badge">
-        <div class="login-status-dot"></div> Conexão Segura
-    </div>
-
     <!-- Selo de Conexão Segura -->
     <div class="login-status-badge">
         <div class="login-status-dot"></div> Conexão Segura
