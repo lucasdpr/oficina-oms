@@ -442,31 +442,37 @@ export function getPartesDoRolo(layout, pos) {
 // ==========================================================================
 // 🆕 BARRA TRANSVERSAL — cilindros de elevação e mangueiras hidráulicas
 // ==========================================================================
-// Mesma lógica de "match por tipo/id" do LAYOUT_ROLOS_POR_TIPO logo acima,
-// só que pra acompanhar o estado dos cilindros de elevação e das
-// mangueiras hidráulicas da barra transversal de cada equipamento.
+// 🔧 CORREÇÃO ("todas as máquinas, todos os veios"): antes era uma lista
+// de tipos que PRECISAVAM bater pra ganhar o painel (só Bow, Horizontal,
+// Straightener e Segmento Grupo 1/2/3) — cada equipamento novo exigia
+// vir aqui adicionar uma entrada. Agora é ao contrário: TODO equipamento
+// ganha o painel automaticamente (Cadeira Superior/Inferior, Segmento
+// Zero, Segmento Grupo 1/2/3, Bow, Horizontal, Straightener, e qualquer
+// tipo novo cadastrado no futuro), em QUALQUER veio (C/D/E/F/G/H) — só a
+// lista TIPOS_SEM_BARRA_TRANSVERSAL abaixo fica de fora.
 //
-// Vale pra toda a MCC4, MENOS Molde e Bender — por isso as únicas
-// entradas aqui são Bow, Horizontal e Straightener (R1/R2), com o MESMO
-// critério de reconhecimento (match) já usado nos rolos.
+// Molde e Bender continuam de fora porque são de "bancada fixa" (não são
+// montados num veio, ao contrário de tudo que passa pelo Swap) e não têm
+// essa barra/cilindros de elevação de verdade. Se algum dia precisar
+// tirar um desses da lista (ou incluir mais um), é só editar aqui.
 //
 // Cada equipamento tem 4 cilindros de elevação e 8 mangueiras hidráulicas
 // (2 mangueiras por cilindro: uma de avanço, uma de retorno).
-export const LAYOUT_BARRA_TRANSVERSAL_POR_TIPO = [
-    { chave: 'horizontal',   match: (t, id) => t.includes('HORIZONTAL'), cilindros: 4, mangueirasPorCilindro: 2 },
-    { chave: 'straightener', match: (t, id) => t.includes('STRAIGHTENER') || t.includes('ENDIREITADOR') || (id || '').includes('STR-'), cilindros: 4, mangueirasPorCilindro: 2 },
-    { chave: 'bow',          match: (t, id) => t.includes('BOW'), cilindros: 4, mangueirasPorCilindro: 2 },
+const TIPOS_SEM_BARRA_TRANSVERSAL = [
+    (t, id) => t.includes('MOLDE'),
+    (t, id) => t.includes('BENDER'),
 ];
 
-// Retorna o layout de Barra Transversal do tipo informado, ou null se
-// esse equipamento não tem (Molde, Bender e tudo da MCC2/3 ficam de
-// fora). Mesma assinatura de getLayoutRolos, pelo mesmo motivo (o
-// Straightener também é reconhecido pelo padrão do ID, não só pelo
-// texto do campo "tipo").
+// Retorna o layout de Barra Transversal do tipo informado, ou null só
+// pros tipos da lista acima (Molde, Bender). Mesma assinatura de
+// getLayoutRolos, pelo mesmo motivo (reconhece também pelo padrão do ID,
+// não só pelo texto do campo "tipo" — importante pro Straightener
+// R1/R2, que às vezes vem só como "STR-1-..." no ID).
 export function getLayoutBarraTransversal(tipo, id) {
     const t = (tipo || '').toUpperCase();
     const i = (id || '').toUpperCase();
-    return LAYOUT_BARRA_TRANSVERSAL_POR_TIPO.find(l => l.match(t, i)) || null;
+    if (TIPOS_SEM_BARRA_TRANSVERSAL.some(semBarra => semBarra(t, i))) return null;
+    return { chave: 'padrao', cilindros: 4, mangueirasPorCilindro: 2 };
 }
 
 // Campos de ocorrência registrados por componente (cilindro OU

@@ -360,18 +360,22 @@
     #modal .painel-mancal button.opt-agua:hover { border-color: #3b82f6; color: #93c5fd; }
     #modal .painel-mancal button.opt-limpar { color: var(--text-muted); font-size: 11.5px; }
 
-    /* ===== 🆕 BARRA TRANSVERSAL (cilindros de elevação + mangueiras
-       hidráulicas) =====
-       Só aparece pra Bow, Horizontal e Straightener (R1/R2) — MCC4 menos
-       Molde e Bender. Cada equipamento tem 4 cilindros de elevação e 8
-       mangueiras hidráulicas (2 por cilindro). Clicar num componente
-       abre o painel de ocorrência logo abaixo, com os mesmos campos de
-       checklist hidráulico (vazamento, aquecimento, qualidade do
-       fluido...) — cada campo cicla Verde -> Amarelo -> Vermelho a cada
-       clique. O estado mostrado na grade (Livre/Avariado/Crítico) é
-       calculado sozinho a partir do pior campo já registrado naquele
-       componente — igual à lógica dos rolos, só que aplicada aos
-       cilindros/mangueiras em vez do travamento do rolo. */
+    /* ===== 🆕 BARRA TRANSVERSAL (cilindros de elevação + sistema
+       hidráulico) =====
+       Aparece pra TODO equipamento, em qualquer veio (C/D/E/F/G/H) —
+       menos Molde e Bender, que ficam numa "bancada fixa" e não têm essa
+       barra/cilindros de elevação de verdade (ver TIPOS_SEM_BARRA_TRANSVERSAL
+       em dados.js). Cada equipamento tem 4 cilindros de elevação, cada um
+       com 2 pontas clicáveis — AV (Avanço) e RE (Retorno) — mais os 2
+       Cilindros Centrais e a Barra Transversal em si.
+       🔧 CORREÇÃO ("a tabela tem que ficar IGUAL a do mancal"): clicar em
+       QUALQUER um desses componentes abre DIRETO o painel de ocorrência
+       logo abaixo, com as 3 opções finais — 🔴 Crítico / 🟡 Avariado /
+       ✅ Sem ocorrência — sem nenhuma etapa no meio, igual ao painel de
+       mancal (Rolamento/Graxa/Água/Limpar). Escolher uma opção já salva
+       na hora. O estado mostrado na grade (Livre/Avariado/Crítico) é
+       o mesmo registrado naquele componente — igual à lógica do mancal,
+       só que aplicada aos cilindros/barra em vez do rolamento. */
     #modal .bt-wrap { margin-top: 18px; }
     /* 🆕 Desenho esquemático (SVG) — dá noção espacial de onde fica cada
        cilindro/mangueira antes de clicar. Os elementos do desenho usam
@@ -494,23 +498,45 @@
         font-size: 12px; font-weight: 700; color: var(--text-heading); margin-bottom: 10px;
         text-transform: uppercase; letter-spacing: 0.04em;
     }
-    /* 🔧 CORREÇÃO ("faz uma tabela bonita e retrátil igual ficou do
-       rolo"): trocado o antigo par "rótulo + botão pequeno" por um
-       botão único, largura cheia, com ícone + rótulo + estado — mesmo
-       estilo visual dos botões do painel de mancal (rolamento/graxa/
-       água), que já ficou aprovado. Clicar em qualquer parte do botão
-       cicla Livre -> Avariado -> Crítico. */
-    #modal .painel-bt-campos { display: flex; flex-direction: column; gap: 7px; }
+    /* 🔧 CORREÇÃO ("a tabela tem que ficar IGUAL a do mancal — um
+       clique só, direto na tabelinha final, sem etapa no meio"):
+       agora QUALQUER componente clicável (AV/RE do cilindro, Central
+       1/2, Barra Transversal) mostra direto as 3 opções finais —
+       🔴 Crítico / 🟡 Avariado / ✅ Sem ocorrência — no mesmo estilo
+       visual do painel de mancal (Rolamento/Graxa/Água). Escolher uma
+       opção já salva na hora. */
+    #modal .painel-bt-campos { display: flex; flex-direction: column; gap: 6px; }
     #modal .painel-bt-opcao {
-        text-align: left; width: 100%; padding: 10px 13px; border-radius: 8px;
-        border: 1.5px solid #22c55e; background: rgba(34,197,94,0.12); color: #86efac;
+        text-align: left; width: 100%; padding: 9px 12px; border-radius: 6px;
+        border: 1px solid var(--border); background: var(--bg-panel-2); color: var(--text-body);
         font-family: var(--sans); font-size: 12.5px; font-weight: 600; cursor: pointer;
         transition: all 0.15s ease;
     }
-    #modal .painel-bt-opcao b { font-weight: 800; }
-    #modal .painel-bt-opcao.amarelo { border-color: #eab308; background: rgba(234,179,8,0.16); color: #fde68a; }
-    #modal .painel-bt-opcao.vermelho { border-color: #ef4444; background: rgba(239,68,68,0.18); color: #fca5a5; }
-    #modal .painel-bt-opcao:hover { border-color: var(--accent); filter: brightness(1.12); }
+    #modal .painel-bt-opcao:hover { border-color: var(--accent); }
+    #modal .painel-bt-opcao.opt-critico:hover { border-color: #ef4444; color: #fca5a5; }
+    #modal .painel-bt-opcao.opt-avariado:hover { border-color: #eab308; color: #fde68a; }
+    #modal .painel-bt-opcao.opt-limpar { color: var(--text-muted); font-size: 11.5px; }
+    #modal .painel-bt-opcao.selecionado { outline: 2px solid var(--accent); outline-offset: 1px; }
+    /* 🆕 Botõezinhos AV/RE nas 2 pontas de cada cilindro de elevação —
+       igual ao Mancal A/B nas pontas do rolo. Reaproveita o MESMO
+       estilo visual do .mancal-btn (só troca as classes de estado de
+       rolamento/graxa/água pra avariado/critico). */
+    #modal .bt-cil-linha { display: flex; align-items: center; gap: 8px; }
+    #modal .bt-cil-rotulo { font-family: var(--mono); font-size: 12.5px; font-weight: 700; color: var(--text-muted); min-width: 48px; }
+    #modal .mancal-btn.avariado { border-color: #eab308; background: rgba(234,179,8,0.22); color: #fde68a; }
+    #modal .mancal-btn.critico { border-color: #ef4444; background: rgba(239,68,68,0.22); color: #fca5a5; }
+    /* 🆕 Mesma lógica no desenho SVG: botão pequeno (AV/RE) desenhado
+       nas 2 pontas do corpo do cilindro. O corpo em si (retângulo
+       verde) só é visual — quem é clicável são os 2 botõezinhos. */
+    #modal .bt-svg-mini-btn { cursor: pointer; }
+    #modal .bt-svg-mini-btn .bt-svg-mini-btn-corpo { fill: rgba(34,197,94,0.14); stroke: #22c55e; stroke-width: 2.5; transition: all 0.15s ease; }
+    #modal .bt-svg-mini-btn .bt-svg-mini-btn-rotulo { font-family: var(--mono); font-size: 14px; font-weight: 800; fill: #86efac; }
+    #modal .bt-svg-mini-btn:hover .bt-svg-mini-btn-corpo { filter: brightness(1.25); stroke: var(--accent); }
+    #modal .bt-svg-mini-btn.avariado .bt-svg-mini-btn-corpo { fill: rgba(234,179,8,0.22); stroke: #eab308; }
+    #modal .bt-svg-mini-btn.avariado .bt-svg-mini-btn-rotulo { fill: #fde68a; }
+    #modal .bt-svg-mini-btn.critico .bt-svg-mini-btn-corpo { fill: rgba(239,68,68,0.28); stroke: #ef4444; }
+    #modal .bt-svg-mini-btn.critico .bt-svg-mini-btn-rotulo { fill: #fca5a5; }
+    #modal .bt-svg-mini-btn.selecionado .bt-svg-mini-btn-corpo { stroke-width: 4; filter: drop-shadow(0 0 5px rgba(56,189,248,0.7)); }
     /* 🆕 Campo de observação (texto livre) dentro do painel — presente
        nos 3 tipos de componente clicável (cilindro verde, bola azul,
        Barra Transversal). */
@@ -2162,20 +2188,41 @@ function renderDiagramaBarraTransversal(layout, statusMap) {
     }
 
     posicoes.forEach(({ pos, cx, dir }) => {
-        const chaveCil = `CIL-${pos}`;
-        const estadoCil = estadoComponenteBT(statusMap[chaveCil]);
-        const rotuloCil = `Cilindro de Elevação #${pos}`;
+        const chaveAV = `CIL-${pos}-AV`;
+        const chaveRE = `CIL-${pos}-RE`;
+        const estadoAV = estadoComponenteBT(statusMap[chaveAV]);
+        const estadoRE = estadoComponenteBT(statusMap[chaveRE]);
+        const rotuloBase = `Cilindro de Elevação #${pos}`;
 
         const bordaCaixa = dir === -1 ? boxTop : boxBottom;
         const bodyNear = bordaCaixa;
         const bodyFar = bodyNear + dir * bodyLen;
         const bodyTop = Math.min(bodyNear, bodyFar);
-        const labelY = (bodyNear + bodyFar) / 2 + 5;
+        const labelY = bodyTop + bodyLen / 2 + 5;
+
+        // 🔧 CORREÇÃO ("igual ao mancal — clico e já abre a tabelinha
+        // final, sem etapa no meio"): o corpo do cilindro (retângulo
+        // verde) agora é só o desenho, não é mais clicável sozinho.
+        // Quem é clicável são os 2 botõezinhos "AV" (em cima) e "RE"
+        // (embaixo), igual ao Mancal A/B nas pontas do rolo — cada um
+        // com seu próprio estado e clicando abre direto Crítico/
+        // Avariado/Sem ocorrência, sem escolher "campo" antes.
+        const btnAltura = 30;
+        const yAV = bodyTop + 6;
+        const yRE = bodyTop + bodyLen - btnAltura - 6;
 
         svg += `
-            <g class="bt-clicavel bt-svg-shape ${estadoCil}" data-bt="${chaveCil}" data-bt-tipo="cilindro" data-bt-rotulo="${rotuloCil}" tabindex="0" role="button">
+            <g class="bt-svg-shape">
                 <rect x="${cx - 24}" y="${bodyTop}" width="48" height="${bodyLen}" rx="9" class="bt-svg-corpo" />
                 <text x="${cx}" y="${labelY}" class="bt-svg-rotulo" text-anchor="middle">CIL ${pos}</text>
+            </g>
+            <g class="bt-clicavel bt-svg-mini-btn ${estadoAV}" data-bt="${chaveAV}" data-bt-tipo="cilindro" data-bt-rotulo="${rotuloBase} — Avanço" tabindex="0" role="button">
+                <rect x="${cx - 20}" y="${yAV}" width="40" height="${btnAltura}" rx="6" class="bt-svg-mini-btn-corpo" />
+                <text x="${cx}" y="${yAV + btnAltura / 2 + 5}" class="bt-svg-mini-btn-rotulo" text-anchor="middle">AV</text>
+            </g>
+            <g class="bt-clicavel bt-svg-mini-btn ${estadoRE}" data-bt="${chaveRE}" data-bt-tipo="cilindro" data-bt-rotulo="${rotuloBase} — Retorno" tabindex="0" role="button">
+                <rect x="${cx - 20}" y="${yRE}" width="40" height="${btnAltura}" rx="6" class="bt-svg-mini-btn-corpo" />
+                <text x="${cx}" y="${yRE + btnAltura / 2 + 5}" class="bt-svg-mini-btn-rotulo" text-anchor="middle">RE</text>
             </g>
         `;
     });
@@ -2197,9 +2244,18 @@ function renderGridBarraTransversal(layout, statusMap) {
 
     let cilindrosHtml = '';
     for (let pos = 1; pos <= nCil; pos++) {
-        const chave = `CIL-${pos}`;
-        const estado = estadoComponenteBT(statusMap[chave]);
-        cilindrosHtml += `<button type="button" class="bt-clicavel bt-item ${estado}" data-bt="${chave}" data-bt-tipo="cilindro" data-bt-rotulo="Cilindro de Elevação #${pos}" title="Cilindro de Elevação #${pos} — ${rotuloEstadoBT(estado)}">CIL ${pos}</button>`;
+        const chaveAV = `CIL-${pos}-AV`;
+        const chaveRE = `CIL-${pos}-RE`;
+        const estadoAV = estadoComponenteBT(statusMap[chaveAV]);
+        const estadoRE = estadoComponenteBT(statusMap[chaveRE]);
+        const rotuloBase = `Cilindro de Elevação #${pos}`;
+        cilindrosHtml += `
+            <div class="bt-cil-linha">
+                <span class="bt-cil-rotulo">CIL ${pos}</span>
+                <button type="button" class="bt-clicavel mancal-btn ${estadoAV}" data-bt="${chaveAV}" data-bt-tipo="cilindro" data-bt-rotulo="${rotuloBase} — Avanço" title="${rotuloBase} — Avanço — ${rotuloEstadoBT(estadoAV)}">AV</button>
+                <button type="button" class="bt-clicavel mancal-btn ${estadoRE}" data-bt="${chaveRE}" data-bt-tipo="cilindro" data-bt-rotulo="${rotuloBase} — Retorno" title="${rotuloBase} — Retorno — ${rotuloEstadoBT(estadoRE)}">RE</button>
+            </div>
+        `;
     }
 
     const bolasHtml = [
@@ -2218,8 +2274,8 @@ function renderGridBarraTransversal(layout, statusMap) {
             <label class="obs-label">Barra Transversal — clique para registrar ocorrência</label>
             <div class="bt-diagrama">${htmlDiagrama}</div>
             <div class="bt-grupo">
-                <div class="bt-grupo-titulo">Cilindros de Elevação (${nCil}) — Flexível de Avanço/Retorno</div>
-                <div class="bt-grid">${cilindrosHtml}</div>
+                <div class="bt-grupo-titulo">Cilindros de Elevação (${nCil}) — Avanço (AV) / Retorno (RE)</div>
+                <div class="bt-grid" style="flex-direction:column; align-items:flex-start;">${cilindrosHtml}</div>
             </div>
             <div class="bt-grupo">
                 <div class="bt-grupo-titulo">Cilindros Centrais (2)</div>
@@ -2233,7 +2289,7 @@ function renderGridBarraTransversal(layout, statusMap) {
                 <span><i class="li-livre"></i> Livre / OK</span>
                 <span><i class="li-avariado"></i> Avariado</span>
                 <span><i class="li-critico"></i> Crítico</span>
-                <span style="width:100%; margin-top:2px; padding-top:6px; border-top:1px solid var(--border); color:var(--text-muted);">O lado RETORNO (esquerda) e AVANÇO (direita) segue sempre a mesma referência fixa da oficina — não muda ao trocar de veio (G/H).</span>
+                <span style="width:100%; margin-top:2px; padding-top:6px; border-top:1px solid var(--border); color:var(--text-muted);">O lado RETORNO (esquerda) e AVANÇO (direita) segue sempre a mesma referência fixa da oficina — não muda ao trocar de veio.</span>
             </div>
             <div class="painel-bt" id="painel-bt">
                 <div class="painel-bt-titulo" id="painel-bt-titulo">Componente —</div>
@@ -2298,9 +2354,9 @@ function abrirModalPeca(slot, peca) {
         const htmlGridRolos = layoutRolos ? renderGridRolos(layoutRolos, travadosAtuais, mancaisAtuais) : '';
 
         // 🆕 Barra Transversal (cilindros de elevação + mangueiras
-        // hidráulicas): vale pra toda a MCC4, MENOS Molde e Bender —
-        // getLayoutBarraTransversal já cuida disso sozinho (só reconhece
-        // Bow, Horizontal e Straightener).
+        // hidráulicas): vale pra todo equipamento, em qualquer veio —
+        // menos Molde e Bender — getLayoutBarraTransversal já cuida disso
+        // sozinho (ver TIPOS_SEM_BARRA_TRANSVERSAL em dados.js).
         const layoutBarra = getLayoutBarraTransversal(peca.tipo, peca.id);
         const statusBarraAtual = layoutBarra ? parseBarraTransversal(peca) : {};
         const htmlGridBarra = layoutBarra ? renderGridBarraTransversal(layoutBarra, statusBarraAtual) : '';
@@ -2424,12 +2480,12 @@ function abrirModalPeca(slot, peca) {
             }
         }
 
-        // 🆕 Barra Transversal: clique num cilindro/bola/barra abre o
-        // painel de ocorrência abaixo — os campos mudam conforme o tipo
-        // de componente clicado (ver camposPorTipoBT), e todos ganham
-        // um campo de observação em texto livre. Cada campo cicla
-        // Verde -> Amarelo -> Vermelho a cada clique e salva na hora —
-        // não tem botão "Salvar" separado, igual ao mancal dos rolos.
+        // 🆕 Barra Transversal: clique em qualquer componente clicável
+        // (AV/RE do cilindro, Central 1/2, Barra Transversal) abre DIRETO
+        // o painel de ocorrência abaixo — 3 opções fixas (Crítico/
+        // Avariado/Sem ocorrência), sem etapa no meio — mais um campo de
+        // observação em texto livre. Escolher uma opção já salva na hora
+        // — não tem botão "Salvar" separado, igual ao mancal dos rolos.
         if (layoutBarra) {
             const painelBt = modal.querySelector('#painel-bt');
             const painelBtTitulo = modal.querySelector('#painel-bt-titulo');
@@ -2438,31 +2494,19 @@ function abrirModalPeca(slot, peca) {
             const btWrap = modal.querySelector('#bt-wrap');
             let chaveSelecionada = null;
 
-            // 🆕 Os 3 tipos de componente têm checklists diferentes:
-            // - 'cilindro' (verde, fora da caixa): Flexível de Avanço/Retorno.
-            // - 'bola' (azul, dentro da caixa): checklist hidráulico completo
-            //   (Cilindro de Recuo ou Cilindro de Avanço, são diferentes —
-            //   o título do painel já deixa isso claro).
-            // - 'barra' (a caixa/barra inteira): só Vazamento.
-            function camposPorTipoBT(tipo) {
-                // 🔧 CORREÇÃO ("os 2 cilindros centrais têm que ter a
-                // opção Flexível de Avanço e Recuo também"): 'cilindro'
-                // e 'bola' agora usam o MESMO checklist (Flexível de
-                // Avanço / Flexível de Retorno) — só a 'barra' continua
-                // com um checklist próprio, de Vazamento apenas.
-                if (tipo === 'cilindro' || tipo === 'bola') {
-                    return [
-                        { chave: 'flexivelAvanco', rotulo: 'Flexível de Avanço' },
-                        { chave: 'flexivelRetorno', rotulo: 'Flexível de Retorno' },
-                    ];
-                }
-                return [{ chave: 'vazamento', rotulo: 'Vazamento' }]; // 'barra'
+            // 🆕 Ícone/rótulo curto de cada estado — usado no título das
+            // 3 opções finais (🔴 Crítico / 🟡 Avariado / ✅ Sem ocorrência).
+            function iconeEstadoBT(estado) {
+                return estado === 'vermelho' ? '🔴' : estado === 'amarelo' ? '🟡' : '🟢';
+            }
+            function rotuloEstadoCurtoBT(estado) {
+                return estado === 'vermelho' ? 'Crítico' : estado === 'amarelo' ? 'Avariado' : 'Livre / OK';
             }
 
             // 🆕 Atualiza a classe visual (livre/avariado/critico +
             // selecionado) em TODOS os elementos que representam este
-            // componente ao mesmo tempo — o ícone do desenho (SVG) E o
-            // botão da lista abaixo dele, sempre sincronizados.
+            // componente ao mesmo tempo — o botãozinho do desenho (SVG)
+            // E o botão da lista abaixo dele, sempre sincronizados.
             function atualizarVisualComponente(chave) {
                 const estado = estadoComponenteBT(statusBarraAtual[chave] || {});
                 btWrap.querySelectorAll(`[data-bt="${chave}"]`).forEach(el => {
@@ -2476,15 +2520,20 @@ function abrirModalPeca(slot, peca) {
 
             if (btWrap && !ehVisitante()) {
                 // Delega o clique pro container inteiro — pega tanto os
-                // botões da lista (<button class="bt-item">) quanto as
-                // formas do desenho SVG (<g class="bt-svg-shape">), porque
-                // os dois usam a mesma classe "bt-clicavel" + data-bt.
+                // botões da lista (<button class="mancal-btn">) quanto as
+                // formas do desenho SVG (<g class="bt-svg-mini-btn">),
+                // porque os dois usam a mesma classe "bt-clicavel" + data-bt.
+                //
+                // 🔧 CORREÇÃO ("a tabela tem que ficar IGUAL a do mancal —
+                // clico e já abre a tabelinha final, sem etapa no meio"):
+                // clicar em QUALQUER componente (AV/RE do cilindro, Central
+                // 1/2, Barra Transversal) mostra direto as 3 opções finais
+                // — sem escolher "campo" antes, igual ao painel de mancal.
                 btWrap.addEventListener('click', (ev) => {
                     const alvo = ev.target.closest('.bt-clicavel');
                     if (!alvo || !btWrap.contains(alvo)) return;
 
                     const chave = alvo.dataset.bt;
-                    const tipoComponente = alvo.dataset.btTipo;
                     const rotuloComponente = alvo.dataset.btRotulo;
 
                     if (chaveSelecionada && chaveSelecionada !== chave) {
@@ -2496,37 +2545,32 @@ function abrirModalPeca(slot, peca) {
                     atualizarVisualComponente(chave);
 
                     const registro = statusBarraAtual[chave] || {};
-                    const campos = camposPorTipoBT(tipoComponente);
+                    const estadoAtual = registro.estado || 'verde';
                     painelBtTitulo.textContent = rotuloComponente;
-                    painelBtCampos.innerHTML = campos.map(c => {
-                        const estadoAtual = registro[c.chave] || 'verde';
-                        const icone = estadoAtual === 'vermelho' ? '🔴' : estadoAtual === 'amarelo' ? '🟡' : '🟢';
-                        const rotuloEstadoTxt = estadoAtual === 'vermelho' ? 'Crítico' : estadoAtual === 'amarelo' ? 'Avariado' : 'Livre / OK';
-                        return `<button type="button" class="painel-bt-opcao ${estadoAtual !== 'verde' ? estadoAtual : ''}" data-campo="${c.chave}" data-rotulo-campo="${c.rotulo}">${icone} ${c.rotulo} — <b>${rotuloEstadoTxt}</b></button>`;
-                    }).join('');
 
-                    // 🆕 Campo de observação — presente nos 3 tipos.
+                    painelBtCampos.innerHTML = `
+                        <button type="button" class="painel-bt-opcao opt-critico ${estadoAtual === 'vermelho' ? 'selecionado' : ''}" data-estado="vermelho">🔴 Crítico</button>
+                        <button type="button" class="painel-bt-opcao opt-avariado ${estadoAtual === 'amarelo' ? 'selecionado' : ''}" data-estado="amarelo">🟡 Avariado</button>
+                        <button type="button" class="painel-bt-opcao opt-limpar ${estadoAtual === 'verde' ? 'selecionado' : ''}" data-estado="verde">✅ Sem ocorrência (limpar)</button>
+                    `;
+
+                    // 🆕 Campo de observação — presente em todos os componentes.
                     painelBtObs.value = registro.observacao || '';
 
-                    painelBtCampos.querySelectorAll('.painel-bt-opcao').forEach(botaoCampo => {
-                        botaoCampo.addEventListener('click', () => {
-                            const campo = botaoCampo.dataset.campo;
-                            const rotuloCampo = botaoCampo.dataset.rotuloCampo;
-                            const atual = registro[campo] || 'verde';
-                            const proximo = ESTADOS_CAMPO_BT[(ESTADOS_CAMPO_BT.indexOf(atual) + 1) % ESTADOS_CAMPO_BT.length];
-                            registro[campo] = proximo;
+                    // Clicar numa das 3 opções salva na hora — mesmo padrão
+                    // do mancal (Rolamento/Graxa/Água/Limpar).
+                    painelBtCampos.querySelectorAll('.painel-bt-opcao').forEach(botao => {
+                        botao.addEventListener('click', () => {
+                            const novoEstado = botao.dataset.estado;
+                            registro.estado = novoEstado;
                             statusBarraAtual[chave] = registro;
 
-                            botaoCampo.classList.remove('amarelo', 'vermelho');
-                            if (proximo !== 'verde') botaoCampo.classList.add(proximo);
-                            const iconeNovo = proximo === 'vermelho' ? '🔴' : proximo === 'amarelo' ? '🟡' : '🟢';
-                            const rotuloEstadoNovo = proximo === 'vermelho' ? 'Crítico' : proximo === 'amarelo' ? 'Avariado' : 'Livre / OK';
-                            botaoCampo.innerHTML = `${iconeNovo} ${rotuloCampo} — <b>${rotuloEstadoNovo}</b>`;
+                            painelBtCampos.querySelectorAll('.painel-bt-opcao').forEach(b => b.classList.remove('selecionado'));
+                            botao.classList.add('selecionado');
 
                             atualizarVisualComponente(chave);
 
-                            const emojiEstado = proximo === 'vermelho' ? '🔴' : proximo === 'amarelo' ? '🟡' : '🟢';
-                            salvarBarraTransversal(peca.id, statusBarraAtual, `🛢️ Barra Transversal — ${rotuloComponente}: ${rotuloCampo} = ${emojiEstado} ${proximo}.`);
+                            salvarBarraTransversal(peca.id, statusBarraAtual, `🛢️ ${rotuloComponente}: ${iconeEstadoBT(novoEstado)} ${rotuloEstadoCurtoBT(novoEstado)}.`);
                         });
                     });
 
@@ -2546,7 +2590,7 @@ function abrirModalPeca(slot, peca) {
                         registro.observacao = textoNovo;
                         statusBarraAtual[chaveSelecionada] = registro;
                         const rotuloAtual = btWrap.querySelector(`[data-bt="${chaveSelecionada}"]`)?.dataset.btRotulo || chaveSelecionada;
-                        salvarBarraTransversal(peca.id, statusBarraAtual, `📝 Barra Transversal — ${rotuloAtual}: observação atualizada.`);
+                        salvarBarraTransversal(peca.id, statusBarraAtual, `📝 ${rotuloAtual}: observação atualizada.`);
                     });
                 }
             }
