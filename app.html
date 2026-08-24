@@ -568,6 +568,7 @@
                 <a href="#" id="nav-producao" class="nav-link" style="color: #3b82f6;" onclick="window.abrirAba(event,'aba-producao')"><i class="fas fa-calculator"></i> Lançamento de Produção</a>
                 <a href="#" id="nav-ocorrencia" class="nav-link" style="color:#eab308;" onclick="window.abrirAba(event,'aba-ocorrencia')"><i class="fas fa-triangle-exclamation"></i> Registro de Ocorrência</a>
                 <a href="#" id="nav-ordens-servico" class="nav-link" style="color:#f472b6;" onclick="window.abrirAba(event,'aba-ordens-servico')"><i class="fas fa-file-invoice"></i> Registro de OS</a>
+                <a href="#" id="nav-qualidade" class="nav-link" style="color:#a78bfa;" onclick="window.abrirAba(event,'aba-qualidade')"><i class="fas fa-magnifying-glass"></i> Qualidade (Entrada/Saída)</a>
 
                 <div class="nav-divider">Oficina</div>
                 <a href="#" id="nav-reparos" class="nav-link highlight-warning" onclick="window.abrirAba(event,'aba-reparos')"><i class="fas fa-wrench"></i> Peças em Reparo</a>
@@ -1203,6 +1204,95 @@
                         </div>
                     </div>
                     <div id="os-lista-container"></div>
+                </div>
+            </section>
+
+            <!-- 🆕 QUALIDADE (Entrada/Saída) — o responsável pela Qualidade
+                 registra fotos + observações de COMO o equipamento chegou na
+                 oficina (Entrada) e, quando a intervenção termina, registra
+                 fotos + observações de COMO ele está saindo (Saída). Fica
+                 uma linha do tempo simples por equipamento: Aguardando Saída
+                 -> Concluído. -->
+            <section id="aba-qualidade" class="tab-content">
+                <div class="glass-panel" style="padding:24px; margin-bottom:24px;">
+                    <h2 style="color:#a78bfa;"><i class="fas fa-magnifying-glass"></i> Qualidade — Entrada e Saída da Oficina</h2>
+                    <p class="text-muted" style="font-size:13px; margin-bottom:20px;">
+                        Registre com fotos como o equipamento chegou na oficina. Quando o serviço terminar, registre
+                        também como ele está saindo. Tudo fica salvo aqui pra conferência.
+                    </p>
+
+                    <div class="flex-align-center gap-10" style="flex-wrap:wrap; margin-bottom:24px;">
+                        <button type="button" class="btn-quick-action" onclick="window.abrirAba(event,'aba-oficina')">
+                            <i class="fas fa-industry"></i> 🏭 Central de Áreas
+                        </button>
+                        <button type="button" class="btn-quick-action" onclick="window.abrirAba(event,'aba-reparos')">
+                            <i class="fas fa-wrench"></i> Peças em Reparo
+                        </button>
+                        <button type="button" class="btn-quick-action" onclick="window.abrirAba(event,'aba-reservas')">
+                            <i class="fas fa-boxes"></i> Estoque Reserva
+                        </button>
+                        <button type="button" class="btn-quick-action" onclick="window.abrirAba(event,'aba-dev-teste')">
+                            <i class="fas fa-flask"></i> Teste de Folhões
+                        </button>
+                    </div>
+
+                    <div class="form-grid-4" style="margin-bottom:16px;">
+                        <div class="input-group">
+                            <label>Equipamento</label>
+                            <select id="qualidade-equipamento" class="premium-select" style="width:100%;">
+                                <option value="">Selecione...</option>
+                            </select>
+                        </div>
+                        <div class="input-group" style="grid-column: span 3;">
+                            <label>Observação da Entrada (estado, avarias, o que veio pra oficina...)</label>
+                            <textarea id="qualidade-obs-entrada" class="premium-textarea" rows="1" placeholder="Ex: Chegou com desgaste no rolo #3, sem tampa lateral..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="input-group" style="margin-bottom:16px;">
+                        <label>Fotos Gerais de Entrada <span style="color:var(--danger);">*</span></label>
+                        <input type="file" id="qualidade-foto-entrada-input" accept="image/*" multiple style="display:none;" onchange="window.processarFotoQualidade(event, 'entrada')">
+                        <button type="button" class="btn-premium" onclick="document.getElementById('qualidade-foto-entrada-input').click()">
+                            <i class="fas fa-camera"></i> Tirar Foto / Anexar
+                        </button>
+                        <div id="qualidade-fotos-entrada-preview" class="hidden" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;"></div>
+                    </div>
+
+                    <div class="glass-panel" style="padding:16px; margin-bottom:16px; background:rgba(167,139,250,0.05); border:1px solid rgba(167,139,250,0.2);">
+                        <label style="display:block; margin-bottom:10px; color:#a78bfa; font-weight:700;"><i class="fas fa-triangle-exclamation"></i> Achados (problemas encontrados na inspeção)</label>
+                        <div class="form-grid-4" style="margin-bottom:10px;">
+                            <div class="input-group" style="grid-column: span 3;">
+                                <textarea id="qualidade-achado-descricao" class="premium-textarea" rows="1" placeholder="Ex: Distribuidor vazando, parafuso frouxo no rolo #2..."></textarea>
+                            </div>
+                            <div class="input-group">
+                                <input type="file" id="qualidade-achado-foto-input" accept="image/*" style="display:none;" onchange="window.processarFotoAchadoNovo(event)">
+                                <button type="button" class="btn-premium w-100" onclick="document.getElementById('qualidade-achado-foto-input').click()" title="Foto do achado (opcional)">
+                                    <i class="fas fa-camera"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="qualidade-achado-novo-foto-preview" class="hidden" style="margin-bottom:10px;"></div>
+                        <button type="button" class="btn-premium" style="font-size:12px; padding:6px 14px;" onclick="window.adicionarAchadoNaLista()">
+                            <i class="fas fa-plus"></i> Adicionar Achado
+                        </button>
+                        <div id="qualidade-achados-pendentes-lista" style="margin-top:12px;"></div>
+                    </div>
+
+                    <button class="btn-premium btn-success" onclick="window.confirmarEntradaQualidade()">
+                        <i class="fas fa-check"></i> Registrar Entrada na Oficina
+                    </button>
+                </div>
+
+                <div class="glass-panel" style="padding:24px;">
+                    <div class="flex-between" style="margin-bottom:16px;">
+                        <h3 style="color:var(--text-title); font-size:1rem;"><i class="fas fa-list"></i> Registros de Qualidade</h3>
+                        <div class="mcc-filter-group" id="qualidade-filtros">
+                            <button class="btn-filter-mcc active" data-status="" onclick="window.filtrarQualidade('', this)">Todas</button>
+                            <button class="btn-filter-mcc" data-status="Aguardando Saída" onclick="window.filtrarQualidade('Aguardando Saída', this)">⏳ Aguardando Saída</button>
+                            <button class="btn-filter-mcc" data-status="Concluído" onclick="window.filtrarQualidade('Concluído', this)">✅ Concluído</button>
+                        </div>
+                    </div>
+                    <div id="qualidade-lista-container"></div>
                 </div>
             </section>
 
