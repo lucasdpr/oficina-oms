@@ -1144,8 +1144,9 @@
                 </div>
 
                 <div class="glass-panel" style="padding:24px;">
-                    <div class="flex-between" style="margin-bottom:16px;">
+                    <div class="flex-between" style="margin-bottom:16px; flex-wrap:wrap; gap:10px;">
                         <h3 style="color:var(--text-title); font-size:1rem;"><i class="fas fa-list"></i> Ocorrências Registradas</h3>
+                        <input type="text" id="ocorrencia-busca" class="premium-input" placeholder="🔎 Buscar por equipamento..." style="max-width:220px;" oninput="window.buscarOcorrencias(this.value)">
                         <div class="mcc-filter-group" id="ocorrencia-filtros">
                             <button class="btn-filter-mcc active" data-cat="" onclick="window.filtrarOcorrencias('', this)">Todas</button>
                             <button class="btn-filter-mcc" data-cat="Intervenção" onclick="window.filtrarOcorrencias('Intervenção', this)">🔧 Intervenção</button>
@@ -1194,8 +1195,9 @@
                 </div>
 
                 <div class="glass-panel" style="padding:24px;">
-                    <div class="flex-between" style="margin-bottom:16px;">
+                    <div class="flex-between" style="margin-bottom:16px; flex-wrap:wrap; gap:10px;">
                         <h3 style="color:var(--text-title); font-size:1rem;"><i class="fas fa-list"></i> OS Registradas</h3>
+                        <input type="text" id="os-busca" class="premium-input" placeholder="🔎 Buscar por número/descrição..." style="max-width:220px;" oninput="window.buscarOrdensServico(this.value)">
                         <div class="mcc-filter-group" id="os-filtros">
                             <button class="btn-filter-mcc active" data-status="" onclick="window.filtrarOrdensServico('', this)">Todas</button>
                             <button class="btn-filter-mcc" data-status="Em Andamento" onclick="window.filtrarOrdensServico('Em Andamento', this)">🔧 Em Andamento</button>
@@ -1265,7 +1267,7 @@
                                 <textarea id="qualidade-achado-descricao" class="premium-textarea" rows="1" placeholder="Ex: Distribuidor vazando, parafuso frouxo no rolo #2..."></textarea>
                             </div>
                             <div class="input-group">
-                                <input type="file" id="qualidade-achado-foto-input" accept="image/*" style="display:none;" onchange="window.processarFotoAchadoNovo(event)">
+                                <input type="file" id="qualidade-achado-foto-input" accept="image/*" multiple style="display:none;" onchange="window.processarFotoAchadoNovo(event)">
                                 <button type="button" class="btn-premium w-100 btn-icon-only" onclick="document.getElementById('qualidade-achado-foto-input').click()" title="Foto do achado (opcional)">
                                     <i class="fas fa-camera"></i>
                                 </button>
@@ -1283,9 +1285,14 @@
                     </button>
                 </div>
 
+                <!-- 🆕 Resumo rápido — calculado em cima do que já foi carregado na
+                     lista abaixo, sem chamada extra ao servidor. -->
+                <div id="qualidade-kpis" class="form-grid-4" style="margin-bottom:24px; gap:12px;"></div>
+
                 <div class="glass-panel" style="padding:24px;">
-                    <div class="flex-between" style="margin-bottom:16px;">
+                    <div class="flex-between" style="margin-bottom:16px; flex-wrap:wrap; gap:10px;">
                         <h3 style="color:var(--text-title); font-size:1rem;"><i class="fas fa-list"></i> Registros de Qualidade</h3>
+                        <input type="text" id="qualidade-busca" class="premium-input" placeholder="🔎 Buscar por equipamento..." style="max-width:220px;" oninput="window.buscarQualidade(this.value)">
                         <div class="mcc-filter-group" id="qualidade-filtros">
                             <button class="btn-filter-mcc active" data-status="" onclick="window.filtrarQualidade('', this)">Todas</button>
                             <button class="btn-filter-mcc" data-status="Aguardando Saída" onclick="window.filtrarQualidade('Aguardando Saída', this)">⏳ Aguardando Saída</button>

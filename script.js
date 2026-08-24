@@ -4572,11 +4572,38 @@ window.confirmarAtividadeOficina = async function() {
                 operador
               };
 
-        const resp = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(corpo)
-        });
+        let resp, enfileirado = false;
+        if (editando) {
+            // Edição não entra na fila offline — reenviar uma edição
+            // sozinho depois, sem o usuário ver o resultado na hora, é
+            // arriscado demais (pode já ter mudado de novo nesse meio
+            // tempo). Só cria-nova-atividade é seguro de enfileirar.
+            resp = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(corpo)
+            });
+        } else {
+            const resultado = await enviarComFilaOffline(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(corpo)
+            }, `Atividade da Oficina — ${descricao}`);
+            resp = resultado.resp;
+            enfileirado = resultado.enfileirado;
+        }
+
+        if (enfileirado) {
+            document.getElementById('area-oficina-descricao').value = '';
+            document.getElementById('area-oficina-responsavel-select').value = '';
+            document.getElementById('area-oficina-responsavel-outro').value = '';
+            document.getElementById('area-oficina-responsavel-outro').classList.add('hidden');
+            document.getElementById('area-oficina-prazo').value = '';
+            document.getElementById('area-oficina-data-inicio').value = '';
+            window.removerFotoAtividadeOficina();
+            alert('📴 Sem internet agora — a atividade foi guardada e será enviada sozinha assim que a conexão voltar.');
+            return;
+        }
 
         if (!resp.ok) {
             const erro = await resp.json().catch(() => ({}));
@@ -6050,10 +6077,151 @@ document.addEventListener('click', function(e) {
 });
 
 // ==========================================
+// 🆕 FILA OFFLINE — se salvar algo falhar por FALTA DE INTERNET (não
+// por erro do servidor), a ação fica guardada no aparelho e é reenviada
+// sozinha quando a conexão voltar. Cobre as ações de criar um registro
+// novo mais usadas em campo: Ocorrência, OS, Entrada de Qualidade e
+// Atividade da Oficina — onde o sinal costuma falhar no meio do uso.
+// Ações de editar/mudar status não entram na fila (não são idempotentes
+// o bastante pra reenviar sozinho sem risco de duplicar/confundir).
+// ==========================================
+const FILA_OFFLINE_KEY = 'oms_fila_offline_v1';
+
+function lerFilaOffline() {
+    try { return JSON.parse(localStorage.getItem(FILA_OFFLINE_KEY) || '[]'); }
+    catch (e) { return []; }
+}
+
+function salvarFilaOffline(fila) {
+    localStorage.setItem(FILA_OFFLINE_KEY, JSON.stringify(fila));
+    atualizarIndicadorFilaOffline();
+}
+
+function atualizarIndicadorFilaOffline() {
+    const fila = lerFilaOffline();
+    let indicador = document.getElementById('indicador-fila-offline');
+
+    if (fila.length === 0) {
+        if (indicador) indicador.classList.add('hidden');
+        return;
+    }
+
+    if (!indicador) {
+        indicador = document.createElement('div');
+        indicador.id = 'indicador-fila-offline';
+        indicador.style.cssText = 'position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:var(--warning); color:#1a1200; font-weight:700; font-size:12px; padding:9px 16px; border-radius:20px; z-index:9500; box-shadow:0 4px 16px rgba(0,0,0,0.35); cursor:pointer; white-space:nowrap;';
+        indicador.onclick = () => window.tentarReenviarFilaOffline();
+        document.body.appendChild(indicador);
+    }
+    indicador.classList.remove('hidden');
+    indicador.innerHTML = `<i class="fas fa-cloud-arrow-up"></i> ${fila.length} aguardando conexão — toque pra tentar agora`;
+}
+
+// Envia uma ação; se o fetch falhar por falta de conexão de verdade
+// (não chegou nem a sair do aparelho — sem internet, DNS falhou etc),
+// guarda na fila em vez de perder o que a pessoa preencheu. Um erro do
+// SERVIDOR (400, 500...) não cai aqui — isso o código que chama trata
+// normal, olhando "resp.ok", porque não adianta reenviar sozinho algo
+// que o servidor já recusou.
+async function enviarComFilaOffline(url, options, descricao) {
+    try {
+        const resp = await fetch(url, options);
+        return { resp, enfileirado: false };
+    } catch (e) {
+        const fila = lerFilaOffline();
+        fila.push({
+            id: Date.now() + Math.random(),
+            url, options, descricao,
+            criado_em: new Date().toLocaleString('pt-BR')
+        });
+        salvarFilaOffline(fila);
+        return { resp: null, enfileirado: true };
+    }
+}
+
+window.tentarReenviarFilaOffline = async function() {
+    let fila = lerFilaOffline();
+    if (fila.length === 0) return;
+
+    const restantes = [];
+    let algumEnviado = false;
+
+    for (const item of fila) {
+        try {
+            const resp = await fetch(item.url, item.options);
+            if (resp.ok) {
+                algumEnviado = true;
+            } else {
+                // Servidor respondeu mas recusou (ex: algo mudou nesse
+                // meio tempo) — não adianta insistir sozinho, descarta
+                // pra não travar o resto da fila esperando pra sempre.
+                console.warn('⚠️ Ação da fila offline foi recusada pelo servidor:', item.descricao);
+            }
+        } catch (e) {
+            // Ainda sem internet — mantém na fila pra tentar de novo.
+            restantes.push(item);
+        }
+    }
+
+    salvarFilaOffline(restantes);
+
+    if (algumEnviado) {
+        if (typeof window.carregarListaOcorrencias === 'function') window.carregarListaOcorrencias();
+        if (typeof window.carregarListaOrdensServico === 'function') window.carregarListaOrdensServico();
+        if (typeof window.carregarListaQualidade === 'function') window.carregarListaQualidade();
+        if (typeof window.carregarOficina === 'function') window.carregarOficina();
+    }
+};
+
+window.addEventListener('online', () => window.tentarReenviarFilaOffline());
+setInterval(() => window.tentarReenviarFilaOffline(), 30000);
+document.addEventListener('DOMContentLoaded', () => atualizarIndicadorFilaOffline());
+
+// ==========================================
+// 🆕 DESFAZER EXCLUSÃO — mostra um toast por alguns segundos com botão
+// "Desfazer". Se a pessoa não clicar, a ação de exclusão de verdade
+// (passada em aoConfirmar) roda sozinha ao final do tempo. Se clicar
+// em desfazer, aoConfirmar NUNCA roda, e aoDesfazer (opcional) é
+// chamado pra devolver o item na tela.
+// ==========================================
+function mostrarToastDesfazer(mensagem, aoConfirmar, aoDesfazer) {
+    const SEGUNDOS = 5;
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position:fixed; bottom:16px; left:50%; transform:translateX(-50%);
+        background:#1f2937; color:#fff; font-size:13px; padding:10px 14px;
+        border-radius:10px; z-index:9600; box-shadow:0 4px 16px rgba(0,0,0,0.4);
+        display:flex; align-items:center; gap:12px; white-space:nowrap;
+    `;
+    toast.innerHTML = `
+        <span>${mensagem}</span>
+        <button type="button" style="background:none; border:1px solid #38bdf8; color:#38bdf8; border-radius:6px; padding:4px 10px; font-weight:700; font-size:12px; cursor:pointer;">Desfazer</button>
+    `;
+    document.body.appendChild(toast);
+
+    let desfeito = false;
+    const timeoutId = setTimeout(async () => {
+        if (desfeito) return;
+        toast.remove();
+        await aoConfirmar();
+    }, SEGUNDOS * 1000);
+
+    toast.querySelector('button').onclick = () => {
+        desfeito = true;
+        clearTimeout(timeoutId);
+        toast.remove();
+        if (typeof aoDesfazer === 'function') aoDesfazer();
+    };
+}
+
+
+// ==========================================
 // ABA "REGISTRO DE OCORRÊNCIA"
 // ==========================================
 let FOTO_OCORRENCIA_BASE64 = null;
 let FILTRO_OCORRENCIA_ATUAL = '';
+let OCORRENCIA_CACHE = [];
+let BUSCA_OCORRENCIA_ATUAL = '';
 
 window.renderAbaOcorrencia = function() {
     const select = document.getElementById("ocorrencia-equipamento");
@@ -6139,7 +6307,7 @@ window.confirmarOcorrencia = async function() {
 
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/registro_com_foto`, {
+        const { resp, enfileirado } = await enviarComFilaOffline(`${apiBase}/api/registro_com_foto`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -6149,7 +6317,14 @@ window.confirmarOcorrencia = async function() {
                 categoria: categoria,
                 foto_base64: FOTO_OCORRENCIA_BASE64 || null
             })
-        });
+        }, `Ocorrência em ${equipamentoId}`);
+
+        if (enfileirado) {
+            document.getElementById("ocorrencia-texto").value = "";
+            window.removerFotoOcorrencia();
+            alert(`📴 Sem internet agora — a ${categoria.toLowerCase()} de [${equipamentoId}] foi guardada e será enviada sozinha assim que a conexão voltar.`);
+            return;
+        }
 
         if (!resp.ok) {
             const erro = await resp.json().catch(() => ({}));
@@ -6198,39 +6373,56 @@ window.carregarListaOcorrencias = async function() {
         const query = FILTRO_OCORRENCIA_ATUAL ? `?categoria=${encodeURIComponent(FILTRO_OCORRENCIA_ATUAL)}` : '';
         const resp = await fetch(`${apiBase}/api/registros_ocorrencia${query}`, { cache: 'no-store' });
         if (!resp.ok) throw new Error('Falha ao buscar');
-        const registros = await resp.json();
-
-        if (!Array.isArray(registros) || registros.length === 0) {
-            container.innerHTML = `<div class="text-muted" style="text-align:center; padding:30px 0;">Nenhum registro encontrado.</div>`;
-            return;
-        }
-
-        container.innerHTML = registros.map(r => `
-            <div style="display:flex; gap:14px; padding:14px 0; border-bottom:1px solid var(--border); align-items:flex-start;">
-                ${r.foto_base64 ? `
-                    <img src="${r.foto_base64}"
-                         style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border); cursor:pointer; flex-shrink:0;"
-                         onclick="window.abrirFotoAmpliada('${r.foto_base64}', '${(r.operador || 'Sistema').replace(/'/g, "\\'")} — ${r.data_hora || ''}')"
-                         title="${r.operador || 'Sistema'} — ${r.data_hora || ''}">
-                ` : `
-                    <div style="width:70px; height:70px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--text-muted);">
-                        <i class="fas fa-image" style="font-size:20px; opacity:0.4;"></i>
-                    </div>
-                `}
-                <div style="flex:1; min-width:0;">
-                    <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
-                        <span class="font-code" style="font-weight:700; color:var(--text-heading);">${r.peca_id}</span>
-                        <span style="font-size:11px; color:var(--text-muted);">${r.data_hora}</span>
-                    </div>
-                    <div style="font-size:13px; color:var(--text-body); margin-bottom:4px;">${r.acao}</div>
-                    <div style="font-size:11px; color:var(--text-accent);">${r.operador}</div>
-                </div>
-            </div>
-        `).join("");
+        OCORRENCIA_CACHE = await resp.json();
+        window.renderizarListaOcorrencias();
     } catch (e) {
         console.error('⚠️ Erro ao carregar ocorrências:', e);
         container.innerHTML = `<div class="text-muted" style="text-align:center; padding:30px 0;">Não foi possível carregar. Verifique sua internet.</div>`;
     }
+};
+
+// 🆕 Busca por equipamento — filtra o que já foi carregado (não faz
+// nova chamada à API), então funciona instantâneo enquanto digita.
+window.buscarOcorrencias = function(texto) {
+    BUSCA_OCORRENCIA_ATUAL = (texto || '').trim().toLowerCase();
+    window.renderizarListaOcorrencias();
+};
+
+window.renderizarListaOcorrencias = function() {
+    const container = document.getElementById("ocorrencia-lista-container");
+    if (!container) return;
+
+    const registros = BUSCA_OCORRENCIA_ATUAL
+        ? OCORRENCIA_CACHE.filter(r => (r.peca_id || '').toLowerCase().includes(BUSCA_OCORRENCIA_ATUAL))
+        : OCORRENCIA_CACHE;
+
+    if (!Array.isArray(registros) || registros.length === 0) {
+        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:30px 0;">Nenhum registro encontrado${BUSCA_OCORRENCIA_ATUAL ? ' pra essa busca' : ''}.</div>`;
+        return;
+    }
+
+    container.innerHTML = registros.map(r => `
+        <div style="display:flex; gap:14px; padding:14px 0; border-bottom:1px solid var(--border); align-items:flex-start;">
+            ${r.foto_base64 ? `
+                <img src="${r.foto_base64}"
+                     style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border); cursor:pointer; flex-shrink:0;"
+                     onclick="window.abrirFotoAmpliada('${r.foto_base64}', '${(r.operador || 'Sistema').replace(/'/g, "\\'")} — ${r.data_hora || ''}')"
+                     title="${r.operador || 'Sistema'} — ${r.data_hora || ''}">
+            ` : `
+                <div style="width:70px; height:70px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--text-muted);">
+                    <i class="fas fa-image" style="font-size:20px; opacity:0.4;"></i>
+                </div>
+            `}
+            <div style="flex:1; min-width:0;">
+                <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
+                    <span class="font-code" style="font-weight:700; color:var(--text-heading);">${r.peca_id}</span>
+                    <span style="font-size:11px; color:var(--text-muted);">${r.data_hora}</span>
+                </div>
+                <div style="font-size:13px; color:var(--text-body); margin-bottom:4px;">${r.acao}</div>
+                <div style="font-size:11px; color:var(--text-accent);">${r.operador}</div>
+            </div>
+        </div>
+    `).join("");
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -6298,6 +6490,7 @@ window.toggleFormAdicionar = function() {
 // ==========================================
 let FOTOS_OS_BASE64 = []; // array de fotos (páginas) da OS sendo cadastrada
 let FILTRO_OS_ATUAL = '';
+let BUSCA_OS_ATUAL = '';
 let OS_CACHE = [];
 
 function renderPreviewFotosOs() {
@@ -6401,7 +6594,7 @@ window.confirmarOrdemServico = async function() {
 
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/ordens_servico`, {
+        const { resp, enfileirado } = await enviarComFilaOffline(`${apiBase}/api/ordens_servico`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -6410,7 +6603,15 @@ window.confirmarOrdemServico = async function() {
                 fotos_base64: FOTOS_OS_BASE64,
                 operador
             })
-        });
+        }, `OS ${numero || '(sem número)'}`);
+
+        if (enfileirado) {
+            document.getElementById('os-numero').value = '';
+            document.getElementById('os-descricao').value = '';
+            window.removerFotoOs();
+            alert('📴 Sem internet agora — a OS foi guardada e será enviada sozinha assim que a conexão voltar.');
+            return;
+        }
 
         if (!resp.ok) {
             const erro = await resp.json().catch(() => ({}));
@@ -6448,64 +6649,83 @@ window.carregarListaOrdensServico = async function() {
         const resp = await fetch(`${apiBase}/api/ordens_servico${query}`, { cache: 'no-store' });
         if (!resp.ok) throw new Error('Falha ao buscar');
         OS_CACHE = await resp.json();
-
-        if (!Array.isArray(OS_CACHE) || OS_CACHE.length === 0) {
-            container.innerHTML = `<div class="text-muted" style="text-align:center; padding:30px 0;">Nenhuma OS registrada${FILTRO_OS_ATUAL ? ' com esse filtro' : ' ainda'}.</div>`;
-            return;
-        }
-
-        container.innerHTML = OS_CACHE.map(os => {
-            const concluida = os.status === 'Concluído';
-            const naoExecutada = os.status === 'Não Executada';
-            let corStatus = 'var(--warning)';
-            let iconeStatus = '🔧';
-            if (concluida) { corStatus = 'var(--success)'; iconeStatus = '✅'; }
-            else if (naoExecutada) { corStatus = 'var(--danger)'; iconeStatus = '🚫'; }
-            const totalFotos = os.total_fotos || 0;
-            return `
-            <div style="display:flex; gap:14px; padding:14px 0; border-bottom:1px solid var(--border); align-items:flex-start;">
-                ${os.foto_capa ? `
-                    <div style="position:relative; flex-shrink:0; cursor:pointer;" onclick="window.abrirGaleriaOs(${os.id}, '${os.numero_os ? `OS ${os.numero_os}` : `OS #${os.id}`}')">
-                        <img src="${os.foto_capa}" style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border);">
-                        ${totalFotos > 1 ? `<span style="position:absolute; bottom:2px; right:2px; background:rgba(0,0,0,0.75); color:#fff; font-size:10px; padding:1px 6px; border-radius:10px;"><i class="fas fa-images"></i> ${totalFotos}</span>` : ''}
-                    </div>
-                ` : `
-                    <div style="width:70px; height:70px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--text-muted);">
-                        <i class="fas fa-file-invoice" style="font-size:20px; opacity:0.4;"></i>
-                    </div>
-                `}
-                <div style="flex:1; min-width:0;">
-                    <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
-                        <span class="font-code" style="font-weight:700; color:var(--text-heading);">${os.numero_os ? `OS ${os.numero_os}` : `#${os.id}`}</span>
-                        <span style="font-size:11px; font-weight:700; color:${corStatus};">${iconeStatus} ${os.status}</span>
-                    </div>
-                    ${os.descricao ? `<div style="font-size:13px; color:var(--text-body); margin-bottom:4px;">${os.descricao}</div>` : ''}
-                    ${naoExecutada && os.motivo_nao_executada ? `
-                        <div style="font-size:12px; color:var(--danger); background:rgba(239,68,68,0.08); border-left:3px solid var(--danger); padding:5px 8px; border-radius:4px; margin-bottom:4px;">
-                            <strong>Motivo:</strong> ${os.motivo_nao_executada}
-                        </div>
-                    ` : ''}
-                    <div style="font-size:11px; color:var(--text-accent);">
-                        ${os.criado_por || 'Sistema'} · ${os.criado_em || ''}
-                        ${concluida && os.concluido_por ? `<br>Concluída por ${os.concluido_por} · ${os.concluido_em || ''}` : ''}
-                        ${naoExecutada && os.encerrado_por ? `<br>Encerrada por ${os.encerrado_por} · ${os.encerrado_em || ''}` : ''}
-                    </div>
-                </div>
-                <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
-                    ${!concluida ? `<button class="btn-premium btn-success" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusOrdemServico(${os.id}, 'Concluído')">Concluir</button>` : ''}
-                    ${!naoExecutada ? `<button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.marcarOsNaoExecutada(${os.id})">Não Executada</button>` : ''}
-                    ${(concluida || naoExecutada) ? `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusOrdemServico(${os.id}, 'Em Andamento')">Reabrir</button>` : ''}
-                    <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.excluirOrdemServico(${os.id})">
-                        <i class="fas fa-trash"></i> Excluir
-                    </button>
-                </div>
-            </div>
-            `;
-        }).join('');
+        window.renderizarListaOrdensServico();
     } catch (e) {
         console.error('⚠️ Erro ao carregar OS:', e);
         container.innerHTML = `<div class="text-muted" style="text-align:center; padding:30px 0;">Não foi possível carregar. Verifique sua internet.</div>`;
     }
+};
+
+// 🆕 Busca por número/descrição — filtra o que já foi carregado (não
+// faz nova chamada à API), funciona instantâneo enquanto digita.
+window.buscarOrdensServico = function(texto) {
+    BUSCA_OS_ATUAL = (texto || '').trim().toLowerCase();
+    window.renderizarListaOrdensServico();
+};
+
+window.renderizarListaOrdensServico = function() {
+    const container = document.getElementById('os-lista-container');
+    if (!container) return;
+
+    const lista = BUSCA_OS_ATUAL
+        ? OS_CACHE.filter(os =>
+            (os.numero_os || '').toLowerCase().includes(BUSCA_OS_ATUAL) ||
+            (os.descricao || '').toLowerCase().includes(BUSCA_OS_ATUAL))
+        : OS_CACHE;
+
+    if (!Array.isArray(lista) || lista.length === 0) {
+        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:30px 0;">Nenhuma OS encontrada${BUSCA_OS_ATUAL ? ' pra essa busca' : (FILTRO_OS_ATUAL ? ' com esse filtro' : ' ainda')}.</div>`;
+        return;
+    }
+
+    container.innerHTML = lista.map(os => {
+        const concluida = os.status === 'Concluído';
+        const naoExecutada = os.status === 'Não Executada';
+        let corStatus = 'var(--warning)';
+        let iconeStatus = '🔧';
+        if (concluida) { corStatus = 'var(--success)'; iconeStatus = '✅'; }
+        else if (naoExecutada) { corStatus = 'var(--danger)'; iconeStatus = '🚫'; }
+        const totalFotos = os.total_fotos || 0;
+        return `
+        <div style="display:flex; gap:14px; padding:14px 0; border-bottom:1px solid var(--border); align-items:flex-start;">
+            ${os.foto_capa ? `
+                <div style="position:relative; flex-shrink:0; cursor:pointer;" onclick="window.abrirGaleriaOs(${os.id}, '${os.numero_os ? `OS ${os.numero_os}` : `OS #${os.id}`}')">
+                    <img src="${os.foto_capa}" style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border);">
+                    ${totalFotos > 1 ? `<span style="position:absolute; bottom:2px; right:2px; background:rgba(0,0,0,0.75); color:#fff; font-size:10px; padding:1px 6px; border-radius:10px;"><i class="fas fa-images"></i> ${totalFotos}</span>` : ''}
+                </div>
+            ` : `
+                <div style="width:70px; height:70px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--text-muted);">
+                    <i class="fas fa-file-invoice" style="font-size:20px; opacity:0.4;"></i>
+                </div>
+            `}
+            <div style="flex:1; min-width:0;">
+                <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
+                    <span class="font-code" style="font-weight:700; color:var(--text-heading);">${os.numero_os ? `OS ${os.numero_os}` : `#${os.id}`}</span>
+                    <span style="font-size:11px; font-weight:700; color:${corStatus};">${iconeStatus} ${os.status}</span>
+                </div>
+                ${os.descricao ? `<div style="font-size:13px; color:var(--text-body); margin-bottom:4px;">${os.descricao}</div>` : ''}
+                ${naoExecutada && os.motivo_nao_executada ? `
+                    <div style="font-size:12px; color:var(--danger); background:rgba(239,68,68,0.08); border-left:3px solid var(--danger); padding:5px 8px; border-radius:4px; margin-bottom:4px;">
+                        <strong>Motivo:</strong> ${os.motivo_nao_executada}
+                    </div>
+                ` : ''}
+                <div style="font-size:11px; color:var(--text-accent);">
+                    ${os.criado_por || 'Sistema'} · ${os.criado_em || ''}
+                    ${concluida && os.concluido_por ? `<br>Concluída por ${os.concluido_por} · ${os.concluido_em || ''}` : ''}
+                    ${naoExecutada && os.encerrado_por ? `<br>Encerrada por ${os.encerrado_por} · ${os.encerrado_em || ''}` : ''}
+                </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
+                ${!concluida ? `<button class="btn-premium btn-success" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusOrdemServico(${os.id}, 'Concluído')">Concluir</button>` : ''}
+                ${!naoExecutada ? `<button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.marcarOsNaoExecutada(${os.id})">Não Executada</button>` : ''}
+                ${(concluida || naoExecutada) ? `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusOrdemServico(${os.id}, 'Em Andamento')">Reabrir</button>` : ''}
+                <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.excluirOrdemServico(${os.id})">
+                    <i class="fas fa-trash"></i> Excluir
+                </button>
+            </div>
+        </div>
+        `;
+    }).join('');
 };
 
 // --------------------------------------------------------------
@@ -6629,36 +6849,48 @@ window.excluirOrdemServico = async function(id) {
 let QUALIDADE_FOTOS_ENTRADA_BASE64 = [];
 let QUALIDADE_FOTOS_SAIDA_BASE64 = [];
 let FILTRO_QUALIDADE_ATUAL = '';
+let BUSCA_QUALIDADE_ATUAL = '';
 let QUALIDADE_CACHE = [];
-let QUALIDADE_ACHADO_FOTO_NOVA = null; // foto do achado sendo digitado no formulário de entrada
+let QUALIDADE_ACHADO_FOTOS_NOVAS = []; // 🆕 fotos (pode ter mais de 1) do achado sendo digitado no formulário de entrada
 let QUALIDADE_ACHADOS_LISTA = []; // achados já adicionados, aguardando o "Registrar Entrada"
 
 window.processarFotoAchadoNovo = async function(event) {
-    const arquivo = event.target.files && event.target.files[0];
-    if (!arquivo) return;
-    try {
-        QUALIDADE_ACHADO_FOTO_NOVA = await comprimirFotoParaBase64(arquivo);
-        const preview = document.getElementById('qualidade-achado-novo-foto-preview');
-        if (preview) {
-            preview.classList.remove('hidden');
-            preview.innerHTML = `
-                <div style="position:relative; display:inline-block;">
-                    <img src="${QUALIDADE_ACHADO_FOTO_NOVA}" style="width:60px; height:60px; object-fit:cover; border-radius:8px; border:1px solid var(--border);">
-                    <button type="button" onclick="window.removerFotoAchadoNovo()" style="position:absolute; top:2px; right:2px; background:rgba(0,0,0,0.7); color:#fff; border:none; border-radius:50%; width:18px; height:18px; cursor:pointer; font-size:10px; line-height:1;"><i class="fas fa-times"></i></button>
-                </div>
-            `;
+    const arquivos = Array.from(event.target.files || []);
+    if (arquivos.length === 0) return;
+    for (const arquivo of arquivos) {
+        try {
+            const base64 = await comprimirFotoParaBase64(arquivo);
+            QUALIDADE_ACHADO_FOTOS_NOVAS.push(base64);
+        } catch (e) {
+            console.error('⚠️ Erro ao processar foto do achado:', e);
+            alert(`Não consegui processar uma das imagens (${arquivo.name}).`);
         }
-    } catch (e) {
-        console.error('⚠️ Erro ao processar foto do achado:', e);
-        alert('Não consegui processar essa imagem.');
     }
+    renderPreviewFotosAchadoNovo();
     event.target.value = '';
 };
 
-window.removerFotoAchadoNovo = function() {
-    QUALIDADE_ACHADO_FOTO_NOVA = null;
+function renderPreviewFotosAchadoNovo() {
     const preview = document.getElementById('qualidade-achado-novo-foto-preview');
-    if (preview) { preview.classList.add('hidden'); preview.innerHTML = ''; }
+    if (!preview) return;
+    if (QUALIDADE_ACHADO_FOTOS_NOVAS.length === 0) { preview.classList.add('hidden'); preview.innerHTML = ''; return; }
+
+    preview.classList.remove('hidden');
+    preview.style.display = 'flex';
+    preview.style.gap = '6px';
+    preview.style.flexWrap = 'wrap';
+    preview.innerHTML = QUALIDADE_ACHADO_FOTOS_NOVAS.map((foto, i) => `
+        <div style="position:relative; display:inline-block;">
+            <img src="${foto}" style="width:50px; height:50px; object-fit:cover; border-radius:8px; border:1px solid var(--border);">
+            <button type="button" onclick="window.removerFotoAchadoNovo(${i})" style="position:absolute; top:2px; right:2px; background:rgba(0,0,0,0.7); color:#fff; border:none; border-radius:50%; width:18px; height:18px; cursor:pointer; font-size:10px; line-height:1;"><i class="fas fa-times"></i></button>
+        </div>
+    `).join('');
+}
+
+window.removerFotoAchadoNovo = function(indice) {
+    if (typeof indice === 'number') QUALIDADE_ACHADO_FOTOS_NOVAS.splice(indice, 1);
+    else QUALIDADE_ACHADO_FOTOS_NOVAS = [];
+    renderPreviewFotosAchadoNovo();
 };
 
 window.adicionarAchadoNaLista = function() {
@@ -6666,7 +6898,7 @@ window.adicionarAchadoNaLista = function() {
     const descricao = campo?.value.trim();
     if (!descricao) return alert('Descreva o achado antes de adicionar.');
 
-    QUALIDADE_ACHADOS_LISTA.push({ descricao, foto_base64: QUALIDADE_ACHADO_FOTO_NOVA });
+    QUALIDADE_ACHADOS_LISTA.push({ descricao, fotos_base64: [...QUALIDADE_ACHADO_FOTOS_NOVAS] });
     campo.value = '';
     window.removerFotoAchadoNovo();
     renderAchadosPendentesLista();
@@ -6684,8 +6916,8 @@ function renderAchadosPendentesLista() {
 
     container.innerHTML = QUALIDADE_ACHADOS_LISTA.map((a, i) => `
         <div style="display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid var(--border);">
-            ${a.foto_base64 ? `<img src="${a.foto_base64}" style="width:36px; height:36px; object-fit:cover; border-radius:6px; flex-shrink:0;">` : `<div style="width:36px; height:36px; flex-shrink:0;"></div>`}
-            <span style="flex:1; font-size:12px; color:var(--text-body);">${a.descricao}</span>
+            ${a.fotos_base64 && a.fotos_base64[0] ? `<img src="${a.fotos_base64[0]}" style="width:36px; height:36px; object-fit:cover; border-radius:6px; flex-shrink:0;">` : `<div style="width:36px; height:36px; flex-shrink:0;"></div>`}
+            <span style="flex:1; font-size:12px; color:var(--text-body);">${a.descricao}${a.fotos_base64 && a.fotos_base64.length > 1 ? ` <span style="color:var(--text-muted);">(${a.fotos_base64.length} fotos)</span>` : ''}</span>
             <button type="button" onclick="window.removerAchadoDaLista(${i})" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:12px;"><i class="fas fa-trash"></i></button>
         </div>
     `).join('');
@@ -6762,7 +6994,7 @@ window.confirmarEntradaQualidade = async function() {
 
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/qualidade`, {
+        const { resp, enfileirado } = await enviarComFilaOffline(`${apiBase}/api/qualidade`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -6772,7 +7004,17 @@ window.confirmarEntradaQualidade = async function() {
                 achados: QUALIDADE_ACHADOS_LISTA,
                 operador
             })
-        });
+        }, `Entrada de Qualidade em ${equipamentoId}`);
+
+        if (enfileirado) {
+            document.getElementById("qualidade-obs-entrada").value = "";
+            window.removerFotoQualidade('entrada');
+            QUALIDADE_ACHADOS_LISTA = [];
+            renderAchadosPendentesLista();
+            window.removerFotoAchadoNovo();
+            alert(`📴 Sem internet agora — a entrada de [${equipamentoId}] foi guardada e será enviada sozinha assim que a conexão voltar.`);
+            return;
+        }
 
         if (!resp.ok) {
             const erro = await resp.json().catch(() => ({}));
@@ -6812,67 +7054,129 @@ window.carregarListaQualidade = async function() {
         const resp = await fetch(`${apiBase}/api/qualidade${query}`, { cache: 'no-store' });
         if (!resp.ok) throw new Error('Falha ao buscar');
         QUALIDADE_CACHE = await resp.json();
+        window.renderizarListaQualidade();
 
-        if (!Array.isArray(QUALIDADE_CACHE) || QUALIDADE_CACHE.length === 0) {
-            container.innerHTML = `<div class="text-muted" style="text-align:center; padding:30px 0;">Nenhum registro encontrado${FILTRO_QUALIDADE_ATUAL ? ' com esse filtro' : ''}.</div>`;
-            return;
+        // 🆕 KPIs sempre olham TUDO (sem o filtro de status ativo na
+        // tela), senão "Concluído" zeraria ao filtrar só "Aguardando
+        // Saída" por exemplo. Só busca de novo se o filtro atual não
+        // já for "todas" (senão reaproveita o que acabou de vir).
+        if (!FILTRO_QUALIDADE_ATUAL) {
+            window.renderizarKpisQualidade(QUALIDADE_CACHE);
+        } else {
+            const respTudo = await fetch(`${apiBase}/api/qualidade`, { cache: 'no-store' });
+            if (respTudo.ok) window.renderizarKpisQualidade(await respTudo.json());
         }
-
-        container.innerHTML = QUALIDADE_CACHE.map(r => {
-            const concluido = r.status === 'Concluído';
-            const corStatus = concluido ? 'var(--success)' : 'var(--warning)';
-            const iconeStatus = concluido ? '✅' : '⏳';
-            const fotoCapaEntrada = r.foto_entrada_capa;
-            const fotoCapaSaida = r.foto_saida_capa;
-            return `
-            <div style="display:flex; gap:14px; padding:14px 0; border-bottom:1px solid var(--border); align-items:flex-start; flex-wrap:wrap;">
-                <div style="display:flex; gap:6px; flex-shrink:0;">
-                    <div style="position:relative; cursor:pointer;" title="Fotos de Entrada" onclick="window.abrirGaleriaQualidade(${r.id}, 'entrada', '${r.peca_id}')">
-                        ${fotoCapaEntrada ? `
-                            <img src="${fotoCapaEntrada}" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:2px solid #38bdf8;">
-                            <span style="position:absolute; bottom:-6px; left:2px; background:#38bdf8; color:#04121c; font-size:9px; font-weight:800; padding:1px 5px; border-radius:8px;">ENTRADA</span>
-                        ` : `<div style="width:64px; height:64px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; color:var(--text-muted);"><i class="fas fa-image" style="font-size:18px; opacity:0.4;"></i></div>`}
-                    </div>
-                    <div style="position:relative; cursor:${fotoCapaSaida ? 'pointer' : 'default'};" title="Fotos de Saída" ${fotoCapaSaida ? `onclick="window.abrirGaleriaQualidade(${r.id}, 'saida', '${r.peca_id}')"` : ''}>
-                        ${fotoCapaSaida ? `
-                            <img src="${fotoCapaSaida}" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:2px solid #a78bfa;">
-                            <span style="position:absolute; bottom:-6px; left:2px; background:#a78bfa; color:#04121c; font-size:9px; font-weight:800; padding:1px 5px; border-radius:8px;">SAÍDA</span>
-                        ` : `<div style="width:64px; height:64px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; color:var(--text-muted); border:1px dashed var(--border);"><i class="fas fa-hourglass-half" style="font-size:16px; opacity:0.4;"></i></div>`}
-                    </div>
-                </div>
-                <div style="flex:1; min-width:180px;">
-                    <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
-                        <span class="font-code" style="font-weight:700; color:var(--text-heading);">${r.peca_id}</span>
-                        <span style="font-size:11px; font-weight:700; color:${corStatus};">${iconeStatus} ${r.status}</span>
-                    </div>
-                    ${r.observacao_entrada ? `<div style="font-size:12px; color:var(--text-body); margin-bottom:2px;"><strong style="color:#38bdf8;">Entrada:</strong> ${r.observacao_entrada}</div>` : ''}
-                    ${r.observacao_saida ? `<div style="font-size:12px; color:var(--text-body); margin-bottom:2px;"><strong style="color:#a78bfa;">Saída:</strong> ${r.observacao_saida}</div>` : ''}
-                    ${Number(r.achados_total) > 0 ? `
-                        <div style="margin:6px 0;">
-                            <button type="button" onclick="window.abrirModalAchadosQualidade(${r.id}, '${r.peca_id}', ${!concluido})" style="background:${Number(r.achados_pendentes) > 0 ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.12)'}; color:${Number(r.achados_pendentes) > 0 ? 'var(--danger)' : 'var(--success)'}; border:1px solid currentColor; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:700; cursor:pointer;">
-                                <i class="fas fa-triangle-exclamation"></i> ${r.achados_pendentes > 0 ? `${r.achados_pendentes} de ${r.achados_total} pendente(s)` : `${r.achados_total} achado(s) resolvido(s)`}
-                            </button>
-                        </div>
-                    ` : ''}
-                    <div style="font-size:11px; color:var(--text-accent);">
-                        Entrada: ${r.criado_por || 'Sistema'} · ${r.criado_em || ''}
-                        ${concluido && r.concluido_por ? `<br>Saída: ${r.concluido_por} · ${r.concluido_em || ''}` : ''}
-                    </div>
-                </div>
-                <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
-                    ${!concluido ? `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.abrirModalAchadosQualidade(${r.id}, '${r.peca_id}', true)"><i class="fas fa-plus"></i> Achado</button>` : ''}
-                    ${!concluido ? `<button class="btn-premium btn-success" style="padding:4px 10px; font-size:11px;" onclick="window.abrirModalSaidaQualidade(${r.id}, '${r.peca_id}')"><i class="fas fa-right-from-bracket"></i> Registrar Saída</button>` : ''}
-                    <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.excluirQualidade(${r.id})">
-                        <i class="fas fa-trash"></i> Excluir
-                    </button>
-                </div>
-            </div>
-            `;
-        }).join('');
     } catch (e) {
         console.error('⚠️ Erro ao carregar registros de qualidade:', e);
         container.innerHTML = `<div class="text-muted" style="text-align:center; padding:30px 0;">Não foi possível carregar. Verifique sua internet.</div>`;
     }
+};
+
+// 🆕 Resumo/dashboard rápido da aba Qualidade — calculado em cima da
+// lista já carregada (até o limite de 100 mais recentes do backend),
+// sem gastar outra chamada além da que já busca "todas" quando
+// necessário.
+window.renderizarKpisQualidade = function(lista) {
+    const container = document.getElementById('qualidade-kpis');
+    if (!container) return;
+    if (!Array.isArray(lista)) lista = [];
+
+    const aguardando = lista.filter(r => r.status !== 'Concluído').length;
+    const concluidos = lista.filter(r => r.status === 'Concluído').length;
+    const achadosPendentes = lista.reduce((soma, r) => soma + (Number(r.achados_pendentes) || 0), 0);
+    const achadosTotal = lista.reduce((soma, r) => soma + (Number(r.achados_total) || 0), 0);
+
+    container.innerHTML = `
+        <div class="kpi-card warning">
+            <div class="kpi-icon"><i class="fas fa-hourglass-half"></i></div>
+            <div class="kpi-data"><h4>${aguardando}</h4><p>Aguardando Saída</p></div>
+        </div>
+        <div class="kpi-card success">
+            <div class="kpi-icon"><i class="fas fa-check"></i></div>
+            <div class="kpi-data"><h4>${concluidos}</h4><p>Concluídos</p></div>
+        </div>
+        <div class="kpi-card ${achadosPendentes > 0 ? 'danger' : ''}">
+            <div class="kpi-icon"><i class="fas fa-triangle-exclamation"></i></div>
+            <div class="kpi-data"><h4>${achadosPendentes}</h4><p>Achados Pendentes</p></div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon"><i class="fas fa-list-check"></i></div>
+            <div class="kpi-data"><h4>${achadosTotal}</h4><p>Achados no Total</p></div>
+        </div>
+    `;
+};
+
+// 🆕 Busca por equipamento — filtra o que já foi carregado (não faz
+// nova chamada à API), funciona instantâneo enquanto digita.
+window.buscarQualidade = function(texto) {
+    BUSCA_QUALIDADE_ATUAL = (texto || '').trim().toLowerCase();
+    window.renderizarListaQualidade();
+};
+
+window.renderizarListaQualidade = function() {
+    const container = document.getElementById("qualidade-lista-container");
+    if (!container) return;
+
+    const lista = BUSCA_QUALIDADE_ATUAL
+        ? QUALIDADE_CACHE.filter(r => (r.peca_id || '').toLowerCase().includes(BUSCA_QUALIDADE_ATUAL))
+        : QUALIDADE_CACHE;
+
+    if (!Array.isArray(lista) || lista.length === 0) {
+        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:30px 0;">Nenhum registro encontrado${BUSCA_QUALIDADE_ATUAL ? ' pra essa busca' : (FILTRO_QUALIDADE_ATUAL ? ' com esse filtro' : '')}.</div>`;
+        return;
+    }
+
+    container.innerHTML = lista.map(r => {
+        const concluido = r.status === 'Concluído';
+        const corStatus = concluido ? 'var(--success)' : 'var(--warning)';
+        const iconeStatus = concluido ? '✅' : '⏳';
+        const fotoCapaEntrada = r.foto_entrada_capa;
+        const fotoCapaSaida = r.foto_saida_capa;
+        return `
+        <div style="display:flex; gap:14px; padding:14px 0; border-bottom:1px solid var(--border); align-items:flex-start; flex-wrap:wrap;">
+            <div style="display:flex; gap:6px; flex-shrink:0;">
+                <div style="position:relative; cursor:pointer;" title="Fotos de Entrada" onclick="window.abrirGaleriaQualidade(${r.id}, 'entrada', '${r.peca_id}')">
+                    ${fotoCapaEntrada ? `
+                        <img src="${fotoCapaEntrada}" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:2px solid #38bdf8;">
+                        <span style="position:absolute; bottom:-6px; left:2px; background:#38bdf8; color:#04121c; font-size:9px; font-weight:800; padding:1px 5px; border-radius:8px;">ENTRADA</span>
+                    ` : `<div style="width:64px; height:64px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; color:var(--text-muted);"><i class="fas fa-image" style="font-size:18px; opacity:0.4;"></i></div>`}
+                </div>
+                <div style="position:relative; cursor:${fotoCapaSaida ? 'pointer' : 'default'};" title="Fotos de Saída" ${fotoCapaSaida ? `onclick="window.abrirGaleriaQualidade(${r.id}, 'saida', '${r.peca_id}')"` : ''}>
+                    ${fotoCapaSaida ? `
+                        <img src="${fotoCapaSaida}" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:2px solid #a78bfa;">
+                        <span style="position:absolute; bottom:-6px; left:2px; background:#a78bfa; color:#04121c; font-size:9px; font-weight:800; padding:1px 5px; border-radius:8px;">SAÍDA</span>
+                    ` : `<div style="width:64px; height:64px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; color:var(--text-muted); border:1px dashed var(--border);"><i class="fas fa-hourglass-half" style="font-size:16px; opacity:0.4;"></i></div>`}
+                </div>
+            </div>
+            <div style="flex:1; min-width:180px;">
+                <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
+                    <span class="font-code" style="font-weight:700; color:var(--text-heading);">${r.peca_id}</span>
+                    <span style="font-size:11px; font-weight:700; color:${corStatus};">${iconeStatus} ${r.status}</span>
+                </div>
+                ${r.observacao_entrada ? `<div style="font-size:12px; color:var(--text-body); margin-bottom:2px;"><strong style="color:#38bdf8;">Entrada:</strong> ${r.observacao_entrada}</div>` : ''}
+                ${r.observacao_saida ? `<div style="font-size:12px; color:var(--text-body); margin-bottom:2px;"><strong style="color:#a78bfa;">Saída:</strong> ${r.observacao_saida}</div>` : ''}
+                ${Number(r.achados_total) > 0 ? `
+                    <div style="margin:6px 0;">
+                        <button type="button" onclick="window.abrirModalAchadosQualidade(${r.id}, '${r.peca_id}', ${!concluido})" style="background:${Number(r.achados_pendentes) > 0 ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.12)'}; color:${Number(r.achados_pendentes) > 0 ? 'var(--danger)' : 'var(--success)'}; border:1px solid currentColor; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:700; cursor:pointer;">
+                            <i class="fas fa-triangle-exclamation"></i> ${r.achados_pendentes > 0 ? `${r.achados_pendentes} de ${r.achados_total} pendente(s)` : `${r.achados_total} achado(s) resolvido(s)`}
+                        </button>
+                    </div>
+                ` : ''}
+                <div style="font-size:11px; color:var(--text-accent);">
+                    Entrada: ${r.criado_por || 'Sistema'} · ${r.criado_em || ''}
+                    ${concluido && r.concluido_por ? `<br>Saída: ${r.concluido_por} · ${r.concluido_em || ''}` : ''}
+                </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
+                ${!concluido ? `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.abrirModalAchadosQualidade(${r.id}, '${r.peca_id}', true)"><i class="fas fa-plus"></i> Achado</button>` : ''}
+                ${!concluido ? `<button class="btn-premium btn-success" style="padding:4px 10px; font-size:11px;" onclick="window.abrirModalSaidaQualidade(${r.id}, '${r.peca_id}')"><i class="fas fa-right-from-bracket"></i> Registrar Saída</button>` : ''}
+                <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.excluirQualidade(${r.id})">
+                    <i class="fas fa-trash"></i> Excluir
+                </button>
+            </div>
+        </div>
+        `;
+    }).join('');
 };
 
 // Galeria de fotos (entrada OU saída) de UM registro de qualidade —
@@ -7019,10 +7323,10 @@ window.confirmarSaidaQualidade = async function(registroId) {
 // registro específico. Se "podeEditar" for true (registro ainda
 // "Aguardando Saída"), permite adicionar novo achado e marcar/desmarcar
 // como resolvido. Se já estiver "Concluído", fica só como consulta.
-let QUALIDADE_ACHADO_MODAL_FOTO_NOVA = null;
+let QUALIDADE_ACHADO_MODAL_FOTOS_NOVAS = []; // 🆕 fotos (pode ter mais de 1) do achado sendo adicionado no modal
 
 window.abrirModalAchadosQualidade = async function(registroId, pecaId, podeEditar) {
-    QUALIDADE_ACHADO_MODAL_FOTO_NOVA = null;
+    QUALIDADE_ACHADO_MODAL_FOTOS_NOVAS = [];
 
     let overlay = document.getElementById('modal-achados-qualidade-overlay');
     if (!overlay) {
@@ -7056,11 +7360,11 @@ window.abrirModalAchadosQualidade = async function(registroId, pecaId, podeEdita
                     <textarea id="modal-achado-nova-descricao" class="premium-textarea" rows="1" placeholder="Descreva o novo achado..."></textarea>
                 </div>
                 <div class="input-group">
-                    <input type="file" id="modal-achado-nova-foto-input" accept="image/*" style="display:none;" onchange="window.processarFotoAchadoModal(event)">
+                    <input type="file" id="modal-achado-nova-foto-input" accept="image/*" multiple style="display:none;" onchange="window.processarFotoAchadoModal(event)">
                     <button type="button" class="btn-premium w-100 btn-icon-only" onclick="document.getElementById('modal-achado-nova-foto-input').click()"><i class="fas fa-camera"></i></button>
                 </div>
             </div>
-            <div id="modal-achado-nova-foto-preview" class="hidden" style="margin-bottom:8px;"></div>
+            <div id="modal-achado-nova-foto-preview" class="hidden" style="margin-bottom:8px; display:flex; gap:6px; flex-wrap:wrap;"></div>
             <button type="button" class="btn-premium" style="font-size:12px; padding:6px 14px;" onclick="window.salvarNovoAchadoModal(${registroId}, '${pecaId}')">
                 <i class="fas fa-plus"></i> Adicionar
             </button>
@@ -7075,18 +7379,30 @@ window.abrirModalAchadosQualidade = async function(registroId, pecaId, podeEdita
 };
 
 window.processarFotoAchadoModal = async function(event) {
-    const arquivo = event.target.files && event.target.files[0];
-    if (!arquivo) return;
-    try {
-        QUALIDADE_ACHADO_MODAL_FOTO_NOVA = await comprimirFotoParaBase64(arquivo);
-        const preview = document.getElementById('modal-achado-nova-foto-preview');
-        if (preview) {
-            preview.classList.remove('hidden');
-            preview.innerHTML = `<img src="${QUALIDADE_ACHADO_MODAL_FOTO_NOVA}" style="width:50px; height:50px; object-fit:cover; border-radius:8px; border:1px solid var(--border);">`;
+    const arquivos = Array.from(event.target.files || []);
+    if (arquivos.length === 0) return;
+    for (const arquivo of arquivos) {
+        try {
+            const base64 = await comprimirFotoParaBase64(arquivo);
+            QUALIDADE_ACHADO_MODAL_FOTOS_NOVAS.push(base64);
+        } catch (e) {
+            console.error('⚠️ Erro ao processar foto:', e);
+            alert(`Não consegui processar uma das imagens (${arquivo.name}).`);
         }
-    } catch (e) {
-        console.error('⚠️ Erro ao processar foto:', e);
-        alert('Não consegui processar essa imagem.');
+    }
+    const preview = document.getElementById('modal-achado-nova-foto-preview');
+    if (preview) {
+        if (QUALIDADE_ACHADO_MODAL_FOTOS_NOVAS.length === 0) {
+            preview.classList.add('hidden'); preview.innerHTML = '';
+        } else {
+            preview.classList.remove('hidden');
+            preview.innerHTML = QUALIDADE_ACHADO_MODAL_FOTOS_NOVAS.map((foto, i) => `
+                <div style="position:relative; display:inline-block;">
+                    <img src="${foto}" style="width:50px; height:50px; object-fit:cover; border-radius:8px; border:1px solid var(--border);">
+                    <button type="button" onclick="QUALIDADE_ACHADO_MODAL_FOTOS_NOVAS.splice(${i},1); document.getElementById('modal-achado-nova-foto-input').dispatchEvent(new Event('change'))" style="display:none;"></button>
+                </div>
+            `).join('');
+        }
     }
     event.target.value = '';
 };
@@ -7103,7 +7419,7 @@ window.salvarNovoAchadoModal = async function(registroId, pecaId) {
         const resp = await fetch(`${apiBase}/api/qualidade/achados`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ registro_id: registroId, descricao, foto_base64: QUALIDADE_ACHADO_MODAL_FOTO_NOVA, operador })
+            body: JSON.stringify({ registro_id: registroId, descricao, fotos_base64: QUALIDADE_ACHADO_MODAL_FOTOS_NOVAS, operador })
         });
         if (!resp.ok) {
             const erro = await resp.json().catch(() => ({}));
@@ -7111,7 +7427,7 @@ window.salvarNovoAchadoModal = async function(registroId, pecaId) {
             return;
         }
         document.getElementById('modal-achado-nova-descricao').value = '';
-        QUALIDADE_ACHADO_MODAL_FOTO_NOVA = null;
+        QUALIDADE_ACHADO_MODAL_FOTOS_NOVAS = [];
         const preview = document.getElementById('modal-achado-nova-foto-preview');
         if (preview) { preview.classList.add('hidden'); preview.innerHTML = ''; }
         await window.recarregarAchadosModal(registroId, pecaId, true);
@@ -7120,6 +7436,61 @@ window.salvarNovoAchadoModal = async function(registroId, pecaId) {
         console.error('⚠️ Erro ao adicionar achado:', e);
         alert('Não foi possível conectar ao servidor.');
     }
+};
+
+// 🆕 Editar a descrição de um achado já criado.
+window.editarAchadoQualidade = async function(achadoId, registroId, pecaId, descricaoAtual) {
+    if (!verificarAcesso()) return;
+    const novaDescricao = prompt('Editar descrição do achado:', descricaoAtual || '');
+    if (novaDescricao === null) return; // cancelou
+    if (!novaDescricao.trim()) return alert('A descrição não pode ficar vazia.');
+
+    const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/qualidade/achados/editar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: achadoId, descricao: novaDescricao.trim(), operador })
+        });
+        if (!resp.ok) {
+            const erro = await resp.json().catch(() => ({}));
+            alert(erro.detail || 'Não foi possível editar o achado.');
+            return;
+        }
+        await window.recarregarAchadosModal(registroId, pecaId, true);
+    } catch (e) {
+        console.error('⚠️ Erro ao editar achado:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+};
+
+// 🆕 Excluir achado COM desfazer — a exclusão de verdade só acontece
+// depois de alguns segundos, dando tempo de cancelar caso tenha
+// apertado sem querer (ver mostrarToastDesfazer, definido junto com o
+// resto das funções utilitárias de Qualidade).
+window.excluirAchadoQualidade = function(achadoId, registroId, pecaId) {
+    if (!verificarAcesso()) return;
+
+    // Some da tela na hora (otimista) — se a pessoa desfizer, a linha
+    // volta a aparecer.
+    const el = document.getElementById(`achado-linha-${achadoId}`);
+    if (el) el.style.display = 'none';
+
+    mostrarToastDesfazer('Achado excluído.', async () => {
+        try {
+            const apiBase = await resolverApiBase();
+            await fetch(`${apiBase}/api/qualidade/achados/excluir`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: achadoId })
+            });
+            await window.carregarListaQualidade();
+        } catch (e) {
+            console.error('⚠️ Erro ao excluir achado:', e);
+        }
+    }, () => window.recarregarAchadosModal(registroId, pecaId, true));
 };
 
 window.recarregarAchadosModal = async function(registroId, pecaId, podeEditar) {
@@ -7138,9 +7509,16 @@ window.recarregarAchadosModal = async function(registroId, pecaId, podeEditar) {
 
         corpo.innerHTML = achados.map(a => {
             const resolvido = a.status === 'Resolvido';
+            const totalFotos = Number(a.total_fotos) || 0;
+            const descricaoEscapada = (a.descricao || '').replace(/'/g, "\\'");
             return `
-            <div style="display:flex; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); align-items:flex-start;">
-                ${a.foto_base64 ? `<img src="${a.foto_base64}" style="width:50px; height:50px; object-fit:cover; border-radius:8px; border:1px solid var(--border); cursor:pointer; flex-shrink:0;" onclick="window.abrirFotoAmpliada('${a.foto_base64}', 'Achado — ${pecaId}')">` : `<div style="width:50px; height:50px; flex-shrink:0;"></div>`}
+            <div id="achado-linha-${a.id}" style="display:flex; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); align-items:flex-start;">
+                ${a.foto_capa ? `
+                    <div style="position:relative; flex-shrink:0; cursor:pointer;" onclick="window.abrirGaleriaAchadoQualidade(${a.id}, '${pecaId}')">
+                        <img src="${a.foto_capa}" style="width:50px; height:50px; object-fit:cover; border-radius:8px; border:1px solid var(--border);">
+                        ${totalFotos > 1 ? `<span style="position:absolute; bottom:-4px; right:-4px; background:rgba(0,0,0,0.75); color:#fff; font-size:9px; padding:1px 5px; border-radius:8px;"><i class="fas fa-images"></i> ${totalFotos}</span>` : ''}
+                    </div>
+                ` : `<div style="width:50px; height:50px; flex-shrink:0;"></div>`}
                 <div style="flex:1; min-width:0;">
                     <div style="font-size:12px; color:var(--text-body); ${resolvido ? 'text-decoration:line-through; opacity:0.6;' : ''}">${a.descricao}</div>
                     <div style="font-size:10px; color:var(--text-accent);">
@@ -7148,17 +7526,70 @@ window.recarregarAchadosModal = async function(registroId, pecaId, podeEditar) {
                         ${resolvido ? `<br>✅ Resolvido por ${a.resolvido_por || ''} · ${a.resolvido_em || ''}` : ''}
                     </div>
                 </div>
-                ${podeEditar ? `
-                    <button type="button" onclick="window.${resolvido ? 'reabrirAchadoQualidade' : 'resolverAchadoQualidade'}(${a.id}, ${registroId}, '${pecaId}')" style="flex-shrink:0; padding:4px 8px; font-size:10px; border-radius:6px; border:1px solid currentColor; background:${resolvido ? 'rgba(234,179,8,0.1)' : 'rgba(34,197,94,0.1)'}; color:${resolvido ? 'var(--warning)' : 'var(--success)'}; cursor:pointer;">
-                        ${resolvido ? '<i class="fas fa-rotate-left"></i> Reabrir' : '<i class="fas fa-check"></i> Resolver'}
-                    </button>
-                ` : `<span style="flex-shrink:0; font-size:10px; font-weight:700; color:${resolvido ? 'var(--success)' : 'var(--warning)'};">${resolvido ? '✅' : '⏳'}</span>`}
+                <div style="display:flex; flex-direction:column; gap:4px; flex-shrink:0; align-items:flex-end;">
+                    ${podeEditar ? `
+                        <button type="button" onclick="window.${resolvido ? 'reabrirAchadoQualidade' : 'resolverAchadoQualidade'}(${a.id}, ${registroId}, '${pecaId}')" style="padding:4px 8px; font-size:10px; border-radius:6px; border:1px solid currentColor; background:${resolvido ? 'rgba(234,179,8,0.1)' : 'rgba(34,197,94,0.1)'}; color:${resolvido ? 'var(--warning)' : 'var(--success)'}; cursor:pointer;">
+                            ${resolvido ? '<i class="fas fa-rotate-left"></i> Reabrir' : '<i class="fas fa-check"></i> Resolver'}
+                        </button>
+                        <div style="display:flex; gap:4px;">
+                            <button type="button" title="Editar" onclick="window.editarAchadoQualidade(${a.id}, ${registroId}, '${pecaId}', '${descricaoEscapada}')" style="padding:3px 7px; font-size:10px; border-radius:6px; border:1px solid var(--border); background:transparent; color:var(--text-muted); cursor:pointer;"><i class="fas fa-pen"></i></button>
+                            <button type="button" title="Excluir" onclick="window.excluirAchadoQualidade(${a.id}, ${registroId}, '${pecaId}')" style="padding:3px 7px; font-size:10px; border-radius:6px; border:1px solid var(--border); background:transparent; color:var(--danger); cursor:pointer;"><i class="fas fa-trash"></i></button>
+                        </div>
+                    ` : `<span style="font-size:10px; font-weight:700; color:${resolvido ? 'var(--success)' : 'var(--warning)'};">${resolvido ? '✅' : '⏳'}</span>`}
+                </div>
             </div>
             `;
         }).join('');
     } catch (e) {
         console.error('⚠️ Erro ao carregar achados:', e);
         corpo.innerHTML = `<div class="text-muted" style="padding:16px 0;">Não foi possível carregar.</div>`;
+    }
+};
+
+// Galeria de fotos de UM achado (quando tem mais de 1) — reaproveita o
+// mesmo padrão da galeria de OS/entrada-saída.
+window.abrirGaleriaAchadoQualidade = async function(achadoId, pecaId) {
+    let overlay = document.getElementById('lightbox-galeria-achado-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'lightbox-galeria-achado-overlay';
+        overlay.className = 'modal-overlay hidden';
+        overlay.style.zIndex = '10097';
+        overlay.innerHTML = `
+            <div class="modal-content" style="max-width:480px;" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h2><i class="fas fa-triangle-exclamation"></i> Fotos do achado</h2>
+                    <button class="btn-close-modal" onclick="document.getElementById('lightbox-galeria-achado-overlay').classList.add('hidden')"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body" id="galeria-achado-corpo" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
+            </div>
+        `;
+        overlay.addEventListener('click', () => overlay.classList.add('hidden'));
+        document.body.appendChild(overlay);
+    }
+
+    const corpo = document.getElementById('galeria-achado-corpo');
+    corpo.innerHTML = `<div class="text-muted" style="padding:20px 0;">Carregando...</div>`;
+    overlay.classList.remove('hidden');
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/qualidade/achados/${achadoId}/fotos`, { cache: 'no-store' });
+        const fotos = resp.ok ? await resp.json() : [];
+
+        if (!Array.isArray(fotos) || fotos.length === 0) {
+            corpo.innerHTML = `<div class="text-muted" style="padding:20px 0;">Nenhuma foto encontrada.</div>`;
+            return;
+        }
+
+        corpo.innerHTML = fotos.map((f, i) => `
+            <img src="${f.foto_base64}"
+                 style="width:110px; height:110px; object-fit:cover; border-radius:8px; border:1px solid var(--border-color); cursor:pointer;"
+                 onclick="window.abrirFotoAmpliada('${f.foto_base64}', 'Achado — ${pecaId} ${i + 1}')">
+        `).join('');
+    } catch (e) {
+        console.error('⚠️ Não consegui carregar as fotos do achado:', e);
+        corpo.innerHTML = `<div class="text-muted" style="padding:20px 0;">Não foi possível carregar.</div>`;
     }
 };
 
@@ -7202,22 +7633,24 @@ window.reabrirAchadoQualidade = async function(achadoId, registroId, pecaId) {
 
 window.excluirQualidade = async function(id) {
     if (!verificarAcesso()) return;
-    if (!confirm('Excluir este registro de qualidade? Essa ação não pode ser desfeita.')) return;
+    if (!confirm('Excluir este registro de qualidade?')) return;
 
-    try {
-        const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/qualidade/excluir`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id })
-        });
-        if (!resp.ok) {
-            alert('Não foi possível excluir o registro.');
-            return;
+    // 🆕 Desfazer exclusão: some da lista na hora (sem recarregar do
+    // servidor, que ainda tem o registro) e só chama a API de verdade
+    // depois de alguns segundos — dá tempo de desfazer se apertou errado.
+    QUALIDADE_CACHE = QUALIDADE_CACHE.filter(r => r.id !== id);
+    window.renderizarListaQualidade();
+
+    mostrarToastDesfazer('Registro de Qualidade excluído.', async () => {
+        try {
+            const apiBase = await resolverApiBase();
+            await fetch(`${apiBase}/api/qualidade/excluir`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+        } catch (e) {
+            console.error('⚠️ Erro ao excluir registro de qualidade:', e);
         }
-        await window.carregarListaQualidade();
-    } catch (e) {
-        console.error('⚠️ Erro ao excluir registro de qualidade:', e);
-        alert('Não foi possível conectar ao servidor.');
-    }
+    }, () => window.carregarListaQualidade());
 };
