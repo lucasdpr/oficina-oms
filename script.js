@@ -7057,7 +7057,7 @@ window.abrirModalAchadosQualidade = async function(registroId, pecaId, podeEdita
                 </div>
                 <div class="input-group">
                     <input type="file" id="modal-achado-nova-foto-input" accept="image/*" style="display:none;" onchange="window.processarFotoAchadoModal(event)">
-                    <button type="button" class="btn-premium w-100" onclick="document.getElementById('modal-achado-nova-foto-input').click()"><i class="fas fa-camera"></i></button>
+                    <button type="button" class="btn-premium w-100 btn-icon-only" onclick="document.getElementById('modal-achado-nova-foto-input').click()"><i class="fas fa-camera"></i></button>
                 </div>
             </div>
             <div id="modal-achado-nova-foto-preview" class="hidden" style="margin-bottom:8px;"></div>

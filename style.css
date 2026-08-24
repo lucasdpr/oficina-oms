@@ -366,6 +366,17 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: 0.4px;
 }
 
+/* 🆕 Botões que têm SÓ ícone, sem texto (ex: botão de câmera nos
+   achados de Qualidade) — o padding padrão do .btn-premium (8px 18px)
+   fica com ~36px de altura, abaixo do mínimo de 44px recomendado pro
+   dedo em touch target. Essa classe garante 44px sem mexer no padrão
+   normal (que já fica alto o bastante por causa do texto junto). */
+.btn-icon-only {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px !important;
+}
+
 .btn-premium:hover {
   background: var(--text-accent);
   color: var(--text-on-primary) !important;
