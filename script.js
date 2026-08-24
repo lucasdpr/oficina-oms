@@ -158,6 +158,30 @@ function filtrarPorAreaTecnico(lista) {
 let MODO_MODAL_RELATORIO = {};
 let ID_HISTORICO_ATUAL = null;
 
+// 🆕 IDs de equipamentos com rascunho salvo (reparo já iniciado, ainda
+// não concluído). Usado por renderReparos() pra tirar da lista
+// "Iniciar Reparo" quem já está "em andamento". Populado por
+// atualizarRascunhosAtivos() e reaproveitado por carregarReparosAndamento().
+let RASCUNHOS_IDS_ATIVOS = new Set();
+
+// Busca a lista de rascunhos ativos no back-end, atualiza o cache
+// local (RASCUNHOS_IDS_ATIVOS) e re-renderiza "Iniciar Reparo" pra
+// esconder quem já foi iniciado. Chamada toda vez que a aba de Reparo
+// (ou o atalho do Painel do Técnico) é aberta.
+async function atualizarRascunhosAtivos() {
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/folhao/rascunhos/todos`, { cache: 'no-store' });
+        if (!resp.ok) throw new Error("Falha ao buscar rascunhos.");
+        const rascunhos = await resp.json();
+        RASCUNHOS_IDS_ATIVOS = new Set(rascunhos.map(r => r.equipamento_id));
+    } catch (e) {
+        console.error('⚠️ Não consegui atualizar rascunhos ativos (lista "Iniciar Reparo" pode mostrar item já em andamento):', e);
+    }
+    if (typeof renderReparos === 'function') renderReparos();
+}
+window.atualizarRascunhosAtivos = atualizarRascunhosAtivos;
+
 // ==========================================
 // FUNÇÃO AUXILIAR - ORDEM PADRÃO
 // ==========================================
@@ -982,7 +1006,47 @@ function atualizarInterfaceUsuario() {
     renderHistorico();
     ativarPainelDevSeAutorizado();
     ativarAuditoriaSeAutorizado();
+    aplicarRestricaoNavTecnico();
 }
+
+// ==========================================
+// 🆕 RESTRIÇÃO DE NAVEGAÇÃO — TÉCNICO SÓ VÊ AS PRÓPRIAS ABAS
+// ==========================================
+// Técnico com área cadastrada (não-ADM, não-visitante) só pode acessar
+// o "Painel do Técnico" + as abas de monitoramento/registro que ele
+// usa no dia a dia (Sinótico 3D, Sequenciamento de Veios, Registro de
+// Ocorrência, Registro de OS) — o resto do menu lateral fica escondido.
+// ADM (MATRICULAS_ADM) e visitante continuam vendo o menu completo.
+const NAV_IDS_LIBERADOS_TECNICO = ['nav-tecnico', 'nav-sinotico', 'nav-fluxo', 'nav-ocorrencia', 'nav-ordens-servico'];
+
+function aplicarRestricaoNavTecnico() {
+    const restrito = !!(OPERADOR_LOGADO && !OPERADOR_LOGADO.visitante && !OPERADOR_LOGADO.isAdm && OPERADOR_LOGADO.area);
+
+    document.querySelectorAll('.sidebar-nav .nav-link').forEach(el => {
+        const liberado = NAV_IDS_LIBERADOS_TECNICO.includes(el.id);
+        el.style.display = (restrito && !liberado) ? 'none' : '';
+    });
+    // Dividers de seção ("Monitoramento de Máquinas", "Oficina"...) só
+    // ficam visíveis se sobrar pelo menos 1 link liberado dentro dela.
+    document.querySelectorAll('.sidebar-nav .nav-divider').forEach(divider => {
+        if (!restrito) { divider.style.display = ''; return; }
+        let irmao = divider.nextElementSibling;
+        let temLinkVisivel = false;
+        while (irmao && !irmao.classList.contains('nav-divider')) {
+            if (irmao.classList.contains('nav-link') && irmao.style.display !== 'none') { temLinkVisivel = true; break; }
+            irmao = irmao.nextElementSibling;
+        }
+        divider.style.display = temLinkVisivel ? '' : 'none';
+    });
+
+    if (restrito) {
+        const abaAtual = document.querySelector('.tab-content.active');
+        const idAtual = abaAtual ? abaAtual.id : null;
+        const abaAindaPermitida = idAtual === 'aba-tecnico' || idAtual === 'aba-fluxo' || idAtual === 'aba-ocorrencia' || idAtual === 'aba-ordens-servico';
+        if (!abaAindaPermitida) window.abrirAba(null, 'aba-tecnico');
+    }
+}
+window.aplicarRestricaoNavTecnico = aplicarRestricaoNavTecnico;
 // 🔧 CORREÇÃO ("some o nome/matrícula/cargo, fica só '...' quando reabre o
 // app já logado"): esta função só era chamada dentro do próprio script.js
 // (como identificador puro, funciona certo lá). Mas o bloco de "restaurar
@@ -1487,7 +1551,13 @@ function renderReparos() {
         localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
     }
 
-    const reparosBrutos = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reparo");
+    // 🔧 CORREÇÃO ("reparo já iniciado continuava aparecendo em 'Iniciar
+    // Reparo'"): equipamento com rascunho salvo (RASCUNHOS_IDS_ATIVOS,
+    // atualizado por atualizarRascunhosAtivos()) já está "em andamento"
+    // — não faz sentido continuar oferecendo "Iniciar" pra ele também.
+    // Agora esses IDs são excluídos daqui e só aparecem na sub-aba
+    // "Reparo em Andamento".
+    const reparosBrutos = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reparo" && !RASCUNHOS_IDS_ATIVOS.has(a.id));
     const { lista: reparos, semArea } = filtrarPorAreaTecnico(reparosBrutos);
 
     if (semArea) {
@@ -2654,57 +2724,225 @@ function renderPainelTecnico() {
 
     const linhaVazia = (msg) => `<div class="text-muted" style="text-align:center; padding: 18px 0;">${msg}</div>`;
 
+    // 🆕 Aviso de "sem área" no topo do painel (ADM não é afetado).
+    const avisoArea = document.getElementById("tecnico-aviso-sem-area");
+    const { isAdm, semArea } = filtrarPorAreaTecnico([]);
+    if (avisoArea) avisoArea.classList.toggle("hidden", isAdm || !semArea);
+
+    // 🆕 Atividades (Pendente/Em Andamento, incluindo as programadas
+    // pra data futura) da área do técnico.
+    if (typeof window.carregarAtividadesPainelTecnico === 'function') window.carregarAtividadesPainelTecnico();
+
+    // 🆕 Todos os equipamentos "no veio" (instalados) da área do
+    // técnico — não só os críticos. ADM continua vendo tudo.
+    const equipamentosVeioArea = filtrarPorAreaTecnico(
+        BANCO_ATIVOS.filter(a => a.local && a.local.includes("Veio") && !a.local.includes("Oficina"))
+    ).lista;
+
+    // 🆕 Lista completa por área, ordenada do mais desgastado pro
+    // menos — pedido pra o técnico acompanhar tudo da área dele, não
+    // só quem já bateu 80%.
+    const listaEquipArea = document.getElementById("tecnico-lista-equipamentos-area");
+    if (listaEquipArea) {
+        if (semArea && !isAdm) {
+            listaEquipArea.innerHTML = linhaVazia("⚠️ Sua área ainda não foi cadastrada. Fale com um ADM.");
+        } else if (equipamentosVeioArea.length === 0) {
+            listaEquipArea.innerHTML = linhaVazia("Nenhum equipamento da sua área instalado no veio.");
+        } else {
+            const todosOrdenados = equipamentosVeioArea
+                .map(a => ({ ...a, pct: a.meta > 0 ? (a.ton / a.meta) * 100 : 0 }))
+                .sort((a, b) => b.pct - a.pct);
+            listaEquipArea.innerHTML = `<div class="tecnico-cards-grid">`
+                + todosOrdenados.map(a => `
+                <div class="tecnico-card-item ${a.pct >= 80 ? 'tecnico-card-critico' : 'tecnico-card-normal'}" onclick="window.abrirHistoricoIndividual('${a.id}')">
+                    <div class="tecnico-card-topo">
+                        <span class="font-code tecnico-card-id">${a.id}</span>
+                        <span class="ind-card-tag bg-tag">${a.tipo}</span>
+                    </div>
+                    <div class="tecnico-card-pct" style="color:${a.pct >= 80 ? 'var(--danger)' : 'var(--text-heading)'};">${a.pct.toFixed(1)}%</div>
+                </div>`).join("")
+                + `</div>`;
+        }
+    }
+
     // 🔧 CORREÇÃO ("equipamento crítico no painel do técnico MUITO
     // GRANDE"): antes mostrava TODOS os equipamentos ≥80%, sem limite —
     // com muitos críticos ao mesmo tempo, a lista esticava a tela toda.
     // Agora segue o mesmo padrão do Painel Geral (renderizarTopCriticos):
     // mostra só os 5 mais críticos aqui, com um botão pra abrir a lista
     // completa no modal que já existe (abrirCriticos()).
-    const criticosTodos = BANCO_ATIVOS
-        .filter(a => a.local && a.local.includes("Veio") && !a.local.includes("Oficina"))
+    // 🆕 Também passa pelo mesmo filtro de área usado no resto do
+    // sistema — técnico só vê os críticos da própria área; ADM vê tudo.
+    const criticosTodos = equipamentosVeioArea
         .map(a => ({ ...a, pct: a.meta > 0 ? (a.ton / a.meta) * 100 : 0 }))
         .filter(a => a.pct >= 80)
         .sort((a, b) => b.pct - a.pct);
 
     const criticos = criticosTodos.slice(0, 5);
 
-    if (criticos.length === 0) {
+    if (semArea && !isAdm) {
+        listaCriticos.innerHTML = linhaVazia("⚠️ Sua área ainda não foi cadastrada. Fale com um ADM.");
+    } else if (criticos.length === 0) {
         listaCriticos.innerHTML = linhaVazia("Nenhum equipamento crítico no momento. ✅");
     } else {
-        listaCriticos.innerHTML = criticos.map(a => `
-            <div class="tecnico-item-linha" onclick="window.abrirHistoricoIndividual('${a.id}')">
-                <div>
-                    <span class="font-code" style="font-weight:700; color:var(--text-heading);">${a.id}</span>
-                    <span class="ind-card-tag bg-tag" style="margin-left:6px;">${a.tipo}</span>
+        listaCriticos.innerHTML = `<div class="tecnico-cards-grid">`
+            + criticos.map(a => `
+            <div class="tecnico-card-item tecnico-card-critico" onclick="window.abrirHistoricoIndividual('${a.id}')">
+                <div class="tecnico-card-topo">
+                    <span class="font-code tecnico-card-id">${a.id}</span>
+                    <span class="ind-card-tag bg-tag">${a.tipo}</span>
                 </div>
-                <div style="text-align:right;">
-                    <span style="color:var(--danger); font-weight:700; font-size:13px;">${a.pct.toFixed(1)}%</span>
-                    <i class="fas fa-chevron-right" style="margin-left:8px; color:var(--text-muted);"></i>
-                </div>
+                <div class="tecnico-card-pct">${a.pct.toFixed(1)}%</div>
             </div>`).join("")
+            + `</div>`
             + (criticosTodos.length > 5
-                ? `<div class="tecnico-item-linha" style="justify-content:center; color:var(--text-accent); font-weight:700; cursor:pointer;" onclick="window.abrirCriticos()">
+                ? `<div class="tecnico-ver-todos" onclick="window.abrirCriticos()">
                         Ver todos os ${criticosTodos.length} críticos <i class="fas fa-arrow-right" style="margin-left:6px;"></i>
                    </div>`
                 : '');
     }
 
     // ---- RESERVAS PRONTAS PRA SWAP ----
-    const reservas = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reserva");
-    if (reservas.length === 0) {
+    // 🆕 Também filtrado pela área do técnico (ADM continua vendo tudo).
+    const reservas = filtrarPorAreaTecnico(
+        BANCO_ATIVOS.filter(a => a.local === "Oficina / Reserva")
+    ).lista;
+
+    if (semArea && !isAdm) {
+        listaReservas.innerHTML = linhaVazia("⚠️ Sua área ainda não foi cadastrada. Fale com um ADM.");
+    } else if (reservas.length === 0) {
         listaReservas.innerHTML = linhaVazia("Nenhuma peça em estoque reserva.");
     } else {
-        listaReservas.innerHTML = reservas.map(a => `
-            <div class="tecnico-item-linha" onclick="window.abrirAba(null,'aba-reservas')">
-                <div>
-                    <span class="font-code" style="font-weight:700; color:var(--text-heading);">${a.id}</span>
-                    <span class="ind-card-tag bg-tag" style="margin-left:6px;">${a.tipo}</span>
+        listaReservas.innerHTML = `<div class="tecnico-cards-grid">`
+            + reservas.map(a => `
+            <div class="tecnico-card-item tecnico-card-reserva" onclick="window.abrirAba(null,'aba-reservas')">
+                <div class="tecnico-card-topo">
+                    <span class="font-code tecnico-card-id">${a.id}</span>
+                    <span class="ind-card-tag bg-tag">${a.tipo}</span>
                 </div>
-                <i class="fas fa-chevron-right" style="color:var(--text-muted);"></i>
-            </div>`).join("");
+                <i class="fas fa-check-circle" style="color:#22c55e;"></i>
+            </div>`).join("")
+            + `</div>`;
     }
 }
 window.renderPainelTecnico = renderPainelTecnico;
+
+// Atalho "Área" do Painel do Técnico — abre a própria área do técnico
+// já direto na sub-aba "Atividades" (sem passar pela grade de cards
+// da Central de Áreas primeiro).
+window.irParaAreaTecnico = function() {
+    const isAdm = !!(OPERADOR_LOGADO && OPERADOR_LOGADO.isAdm);
+    const area = OPERADOR_LOGADO && OPERADOR_LOGADO.area;
+    if (!isAdm && !area) {
+        alert("Sua área ainda não foi cadastrada. Fale com um ADM.");
+        return;
+    }
+    if (!area) {
+        window.abrirAba(null, 'aba-oficina'); // ADM sem área fixa: manda pra grade de áreas
+        return;
+    }
+    window.abrirAreaOficina(area, 'atividades');
+};
+
+// Atalho "Criar Atividade" do Painel do Técnico — abre a própria área
+// já na sub-aba Atividades e destrava o formulário de nova atividade
+// (o mesmo formulário da Central de Áreas, com campo de Prazo — é ele
+// que permite programar uma atividade pra uma data futura: ela fica
+// "Pendente" até lá).
+window.irCriarAtividadeTecnico = function() {
+    const isAdm = !!(OPERADOR_LOGADO && OPERADOR_LOGADO.isAdm);
+    const area = OPERADOR_LOGADO && OPERADOR_LOGADO.area;
+    if (!isAdm && !area) {
+        alert("Sua área ainda não foi cadastrada. Fale com um ADM.");
+        return;
+    }
+    if (!area) {
+        window.abrirAba(null, 'aba-oficina');
+        return;
+    }
+    window.abrirAreaOficina(area, 'atividades');
+    // Pequeno delay pra garantir que o DOM da área já renderizou antes
+    // de abrir o formulário (abrirAreaOficina faz fetches assíncronos).
+    setTimeout(() => {
+        const card = document.getElementById('area-oficina-form-card');
+        if (card && card.classList.contains('hidden') && typeof window.alternarFormAtividadeOficina === 'function') {
+            window.alternarFormAtividadeOficina();
+        }
+    }, 350);
+};
+
+// 🆕 Lista de atividades (Pendente/Em Andamento) da área do técnico,
+// direto no Painel do Técnico — sem precisar entrar na área pra ver o
+// que já está rolando ou o que foi programado pra frente.
+window.carregarAtividadesPainelTecnico = async function() {
+    const container = document.getElementById("tecnico-lista-atividades");
+    if (!container) return;
+
+    const linhaVazia = (msg) => `<div class="text-muted" style="text-align:center; padding: 18px 0;">${msg}</div>`;
+    const isAdm = !!(OPERADOR_LOGADO && OPERADOR_LOGADO.isAdm);
+    const area = OPERADOR_LOGADO && OPERADOR_LOGADO.area;
+
+    if (!isAdm && !area) {
+        container.innerHTML = linhaVazia("⚠️ Sua área ainda não foi cadastrada. Fale com um ADM.");
+        return;
+    }
+    if (!area) {
+        container.innerHTML = linhaVazia("Você é ADM sem área fixa — abra a Central de Áreas pra ver atividades.");
+        return;
+    }
+
+    container.innerHTML = linhaVazia("Carregando...");
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/atividades?area=${encodeURIComponent(area)}`, { cache: 'no-store' });
+        const atividades = resp.ok ? await resp.json() : [];
+
+        // 🆕 Agora as futuras (data_inicio no futuro) continuam
+        // aparecendo na lista — só que sinalizadas com um selo
+        // "PROGRAMADA", em vez de sumirem sem explicação. Ficam por
+        // último, depois das que já podem ser feitas.
+        const abertas = atividades
+            .filter(a => a.status !== 'Concluído')
+            .sort((a, b) => {
+                const aFutura = atividadeAindaNaoComecou(a) ? 1 : 0;
+                const bFutura = atividadeAindaNaoComecou(b) ? 1 : 0;
+                if (aFutura !== bFutura) return aFutura - bFutura;
+                return (a.status === 'Em Andamento' ? -1 : 1) - (b.status === 'Em Andamento' ? -1 : 1);
+            });
+
+        if (abertas.length === 0) {
+            container.innerHTML = linhaVazia("Nenhuma atividade pendente ou em andamento. ✅");
+            return;
+        }
+
+        const corStatus = { 'Pendente': 'var(--warning)', 'Em Andamento': 'var(--info)' };
+        container.innerHTML = abertas.map(x => {
+            const prazoFormatado = x.prazo ? x.prazo.split('-').reverse().join('/') : null;
+            const inicioFormatado = x.data_inicio ? x.data_inicio.split('-').reverse().join('/') : null;
+            const futura = atividadeAindaNaoComecou(x);
+            const atrasada = !futura && typeof atividadeEstaAtrasada === 'function' && atividadeEstaAtrasada(x);
+            return `
+                <div class="tecnico-item-linha" onclick="window.irParaAreaTecnico()" style="${futura ? 'opacity:0.8;' : ''}">
+                    <div>
+                        ${x.equipamento_id ? `<span class="font-code" style="font-weight:700; color:var(--text-heading);">${x.equipamento_id}</span> · ` : ''}
+                        <span style="font-size:13px; color:var(--text-body);">${x.descricao}</span>
+                        ${futura ? `<span style="font-size:10px; background:var(--text-accent, #3b82f6); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700; margin-left:6px;">PROGRAMADA</span>` : ''}
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+                            ${futura
+                                ? `<span style="color:var(--text-accent, #3b82f6); font-weight:700;">Começa ${inicioFormatado}</span>`
+                                : `<span style="color:${corStatus[x.status] || 'var(--text-muted)'}; font-weight:700;">${x.status}</span>`}
+                            ${x.responsavel ? ` · <i class="fas fa-user"></i> ${x.responsavel}` : ' · <span style="font-style:italic;">Sem responsável</span>'}
+                            ${prazoFormatado ? ` · Prazo: <span style="color:${atrasada ? 'var(--danger)' : 'var(--text-muted)'}; font-weight:${atrasada ? '700' : '400'};">${prazoFormatado}</span>` : ''}
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color:var(--text-muted);"></i>
+                </div>`;
+        }).join('');
+    } catch (e) {
+        console.error('⚠️ Não consegui carregar atividades do painel técnico:', e);
+        container.innerHTML = linhaVazia("Não foi possível carregar as atividades agora.");
+    }
+};
 
 // ==========================================
 // ABA REPARO — abas "Iniciar Reparo" x "Reparo em Andamento"
@@ -2769,6 +3007,11 @@ window.carregarReparosAndamento = async function() {
         const resp = await fetch(`${apiBase}/api/folhao/rascunhos/todos`);
         if (!resp.ok) throw new Error("Falha ao buscar rascunhos.");
         const rascunhos = await resp.json();
+
+        // Reaproveita esse mesmo fetch pra manter RASCUNHOS_IDS_ATIVOS em
+        // dia (usado por renderReparos() na sub-aba "Iniciar Reparo").
+        RASCUNHOS_IDS_ATIVOS = new Set(rascunhos.map(r => r.equipamento_id));
+        if (typeof renderReparos === 'function') renderReparos();
 
         // Cruza cada rascunho com o cadastro do equipamento (BANCO_ATIVOS)
         // pra saber o tipo dele e poder aplicar o filtro de área.
@@ -3574,6 +3817,11 @@ window.carregarOficina = async function() {
                 <button class="btn-filter-mcc" onclick="window.filtrarCentralAreas('Restrição', this)">🟠 Restrição</button>
                 <button class="btn-filter-mcc" onclick="window.filtrarCentralAreas('Atenção', this)">🟡 Atenção</button>
             </div>
+            ${OPERADOR_LOGADO && OPERADOR_LOGADO.isAdm ? `
+                <button class="btn-premium" onclick="window.abrirModalAtividadeMassa()">
+                    <i class="fas fa-layer-group"></i> Atividade em Massa
+                </button>
+            ` : ''}
         </div>
         <div id="oficina-grade-areas" class="oficina-grade"></div>
     `;
@@ -3596,6 +3844,104 @@ window.carregarOficina = async function() {
     if (OFICINA_AREA_ATUAL) renderizarAtividadesArea();
 };
 
+// ==========================================
+// 🆕 ATIVIDADE EM MASSA (só ADM) — cria a mesma atividade em várias
+// áreas de uma vez, ou em todas, reaproveitando o mesmo endpoint que
+// já existe pra criar 1 atividade (POST /api/oficina/atividade), só
+// que chamado uma vez por área selecionada.
+// ==========================================
+window.abrirModalAtividadeMassa = function() {
+    if (!OPERADOR_LOGADO || !OPERADOR_LOGADO.isAdm) return;
+
+    const descEl = document.getElementById('massa-descricao');
+    const prioEl = document.getElementById('massa-prioridade');
+    const inicioEl = document.getElementById('massa-data-inicio');
+    const prazoEl = document.getElementById('massa-prazo');
+    const respEl = document.getElementById('massa-responsavel');
+    const todasEl = document.getElementById('massa-todas-areas');
+    if (descEl) descEl.value = '';
+    if (prioEl) prioEl.value = 'Normal';
+    if (inicioEl) inicioEl.value = '';
+    if (prazoEl) prazoEl.value = '';
+    if (respEl) respEl.value = '';
+    if (todasEl) todasEl.checked = false;
+
+    const areasOficina = AREAS_OFICINA.filter(a => a.tipo === 'oficina');
+    const lista = document.getElementById('massa-lista-areas');
+    if (lista) {
+        lista.innerHTML = areasOficina.map(a => `
+            <label style="display:flex; align-items:center; gap:8px; padding:6px 2px; cursor:pointer;">
+                <input type="checkbox" class="massa-area-checkbox" value="${a.chave}">
+                <span>${a.nome}</span>
+            </label>
+        `).join('');
+    }
+    document.getElementById('modal-atividade-massa')?.classList.remove('hidden');
+};
+
+window.fecharModalAtividadeMassa = function() {
+    document.getElementById('modal-atividade-massa')?.classList.add('hidden');
+};
+
+window.alternarTodasAreasMassa = function(marcado) {
+    document.querySelectorAll('.massa-area-checkbox').forEach(cb => { cb.checked = marcado; });
+};
+
+window.confirmarAtividadeMassa = async function() {
+    if (!verificarAcesso()) return;
+
+    const descricao = document.getElementById('massa-descricao')?.value.trim();
+    if (!descricao) return alert('Descreva a atividade.');
+
+    const prioridade = document.getElementById('massa-prioridade')?.value || 'Normal';
+    const prazo = document.getElementById('massa-prazo')?.value || null;
+    const dataInicio = document.getElementById('massa-data-inicio')?.value || null;
+    const responsavel = document.getElementById('massa-responsavel')?.value.trim() || null;
+    const areasSelecionadas = Array.from(document.querySelectorAll('.massa-area-checkbox:checked')).map(cb => cb.value);
+
+    if (areasSelecionadas.length === 0) return alert('Selecione pelo menos uma área (ou marque "Selecionar todas").');
+    if (dataInicio && prazo && dataInicio > prazo) {
+        return alert('A Data de Início não pode ser depois do Prazo.');
+    }
+
+    const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'ADM') : 'Sistema';
+    let sucesso = 0, falha = 0;
+
+    try {
+        const apiBase = await resolverApiBase();
+        for (const chave of areasSelecionadas) {
+            try {
+                const resp = await fetch(`${apiBase}/api/oficina/atividade`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        area: chave,
+                        equipamento_id: null,
+                        descricao,
+                        responsavel,
+                        prioridade,
+                        prazo,
+                        data_inicio: dataInicio,
+                        foto_base64: null,
+                        operador
+                    })
+                });
+                if (resp.ok) sucesso++; else falha++;
+            } catch (e) {
+                falha++;
+            }
+        }
+    } catch (e) {
+        console.error('⚠️ Erro ao resolver a API base pra atividade em massa:', e);
+        alert('Não foi possível conectar ao servidor.');
+        return;
+    }
+
+    alert(`✅ Atividade criada em ${sucesso} área(s).${falha > 0 ? ` ⚠️ Não foi possível criar em ${falha} área(s).` : ''}`);
+    window.fecharModalAtividadeMassa();
+    if (typeof window.carregarOficina === 'function') window.carregarOficina();
+};
+
 // Uma atividade está "atrasada" quando ainda não foi concluída, TEM um
 // prazo definido, e esse prazo já passou. Sem prazo definido, nunca
 // conta como atrasada (não dá pra saber isso sem uma data de referência).
@@ -3603,6 +3949,18 @@ function atividadeEstaAtrasada(x) {
     if (x.status === 'Concluído' || !x.prazo) return false;
     const hoje = new Date().toISOString().slice(0, 10);
     return x.prazo < hoje;
+}
+
+// 🆕 Uma atividade "ainda não começou" quando tem uma Data de Início
+// cadastrada e essa data é futura (depois de hoje). Ela existe no
+// sistema (dá pra editar/excluir), mas não entra nas contagens de
+// Pendente/Em Andamento nem na lista principal — só aparece como
+// "pra fazer" no dia marcado. Sem data de início, é considerada já
+// disponível pra começar (comportamento de antes, sem quebrar nada).
+function atividadeAindaNaoComecou(x) {
+    if (!x.data_inicio) return false;
+    const hoje = new Date().toISOString().slice(0, 10);
+    return x.data_inicio > hoje;
 }
 
 // --------------------------------------------------------------
@@ -3873,7 +4231,7 @@ window.alternarFormAtividadeOficina = function() {
     if (vaiAbrir) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 };
 
-window.abrirAreaOficina = async function(chave) {
+window.abrirAreaOficina = async function(chave, abaInicial) {
     const area = AREAS_OFICINA.find(a => a.chave === chave);
     if (!area) return;
 
@@ -3904,16 +4262,22 @@ window.abrirAreaOficina = async function(chave) {
         // completamente vazia, em toda área, mesmo quando havia
         // procedimento cadastrado. Agora cada botão leva um id previsível
         // (area-oficina-tab-btn-<chave>), então a busca funciona de novo.
-        tabsContainer.innerHTML = abasDaArea.map((aba, i) => `
-            <button class="folhao-tab ${i === 0 ? 'active' : ''}" id="area-oficina-tab-btn-${aba.chave}" onclick="window.trocarAbaAreaOficina(event,'${aba.chave}')">
+        // Se abaInicial foi pedida e existe nessa área, ela entra ativa
+        // no lugar da 1ª aba padrão (usada pelo atalho "Ver Equipe da
+        // Área" do Painel do Técnico, por exemplo).
+        const abaAtiva = (abaInicial && abasDaArea.some(ab => ab.chave === abaInicial)) ? abaInicial : abasDaArea[0].chave;
+
+        tabsContainer.innerHTML = abasDaArea.map((aba) => `
+            <button class="folhao-tab ${aba.chave === abaAtiva ? 'active' : ''}" id="area-oficina-tab-btn-${aba.chave}" onclick="window.trocarAbaAreaOficina(event,'${aba.chave}')">
                 <i class="fas ${aba.icone}"></i> ${aba.label}
             </button>
         `).join('');
     }
-    // Esconde as seções que essa área não usa; mostra a 1ª por padrão.
+    // Esconde as seções que essa área não usa; mostra a aba ativa.
+    const abaAtivaSecao = (abaInicial && abasDaArea.some(ab => ab.chave === abaInicial)) ? abaInicial : abasDaArea[0].chave;
     ['atividades', 'materiais', 'equipe', 'procedimentos', 'notas'].forEach(s => {
         const usaEssaAba = abasDaArea.some(ab => ab.chave === s);
-        document.getElementById(`area-oficina-secao-${s}`)?.classList.toggle('hidden', !(usaEssaAba && s === abasDaArea[0].chave));
+        document.getElementById(`area-oficina-secao-${s}`)?.classList.toggle('hidden', !(usaEssaAba && s === abaAtivaSecao));
     });
     // Renomeia labels dentro da própria seção "Materiais" quando a área
     // usa outro nome pra ela (ex: "Ferramentas"), sem duplicar seção.
@@ -3959,6 +4323,7 @@ window.abrirAreaOficina = async function(chave) {
     document.getElementById('area-oficina-responsavel-outro').classList.add('hidden');
     document.getElementById('area-oficina-prioridade').value = 'Normal';
     document.getElementById('area-oficina-prazo').value = '';
+    document.getElementById('area-oficina-data-inicio').value = '';
     window.removerFotoAtividadeOficina();
     window.alternarTipoAtividadeOficina('equipamento');
 
@@ -4001,7 +4366,12 @@ window.abrirAreaOficina = async function(chave) {
 
 window.fecharAreaOficina = function() {
     OFICINA_AREA_ATUAL = null;
-    window.abrirAba(null, 'aba-oficina');
+    // 🔧 CORREÇÃO ("técnico fechava a área e caía na Central de Áreas,
+    // uma visão de ADM com todas as áreas da fábrica"): técnico
+    // restrito (não-ADM, com área fixa) volta pro Painel do Técnico —
+    // só ADM/visitante continuam caindo na grade completa.
+    const restrito = !!(OPERADOR_LOGADO && !OPERADOR_LOGADO.visitante && !OPERADOR_LOGADO.isAdm && OPERADOR_LOGADO.area);
+    window.abrirAba(null, restrito ? 'aba-tecnico' : 'aba-oficina');
 };
 
 // --------------------------------------------------------------
@@ -4033,14 +4403,21 @@ function renderizarAtividadesArea() {
     if (!container || !OFICINA_AREA_ATUAL) return;
 
     const todasDaArea = OFICINA_ATIVIDADES_CACHE.filter(x => x.area === OFICINA_AREA_ATUAL);
-    let itens = todasDaArea;
+
+    // 🆕 Separa quem já pode aparecer como "pra fazer" de quem ainda
+    // está programado pra uma data futura (data_inicio no futuro).
+    const ativas = todasDaArea.filter(x => !atividadeAindaNaoComecou(x));
+    const futuras = todasDaArea.filter(x => atividadeAindaNaoComecou(x))
+        .sort((a, b) => (a.data_inicio || '').localeCompare(b.data_inicio || ''));
+
+    let itens = ativas;
     if (OFICINA_FILTRO_STATUS_ATUAL) {
         itens = itens.filter(x => x.status === OFICINA_FILTRO_STATUS_ATUAL);
     }
 
-    const qtdPendente = todasDaArea.filter(x => x.status === 'Pendente').length;
-    const qtdAndamento = todasDaArea.filter(x => x.status === 'Em Andamento').length;
-    const qtdAtrasada = todasDaArea.filter(x => atividadeEstaAtrasada(x)).length;
+    const qtdPendente = ativas.filter(x => x.status === 'Pendente').length;
+    const qtdAndamento = ativas.filter(x => x.status === 'Em Andamento').length;
+    const qtdAtrasada = ativas.filter(x => atividadeEstaAtrasada(x)).length;
 
     const statsHtml = `
         <div class="area-oficina-stats">
@@ -4050,13 +4427,44 @@ function renderizarAtividadesArea() {
         </div>
     `;
 
+    // 🆕 Bloco de "Programadas" — atividades com início futuro, fora da
+    // contagem principal, cada uma mostrando a data em que vai "virar"
+    // Pendente sozinha.
+    const futurasHtml = futuras.length === 0 ? '' : `
+        <div class="area-oficina-programadas">
+            <h4 style="font-size:12px; color:var(--text-accent); text-transform:uppercase; letter-spacing:0.5px; margin:16px 0 8px;">
+                <i class="fas fa-calendar-plus"></i> Programadas (ainda não começaram)
+            </h4>
+            ${futuras.map(x => {
+                const inicioFormatado = x.data_inicio.split('-').reverse().join('/');
+                return `
+                <div class="atividade-card" style="--card-accent:var(--text-accent, #3b82f6); opacity:0.85;">
+                    <div style="flex:1; min-width:0;">
+                        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
+                            ${x.equipamento_id
+                                ? `<span class="font-code" style="font-weight:700; color:var(--text-heading);">${x.equipamento_id}</span>`
+                                : `<span class="ind-card-tag bg-tag">Tarefa avulsa</span>`}
+                            <span style="font-size:10px; background:var(--text-accent, #3b82f6); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">COMEÇA ${inicioFormatado}</span>
+                        </div>
+                        <div style="font-size:13px; color:var(--text-body);">${x.descricao}</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">${x.responsavel ? `${x.responsavel} · ` : ''}${x.criado_em || ''}</div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
+                        <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.editarAtividadeOficina(${x.id})"><i class="fas fa-pen"></i></button>
+                        <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.excluirAtividadeOficina(${x.id})"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+            }).join('')}
+        </div>
+    `;
+
     if (itens.length === 0) {
         container.innerHTML = statsHtml + `
             <div class="area-oficina-vazio">
                 <i class="fas fa-clipboard-check"></i>
                 <p>Nenhuma atividade encontrada${OFICINA_FILTRO_STATUS_ATUAL ? ' com esse filtro' : ' nesta área ainda'}.</p>
             </div>
-        `;
+        ` + futurasHtml;
         return;
     }
 
@@ -4087,6 +4495,7 @@ function renderizarAtividadesArea() {
                 <div style="font-size:13px; color:var(--text-body);">${x.descricao}</div>
                 <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
                     ${x.responsavel ? `${x.responsavel} · ` : ''}${x.criado_em || ''}
+                    ${x.data_inicio ? ` · <span style="color:var(--text-accent, #3b82f6);">Início salvo: ${x.data_inicio.split('-').reverse().join('/')}</span>` : ''}
                     ${prazoFormatado ? ` · Prazo: <span style="color:${atrasada ? 'var(--danger)' : 'var(--text-muted)'}; font-weight:${atrasada ? '700' : '400'};">${prazoFormatado}</span>` : ''}
                 </div>
             </div>
@@ -4105,7 +4514,7 @@ function renderizarAtividadesArea() {
             </div>
         </div>
     `;
-    }).join('');
+    }).join('') + futurasHtml;
 }
 
 // --------------------------------------------------------------
@@ -4119,6 +4528,7 @@ window.confirmarAtividadeOficina = async function() {
     const responsavel = lerResponsavelFormOficina();
     const prioridade = document.getElementById('area-oficina-prioridade')?.value || 'Normal';
     const prazo = document.getElementById('area-oficina-prazo')?.value || null;
+    const dataInicio = document.getElementById('area-oficina-data-inicio')?.value || null;
     const equipamentoId = OFICINA_TIPO_ATIVIDADE_ATUAL === 'equipamento'
         ? document.getElementById('area-oficina-equipamento')?.value
         : null;
@@ -4127,6 +4537,11 @@ window.confirmarAtividadeOficina = async function() {
         return alert('Selecione o equipamento, ou troque para "Tarefa Avulsa".');
     }
     if (!descricao) return alert('Descreva a atividade.');
+    // 🆕 Início não pode ser depois do prazo — evita programar algo
+    // pra "começar" numa data que já é depois do "terminar".
+    if (dataInicio && prazo && dataInicio > prazo) {
+        return alert('A Data de Início não pode ser depois do Prazo.');
+    }
 
     const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
     const editando = OFICINA_EDITANDO_ID !== null;
@@ -4142,6 +4557,7 @@ window.confirmarAtividadeOficina = async function() {
                 responsavel: responsavel || null,
                 prioridade,
                 prazo,
+                data_inicio: dataInicio,
                 foto_base64: OFICINA_FOTO_BASE64 || null
               }
             : {
@@ -4151,6 +4567,7 @@ window.confirmarAtividadeOficina = async function() {
                 responsavel: responsavel || null,
                 prioridade,
                 prazo,
+                data_inicio: dataInicio,
                 foto_base64: OFICINA_FOTO_BASE64 || null,
                 operador
               };
@@ -4181,6 +4598,7 @@ window.confirmarAtividadeOficina = async function() {
         document.getElementById('area-oficina-responsavel-outro').value = '';
         document.getElementById('area-oficina-responsavel-outro').classList.add('hidden');
         document.getElementById('area-oficina-prazo').value = '';
+        document.getElementById('area-oficina-data-inicio').value = '';
         window.removerFotoAtividadeOficina();
         window.cancelarEdicaoAtividadeOficina();
 
@@ -4786,6 +5204,7 @@ window.editarAtividadeOficina = function(id) {
     document.getElementById('area-oficina-descricao').value = atividade.descricao || '';
     document.getElementById('area-oficina-prioridade').value = atividade.prioridade || 'Normal';
     document.getElementById('area-oficina-prazo').value = atividade.prazo || '';
+    document.getElementById('area-oficina-data-inicio').value = atividade.data_inicio || '';
 
     // Responsável: tenta achar na equipe carregada; se não achar
     // (pessoa não está no roster, ou já não existe mais), cai pro
@@ -5102,6 +5521,7 @@ window.abrirAba = function(event, idAba) {
     if (idAba === "aba-mcc3" && typeof renderizarGraficosMCC === 'function') renderizarGraficosMCC(3);
     if (idAba === "aba-mcc4" && typeof renderizarGraficosMCC === 'function') renderizarGraficosMCC(4);
     if (idAba === "aba-reparos" && typeof renderReparos === 'function') renderReparos();
+    if (idAba === "aba-reparos" && typeof window.atualizarRascunhosAtivos === 'function') window.atualizarRascunhosAtivos();
     if (idAba === "aba-reparos" && typeof window.trocarAbaReparo === 'function') window.trocarAbaReparo(null, "reparo-sub-iniciar");
     if (idAba === "aba-reservas" && typeof renderReservas === 'function') renderReservas();
     if (idAba === "aba-rolos" && typeof renderRolos === 'function') renderRolos();

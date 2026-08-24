@@ -2910,7 +2910,7 @@ h1, h2, h3, h4, h5, h6 {
    ========================================================================== */
 .tecnico-atalhos-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
     gap: 12px;
     margin-top: 20px;
 }
@@ -2963,6 +2963,58 @@ h1, h2, h3, h4, h5, h6 {
     transform: scale(0.99);
 }
 
+/* 🆕 Cards de "Equipamentos Críticos" e "Reserva Pronta" — grade em
+   vez da lista vertical de antes, melhor aproveitamento de espaço. */
+.tecnico-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+}
+.tecnico-card-item {
+    background: var(--bg-td);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm, 8px);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    min-height: 66px;
+    touch-action: manipulation;
+}
+.tecnico-card-item:active {
+    background: var(--bg-hover, rgba(255,255,255,0.06));
+    transform: scale(0.98);
+}
+.tecnico-card-critico { border-left: 3px solid var(--danger); }
+.tecnico-card-normal { border-left: 3px solid var(--text-accent, #3b82f6); }
+.tecnico-card-reserva { border-left: 3px solid #22c55e; flex-direction: row; align-items: center; }
+.tecnico-card-topo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.tecnico-card-id {
+    font-weight: 700;
+    color: var(--text-heading);
+    font-size: 13px;
+}
+.tecnico-card-pct {
+    color: var(--danger);
+    font-weight: 700;
+    font-size: 15px;
+    align-self: flex-end;
+}
+.tecnico-ver-todos {
+    text-align: center;
+    color: var(--text-accent);
+    font-weight: 700;
+    cursor: pointer;
+    padding: 12px 0 4px;
+}
+
 /* ==========================================================================
    OTIMIZAÇÃO MOBILE — app é usado quase 100% no celular
    ========================================================================== */
@@ -2993,7 +3045,7 @@ h1, h2, h3, h4, h5, h6 {
         grid-template-columns: 1fr;
     }
     .tecnico-atalhos-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
         gap: 8px;
     }
     .tecnico-atalho-btn {
