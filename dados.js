@@ -442,36 +442,40 @@ export function getPartesDoRolo(layout, pos) {
 // ==========================================================================
 // 🆕 BARRA TRANSVERSAL — cilindros de elevação e mangueiras hidráulicas
 // ==========================================================================
-// 🔧 CORREÇÃO ("todas as máquinas, todos os veios"): antes era uma lista
-// de tipos que PRECISAVAM bater pra ganhar o painel (só Bow, Horizontal,
-// Straightener e Segmento Grupo 1/2/3) — cada equipamento novo exigia
-// vir aqui adicionar uma entrada. Agora é ao contrário: TODO equipamento
-// ganha o painel automaticamente (Cadeira Superior/Inferior, Segmento
-// Zero, Segmento Grupo 1/2/3, Bow, Horizontal, Straightener, e qualquer
-// tipo novo cadastrado no futuro), em QUALQUER veio (C/D/E/F/G/H) — só a
-// lista TIPOS_SEM_BARRA_TRANSVERSAL abaixo fica de fora.
+// 🔧 CORREÇÃO ("essa tabela é somente pro Segmento de Grupo 1,2,3"):
+// volta a ser uma lista de tipos que PRECISAM bater pra ganhar o
+// painel — agora só Segmento de Grupo 1/2/3. Cadeira (Superior/
+// Inferior), Segmento Zero, Bow, Horizontal, Straightener, Molde e
+// Bender ficam de fora.
 //
-// Molde e Bender continuam de fora porque são de "bancada fixa" (não são
-// montados num veio, ao contrário de tudo que passa pelo Swap) e não têm
-// essa barra/cilindros de elevação de verdade. Se algum dia precisar
-// tirar um desses da lista (ou incluir mais um), é só editar aqui.
-//
-// Cada equipamento tem 4 cilindros de elevação e 8 mangueiras hidráulicas
-// (2 mangueiras por cilindro: uma de avanço, uma de retorno).
-const TIPOS_SEM_BARRA_TRANSVERSAL = [
-    (t, id) => t.includes('MOLDE'),
-    (t, id) => t.includes('BENDER'),
+// 🔧 CORREÇÃO ("essa tabela é somente pro Segmento de Grupo 1,2,3"):
+// na MCC 2/3 (id termina em 2C/2D/2E/2F) o painel agora só aparece pro
+// Segmento de Grupo 1/2/3 — Cadeira (Superior/Inferior) e Segmento
+// Zero ficam de fora. Na MCC4 (id termina em 4G/4H) nada mudou: Bow,
+// Horizontal e Straightener continuam com o painel, como já estava.
+// Molde e Bender ficam de fora nas duas máquinas (bancada fixa).
+const TIPOS_COM_BARRA_TRANSVERSAL = [
+    // MCC4 (Bow, Horizontal, Straightener) — mantém como já estava.
+    (t, id) => /4[GH]$/.test(id) && !t.includes('MOLDE') && !t.includes('BENDER'),
+    // MCC 2/3 — só Segmento de Grupo 1/2/3.
+    (t, id) => (t.includes('GRUPO') || id.includes('GRP')) && /2[CDEF]$/.test(id),
 ];
 
-// Retorna o layout de Barra Transversal do tipo informado, ou null só
-// pros tipos da lista acima (Molde, Bender). Mesma assinatura de
-// getLayoutRolos, pelo mesmo motivo (reconhece também pelo padrão do ID,
-// não só pelo texto do campo "tipo" — importante pro Straightener
-// R1/R2, que às vezes vem só como "STR-1-..." no ID).
+// Retorna o layout de Barra Transversal do tipo informado. Duas
+// variantes possíveis:
+// - { chave: 'padrao', ... } — Segmento de Grupo 1/2/3 e Bow/Horizontal/
+//   Straightener (MCC4): desenho completo (cilindros/porcas/bolas).
+// - { chave: 'anomalia' } — SOMENTE Cadeira (Superior/Inferior): sem
+//   desenho, só um botão "Relatar Anomalia" que abre um checklist
+//   simples (Vazamento de Junta Rotativa / Vazamento de Engate
+//   Rápido). 🆕 Reaproveita a MESMA coluna do banco (barra_transversal)
+//   — não precisa de coluna nova.
+// Pra tudo mais (Segmento Zero, Molde, Bender) retorna null.
 export function getLayoutBarraTransversal(tipo, id) {
     const t = (tipo || '').toUpperCase();
     const i = (id || '').toUpperCase();
-    if (TIPOS_SEM_BARRA_TRANSVERSAL.some(semBarra => semBarra(t, i))) return null;
+    if (t.includes('CADEIRA')) return { chave: 'anomalia' };
+    if (!TIPOS_COM_BARRA_TRANSVERSAL.some(comBarra => comBarra(t, i))) return null;
     return { chave: 'padrao', cilindros: 4, mangueirasPorCilindro: 2 };
 }
 

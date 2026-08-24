@@ -445,6 +445,11 @@
     #modal .bt-svg-porca { stroke: #94a3b8; fill: rgba(148,163,184,0.18); stroke-width: 2.5; }
     #modal .bt-svg-shape.avariado .bt-svg-porca { fill: rgba(234,179,8,0.22); stroke: #eab308; }
     #modal .bt-svg-shape.critico .bt-svg-porca { fill: rgba(239,68,68,0.28); stroke: #ef4444; }
+    /* 🆕 Bloco Fixo — só identificação visual (não clicável, sem
+       tabela). Aparece só nos veios C/D/E/F (MCC 2/3), num canto da
+       caixa conforme o veio. */
+    #modal .bt-svg-bloco-fixo-corpo { fill: rgba(59,130,246,0.14); stroke: #3b82f6; stroke-width: 2.5; }
+    #modal .bt-svg-bloco-fixo-rotulo { font-family: var(--mono); font-size: 12px; font-weight: 800; fill: #93c5fd; letter-spacing: 0.02em; }
     #modal .bt-svg-shape:hover .bt-svg-caixa-transversal,
     #modal .bt-svg-shape:hover .bt-svg-flexivel-fundo,
     #modal .bt-svg-shape:hover .bt-svg-faixa-hidraulica-l { filter: brightness(1.25); stroke: var(--accent); }
@@ -2060,22 +2065,22 @@ function rotuloEstadoBT(estado) {
     return 'Livre / OK';
 }
 
-// 🆕 Checklist do Cilindro (de elevação): OK / Travamento de Cilindro /
-// Vazamento do Cilindro / Vazamento no Flexível de Avanço / Vazamento
-// no Flexível de Retorno.
+// 🆕 Checklist do Cilindro (de elevação) — texto padronizado (usado em
+// TODOS os equipamentos, MCC4 e MCC 2/3): OK / Travado, não movimenta /
+// Vazamento do cilindro / Vazamento de avanço / Vazamento de retorno.
 const OPCOES_CILINDRO_BT = [
     { id: 'ok', estado: 'verde', label: '✅ OK' },
-    { id: 'travamento', estado: 'vermelho', label: '🔴 Travamento de Cilindro' },
-    { id: 'vazamento_cilindro', estado: 'amarelo', label: '🟡 Vazamento do Cilindro' },
-    { id: 'vazamento_flex_avanco', estado: 'amarelo', label: '🟡 Vazamento no Flexível de Avanço' },
-    { id: 'vazamento_flex_retorno', estado: 'amarelo', label: '🟡 Vazamento no Flexível de Retorno' },
+    { id: 'travamento', estado: 'vermelho', label: '🔴 Travado, não movimenta' },
+    { id: 'vazamento_cilindro', estado: 'amarelo', label: '🟡 Vazamento do cilindro' },
+    { id: 'vazamento_flex_avanco', estado: 'amarelo', label: '🟡 Vazamento de avanço' },
+    { id: 'vazamento_flex_retorno', estado: 'amarelo', label: '🟡 Vazamento de retorno' },
 ];
 
 // 🆕 Checklist da Porca Hidráulica — igual ao do Cilindro, mais uma
-// opção extra que só existe aqui: Vazamento no Flexível de Segurança.
+// opção extra que só existe aqui: Vazamento do flexível de alívio.
 const OPCOES_PORCA_BT = [
     ...OPCOES_CILINDRO_BT,
-    { id: 'vazamento_flex_seguranca', estado: 'amarelo', label: '🟡 Vazamento no Flexível de Segurança' },
+    { id: 'vazamento_flex_alivio', estado: 'amarelo', label: '🟡 Vazamento do flexível de alívio' },
 ];
 
 // 🆕 Checklist da Barra Transversal / Sistema Hidráulico — só tem
@@ -2083,6 +2088,26 @@ const OPCOES_PORCA_BT = [
 const OPCOES_BARRA_BT = [
     { id: 'ok', estado: 'verde', label: '✅ Sem ocorrência' },
     { id: 'vazamento', estado: 'amarelo', label: '🟡 Vazamento' },
+];
+
+// 🆕 Checklist do Cilindro Central (bola azul, "Cilindro 1"/"Cilindro
+// 2") — usado em TODOS os equipamentos, MCC4 e MCC 2/3: OK / Vazamento
+// do cilindro / Vazamento de avanço / Vazamento de retorno.
+const OPCOES_BOLA_BT = [
+    { id: 'ok', estado: 'verde', label: '✅ OK' },
+    { id: 'vazamento_cilindro', estado: 'amarelo', label: '🟡 Vazamento do cilindro' },
+    { id: 'vazamento_avanco', estado: 'amarelo', label: '🟡 Vazamento de avanço' },
+    { id: 'vazamento_retorno', estado: 'amarelo', label: '🟡 Vazamento de retorno' },
+];
+
+// 🆕 Checklist da Anomalia da Cadeira — SOMENTE Cadeira (Superior/
+// Inferior). Não tem desenho, é só um botão "Relatar Anomalia" que
+// abre esse checklist: OK / Vazamento de Junta Rotativa / Vazamento
+// de Engate Rápido.
+const OPCOES_ANOMALIA_CADEIRA_BT = [
+    { id: 'ok', estado: 'verde', label: '✅ OK' },
+    { id: 'vazamento_junta_rotativa', estado: 'amarelo', label: '🟡 Vazamento de Junta Rotativa' },
+    { id: 'vazamento_engate_rapido', estado: 'amarelo', label: '🟡 Vazamento de Engate Rápido' },
 ];
 
 // 🆕 CORREÇÃO ("muda de ideia — tira todos os flexível, deixa só
@@ -2102,7 +2127,17 @@ const OPCOES_BARRA_BT = [
 //    com seu checklist + observação. São diferentes um do outro.
 //  - BARRA-TRANSVERSAL (a caixa inteira + a barra amarela): painel só
 //    com Vazamento + observação.
-function renderDiagramaBarraTransversal(layout, statusMap) {
+function renderDiagramaBarraTransversal(layout, statusMap, veio) {
+    return ehMCC4(veio)
+        ? renderDiagramaBarraTransversalMCC4(layout, statusMap, veio)
+        : renderDiagramaBarraTransversalMCC23(layout, statusMap, veio);
+}
+
+// 🆕 MCC4 (veios G/H): desenho completo — Cilindros de Elevação (verde,
+// fora da caixa), tubo "Sistema Hidráulico" (amarelo), setas de fluxo
+// do veio, referência "Sentido do Veio", Porcas Hidráulicas e Cilindros
+// Centrais dentro da caixa.
+function renderDiagramaBarraTransversalMCC4(layout, statusMap, veio) {
     const nCil = layout.cilindros;
     const largura = 760;
     const margemX = 90;
@@ -2247,6 +2282,31 @@ function renderDiagramaBarraTransversal(layout, statusMap) {
     // Seta vermelha da base: fluxo do veio saindo da barra transversal.
     svg += setaFluxo(largura / 2, alturaTotal - setaFolga - setaAltura - 6);
 
+    // 🆕 BLOCO FIXO — só identificação/referência visual (não é
+    // clicável, não tem tabela/ocorrência). Fica DENTRO da caixa, na
+    // mesma linha das porcas daquele canto, colado ao lado da porca:
+    // veio E/C = ao lado da porca inferior-esquerda; veio F/D = ao
+    // lado da porca superior-direita. Nos veios G/H (MCC4) não aparece.
+    const veioNorm = (veio || '').toUpperCase();
+    const ladoBlocoFixo = (veioNorm === 'E' || veioNorm === 'C') ? 'inferior-esquerdo'
+        : (veioNorm === 'F' || veioNorm === 'D') ? 'superior-direito'
+        : null;
+    if (ladoBlocoFixo) {
+        const blocoLado = 42;
+        const gap = 16;
+        const porcaRaio = 24;
+        const blocoCy = ladoBlocoFixo === 'inferior-esquerdo' ? porcaYBaixo : porcaYCima;
+        const blocoCx = ladoBlocoFixo === 'inferior-esquerdo'
+            ? porcaXEsq + porcaRaio + gap + blocoLado / 2
+            : porcaXDir - porcaRaio - gap - blocoLado / 2;
+        svg += `
+            <g class="bt-svg-bloco-fixo">
+                <rect x="${blocoCx - blocoLado / 2}" y="${blocoCy - blocoLado / 2}" width="${blocoLado}" height="${blocoLado}" class="bt-svg-bloco-fixo-corpo" />
+                <text x="${blocoCx}" y="${blocoCy - blocoLado / 2 - 8}" class="bt-svg-bloco-fixo-rotulo" text-anchor="middle">Bloco Fixo</text>
+            </g>
+        `;
+    }
+
     return `
         <svg viewBox="0 0 ${largura} ${alturaTotal}" class="bt-diagrama-svg" xmlns="http://www.w3.org/2000/svg" style="aspect-ratio:${largura}/${alturaTotal};">
             ${svg}
@@ -2254,10 +2314,133 @@ function renderDiagramaBarraTransversal(layout, statusMap) {
     `;
 }
 
-function renderGridBarraTransversal(layout, statusMap) {
+// 🆕 MCC 2/3 (veios C/D/E/F): desenho SIMPLIFICADO — só a caixa com as
+// 4 Porcas Hidráulicas (cinza), os 2 Cilindros Centrais (azul) e o
+// Bloco Fixo (referência visual). SEM Cilindros de Elevação verdes,
+// SEM tubo "Sistema Hidráulico", SEM setas de fluxo do veio, SEM
+// referência "Sentido do Veio" — a MCC 2/3 não tem essas peças.
+function renderDiagramaBarraTransversalMCC23(layout, statusMap, veio) {
+    const largura = 760;
+    const margemX = 60;
+    const boxTop = 40;
+    const boxH = 320;
+    const boxBottom = boxTop + boxH;
+    const alturaTotal = boxBottom + 40;
+
+    const boxLeft = margemX, boxRight = largura - margemX;
+
+    let svg = '';
+
+    // Caixa (retângulo cinza) — só o contorno, não é clicável (é a MCC
+    // 2/3 que não tem "Barra Transversal — Vazamento" como componente).
+    svg += `
+        <rect x="${boxLeft}" y="${boxTop}" width="${boxRight - boxLeft}" height="${boxH}" rx="12" class="bt-svg-caixa-transversal" />
+    `;
+
+    // --- Porcas Hidráulicas (4) — furos fixos nos 4 cantos internos da
+    // caixa. Mesmo checklist do Cilindro (OK / Travado / Vazamento do
+    // Cilindro / Vazamento de Avanço / Vazamento de Retorno / Vazamento
+    // do Flexível de Alívio). ---
+    const porcaXEsq = boxLeft + (boxRight - boxLeft) * 0.12;
+    const porcaXDir = boxRight - (boxRight - boxLeft) * 0.12;
+    const porcaYCima = boxTop + boxH * 0.18;
+    const porcaYBaixo = boxTop + boxH * 0.86;
+    [
+        { chave: 'PORCA-1', cx: porcaXEsq, cy: porcaYCima },
+        { chave: 'PORCA-2', cx: porcaXDir, cy: porcaYCima },
+        { chave: 'PORCA-3', cx: porcaXEsq, cy: porcaYBaixo },
+        { chave: 'PORCA-4', cx: porcaXDir, cy: porcaYBaixo },
+    ].forEach((p, i) => {
+        const estado = estadoComponenteBT(statusMap[p.chave]);
+        const rotulo = `Porca Hidráulica #${i + 1}`;
+        svg += `
+            <g class="bt-clicavel bt-svg-shape ${estado}" data-bt="${p.chave}" data-bt-tipo="porca" data-bt-rotulo="${rotulo}" tabindex="0" role="button">
+                <circle cx="${p.cx}" cy="${p.cy}" r="24" class="bt-svg-flexivel-fundo bt-svg-porca" />
+            </g>
+        `;
+    });
+
+    // --- Cilindros Centrais (2, bola azul) — cada um com seu próprio
+    // painel/checklist. ---
+    const cyBola = boxTop + boxH * 0.5;
+    const distCentro = 85;
+    [
+        { chave: 'BALL-RE', cx: largura / 2 - distCentro, sigla: '1', classeExtra: 'bt-svg-bola-re', rotulo: 'Cilindro 1' },
+        { chave: 'BALL-AV', cx: largura / 2 + distCentro, sigla: '2', classeExtra: 'bt-svg-bola-av', rotulo: 'Cilindro 2' },
+    ].forEach(b => {
+        const estado = estadoComponenteBT(statusMap[b.chave]);
+        svg += `
+            <g class="bt-clicavel bt-svg-shape ${estado}" data-bt="${b.chave}" data-bt-tipo="bola" data-bt-rotulo="${b.rotulo}" tabindex="0" role="button">
+                <circle cx="${b.cx}" cy="${cyBola}" r="44" class="bt-svg-flexivel-fundo ${b.classeExtra}" />
+                <text x="${b.cx}" y="${cyBola + 9}" class="bt-svg-rotulo-elo" text-anchor="middle">${b.sigla}</text>
+            </g>
+        `;
+    });
+
+    // 🆕 BLOCO FIXO — só identificação/referência visual (não é
+    // clicável, sem tabela). Fica dentro da caixa, na mesma linha das
+    // porcas daquele canto, colado ao lado da porca: veio E/C = ao
+    // lado da porca inferior-esquerda; veio F/D = ao lado da porca
+    // superior-direita.
+    const veioNorm = (veio || '').toUpperCase();
+    const ladoBlocoFixo = (veioNorm === 'E' || veioNorm === 'C') ? 'inferior-esquerdo'
+        : (veioNorm === 'F' || veioNorm === 'D') ? 'superior-direito'
+        : null;
+    if (ladoBlocoFixo) {
+        const blocoLado = 42;
+        const gap = 16;
+        const porcaRaio = 24;
+        const blocoCy = ladoBlocoFixo === 'inferior-esquerdo' ? porcaYBaixo : porcaYCima;
+        const blocoCx = ladoBlocoFixo === 'inferior-esquerdo'
+            ? porcaXEsq + porcaRaio + gap + blocoLado / 2
+            : porcaXDir - porcaRaio - gap - blocoLado / 2;
+        svg += `
+            <g class="bt-svg-bloco-fixo">
+                <rect x="${blocoCx - blocoLado / 2}" y="${blocoCy - blocoLado / 2}" width="${blocoLado}" height="${blocoLado}" class="bt-svg-bloco-fixo-corpo" />
+                <text x="${blocoCx}" y="${blocoCy - blocoLado / 2 - 8}" class="bt-svg-bloco-fixo-rotulo" text-anchor="middle">Bloco Fixo</text>
+            </g>
+        `;
+    }
+
+    return `
+        <svg viewBox="0 0 ${largura} ${alturaTotal}" class="bt-diagrama-svg" xmlns="http://www.w3.org/2000/svg" style="aspect-ratio:${largura}/${alturaTotal};">
+            ${svg}
+        </svg>
+    `;
+}
+
+function renderGridBarraTransversal(layout, statusMap, veio) {
+    // 🆕 Cadeira (Superior/Inferior): sem desenho, só um botão "Relatar
+    // Anomalia" que abre o checklist (Vazamento de Junta Rotativa /
+    // Vazamento de Engate Rápido).
+    if (layout.chave === 'anomalia') {
+        const estadoAnomalia = estadoComponenteBT(statusMap['ANOMALIA']);
+        return `
+            <div class="bt-wrap" id="bt-wrap">
+                <label class="obs-label">Cadeira — clique para relatar anomalia</label>
+                <div class="bt-grid">
+                    <button type="button" class="bt-clicavel bt-item ${estadoAnomalia}" data-bt="ANOMALIA" data-bt-tipo="anomalia_cadeira" data-bt-rotulo="Anomalia da Cadeira" title="Anomalia da Cadeira — ${rotuloEstadoBT(estadoAnomalia)}">🔧 Relatar Anomalia</button>
+                </div>
+                <div class="bt-legenda">
+                    <span><i class="li-livre"></i> Livre / OK</span>
+                    <span><i class="li-avariado"></i> Avariado</span>
+                    <span><i class="li-critico"></i> Crítico</span>
+                </div>
+                <div class="painel-bt" id="painel-bt">
+                    <div class="painel-bt-titulo" id="painel-bt-titulo">Componente —</div>
+                    <div id="painel-bt-campos" class="painel-bt-campos"></div>
+                    <div class="painel-bt-obs-wrap">
+                        <label class="painel-bt-obs-label" for="painel-bt-obs">Observação</label>
+                        <textarea id="painel-bt-obs" class="painel-bt-obs" placeholder="Anote aqui detalhes dessa ocorrência..."></textarea>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     const nCil = layout.cilindros;
 
-    const htmlDiagrama = renderDiagramaBarraTransversal(layout, statusMap);
+    const htmlDiagrama = renderDiagramaBarraTransversal(layout, statusMap, veio);
 
     // 🔧 CORREÇÃO ("tire tudo isso, já tem a tabela que abre, não
     // precisa disso"): removida a lista de botões (Cilindros de
@@ -2343,7 +2526,12 @@ function abrirModalPeca(slot, peca) {
         // sozinho (ver TIPOS_SEM_BARRA_TRANSVERSAL em dados.js).
         const layoutBarra = getLayoutBarraTransversal(peca.tipo, peca.id);
         const statusBarraAtual = layoutBarra ? parseBarraTransversal(peca) : {};
-        const htmlGridBarra = layoutBarra ? renderGridBarraTransversal(layoutBarra, statusBarraAtual) : '';
+        // 🆕 Veio da peça — decide de que lado fica o Bloco Fixo (só
+        // referência visual): E/C = canto inferior esquerdo, F/D = canto
+        // superior direito. Usa o veio do local instalado; se a peça não
+        // estiver instalada (Oficina), cai pro veio da aba aberta.
+        const veioBarra = extrairVeioDoLocal(peca.local) || veioAtual;
+        const htmlGridBarra = layoutBarra ? renderGridBarraTransversal(layoutBarra, statusBarraAtual, veioBarra) : '';
 
         modal.innerHTML = `
             <div class="modal-top">
@@ -2534,16 +2722,24 @@ function abrirModalPeca(slot, peca) {
                     painelBtTitulo.textContent = rotuloComponente;
 
                     // 🆕 Checklist específico por tipo de componente:
-                    // - cilindro/porca: OK / Travamento / Vazamento do
-                    //   Cilindro / Vazamento no Flexível de Avanço /
-                    //   Vazamento no Flexível de Retorno.
-                    // - barra (Sistema Hidráulico): só Vazamento.
-                    // - bola (Cilindro Central): mantém as 3 opções
-                    //   finais originais (Crítico/Avariado/Sem ocorrência).
+                    // - cilindro (elevação): OK / Travado / Vazamento do
+                    //   cilindro / Vazamento de avanço / Vazamento de retorno.
+                    // - porca: igual ao cilindro + Vazamento do flexível
+                    //   de alívio.
+                    // - bola (Cilindro Central): OK / Vazamento do
+                    //   cilindro / Vazamento de avanço / Vazamento de
+                    //   retorno (igual ao cilindro, sem "Travado").
+                    // - barra (Sistema Hidráulico, só existe na MCC4): só
+                    //   Vazamento.
+                    // - anomalia_cadeira (SOMENTE Cadeira): OK / Vazamento
+                    //   de Junta Rotativa / Vazamento de Engate Rápido.
                     const opcoesChecklist = (tipoComponente === 'cilindro')
                         ? OPCOES_CILINDRO_BT
-                        : (tipoComponente === 'porca' ? OPCOES_PORCA_BT
-                        : (tipoComponente === 'barra' ? OPCOES_BARRA_BT : null));
+                        : (tipoComponente === 'porca') ? OPCOES_PORCA_BT
+                        : (tipoComponente === 'bola') ? OPCOES_BOLA_BT
+                        : (tipoComponente === 'barra') ? OPCOES_BARRA_BT
+                        : (tipoComponente === 'anomalia_cadeira') ? OPCOES_ANOMALIA_CADEIRA_BT
+                        : null;
 
                     if (opcoesChecklist) {
                         const ocorrenciaAtual = registro.ocorrencia || 'ok';
