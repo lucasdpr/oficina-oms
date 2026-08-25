@@ -1204,6 +1204,25 @@ const cilindroElevMat = new THREE.MeshStandardMaterial({ color: 0x8a94a8, roughn
 // Transversal (mesmo dado que o modal usa: barra_transversal → estado).
 const cilindroElevMatAlerta = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3, metalness: 0.5, emissive: 0x7a0000, emissiveIntensity: 0.45 });
 
+// 🆕 4 Porcas Hidráulicas — pequenos cilindros cinza, mais pro centro
+// do bloco que os 4 pilares/cilindros de elevação (igual ao desenho 2D).
+const porcaHidraulicaGeo = new THREE.CylinderGeometry(0.055, 0.055, 0.09, 14);
+const porcaHidraulicaMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.3, metalness: 0.6 });
+const porcaHidraulicaMatAlerta = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3, metalness: 0.55, emissive: 0x7a0000, emissiveIntensity: 0.45 });
+
+// 🆕 2 Cilindros Centrais (Recuo/RE e Avanço/AV) — agora como
+// pequenos cilindros (não bolas), os dois na mesma cor azul.
+const bolaCentralGeo = new THREE.CylinderGeometry(0.085, 0.085, 0.14, 16);
+const bolaCentralMat = new THREE.MeshPhysicalMaterial({ color: 0x38bdf8, roughness: 0.25, metalness: 0.4, clearcoat: 0.5 });
+const bolaCentralMatAlerta = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3, metalness: 0.5, emissive: 0x7a0000, emissiveIntensity: 0.45 });
+
+// 🆕 Sistema Hidráulico — agora é UM SÓ tubo contínuo ligando o topo
+// de cada peça à seguinte, ao longo de toda a máquina (igual à foto
+// real), em vez de um "⊓" fechado dentro de cada peça isolada. A
+// geometria é construída em construirSistemaHidraulicoGeral().
+const tuboHidraulicoMat = new THREE.MeshStandardMaterial({ color: 0xE8B024, roughness: 0.35, metalness: 0.55 });
+const tuboHidraulicoMatAlerta = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.35, metalness: 0.5, emissive: 0x7a0000, emissiveIntensity: 0.4 });
+
 function adicionarRolosDecorativos(mesh, peca) {
     const offsets = [-0.24, 0, 0.24]; // 3 rolos por fileira, igual à foto real
     const yRolo = VAO_PLACA / 2 - 0.02; // encostados na borda do vão, sem atravessar a metade
@@ -1253,12 +1272,66 @@ function adicionarRolosDecorativos(mesh, peca) {
             mesh.add(pilar);
 
             const estadoCil = estadoComponenteBT(statusBarra[`CIL-${numeroCil}`]);
-            const matCil = estadoCil === 'critico' ? cilindroElevMatAlerta : cilindroElevMat;
+            const matCil = estadoCil !== '' ? cilindroElevMatAlerta : cilindroElevMat;
             const cilindro = new THREE.Mesh(cilindroElevGeo, matCil);
             cilindro.position.set(cx, yTopoPilar + 0.065, cz);
             cilindro.castShadow = true;
             mesh.add(cilindro);
         });
+    });
+
+    // 🆕 4 Porcas Hidráulicas — mais pro centro, rentes ao topo do
+    // bloco (não na altura dos pilares/cilindros, que ficam nas quinas).
+    // Cada uma reflete o status real salvo (PORCA-1..4).
+    const yPorca = ALTURA_TOPO_BLOCO + 0.05;
+    [[-0.32, -0.4], [0.32, -0.4], [-0.32, 0.4], [0.32, 0.4]].forEach(([px, pz], idx) => {
+        const estadoPorca = estadoComponenteBT(statusBarra[`PORCA-${idx + 1}`]);
+        const matPorca = estadoPorca !== '' ? porcaHidraulicaMatAlerta : porcaHidraulicaMat;
+        const porca = new THREE.Mesh(porcaHidraulicaGeo, matPorca);
+        porca.position.set(px, yPorca, pz);
+        porca.castShadow = true;
+        mesh.add(porca);
+    });
+
+    // 🆕 2 Cilindros Centrais (BALL-RE e BALL-AV) — cada um reflete o
+    // status real salvo na Barra Transversal.
+    const yBola = ALTURA_TOPO_BLOCO + 0.07;
+    const estadoRe = estadoComponenteBT(statusBarra['BALL-RE']);
+    const bolaRe = new THREE.Mesh(bolaCentralGeo, estadoRe !== '' ? bolaCentralMatAlerta : bolaCentralMat);
+    bolaRe.position.set(-0.15, yBola, 0);
+    bolaRe.castShadow = true;
+    mesh.add(bolaRe);
+
+    const estadoAv = estadoComponenteBT(statusBarra['BALL-AV']);
+    const bolaAv = new THREE.Mesh(bolaCentralGeo, estadoAv !== '' ? bolaCentralMatAlerta : bolaCentralMat);
+    bolaAv.position.set(0.15, yBola, 0);
+    bolaAv.castShadow = true;
+    mesh.add(bolaAv);
+
+    // 🆕 Sistema Hidráulico — ponte em "⊓" ligando o CIL-1 ao CIL-2
+    // (mesma fileira de entrada da peça, um de cada lado): sobe a
+    // partir de cada cilindro, atravessa reto por cima, desce do outro
+    // lado — igual ao desenho 2D da Barra Transversal. Fica vermelha
+    // se o componente "BARRA-TRANSVERSAL" estiver crítico.
+    const estadoBarraTransv = estadoComponenteBT(statusBarra['BARRA-TRANSVERSAL']);
+    const matPonte = estadoBarraTransv !== '' ? tuboHidraulicoMatAlerta : tuboHidraulicoMat;
+    const yTopoCilLocal = yTopoPilar + 0.13; // topo do cilindro de elevação
+    const yPonteHidraulica = yTopoCilLocal + 0.16;
+    const xLadoCil1Cil2 = cornersX[0]; // mesmo X do CIL-1 e do CIL-2
+
+    const ponteHorizontalGeo = new THREE.CylinderGeometry(0.032, 0.032, cornersZ[1] - cornersZ[0], 12);
+    ponteHorizontalGeo.rotateX(Math.PI / 2);
+    const ponteHorizontal = new THREE.Mesh(ponteHorizontalGeo, matPonte);
+    ponteHorizontal.position.set(xLadoCil1Cil2, yPonteHidraulica, 0);
+    ponteHorizontal.castShadow = true;
+    mesh.add(ponteHorizontal);
+
+    const pernaPonteGeo = new THREE.CylinderGeometry(0.032, 0.032, yPonteHidraulica - yTopoCilLocal, 10);
+    cornersZ.forEach(cz => {
+        const perna = new THREE.Mesh(pernaPonteGeo, matPonte);
+        perna.position.set(xLadoCil1Cil2, (yTopoCilLocal + yPonteHidraulica) / 2, cz);
+        perna.castShadow = true;
+        mesh.add(perna);
     });
 }
 
@@ -1453,7 +1526,11 @@ function construirCena(veio) {
         const ehCadeira = slot.grupo === 'sup' || slot.grupo === 'inf';
         if (!ehCadeira) {
             const sprite = criarSpriteTexto(slot.label, corHexParaCss(cor));
-            const offsetY = mcc4 ? (slot.grupo === 'cabeceira' ? 0.85 : 0.55) : 0.75;
+            // 🆕 Peças "abertas" (curva/horizontal da MCC4 e Segmentos de
+            // Grupo da MCC2/3) ficaram bem mais altas com os pilares,
+            // cilindros e a ponte hidráulica — a etiqueta precisa subir
+            // bastante pra não tampar mais esses detalhes.
+            const offsetY = usarPecaAberta ? 1.0 : (mcc4 ? (slot.grupo === 'cabeceira' ? 0.85 : 0.55) : 0.75);
             sprite.position.set(slot.pos.x, slot.pos.y + offsetY, slot.pos.z);
             grupoLinha.add(sprite);
             labelObjects.push(sprite);
