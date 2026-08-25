@@ -1223,7 +1223,7 @@ const bolaCentralMatAlerta = new THREE.MeshStandardMaterial({ color: 0xef4444, r
 const tuboHidraulicoMat = new THREE.MeshStandardMaterial({ color: 0xE8B024, roughness: 0.35, metalness: 0.55 });
 const tuboHidraulicoMatAlerta = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.35, metalness: 0.5, emissive: 0x7a0000, emissiveIntensity: 0.4 });
 
-function adicionarRolosDecorativos(mesh, peca) {
+function adicionarRolosDecorativos(mesh, peca, ehGrupo23) {
     const offsets = [-0.24, 0, 0.24]; // 3 rolos por fileira, igual à foto real
     const yRolo = VAO_PLACA / 2 - 0.02; // encostados na borda do vão, sem atravessar a metade
 
@@ -1252,9 +1252,10 @@ function adicionarRolosDecorativos(mesh, peca) {
     });
 
     // 🆕 4 pilares saindo da base INFERIOR e atravessando até acima da
-    // base superior, com o cilindro de elevação (cinza, ou vermelho se
-    // aquele CIL específico estiver crítico na Barra Transversal) só
-    // no topo de cada um.
+    // base superior. Na MCC4 o topo é o Cilindro de Elevação (CIL-1..4);
+    // no Grupo da MCC2/3 (mais simples, sem CIL) a mesma haste já
+    // representa a Porca Hidráulica (PORCA-1..4) — não precisa de uma
+    // peça separada pra isso.
     const cornersX = [-0.5, 0.5];
     const cornersZ = [-0.55, 0.55];
     const yBasePilar = -ALTURA_TOPO_BLOCO;               // começa na base de baixo do bloco
@@ -1262,36 +1263,39 @@ function adicionarRolosDecorativos(mesh, peca) {
     const yTopoPilar = yBasePilar + ALTURA_PILAR;        // ponta de cima do pilar
 
     const statusBarra = peca ? parseBarraTransversal(peca) : {};
-    let numeroCil = 0;
+    let numeroCanto = 0;
     cornersX.forEach(cx => {
         cornersZ.forEach(cz => {
-            numeroCil++;
+            numeroCanto++;
             const pilar = new THREE.Mesh(pilarGeo, pilarMat);
             pilar.position.set(cx, yCentroPilar, cz);
             pilar.castShadow = true;
             mesh.add(pilar);
 
-            const estadoCil = estadoComponenteBT(statusBarra[`CIL-${numeroCil}`]);
-            const matCil = estadoCil !== '' ? cilindroElevMatAlerta : cilindroElevMat;
-            const cilindro = new THREE.Mesh(cilindroElevGeo, matCil);
+            const chaveStatus = ehGrupo23 ? `PORCA-${numeroCanto}` : `CIL-${numeroCanto}`;
+            const estadoTopo = estadoComponenteBT(statusBarra[chaveStatus]);
+            const matTopo = estadoTopo !== '' ? cilindroElevMatAlerta : cilindroElevMat;
+            const cilindro = new THREE.Mesh(cilindroElevGeo, matTopo);
             cilindro.position.set(cx, yTopoPilar + 0.065, cz);
             cilindro.castShadow = true;
             mesh.add(cilindro);
         });
     });
 
-    // 🆕 4 Porcas Hidráulicas — mais pro centro, rentes ao topo do
-    // bloco (não na altura dos pilares/cilindros, que ficam nas quinas).
-    // Cada uma reflete o status real salvo (PORCA-1..4).
-    const yPorca = ALTURA_TOPO_BLOCO + 0.05;
-    [[-0.32, -0.4], [0.32, -0.4], [-0.32, 0.4], [0.32, 0.4]].forEach(([px, pz], idx) => {
-        const estadoPorca = estadoComponenteBT(statusBarra[`PORCA-${idx + 1}`]);
-        const matPorca = estadoPorca !== '' ? porcaHidraulicaMatAlerta : porcaHidraulicaMat;
-        const porca = new THREE.Mesh(porcaHidraulicaGeo, matPorca);
-        porca.position.set(px, yPorca, pz);
-        porca.castShadow = true;
-        mesh.add(porca);
-    });
+    // 🆕 4 Porcas Hidráulicas separadas — só na MCC4. No Grupo da
+    // MCC2/3 a haste já cobre esse papel (ver acima), então não
+    // precisa duplicar.
+    if (!ehGrupo23) {
+        const yPorca = ALTURA_TOPO_BLOCO + 0.05;
+        [[-0.32, -0.4], [0.32, -0.4], [-0.32, 0.4], [0.32, 0.4]].forEach(([px, pz], idx) => {
+            const estadoPorca = estadoComponenteBT(statusBarra[`PORCA-${idx + 1}`]);
+            const matPorca = estadoPorca !== '' ? porcaHidraulicaMatAlerta : porcaHidraulicaMat;
+            const porca = new THREE.Mesh(porcaHidraulicaGeo, matPorca);
+            porca.position.set(px, yPorca, pz);
+            porca.castShadow = true;
+            mesh.add(porca);
+        });
+    }
 
     // 🆕 2 Cilindros Centrais (BALL-RE e BALL-AV) — cada um reflete o
     // status real salvo na Barra Transversal.
@@ -1308,31 +1312,30 @@ function adicionarRolosDecorativos(mesh, peca) {
     bolaAv.castShadow = true;
     mesh.add(bolaAv);
 
-    // 🆕 Sistema Hidráulico — ponte em "⊓" ligando o CIL-1 ao CIL-2
-    // (mesma fileira de entrada da peça, um de cada lado): sobe a
-    // partir de cada cilindro, atravessa reto por cima, desce do outro
-    // lado — igual ao desenho 2D da Barra Transversal. Fica vermelha
-    // se o componente "BARRA-TRANSVERSAL" estiver crítico.
-    const estadoBarraTransv = estadoComponenteBT(statusBarra['BARRA-TRANSVERSAL']);
-    const matPonte = estadoBarraTransv !== '' ? tuboHidraulicoMatAlerta : tuboHidraulicoMat;
-    const yTopoCilLocal = yTopoPilar + 0.13; // topo do cilindro de elevação
-    const yPonteHidraulica = yTopoCilLocal + 0.16;
-    const xLadoCil1Cil2 = cornersX[0]; // mesmo X do CIL-1 e do CIL-2
+    // 🆕 Sistema Hidráulico — ponte em "⊓" ligando o CIL-1 ao CIL-2,
+    // só na MCC4 (o Grupo da MCC2/3 é mais simples, sem essa ponte).
+    if (!ehGrupo23) {
+        const estadoBarraTransv = estadoComponenteBT(statusBarra['BARRA-TRANSVERSAL']);
+        const matPonte = estadoBarraTransv !== '' ? tuboHidraulicoMatAlerta : tuboHidraulicoMat;
+        const yTopoCilLocal = yTopoPilar + 0.13; // topo do cilindro de elevação
+        const yPonteHidraulica = yTopoCilLocal + 0.16;
+        const xLadoCil1Cil2 = cornersX[0]; // mesmo X do CIL-1 e do CIL-2
 
-    const ponteHorizontalGeo = new THREE.CylinderGeometry(0.032, 0.032, cornersZ[1] - cornersZ[0], 12);
-    ponteHorizontalGeo.rotateX(Math.PI / 2);
-    const ponteHorizontal = new THREE.Mesh(ponteHorizontalGeo, matPonte);
-    ponteHorizontal.position.set(xLadoCil1Cil2, yPonteHidraulica, 0);
-    ponteHorizontal.castShadow = true;
-    mesh.add(ponteHorizontal);
+        const ponteHorizontalGeo = new THREE.CylinderGeometry(0.032, 0.032, cornersZ[1] - cornersZ[0], 12);
+        ponteHorizontalGeo.rotateX(Math.PI / 2);
+        const ponteHorizontal = new THREE.Mesh(ponteHorizontalGeo, matPonte);
+        ponteHorizontal.position.set(xLadoCil1Cil2, yPonteHidraulica, 0);
+        ponteHorizontal.castShadow = true;
+        mesh.add(ponteHorizontal);
 
-    const pernaPonteGeo = new THREE.CylinderGeometry(0.032, 0.032, yPonteHidraulica - yTopoCilLocal, 10);
-    cornersZ.forEach(cz => {
+        const pernaPonteGeo = new THREE.CylinderGeometry(0.032, 0.032, yPonteHidraulica - yTopoCilLocal, 10);
+        cornersZ.forEach(cz => {
         const perna = new THREE.Mesh(pernaPonteGeo, matPonte);
         perna.position.set(xLadoCil1Cil2, (yTopoCilLocal + yPonteHidraulica) / 2, cz);
         perna.castShadow = true;
         mesh.add(perna);
     });
+    }
 }
 
 let piecesById = {};      // dados vindos da API, por id
@@ -1515,7 +1518,7 @@ function construirCena(veio) {
         // horizontal) e agora também nos Segmentos de Grupo (G1/G2/G3)
         // da MCC2/3. Molde/Bender/Zero continuam com o bloco liso.
         if (usarPecaAberta) {
-            adicionarRolosDecorativos(mesh, peca);
+            adicionarRolosDecorativos(mesh, peca, ehGrupoMCC23);
         }
 
         // Etiqueta fixa (sempre visível), agora como sprite 3D. As 74
