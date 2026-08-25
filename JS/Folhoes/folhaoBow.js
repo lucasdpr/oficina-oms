@@ -1,17 +1,16 @@
-// folhaoHorizontal.js - VERSÃO COMPLETA COM TODAS AS SEÇÕES DO DOCUMENTO OFICIAL
+// folhaoBow.js - VERSÃO COMPLETA COM TODAS AS SEÇÕES DO DOCUMENTO OFICIAL
 
-// 🔧 Import novo: precisa de resolverApiBase() pra achar a API certa
-// (local ou Render) em vez de bater fixo em localhost:8000.
-import { BANCO_ATIVOS, resolverApiBase } from './banco.js?v=5';
+import { BANCO_ATIVOS, resolverApiBase } from '../Core/banco.js?v=5';
+import { renderAtivos, renderReparos, renderReservas } from '../ui.js';
 import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
 
-let ID_FOLHAO_HORIZ_ATUAL = null;
+let ID_FOLHAO_BOW_ATUAL = null;
 
 // ==============================================================
 // 1. DADOS DAS TABELAS (transcritos do documento)
 // ==============================================================
 
-const itensChegadaHorizontal = [
+const itensChegadaBow = [
     { grupo: "LUBRIFICAÇÃO", desc: "Sistema de lubrificação isento de vazamentos." },
     { grupo: "", desc: "Tubulação amassada." },
     { grupo: "", desc: "Distribuidores de graxa funcionando corretamente sem vazamentos." },
@@ -37,10 +36,10 @@ const itensChegadaHorizontal = [
     { grupo: "", desc: "Conexões apertadas." }
 ];
 
-const refPassLineInfHoriz = ["60,00", "60,00", "60,00", "60,00", "60,00", "60,00", "60,00"];
-const refPassLineSupHoriz = ["35,00", "35,00", "35,00", "35,00", "35,00", "35,00", "35,00"];
+const refPassLineInfBow = ["68,66", "91,34", "105,13", "110,00", "105,13", "91,34", "68,66"];
+const refPassLineSupBow = ["124,13", "102,66", "89,61", "85,00", "89,61", "102,66", "124,13"];
 
-const manutencaoHorizontal = [
+const manutencaoBow = [
     { item: "1", desc: "Lavagem e/ou Limpeza Mecânica" },
     { item: "2.1", desc: "Teste Hidrostático" },
     { item: "2.2", desc: "Teste Hidráulico" },
@@ -186,13 +185,13 @@ function garantirContainer(id) {
 // ==============================================================
 // 3. RENDERIZAR CHECKLIST DE CHEGADA (com categorias)
 // ==============================================================
-function renderizarInspecaoChegadaHorizontal() {
-    const container = garantirContainer('container-check-recebimento-horizontal');
+function renderizarInspecaoChegadaBow() {
+    const container = garantirContainer('container-check-recebimento-bow');
     if (!container) return;
 
     let categorias = {};
     let currentGroup = "GERAL";
-    itensChegadaHorizontal.forEach(item => {
+    itensChegadaBow.forEach(item => {
         if (item.grupo && item.grupo.trim() !== "") currentGroup = item.grupo;
         if (!categorias[currentGroup]) categorias[currentGroup] = [];
         categorias[currentGroup].push(item.desc);
@@ -203,7 +202,7 @@ function renderizarInspecaoChegadaHorizontal() {
     for (const [nomeCategoria, perguntas] of Object.entries(categorias)) {
         html += `<h4 style="margin: 20px 0 10px 0; color: var(--text-accent); border-bottom: 1px dashed var(--border-color); padding-bottom: 5px;"><i class="fas fa-tasks"></i> ${nomeCategoria}</h4><div class="checklist-container">`;
         perguntas.forEach((pergunta, index) => {
-            const name = `hz-g${groupIndex}-q${index}`;
+            const name = `bw-g${groupIndex}-q${index}`;
             html += `<div class="check-item"><p>${index + 1}. ${pergunta}</p><div class="check-options"><label><input type="radio" name="${name}" value="SIM" checked> SIM</label><label><input type="radio" name="${name}" value="NÃO"> NÃO</label></div></div>`;
         });
         html += `</div>`;
@@ -215,17 +214,17 @@ function renderizarInspecaoChegadaHorizontal() {
 // ==============================================================
 // 4. GAP (7 conjuntos)
 // ==============================================================
-function renderizarGapHorizontal() {
-    const container = garantirContainer('horiz-gap');
+function renderizarGapBow() {
+    const container = garantirContainer('bow-gap');
     if (!container) return;
     let html = `<h3 style="color:var(--text-heading);">AFERIÇÃO DE GAP (255+0,3/-0,3)</h3>
         <table class="premium-table" style="font-size:10px;">
             <tr><th>CONJ. ROLO</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr>`;
     for (let i = 1; i <= 7; i++) {
         html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>
-            <td><input id="hgap-${i}-a"></td>
-            <td><input id="hgap-${i}-b"></td>
-            <td><input id="hgap-${i}-c"></td></tr>`;
+            <td><input id="gap-${i}-a"></td>
+            <td><input id="gap-${i}-b"></td>
+            <td><input id="gap-${i}-c"></td></tr>`;
     }
     html += `</table>`;
     container.innerHTML = html;
@@ -234,8 +233,8 @@ function renderizarGapHorizontal() {
 // ==============================================================
 // 5. CANGALHAS (Superior e Inferior)
 // ==============================================================
-function renderizarCangalhasHorizontal() {
-    const container = garantirContainer('horiz-cangalhas');
+function renderizarCangalhasBow() {
+    const container = garantirContainer('bow-cangalhas');
     if (!container) return;
     const bases = ['Sup', 'Inf'];
     let html = `<h3 style="color:var(--text-heading);">INSPEÇÃO DE CANGALHAS</h3>`;
@@ -247,10 +246,10 @@ function renderizarCangalhasHorizontal() {
                 <tr><th></th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th></tr>`;
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td>${i}ª</td>
-                <td style="text-align:center;"><input type="radio" name="hcang-${prefix}-${i}-a" value="OK" checked></td>
-                <td style="text-align:center;"><input type="radio" name="hcang-${prefix}-${i}-a" value="NOK"></td>
-                <td style="text-align:center;"><input type="radio" name="hcang-${prefix}-${i}-b" value="OK" checked></td>
-                <td style="text-align:center;"><input type="radio" name="hcang-${prefix}-${i}-b" value="NOK"></td></tr>`;
+                <td style="text-align:center;"><input type="radio" name="cang-${prefix}-${i}-a" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="cang-${prefix}-${i}-a" value="NOK"></td>
+                <td style="text-align:center;"><input type="radio" name="cang-${prefix}-${i}-b" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="cang-${prefix}-${i}-b" value="NOK"></td></tr>`;
         }
         html += `</table>`;
     });
@@ -260,7 +259,7 @@ function renderizarCangalhasHorizontal() {
 // ==============================================================
 // 6. PASS LINE (Chegada e Saída)
 // ==============================================================
-function renderizarPassLinesHorizontal() {
+function renderizarPassLinesBow() {
     const renderTable = (id, refs, titulo) => {
         const container = garantirContainer(id);
         if (!container) return;
@@ -277,17 +276,17 @@ function renderizarPassLinesHorizontal() {
         html += `</table>`;
         container.innerHTML = html;
     };
-    renderTable('horiz-passline-inf-chegada', refPassLineInfHoriz, 'PASS LINE - BASE INFERIOR (CHEGADA)');
-    renderTable('horiz-passline-sup-chegada', refPassLineSupHoriz, 'PASS LINE - BASE SUPERIOR (CHEGADA)');
-    renderTable('horiz-passline-inf-saida', refPassLineInfHoriz, 'PASS LINE - BASE INFERIOR (SAÍDA)');
-    renderTable('horiz-passline-sup-saida', refPassLineSupHoriz, 'PASS LINE - BASE SUPERIOR (SAÍDA)');
+    renderTable('bow-passline-inf-chegada', refPassLineInfBow, 'PASS LINE - BASE INFERIOR (CHEGADA)');
+    renderTable('bow-passline-sup-chegada', refPassLineSupBow, 'PASS LINE - BASE SUPERIOR (CHEGADA)');
+    renderTable('bow-passline-inf-saida', refPassLineInfBow, 'PASS LINE - BASE INFERIOR (SAÍDA)');
+    renderTable('bow-passline-sup-saida', refPassLineSupBow, 'PASS LINE - BASE SUPERIOR (SAÍDA)');
 }
 
 // ==============================================================
 // 7. CILINDROS HIDRÁULICOS (Chegada)
 // ==============================================================
-function renderizarCilindrosChegadaHorizontal() {
-    const container = garantirContainer('horiz-cilindros-chegada');
+function renderizarCilindrosChegadaBow() {
+    const container = garantirContainer('bow-cilindros-chegada');
     if (!container) return;
     const tipos = [
         { nome: 'Cilindro de Elevação', prefix: 'ce', pos: ['A','B','C','D'] },
@@ -301,11 +300,11 @@ function renderizarCilindrosChegadaHorizontal() {
                 <tr><th>Posição</th><th>Número</th><th>Produção</th><th>OK</th><th>NOK</th><th>Observação</th></tr>`;
         t.pos.forEach(p => {
             html += `<tr><td style="text-align:center;font-weight:bold;">${p}</td>
-                <td><input id="hcil-${t.prefix}-num-${p}"></td>
-                <td><input id="hcil-${t.prefix}-prod-${p}"></td>
-                <td style="text-align:center;"><input type="radio" name="hcil-${t.prefix}-${p}" value="OK" checked></td>
-                <td style="text-align:center;"><input type="radio" name="hcil-${t.prefix}-${p}" value="NOK"></td>
-                <td><input id="hcil-${t.prefix}-obs-${p}"></td></tr>`;
+                <td><input id="cil-${t.prefix}-num-${p}"></td>
+                <td><input id="cil-${t.prefix}-prod-${p}"></td>
+                <td style="text-align:center;"><input type="radio" name="cil-${t.prefix}-${p}" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="cil-${t.prefix}-${p}" value="NOK"></td>
+                <td><input id="cil-${t.prefix}-obs-${p}"></td></tr>`;
         });
         html += `</table>`;
     });
@@ -315,8 +314,8 @@ function renderizarCilindrosChegadaHorizontal() {
 // ==============================================================
 // 8. CILINDROS HIDRÁULICOS (Saída)
 // ==============================================================
-function renderizarCilindrosSaidaHorizontal() {
-    const container = garantirContainer('horiz-cilindros-saida');
+function renderizarCilindrosSaidaBow() {
+    const container = garantirContainer('bow-cilindros-saida');
     if (!container) return;
     const tipos = [
         { nome: 'Cilindro de Elevação', prefix: 'se', pos: ['A','B','C','D'] },
@@ -330,12 +329,12 @@ function renderizarCilindrosSaidaHorizontal() {
                 <tr><th>Posição</th><th>Número</th><th>Produção</th><th>Reparado</th><th>Reutilizado</th><th>Novo</th><th>Observação</th></tr>`;
         t.pos.forEach(p => {
             html += `<tr><td style="text-align:center;font-weight:bold;">${p}</td>
-                <td><input id="hcils-${t.prefix}-num-${p}"></td>
-                <td><input id="hcils-${t.prefix}-prod-${p}"></td>
-                <td style="text-align:center;"><input type="checkbox" id="hcils-${t.prefix}-rep-${p}"></td>
-                <td style="text-align:center;"><input type="checkbox" id="hcils-${t.prefix}-reu-${p}"></td>
-                <td style="text-align:center;"><input type="checkbox" id="hcils-${t.prefix}-nov-${p}"></td>
-                <td><input id="hcils-${t.prefix}-obs-${p}"></td></tr>`;
+                <td><input id="cils-${t.prefix}-num-${p}"></td>
+                <td><input id="cils-${t.prefix}-prod-${p}"></td>
+                <td style="text-align:center;"><input type="checkbox" id="cils-${t.prefix}-rep-${p}"></td>
+                <td style="text-align:center;"><input type="checkbox" id="cils-${t.prefix}-reu-${p}"></td>
+                <td style="text-align:center;"><input type="checkbox" id="cils-${t.prefix}-nov-${p}"></td>
+                <td><input id="cils-${t.prefix}-obs-${p}"></td></tr>`;
         });
         html += `</table>`;
     });
@@ -345,8 +344,8 @@ function renderizarCilindrosSaidaHorizontal() {
 // ==============================================================
 // 9. INSPEÇÃO DE ROLOS (Chegada e Saída)
 // ==============================================================
-function renderizarInspecaoRolosHorizontal(tipo) {
-    const idContainer = `horiz-rolos-${tipo}`;
+function renderizarInspecaoRolosBow(tipo) {
+    const idContainer = `bow-rolos-${tipo}`;
     const container = garantirContainer(idContainer);
     if (!container) return;
     const titulo = tipo === 'chegada' ? 'CHEGADA' : 'SAÍDA';
@@ -363,8 +362,8 @@ function renderizarInspecaoRolosHorizontal(tipo) {
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>`;
             for (let j = 1; j <= 4; j++) {
-                html += `<td style="text-align:center;"><input type="radio" name="hrol-${prefix}-${bPrefix}-${i}-${j}" value="OK" checked></td>
-                         <td style="text-align:center;"><input type="radio" name="hrol-${prefix}-${bPrefix}-${i}-${j}" value="NOK"></td>`;
+                html += `<td style="text-align:center;"><input type="radio" name="rol-${prefix}-${bPrefix}-${i}-${j}" value="OK" checked></td>
+                         <td style="text-align:center;"><input type="radio" name="rol-${prefix}-${bPrefix}-${i}-${j}" value="NOK"></td>`;
             }
             html += `</tr>`;
         }
@@ -376,8 +375,8 @@ function renderizarInspecaoRolosHorizontal(tipo) {
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>`;
             for (let j = 1; j <= 4; j++) {
-                html += `<td style="text-align:center;"><input type="radio" name="hhid-${prefix}-${bPrefix}-${i}-${j}" value="OK" checked></td>
-                         <td style="text-align:center;"><input type="radio" name="hhid-${prefix}-${bPrefix}-${i}-${j}" value="NOK"></td>`;
+                html += `<td style="text-align:center;"><input type="radio" name="hid-${prefix}-${bPrefix}-${i}-${j}" value="OK" checked></td>
+                         <td style="text-align:center;"><input type="radio" name="hid-${prefix}-${bPrefix}-${i}-${j}" value="NOK"></td>`;
             }
             html += `</tr>`;
         }
@@ -388,12 +387,12 @@ function renderizarInspecaoRolosHorizontal(tipo) {
                 <tr><th></th><th>Num</th><th>Medida</th><th>Num</th><th>Medida</th><th>Num</th><th>Medida</th></tr>`;
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>
-                <td><input id="hmed-${prefix}-${bPrefix}-${i}-n1"></td>
-                <td><input id="hmed-${prefix}-${bPrefix}-${i}-m1"></td>
-                <td><input id="hmed-${prefix}-${bPrefix}-${i}-n2"></td>
-                <td><input id="hmed-${prefix}-${bPrefix}-${i}-m2"></td>
-                <td><input id="hmed-${prefix}-${bPrefix}-${i}-n3"></td>
-                <td><input id="hmed-${prefix}-${bPrefix}-${i}-m3"></td></tr>`;
+                <td><input id="med-${prefix}-${bPrefix}-${i}-n1"></td>
+                <td><input id="med-${prefix}-${bPrefix}-${i}-m1"></td>
+                <td><input id="med-${prefix}-${bPrefix}-${i}-n2"></td>
+                <td><input id="med-${prefix}-${bPrefix}-${i}-m2"></td>
+                <td><input id="med-${prefix}-${bPrefix}-${i}-n3"></td>
+                <td><input id="med-${prefix}-${bPrefix}-${i}-m3"></td></tr>`;
         }
         html += `</table>
             <p style="font-size:8px;color:var(--text-muted);">*Nota: Diâmetros nominais: Bow: 230,00mm louco; Bow 250,00mm acionado; H e R: 300,00mm.</p>`;
@@ -404,8 +403,8 @@ function renderizarInspecaoRolosHorizontal(tipo) {
 // ==============================================================
 // 10. DISTRIBUIÇÃO DE GRAXA
 // ==============================================================
-function renderizarGraxaHorizontal() {
-    const container = garantirContainer('horiz-graxa');
+function renderizarGraxaBow() {
+    const container = garantirContainer('bow-graxa');
     if (!container) return;
     const bases = ['Superior', 'Inferior'];
     let html = `<h3 style="color:var(--text-heading);">INSPEÇÃO DE DISTRIBUIÇÃO DE GRAXA</h3>
@@ -418,9 +417,9 @@ function renderizarGraxaHorizontal() {
                 <tr><th></th><th>OK</th><th>VT</th><th>SA</th><th></th><th></th></tr>`;
         for (let i = 7; i >= 1; i--) {
             html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>
-                <td style="text-align:center;"><input type="radio" name="hgrx-${prefix}-${i}" value="OK" checked></td>
-                <td style="text-align:center;"><input type="radio" name="hgrx-${prefix}-${i}" value="VT"></td>
-                <td style="text-align:center;"><input type="radio" name="hgrx-${prefix}-${i}" value="SA"></td>
+                <td style="text-align:center;"><input type="radio" name="grx-${prefix}-${i}" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="grx-${prefix}-${i}" value="VT"></td>
+                <td style="text-align:center;"><input type="radio" name="grx-${prefix}-${i}" value="SA"></td>
                 <td></td>
                 <td style="text-align:center;font-weight:bold;">${i}</td></tr>`;
         }
@@ -433,20 +432,20 @@ function renderizarGraxaHorizontal() {
 // ==============================================================
 // 11. CHECKLIST DE MANUTENÇÃO (com P, G, Executante, Matrícula, Data)
 // ==============================================================
-function renderizarChecklistManutencaoHorizontal() {
-    const container = garantirContainer('horiz-checklist-manutencao');
+function renderizarChecklistManutencaoBow() {
+    const container = garantirContainer('bow-checklist-manutencao');
     if (!container) return;
     let html = `<h3 style="color:var(--text-heading);">CHECKLIST DE MANUTENÇÃO</h3>
         <table class="premium-table" style="font-size:9px;">
             <tr><th>Item</th><th>Descrição da Atividade</th><th style="width:30px;">P</th><th style="width:30px;">G</th><th>Executante</th><th>Matrícula</th><th>Data</th></tr>`;
-    manutencaoHorizontal.forEach((tarefa, index) => {
+    manutencaoBow.forEach((tarefa, index) => {
         html += `<tr><td style="text-align:center;font-weight:bold;">${tarefa.item}</td>
             <td style="font-size:9px;">${tarefa.desc}</td>
-            <td style="text-align:center;"><input type="checkbox" id="hz-p-${index}"></td>
-            <td style="text-align:center;"><input type="checkbox" id="hz-g-${index}"></td>
-            <td><input id="hz-resp-${index}"></td>
-            <td><input id="hz-mat-${index}"></td>
-            <td><input type="date" id="hz-dat-${index}"></td></tr>`;
+            <td style="text-align:center;"><input type="checkbox" id="bw-p-${index}"></td>
+            <td style="text-align:center;"><input type="checkbox" id="bw-g-${index}"></td>
+            <td><input id="bw-resp-${index}"></td>
+            <td><input id="bw-mat-${index}"></td>
+            <td><input type="date" id="bw-dat-${index}"></td></tr>`;
     });
     html += `</table>`;
     container.innerHTML = html;
@@ -455,12 +454,12 @@ function renderizarChecklistManutencaoHorizontal() {
 // ==============================================================
 // 12. MATERIAIS APLICADOS
 // ==============================================================
-function renderizarMateriaisHorizontal() {
-    const container = garantirContainer('horiz-materiais');
+function renderizarMateriaisBow() {
+    const container = garantirContainer('bow-materiais');
     if (!container) return;
     let rows = '';
     for (let i = 1; i <= 30; i++) {
-        rows += `<tr><td><input id="hmat-desc-${i}" style="width:100%;"></td><td><input id="hmat-qtd-${i}" style="width:60px;"></td></tr>`;
+        rows += `<tr><td><input id="mat-desc-${i}" style="width:100%;"></td><td><input id="mat-qtd-${i}" style="width:60px;"></td></tr>`;
     }
     const html = `<h3 style="color:var(--text-heading);">MATERIAIS APLICADOS</h3>
         <table class="premium-table" style="font-size:9px;">
@@ -473,58 +472,58 @@ function renderizarMateriaisHorizontal() {
 // ==============================================================
 // 13. FUNÇÃO PRINCIPAL DE ABRIR
 // ==============================================================
-window.abrirFolhaoHorizontal = function(id) {
-    ID_FOLHAO_HORIZ_ATUAL = id;
-    const modal = document.getElementById('modal-folhao-horizontal');
+window.abrirFolhaoBow = function(id) {
+    ID_FOLHAO_BOW_ATUAL = id;
+    const modal = document.getElementById('modal-folhao-bow');
     if (!modal) {
-        console.error("Modal #modal-folhao-horizontal não encontrado!");
+        console.error("Modal #modal-folhao-bow não encontrado!");
         return;
     }
 
     // Preenche cabeçalho
-    const tagNameEl = document.getElementById('horizontal-tag-name');
+    const tagNameEl = document.getElementById('bow-tag-name');
     if (tagNameEl) tagNameEl.innerText = id;
-    const dataInicio = document.getElementById('horiz-data-inicio');
-    const dataFim = document.getElementById('horiz-data-fim');
+    const dataInicio = document.getElementById('bow-data-inicio');
+    const dataFim = document.getElementById('bow-data-fim');
     if (dataInicio) dataInicio.valueAsDate = new Date();
     if (dataFim) dataFim.valueAsDate = new Date();
-    const motivoEl = document.getElementById('horiz-motivo');
+    const motivoEl = document.getElementById('bow-motivo');
     if (motivoEl) motivoEl.value = '';
 
     // Renderiza todas as abas
-    renderizarInspecaoChegadaHorizontal();
-    renderizarGapHorizontal();
-    renderizarCangalhasHorizontal();
-    renderizarPassLinesHorizontal();
-    renderizarCilindrosChegadaHorizontal();
-    renderizarCilindrosSaidaHorizontal();
-    renderizarInspecaoRolosHorizontal('chegada');
-    renderizarInspecaoRolosHorizontal('saida');
-    renderizarGraxaHorizontal();
-    renderizarChecklistManutencaoHorizontal();
-    renderizarMateriaisHorizontal();
+    renderizarInspecaoChegadaBow();
+    renderizarGapBow();
+    renderizarCangalhasBow();
+    renderizarPassLinesBow();
+    renderizarCilindrosChegadaBow();
+    renderizarCilindrosSaidaBow();
+    renderizarInspecaoRolosBow('chegada');
+    renderizarInspecaoRolosBow('saida');
+    renderizarGraxaBow();
+    renderizarChecklistManutencaoBow();
+    renderizarMateriaisBow();
 
     modal.classList.remove('hidden');
     // Ativa a primeira aba
-    window.trocarAbaHorizontal({ currentTarget: document.querySelector('#modal-folhao-horizontal .folhao-tab') }, 'horiz-aba-dados');
+    window.trocarAbaBow({ currentTarget: document.querySelector('#modal-folhao-bow .folhao-tab') }, 'bow-aba-dados');
 
     // Restaura progresso salvo (ex: chegada já feita, aguardando saída)
     // e liga o auto-salvamento pra nada mais se perder.
-    restaurarRascunhoNoModal('modal-folhao-horizontal', id);
-    ativarAutoSalvamentoFolhao('modal-folhao-horizontal', id, 'Horizontal');
+    restaurarRascunhoNoModal('modal-folhao-bow', id);
+    ativarAutoSalvamentoFolhao('modal-folhao-bow', id, 'Bow');
 };
 
 // ==============================================================
 // 14. FECHAR E TROCAR ABA
 // ==============================================================
-window.fecharFolhaoHorizontal = function() {
-    const modal = document.getElementById('modal-folhao-horizontal');
+window.fecharFolhaoBow = function() {
+    const modal = document.getElementById('modal-folhao-bow');
     if (modal) modal.classList.add('hidden');
-    ID_FOLHAO_HORIZ_ATUAL = null;
+    ID_FOLHAO_BOW_ATUAL = null;
 };
 
-window.trocarAbaHorizontal = function(evt, abaId) {
-    const modal = document.getElementById('modal-folhao-horizontal');
+window.trocarAbaBow = function(evt, abaId) {
+    const modal = document.getElementById('modal-folhao-bow');
     if (!modal) return;
     modal.querySelectorAll('.folhao-content').forEach(c => c.classList.add('hidden'));
     modal.querySelectorAll('.folhao-tab').forEach(b => b.classList.remove('active'));
@@ -536,20 +535,20 @@ window.trocarAbaHorizontal = function(evt, abaId) {
 // ==============================================================
 // 15. GERAR PDF COMPLETO E SALVAR NO BANCO (NUVEM + PDF NATIVO)
 // ==============================================================
-window.salvarEImprimirFolhaoHorizontal = async function() {
+window.salvarEImprimirFolhaoBow = async function() {
     if (!window.verificarAcesso || !window.verificarAcesso()) { alert("Acesso negado."); return; }
-    if (!ID_FOLHAO_HORIZ_ATUAL) { alert("Nenhuma TAG carregada."); return; }
+    if (!ID_FOLHAO_BOW_ATUAL) { alert("Nenhuma TAG carregada."); return; }
 
-    const tag = ID_FOLHAO_HORIZ_ATUAL;
+    const tag = ID_FOLHAO_BOW_ATUAL;
 
     // 1. CAPTURA DOS DADOS DO CABEÇALHO
-    const dtInicio = getV('horiz-data-inicio') || new Date().toLocaleDateString('pt-BR');
-    const dtFim = getV('horiz-data-fim') || new Date().toLocaleDateString('pt-BR');
-    const numSeg = getV('horiz-num-segmento') || '______';
-    const veio = document.getElementById('horiz-veio')?.value || '';
-    const motivo = getV('horiz-motivo') || '_______________';
-    const tipoExec = document.getElementById('horiz-tipo-execucao')?.value || 'GERAL';
-    const novaMeta = getV('horiz-nova-meta') || 'Manter Atual'; // 🔥 CAPTURA A NOVA META
+    const dtInicio = getV('bow-data-inicio') || new Date().toLocaleDateString('pt-BR');
+    const dtFim = getV('bow-data-fim') || new Date().toLocaleDateString('pt-BR');
+    const numSeg = getV('bow-num-segmento') || '______';
+    const veio = document.getElementById('bow-veio')?.value || '';
+    const motivo = getV('bow-motivo') || '_______________';
+    const tipoExec = document.getElementById('bow-tipo-execucao')?.value || 'GERAL';
+    const novaMeta = getV('bow-nova-meta') || 'Manter Atual'; // 🔥 CAPTURA A NOVA META
 
     // 2. ATUALIZA O EQUIPAMENTO NO BANCO (rota real que já existe na API)
     // 🔧 CORREÇÃO: antes chamava POST /api/salvar_folhao, rota que nunca
@@ -576,7 +575,7 @@ window.salvarEImprimirFolhaoHorizontal = async function() {
     }
 
     // Folhão concluído: apaga o rascunho salvo dessa TAG.
-    finalizarRascunhoFolhao(tag, "Horizontal");
+    finalizarRascunhoFolhao(tag, "Bow");
 
     // ==========================================================
     // FUNÇÕES AUXILIARES DO PDF (Mantidas do original)
@@ -585,7 +584,7 @@ window.salvarEImprimirFolhaoHorizontal = async function() {
         let html = '';
         let categorias = {};
         let currentGroup = "GERAL";
-        itensChegadaHorizontal.forEach(it => {
+        itensChegadaBow.forEach(it => {
             if (it.grupo && it.grupo.trim() !== "") currentGroup = it.grupo;
             if (!categorias[currentGroup]) categorias[currentGroup] = [];
             categorias[currentGroup].push(it.desc);
@@ -595,7 +594,7 @@ window.salvarEImprimirFolhaoHorizontal = async function() {
             html += `<tr><th colspan="3" style="background:#002b5e; color:#fff; font-size:10px; text-align:left; padding:4px; border:1px solid #000;">${nomeCategoria}</th></tr>`;
             html += `<tr><th style="border:1px solid #000; padding:3px; width:5%;">Item</th><th style="border:1px solid #000; padding:3px;">Descrição</th><th style="border:1px solid #000; padding:3px; width:12%;">Status</th></tr>`;
             perguntas.forEach((pergunta, index) => {
-                const name = `hz-g${groupIndex}-q${index}`;
+                const name = `bw-g${groupIndex}-q${index}`;
                 const val = getRadioValue(name);
                 html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px;">${index+1}</td>
                     <td style="border:1px solid #000; padding:3px;">${pergunta}</td>
@@ -610,9 +609,9 @@ window.salvarEImprimirFolhaoHorizontal = async function() {
         let html = '';
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hgap-${i}-a`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hgap-${i}-b`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hgap-${i}-c`)}</td></tr>`;
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`gap-${i}-a`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`gap-${i}-b`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`gap-${i}-c`)}</td></tr>`;
         }
         return html;
     }
@@ -630,8 +629,8 @@ window.salvarEImprimirFolhaoHorizontal = async function() {
                     <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th>
                     <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">NOK</th></tr>`;
             for (let i = 1; i <= 7; i++) {
-                const a = getRadioValue(`hcang-${b}-${i}-a`);
-                const bVal = getRadioValue(`hcang-${b}-${i}-b`);
+                const a = getRadioValue(`cang-${b}-${i}-a`);
+                const bVal = getRadioValue(`cang-${b}-${i}-b`);
                 html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px;">${i}ª</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${a === 'OK' ? 'X' : ''}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${a === 'NOK' ? 'X' : ''}</td>
@@ -667,13 +666,13 @@ window.salvarEImprimirFolhaoHorizontal = async function() {
                     <th style="border:1px solid #000; padding:3px;">Produção</th><th style="border:1px solid #000; padding:3px;">OK</th>
                     <th style="border:1px solid #000; padding:3px;">NOK</th><th style="border:1px solid #000; padding:3px;">Obs</th></tr>`;
             t.pos.forEach(p => {
-                const ok = getRadioValue(`hcil-${t.prefix}-${p}`);
+                const ok = getRadioValue(`cil-${t.prefix}-${p}`);
                 html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hcil-${t.prefix}-num-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hcil-${t.prefix}-prod-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`cil-${t.prefix}-num-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`cil-${t.prefix}-prod-${p}`)}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${ok === 'OK' ? 'X' : ''}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${ok === 'NOK' ? 'X' : ''}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hcil-${t.prefix}-obs-${p}`)}</td></tr>`;
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`cil-${t.prefix}-obs-${p}`)}</td></tr>`;
             });
         });
         return html;
@@ -694,12 +693,12 @@ window.salvarEImprimirFolhaoHorizontal = async function() {
                     <th style="border:1px solid #000; padding:3px;">Obs</th></tr>`;
             t.pos.forEach(p => {
                 html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hcils-${t.prefix}-num-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hcils-${t.prefix}-prod-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`hcils-${t.prefix}-rep-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`hcils-${t.prefix}-reu-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`hcils-${t.prefix}-nov-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hcils-${t.prefix}-obs-${p}`)}</td></tr>`;
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`cils-${t.prefix}-num-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`cils-${t.prefix}-prod-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`cils-${t.prefix}-rep-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`cils-${t.prefix}-reu-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`cils-${t.prefix}-nov-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`cils-${t.prefix}-obs-${p}`)}</td></tr>`;
             });
         });
         return html;
@@ -723,7 +722,7 @@ window.salvarEImprimirFolhaoHorizontal = async function() {
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>`;
             for (let j = 1; j <= 4; j++) {
-                const val = getRadioValue(`hrol-${prefix}-${bPrefix}-${i}-${j}`);
+                const val = getRadioValue(`rol-${prefix}-${bPrefix}-${i}-${j}`);
                 html += `<td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'OK' ? 'X' : ''}</td>
                          <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'NOK' ? 'X' : ''}</td>`;
             }
@@ -743,7 +742,7 @@ window.salvarEImprimirFolhaoHorizontal = async function() {
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>`;
             for (let j = 1; j <= 4; j++) {
-                const val = getRadioValue(`hhid-${prefix}-${bPrefix}-${i}-${j}`);
+                const val = getRadioValue(`hid-${prefix}-${bPrefix}-${i}-${j}`);
                 html += `<td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'OK' ? 'X' : ''}</td>
                          <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'NOK' ? 'X' : ''}</td>`;
             }
@@ -760,12 +759,12 @@ window.salvarEImprimirFolhaoHorizontal = async function() {
                 <th style="border:1px solid #000; padding:3px;">Num</th><th style="border:1px solid #000; padding:3px;">Medida</th></tr>`;
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hmed-${prefix}-${bPrefix}-${i}-n1`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hmed-${prefix}-${bPrefix}-${i}-m1`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hmed-${prefix}-${bPrefix}-${i}-n2`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hmed-${prefix}-${bPrefix}-${i}-m2`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hmed-${prefix}-${bPrefix}-${i}-n3`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hmed-${prefix}-${bPrefix}-${i}-m3`)}</td></tr>`;
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`med-${prefix}-${bPrefix}-${i}-n1`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`med-${prefix}-${bPrefix}-${i}-m1`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`med-${prefix}-${bPrefix}-${i}-n2`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`med-${prefix}-${bPrefix}-${i}-m2`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`med-${prefix}-${bPrefix}-${i}-n3`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`med-${prefix}-${bPrefix}-${i}-m3`)}</td></tr>`;
         }
         return html;
     }
@@ -780,7 +779,7 @@ window.salvarEImprimirFolhaoHorizontal = async function() {
                     <th style="border:1px solid #000; padding:3px;">OK</th><th style="border:1px solid #000; padding:3px;">VT</th>
                     <th style="border:1px solid #000; padding:3px;">SA</th><th style="border:1px solid #000; padding:3px;">Dir</th></tr>`;
             for (let i = 7; i >= 1; i--) {
-                const val = getRadioValue(`hgrx-${b}-${i}`);
+                const val = getRadioValue(`grx-${b}-${i}`);
                 html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'OK' ? 'X' : ''}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${val === 'VT' ? 'X' : ''}</td>
@@ -793,11 +792,11 @@ window.salvarEImprimirFolhaoHorizontal = async function() {
 
     function gerarManutencaoPDF() {
         let html = '';
-        manutencaoHorizontal.forEach((tarefa, index) => {
-            const p = document.getElementById(`hz-p-${index}`)?.checked ? 'X' : '';
-            const g = document.getElementById(`hz-g-${index}`)?.checked ? 'X' : '';
-            const mat = getV(`hz-mat-${index}`);
-            const data = getV(`hz-dat-${index}`);
+        manutencaoBow.forEach((tarefa, index) => {
+            const p = document.getElementById(`bw-p-${index}`)?.checked ? 'X' : '';
+            const g = document.getElementById(`bw-g-${index}`)?.checked ? 'X' : '';
+            const mat = getV(`bw-mat-${index}`);
+            const data = getV(`bw-dat-${index}`);
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${tarefa.item}</td>
                 <td style="border:1px solid #000; padding:3px; font-size:9px;">${tarefa.desc}</td>
                 <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
@@ -826,7 +825,7 @@ window.salvarEImprimirFolhaoHorizontal = async function() {
         <div style="display: flex; border: 2px solid #000; border-bottom: 5px solid #002b5e; margin-bottom: 8px; align-items: center; background: #fff;">
             <div style="width: 20%; text-align: center; border-right: 2px solid #000; padding: 8px;"><span style="font-weight: 900; font-size: 28px; color: #002b5e; letter-spacing: -2px;">CSN</span></div>
             <div style="width: 60%; text-align: center; padding: 8px;">
-                <h2 style="margin: 0; font-size: 12px; color: #000;">CHECK LIST GERAL SEGMENTOS HORIZONTAL MCC#4</h2>
+                <h2 style="margin: 0; font-size: 12px; color: #000;">CHECK LIST GERAL SEGMENTOS BOW MCC#4</h2>
                 <p style="margin: 4px 0 0 0; font-size: 8px; color: #333; font-weight: bold;">DATA INÍCIO: ${dtInicio} | DATA FIM: ${dtFim}</p>
             </div>
             <div style="width: 20%; font-size: 9px; border-left: 2px solid #000; padding: 8px; line-height: 1.4; font-weight: bold;">
@@ -875,14 +874,14 @@ window.salvarEImprimirFolhaoHorizontal = async function() {
                 <tr><th style="border:1px solid #000; padding:3px;">Conj</th><th style="border:1px solid #000; padding:3px;">Ref</th>
                     <th style="border:1px solid #000; padding:3px;">Pos A</th><th style="border:1px solid #000; padding:3px;">Pos B</th>
                     <th style="border:1px solid #000; padding:3px;">Pos C</th></tr>
-                ${gerarPassLinePDF('horiz-passline-inf-chegada', refPassLineInfHoriz)}
+                ${gerarPassLinePDF('bow-passline-inf-chegada', refPassLineInfBow)}
             </table></div>
             <div style="width:50%;"><table>
                 <tr><th colspan="5" style="background:#ddd; border:1px solid #000; padding:3px;">BASE SUPERIOR (CHEGADA)</th></tr>
                 <tr><th style="border:1px solid #000; padding:3px;">Conj</th><th style="border:1px solid #000; padding:3px;">Ref</th>
                     <th style="border:1px solid #000; padding:3px;">Pos A</th><th style="border:1px solid #000; padding:3px;">Pos B</th>
                     <th style="border:1px solid #000; padding:3px;">Pos C</th></tr>
-                ${gerarPassLinePDF('horiz-passline-sup-chegada', refPassLineSupHoriz)}
+                ${gerarPassLinePDF('bow-passline-sup-chegada', refPassLineSupBow)}
             </table></div>
         </div>
 
@@ -924,14 +923,14 @@ window.salvarEImprimirFolhaoHorizontal = async function() {
                 <tr><th style="border:1px solid #000; padding:3px;">Conj</th><th style="border:1px solid #000; padding:3px;">Ref</th>
                     <th style="border:1px solid #000; padding:3px;">Pos A</th><th style="border:1px solid #000; padding:3px;">Pos B</th>
                     <th style="border:1px solid #000; padding:3px;">Pos C</th></tr>
-                ${gerarPassLinePDF('horiz-passline-inf-saida', refPassLineInfHoriz)}
+                ${gerarPassLinePDF('bow-passline-inf-saida', refPassLineInfBow)}
             </table></div>
             <div style="width:50%;"><table>
                 <tr><th colspan="5" style="background:#ddd; border:1px solid #000; padding:3px;">BASE SUPERIOR (SAÍDA)</th></tr>
                 <tr><th style="border:1px solid #000; padding:3px;">Conj</th><th style="border:1px solid #000; padding:3px;">Ref</th>
                     <th style="border:1px solid #000; padding:3px;">Pos A</th><th style="border:1px solid #000; padding:3px;">Pos B</th>
                     <th style="border:1px solid #000; padding:3px;">Pos C</th></tr>
-                ${gerarPassLinePDF('horiz-passline-sup-saida', refPassLineSupHoriz)}
+                ${gerarPassLinePDF('bow-passline-sup-saida', refPassLineSupBow)}
             </table></div>
         </div>
 
@@ -953,7 +952,7 @@ window.salvarEImprimirFolhaoHorizontal = async function() {
         <table>
             <tr><th style="width:80%;">MATERIAIS</th><th style="width:20%;">QUANTIDADE</th></tr>
             ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30].map(i => `
-                <tr><td>${getV(`hmat-desc-${i}`)}</td><td>${getV(`hmat-qtd-${i}`)}</td></tr>
+                <tr><td>${getV(`mat-desc-${i}`)}</td><td>${getV(`mat-qtd-${i}`)}</td></tr>
             `).join('')}
         </table>
 
@@ -969,7 +968,7 @@ window.salvarEImprimirFolhaoHorizontal = async function() {
     if (!printDiv) { alert("Div 'print-content' não encontrada!"); return; }
     printDiv.innerHTML = htmlPDF;
     
-    window.fecharFolhaoHorizontal();
+    window.fecharFolhaoBow();
     if (typeof renderReparos === 'function') renderReparos();
     if (typeof renderReservas === 'function') renderReservas();
     if (typeof renderAtivos === 'function') renderAtivos();

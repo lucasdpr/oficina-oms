@@ -2,8 +2,8 @@
 // folhaoMolde4.js - Módulo completo para BENDER e MOLDE MCC 4
 // ==============================================================
 
-import { BANCO_ATIVOS, resolverApiBase } from './banco.js?v=5';
-import { renderAtivos, renderReparos, renderReservas } from './ui.js';
+import { BANCO_ATIVOS, resolverApiBase } from '../Core/banco.js?v=5';
+import { renderAtivos, renderReparos, renderReservas } from '../ui.js';
 import { gerarTelasBenderHTML, imprimirPDFBender } from './folhao_bender.js';
 import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
 
