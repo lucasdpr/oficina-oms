@@ -1487,6 +1487,32 @@
         </div>
     </div>
 
+    <!-- 🆕 CHECKLIST DE EXECUÇÃO — passo a passo real do reparo, por
+         equipamento, dividido em seções (Mecânica, Elétrica, Hidráulica,
+         Caldeiraria, Usinagem, Tubulação, Jato/Pintura). Diferente do
+         Procedimento oficial acima; editável só pelas 3 matrículas ADM. -->
+    <div id="modal-checklist-execucao" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width:720px; max-height:90vh; overflow-y:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; gap:10px;">
+                <div>
+                    <h2 style="color:var(--text-heading); margin-bottom:2px;" id="checklist-execucao-titulo"><i class="fas fa-list-check"></i> Checklist de Execução</h2>
+                    <div class="text-muted" style="font-size:11px;">Passo a passo real do reparo — cada etapa registra quem executou.</div>
+                </div>
+                <button class="btn-close-emergency" onclick="window.fecharModalChecklistExecucao()"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <span class="text-muted" style="font-size:12px;">Progresso</span>
+                <span id="checklist-execucao-progresso" style="font-size:12px; font-weight:700; color:var(--text-accent);">0 / 0 (0%)</span>
+            </div>
+            <div class="premium-bar" style="height:10px; margin-bottom:16px;">
+                <div id="checklist-execucao-barra-fill" style="height:100%; width:0%; background:var(--success); border-radius:6px; transition:width 0.2s;"></div>
+            </div>
+
+            <div id="checklist-execucao-secoes"></div>
+        </div>
+    </div>
+
             <section id="aba-painel-adm" class="tab-content">
                 <div class="glass-panel" style="border-top:4px solid #38bdf8; padding:24px; margin-bottom:20px;">
                     <h2 style="color:#38bdf8;"><i class="fas fa-file-lines"></i> Painel — ADM</h2>

@@ -224,6 +224,24 @@ export const BIBLIOTECA_CHECKLISTS = {
 //
 // tipo: 'oficina'         -> abre o módulo genérico de área (Nível 3)
 //       'administrativo'  -> abre a tela própria já existente (aba-painel-*)
+// ==========================================
+// 🆕 CHECKLIST DE EXECUÇÃO — seções fixas usadas no modal do passo a
+// passo real de reparo (aba Reparo). Nem todo equipamento passa por
+// todas — uma seção só aparece no modal se tiver etapa cadastrada pra
+// aquele equipamento específico. "Mecânica" e "Tubulação" são
+// exclusivas desse checklist (não existem em AREAS_OFICINA); as demais
+// reaproveitam nome/ícone/cor já usados na Oficina.
+// ==========================================
+export const CHECKLIST_EXECUCAO_SECOES = [
+    { chave: 'mecanica',    nome: 'Mecânica',    icone: 'fa-gears',      cor: '#3b82f6' },
+    { chave: 'eletrica',    nome: 'Elétrica',    icone: 'fa-bolt',       cor: '#eab308' },
+    { chave: 'hidraulica',  nome: 'Hidráulica',  icone: 'fa-oil-can',    cor: '#38bdf8' },
+    { chave: 'caldeiraria', nome: 'Caldeiraria', icone: 'fa-fire',       cor: '#f97316' },
+    { chave: 'usinagem',    nome: 'Usinagem',    icone: 'fa-gear',       cor: '#a855f7' },
+    { chave: 'tubulacao',   nome: 'Tubulação',   icone: 'fa-water',      cor: '#06b6d4' },
+    { chave: 'jato',        nome: 'Jato/Pintura', icone: 'fa-spray-can', cor: '#7c8aa5' },
+];
+
 export const ABAS_PADRAO_OFICINA = [
     { chave: 'atividades',    label: 'Atividades',    icone: 'fa-clipboard-list' },
     { chave: 'materiais',     label: 'Materiais',     icone: 'fa-boxes-stacked' },
