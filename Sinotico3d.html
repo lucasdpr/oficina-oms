@@ -641,7 +641,9 @@
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { getLayoutRolos, getPartesDoRolo, getLayoutBarraTransversal, CAMPOS_OCORRENCIA_BARRA_TRANSVERSAL } from './dados.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { getLayoutRolos, getPartesDoRolo, getLayoutBarraTransversal, CAMPOS_OCORRENCIA_BARRA_TRANSVERSAL } from './JS/Core/dados.js';
 
 // ==========================================================================
 // CONFIGURAÇÃO DA API — mesma lógica usada no banco.js: detecta local vs
@@ -1052,6 +1054,13 @@ const fillFrontal = new THREE.DirectionalLight(0xffffff, 0.6);
 fillFrontal.position.set(10, 6, 18);
 scene.add(fillFrontal);
 
+// Luz suave de baixo, só pra dar um respiro de brilho no clearcoat das
+// peças (sem isso, o acabamento novo ficava "morto" onde a luz de cima
+// não alcança).
+const fillBaixo = new THREE.DirectionalLight(0x9fb4d6, 0.35);
+fillBaixo.position.set(-4, -6, 8);
+scene.add(fillBaixo);
+
 // ==========================================================================
 // AMBIENTAÇÃO — simplificada de volta, só o chão de referência e a
 // fumaça perto do Molde. A ponte rolante segurando a panela está mais
@@ -1123,8 +1132,22 @@ function atualizarVapor(delta) {
 const grupoLinha = new THREE.Group();
 scene.add(grupoLinha);
 
-const blocoGeoCabeceira = new THREE.BoxGeometry(1.1, 1.55, 1.55);
-const blocoGeoPadrao = new THREE.BoxGeometry(1.28, 0.62, 1.35);
+const blocoGeoCabeceira = new RoundedBoxGeometry(1.1, 1.55, 1.55, 3, 0.09);
+const blocoGeoPadrao = new RoundedBoxGeometry(1.28, 0.62, 1.35, 3, 0.07);
+
+// 🆕 "Gaiola de rolos" aberta — como o equipamento real da MCC4 (curva
+// e mesa horizontal): duas metades separadas por um vão no meio, por
+// onde a placa de aço passa entre os rolos de cima e os de baixo.
+// Continua sendo UMA SÓ geometria (mergeGeometries), então o resto do
+// código (raycaster, cor, emissive) trata a peça exatamente como antes
+// — só a forma interna mudou.
+const VAO_PLACA = 0.26;         // altura livre no meio, por onde a placa passa
+const ALTURA_METADE = (0.62 - VAO_PLACA) / 2;
+const metadeCima = new RoundedBoxGeometry(1.28, ALTURA_METADE, 1.35, 2, 0.05);
+metadeCima.translate(0, VAO_PLACA / 2 + ALTURA_METADE / 2, 0);
+const metadeBaixo = new RoundedBoxGeometry(1.28, ALTURA_METADE, 1.35, 2, 0.05);
+metadeBaixo.translate(0, -(VAO_PLACA / 2 + ALTURA_METADE / 2), 0);
+const blocoGeoPadraoAberto = mergeGeometries([metadeCima, metadeBaixo]);
 
 // MCC2/3: peças bem menores e mais numerosas (82 por veio, contra 19 da MCC4)
 // MCC2/3: curva (Molde..Grupo3-3) usa o mesmo bloco "padrão" da MCC4 —
@@ -1135,6 +1158,109 @@ const blocoGeoPadrao = new THREE.BoxGeometry(1.28, 0.62, 1.35);
 // que os blocos da curva, só que bem mais finos.
 const cilindroCadeiraGeo = new THREE.CylinderGeometry(0.15, 0.15, 1.35, 18);
 cilindroCadeiraGeo.rotateX(Math.PI / 2); // deita o cilindro: eixo passa a ficar ao longo de Z (largura da linha)
+
+// 🆕 Rolos decorativos em cima dos blocos da MCC4 (curva/horizontal) —
+// na foto real do equipamento (gaiola de rolos suspensa pela ponte),
+// dá pra ver claramente 3 rolos cilíndricos enfileirados na base. Sem
+// isso, o bloco fica com uma cara "genérica" de caixa mesmo depois de
+// arredondar as quinas. São puramente visuais: adicionados como FILHOS
+// do mesh principal (mesh.add), nunca entram em meshesBySlot — o
+// raycaster já é não-recursivo (intersectObjects(alvos, false)), então
+// clique/hover continuam batendo só no bloco pai, normalmente.
+const rolinhoGeo = new THREE.CylinderGeometry(0.09, 0.09, 1.1, 16);
+rolinhoGeo.rotateX(Math.PI / 2);
+const rolinhoMat = new THREE.MeshStandardMaterial({ color: 0x1a1e28, roughness: 0.3, metalness: 0.75 });
+// 🆕 Material de alerta — usado nos rolos quando a peça tem algum rolo
+// travado ou mancal com ocorrência registrada (dado real vindo do
+// mesmo campo que o modal usa: rolos_travados / mancais_ocorrencias).
+const rolinhoMatAlerta = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3, metalness: 0.55, emissive: 0x7a0000, emissiveIntensity: 0.45 });
+
+// (Buchas/parafusos removidos — o usuário pediu pra tirar as bolinhas
+// pretas na lateral do segmento.)
+
+// 🆕 BARRA TRANSVERSAL 3D — mesma estrutura que já existe no desenho
+// 2D do modal (renderDiagramaBarraTransversalMCC4): 4 pilares nos
+// cantos, cada um com seu Cilindro de Elevação em cima, e por cima de
+// tudo a Barra Transversal com o Sistema Hidráulico (o tubo amarelo).
+// Ainda é só visual/decorativo (filho do mesh principal), mas usa a
+// MESMA contagem/posições que o resto do sistema já trata como dado
+// real (CIL-1..4) — se no futuro quisermos colorir cada pilar pelo
+// status salvo no banco (statusBarraAtual), a estrutura já está pronta
+// pra isso, bastando trocar a cor do material por peça em vez de um
+// material único.
+const ALTURA_TOPO_BLOCO = 0.31; // metade da altura total do bloco (0.62)
+const EXTENSAO_ACIMA = 0.14;    // bem mais curto — só o suficiente pro cilindro assentar em cima
+const ALTURA_PILAR = ALTURA_TOPO_BLOCO * 2 + EXTENSAO_ACIMA; // sai da base de baixo e atravessa até acima da base de cima
+
+// Coluna robusta (quadrada), não um fio fino — mais parecido com o
+// suporte real da máquina.
+const pilarGeo = new THREE.BoxGeometry(0.11, ALTURA_PILAR, 0.11);
+const pilarMat = new THREE.MeshStandardMaterial({ color: 0x3a4150, roughness: 0.35, metalness: 0.65 });
+
+const cilindroElevGeo = new THREE.CylinderGeometry(0.09, 0.09, 0.13, 14);
+const cilindroElevMat = new THREE.MeshStandardMaterial({ color: 0x8a94a8, roughness: 0.3, metalness: 0.6 });
+// 🆕 Material de alerta — usado no cilindro (CIL-1..4) quando aquele
+// componente específico está marcado como crítico na Barra
+// Transversal (mesmo dado que o modal usa: barra_transversal → estado).
+const cilindroElevMatAlerta = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3, metalness: 0.5, emissive: 0x7a0000, emissiveIntensity: 0.45 });
+
+function adicionarRolosDecorativos(mesh, peca) {
+    const offsets = [-0.24, 0, 0.24]; // 3 rolos por fileira, igual à foto real
+    const yRolo = VAO_PLACA / 2 - 0.02; // encostados na borda do vão, sem atravessar a metade
+
+    // 🆕 Rolos ficam vermelhos SÓ na base que tiver problema: se o
+    // travamento/mancal for da base Superior ("S-..."), só a fileira de
+    // cima fica vermelha; se for da Inferior ("I-..."), só a de baixo;
+    // se tiver dos dois lados, as duas fileiras ficam vermelhas.
+    const travados = peca ? parseRolosTravados(peca) : new Set();
+    const mancais = peca ? parseMancais(peca) : {};
+    const chaves = [...travados, ...Object.keys(mancais)];
+    const temAlertaSuperior = chaves.some(k => k.startsWith('S-'));
+    const temAlertaInferior = chaves.some(k => k.startsWith('I-'));
+    const matRoloCima = temAlertaSuperior ? rolinhoMatAlerta : rolinhoMat;
+    const matRoloBaixo = temAlertaInferior ? rolinhoMatAlerta : rolinhoMat;
+
+    offsets.forEach(offX => {
+        const rolinhoCima = new THREE.Mesh(rolinhoGeo, matRoloCima);
+        rolinhoCima.position.set(offX, yRolo, 0);
+        rolinhoCima.castShadow = true;
+        mesh.add(rolinhoCima);
+
+        const rolinhoBaixo = new THREE.Mesh(rolinhoGeo, matRoloBaixo);
+        rolinhoBaixo.position.set(offX, -yRolo, 0);
+        rolinhoBaixo.castShadow = true;
+        mesh.add(rolinhoBaixo);
+    });
+
+    // 🆕 4 pilares saindo da base INFERIOR e atravessando até acima da
+    // base superior, com o cilindro de elevação (cinza, ou vermelho se
+    // aquele CIL específico estiver crítico na Barra Transversal) só
+    // no topo de cada um.
+    const cornersX = [-0.5, 0.5];
+    const cornersZ = [-0.55, 0.55];
+    const yBasePilar = -ALTURA_TOPO_BLOCO;               // começa na base de baixo do bloco
+    const yCentroPilar = yBasePilar + ALTURA_PILAR / 2;  // centro do cilindro do pilar
+    const yTopoPilar = yBasePilar + ALTURA_PILAR;        // ponta de cima do pilar
+
+    const statusBarra = peca ? parseBarraTransversal(peca) : {};
+    let numeroCil = 0;
+    cornersX.forEach(cx => {
+        cornersZ.forEach(cz => {
+            numeroCil++;
+            const pilar = new THREE.Mesh(pilarGeo, pilarMat);
+            pilar.position.set(cx, yCentroPilar, cz);
+            pilar.castShadow = true;
+            mesh.add(pilar);
+
+            const estadoCil = estadoComponenteBT(statusBarra[`CIL-${numeroCil}`]);
+            const matCil = estadoCil === 'critico' ? cilindroElevMatAlerta : cilindroElevMat;
+            const cilindro = new THREE.Mesh(cilindroElevGeo, matCil);
+            cilindro.position.set(cx, yTopoPilar + 0.065, cz);
+            cilindro.castShadow = true;
+            mesh.add(cilindro);
+        });
+    });
+}
 
 let piecesById = {};      // dados vindos da API, por id
 let meshesBySlot = [];    // { slot, mesh, material }
@@ -1234,7 +1360,7 @@ function construirChassiMCC23(slots) {
     const centroX = (xIni + xFim) / 2;
 
     const vigaMat = new THREE.MeshStandardMaterial({ color: 0x333b4a, metalness: 0.75, roughness: 0.3 });
-    const vigaGeo = new THREE.BoxGeometry(comprimento, 0.07, 0.1);
+    const vigaGeo = new RoundedBoxGeometry(comprimento, 0.07, 0.1, 2, 0.03);
 
     const vigaSup = new THREE.Mesh(vigaGeo, vigaMat);
     vigaSup.position.set(centroX, sup[0].pos.y + 0.22, sup[0].pos.z);
@@ -1278,15 +1404,22 @@ function construirCena(veio) {
         const peca = encontrarPecaDoSlot(slot, mapaSlotsInstalados);
         const cor = corPorPeca(peca);
         const glow = emissivoPorPeca(peca);
+        // Segmentos de Grupo (G1, G2-1/2, G3-1/2/3) da MCC2/3 usam a
+        // mesma "gaiola aberta" com rolos + pilares da MCC4 — só o
+        // Molde e o Zero continuam com o bloco liso de cabeceira.
+        const ehGrupoMCC23 = !mcc4 && slot.id.startsWith('GRP');
+        const usarPecaAberta = (mcc4 && slot.grupo !== 'cabeceira') || ehGrupoMCC23;
+
         let geo;
         if (mcc4) {
-            geo = slot.grupo === 'cabeceira' ? blocoGeoCabeceira : blocoGeoPadrao;
+            geo = slot.grupo === 'cabeceira' ? blocoGeoCabeceira : blocoGeoPadraoAberto;
         } else {
-            geo = slot.grupo === 'cabeceira' ? blocoGeoPadrao : cilindroCadeiraGeo;
+            geo = ehGrupoMCC23 ? blocoGeoPadraoAberto : (slot.grupo === 'cabeceira' ? blocoGeoPadrao : cilindroCadeiraGeo);
         }
 
-        const material = new THREE.MeshStandardMaterial({
-            color: cor, roughness: 0.38, metalness: 0.28,
+        const material = new THREE.MeshPhysicalMaterial({
+            color: cor, roughness: 0.32, metalness: 0.35,
+            clearcoat: 0.5, clearcoatRoughness: 0.25,
             emissive: glow.cor, emissiveIntensity: glow.intensidade
         });
 
@@ -1298,12 +1431,19 @@ function construirCena(veio) {
         mesh.userData = { slot, peca, emissiveBase: glow.cor, emissiveIntensityBase: glow.intensidade };
 
         // borda destacada (aresta)
-        const edges = new THREE.EdgesGeometry(geo);
+        const edges = new THREE.EdgesGeometry(geo, 20);
         const linha = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x0a0e14, linewidth: 1, transparent: true, opacity: 0.55 }));
         mesh.add(linha);
 
         grupoLinha.add(mesh);
         meshesBySlot.push({ slot, mesh, material });
+
+        // 🆕 Rolos + pilares/cilindros visíveis — na MCC4 (curva e mesa
+        // horizontal) e agora também nos Segmentos de Grupo (G1/G2/G3)
+        // da MCC2/3. Molde/Bender/Zero continuam com o bloco liso.
+        if (usarPecaAberta) {
+            adicionarRolosDecorativos(mesh, peca);
+        }
 
         // Etiqueta fixa (sempre visível), agora como sprite 3D. As 74
         // cadeiras (MCC2/3) NÃO ganham etiqueta fixa — numa fileira com
@@ -1358,7 +1498,7 @@ function reconstruirCaminhoAco(veio) {
     acoMesh.scale.setScalar(ehMCC4(veio) ? 1 : 0.42);
 }
 
-const acoGeo = new THREE.BoxGeometry(1.9, 0.44, 1.24); // placa: dobro do tamanho original
+const acoGeo = new RoundedBoxGeometry(1.9, 0.44, 1.24, 3, 0.06); // placa: dobro do tamanho original
 const acoMat = new THREE.MeshStandardMaterial({
     color: 0xff5522,
     emissive: 0xff3300,
@@ -1384,24 +1524,24 @@ scene.add(acoMesh);
 // clique nos equipamentos reais, não importa a posição visual.
 // ==========================================================================
 const AMARELO_PONTE = 0xE8B024;
-const ponteMat = new THREE.MeshStandardMaterial({ color: AMARELO_PONTE, metalness: 0.5, roughness: 0.4 });
-const estruturaMat = new THREE.MeshStandardMaterial({ color: 0x2a2f3a, metalness: 0.6, roughness: 0.35 });
+const ponteMat = new THREE.MeshPhysicalMaterial({ color: AMARELO_PONTE, metalness: 0.6, roughness: 0.32, clearcoat: 0.3 });
+const estruturaMat = new THREE.MeshPhysicalMaterial({ color: 0x2a2f3a, metalness: 0.7, roughness: 0.28, clearcoat: 0.4 });
 const caboMat = new THREE.MeshStandardMaterial({ color: 0x14161c, metalness: 0.3, roughness: 0.6 });
-const panelaMat = new THREE.MeshStandardMaterial({ color: 0x2a2f3a, metalness: 0.8, roughness: 0.3 });
+const panelaMat = new THREE.MeshPhysicalMaterial({ color: 0x2a2f3a, metalness: 0.85, roughness: 0.22, clearcoat: 0.4 });
 
 // -- Estrutura da ponte: viga + duas pernas curtas + trolley --
 const grupoPonte = new THREE.Group();
 
-const vigaPonte = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.3, 0.55), ponteMat);
+const vigaPonte = new THREE.Mesh(new RoundedBoxGeometry(4.6, 0.3, 0.55, 3, 0.05), ponteMat);
 grupoPonte.add(vigaPonte);
 
 [-2.05, 2.05].forEach(x => {
-    const perna = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.0, 0.5), ponteMat);
+    const perna = new THREE.Mesh(new RoundedBoxGeometry(0.2, 1.0, 0.5, 3, 0.04), ponteMat);
     perna.position.set(x, 0.65, 0);
     grupoPonte.add(perna);
 });
 
-const trolley = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.2, 0.45), estruturaMat);
+const trolley = new THREE.Mesh(new RoundedBoxGeometry(0.55, 0.2, 0.45, 3, 0.03), estruturaMat);
 trolley.position.set(0, -0.25, 0);
 grupoPonte.add(trolley);
 
@@ -1942,6 +2082,9 @@ async function salvarRolosTravados(id, travadosSet, botaoEl, statusEl) {
                 const resumo = lista.length ? lista.join(', ') : '(nenhum — todos liberados)';
                 window.registrarHistorico(id, `🔒 Rolos travados atualizados no Sinótico 3D: ${resumo}`);
             }
+            // 🆕 Redesenha a cena 3D na hora — os rolos já aparecem
+            // vermelhos/normais assim que o travamento é salvo.
+            construirCena(veioAtual);
         } else {
             throw new Error(resultado.detail || 'A API não confirmou o salvamento.');
         }
@@ -2014,6 +2157,9 @@ async function salvarMancalOcorrencia(id, chaveMancal, tipo, mancaisMap, botaoEl
             // estiver aberto), pra o selo de ocorrência aparecer/sumir
             // sem precisar trocar de aba e voltar.
             if (typeof window.renderPainelVeios === 'function') window.renderPainelVeios();
+            // 🆕 Redesenha a cena 3D na hora — os rolos ficam vermelhos
+            // assim que o mancal com ocorrência é salvo.
+            construirCena(veioAtual);
         } else {
             throw new Error(resultado.detail || 'A API não confirmou o salvamento.');
         }
@@ -2432,6 +2578,10 @@ function renderGridBarraTransversal(layout, statusMap, veio) {
                     <div class="painel-bt-obs-wrap">
                         <label class="painel-bt-obs-label" for="painel-bt-obs">Observação</label>
                         <textarea id="painel-bt-obs" class="painel-bt-obs" placeholder="Anote aqui detalhes dessa ocorrência..."></textarea>
+                        <div class="obs-footer">
+                            <span id="painel-bt-status" class="obs-status"></span>
+                            <button type="button" class="btn-salvar-obs" id="btn-salvar-bt">💾 Salvar</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2464,6 +2614,10 @@ function renderGridBarraTransversal(layout, statusMap, veio) {
                 <div class="painel-bt-obs-wrap">
                     <label class="painel-bt-obs-label" for="painel-bt-obs">Observação</label>
                     <textarea id="painel-bt-obs" class="painel-bt-obs" placeholder="Anote aqui detalhes dessa ocorrência..."></textarea>
+                    <div class="obs-footer">
+                        <span id="painel-bt-status" class="obs-status"></span>
+                        <button type="button" class="btn-salvar-obs" id="btn-salvar-bt">💾 Salvar</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2488,6 +2642,10 @@ async function salvarBarraTransversal(id, statusMap, mensagemHistorico) {
             if (mensagemHistorico && typeof window.registrarHistorico === 'function') {
                 window.registrarHistorico(id, mensagemHistorico);
             }
+            // 🆕 Redesenha a cena 3D na hora, sem precisar trocar de veio
+            // ou clicar em "Atualizar" — assim o cilindro já aparece
+            // vermelho/normal assim que a ocorrência é salva.
+            construirCena(veioAtual);
         } else {
             throw new Error(resultado.detail || 'A API não confirmou o salvamento.');
         }
@@ -2812,6 +2970,31 @@ function abrirModalPeca(slot, peca) {
                         statusBarraAtual[chaveSelecionada] = registro;
                         const rotuloAtual = btWrap.querySelector(`[data-bt="${chaveSelecionada}"]`)?.dataset.btRotulo || chaveSelecionada;
                         salvarBarraTransversal(peca.id, statusBarraAtual, `📝 ${rotuloAtual}: observação atualizada.`);
+                    });
+                }
+
+                // 🆕 Botão "💾 Salvar" explícito — a opção (Crítico/
+                // Avariado/Sem ocorrência) já salva sozinha ao clicar,
+                // mas esse botão garante o salvamento da observação
+                // digitada e força a atualização visual do cilindro na
+                // hora, sem precisar tirar o foco do campo de texto.
+                const btnSalvarBt = modal.querySelector('#btn-salvar-bt');
+                const painelBtStatus = modal.querySelector('#painel-bt-status');
+                if (btnSalvarBt) {
+                    btnSalvarBt.addEventListener('click', async () => {
+                        if (!chaveSelecionada) {
+                            if (painelBtStatus) { painelBtStatus.textContent = 'Selecione um componente no desenho antes.'; painelBtStatus.className = 'obs-status err'; }
+                            return;
+                        }
+                        btnSalvarBt.disabled = true;
+                        if (painelBtStatus) { painelBtStatus.textContent = 'Salvando...'; painelBtStatus.className = 'obs-status'; }
+                        const registro = statusBarraAtual[chaveSelecionada] || {};
+                        registro.observacao = painelBtObs.value;
+                        statusBarraAtual[chaveSelecionada] = registro;
+                        const rotuloAtual = btWrap.querySelector(`[data-bt="${chaveSelecionada}"]`)?.dataset.btRotulo || chaveSelecionada;
+                        await salvarBarraTransversal(peca.id, statusBarraAtual, `📝 ${rotuloAtual}: salvo manualmente.`);
+                        if (painelBtStatus) { painelBtStatus.textContent = '✅ Salvo — 3D atualizado.'; painelBtStatus.className = 'obs-status ok'; }
+                        btnSalvarBt.disabled = false;
                     });
                 }
             }
