@@ -155,15 +155,15 @@ const checklistsM4 = {
         {num: 4, text: "A folga máxima entre as placas laterais e largas é de 0.25mm?"},
         {num: 5, text: "Os encaixes dos eixos cardans nos motores foram feitos sem interferência?"},
         {num: 6, text: "As marcações dos centros das placas largas estão legíveis?"},
-        {num: 7, text: "Tubos telescópios sem vazamentos? (Analisado com 7kgf/cm2)."},
+        {num: 7, text: "Tubos telescópios sem vazamentos? (Analisado durante a movimentação das faces entre as bitolas de 810mm até 1830mm em condição de teste de casamento com 7kgf/cm2 (pressão referência)."},
         {num: 8, text: "Os protetores sanfonados estão em bom estado de conservação?"},
         {num: 9, text: "Os engates rápidos estão apertados e protegidos?"},
         {num: 11, text: "Os eixos cardan estão limpos, lubrificados e protegidos?"},
-        {num: 12, text: "Os leques dos sprays estão corretamente alinhados e sem obstrução?"},
+        {num: 12, text: "Os leques dos sprays estão corretamente alinhados (passando entre os rolos e placas, e sem obstrução?"},
         {num: 13, text: "Não houve vazamento durante o teste hidrostático com 10 bar de pressão durante 30min."},
         {num: 14, text: "Foot Rolls e roletes das guias laterais estão lubrificados e girando normalmente?"},
         {num: 15, text: "As tampas de proteção dos parafusos do foot roll estão montadas?"},
-        {num: 16, text: "Os parafusos M36 alinhados na elevação de 1640mm ~3mm a partir do pé do molde?"},
+        {num: 16, text: "Os parafusos M36 alinhados (c/ contra porca) na elevação de 1640mm ~3mm a partir do pé do molde?"},
         {num: 17, text: "Cavidade interna do molde e rolos limpos?"},
         {num: 18, text: "Cilindros hidráulicos do sistema do clamp foi feito sangria?"}
     ],
@@ -171,7 +171,7 @@ const checklistsM4 = {
         "CHECK DOS CILINDROS DO CLAMP",
         "VERIFICAR VAZAMENTO DE GRAXA NAS CONEXÕES",
         "VERIFICAR VAZAMENTO DE ÓLEO NAS CONEXÕES",
-        "INSPECIONAR O ELEMENTO FILTRANTE DA LINHA DE PRESSÃO HIDRÁULICA.",
+        "INSPECIONAR O ELEMENTO FILTRANTE DO FILTRO DA LINHA DE PRESSÃO HIDRÁULICA E SE NECESSÁRIO EFETUAR A TROCA.",
         "LUBRIFICAÇÃO",
         "VERIFICAR VAZAMENTO EM MANGUEIRAS E DOSADOR, SUBSTITUIR SE NECESSÁRIO.",
         "EFETUAR A LIMPEZA DOS ENGATES HIDRÁULICOS",
@@ -243,15 +243,21 @@ async function preencherFolhaoComChecklistExecucao(id, item) {
         Object.entries(valores).forEach(([campo, valor]) => {
             if (!valor) return; // etapa ainda não respondida — não mexe no campo
 
-            // Campo pode ser um par de radios SIM/NÃO (name="campo") ou um
-            // <input>/<textarea> comum (id="campo") — tenta os dois.
+            // Campo pode ser: par de radios SIM/NÃO (name="campo"), um
+            // checkbox simples (id="campo", tipo checkbox) ou um
+            // <input>/<textarea> comum (id="campo") — tenta os três.
             const radios = document.getElementsByName(campo);
             if (radios && radios.length > 0) {
                 radios.forEach(r => { r.checked = (valor === 'OK' && r.value === 'SIM') || r.value === valor; });
                 return;
             }
             const inputEl = document.getElementById(campo);
-            if (inputEl) inputEl.value = valor;
+            if (!inputEl) return;
+            if (inputEl.type === 'checkbox') {
+                inputEl.checked = (valor === 'OK');
+            } else {
+                inputEl.value = valor;
+            }
         });
     } catch (e) {
         console.error('⚠️ Não consegui puxar os valores do Checklist de Execução pro folhão:', e);
@@ -410,26 +416,46 @@ function renderizarM4SensorResist() {
 function renderizarM4PeritagemLargas() {
     const container = document.getElementById('container-m4-peritagem-l');
     if (!container) return;
-    
-    const renderTable = (titulo, prefix) => `
-        <h4 style="margin-top:15px; color:var(--text-accent);">${titulo}</h4>
-        <div style="margin-bottom:10px;">
-            <label style="margin-right:15px;">PLACA FIXA AFASTADA: <input type="radio" name="${prefix}-fixa-afast" value="SIM"> SIM <input type="radio" name="${prefix}-fixa-afast" value="NÃO" checked> NÃO</label>
-            <label>PLACA MÓVEL AFASTADA: <input type="radio" name="${prefix}-movel-afast" value="SIM"> SIM <input type="radio" name="${prefix}-movel-afast" value="NÃO" checked> NÃO</label>
+
+    // 🆕 Restruturado pra bater com o documento oficial: em vez de 1
+    // tabela combinando fixa+móvel, agora são 4 blocos separados (Placa
+    // Fixa e Placa Móvel, em Entrada e Saída), cada um com o Nº da
+    // placa e a "Leitura Original" separada da "Tolerância".
+    const MEDIDAS_PLACA_LARGA = [
+        { label: "PLANICIDADE VERTICAL (F)", sufixo: "fv", tolerancia: "< 0,2mm" },
+        { label: "PLANICIDADE HORIZONTAL (G)", sufixo: "fh", tolerancia: "< 0,2mm" },
+        { label: "PROFUNDIDADE DE RANHURAS (P)", sufixo: "pr", tolerancia: "< 1mm" },
+        { label: "DESGASTE (A)", sufixo: "da", tolerancia: "< 1mm" },
+    ];
+
+    const renderBlocoPlaca = (prefix, ladoLabel, ladoSufixo) => `
+        <h4 style="margin-top:15px; color:var(--text-accent);">PLACA LARGA ${ladoLabel} — Nº <input id="${prefix}-${ladoSufixo}-numero" style="width:100px; display:inline-block;"></h4>
+        <p style="font-size:9.5px; color:var(--text-muted); margin:2px 0 6px 0;">
+            1) Afastar placa quando o cobre estiver aparente. &nbsp; 2) Identificar na placa o local do desgaste.
+        </p>
+        <div style="margin-bottom:6px; font-size:11px;">
+            <label style="margin-right:15px;">PLACA AFASTADA: <input type="radio" name="${prefix}-${ladoSufixo}-afast" value="SIM"> SIM <input type="radio" name="${prefix}-${ladoSufixo}-afast" value="NÃO" checked> NÃO</label>
+            <label>PLACA: <select id="${prefix}-${ladoSufixo}-tipo" style="display:inline-block; width:auto;"><option value="STEP">STEP</option><option value="FULL FACE">FULL FACE</option></select></label>
         </div>
         <table class="premium-table" style="font-size:10px;">
-            <tr><th>DESCRIÇÃO</th><th>TOLERÂNCIA</th><th>PLACA FIXA</th><th>PLACA MÓVEL</th></tr>
-            <tr><td>PLANICIDADE VERTICAL (F)</td><td>< 0,2mm</td><td><input id="${prefix}-fv-fixa"></td><td><input id="${prefix}-fv-movel"></td></tr>
-            <tr><td>PLANICIDADE HORIZONTAL (G)</td><td>< 0,2mm</td><td><input id="${prefix}-fh-fixa"></td><td><input id="${prefix}-fh-movel"></td></tr>
-            <tr><td>PROFUNDIDADE DE RANHURAS (P)</td><td>< 1mm</td><td><input id="${prefix}-pr-fixa"></td><td><input id="${prefix}-pr-movel"></td></tr>
-            <tr><td>DESGASTE (A)</td><td>< 1mm</td><td><input id="${prefix}-da-fixa"></td><td><input id="${prefix}-da-movel"></td></tr>
+            <tr><th>DESCRIÇÃO</th><th>LEITURA ORIGINAL (± 0,10mm)</th><th>TOLERÂNCIA</th></tr>
+            ${MEDIDAS_PLACA_LARGA.map(m => `
+                <tr><td>${m.label}</td><td><input id="${prefix}-${m.sufixo}-${ladoSufixo}"></td><td style="text-align:center;">${m.tolerancia}</td></tr>
+            `).join('')}
         </table>
+        <p style="font-size:9px; color:var(--text-muted); margin-top:2px;">Obs: só preencher se a placa for substituída.</p>
     `;
 
     container.innerHTML = `
         <h3 style="color:var(--text-heading);">PERITAGEM PLACAS LARGAS</h3>
-        ${renderTable('AO ENTRAR NA OFICINA', 'm4-per-ent')}
-        ${renderTable('AO SAIR DA OFICINA', 'm4-per-sai')}
+
+        <h4 style="margin-top:10px; color:var(--text-heading); border-bottom:1px dashed var(--border-color); padding-bottom:4px;">AO ENTRAR NA OFICINA</h4>
+        ${renderBlocoPlaca('m4-per-ent', 'FIXA', 'fixa')}
+        ${renderBlocoPlaca('m4-per-ent', 'MÓVEL', 'movel')}
+
+        <h4 style="margin-top:20px; color:var(--text-heading); border-bottom:1px dashed var(--border-color); padding-bottom:4px;">AO SAIR DA OFICINA</h4>
+        ${renderBlocoPlaca('m4-per-sai', 'FIXA', 'fixa')}
+        ${renderBlocoPlaca('m4-per-sai', 'MÓVEL', 'movel')}
     `;
 }
 
@@ -532,16 +558,16 @@ function renderizarM4Mecanica() {
     container.innerHTML = `
         <h3 style="color:var(--text-heading);">AFERIÇÃO EIXO EXCÊNTRICO E BUCHA</h3>
         <table class="premium-table" style="font-size:10px;">
-            <tr><th>COTA</th><th>DESENHO</th><th>LADO DIREITO</th><th>LADO ESQUERDO</th></tr>
-            <tr><td>A</td><td>70 (0 / +0,1)</td><td><input id="m4-ex-a-d"></td><td><input id="m4-ex-a-e"></td></tr>
-            <tr><td>B</td><td>45,00</td><td><input id="m4-ex-b-d"></td><td><input id="m4-ex-b-e"></td></tr>
-            <tr><td>C</td><td>90 d9 (-0,12/-0,20)</td><td><input id="m4-ex-c-d"></td><td><input id="m4-ex-c-e"></td></tr>
-            <tr><td>D</td><td>31,00</td><td><input id="m4-ex-d-d"></td><td><input id="m4-ex-d-e"></td></tr>
-            <tr><td>E</td><td>70 h7 (0 / -0,03)</td><td><input id="m4-ex-e-d"></td><td><input id="m4-ex-e-e"></td></tr>
-            <tr><td>F</td><td>12,00</td><td><input id="m4-ex-f-d"></td><td><input id="m4-ex-f-e"></td></tr>
-            <tr><td>SW</td><td>55,00</td><td><input id="m4-ex-sw-d"></td><td><input id="m4-ex-sw-e"></td></tr>
-            <tr><td colspan="4" style="background:#ddd;text-align:center;font-weight:bold;">BUCHA DO EXCÊNTRICO</td></tr>
-            <tr><td>DIA INT.</td><td>70 H8 (0 / +0,046)</td><td><input id="m4-ex-buc-d"></td><td><input id="m4-ex-buc-e"></td></tr>
+            <tr><th>COTA</th><th>MEDIDA DO DESENHO</th><th>MEDIDA TOLERÁVEL</th><th>LADO DIREITO</th><th>LADO ESQUERDO</th></tr>
+            <tr><td>A</td><td>70 (0 / +0,1)</td><td>70 (+/- 1,5)</td><td><input id="m4-ex-a-d"></td><td><input id="m4-ex-a-e"></td></tr>
+            <tr><td>B</td><td>45,00</td><td>45,00 (0 / -0,5)</td><td><input id="m4-ex-b-d"></td><td><input id="m4-ex-b-e"></td></tr>
+            <tr><td>C</td><td>90 d9 (-0,12/-0,20)</td><td>90 (0 / -0,207)</td><td><input id="m4-ex-c-d"></td><td><input id="m4-ex-c-e"></td></tr>
+            <tr><td>D</td><td>31,00</td><td>31,00 (0 / -0,5)</td><td><input id="m4-ex-d-d"></td><td><input id="m4-ex-d-e"></td></tr>
+            <tr><td>E</td><td>70 h7 (0 / -0,03)</td><td>70,00 (-0,15)</td><td><input id="m4-ex-e-d"></td><td><input id="m4-ex-e-e"></td></tr>
+            <tr><td>F</td><td>12,00</td><td>12,00 (+/- 0,2)</td><td><input id="m4-ex-f-d"></td><td><input id="m4-ex-f-e"></td></tr>
+            <tr><td>SW</td><td>55,00</td><td>55,00 (+/- 0,5)</td><td><input id="m4-ex-sw-d"></td><td><input id="m4-ex-sw-e"></td></tr>
+            <tr><td colspan="5" style="background:#ddd;text-align:center;font-weight:bold;">BUCHA DO EXCÊNTRICO</td></tr>
+            <tr><td>DIA INT.</td><td>70 H8 (0 / +0,046)</td><td>70,00 (+0,15)</td><td><input id="m4-ex-buc-d"></td><td><input id="m4-ex-buc-e"></td></tr>
         </table>
 
         <h3 style="color:var(--text-heading); margin-top:20px;">VERIFICAÇÃO DOS CARDANS</h3>
@@ -556,7 +582,7 @@ function renderizarM4Materiais() {
     const container = document.getElementById('container-m4-materiais');
     if (!container) return;
     let rows = '';
-    for (let i = 1; i <= 20; i++) {
+    for (let i = 1; i <= 29; i++) {
         rows += `<tr><td><input id="m4-mat-desc-${i}" class="w-100" placeholder="Material"></td><td><input id="m4-mat-qtd-${i}" style="width:80px;" placeholder="Qtd"></td></tr>`;
     }
     container.innerHTML = `
@@ -724,6 +750,8 @@ export async function salvarEImprimirFolhaoMolde4() {
     const mot = getV('molde4-motivo');
     const tipoE = getV('molde4-tipo-exec'); 
     const novaMeta = getV('molde4-nova-meta') || 'Manter Atual';
+    const lider = getV('molde4-lider-responsavel'); // 🆕
+    const desempenho = getV('molde4-desempenho'); // 🆕
 
     // 2. ATUALIZA O EQUIPAMENTO NO BANCO (rota real que já existe na API)
     // 🔧 CORREÇÃO: antes essa etapa chamava POST /api/salvar_folhao, uma
@@ -766,9 +794,9 @@ export async function salvarEImprimirFolhaoMolde4() {
 
     // 3. FUNÇÃO AUXILIAR DA TABELA DO PDF
     function gerarTabelaCheckPDF(prefix, arr, isFinal = false) {
-        let h = `<table><tr><th style="width:5%;">ITEM</th><th>DESCRIÇÃO</th>`;
+        let h = `<table><thead><tr><th style="width:5%;">ITEM</th><th>DESCRIÇÃO</th>`;
         if (isFinal) h += `<th style="width:15%;">MEDIDA ENCONTRADA</th>`;
-        h += `<th style="width:8%;">SIM</th><th style="width:8%;">NÃO</th></tr>`;
+        h += `<th style="width:8%;">SIM</th><th style="width:8%;">NÃO</th></tr></thead><tbody>`;
         arr.forEach((item, i) => {
             const desc = isFinal ? item.text : item;
             const numVal = isFinal ? item.num : (i + 1);
@@ -777,32 +805,58 @@ export async function salvarEImprimirFolhaoMolde4() {
             if (isFinal) h += `<td style="text-align:center;">${getV(`${prefix}-${i}-med`)}</td>`;
             h += `<td style="text-align:center;font-weight:bold;">${v==='SIM'?'X':''}</td><td style="text-align:center;font-weight:bold;">${v==='NÃO'?'X':''}</td></tr>`;
         });
-        h += `</table>`;
+        h += `</tbody></table>`;
         return h;
     }
 
     // 4. DESENHA O SEU PDF PERFEITO DA CSN
+    // Código do documento — identifica esse laudo de forma única, prática
+    // comum em documentos técnicos formais (tipo "MCC4-M4-12-260826").
+    const dataCompacta = new Date().toLocaleDateString('pt-BR').split('/').reverse().join('').slice(2);
+    const codigoDocumento = `LM-MCC4-${tag}-${dataCompacta}`;
+
     let htmlPDF = `
     <style>
-        .pdf-base { font-family: Arial, sans-serif; font-size: 9px; color: #000; }
-        .pdf-base table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
-        .pdf-base th, .pdf-base td { border: 1px solid #000; padding: 3px; }
-        .pdf-base th { background: #e0e0e0; text-align: center; font-weight: bold; font-size: 9px; }
-        .pdf-base .titulo-secao { background: #002b5e; color: #fff; font-weight: bold; padding: 4px; text-align: left; margin: 10px 0 4px 0; border: 1px solid #000; font-size: 10px; text-transform: uppercase; }
-        .pdf-base .assinatura-box { margin-top:2px; font-size:8px; font-weight:bold; }
-        @media print { .quebra-pagina { break-before: page; page-break-before: always; margin-top: 10px; } }
+        /* Margens de página no padrão de documento técnico formal
+           (3cm esquerda p/ encadernação, 2cm nas demais). */
+        @page { size: A4; margin: 2cm 2cm 2cm 3cm; }
+
+        .pdf-base { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #000; line-height: 1.35; }
+        .pdf-base table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        .pdf-base th, .pdf-base td { border: 1px solid #333; padding: 4px 6px; font-size: 9pt; }
+        .pdf-base th { background: #e8e8e8; text-align: center; font-weight: bold; }
+        /* Repete o cabeçalho da tabela em toda página nova, se a tabela
+           quebrar no meio — padrão de documento técnico bem formatado. */
+        .pdf-base thead { display: table-header-group; }
+        .pdf-base tr { page-break-inside: avoid; }
+
+        .pdf-base .titulo-secao {
+            background: #002b5e; color: #fff; font-weight: bold;
+            padding: 6px 8px; text-align: left; margin: 16px 0 6px 0;
+            font-size: 10.5pt; text-transform: uppercase; letter-spacing: 0.3px;
+        }
+        .pdf-base .assinatura-box { margin: 6px 0 4px 0; font-size: 9pt; font-weight: bold; }
+        .pdf-base .rodape-documento {
+            margin-top: 24px; padding-top: 6px; border-top: 1px solid #999;
+            font-size: 7.5pt; color: #444; display: flex; justify-content: space-between;
+        }
+        @media print {
+            .quebra-pagina { break-before: page; page-break-before: always; margin-top: 10px; }
+        }
     </style>
     <div class="pdf-base">
         <!-- CABEÇALHO -->
-        <div style="display: flex; border: 2px solid #000; border-bottom: 5px solid #002b5e; margin-bottom: 8px; align-items: center;">
-            <div style="width: 20%; text-align: center; border-right: 2px solid #000; padding: 8px;"><span style="font-weight: 900; font-size: 28px; color: #002b5e; letter-spacing: -2px;">CSN</span></div>
-            <div style="width: 60%; text-align: center; padding: 8px;">
-                <h2 style="margin: 0; font-size: 12px; color: #000;">CHECK LIST GERAL DO MOLDE MCC 4</h2>
-                <p style="margin: 4px 0 0 0; font-size: 8px; font-weight: bold;">DATA INÍCIO: ${dtIni} | DATA FIM: ${dtFim}</p>
+        <div style="display: flex; border: 2px solid #000; border-bottom: 4px solid #002b5e; margin-bottom: 10px; align-items: center;">
+            <div style="width: 18%; text-align: center; border-right: 2px solid #000; padding: 10px;"><span style="font-weight: 900; font-size: 26px; color: #002b5e; letter-spacing: -1.5px;">CSN</span></div>
+            <div style="width: 62%; text-align: center; padding: 8px;">
+                <h2 style="margin: 0; font-size: 13pt; letter-spacing: 0.5px;">CHECK LIST GERAL DO MOLDE MCC 4</h2>
+                <p style="margin: 4px 0 0 0; font-size: 8.5pt; font-weight: bold;">DATA INÍCIO: ${dtIni} &nbsp;|&nbsp; DATA FIM: ${dtFim}</p>
             </div>
-            <div style="width: 20%; font-size: 9px; border-left: 2px solid #000; padding: 8px; font-weight: bold;">TAG: ${tag}</div>
+            <div style="width: 20%; font-size: 9pt; border-left: 2px solid #000; padding: 8px; font-weight: bold; text-align: center;">
+                TAG<br><span style="font-size: 13pt;">${tag}</span>
+            </div>
         </div>
-        
+
         <table style="margin-bottom: 15px; border: 2px solid #000;">
             <tr>
                 <td style="width: 25%;"><strong>Nº MOLDE:</strong> ${num}</td>
@@ -810,46 +864,61 @@ export async function salvarEImprimirFolhaoMolde4() {
                 <td style="width: 25%; color: #002b5e;"><strong>EXECUÇÃO:</strong> ${tipoE}</td>
                 <td style="width: 20%; background-color: #f0f0f0; text-align: center;"><strong>NOVA META:</strong> ${novaMeta}</td>
             </tr>
+            <tr>
+                <td colspan="2"><strong>LÍDER RESPONSÁVEL:</strong> ${lider}</td>
+                <td colspan="2"><strong>DESEMPENHO:</strong> ${desempenho}</td>
+            </tr>
         </table>
 
-        <div class="titulo-secao">IDENTIFICAÇÃO DE COMPONENTES</div>
+        <div class="titulo-secao">Identificação de Componentes</div>
         <table>
-            <tr><th>PLACAS</th><th>SAÍDA MÁQ</th><th>SAÍDA OFI</th><th>REDUTORES</th><th>SAÍDA MÁQ</th><th>SAÍDA OFI</th><th>CILINDROS</th><th>SAÍDA MÁQ</th><th>SAÍDA OFI</th></tr>
+            <thead><tr><th>PLACAS</th><th>SAÍDA MÁQ</th><th>SAÍDA OFI</th><th>REDUTORES</th><th>SAÍDA MÁQ</th><th>SAÍDA OFI</th><th>CILINDROS</th><th>SAÍDA MÁQ</th><th>SAÍDA OFI</th></tr></thead>
+            <tbody>
             <tr><td>FIXA:</td><td style="text-align:center;">${getV('m4-id-pl-fixa-mq')}</td><td style="text-align:center;">${getV('m4-id-pl-fixa-of')}</td><td>SUP DIR</td><td style="text-align:center;">${getV('m4-id-red-sd-mq')}</td><td style="text-align:center;">${getV('m4-id-red-sd-of')}</td><td>SUP DIR</td><td style="text-align:center;">${getV('m4-id-cil-sd-mq')}</td><td style="text-align:center;">${getV('m4-id-cil-sd-of')}</td></tr>
             <tr><td>MÓVEL:</td><td style="text-align:center;">${getV('m4-id-pl-movel-mq')}</td><td style="text-align:center;">${getV('m4-id-pl-movel-of')}</td><td>INF DIR</td><td style="text-align:center;">${getV('m4-id-red-id-mq')}</td><td style="text-align:center;">${getV('m4-id-red-id-of')}</td><td>INF DIR</td><td style="text-align:center;">${getV('m4-id-cil-id-mq')}</td><td style="text-align:center;">${getV('m4-id-cil-id-of')}</td></tr>
             <tr><td>DIREITA:</td><td style="text-align:center;">${getV('m4-id-pl-dir-mq')}</td><td style="text-align:center;">${getV('m4-id-pl-dir-of')}</td><td>SUP ESQ</td><td style="text-align:center;">${getV('m4-id-red-se-mq')}</td><td style="text-align:center;">${getV('m4-id-red-se-of')}</td><td>SUP ESQ</td><td style="text-align:center;">${getV('m4-id-cil-se-mq')}</td><td style="text-align:center;">${getV('m4-id-cil-se-of')}</td></tr>
             <tr><td>ESQUERDA:</td><td style="text-align:center;">${getV('m4-id-pl-esq-mq')}</td><td style="text-align:center;">${getV('m4-id-pl-esq-of')}</td><td>INF ESQ</td><td style="text-align:center;">${getV('m4-id-red-ie-mq')}</td><td style="text-align:center;">${getV('m4-id-red-ie-of')}</td><td>INF ESQ</td><td style="text-align:center;">${getV('m4-id-cil-ie-mq')}</td><td style="text-align:center;">${getV('m4-id-cil-ie-of')}</td></tr>
+            </tbody>
         </table>
-        <div class="assinatura-box">DATA: ____/____/____ NOME:______________________________________ MATRÍCULA:_________</div>
+        <div class="assinatura-box">DATA: ____/____/____ &nbsp; NOME: ______________________________________ &nbsp; MATRÍCULA: _________</div>
 
-        <div class="titulo-secao">1. INSPEÇÃO DE RECEBIMENTO MECÂNICA</div>
+        <div class="titulo-secao">1. Inspeção de Recebimento Mecânica</div>
         ${gerarTabelaCheckPDF('m4-rec', checklistsM4.recebimentoMecanica)}
-        
-        <div class="titulo-secao">2. INSPEÇÃO DE RECEBIMENTO ELÉTRICA</div>
+
+        <div class="titulo-secao">2. Inspeção de Recebimento Elétrica</div>
         ${gerarTabelaCheckPDF('m4-ele', checklistsM4.recebimentoEletrica)}
 
         <div class="quebra-pagina"></div>
-        <div class="titulo-secao">3. REVISÃO DOS MOLDES</div>
+        <div class="titulo-secao">3. Revisão dos Moldes</div>
         ${gerarTabelaCheckPDF('m4-rev', checklistsM4.revisao)}
 
-        <div class="titulo-secao">4. INSPEÇÃO FINAL DOS MOLDES</div>
+        <div class="titulo-secao">4. Inspeção Final dos Moldes</div>
         ${gerarTabelaCheckPDF('m4-fin', checklistsM4.inspecaoFinal, true)}
-        <div class="assinatura-box">DATA: ____/____/____ NOME:______________________________________ MATRÍCULA:_________</div>
+        <div class="assinatura-box">DATA: ____/____/____ &nbsp; NOME: ______________________________________ &nbsp; MATRÍCULA: _________</div>
 
         <div class="quebra-pagina"></div>
-        <div class="titulo-secao">5. PLANILHA DE AJUSTE E MEDIDAS NOMINAIS DO MOLDE</div>
+        <div class="titulo-secao">5. Planilha de Ajuste e Medidas Nominais do Molde</div>
         <table>
-            <tr><th>ITEM</th><th>DESCRIÇÃO</th><th>NOMINAL</th><th>REAL</th></tr>
+            <thead><tr><th>ITEM</th><th>DESCRIÇÃO</th><th>NOMINAL</th><th>REAL</th></tr></thead>
+            <tbody>
             <tr><td style="text-align:center;">1</td><td>APERTO DO PARAFUSO EXCÊNTRICO</td><td>-</td><td>Dir: ${getV('m4-aj-exc-dir')} | Esq: ${getV('m4-aj-exc-esq')}</td></tr>
             <tr><td style="text-align:center;">2</td><td>TORQUE DO PARAFUSO DE FIXAÇÃO DO FOOT ROLL</td><td>300 + 5 Nm</td><td style="text-align:center;">${getV('m4-aj-tfr')}</td></tr>
             <tr><td style="text-align:center;">3</td><td>TORQUE DO PARAFUSO DE FIXAÇÃO DA PLACA LATERAL</td><td>200 + 5 Nm</td><td style="text-align:center;">${getV('m4-aj-tpl')}</td></tr>
             <tr><td style="text-align:center;">4</td><td>TIRANTE FIXAÇÃO DAS GUIAS LATERAIS</td><td>100 Nm</td><td style="text-align:center;">${getV('m4-aj-tir')}</td></tr>
             <tr><td style="text-align:center;">5</td><td>FOLGA DE GABARITO DO CLAMP (Ø250)</td><td>1,60 ± 0,15 mm</td><td>Sup: ${getV('m4-aj-clp-sup')} | Inf: ${getV('m4-aj-clp-inf')}</td></tr>
+            </tbody>
         </table>
-        
-        <div style="margin-top:40px; display:flex; justify-content:space-around; text-align:center; font-size:10px; font-weight:bold;">
-            <div><p>___________________________________</p><p>Assinatura Mecânica / Operador</p></div>
-            <div><p>___________________________________</p><p>Inspetor de Qualidade</p></div>
+
+        <div style="margin-top:36px; display:flex; justify-content:space-around; text-align:center; font-size:9.5pt; font-weight:bold;">
+            <div><p style="margin-bottom:2px;">___________________________________</p><p style="margin-top:2px;">Assinatura Mecânica / Operador</p></div>
+            <div><p style="margin-bottom:2px;">___________________________________</p><p style="margin-top:2px;">Inspetor de Qualidade</p></div>
+        </div>
+
+        <!-- RODAPÉ DE CONTROLE DO DOCUMENTO -->
+        <div class="rodape-documento">
+            <span>Documento: ${codigoDocumento}</span>
+            <span>Oficina de Moldes e Segmentos — CSN</span>
+            <span>Gerado em: ${new Date().toLocaleString('pt-BR')}</span>
         </div>
     </div>`;
 
