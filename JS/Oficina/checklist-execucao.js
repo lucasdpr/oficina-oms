@@ -14,9 +14,28 @@
 // procedimentos...).
 // ==========================================================================
 
-import { resolverApiBase, OPERADOR_LOGADO } from '../Core/banco.js?v=5';
+import { resolverApiBase, OPERADOR_LOGADO, BANCO_ATIVOS } from '../Core/banco.js?v=5';
 import { CHECKLIST_EXECUCAO_SECOES } from '../Core/dados.js';
 import { MATRICULAS_ADM, OFICINA_EQUIPE_ATUAL, verificarAcesso, renderReparos } from '../script.js';
+
+// ==========================================================================
+// 🆕 TIPO DE EQUIPAMENTO — as etapas agora são cadastradas por TIPO (ex:
+// "molde-mcc4"), não mais por tag específica (ex: "M4-12"). Essa função
+// resolve o tipo a partir da tag, usando o que já existe no BANCO_ATIVOS
+// (a.tipo + a.mcc_compat). Se um dia mudar a nomenclatura do tipo no
+// cadastro, só precisa ajustar aqui — o resto do arquivo não muda.
+// ==========================================================================
+function resolverTipoEquipamento(equipamentoId) {
+    const item = BANCO_ATIVOS.find(a => a.id === equipamentoId);
+    if (!item) return null;
+    const tipoSlug = (item.tipo || '')
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acento
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+    const mcc = (item.mcc_compat || '').replace('/', '-'); // "2/3" -> "2-3"
+    return mcc ? `${tipoSlug}-mcc${mcc}` : tipoSlug;
+}
 
 // ==========================================================================
 // 🆕 CHECKLIST DE EXECUÇÃO — passo a passo real do reparo, por
@@ -116,11 +135,14 @@ window.renderizarBotaoConcluirReparo = function(equipamentoId) {
 // --------------------------------------------------------------
 // ESTADO DO MODAL
 // --------------------------------------------------------------
-let CHECKLIST_EXECUCAO_EQUIPAMENTO_ATUAL = null;
+let CHECKLIST_EXECUCAO_EQUIPAMENTO_ATUAL = null; // tag específica, ex: "M4-12"
+let CHECKLIST_EXECUCAO_TIPO_ATUAL = null;        // tipo, ex: "molde-mcc4" — dono das etapas
+let CHECKLIST_EXECUCAO_EXECUCAO_ATUAL = null;    // 🆕 id do reparo (execução) em andamento
 let CHECKLIST_EXECUCAO_ETAPAS_ATUAIS = [];
 
 window.abrirChecklistExecucao = async function(equipamentoId) {
     CHECKLIST_EXECUCAO_EQUIPAMENTO_ATUAL = equipamentoId;
+    CHECKLIST_EXECUCAO_TIPO_ATUAL = resolverTipoEquipamento(equipamentoId);
     const modal = document.getElementById('modal-checklist-execucao');
     const titulo = document.getElementById('checklist-execucao-titulo');
     if (titulo) titulo.textContent = `Checklist de Execução — ${equipamentoId}`;
@@ -129,14 +151,57 @@ window.abrirChecklistExecucao = async function(equipamentoId) {
     const container = document.getElementById('checklist-execucao-secoes');
     if (container) container.innerHTML = `<p class="text-muted" style="text-align:center; padding:20px;">Carregando...</p>`;
 
+    if (!CHECKLIST_EXECUCAO_TIPO_ATUAL) {
+        if (container) container.innerHTML = `<p class="text-muted" style="text-align:center; padding:20px;">Não consegui identificar o tipo desse equipamento — confira o cadastro dele.</p>`;
+        return;
+    }
+
+    // 🆕 Resolve ou cria a EXECUÇÃO (o reparo em si) antes de buscar as
+    // etapas — sem isso não tem como saber o que já foi marcado NESSE
+    // reparo específico (etapas agora são compartilhadas entre todo
+    // equipamento do mesmo tipo).
+    const apiBase = await resolverApiBase();
+    try {
+        const respStatus = await fetch(`${apiBase}/api/checklist-execucao/status/${encodeURIComponent(equipamentoId)}`, { cache: 'no-store' });
+        const status = respStatus.ok ? await respStatus.json() : null;
+
+        if (status && status.execucao_id) {
+            // Já existe um reparo em andamento pra essa tag — reaproveita.
+            CHECKLIST_EXECUCAO_EXECUCAO_ATUAL = status.execucao_id;
+        } else {
+            // Nenhum reparo em andamento ainda — pergunta Geral ou Parcial
+            // e abre um novo.
+            const tipoExecucao = confirm('Esse reparo é GERAL?\n\nOK = Geral\nCancelar = Parcial') ? 'geral' : 'parcial';
+            const tecnico = OPERADOR_LOGADO || {};
+            const respIniciar = await fetch(`${apiBase}/api/checklist-execucao/execucoes/iniciar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    equipamento_id: equipamentoId,
+                    tipo_equipamento: CHECKLIST_EXECUCAO_TIPO_ATUAL,
+                    tipo_execucao: tipoExecucao,
+                    tecnico_matricula: tecnico.matricula || null,
+                    tecnico_nome: tecnico.nome || 'Técnico'
+                })
+            });
+            const resultadoIniciar = respIniciar.ok ? await respIniciar.json() : null;
+            CHECKLIST_EXECUCAO_EXECUCAO_ATUAL = resultadoIniciar ? resultadoIniciar.execucao_id : null;
+        }
+    } catch (e) {
+        console.error('⚠️ Erro ao resolver a execução do Checklist de Execução:', e);
+        if (container) container.innerHTML = `<p class="text-muted" style="text-align:center; padding:20px;">Não consegui conectar ao servidor pra abrir esse reparo.</p>`;
+        return;
+    }
+
     await window.recarregarChecklistExecucao();
 };
 
 window.recarregarChecklistExecucao = async function() {
-    if (!CHECKLIST_EXECUCAO_EQUIPAMENTO_ATUAL) return;
+    if (!CHECKLIST_EXECUCAO_TIPO_ATUAL) return;
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/checklist-execucao/etapas/${encodeURIComponent(CHECKLIST_EXECUCAO_EQUIPAMENTO_ATUAL)}`, { cache: 'no-store' });
+        const qs = CHECKLIST_EXECUCAO_EXECUCAO_ATUAL ? `?execucao_id=${CHECKLIST_EXECUCAO_EXECUCAO_ATUAL}` : '';
+        const resp = await fetch(`${apiBase}/api/checklist-execucao/etapas/${encodeURIComponent(CHECKLIST_EXECUCAO_TIPO_ATUAL)}${qs}`, { cache: 'no-store' });
         CHECKLIST_EXECUCAO_ETAPAS_ATUAIS = resp.ok ? await resp.json() : [];
     } catch (e) {
         console.error('⚠️ Erro ao carregar etapas do Checklist de Execução:', e);
@@ -152,6 +217,8 @@ window.fecharModalChecklistExecucao = function() {
     const modal = document.getElementById('modal-checklist-execucao');
     if (modal) modal.classList.add('hidden');
     CHECKLIST_EXECUCAO_EQUIPAMENTO_ATUAL = null;
+    CHECKLIST_EXECUCAO_TIPO_ATUAL = null;
+    CHECKLIST_EXECUCAO_EXECUCAO_ATUAL = null;
     CHECKLIST_EXECUCAO_ETAPAS_ATUAIS = [];
 };
 
@@ -229,6 +296,12 @@ window.renderizarChecklistExecucao = function() {
 window.marcarEtapaChecklistExecucao = async function(etapaId, marcado) {
     if (!verificarAcesso()) { window.recarregarChecklistExecucao(); return; }
 
+    if (!CHECKLIST_EXECUCAO_EXECUCAO_ATUAL) {
+        alert('Não foi possível identificar o reparo em andamento. Feche e abra o checklist de novo.');
+        window.recarregarChecklistExecucao();
+        return;
+    }
+
     let colaborador = null;
     if (marcado) {
         const equipe = Array.isArray(OFICINA_EQUIPE_ATUAL) ? OFICINA_EQUIPE_ATUAL : [];
@@ -252,6 +325,7 @@ window.marcarEtapaChecklistExecucao = async function(etapaId, marcado) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 etapa_id: etapaId,
+                execucao_id: CHECKLIST_EXECUCAO_EXECUCAO_ATUAL,
                 equipamento_id: CHECKLIST_EXECUCAO_EQUIPAMENTO_ATUAL,
                 marcado,
                 colaborador,
@@ -282,7 +356,7 @@ window.formNovaEtapaChecklistExecucao = async function(areaChave) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                equipamento_id: CHECKLIST_EXECUCAO_EQUIPAMENTO_ATUAL,
+                equipamento_id: CHECKLIST_EXECUCAO_TIPO_ATUAL, // 🆕 tipo, não a tag
                 area: areaChave,
                 texto: texto.trim(),
                 operador: tecnico.matricula || ''
