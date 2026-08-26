@@ -294,6 +294,11 @@ window.renderizarChecklistExecucao = function() {
 // MARCAR ETAPA (qualquer técnico logado)
 // --------------------------------------------------------------
 window.marcarEtapaChecklistExecucao = async function(etapaId, marcado) {
+    // 🔍 LOG TEMPORÁRIO DE DIAGNÓSTICO — remover depois de descobrir a
+    // causa do "volta pra tela de login sozinho" ao marcar uma etapa.
+    console.log('[DIAGNÓSTICO checklist] OPERADOR_LOGADO no momento do clique:', OPERADOR_LOGADO);
+    console.log('[DIAGNÓSTICO checklist] execução atual:', CHECKLIST_EXECUCAO_EXECUCAO_ATUAL, '| tipo atual:', CHECKLIST_EXECUCAO_TIPO_ATUAL);
+
     if (!verificarAcesso()) { window.recarregarChecklistExecucao(); return; }
 
     if (!CHECKLIST_EXECUCAO_EXECUCAO_ATUAL) {
