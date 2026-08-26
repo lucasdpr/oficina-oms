@@ -202,6 +202,64 @@ function renderizarTabelaSimNaoM4(containerId, array, prefix, isFinal = false) {
     container.innerHTML += html;
 }
 
+// ==============================================================
+// 🆕 PONTE COM O CHECKLIST DE EXECUÇÃO
+// ==============================================================
+// Busca os valores já respondidos no Checklist de Execução (reparo em
+// andamento dessa tag) e preenche os campos correspondentes do folhão
+// automaticamente. Só preenche os campos que JÁ têm etapa mapeada
+// (folhao_campo) e JÁ foram respondidos — o resto do formulário
+// continua 100% manual, sem quebrar nada.
+//
+// Não sobrescreve com valor vazio: se uma etapa ainda não foi marcada,
+// o campo do folhão fica do jeito que já estava (em branco ou como o
+// técnico tiver digitado manualmente).
+async function preencherFolhaoComChecklistExecucao(id, item) {
+    try {
+        // Mesmo cálculo de "tipo de equipamento" usado no Checklist de
+        // Execução (ex: "molde-mcc4") — precisa bater com o que foi usado
+        // lá no cadastro das etapas, senão a ponte não acha nada.
+        const tipoSlug = (item.tipo || '')
+            .toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, '');
+        const mcc = (item.mcc_compat || '').replace('/', '-');
+        const tipoEquipamento = mcc ? `${tipoSlug}-mcc${mcc}` : tipoSlug;
+
+        const apiBase = await resolverApiBase();
+
+        // Só faz sentido puxar valor se existir um reparo em andamento
+        // pra essa tag. Se não tiver (ex: abriu o folhão sem ter aberto o
+        // Checklist de Execução ainda), não tem de onde puxar — segue
+        // tudo manual normalmente.
+        const respStatus = await fetch(`${apiBase}/api/checklist-execucao/status/${encodeURIComponent(id)}`, { cache: 'no-store' });
+        const status = respStatus.ok ? await respStatus.json() : null;
+        if (!status || !status.execucao_id) return;
+
+        const respValores = await fetch(`${apiBase}/api/checklist-execucao/folhao/${encodeURIComponent(tipoEquipamento)}?execucao_id=${status.execucao_id}`, { cache: 'no-store' });
+        const valores = respValores.ok ? await respValores.json() : {};
+
+        Object.entries(valores).forEach(([campo, valor]) => {
+            if (!valor) return; // etapa ainda não respondida — não mexe no campo
+
+            // Campo pode ser um par de radios SIM/NÃO (name="campo") ou um
+            // <input>/<textarea> comum (id="campo") — tenta os dois.
+            const radios = document.getElementsByName(campo);
+            if (radios && radios.length > 0) {
+                radios.forEach(r => { r.checked = (valor === 'OK' && r.value === 'SIM') || r.value === valor; });
+                return;
+            }
+            const inputEl = document.getElementById(campo);
+            if (inputEl) inputEl.value = valor;
+        });
+    } catch (e) {
+        console.error('⚠️ Não consegui puxar os valores do Checklist de Execução pro folhão:', e);
+        // Falha aqui não deve travar a abertura do folhão — só segue sem
+        // autopreencher, técnico preenche manual como sempre.
+    }
+}
+
 function renderizarM4Identificacao() {
     const container = document.getElementById('container-m4-identificacao');
     if (!container) return;
@@ -630,6 +688,13 @@ export function abrirFolhaoMCC4(id) {
         renderizarM4ChavetasEngrenagem();
         renderizarM4Mecanica();
         renderizarM4Materiais();
+
+        // 🆕 Depois de tudo desenhado na tela, tenta puxar os valores já
+        // respondidos no Checklist de Execução e preencher os campos
+        // correspondentes sozinho. Roda em paralelo (não bloqueia a
+        // abertura do modal) — se falhar ou não achar nada, o formulário
+        // segue 100% manual, do jeito que já era.
+        preencherFolhaoComChecklistExecucao(id, item);
 
         const firstTabM4 = modalM4.querySelector('.folhao-tab');
         if (firstTabM4) firstTabM4.click();

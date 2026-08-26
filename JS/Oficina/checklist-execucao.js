@@ -257,22 +257,7 @@ window.renderizarChecklistExecucao = function() {
                     ${isAdmin ? `<button class="btn-premium" style="padding:3px 8px; font-size:11px;" onclick="window.formNovaEtapaChecklistExecucao('${secao.chave}')"><i class="fas fa-plus"></i> Etapa</button>` : ''}
                 </div>
                 ${etapasDaSecao.length === 0 ? `<div class="text-muted" style="font-size:11.5px;">Nenhuma etapa cadastrada ainda nesta seção.</div>` : ''}
-                ${etapasDaSecao.map((e, idx) => `
-                    <div style="display:flex; gap:10px; align-items:flex-start; padding:8px; border-radius:8px; background:${e.marcado ? 'var(--success-bg)' : 'var(--bg-td)'}; margin-bottom:6px;">
-                        <input type="checkbox" ${e.marcado ? 'checked' : ''} style="margin-top:3px; width:18px; height:18px; flex-shrink:0;" onchange="window.marcarEtapaChecklistExecucao(${e.id}, this.checked)">
-                        <div style="flex:1; min-width:0;">
-                            <div style="font-size:13px; color:var(--text-heading);">${e.texto}</div>
-                            ${e.marcado ? `<div class="text-muted" style="font-size:11px; margin-top:2px;"><i class="fas fa-user"></i> ${e.colaborador || '—'} · marcado por ${e.tecnico_nome || '—'} em ${e.data_hora ? new Date(e.data_hora).toLocaleString('pt-BR') : ''}</div>` : ''}
-                        </div>
-                        ${isAdmin ? `
-                            <div style="display:flex; flex-direction:column; gap:3px;">
-                                <button class="btn-premium" style="padding:2px 6px; font-size:10px;" title="Mover pra cima" onclick="window.moverEtapaChecklistExecucao(${e.id}, '${secao.chave}', -1)"><i class="fas fa-arrow-up"></i></button>
-                                <button class="btn-premium" style="padding:2px 6px; font-size:10px;" title="Mover pra baixo" onclick="window.moverEtapaChecklistExecucao(${e.id}, '${secao.chave}', 1)"><i class="fas fa-arrow-down"></i></button>
-                                <button class="btn-outline-danger" style="padding:2px 6px; font-size:10px;" title="Excluir etapa" onclick="window.excluirEtapaChecklistExecucao(${e.id})"><i class="fas fa-trash"></i></button>
-                            </div>
-                        ` : ''}
-                    </div>
-                `).join('')}
+                ${etapasDaSecao.map((e, idx) => renderizarLinhaEtapaChecklistExecucao(e, secao, isAdmin)).join('')}
             </div>
         `;
     });
@@ -291,14 +276,114 @@ window.renderizarChecklistExecucao = function() {
 };
 
 // --------------------------------------------------------------
-// MARCAR ETAPA (qualquer técnico logado)
+// 🆕 Renderiza 1 linha de etapa, no formato certo pro tipo dela:
+// - "sim_nao" (padrão): checkbox, igual sempre foi
+// - "medicao": mostra o valor atual + botão pra registrar/editar
+// - "medicao_multipla": mostra quantos campos já foram preenchidos
+//   (ex: "23/57") + botão que abre o mini-formulário
+// --------------------------------------------------------------
+function renderizarLinhaEtapaChecklistExecucao(e, secao, isAdmin) {
+    const tipoResposta = e.tipo_resposta || 'sim_nao';
+    const botoesAdmin = isAdmin ? `
+        <div style="display:flex; flex-direction:column; gap:3px;">
+            <button class="btn-premium" style="padding:2px 6px; font-size:10px;" title="Mover pra cima" onclick="window.moverEtapaChecklistExecucao(${e.id}, '${secao.chave}', -1)"><i class="fas fa-arrow-up"></i></button>
+            <button class="btn-premium" style="padding:2px 6px; font-size:10px;" title="Mover pra baixo" onclick="window.moverEtapaChecklistExecucao(${e.id}, '${secao.chave}', 1)"><i class="fas fa-arrow-down"></i></button>
+            <button class="btn-outline-danger" style="padding:2px 6px; font-size:10px;" title="Excluir etapa" onclick="window.excluirEtapaChecklistExecucao(${e.id})"><i class="fas fa-trash"></i></button>
+        </div>
+    ` : '';
+
+    if (tipoResposta === 'medicao') {
+        const preenchida = !!(e.valor && e.valor.trim());
+        return `
+            <div style="display:flex; gap:10px; align-items:flex-start; padding:8px; border-radius:8px; background:${preenchida ? 'var(--success-bg)' : 'var(--bg-td)'}; margin-bottom:6px;">
+                <div style="flex:1; min-width:0;">
+                    <div style="font-size:13px; color:var(--text-heading);">${e.texto}</div>
+                    ${preenchida
+                        ? `<div style="font-size:12px; color:var(--text-accent); margin-top:2px;"><i class="fas fa-ruler"></i> ${e.valor}</div>
+                           <div class="text-muted" style="font-size:11px; margin-top:2px;"><i class="fas fa-user"></i> ${e.colaborador || '—'} · em ${e.data_hora ? new Date(e.data_hora).toLocaleString('pt-BR') : ''}</div>`
+                        : `<div class="text-muted" style="font-size:11px; margin-top:2px;">Ainda sem valor registrado.</div>`}
+                </div>
+                <button class="btn-premium" style="padding:4px 10px; font-size:11px; flex-shrink:0;" onclick="window.responderMedicaoChecklistExecucao(${e.id}, '${(e.valor || '').replace(/'/g, "\\'")}')">
+                    <i class="fas fa-pen"></i> ${preenchida ? 'Editar' : 'Registrar'}
+                </button>
+                ${botoesAdmin}
+            </div>
+        `;
+    }
+
+    if (tipoResposta === 'medicao_multipla') {
+        let totalCampos = 0, preenchidos = 0;
+        try {
+            const mapaCampos = JSON.parse(e.folhao_campo || '{}');
+            const valoresAtuais = JSON.parse(e.valor || '{}');
+            totalCampos = Object.keys(mapaCampos).length;
+            preenchidos = Object.keys(valoresAtuais).filter(k => valoresAtuais[k]).length;
+        } catch (err) { /* mapa mal formado — mostra 0/0 */ }
+        const completo = totalCampos > 0 && preenchidos === totalCampos;
+        return `
+            <div style="display:flex; gap:10px; align-items:flex-start; padding:8px; border-radius:8px; background:${completo ? 'var(--success-bg)' : 'var(--bg-td)'}; margin-bottom:6px;">
+                <div style="flex:1; min-width:0;">
+                    <div style="font-size:13px; color:var(--text-heading);">${e.texto}</div>
+                    <div class="text-muted" style="font-size:11px; margin-top:2px;"><i class="fas fa-ruler-combined"></i> ${preenchidos} / ${totalCampos} medições preenchidas</div>
+                </div>
+                <button class="btn-premium" style="padding:4px 10px; font-size:11px; flex-shrink:0;" onclick="window.abrirMedicaoMultiplaChecklistExecucao(${e.id})">
+                    <i class="fas fa-ruler"></i> Preencher
+                </button>
+                ${botoesAdmin}
+            </div>
+        `;
+    }
+
+    // Padrão: checkbox sim/não (comportamento original)
+    return `
+        <div style="display:flex; gap:10px; align-items:flex-start; padding:8px; border-radius:8px; background:${e.marcado ? 'var(--success-bg)' : 'var(--bg-td)'}; margin-bottom:6px;">
+            <input type="checkbox" ${e.marcado ? 'checked' : ''} style="margin-top:3px; width:18px; height:18px; flex-shrink:0;" onchange="window.marcarEtapaChecklistExecucao(${e.id}, this.checked)">
+            <div style="flex:1; min-width:0;">
+                <div style="font-size:13px; color:var(--text-heading);">${e.texto}</div>
+                ${e.marcado ? `<div class="text-muted" style="font-size:11px; margin-top:2px;"><i class="fas fa-user"></i> ${e.colaborador || '—'} · marcado por ${e.tecnico_nome || '—'} em ${e.data_hora ? new Date(e.data_hora).toLocaleString('pt-BR') : ''}</div>` : ''}
+                ${e.descricao ? `<details style="margin-top:4px;"><summary style="font-size:11px; color:var(--text-accent); cursor:pointer;">Ver passo a passo</summary><div class="text-muted" style="font-size:11px; white-space:pre-line; margin-top:4px;">${e.descricao}</div></details>` : ''}
+            </div>
+            ${botoesAdmin}
+        </div>
+    `;
+}
+
+// --------------------------------------------------------------
+// 🆕 ENVIO COMPARTILHADO — usado pelo checkbox (sim/não), pela
+// medição única e pela medição múltipla. Centraliza o POST /marcar
+// pra não repetir a mesma lógica 3 vezes.
+// --------------------------------------------------------------
+async function enviarMarcacaoChecklistExecucao(etapaId, { marcado, valor = null, colaborador = null, trocado = null }) {
+    const tecnico = OPERADOR_LOGADO || {};
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/checklist-execucao/marcar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                etapa_id: etapaId,
+                execucao_id: CHECKLIST_EXECUCAO_EXECUCAO_ATUAL,
+                equipamento_id: CHECKLIST_EXECUCAO_EQUIPAMENTO_ATUAL,
+                marcado,
+                colaborador,
+                valor,
+                trocado,
+                tecnico_matricula: tecnico.matricula || null,
+                tecnico_nome: tecnico.nome || 'Técnico'
+            })
+        });
+        if (!resp.ok) alert('Não foi possível salvar essa resposta.');
+    } catch (e) {
+        console.error('⚠️ Erro ao salvar resposta do Checklist de Execução:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+    window.recarregarChecklistExecucao();
+}
+
+// --------------------------------------------------------------
+// MARCAR ETAPA (qualquer técnico logado) — checkboxes sim/não
 // --------------------------------------------------------------
 window.marcarEtapaChecklistExecucao = async function(etapaId, marcado) {
-    // 🔍 LOG TEMPORÁRIO DE DIAGNÓSTICO — remover depois de descobrir a
-    // causa do "volta pra tela de login sozinho" ao marcar uma etapa.
-    console.log('[DIAGNÓSTICO checklist] OPERADOR_LOGADO no momento do clique:', OPERADOR_LOGADO);
-    console.log('[DIAGNÓSTICO checklist] execução atual:', CHECKLIST_EXECUCAO_EXECUCAO_ATUAL, '| tipo atual:', CHECKLIST_EXECUCAO_TIPO_ATUAL);
-
     if (!verificarAcesso()) { window.recarregarChecklistExecucao(); return; }
 
     if (!CHECKLIST_EXECUCAO_EXECUCAO_ATUAL) {
@@ -322,28 +407,106 @@ window.marcarEtapaChecklistExecucao = async function(etapaId, marcado) {
         }
     }
 
-    const tecnico = OPERADOR_LOGADO || {};
-    try {
-        const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/checklist-execucao/marcar`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                etapa_id: etapaId,
-                execucao_id: CHECKLIST_EXECUCAO_EXECUCAO_ATUAL,
-                equipamento_id: CHECKLIST_EXECUCAO_EQUIPAMENTO_ATUAL,
-                marcado,
-                colaborador,
-                tecnico_matricula: tecnico.matricula || null,
-                tecnico_nome: tecnico.nome || 'Técnico'
-            })
-        });
-        if (!resp.ok) alert('Não foi possível salvar essa marcação.');
-    } catch (e) {
-        console.error('⚠️ Erro ao marcar etapa do Checklist de Execução:', e);
-        alert('Não foi possível conectar ao servidor.');
+    await enviarMarcacaoChecklistExecucao(etapaId, { marcado, colaborador });
+};
+
+// --------------------------------------------------------------
+// 🆕 MEDIÇÃO ÚNICA (tipo_resposta = "medicao") — ex: "Qual a situação
+// do molde / Observação". Pede o valor e quem preencheu, num prompt
+// simples (não precisa de modal pra 1 campo só).
+// --------------------------------------------------------------
+window.responderMedicaoChecklistExecucao = async function(etapaId, valorAtual) {
+    if (!verificarAcesso()) { window.recarregarChecklistExecucao(); return; }
+    if (!CHECKLIST_EXECUCAO_EXECUCAO_ATUAL) {
+        alert('Não foi possível identificar o reparo em andamento. Feche e abra o checklist de novo.');
+        return;
     }
-    window.recarregarChecklistExecucao();
+
+    const valor = prompt('Valor / observação:', valorAtual || '');
+    if (valor === null) return; // cancelou
+    if (!valor.trim()) { alert('Informe um valor.'); return; }
+
+    const equipe = Array.isArray(OFICINA_EQUIPE_ATUAL) ? OFICINA_EQUIPE_ATUAL : [];
+    const nomes = equipe.map(p => p.nome).join(', ');
+    const colaborador = prompt(`Quem preencheu essa informação?${nomes ? `\n(Equipe: ${nomes})` : ''}`);
+    if (colaborador === null) return;
+
+    await enviarMarcacaoChecklistExecucao(etapaId, { marcado: true, valor: valor.trim(), colaborador: colaborador.trim() || null });
+};
+
+// --------------------------------------------------------------
+// 🆕 MEDIÇÃO MÚLTIPLA (tipo_resposta = "medicao_multipla") — ex:
+// "Verificar bitola/aresta — Esquerda", que precisa de dezenas de
+// valores de uma vez. Abre um mini-formulário com 1 campo por medida,
+// gerado a partir do `folhao_campo` (JSON) que veio da etapa — não tem
+// nada fixo no código, então funciona pra qualquer etapa desse tipo,
+// de qualquer equipamento.
+// --------------------------------------------------------------
+window.abrirMedicaoMultiplaChecklistExecucao = function(etapaId) {
+    if (!verificarAcesso()) return;
+    const etapa = CHECKLIST_EXECUCAO_ETAPAS_ATUAIS.find(e => e.id === etapaId);
+    if (!etapa) return;
+
+    let mapaCampos = {};
+    let valoresAtuais = {};
+    try { mapaCampos = JSON.parse(etapa.folhao_campo || '{}'); } catch (e) { mapaCampos = {}; }
+    try { valoresAtuais = JSON.parse(etapa.valor || '{}'); } catch (e) { valoresAtuais = {}; }
+    const chaves = Object.keys(mapaCampos).sort();
+
+    if (chaves.length === 0) {
+        alert('Essa etapa não tem nenhum campo de medição configurado ainda.');
+        return;
+    }
+
+    // Remove um modal anterior, se sobrou algum aberto.
+    const existente = document.getElementById('modal-medicao-multipla-dinamico');
+    if (existente) existente.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'modal-medicao-multipla-dinamico';
+    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px;';
+    modal.innerHTML = `
+        <div class="glass-panel" style="max-width:640px; width:100%; max-height:85vh; overflow-y:auto; padding:18px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h4 style="margin:0; color:var(--text-heading);"><i class="fas fa-ruler"></i> ${etapa.texto}</h4>
+                <button class="btn-outline-danger" style="padding:2px 10px;" onclick="document.getElementById('modal-medicao-multipla-dinamico').remove()"><i class="fas fa-times"></i></button>
+            </div>
+            <p class="text-muted" style="font-size:11.5px; margin-bottom:12px;">Preenche o que já mediu — não precisa fazer tudo de uma vez, dá pra voltar e completar depois.</p>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:8px; margin-bottom:14px;">
+                ${chaves.map(chave => `
+                    <div>
+                        <label style="font-size:10.5px; color:var(--text-muted); display:block; margin-bottom:2px;">${chave}</label>
+                        <input type="text" data-chave-medicao="${chave}" value="${valoresAtuais[chave] || ''}" class="premium-select" style="width:100%; padding:4px 6px; font-size:12px;">
+                    </div>
+                `).join('')}
+            </div>
+            <button class="btn-premium btn-success" style="width:100%;" onclick="window.salvarMedicaoMultiplaChecklistExecucao(${etapaId})">
+                <i class="fas fa-save"></i> Salvar medições
+            </button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+};
+
+window.salvarMedicaoMultiplaChecklistExecucao = async function(etapaId) {
+    const modal = document.getElementById('modal-medicao-multipla-dinamico');
+    if (!modal) return;
+    const inputs = modal.querySelectorAll('[data-chave-medicao]');
+    const valores = {};
+    let preenchidos = 0;
+    inputs.forEach(inp => {
+        const v = inp.value.trim();
+        if (v) { valores[inp.dataset.chaveMedicao] = v; preenchidos++; }
+    });
+    if (preenchidos === 0) { alert('Preencha pelo menos uma medição antes de salvar.'); return; }
+
+    const equipe = Array.isArray(OFICINA_EQUIPE_ATUAL) ? OFICINA_EQUIPE_ATUAL : [];
+    const nomes = equipe.map(p => p.nome).join(', ');
+    const colaborador = prompt(`Quem realizou essas medições?${nomes ? `\n(Equipe: ${nomes})` : ''}`);
+    if (colaborador === null) return;
+
+    modal.remove();
+    await enviarMarcacaoChecklistExecucao(etapaId, { marcado: true, valor: JSON.stringify(valores), colaborador: colaborador.trim() || null });
 };
 
 // --------------------------------------------------------------
