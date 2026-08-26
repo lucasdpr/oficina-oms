@@ -909,6 +909,226 @@ export async function salvarEImprimirFolhaoMolde4() {
             </tbody>
         </table>
 
+        <div class="titulo-secao">6. Check List Hidráulico e Elétrico</div>
+        <table>
+            <thead><tr><th style="width:5%;">ITEM</th><th>DESCRIÇÃO SERVIÇO</th><th>NOME</th><th>MATRÍCULA</th></tr></thead>
+            <tbody>
+            ${checklistsM4.hidraulico.map((desc, i) => `
+                <tr><td style="text-align:center;">${i + 1}</td><td>${desc}</td><td>${getV(`m4-hid-nome-${i}`)}</td><td>${getV(`m4-hid-mat-${i}`)}</td></tr>
+            `).join('')}
+            </tbody>
+        </table>
+        <p style="font-size:9pt; margin:6px 0;"><strong>CHECK ELÉTRICO:</strong> Os conectores do DBO e VUHZ estão limpos, tamponados e protegidos? &nbsp;
+            Nome: ${getV('m4-ele-nome')} &nbsp; Matrícula: ${getV('m4-ele-mat')}</p>
+
+        <div class="quebra-pagina"></div>
+        <div class="titulo-secao">7. Diâmetros e Alinhamento (Foot Roll e Edge Roll)</div>
+        ${(() => {
+            const secRolosPDF = (titulo, prefix) => `
+                <h4 style="margin-top:10px;">${titulo}</h4>
+                <p style="font-size:9pt; margin:2px 0;">
+                    Lado Esq Afastado: <strong>${getRadioValue(`m4-${prefix}-esq-af`)}</strong> &nbsp;|&nbsp;
+                    Lado Dir Afastado: <strong>${getRadioValue(`m4-${prefix}-dir-af`)}</strong>
+                </p>
+                <table>
+                    <tr><th>LADO FIXO</th><td>${getV(`m4-${prefix}-fixo`)}</td><th>LADO MÓVEL</th><td>${getV(`m4-${prefix}-movel`)}</td></tr>
+                    <tr><th>LADO DIREITO</th><td>${getV(`m4-${prefix}-dir`)}</td><th>LADO ESQUERDO</th><td>${getV(`m4-${prefix}-esq`)}</td></tr>
+                </table>
+            `;
+            return `
+                ${secRolosPDF('DIÂMETROS — CHEGADA NA OFICINA', 'dia-c')}
+                <p style="font-size:8pt; color:#555;">Obs.: Afastar edge roll que apresentar diâmetro Ø menor que 97,00mm.</p>
+                ${secRolosPDF('DIÂMETROS — SAÍDA DA OFICINA', 'dia-s')}
+                <h4 style="margin-top:15px;">ALINHAMENTO DOS ROLOS (F1, F2, F3 — Tolerância ±0,1mm)</h4>
+                <table>
+                    <tr><th>FACE</th><th>F1</th><th>F2</th><th>F3</th></tr>
+                    <tr><td>FIXA</td><td>${getV('m4-alinh-fixa-f1')}</td><td>${getV('m4-alinh-fixa-f2')}</td><td>${getV('m4-alinh-fixa-f3')}</td></tr>
+                    <tr><td>MÓVEL</td><td>${getV('m4-alinh-mov-f1')}</td><td>${getV('m4-alinh-mov-f2')}</td><td>${getV('m4-alinh-mov-f3')}</td></tr>
+                </table>
+            `;
+        })()}
+        <div class="assinatura-box">DATA: ____/____/____ &nbsp; NOME: ______________________________________ &nbsp; MATRÍCULA: _________</div>
+
+        <div class="quebra-pagina"></div>
+        <div class="titulo-secao">8. Planilha de Ajuste do Sensor de Nível</div>
+        <table>
+            <thead><tr><th>ITEM</th><th>DESCRIÇÃO</th><th>OK</th></tr></thead>
+            <tbody>
+            ${[1,2,3,4,5,6,7].map(i => `<tr><td style="text-align:center;">${i}</td><td>${['VERIFICAR TAMPA DE PROTEÇÃO;','EFETUAR A TROCA DAS GAXETAS DE ISOLAÇÃO DO SENSOR','VERIFICAR PARAFUSO DE FIXAÇÃO DO SUPORTE DO SENSOR, TORQUE 50 NM;','VERIFICAR PARAFUSO DE FIXAÇÃO DA TAMPA DE PROTEÇÃO DO SENSOR, TORQUE 40 NM;','VERIFICAR ESTADO DE CONSERVAÇÃO E LIMPEZA;','TESTE DE ESTANQUIEDADE (5 BAR);','CHECK NA CONEXÕES DE ALIMENTAÇÃO DE ÁGUA;'][i-1]}</td><td style="text-align:center;">${getCheckboxValue(`m4-sn-${i}`)}</td></tr>`).join('')}
+            </tbody>
+        </table>
+        <h4 style="margin-top:10px;">MEDIÇÃO RESISTÊNCIA NO SENSOR</h4>
+        <table>
+            <thead><tr><th>ITEM</th><th>PINOS</th><th>LIMITES (Ω)</th><th>VALOR</th></tr></thead>
+            <tbody>
+            ${[['1-2','140...300'],['3-4','0...2'],['1-5','70...150'],['3-5','0...1'],['7-8','0...1'],['8-9','100...140'],['15-16','3...10'],['Pino 10 / Carcaça','0...1']].map((p,i) => `<tr><td style="text-align:center;">${i+8}</td><td>${p[0]}</td><td>${p[1]}</td><td>${getV(`m4-sn-res-${i+8}`)}</td></tr>`).join('')}
+            </tbody>
+        </table>
+        <h4 style="margin-top:10px;">ISOLAÇÃO DOS SENSORES (MΩ)</h4>
+        <table>
+            <thead><tr><th>PINOS</th><th>&gt;10 MΩ</th><th>VALOR MEDIDO</th></tr></thead>
+            <tbody>
+            ${["5 e 6","5 e 8","5 e 10","5 e 15","6 e 8","6 e 10","6 e 15","8 e 10","8 e 15","10 e 15"].map((p,i) => `<tr><td style="text-align:center;">${p}</td><td style="text-align:center;">&gt;10 MΩ</td><td>${getV(`m4-sn-iso-${i}`)}</td></tr>`).join('')}
+            </tbody>
+        </table>
+
+        <div class="quebra-pagina"></div>
+        <div class="titulo-secao">9. Teste de Resistência das Placas (Termopares)</div>
+        <table>
+            <thead><tr><th>TERMOPAR</th><th>FACE FIXA (10-30 Ω)</th><th>FACE MÓVEL (10-30 Ω)</th></tr></thead>
+            <tbody>
+            ${Array.from({length:12}, (_, idx) => idx+1).map(i => `<tr><td style="text-align:center;font-weight:bold;">T${i}</td><td>${getV(`m4-termo-f-${i}`)}</td><td>${getV(`m4-termo-m-${i}`)}</td></tr>`).join('')}
+            </tbody>
+        </table>
+        <h4 style="margin-top:10px;">PLACAS ESTREITAS</h4>
+        <table>
+            <thead><tr><th>LADO</th><th>T1 (10-30 Ω)</th><th>T2 (10-30 Ω)</th></tr></thead>
+            <tbody>
+            <tr><td>DIREITA</td><td>${getV('m4-termo-ed-1')}</td><td>${getV('m4-termo-ed-2')}</td></tr>
+            <tr><td>ESQUERDA</td><td>${getV('m4-termo-ee-1')}</td><td>${getV('m4-termo-ee-2')}</td></tr>
+            </tbody>
+        </table>
+        <h4 style="margin-top:10px;">VERIFICAÇÃO CAIXAS TERMOPARES</h4>
+        <table>
+            <thead><tr><th>DESCRIÇÃO</th><th>CONDIÇÃO</th></tr></thead>
+            <tbody>
+            <tr><td>PARAFUSOS BASE</td><td>${getV('m4-tc-1')}</td></tr>
+            <tr><td>TESTE DE AR</td><td>${getV('m4-tc-2')}</td></tr>
+            <tr><td>ESTADO/LIMPEZA</td><td>${getV('m4-tc-3')}</td></tr>
+            <tr><td>BORRACHAS/VED.</td><td>${getV('m4-tc-4')}</td></tr>
+            <tr><td>TRAVAS</td><td>${getV('m4-tc-5')}</td></tr>
+            </tbody>
+        </table>
+
+        <div class="quebra-pagina"></div>
+        <div class="titulo-secao">10. Peritagem Placas Largas</div>
+        ${(() => {
+            const medidasPlacaLargaPDF = [
+                { label: "PLANICIDADE VERTICAL (F)", sufixo: "fv", tolerancia: "< 0,2mm" },
+                { label: "PLANICIDADE HORIZONTAL (G)", sufixo: "fh", tolerancia: "< 0,2mm" },
+                { label: "PROFUNDIDADE DE RANHURAS (P)", sufixo: "pr", tolerancia: "< 1mm" },
+                { label: "DESGASTE (A)", sufixo: "da", tolerancia: "< 1mm" },
+            ];
+            const blocoPlacaPDF = (prefix, ladoLabel, ladoSufixo) => `
+                <h4 style="margin-top:10px;">PLACA LARGA ${ladoLabel} — Nº ${getV(`${prefix}-${ladoSufixo}-numero`)}
+                    &nbsp;(${getV(`${prefix}-${ladoSufixo}-tipo`) || 'STEP'}) &nbsp;—&nbsp;
+                    Afastada: ${getRadioValue(`${prefix}-${ladoSufixo}-afast`)}</h4>
+                <table>
+                    <thead><tr><th>DESCRIÇÃO</th><th>LEITURA ORIGINAL (± 0,10mm)</th><th>TOLERÂNCIA</th></tr></thead>
+                    <tbody>
+                    ${medidasPlacaLargaPDF.map(m => `<tr><td>${m.label}</td><td>${getV(`${prefix}-${m.sufixo}-${ladoSufixo}`)}</td><td style="text-align:center;">${m.tolerancia}</td></tr>`).join('')}
+                    </tbody>
+                </table>
+            `;
+            return `
+                <p style="font-weight:bold; margin:6px 0 2px 0;">AO ENTRAR NA OFICINA</p>
+                ${blocoPlacaPDF('m4-per-ent', 'FIXA', 'fixa')}
+                ${blocoPlacaPDF('m4-per-ent', 'MÓVEL', 'movel')}
+                <p style="font-weight:bold; margin:10px 0 2px 0;">AO SAIR DA OFICINA</p>
+                ${blocoPlacaPDF('m4-per-sai', 'FIXA', 'fixa')}
+                ${blocoPlacaPDF('m4-per-sai', 'MÓVEL', 'movel')}
+            `;
+        })()}
+
+        <div class="quebra-pagina"></div>
+        <div class="titulo-secao">11. Peritagem Placas Estreitas</div>
+        <p style="font-size:8pt; color:#555;">Tolerâncias: B ≤ 1,0mm | E/F ≤ 2,0mm</p>
+        ${(() => {
+            const medidasEstreitasPDF = ['A (Desgaste topo)','B (Desgaste base)','C (Comprimento)','D (Comprimento)','E (Chanfro)','F (Chanfro)','G (Meio)','H1 (0,0mm ±0,1mm)','H2 (0,5mm ±0,1mm)','H3 (1,0mm ±0,1mm)','H4 (1,5mm ±0,1mm)','L (Largura topo)','M (Largura base)'];
+            const secEstreitasPDF = (titulo, prefix) => `
+                <h4 style="margin-top:10px;">${titulo}</h4>
+                <table>
+                    <thead><tr><th>MEDIDA</th><th>FACE SUL (ESQ)</th><th>FACE NORTE (DIR)</th></tr></thead>
+                    <tbody>
+                    ${medidasEstreitasPDF.map((p, i) => `<tr><td>${p}</td><td>${getV(`${prefix}-sul-${i}`)}</td><td>${getV(`${prefix}-nor-${i}`)}</td></tr>`).join('')}
+                    </tbody>
+                </table>
+            `;
+            return `${secEstreitasPDF('CHEGADA NA OFICINA', 'pe-cheg')}${secEstreitasPDF('SAÍDA DA OFICINA', 'pe-sai')}`;
+        })()}
+        <div class="assinatura-box">DATA: ____/____/____ &nbsp; NOME: ______________________________________ &nbsp; MATRÍCULA: _________</div>
+
+        <div class="quebra-pagina"></div>
+        <div class="titulo-secao">12. Caixas de Engrenagem, Chavetas e Folga Aresta</div>
+        <h4 style="margin-top:10px;">FOLGAS NAS CAIXAS DE ENGRENAGEM (BITOLA 1300 ± 1MM)</h4>
+        <table>
+            <thead><tr><th>COMPONENTE</th><th>ESQ SUP</th><th>ESQ INF</th><th>DIR SUP</th><th>DIR INF</th></tr></thead>
+            <tbody>
+            <tr><td>FUSO (mm)</td><td>${getV('m4-eng-fuso-es')}</td><td>${getV('m4-eng-fuso-ei')}</td><td>${getV('m4-eng-fuso-ds')}</td><td>${getV('m4-eng-fuso-di')}</td></tr>
+            <tr><td>PLACA (mm)</td><td>${getV('m4-eng-placa-es')}</td><td>${getV('m4-eng-placa-ei')}</td><td>${getV('m4-eng-placa-ds')}</td><td>${getV('m4-eng-placa-di')}</td></tr>
+            </tbody>
+        </table>
+        <h4 style="margin-top:10px;">AJUSTE DE CHAVETAS DAS PLACAS ESTREITAS</h4>
+        <table>
+            <thead><tr><th>PLACA</th><th>LADO</th><th>A</th><th>B</th><th>NOME</th><th>REG</th></tr></thead>
+            <tbody>
+            <tr><td>ESQUERDA</td><td>A</td><td>${getV('m4-chav-esq-a-a')}</td><td>${getV('m4-chav-esq-a-b')}</td><td>${getV('m4-chav-esq-a-nome')}</td><td>${getV('m4-chav-esq-a-reg')}</td></tr>
+            <tr><td>ESQUERDA</td><td>B</td><td>${getV('m4-chav-esq-b-a')}</td><td>${getV('m4-chav-esq-b-b')}</td><td>${getV('m4-chav-esq-b-nome')}</td><td>${getV('m4-chav-esq-b-reg')}</td></tr>
+            <tr><td>DIREITA</td><td>A</td><td>${getV('m4-chav-dir-a-a')}</td><td>${getV('m4-chav-dir-a-b')}</td><td>${getV('m4-chav-dir-a-nome')}</td><td>${getV('m4-chav-dir-a-reg')}</td></tr>
+            <tr><td>DIREITA</td><td>B</td><td>${getV('m4-chav-dir-b-a')}</td><td>${getV('m4-chav-dir-b-b')}</td><td>${getV('m4-chav-dir-b-nome')}</td><td>${getV('m4-chav-dir-b-reg')}</td></tr>
+            </tbody>
+        </table>
+        <h4 style="margin-top:10px;">AVALIAÇÃO DO SISTEMA DE RESFRIAMENTO NA SAÍDA</h4>
+        <table>
+            <tr><th>FACE FIXA</th><td>${getV('m4-resf-fixa')}</td></tr>
+            <tr><th>FACE MÓVEL</th><td>${getV('m4-resf-movel')}</td></tr>
+        </table>
+        <h4 style="margin-top:10px;">RELATÓRIO FOLGA DE ARESTA (Tolerância = 0,25mm por face)</h4>
+        <table>
+            <thead><tr><th>LARGURA</th><th>ESQUERDA (Sup/Meio/Inf)</th><th>DIREITA (Sup/Meio/Inf)</th></tr></thead>
+            <tbody>
+            ${[1000, 1030, 1040, 1090, 1100, 1160, 1180, 1230, 1290, 1360, 1380, 1420, 1460, 1500, 1530, 1550, 1560, 1580, 1620].map(l => `
+                <tr><td style="font-weight:bold;">${l}</td>
+                    <td>${getV(`m4-fa-${l}-es`)} / ${getV(`m4-fa-${l}-em`)} / ${getV(`m4-fa-${l}-ei`)}</td>
+                    <td>${getV(`m4-fa-${l}-ds`)} / ${getV(`m4-fa-${l}-dm`)} / ${getV(`m4-fa-${l}-di`)}</td></tr>
+            `).join('')}
+            </tbody>
+        </table>
+        <div class="assinatura-box">DATA: ____/____/____ &nbsp; NOME: ______________________________________ &nbsp; MATRÍCULA: _________</div>
+
+        <div class="quebra-pagina"></div>
+        <div class="titulo-secao">13. Aferição Eixo Excêntrico, Cardans e Transmissões</div>
+        <table>
+            <thead><tr><th>COTA</th><th>MEDIDA DO DESENHO</th><th>MEDIDA TOLERÁVEL</th><th>LADO DIREITO</th><th>LADO ESQUERDO</th></tr></thead>
+            <tbody>
+            ${[['A','70 (0 / +0,1)','70 (+/- 1,5)'],['B','45,00','45,00 (0 / -0,5)'],['C','90 d9 (-0,12/-0,20)','90 (0 / -0,207)'],['D','31,00','31,00 (0 / -0,5)'],['E','70 h7 (0 / -0,03)','70,00 (-0,15)'],['F','12,00','12,00 (+/- 0,2)'],['SW','55,00','55,00 (+/- 0,5)']].map(([cota, desenho, tol]) => `
+                <tr><td>${cota}</td><td>${desenho}</td><td>${tol}</td><td>${getV(`m4-ex-${cota.toLowerCase()}-d`)}</td><td>${getV(`m4-ex-${cota.toLowerCase()}-e`)}</td></tr>
+            `).join('')}
+            <tr><td colspan="5" style="background:#e8e8e8; text-align:center; font-weight:bold;">BUCHA DO EXCÊNTRICO</td></tr>
+            <tr><td>DIA INT.</td><td>70 H8 (0 / +0,046)</td><td>70,00 (+0,15)</td><td>${getV('m4-ex-buc-d')}</td><td>${getV('m4-ex-buc-e')}</td></tr>
+            </tbody>
+        </table>
+        <h4 style="margin-top:10px;">VERIFICAÇÃO DOS CARDANS</h4>
+        <table>
+            <thead><tr><th>LOCAL</th><th>ARTICULAÇÃO</th><th>SANFONADA</th><th>PINO TRAVA</th><th>ACOPLAMENTO</th><th>DATA TROCA</th></tr></thead>
+            <tbody>
+            ${['Esq Sup', 'Dir Sup', 'Esq Inf', 'Dir Inf'].map((loc, i) => `
+                <tr><td>${loc}</td><td>${getV(`m4-cd-art-${i}`)}</td><td>${getV(`m4-cd-sanf-${i}`)}</td><td>${getV(`m4-cd-pino-${i}`)}</td><td>${getV(`m4-cd-acop-${i}`)}</td><td>${getV(`m4-cd-data-${i}`)}</td></tr>
+            `).join('')}
+            </tbody>
+        </table>
+        <h4 style="margin-top:10px;">PARAFUSOS DE FIXAÇÃO DAS TRANSMISSÕES</h4>
+        <table>
+            <thead><tr><th>LOCAL</th><th>Nº BENZLER</th><th>Nº TRANSMI</th><th>P1</th><th>P2</th><th>P3</th><th>P4</th></tr></thead>
+            <tbody>
+            ${['Sup Dir', 'Sup Esq', 'Inf Dir', 'Inf Esq'].map((loc, i) => `
+                <tr><td>${loc}</td><td>${getV(`m4-tr-bz-${i}`)}</td><td>${getV(`m4-tr-tr-${i}`)}</td>
+                    ${[1,2,3,4].map(p => `<td style="text-align:center;">${getCheckboxValue(`m4-tr-p${p}-${i}`)}</td>`).join('')}</tr>
+            `).join('')}
+            </tbody>
+        </table>
+        <div class="assinatura-box">DATA: ____/____/____ &nbsp; NOME: ______________________________________ &nbsp; MATRÍCULA: _________</div>
+
+        <div class="quebra-pagina"></div>
+        <div class="titulo-secao">14. Materiais Utilizados na Manutenção</div>
+        <table>
+            <thead><tr><th style="width:80%;">DESCRIÇÃO DO MATERIAL / SKU</th><th style="width:20%;">QUANTIDADE</th></tr></thead>
+            <tbody>
+            ${Array.from({length:29}, (_, idx) => idx+1).filter(i => getV(`m4-mat-desc-${i}`)).map(i => `<tr><td>${getV(`m4-mat-desc-${i}`)}</td><td style="text-align:center;">${getV(`m4-mat-qtd-${i}`)}</td></tr>`).join('') || '<tr><td colspan="2" style="text-align:center; color:#777;">Nenhum material informado.</td></tr>'}
+            </tbody>
+        </table>
+        <p style="font-size:9pt; margin-top:8px;"><strong>OBSERVAÇÕES GERAIS:</strong> ${getV('m4-observacoes-gerais')}</p>
+
         <div style="margin-top:36px; display:flex; justify-content:space-around; text-align:center; font-size:9.5pt; font-weight:bold;">
             <div><p style="margin-bottom:2px;">___________________________________</p><p style="margin-top:2px;">Assinatura Mecânica / Operador</p></div>
             <div><p style="margin-bottom:2px;">___________________________________</p><p style="margin-top:2px;">Inspetor de Qualidade</p></div>

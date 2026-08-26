@@ -526,7 +526,13 @@ export async function sincronizarAtivosReaisMCC4() {
                 ton: parseFloat(peca.tonelagem) || 0,
                 meta: parseFloat(peca.meta) || 0,
                 ordem: getOrdemPadrao(tipoCanonico),
-                mcc_compat: inferirMccCompat(peca, tipoCanonico),
+                // 🆕 CORREÇÃO CRÍTICA: agora que "mcc_compat" é uma coluna
+                // de verdade no banco (antes não existia lá), a resposta da
+                // API já traz o valor certo — usa ele direto. O "chute" por
+                // meta (inferirMccCompat) só entra como plano B, pras peças
+                // antigas cadastradas antes dessa correção, que nunca
+                // tiveram esse campo salvo no Postgres.
+                mcc_compat: peca.mcc_compat || inferirMccCompat(peca, tipoCanonico),
                 tag_patrimonio: peca.tag_patrimonio || null,
                 data_entrada: peca.data_entrada || null,
                 // 🔧 CORREÇÃO ("instalei e não foi salvo com a data"): esta
@@ -618,6 +624,15 @@ export async function salvarPecaNoPython(peca) {
             body: JSON.stringify({
                 id: peca.id || peca.ID,
                 tipo: peca.tipo || "",
+                // 🆕 CORREÇÃO CRÍTICA: "mcc_compat" (MCC 2/3 ou MCC 4) nunca
+                // era enviado pro backend aqui, mesmo já vindo certinho no
+                // objeto `peca` desde o cadastro. Isso fazia o campo viver
+                // só no localStorage de quem cadastrou — qualquer outro
+                // login/dispositivo, ao sincronizar com a nuvem, recebia o
+                // equipamento SEM esse dado e caía no padrão "2/3", fazendo
+                // um Molde MCC4 "virar" MCC 2/3 (inclusive abrindo o Folhão
+                // errado) pra todo mundo, exceto no navegador original.
+                mcc_compat: peca.mcc_compat || null,
                 tonelagem: peca.ton || 0,
                 dias: peca.dias || 0,
                 local: peca.local || "",
