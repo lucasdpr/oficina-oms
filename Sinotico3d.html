@@ -1197,7 +1197,7 @@ const ALTURA_PILAR = ALTURA_TOPO_BLOCO * 2 + EXTENSAO_ACIMA; // sai da base de b
 const pilarGeo = new THREE.BoxGeometry(0.11, ALTURA_PILAR, 0.11);
 const pilarMat = new THREE.MeshStandardMaterial({ color: 0x3a4150, roughness: 0.35, metalness: 0.65 });
 
-const cilindroElevGeo = new THREE.CylinderGeometry(0.09, 0.09, 0.13, 14);
+const cilindroElevGeo = new THREE.CylinderGeometry(0.055, 0.055, 0.12, 14);
 const cilindroElevMat = new THREE.MeshStandardMaterial({ color: 0x8a94a8, roughness: 0.3, metalness: 0.6 });
 // 🆕 Material de alerta — usado no cilindro (CIL-1..4) quando aquele
 // componente específico está marcado como crítico na Barra
@@ -1206,13 +1206,13 @@ const cilindroElevMatAlerta = new THREE.MeshStandardMaterial({ color: 0xef4444, 
 
 // 🆕 4 Porcas Hidráulicas — pequenos cilindros cinza, mais pro centro
 // do bloco que os 4 pilares/cilindros de elevação (igual ao desenho 2D).
-const porcaHidraulicaGeo = new THREE.CylinderGeometry(0.055, 0.055, 0.09, 14);
+const porcaHidraulicaGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.12, 14);
 const porcaHidraulicaMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.3, metalness: 0.6 });
 const porcaHidraulicaMatAlerta = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3, metalness: 0.55, emissive: 0x7a0000, emissiveIntensity: 0.45 });
 
 // 🆕 2 Cilindros Centrais (Recuo/RE e Avanço/AV) — agora como
 // pequenos cilindros (não bolas), os dois na mesma cor azul.
-const bolaCentralGeo = new THREE.CylinderGeometry(0.085, 0.085, 0.14, 16);
+const bolaCentralGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.12, 16);
 const bolaCentralMat = new THREE.MeshPhysicalMaterial({ color: 0x38bdf8, roughness: 0.25, metalness: 0.4, clearcoat: 0.5 });
 const bolaCentralMatAlerta = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3, metalness: 0.5, emissive: 0x7a0000, emissiveIntensity: 0.45 });
 
@@ -1302,13 +1302,13 @@ function adicionarRolosDecorativos(mesh, peca, ehGrupo23) {
     const yBola = ALTURA_TOPO_BLOCO + 0.07;
     const estadoRe = estadoComponenteBT(statusBarra['BALL-RE']);
     const bolaRe = new THREE.Mesh(bolaCentralGeo, estadoRe !== '' ? bolaCentralMatAlerta : bolaCentralMat);
-    bolaRe.position.set(-0.15, yBola, 0);
+    bolaRe.position.set(0, yBola, 0.28);
     bolaRe.castShadow = true;
     mesh.add(bolaRe);
 
     const estadoAv = estadoComponenteBT(statusBarra['BALL-AV']);
     const bolaAv = new THREE.Mesh(bolaCentralGeo, estadoAv !== '' ? bolaCentralMatAlerta : bolaCentralMat);
-    bolaAv.position.set(0.15, yBola, 0);
+    bolaAv.position.set(0, yBola, -0.28);
     bolaAv.castShadow = true;
     mesh.add(bolaAv);
 
