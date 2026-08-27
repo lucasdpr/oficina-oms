@@ -597,6 +597,17 @@ async function entrarComoVisitante(nomeDigitado) {
 
 export function verificarAcesso() {
     if (!OPERADOR_LOGADO) {
+        // 🔧 CORREÇÃO CRÍTICA ("marco uma etapa do Checklist, o sistema
+        // volta pra tela de login, e ao logar de novo volta direto pro
+        // Checklist"): o modal do Checklist de Execução (e outros modais)
+        // ficam DENTRO de #container-sistema-oms no HTML. Escondendo só o
+        // container, o modal "some" junto (efeito colateral, não fechado
+        // de verdade — a classe "hidden" dele nunca volta). Quando faz
+        // login de novo e o container reaparece, o modal reaparece junto,
+        // por trás de tudo, dando a impressão de ter "voltado" pra ele.
+        // Agora, antes de trocar de tela, fecha de verdade qualquer modal
+        // que esteja aberto.
+        document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(m => m.classList.add('hidden'));
         document.getElementById("container-sistema-oms").style.display = "none";
         document.getElementById("tela-login-home").style.display = "flex";
         return false;
@@ -6198,6 +6209,19 @@ if (typeof renderAtivos !== 'undefined') window.renderAtivos = renderAtivos;
 if (typeof renderReparos !== 'undefined') window.renderReparos = renderReparos;
 if (typeof renderPainelVeios !== 'undefined') window.renderPainelVeios = renderPainelVeios;
 if (typeof verificarAcesso !== 'undefined') window.verificarAcesso = verificarAcesso;
+// 🔧 CORREÇÃO CRÍTICA (checklist voltava pro login sozinho): o
+// checklist-execucao.js importa este script.js SEM o "?v=27" que o
+// app.html usa — pro navegador isso é uma URL diferente, então ele
+// carrega uma SEGUNDA CÓPIA inteira deste arquivo, com seu próprio
+// OPERADOR_LOGADO isolado, que o login de verdade nunca atualiza.
+// Qualquer coisa importada via "import { X } from '../script.js'" por
+// outro arquivo pode estar pegando essa cópia fantasma. A correção é
+// nunca depender de um import direto pra essas informações — sempre
+// ler de window.*, que sempre aponta pra cópia real (a que de fato
+// roda os cliques da tela), não importa quantas cópias fantasmas
+// existam por aí.
+window.MATRICULAS_ADM = MATRICULAS_ADM;
+window.getOficinaEquipeAtual = function() { return OFICINA_EQUIPE_ATUAL; };
 if (typeof entrarComoVisitante !== 'undefined') window.entrarComoVisitante = entrarComoVisitante;
 if (typeof processarAutenticacaoHome !== 'undefined') window.processarAutenticacaoHome = processarAutenticacaoHome;
 window.setOperadorLogado = function(op) { OPERADOR_LOGADO = op; };

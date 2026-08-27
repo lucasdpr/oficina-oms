@@ -16,7 +16,18 @@
 
 import { resolverApiBase, OPERADOR_LOGADO, BANCO_ATIVOS } from '../Core/banco.js?v=5';
 import { CHECKLIST_EXECUCAO_SECOES } from '../Core/dados.js';
-import { MATRICULAS_ADM, OFICINA_EQUIPE_ATUAL, verificarAcesso, renderReparos } from '../script.js';
+// 🔧 CORREÇÃO CRÍTICA: NÃO importar MATRICULAS_ADM/OFICINA_EQUIPE_ATUAL/
+// verificarAcesso/renderReparos de '../script.js' aqui. O app.html
+// carrega o script.js como './JS/script.js?v=27' — uma URL diferente
+// de '../script.js' (sem versão). Pro navegador, isso são DOIS módulos
+// diferentes: importar daqui pegava uma SEGUNDA CÓPIA fantasma do
+// script.js inteiro, com seu próprio OPERADOR_LOGADO que o login nunca
+// atualiza (era por isso que marcar uma etapa do checklist às vezes
+// jogava pra tela de login do nada). Em vez de importar, usamos
+// window.verificarAcesso(), window.MATRICULAS_ADM, window.renderReparos
+// e window.getOficinaEquipeAtual() — que sempre apontam pra instância
+// real do script.js (a que realmente roda os cliques da tela), não
+// importa quantas cópias fantasmas existam.
 
 // ==========================================================================
 // 🆕 TIPO DE EQUIPAMENTO — as etapas agora são cadastradas por TIPO (ex:
@@ -97,8 +108,8 @@ window.carregarStatusChecklistExecucaoReparo = async function(idsEquipamentos, f
     // Redesenha a tabela de Reparo ("Iniciar Reparo") E a lista de
     // "Reparo em Andamento" (se estiverem na tela) pra refletir o status
     // recém-carregado — cada função já lida com não estar montada.
-    if (document.getElementById('reparos-table-body') && typeof renderReparos === 'function') {
-        renderReparos();
+    if (document.getElementById('reparos-table-body') && typeof window.renderReparos === 'function') {
+        window.renderReparos();
     }
     if (document.getElementById('reparos-lista-andamento') && typeof window.carregarReparosAndamento === 'function') {
         window.carregarReparosAndamento();
@@ -138,7 +149,7 @@ window.carregarExecucoesChecklistAtivas = async function() {
 // ==========================================================================
 window.iniciarReparoEAbrirChecklist = async function(equipamentoId) {
     window.EXECUCOES_CHECKLIST_IDS_ATIVAS.add(equipamentoId);
-    if (typeof renderReparos === 'function') renderReparos();
+    if (typeof window.renderReparos === 'function') window.renderReparos();
 
     await window.abrirChecklistExecucao(equipamentoId);
 
@@ -147,7 +158,7 @@ window.iniciarReparoEAbrirChecklist = async function(equipamentoId) {
     // equipamento de "Iniciar Reparo" à toa.
     if (!CHECKLIST_EXECUCAO_EXECUCAO_ATUAL) {
         window.EXECUCOES_CHECKLIST_IDS_ATIVAS.delete(equipamentoId);
-        if (typeof renderReparos === 'function') renderReparos();
+        if (typeof window.renderReparos === 'function') window.renderReparos();
         return;
     }
 
@@ -342,7 +353,7 @@ window.fecharModalChecklistExecucao = function() {
 
 function ehAdminChecklistExecucao() {
     const matricula = (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula || '').toUpperCase();
-    return MATRICULAS_ADM.includes(matricula);
+    return window.MATRICULAS_ADM.includes(matricula);
 }
 
 window.renderizarChecklistExecucao = function() {
@@ -359,7 +370,7 @@ window.renderizarChecklistExecucao = function() {
     if (barraEl) barraEl.style.width = `${pct}%`;
 
     const isAdmin = ehAdminChecklistExecucao();
-    const equipe = Array.isArray(OFICINA_EQUIPE_ATUAL) ? OFICINA_EQUIPE_ATUAL : [];
+    const equipe = Array.isArray(window.getOficinaEquipeAtual()) ? window.getOficinaEquipeAtual() : [];
 
     let html = '';
     CHECKLIST_EXECUCAO_SECOES.forEach(secao => {
@@ -404,6 +415,7 @@ function renderizarLinhaEtapaChecklistExecucao(e, secao, isAdmin) {
     const tipoResposta = e.tipo_resposta || 'sim_nao';
     const botoesAdmin = isAdmin ? `
         <div style="display:flex; flex-direction:column; gap:3px;">
+            <button class="btn-premium" style="padding:2px 6px; font-size:10px;" title="Editar (texto e mapeamento com o Folhão)" onclick='window.editarEtapaChecklistExecucao(${e.id})'><i class="fas fa-pen"></i></button>
             <button class="btn-premium" style="padding:2px 6px; font-size:10px;" title="Mover pra cima" onclick="window.moverEtapaChecklistExecucao(${e.id}, '${secao.chave}', -1)"><i class="fas fa-arrow-up"></i></button>
             <button class="btn-premium" style="padding:2px 6px; font-size:10px;" title="Mover pra baixo" onclick="window.moverEtapaChecklistExecucao(${e.id}, '${secao.chave}', 1)"><i class="fas fa-arrow-down"></i></button>
             <button class="btn-outline-danger" style="padding:2px 6px; font-size:10px;" title="Excluir etapa" onclick="window.excluirEtapaChecklistExecucao(${e.id})"><i class="fas fa-trash"></i></button>
@@ -498,11 +510,144 @@ async function enviarMarcacaoChecklistExecucao(etapaId, { marcado, valor = null,
     window.recarregarChecklistExecucao();
 }
 
+// ==========================================================================
+// 🆕 MODAL "QUEM EXECUTOU" — substitui o prompt() de texto livre (que só
+// deixava digitar 1 nome por vez, sem nem sugerir a equipe direito) por
+// um modal com checkbox de cada colaborador da equipe (incluindo o
+// próprio técnico logado), opção de marcar todos de uma vez, e um campo
+// de texto livre pra alguém de FORA da equipe que também ajudou.
+// ==========================================================================
+function garantirModalColaboradoresEtapa() {
+    if (document.getElementById('modal-colaboradores-etapa')) return;
+    const div = document.createElement('div');
+    div.id = 'modal-colaboradores-etapa';
+    div.className = 'modal-overlay hidden';
+    div.style.zIndex = '10000';
+    div.innerHTML = `
+        <div class="modal-content" style="max-width:460px;">
+            <h2 style="color:var(--text-heading); margin-bottom:4px;">
+                <i class="fas fa-users"></i> Quem executou essa etapa?
+            </h2>
+            <p class="text-muted" style="margin-bottom:14px; font-size:12px;">
+                Marque um, vários, ou todos da equipe.
+            </p>
+            <div id="colaboradores-etapa-lista" style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; margin-bottom:12px; border:1px solid var(--border-color); border-radius:8px; padding:10px;"></div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
+                <input type="checkbox" id="colaboradores-etapa-todos" style="width:16px; height:16px;">
+                <label for="colaboradores-etapa-todos" style="margin:0; font-size:12px; cursor:pointer;">Selecionar todos</label>
+            </div>
+            <div class="input-group" style="margin-bottom:18px; text-align:left;">
+                <label style="font-size:12px;">Alguém de outra equipe ajudou? (opcional)</label>
+                <input type="text" id="colaboradores-etapa-outro" class="premium-input" placeholder="Ex: João (Elétrica)">
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+                <button class="btn-outline-danger" style="padding:8px 14px;" id="colaboradores-etapa-cancelar">Cancelar</button>
+                <button class="btn-premium btn-success" style="padding:8px 16px;" id="colaboradores-etapa-confirmar"><i class="fas fa-check"></i> Confirmar</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(div);
+}
+
+// Retorna uma Promise que resolve pro texto final (nomes separados por
+// vírgula) ou null se o técnico cancelar.
+// `areaChave` (opcional) é a área do equipamento (ex: "molde-mcc4",
+// "bow", "segmento-grupo" — o mesmo valor de resolverTipoEquipamento())
+// — usada pra buscar a equipe certa direto do servidor. Funciona pra
+// QUALQUER tipo de equipamento, não só um caso específico, porque usa
+// a mesma área que já resolve as etapas do Checklist.
+window.escolherColaboradoresChecklist = async function(areaChave) {
+    garantirModalColaboradoresEtapa();
+    const modal = document.getElementById('modal-colaboradores-etapa');
+    const lista = document.getElementById('colaboradores-etapa-lista');
+    const inputOutro = document.getElementById('colaboradores-etapa-outro');
+    const checkTodos = document.getElementById('colaboradores-etapa-todos');
+    inputOutro.value = '';
+    checkTodos.checked = false;
+    lista.innerHTML = `<p class="text-muted" style="font-size:12px; margin:0;">Carregando equipe...</p>`;
+    modal.classList.remove('hidden');
+
+    // 🆕 CORREÇÃO ("só aparecia eu na lista"): antes usava só o cache
+    // window.getOficinaEquipeAtual(), que só é preenchido quando o
+    // técnico visita a tela da área na aba Oficina antes de abrir o
+    // Checklist — se ele abrir o Checklist direto (o caminho normal, via
+    // "Iniciar Reparo"), esse cache vem vazio. Agora busca a equipe
+    // direto do servidor, pela área do equipamento, toda vez que o modal
+    // abre — não depende de já ter passado por nenhuma outra tela antes.
+    let nomesEquipe = [];
+    if (areaChave) {
+        try {
+            const apiBase = await resolverApiBase();
+            const resp = await fetch(`${apiBase}/api/oficina/equipe/${encodeURIComponent(areaChave)}`, { cache: 'no-store' });
+            const equipe = resp.ok ? await resp.json() : [];
+            nomesEquipe = Array.isArray(equipe) ? equipe.map(p => p.nome).filter(Boolean) : [];
+        } catch (e) {
+            console.error('⚠️ Não consegui buscar a equipe da área pra esse checklist:', e);
+        }
+    }
+    // Fallback: se não veio nada do servidor (área não encontrada, sem
+    // conexão, ou não foi passada nenhuma área), tenta o cache local.
+    if (nomesEquipe.length === 0) {
+        const equipeCache = Array.isArray(window.getOficinaEquipeAtual()) ? window.getOficinaEquipeAtual() : [];
+        nomesEquipe = equipeCache.map(p => p.nome).filter(Boolean);
+    }
+
+    // O próprio técnico logado sempre aparece também (marcado como
+    // "você"), mesmo que não esteja cadastrado formalmente na equipe.
+    const operador = (typeof window.getOperadorLogado === 'function') ? window.getOperadorLogado() : null;
+    const nomeOperador = operador && operador.nome ? operador.nome.replace(/\s*\[.+?\]/, '').trim() : null;
+
+    let nomes = [...nomesEquipe];
+    if (nomeOperador && !nomes.some(n => n.toLowerCase() === nomeOperador.toLowerCase())) {
+        nomes.unshift(nomeOperador);
+    }
+
+    lista.innerHTML = nomes.length
+        ? nomes.map(nome => `
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; margin:0;">
+                <input type="checkbox" class="colaboradores-etapa-checkbox" value="${nome.replace(/"/g, '&quot;')}" style="width:16px; height:16px; flex-shrink:0;">
+                <span>${nome}${nomeOperador && nome === nomeOperador ? ' <span style="color:var(--text-accent); font-size:11px;">(você)</span>' : ''}</span>
+            </label>
+        `).join('')
+        : `<p class="text-muted" style="font-size:12px; margin:0;">Nenhuma equipe cadastrada pra essa área ainda — use o campo abaixo.</p>`;
+
+    return new Promise((resolve) => {
+        const btnConfirmar = document.getElementById('colaboradores-etapa-confirmar');
+        const btnCancelar = document.getElementById('colaboradores-etapa-cancelar');
+
+        checkTodos.onchange = () => {
+            document.querySelectorAll('.colaboradores-etapa-checkbox').forEach(cb => { cb.checked = checkTodos.checked; });
+        };
+
+        const finalizar = (valor) => {
+            modal.classList.add('hidden');
+            checkTodos.onchange = null;
+            btnConfirmar.onclick = null;
+            btnCancelar.onclick = null;
+            resolve(valor);
+        };
+
+        btnConfirmar.onclick = () => {
+            const marcados = Array.from(document.querySelectorAll('.colaboradores-etapa-checkbox:checked')).map(cb => cb.value);
+            const outro = inputOutro.value.trim();
+            const todosNomes = [...marcados];
+            if (outro) todosNomes.push(outro);
+            if (todosNomes.length === 0) {
+                alert('Marque pelo menos uma pessoa, ou preencha o campo de outra equipe.');
+                return;
+            }
+            finalizar(todosNomes.join(', '));
+        };
+
+        btnCancelar.onclick = () => finalizar(null);
+    });
+};
+
 // --------------------------------------------------------------
 // MARCAR ETAPA (qualquer técnico logado) — checkboxes sim/não
 // --------------------------------------------------------------
 window.marcarEtapaChecklistExecucao = async function(etapaId, marcado) {
-    if (!verificarAcesso()) { window.recarregarChecklistExecucao(); return; }
+    if (!window.verificarAcesso()) { window.fecharModalChecklistExecucao(); return; }
 
     if (!CHECKLIST_EXECUCAO_EXECUCAO_ATUAL) {
         alert('Não foi possível identificar o reparo em andamento. Feche e abra o checklist de novo.');
@@ -512,12 +657,8 @@ window.marcarEtapaChecklistExecucao = async function(etapaId, marcado) {
 
     let colaborador = null;
     if (marcado) {
-        const equipe = Array.isArray(OFICINA_EQUIPE_ATUAL) ? OFICINA_EQUIPE_ATUAL : [];
-        const nomes = equipe.map(p => p.nome).join(', ');
-        colaborador = prompt(`Quem da equipe executou essa etapa?${nomes ? `\n(Equipe: ${nomes})` : ''}`);
+        colaborador = await window.escolherColaboradoresChecklist(CHECKLIST_EXECUCAO_TIPO_ATUAL);
         if (colaborador === null) { window.recarregarChecklistExecucao(); return; } // cancelou
-        colaborador = colaborador.trim();
-        if (!colaborador) { alert('Informe o nome de quem executou a etapa.'); window.recarregarChecklistExecucao(); return; }
     } else {
         if (!confirm('Desmarcar essa etapa? Isso registra retrabalho (ela vai precisar ser refeita).')) {
             window.recarregarChecklistExecucao();
@@ -534,7 +675,7 @@ window.marcarEtapaChecklistExecucao = async function(etapaId, marcado) {
 // simples (não precisa de modal pra 1 campo só).
 // --------------------------------------------------------------
 window.responderMedicaoChecklistExecucao = async function(etapaId, valorAtual) {
-    if (!verificarAcesso()) { window.recarregarChecklistExecucao(); return; }
+    if (!window.verificarAcesso()) { window.fecharModalChecklistExecucao(); return; }
     if (!CHECKLIST_EXECUCAO_EXECUCAO_ATUAL) {
         alert('Não foi possível identificar o reparo em andamento. Feche e abra o checklist de novo.');
         return;
@@ -544,12 +685,10 @@ window.responderMedicaoChecklistExecucao = async function(etapaId, valorAtual) {
     if (valor === null) return; // cancelou
     if (!valor.trim()) { alert('Informe um valor.'); return; }
 
-    const equipe = Array.isArray(OFICINA_EQUIPE_ATUAL) ? OFICINA_EQUIPE_ATUAL : [];
-    const nomes = equipe.map(p => p.nome).join(', ');
-    const colaborador = prompt(`Quem preencheu essa informação?${nomes ? `\n(Equipe: ${nomes})` : ''}`);
+    const colaborador = await window.escolherColaboradoresChecklist(CHECKLIST_EXECUCAO_TIPO_ATUAL);
     if (colaborador === null) return;
 
-    await enviarMarcacaoChecklistExecucao(etapaId, { marcado: true, valor: valor.trim(), colaborador: colaborador.trim() || null });
+    await enviarMarcacaoChecklistExecucao(etapaId, { marcado: true, valor: valor.trim(), colaborador: colaborador || null });
 };
 
 // --------------------------------------------------------------
@@ -561,7 +700,7 @@ window.responderMedicaoChecklistExecucao = async function(etapaId, valorAtual) {
 // de qualquer equipamento.
 // --------------------------------------------------------------
 window.abrirMedicaoMultiplaChecklistExecucao = function(etapaId) {
-    if (!verificarAcesso()) return;
+    if (!window.verificarAcesso()) { window.fecharModalChecklistExecucao(); return; }
     const etapa = CHECKLIST_EXECUCAO_ETAPAS_ATUAIS.find(e => e.id === etapaId);
     if (!etapa) return;
 
@@ -618,13 +757,11 @@ window.salvarMedicaoMultiplaChecklistExecucao = async function(etapaId) {
     });
     if (preenchidos === 0) { alert('Preencha pelo menos uma medição antes de salvar.'); return; }
 
-    const equipe = Array.isArray(OFICINA_EQUIPE_ATUAL) ? OFICINA_EQUIPE_ATUAL : [];
-    const nomes = equipe.map(p => p.nome).join(', ');
-    const colaborador = prompt(`Quem realizou essas medições?${nomes ? `\n(Equipe: ${nomes})` : ''}`);
+    const colaborador = await window.escolherColaboradoresChecklist(CHECKLIST_EXECUCAO_TIPO_ATUAL);
     if (colaborador === null) return;
 
     modal.remove();
-    await enviarMarcacaoChecklistExecucao(etapaId, { marcado: true, valor: JSON.stringify(valores), colaborador: colaborador.trim() || null });
+    await enviarMarcacaoChecklistExecucao(etapaId, { marcado: true, valor: JSON.stringify(valores), colaborador: colaborador || null });
 };
 
 // --------------------------------------------------------------
@@ -654,6 +791,144 @@ window.formNovaEtapaChecklistExecucao = async function(areaChave) {
         alert('Não foi possível conectar ao servidor.');
     }
     window.recarregarChecklistExecucao();
+};
+
+// ==========================================================================
+// 🆕 MODAL "EDITAR ETAPA" — permite corrigir o texto E o mapeamento com
+// o Folhão (folhao_campo / tipo_resposta) de uma etapa já cadastrada,
+// sem precisar apagar e recriar (o que perderia o histórico de quem já
+// marcou essa etapa em reparos em andamento). Foi criado especificamente
+// pra corrigir casos como "a etapa preenche 57 medições, mas nenhuma
+// aparece no Folhão" — geralmente um folhao_campo apontando pro nome
+// errado do campo.
+// ==========================================================================
+function garantirModalEditarEtapa() {
+    if (document.getElementById('modal-editar-etapa-checklist')) return;
+    const div = document.createElement('div');
+    div.id = 'modal-editar-etapa-checklist';
+    div.className = 'modal-overlay hidden';
+    div.style.zIndex = '10000';
+    div.innerHTML = `
+        <div class="modal-content" style="max-width:640px; text-align:left;">
+            <h2 style="color:var(--text-heading); margin-bottom:14px;"><i class="fas fa-pen"></i> Editar Etapa</h2>
+
+            <div class="input-group" style="margin-bottom:12px;">
+                <label>Texto da etapa</label>
+                <input type="text" id="editar-etapa-texto" class="premium-input">
+            </div>
+
+            <div class="input-group" style="margin-bottom:12px;">
+                <label>Tipo de resposta</label>
+                <select id="editar-etapa-tipo-resposta" class="premium-select" onchange="window.atualizarAjudaFolhaoCampoEtapa()">
+                    <option value="sim_nao">Sim / Não</option>
+                    <option value="medicao">Medição única (1 valor)</option>
+                    <option value="medicao_multipla">Medição múltipla (vários valores)</option>
+                </select>
+            </div>
+
+            <div class="input-group" style="margin-bottom:6px;">
+                <label>Mapeamento com o Folhão (folhao_campo) — deixe em branco pra não jogar em nenhum campo</label>
+                <textarea id="editar-etapa-folhao-campo" class="premium-input" style="width:100%; min-height:90px; font-family:monospace; font-size:12px;" placeholder='Ex: "m4-aj-tfr" (sim/não ou medição única) ou {"1000-inf":"m4-fa-1000-ei", "1000-meio":"m4-fa-1000-em"} (medição múltipla)'></textarea>
+            </div>
+            <p id="editar-etapa-ajuda" class="text-muted" style="font-size:11px; margin-bottom:16px;"></p>
+
+            <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+                <button class="btn-outline-danger" style="padding:8px 14px;" id="editar-etapa-cancelar">Cancelar</button>
+                <button class="btn-premium btn-success" style="padding:8px 16px;" id="editar-etapa-salvar"><i class="fas fa-save"></i> Salvar</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(div);
+}
+
+// Atualiza o texto de ajuda embaixo do campo, de acordo com o tipo de
+// resposta escolhido — pra quem for corrigir o mapeamento não precisar
+// adivinhar o formato certo do JSON.
+window.atualizarAjudaFolhaoCampoEtapa = function() {
+    const tipo = document.getElementById('editar-etapa-tipo-resposta')?.value;
+    const ajuda = document.getElementById('editar-etapa-ajuda');
+    if (!ajuda) return;
+    if (tipo === 'medicao_multipla') {
+        ajuda.innerHTML = 'Formato: <code>{"nome_mostrado_no_checklist": "id_real_do_input_no_folhão", ...}</code> — o lado esquerdo é só o rótulo que aparece pro técnico preencher; o lado direito TEM que ser o <code>id</code> exato do campo no HTML do Folhão (ex: <code>m4-fa-1000-ei</code>), senão o valor não aparece lá.';
+    } else {
+        ajuda.innerHTML = 'Formato: o <code>id</code> exato de UM campo do Folhão (texto simples, sem chaves), ex: <code>m4-aj-tfr</code>. Deixe vazio se essa etapa não deve preencher nada no Folhão sozinha.';
+    }
+};
+
+window.editarEtapaChecklistExecucao = function(etapaId) {
+    if (!ehAdminChecklistExecucao()) { alert('Só as matrículas autorizadas podem editar etapas do checklist.'); return; }
+    const etapa = CHECKLIST_EXECUCAO_ETAPAS_ATUAIS.find(e => e.id === etapaId);
+    if (!etapa) { alert('Não achei essa etapa — feche e abra o checklist de novo.'); return; }
+
+    garantirModalEditarEtapa();
+    const modal = document.getElementById('modal-editar-etapa-checklist');
+    document.getElementById('editar-etapa-texto').value = etapa.texto || '';
+    document.getElementById('editar-etapa-tipo-resposta').value = etapa.tipo_resposta || 'sim_nao';
+
+    // Mostra o folhao_campo já formatado (com identação), pra quem for
+    // consertar um JSON de medição múltipla conseguir ler/editar direito
+    // em vez de uma linha só ilegível.
+    let folhaoCampoFormatado = etapa.folhao_campo || '';
+    if ((etapa.tipo_resposta || '') === 'medicao_multipla' && folhaoCampoFormatado) {
+        try { folhaoCampoFormatado = JSON.stringify(JSON.parse(folhaoCampoFormatado), null, 2); } catch (e) { /* deixa como veio, se não for JSON válido */ }
+    }
+    document.getElementById('editar-etapa-folhao-campo').value = folhaoCampoFormatado;
+    window.atualizarAjudaFolhaoCampoEtapa();
+
+    modal.classList.remove('hidden');
+
+    const btnSalvar = document.getElementById('editar-etapa-salvar');
+    const btnCancelar = document.getElementById('editar-etapa-cancelar');
+
+    const fechar = () => {
+        modal.classList.add('hidden');
+        btnSalvar.onclick = null;
+        btnCancelar.onclick = null;
+    };
+
+    btnCancelar.onclick = fechar;
+
+    btnSalvar.onclick = async () => {
+        const texto = document.getElementById('editar-etapa-texto').value.trim();
+        if (!texto) { alert('O texto da etapa não pode ficar vazio.'); return; }
+        const tipoResposta = document.getElementById('editar-etapa-tipo-resposta').value;
+        // Comprime de volta pra 1 linha só antes de mandar pro servidor
+        // (a identação bonitinha é só pra facilitar a leitura na hora de
+        // editar; o formato salvo no banco não precisa disso).
+        let folhaoCampo = document.getElementById('editar-etapa-folhao-campo').value.trim();
+        if (tipoResposta === 'medicao_multipla' && folhaoCampo) {
+            try { folhaoCampo = JSON.stringify(JSON.parse(folhaoCampo)); }
+            catch (e) { alert('O mapeamento não é um JSON válido. Confira as chaves/aspas/vírgulas e tente de novo.'); return; }
+        }
+
+        const tecnico = OPERADOR_LOGADO || {};
+        try {
+            const apiBase = await resolverApiBase();
+            const resp = await fetch(`${apiBase}/api/checklist-execucao/etapas/editar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: etapaId,
+                    texto,
+                    operador: tecnico.matricula || '',
+                    folhao_campo: folhaoCampo,
+                    tipo_resposta: tipoResposta
+                })
+            });
+            if (!resp.ok) {
+                const erro = await resp.json().catch(() => null);
+                alert(erro?.detail || 'Não foi possível salvar as alterações.');
+                return;
+            }
+        } catch (e) {
+            console.error('⚠️ Erro ao editar etapa do Checklist de Execução:', e);
+            alert('Não foi possível conectar ao servidor.');
+            return;
+        }
+
+        fechar();
+        window.recarregarChecklistExecucao();
+    };
 };
 
 window.excluirEtapaChecklistExecucao = async function(etapaId) {
