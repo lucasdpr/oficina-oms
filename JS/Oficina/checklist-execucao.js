@@ -541,11 +541,18 @@ function renderizarLinhaEtapaChecklistExecucao(e, secao, isAdmin) {
     const badgeResposta = e.marcado && e.valor
         ? `<span style="font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px; margin-left:6px; background:${e.valor === 'SIM' ? 'var(--success)' : 'var(--danger)'}; color:#fff;">${e.valor}</span>`
         : '';
+    // 🆕 Se a correção veio do Folhão (colaborador termina com "(via
+    // Folhão)"), mostra um selo azul junto — fica visível de relance,
+    // sem precisar ler o texto todo do colaborador.
+    const veioDoFolhao = e.marcado && (e.colaborador || '').includes('(via Folhão)');
+    const badgeOrigem = veioDoFolhao
+        ? `<span style="font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px; margin-left:6px; background:var(--primary, #38bdf8); color:#04202e;"><i class="fas fa-file-signature"></i> via Folhão</span>`
+        : '';
     return `
         <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start; padding:8px; border-radius:8px; background:${corFundo}; margin-bottom:6px;">
             <input type="checkbox" ${e.marcado ? 'checked' : ''} style="margin-top:3px; width:18px; height:18px; flex-shrink:0;" onchange="window.marcarEtapaChecklistExecucao(${e.id}, this.checked)">
             <div style="flex:1; min-width:0;">
-                <div style="font-size:13px; color:var(--text-heading);">${e.texto}${badgeResposta}</div>
+                <div style="font-size:13px; color:var(--text-heading);">${e.texto}${badgeResposta}${badgeOrigem}</div>
                 ${e.marcado ? `<div class="text-muted" style="font-size:11px; margin-top:2px;"><i class="fas fa-user"></i> ${e.colaborador || '—'} · marcado por ${e.tecnico_nome || '—'} em ${e.data_hora ? new Date(e.data_hora).toLocaleString('pt-BR') : ''}</div>` : ''}
                 ${e.descricao ? `<details style="margin-top:4px;"><summary style="font-size:11px; color:var(--text-accent); cursor:pointer;">Ver passo a passo</summary><div class="text-muted" style="font-size:11px; white-space:pre-line; margin-top:4px;">${e.descricao}</div></details>` : ''}
             </div>
@@ -723,7 +730,17 @@ window.escolherColaboradoresChecklist = async function(areaChave) {
 // MARCAR ETAPA (qualquer técnico logado) — checkboxes sim/não
 // --------------------------------------------------------------
 window.marcarEtapaChecklistExecucao = async function(etapaId, marcado) {
-    if (!window.verificarAcesso()) { window.fecharModalChecklistExecucao(); return; }
+    if (!window.verificarAcesso()) {
+        // 🐛 CORRIGIDO ("conclui uma etapa e a janela inteira fecha"):
+        // verificarAcesso() retorna false por 2 motivos bem diferentes —
+        // sessao realmente expirada (aí sim precisa fechar tudo e voltar
+        // pro login) ou Modo Visitante (que já mostra o próprio aviso de
+        // "somente leitura" e não deveria fechar nada, só bloquear a
+        // ação). Antes os dois casos fechavam o Checklist igual; agora só
+        // fecha quando realmente não tem ninguém logado.
+        if (!OPERADOR_LOGADO) window.fecharModalChecklistExecucao();
+        return;
+    }
 
     if (!CHECKLIST_EXECUCAO_EXECUCAO_ATUAL) {
         alert('Não foi possível identificar o reparo em andamento. Feche e abra o checklist de novo.');
@@ -760,7 +777,17 @@ window.marcarEtapaChecklistExecucao = async function(etapaId, marcado) {
 // simples (não precisa de modal pra 1 campo só).
 // --------------------------------------------------------------
 window.responderMedicaoChecklistExecucao = async function(etapaId, valorAtual) {
-    if (!window.verificarAcesso()) { window.fecharModalChecklistExecucao(); return; }
+    if (!window.verificarAcesso()) {
+        // 🐛 CORRIGIDO ("conclui uma etapa e a janela inteira fecha"):
+        // verificarAcesso() retorna false por 2 motivos bem diferentes —
+        // sessao realmente expirada (aí sim precisa fechar tudo e voltar
+        // pro login) ou Modo Visitante (que já mostra o próprio aviso de
+        // "somente leitura" e não deveria fechar nada, só bloquear a
+        // ação). Antes os dois casos fechavam o Checklist igual; agora só
+        // fecha quando realmente não tem ninguém logado.
+        if (!OPERADOR_LOGADO) window.fecharModalChecklistExecucao();
+        return;
+    }
     if (!CHECKLIST_EXECUCAO_EXECUCAO_ATUAL) {
         alert('Não foi possível identificar o reparo em andamento. Feche e abra o checklist de novo.');
         return;
@@ -785,7 +812,17 @@ window.responderMedicaoChecklistExecucao = async function(etapaId, valorAtual) {
 // de qualquer equipamento.
 // --------------------------------------------------------------
 window.abrirMedicaoMultiplaChecklistExecucao = function(etapaId) {
-    if (!window.verificarAcesso()) { window.fecharModalChecklistExecucao(); return; }
+    if (!window.verificarAcesso()) {
+        // 🐛 CORRIGIDO ("conclui uma etapa e a janela inteira fecha"):
+        // verificarAcesso() retorna false por 2 motivos bem diferentes —
+        // sessao realmente expirada (aí sim precisa fechar tudo e voltar
+        // pro login) ou Modo Visitante (que já mostra o próprio aviso de
+        // "somente leitura" e não deveria fechar nada, só bloquear a
+        // ação). Antes os dois casos fechavam o Checklist igual; agora só
+        // fecha quando realmente não tem ninguém logado.
+        if (!OPERADOR_LOGADO) window.fecharModalChecklistExecucao();
+        return;
+    }
     const etapa = CHECKLIST_EXECUCAO_ETAPAS_ATUAIS.find(e => e.id === etapaId);
     if (!etapa) return;
 

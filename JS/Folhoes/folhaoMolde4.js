@@ -2,12 +2,18 @@
 // folhaoMolde4.js - Módulo completo para BENDER e MOLDE MCC 4
 // ==============================================================
 
-import { BANCO_ATIVOS, resolverApiBase } from '../Core/banco.js?v=5';
+import { BANCO_ATIVOS, resolverApiBase, OPERADOR_LOGADO } from '../Core/banco.js?v=5';
 import { renderAtivos, renderReparos, renderReservas } from '../ui.js';
 import { gerarTelasBenderHTML, imprimirPDFBender } from './folhao_bender.js';
 import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
 
 let ID_FOLHAO_ATUAL = null;
+
+// 🆕 Contexto da ponte com o Checklist de Execução do folhão aberto no
+// momento — precisa ficar acessível pra window.folhaoM4CampoEditado
+// (chamada quando o técnico edita um campo na mão) saber PRA QUAL
+// etapa/execução mandar a correção de volta.
+let PONTE_CHECKLIST_M4 = { execucaoId: null, tipoEquipamento: null, mapaCampoParaEtapa: {} };
 
 // ==============================================================
 // FUNÇÕES AUXILIARES
@@ -281,7 +287,62 @@ function mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados) {
     setTimeout(() => toast.remove(), naoEncontrados > 0 ? 12000 : 6000);
 }
 
+// ==============================================================
+// 🆕 REFLETE EDIÇÃO MANUAL DO FOLHÃO DE VOLTA NO CHECKLIST DE EXECUÇÃO
+// ==============================================================
+// Ouve o evento disparado por folhaoPersistencia.js sempre que o
+// técnico edita um campo na mão dentro do Folhão. Se aquele campo tiver
+// uma etapa correspondente no Checklist de Execução (ver
+// PONTE_CHECKLIST_M4.mapaCampoParaEtapa), grava a correção lá também —
+// usando a MESMA rota que o próprio Checklist usa pra marcar etapas
+// (/api/checklist-execucao/marcar), que já registra tecnico_nome,
+// tecnico_matricula e data_hora sozinha. O "colaborador" leva a marca
+// "(via Folhão)" pra ficar visível na tela do Checklist quem editou e
+// de onde veio a mudança.
+let LISTENER_EDICAO_MANUAL_M4_LIGADO = false;
+function ligarListenerEdicaoManualM4() {
+    if (LISTENER_EDICAO_MANUAL_M4_LIGADO) return;
+    LISTENER_EDICAO_MANUAL_M4_LIGADO = true;
+
+    document.addEventListener('folhao:campo-editado-manualmente', async (ev) => {
+        const { modalId, campo, valor } = ev.detail || {};
+        if (modalId !== 'modal-folhao-molde4') return;
+        if (!campo.startsWith('radio:')) return; // só sim_nao tem etapa correspondente hoje
+
+        const folhaoCampo = campo.slice('radio:'.length);
+        const etapaId = PONTE_CHECKLIST_M4.mapaCampoParaEtapa[folhaoCampo];
+        if (!etapaId || !PONTE_CHECKLIST_M4.execucaoId) return; // esse campo não tem etapa mapeada — nada a refletir
+
+        const tecnico = OPERADOR_LOGADO || {};
+        try {
+            const apiBase = await resolverApiBase();
+            await fetch(`${apiBase}/api/checklist-execucao/marcar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    etapa_id: etapaId,
+                    execucao_id: PONTE_CHECKLIST_M4.execucaoId,
+                    equipamento_id: PONTE_CHECKLIST_M4.equipamentoId,
+                    marcado: true,
+                    valor: valor,
+                    colaborador: `${tecnico.nome || 'Técnico'} (via Folhão)`,
+                    tecnico_matricula: tecnico.matricula || null,
+                    tecnico_nome: tecnico.nome || 'Técnico'
+                })
+            });
+            // Atualiza o cache do Checklist pra próxima vez que a tela dele
+            // for aberta/redesenhada já vir com a correção.
+            if (typeof window.carregarStatusChecklistExecucaoReparo === 'function') {
+                window.carregarStatusChecklistExecucaoReparo([PONTE_CHECKLIST_M4.equipamentoId], true);
+            }
+        } catch (e) {
+            console.error('⚠️ Não consegui refletir a edição manual do Folhão no Checklist de Execução:', e);
+        }
+    });
+}
+
 async function preencherFolhaoComChecklistExecucao(id, item) {
+    ligarListenerEdicaoManualM4();
     try {
         // Mesmo cálculo de "tipo de equipamento" usado no Checklist de
         // Execução (ex: "molde-mcc4") — precisa bater com o que foi usado
@@ -306,6 +367,24 @@ async function preencherFolhaoComChecklistExecucao(id, item) {
 
         const respValores = await fetch(`${apiBase}/api/checklist-execucao/folhao/${encodeURIComponent(tipoEquipamento)}?execucao_id=${status.execucao_id}`, { cache: 'no-store' });
         const valores = respValores.ok ? await respValores.json() : {};
+
+        // 🆕 Monta o mapa folhao_campo -> etapa_id (inclui só etapas
+        // sim_nao, que são as que dá pra editar direto num radio SIM/NÃO
+        // no Folhão). É isso que permite mandar a correção manual do
+        // Folhão de volta pro Checklist de Execução — sem esse mapa, a
+        // gente sabe QUE campo mudou, mas não sabe qual etapa lá no
+        // Checklist corresponde a ele.
+        try {
+            const respEtapas = await fetch(`${apiBase}/api/checklist-execucao/etapas/${encodeURIComponent(tipoEquipamento)}?execucao_id=${status.execucao_id}`, { cache: 'no-store' });
+            const etapas = respEtapas.ok ? await respEtapas.json() : [];
+            const mapa = {};
+            etapas.forEach(et => {
+                if (et.folhao_campo && et.tipo_resposta === 'sim_nao') mapa[et.folhao_campo] = et.id;
+            });
+            PONTE_CHECKLIST_M4 = { execucaoId: status.execucao_id, tipoEquipamento, mapaCampoParaEtapa: mapa, equipamentoId: id };
+        } catch (e) {
+            console.error('⚠️ Não consegui montar o mapa campo→etapa pra edição manual refletir no Checklist:', e);
+        }
 
         let preenchidos = 0;
         let naoEncontrados = 0;
@@ -350,6 +429,13 @@ async function preencherFolhaoComChecklistExecucao(id, item) {
             // <input>/<textarea> comum (id="campo") — tenta os três.
             const radios = document.getElementsByName(campo);
             if (radios && radios.length > 0) {
+                // 🆕 Se o técnico já editou essa resposta manualmente no
+                // Folhão (marcado por ativarAutoSalvamentoFolhao), respeita
+                // a edição dele e não sobrescreve mais com o valor do
+                // Checklist de Execução.
+                const jaEditadoManualmente = Array.from(radios).some(r => r.dataset.editadoManual === '1');
+                if (jaEditadoManualmente) return;
+
                 let algumMarcado = false;
                 radios.forEach(r => {
                     r.checked = (valor === 'OK' && r.value === 'SIM') || r.value === valor;
@@ -374,6 +460,7 @@ async function preencherFolhaoComChecklistExecucao(id, item) {
             }
             const inputEl = document.getElementById(campo);
             if (!inputEl) { naoEncontrados++; return; }
+            if (inputEl.dataset.editadoManual === '1') return; // 🆕 idem, mas pra input/checkbox comuns
             if (inputEl.type === 'checkbox') {
                 inputEl.checked = (valor === 'OK');
             } else {

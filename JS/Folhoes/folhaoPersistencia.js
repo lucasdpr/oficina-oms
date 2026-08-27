@@ -19,9 +19,15 @@ import { resolverApiBase } from '../Core/banco.js?v=5';
 // --------------------------------------------------------------
 // COLETA GENÉRICA DE TODOS OS CAMPOS DENTRO DE UM MODAL
 // --------------------------------------------------------------
+// 🆕 Agora também coleta QUAIS campos foram editados manualmente pelo
+// técnico (data-editado-manual="1", marcado por ativarAutoSalvamentoFolhao
+// sempre que o próprio usuário mexe num campo — nunca quando é o script
+// que preenche via .value=). Isso é o que permite ao Checklist de
+// Execução respeitar uma correção manual feita direto no Folhão, em vez
+// de sempre sobrescrever na próxima abertura.
 export function coletarDadosModal(modalId) {
     const modal = document.getElementById(modalId);
-    const dados = { campos: {}, radios: {} };
+    const dados = { campos: {}, radios: {}, editadosManualmente: {} };
     if (!modal) return dados;
 
     modal.querySelectorAll('input, textarea, select').forEach(el => {
@@ -32,6 +38,7 @@ export function coletarDadosModal(modalId) {
         } else {
             dados.campos[el.id] = el.value;
         }
+        if (el.dataset.editadoManual === '1') dados.editadosManualmente[el.id] = true;
     });
 
     const nomesRadio = new Set();
@@ -39,9 +46,26 @@ export function coletarDadosModal(modalId) {
     nomesRadio.forEach(nome => {
         const marcado = modal.querySelector(`input[type="radio"][name="${CSS.escape(nome)}"]:checked`);
         if (marcado) dados.radios[nome] = marcado.value;
+        const algumEditado = modal.querySelector(`input[type="radio"][name="${CSS.escape(nome)}"][data-editado-manual="1"]`);
+        if (algumEditado) dados.editadosManualmente[`radio:${nome}`] = true;
     });
 
     return dados;
+}
+
+// --------------------------------------------------------------
+// MARCA VISUALMENTE UM CAMPO/GRUPO COMO "EDITADO MANUALMENTE NO
+// FOLHÃO" — cor diferente da que o Checklist de Execução usa (azul, em
+// vez do verde/vermelho do preenchimento automático), pra ficar claro
+// que essa resposta foi conferida/corrigida na mão e não vem mais do
+// Checklist.
+// --------------------------------------------------------------
+function marcarEditadoManual(el) {
+    if (!el) return;
+    el.dataset.editadoManual = '1';
+    el.style.background = 'rgba(56, 189, 248, 0.14)';
+    el.style.borderColor = 'var(--primary, #38bdf8)';
+    el.title = '✍️ Editado manualmente no Folhão — não será mais sobrescrito pelo Checklist de Execução';
 }
 
 // --------------------------------------------------------------
@@ -65,6 +89,25 @@ export function preencherDadosModal(modalId, dados) {
         const valor = radios[nome];
         const el = modal.querySelector(`input[type="radio"][name="${CSS.escape(nome)}"][value="${CSS.escape(String(valor))}"]`);
         if (el) el.checked = true;
+    });
+
+    // 🆕 Reaplica a marca de "editado manualmente" salva no rascunho —
+    // sem isso, ao recarregar a página essa informação existia só no
+    // banco (dentro de "dados"), mas os elementos <input> recém-criados
+    // nasciam sem o data-editado-manual, e o Checklist voltava a poder
+    // sobrescrever um campo que o técnico já tinha corrigido na mão.
+    const editados = dados.editadosManualmente || {};
+    Object.keys(editados).forEach(chave => {
+        if (chave.startsWith('radio:')) {
+            const nome = chave.slice('radio:'.length);
+            modal.querySelectorAll(`input[type="radio"][name="${CSS.escape(nome)}"]`).forEach(r => {
+                r.dataset.editadoManual = '1';
+            });
+            const marcado = modal.querySelector(`input[type="radio"][name="${CSS.escape(nome)}"]:checked`);
+            marcarEditadoManual(marcado?.closest('.sim-nao-card') || marcado?.closest('tr') || marcado?.closest('label'));
+        } else {
+            marcarEditadoManual(document.getElementById(chave));
+        }
     });
 }
 
@@ -175,6 +218,43 @@ export function ativarAutoSalvamentoFolhao(modalId, equipamentoId, tipoFolhao) {
         }, 800);
     };
 
+    // 🆕 CORRIGIDO ("editei a mão e o Checklist apagou minha resposta"):
+    // esse listener roda só quando o EVENTO input/change dispara de
+    // verdade — ou seja, só quando é o dedo do técnico mexendo no campo.
+    // Quando o Checklist de Execução preenche um campo via JS
+    // (elemento.value = ... / elemento.checked = ...), isso NUNCA
+    // dispara input/change sozinho — então só marca como "editado
+    // manualmente" o que o técnico realmente tocou, nunca o que veio
+    // do preenchimento automático.
+    const marcarComoEditado = (e) => {
+        const el = e.target;
+        if (!el || !(el.matches('input, textarea, select'))) return;
+        if (el.type === 'radio' && el.name) {
+            modal.querySelectorAll(`input[type="radio"][name="${CSS.escape(el.name)}"]`).forEach(r => {
+                r.dataset.editadoManual = '1';
+            });
+            marcarEditadoManual(el.closest('.sim-nao-card') || el.closest('tr') || el.closest('label'));
+            // 🆕 Avisa quem estiver ouvindo (ex: folhaoMolde4.js) que esse
+            // campo foi corrigido na mão, pra dar a chance de espelhar a
+            // correção de volta pro Checklist de Execução — sem isso, a
+            // correção só existia dentro do Folhão, e o Checklist
+            // continuava mostrando a resposta antiga como se nada tivesse
+            // mudado (sem saber quem corrigiu, nem quando).
+            modal.dispatchEvent(new CustomEvent('folhao:campo-editado-manualmente', {
+                detail: { modalId, campo: `radio:${el.name}`, valor: el.value },
+                bubbles: true
+            }));
+        } else if (el.id) {
+            marcarEditadoManual(el);
+            modal.dispatchEvent(new CustomEvent('folhao:campo-editado-manualmente', {
+                detail: { modalId, campo: el.id, valor: el.type === 'checkbox' ? el.checked : el.value },
+                bubbles: true
+            }));
+        }
+    };
+
+    modal.addEventListener('input', marcarComoEditado);
+    modal.addEventListener('change', marcarComoEditado);
     modal.addEventListener('input', salvarAgora);
     modal.addEventListener('change', salvarAgora);
 }
