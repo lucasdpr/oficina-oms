@@ -195,7 +195,14 @@ function renderizarTabelaSimNaoM4(containerId, array, prefix, isFinal = false) {
         const name = `${prefix}-${i}`;
         html += `<tr><td style="text-align:center;font-weight:bold;">${num}</td><td>${desc}</td>`;
         if (isFinal) html += `<td><input id="${name}-med" class="w-100"></td>`;
-        html += `<td style="text-align:center;"><input type="radio" name="${name}" value="SIM" checked></td>
+        // 🔧 CORREÇÃO CRÍTICA: antes o "SIM" vinha marcado (checked) por
+        // padrão em TODAS as perguntas, mesmo sem ninguém ter respondido
+        // nada — o formulário parecia "todo preenchido" na hora de abrir,
+        // escondendo tanto se o técnico esqueceu de responder quanto se a
+        // ponte com o Checklist de Execução realmente funcionou. Agora
+        // nenhuma das duas vem marcada; a resposta só aparece quando for
+        // de verdade (manual ou pela ponte).
+        html += `<td style="text-align:center;"><input type="radio" name="${name}" value="SIM"></td>
                  <td style="text-align:center;"><input type="radio" name="${name}" value="NÃO"></td></tr>`;
     });
     html += `</tbody></table>`;
@@ -277,11 +284,16 @@ async function preencherFolhaoComChecklistExecucao(id, item) {
             // sem isso, numa tabela com dezenas de campos minúsculos (ex:
             // "Relatório Folga de Aresta", 57 campos de 40px), fica
             // impossível saber de relance se a ponte funcionou ou não.
-            const destacarCampo = (el) => {
+            // Resposta NÃO vem destacada em vermelho/atenção em vez de
+            // verde — geralmente significa que algo precisa de reparo, não
+            // "tá tudo certo".
+            const destacarCampo = (el, ehAtencao = false) => {
                 if (!el) return;
-                el.style.background = 'rgba(16, 185, 129, 0.18)';
-                el.style.borderColor = 'var(--success, #10b981)';
-                el.title = '🔗 Preenchido automaticamente pelo Checklist de Execução';
+                el.style.background = ehAtencao ? 'rgba(239, 68, 68, 0.18)' : 'rgba(16, 185, 129, 0.18)';
+                el.style.borderColor = ehAtencao ? 'var(--danger, #ef4444)' : 'var(--success, #10b981)';
+                el.title = ehAtencao
+                    ? '🔗 Preenchido automaticamente pelo Checklist de Execução — resposta NÃO, requer atenção'
+                    : '🔗 Preenchido automaticamente pelo Checklist de Execução';
             };
 
             // Campo pode ser: par de radios SIM/NÃO (name="campo"), um
@@ -292,7 +304,13 @@ async function preencherFolhaoComChecklistExecucao(id, item) {
                 let algumMarcado = false;
                 radios.forEach(r => {
                     r.checked = (valor === 'OK' && r.value === 'SIM') || r.value === valor;
-                    if (r.checked) { destacarCampo(r.closest('label') || r); algumMarcado = true; }
+                    if (r.checked) {
+                        // 🔧 Destacar só o <input type="radio"> quase não
+                        // aparece (é um círculo pequeno). Destaca a linha
+                        // (<tr>) inteira da tabela, bem mais visível.
+                        destacarCampo(r.closest('tr') || r.closest('label') || r, r.value === 'NÃO');
+                        algumMarcado = true;
+                    }
                 });
                 if (algumMarcado) preenchidos++; else naoEncontrados++;
                 return;

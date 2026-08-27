@@ -209,6 +209,66 @@ let CHECKLIST_EXECUCAO_ETAPAS_ATUAIS = [];
 // resto do sistema. Criado dinamicamente na primeira vez que é usado —
 // não precisa mexer no app.html.
 // ==========================================================================
+// ==========================================================================
+// 🆕 MODAL "SIM OU NÃO" — antes, marcar uma etapa sim/não só sabia
+// dizer "feito" (sempre virava SIM lá no Folhão). Agora, ao marcar,
+// pergunta a resposta de verdade primeiro — importante porque a
+// resposta real pode ser NÃO (ex: "os flexíveis estão danificados?" —
+// marcar a etapa como "revisada" não significa que a resposta seja
+// SIM).
+// ==========================================================================
+function garantirModalSimNaoEtapa() {
+    if (document.getElementById('modal-sim-nao-etapa')) return;
+    const div = document.createElement('div');
+    div.id = 'modal-sim-nao-etapa';
+    div.className = 'modal-overlay hidden';
+    div.style.zIndex = '10000';
+    div.innerHTML = `
+        <div class="modal-content" style="max-width:440px; text-align:center;">
+            <h2 style="color:var(--text-heading); margin-bottom:6px;">
+                <i class="fas fa-circle-question"></i> Qual a resposta?
+            </h2>
+            <p id="modal-sim-nao-etapa-texto" class="text-muted" style="margin-bottom:22px; font-size:13px;"></p>
+            <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+                <button class="btn-premium btn-success" style="flex:1; min-width:120px; padding:16px 10px; font-size:14px;" id="btn-sim-nao-etapa-sim">
+                    <i class="fas fa-check" style="font-size:18px; display:block; margin-bottom:6px;"></i>SIM
+                </button>
+                <button class="btn-premium" style="flex:1; min-width:120px; padding:16px 10px; font-size:14px; background:transparent; border-color:var(--danger); color:var(--danger);" id="btn-sim-nao-etapa-nao">
+                    <i class="fas fa-xmark" style="font-size:18px; display:block; margin-bottom:6px;"></i>NÃO
+                </button>
+            </div>
+            <button class="btn-outline-danger" style="margin-top:16px; padding:6px 14px; font-size:12px;" id="btn-sim-nao-etapa-cancelar">Cancelar</button>
+        </div>
+    `;
+    document.body.appendChild(div);
+}
+
+// Retorna uma Promise que resolve pra 'SIM', 'NÃO' ou null (cancelou).
+window.escolherSimNaoEtapa = function(textoEtapa) {
+    garantirModalSimNaoEtapa();
+    const modal = document.getElementById('modal-sim-nao-etapa');
+    document.getElementById('modal-sim-nao-etapa-texto').textContent = textoEtapa || '';
+    modal.classList.remove('hidden');
+
+    return new Promise((resolve) => {
+        const btnSim = document.getElementById('btn-sim-nao-etapa-sim');
+        const btnNao = document.getElementById('btn-sim-nao-etapa-nao');
+        const btnCancelar = document.getElementById('btn-sim-nao-etapa-cancelar');
+
+        const finalizar = (valor) => {
+            modal.classList.add('hidden');
+            btnSim.onclick = null;
+            btnNao.onclick = null;
+            btnCancelar.onclick = null;
+            resolve(valor);
+        };
+
+        btnSim.onclick = () => finalizar('SIM');
+        btnNao.onclick = () => finalizar('NÃO');
+        btnCancelar.onclick = () => finalizar(null);
+    });
+};
+
 function garantirModalTipoExecucao() {
     if (document.getElementById('modal-tipo-execucao')) return;
     const div = document.createElement('div');
@@ -465,11 +525,21 @@ function renderizarLinhaEtapaChecklistExecucao(e, secao, isAdmin) {
     }
 
     // Padrão: checkbox sim/não (comportamento original)
+    // 🆕 Cor de fundo agora reflete a resposta de verdade: verde só
+    // quando a resposta foi SIM. Se foi marcada mas a resposta é NÃO,
+    // fica laranja/vermelho — chamando atenção, em vez de parecer que
+    // "está tudo certo" igual antes (quando qualquer marcação virava
+    // verde, sem distinguir SIM de NÃO).
+    const respondidaComNao = e.marcado && e.valor === 'NÃO';
+    const corFundo = respondidaComNao ? 'rgba(239, 68, 68, 0.12)' : (e.marcado ? 'var(--success-bg)' : 'var(--bg-td)');
+    const badgeResposta = e.marcado && e.valor
+        ? `<span style="font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px; margin-left:6px; background:${e.valor === 'SIM' ? 'var(--success)' : 'var(--danger)'}; color:#fff;">${e.valor}</span>`
+        : '';
     return `
-        <div style="display:flex; gap:10px; align-items:flex-start; padding:8px; border-radius:8px; background:${e.marcado ? 'var(--success-bg)' : 'var(--bg-td)'}; margin-bottom:6px;">
+        <div style="display:flex; gap:10px; align-items:flex-start; padding:8px; border-radius:8px; background:${corFundo}; margin-bottom:6px;">
             <input type="checkbox" ${e.marcado ? 'checked' : ''} style="margin-top:3px; width:18px; height:18px; flex-shrink:0;" onchange="window.marcarEtapaChecklistExecucao(${e.id}, this.checked)">
             <div style="flex:1; min-width:0;">
-                <div style="font-size:13px; color:var(--text-heading);">${e.texto}</div>
+                <div style="font-size:13px; color:var(--text-heading);">${e.texto}${badgeResposta}</div>
                 ${e.marcado ? `<div class="text-muted" style="font-size:11px; margin-top:2px;"><i class="fas fa-user"></i> ${e.colaborador || '—'} · marcado por ${e.tecnico_nome || '—'} em ${e.data_hora ? new Date(e.data_hora).toLocaleString('pt-BR') : ''}</div>` : ''}
                 ${e.descricao ? `<details style="margin-top:4px;"><summary style="font-size:11px; color:var(--text-accent); cursor:pointer;">Ver passo a passo</summary><div class="text-muted" style="font-size:11px; white-space:pre-line; margin-top:4px;">${e.descricao}</div></details>` : ''}
             </div>
@@ -656,7 +726,16 @@ window.marcarEtapaChecklistExecucao = async function(etapaId, marcado) {
     }
 
     let colaborador = null;
+    let respostaSimNao = null;
     if (marcado) {
+        // 🆕 Pergunta a resposta de verdade ANTES de perguntar quem fez —
+        // antes, marcar essa etapa só significava "feito", e sempre virava
+        // SIM lá no Folhão, mesmo quando a resposta correta era NÃO (ex:
+        // "os flexíveis estão danificados?").
+        const etapa = CHECKLIST_EXECUCAO_ETAPAS_ATUAIS.find(e => e.id === etapaId);
+        respostaSimNao = await window.escolherSimNaoEtapa(etapa ? etapa.texto : '');
+        if (respostaSimNao === null) { window.recarregarChecklistExecucao(); return; } // cancelou
+
         colaborador = await window.escolherColaboradoresChecklist(CHECKLIST_EXECUCAO_TIPO_ATUAL);
         if (colaborador === null) { window.recarregarChecklistExecucao(); return; } // cancelou
     } else {
@@ -666,7 +745,7 @@ window.marcarEtapaChecklistExecucao = async function(etapaId, marcado) {
         }
     }
 
-    await enviarMarcacaoChecklistExecucao(etapaId, { marcado, colaborador });
+    await enviarMarcacaoChecklistExecucao(etapaId, { marcado, colaborador, valor: respostaSimNao });
 };
 
 // --------------------------------------------------------------
