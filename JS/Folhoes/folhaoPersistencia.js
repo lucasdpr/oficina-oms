@@ -72,10 +72,10 @@ export function preencherDadosModal(modalId, dados) {
 // API: SALVAR / CARREGAR / FINALIZAR RASCUNHO
 // --------------------------------------------------------------
 export async function salvarRascunhoFolhao(equipamentoId, tipoFolhao, dados, etapa = null) {
-    if (!equipamentoId) return;
+    if (!equipamentoId) return false;
     try {
         const apiBase = await resolverApiBase();
-        await fetch(`${apiBase}/api/folhao/salvar`, {
+        const resp = await fetch(`${apiBase}/api/folhao/salvar`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -85,8 +85,16 @@ export async function salvarRascunhoFolhao(equipamentoId, tipoFolhao, dados, eta
                 etapa
             })
         });
+        // 🐛 CORRIGIDO: antes essa função nunca contava pra quem chamou
+        // se o salvamento deu certo ou não — mesmo com a API retornando
+        // erro (500, offline, etc.), o "catch" só fazia console.error e
+        // a função terminava normal, sem sinalizar nada. Isso deixava
+        // quem chama (ex: o botão "Salvar" do Folhão) sem saber que
+        // precisava avisar o técnico. Agora devolve true/false de verdade.
+        return resp.ok;
     } catch (e) {
         console.error('⚠️ Não foi possível salvar o progresso do folhão:', e);
+        return false;
     }
 }
 

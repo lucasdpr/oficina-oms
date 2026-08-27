@@ -921,11 +921,24 @@ export async function salvarFolhaoMolde4() {
         return;
     }
 
-    // Força o rascunho a refletir o estado mais recente na hora (sem
-    // esperar o debounce de 800ms do auto-salvamento) — garante que o
-    // que acabou de ser salvo como laudo também fica no rascunho.
+    // 🐛 CORRIGIDO ("aparece a mensagem de sucesso, mas quando abre fica
+    // igual"): quem realmente guarda os dados pra reabrir o Folhão depois
+    // é o /api/folhao/salvar (rascunho), NÃO o /api/laudos (que só grava
+    // o HTML pronto pra impressão). Antes essa chamada de rascunho não
+    // era esperada nem verificada — se ela falhasse (rede instável, API
+    // fora do ar), o alerta de sucesso aparecia do mesmo jeito (porque é
+    // de outra chamada, o /api/laudos), passando a falsa impressão de
+    // que salvou tudo. Agora ela é esperada de verdade e, se falhar, o
+    // técnico é avisado explicitamente em vez de ficar pensando que
+    // "salvou mas bugou".
+    let rascunhoSalvoComSucesso = true;
     if (typeof window.salvarRascunhoFolhao === 'function' && typeof window.coletarDadosModal === 'function') {
-        window.salvarRascunhoFolhao(tag, "Molde", window.coletarDadosModal("modal-folhao-molde4"));
+        try {
+            const resultado = await window.salvarRascunhoFolhao(tag, "Molde", window.coletarDadosModal("modal-folhao-molde4"));
+            rascunhoSalvoComSucesso = resultado !== false;
+        } catch (e) {
+            rascunhoSalvoComSucesso = false;
+        }
     }
 
     if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Folhão de manutenção (Molde MCC4) salvo — aguardando conclusão do reparo.`);
@@ -937,7 +950,11 @@ export async function salvarFolhaoMolde4() {
     }
     if (typeof window.renderReparos === 'function') window.renderReparos();
 
-    alert("✅ Folhão salvo. Assim que o Checklist de Execução estiver 100%, clique em \"Concluir\" para gerar e imprimir o documento final.");
+    if (rascunhoSalvoComSucesso) {
+        alert("✅ Folhão salvo. Assim que o Checklist de Execução estiver 100%, clique em \"Concluir\" para gerar e imprimir o documento final.");
+    } else {
+        alert("⚠️ O laudo foi gravado, mas NÃO consegui salvar o progresso do formulário pra reabrir depois (falha ao falar com /api/folhao/salvar). Confira sua conexão e clique em \"Salvar\" de novo antes de fechar — senão os campos digitados podem não vir de volta.");
+    }
     fecharFolhaoMolde4();
 }
 window.salvarFolhaoMolde4 = salvarFolhaoMolde4;
