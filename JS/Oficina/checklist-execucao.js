@@ -191,6 +191,67 @@ let CHECKLIST_EXECUCAO_TIPO_ATUAL = null;        // tipo, ex: "molde-mcc4" — d
 let CHECKLIST_EXECUCAO_EXECUCAO_ATUAL = null;    // 🆕 id do reparo (execução) em andamento
 let CHECKLIST_EXECUCAO_ETAPAS_ATUAIS = [];
 
+// ==========================================================================
+// 🆕 MODAL "TIPO DE EXECUÇÃO" — substitui o confirm() nativo do
+// navegador (que ficava tosco: "OK = Geral, Cancelar = Parcial") por um
+// modal de verdade com dois botões claros, no mesmo estilo visual do
+// resto do sistema. Criado dinamicamente na primeira vez que é usado —
+// não precisa mexer no app.html.
+// ==========================================================================
+function garantirModalTipoExecucao() {
+    if (document.getElementById('modal-tipo-execucao')) return;
+    const div = document.createElement('div');
+    div.id = 'modal-tipo-execucao';
+    div.className = 'modal-overlay hidden';
+    div.style.zIndex = '10000';
+    div.innerHTML = `
+        <div class="modal-content" style="max-width:440px; text-align:center;">
+            <h2 style="color:var(--text-heading); margin-bottom:6px;">
+                <i class="fas fa-clipboard-list"></i> Tipo de Execução
+            </h2>
+            <p class="text-muted" style="margin-bottom:22px; font-size:13px;">
+                Esse reparo vai ser uma revisão <strong>Geral</strong> (todos os itens) ou <strong>Parcial</strong> (só alguns itens)?
+            </p>
+            <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+                <button class="btn-premium btn-success" style="flex:1; min-width:150px; padding:16px 10px; font-size:14px;" id="btn-tipo-execucao-geral">
+                    <i class="fas fa-list-check" style="font-size:18px; display:block; margin-bottom:6px;"></i>GERAL
+                </button>
+                <button class="btn-premium" style="flex:1; min-width:150px; padding:16px 10px; font-size:14px; background:transparent; border-color:var(--text-accent); color:var(--text-accent);" id="btn-tipo-execucao-parcial">
+                    <i class="fas fa-list" style="font-size:18px; display:block; margin-bottom:6px;"></i>PARCIAL
+                </button>
+            </div>
+            <button class="btn-outline-danger" style="margin-top:16px; padding:6px 14px; font-size:12px;" id="btn-tipo-execucao-cancelar">Cancelar</button>
+        </div>
+    `;
+    document.body.appendChild(div);
+}
+
+// Retorna uma Promise que resolve pra 'geral', 'parcial' ou null (se o
+// técnico cancelar sem escolher).
+window.escolherTipoExecucaoChecklist = function() {
+    garantirModalTipoExecucao();
+    const modal = document.getElementById('modal-tipo-execucao');
+    modal.classList.remove('hidden');
+
+    return new Promise((resolve) => {
+        const btnGeral = document.getElementById('btn-tipo-execucao-geral');
+        const btnParcial = document.getElementById('btn-tipo-execucao-parcial');
+        const btnCancelar = document.getElementById('btn-tipo-execucao-cancelar');
+
+        const finalizar = (valor) => {
+            modal.classList.add('hidden');
+            btnGeral.onclick = null;
+            btnParcial.onclick = null;
+            btnCancelar.onclick = null;
+            resolve(valor);
+        };
+
+        btnGeral.onclick = () => finalizar('geral');
+        btnParcial.onclick = () => finalizar('parcial');
+        btnCancelar.onclick = () => finalizar(null);
+    });
+};
+
 window.abrirChecklistExecucao = async function(equipamentoId) {
     CHECKLIST_EXECUCAO_EQUIPAMENTO_ATUAL = equipamentoId;
     CHECKLIST_EXECUCAO_TIPO_ATUAL = resolverTipoEquipamento(equipamentoId);
@@ -221,8 +282,14 @@ window.abrirChecklistExecucao = async function(equipamentoId) {
             CHECKLIST_EXECUCAO_EXECUCAO_ATUAL = status.execucao_id;
         } else {
             // Nenhum reparo em andamento ainda — pergunta Geral ou Parcial
-            // e abre um novo.
-            const tipoExecucao = confirm('Esse reparo é GERAL?\n\nOK = Geral\nCancelar = Parcial') ? 'geral' : 'parcial';
+            // (modal próprio, ver escolherTipoExecucaoChecklist) e abre um novo.
+            const tipoExecucao = await window.escolherTipoExecucaoChecklist();
+            if (!tipoExecucao) {
+                // Técnico cancelou a escolha — fecha o checklist sem criar
+                // execução nenhuma, como se nunca tivesse clicado.
+                window.fecharModalChecklistExecucao();
+                return;
+            }
             const tecnico = OPERADOR_LOGADO || {};
             const respIniciar = await fetch(`${apiBase}/api/checklist-execucao/execucoes/iniciar`, {
                 method: 'POST',

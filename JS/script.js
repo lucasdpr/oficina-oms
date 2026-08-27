@@ -2656,16 +2656,41 @@ window.processarCadastroPeca = async function() {
     }
 
     // 🆕 Se marcado como "já instalada", checa se esse slot (veio +
-    // posição) já está ocupado por outro equipamento — mesma checagem
-    // de segurança que o Swap Automático (iniciarSwapAlocacao) faz, pra
-    // não sobrescrever silenciosamente uma peça que já está lá.
+    // posição) já está ocupado por outro equipamento. Se estiver, saca
+    // o equipamento antigo pra "Oficina / Reparo" — igual o Swap
+    // Automático (iniciarSwapAlocacao) já faz — em vez de simplesmente
+    // bloquear o cadastro. Vale pra qualquer tipo de equipamento (Molde,
+    // Bow, Segmento, Cadeira etc.), não só um caso específico.
+    let pecaSacada = null;
     if (jaInstalada && posicaoFixa) {
-        const jaOcupado = BANCO_ATIVOS.find(a =>
+        pecaSacada = BANCO_ATIVOS.find(a =>
             a.status === "Instalado" && a.veio === veioInstalacao && a.posicaoFixa === posicaoFixa
         );
-        if (jaOcupado) {
-            alert(`⚠️ O slot ${posicaoFixa} do Veio ${veioInstalacao} já está ocupado por ${jaOcupado.id}. Verifique antes de cadastrar.`);
-            return;
+        if (pecaSacada) {
+            const confirmar = confirm(
+                `⚠️ O slot ${posicaoFixa} do Veio ${veioInstalacao} já está ocupado por ${pecaSacada.id}.\n\n` +
+                `Ao confirmar, ${pecaSacada.id} será SACADO desse slot e movido pra Oficina / Reparo, e ${id} entra no lugar dele.\n\nContinuar?`
+            );
+            if (!confirmar) return;
+        }
+    }
+
+    if (pecaSacada) {
+        pecaSacada.status = "Oficina / Reparo";
+        pecaSacada.local = "Oficina / Reparo";
+        pecaSacada.veio = "";
+        pecaSacada.posicaoFixa = "";
+        pecaSacada.pos = "";
+        pecaSacada.dataReparo = Date.now();
+        pecaSacada.dias = 0;
+        pecaSacada.dataEntradaVeio = null;
+        pecaSacada.substituidoPor = id;
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+        if (typeof window.salvarPecaNoPython === 'function') {
+            await window.salvarPecaNoPython(pecaSacada);
+        }
+        if (typeof registrarHistorico === 'function') {
+            registrarHistorico(pecaSacada.id, `🔻 Sacado do Veio ${veioInstalacao} (slot ${posicaoFixa}) — substituído por ${id} no cadastro retroativo.`);
         }
     }
 
@@ -2715,8 +2740,9 @@ window.processarCadastroPeca = async function() {
     if (typeof registrarHistorico === 'function') {
         const rotuloDesgaste = tonAtual > 0 ? ` (cadastrada já com ${tonAtual.toLocaleString('pt-BR')} de desgaste)` : ' (peça nova, sem uso)';
         const dataFormatada = new Date(dataEntradaMs).toLocaleDateString('pt-BR');
+        const rotuloSacada = pecaSacada ? ` — ${pecaSacada.id} foi sacado do slot pra Oficina / Reparo` : '';
         const rotuloLocal = jaInstalada
-            ? `📦 Peça cadastrada já Instalada no Veio ${veioInstalacao} (entrada em ${dataFormatada})${rotuloDesgaste}.`
+            ? `📦 Peça cadastrada já Instalada no Veio ${veioInstalacao} (entrada em ${dataFormatada})${rotuloDesgaste}${rotuloSacada}.`
             : `📦 Peça cadastrada no Estoque Reserva${rotuloDesgaste}.`;
         registrarHistorico(id, rotuloLocal);
     }
@@ -2742,7 +2768,7 @@ window.processarCadastroPeca = async function() {
     }
 
     alert(jaInstalada
-        ? `✅ Equipamento [${id}] cadastrado já Instalado no Veio ${veioInstalacao} (entrada retroativa em ${new Date(dataEntradaMs).toLocaleDateString('pt-BR')})!`
+        ? `✅ Equipamento [${id}] cadastrado já Instalado no Veio ${veioInstalacao} (entrada retroativa em ${new Date(dataEntradaMs).toLocaleDateString('pt-BR')})!` + (pecaSacada ? `\n\n${pecaSacada.id} foi sacado desse slot e movido pra Oficina / Reparo.` : '')
         : `✅ Equipamento [${id}] cadastrado com sucesso no Estoque Reserva!`);
 };
 
