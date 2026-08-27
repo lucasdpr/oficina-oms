@@ -167,6 +167,29 @@
         /* ===== GRAFICOS CARDS ===== */
         .graficos-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 18px; padding: 8px 0; }
         .mcc-grafico-card { background: rgba(20,30,50,0.5); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; transition: all var(--transition); border-top: 3px solid var(--border); }
+
+        /* ===== Cards SIM/NÃO dos folhões (ex: Molde MCC 4) =====
+           Celular: grid empilha em 1 coluna, card com texto em cima e
+           botões grandes embaixo (fácil de tocar).
+           PC (>=900px): vira uma linha só — texto à esquerda, SIM/NÃO
+           numa faixa fixa à direita, como uma lista, aproveitando a
+           largura da tela em vez de ficar com cara de formulário de
+           celular esticado. */
+        .sim-nao-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+        .sim-nao-card { padding: 12px; border-radius: 10px; background: var(--bg-td); border: 1px solid var(--border-color); transition: background 0.2s ease, border-color 0.2s ease; }
+        .sim-nao-card-header { display: flex; gap: 8px; margin-bottom: 10px; }
+        .sim-nao-card-num { font-weight: 700; color: var(--text-accent); flex-shrink: 0; }
+        .sim-nao-card-text { font-size: 12.5px; color: var(--text-heading); line-height: 1.4; }
+        .sim-nao-card-options { display: flex; flex-direction: column; }
+        .sim-nao-card-options-row { display: flex; gap: 8px; width: 100%; }
+        .sim-nao-option { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 6px; border-radius: 8px; border: 1px solid var(--border-color); cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--text-heading); transition: border-color 0.15s ease, background 0.15s ease; }
+        .sim-nao-option:hover { border-color: var(--primary); }
+        @media (min-width: 900px) {
+            .sim-nao-card-grid { grid-template-columns: 1fr; }
+            .sim-nao-card { display: flex; align-items: center; gap: 18px; padding: 10px 16px; }
+            .sim-nao-card-header { margin-bottom: 0; flex: 1; align-items: center; }
+            .sim-nao-card-options { flex-shrink: 0; width: 240px; }
+        }
         .mcc-grafico-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); border-color: var(--primary); }
         /* ===== RESPONSIVE ===== */
         @media (max-width: 992px) { .kpi-container { grid-template-columns: 1fr 1fr; } .graficos-container { grid-template-columns: 1fr; } .welcome-box { flex-direction: column; align-items: flex-start; } }
@@ -2242,7 +2265,7 @@
             </div>
             
             <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end; padding-top: 15px; border-top: 1px solid var(--border);">
-                <button class="btn-premium btn-success" onclick="window.salvarEImprimirFolhaoMolde4()"><i class="fas fa-save"></i> Salvar e Imprimir</button>
+                <button class="btn-premium btn-success" onclick="window.salvarFolhaoMolde4()"><i class="fas fa-save"></i> Salvar</button>
                 <button class="btn-outline-danger" onclick="window.fecharFolhaoMolde4()">Fechar</button>
             </div>
         </div>

@@ -20,7 +20,15 @@ export function getV(id) {
 export function getRadioValue(name) {
     const radios = document.getElementsByName(name);
     for (let r of radios) if (r.checked) return r.value;
-    return 'NÃO';
+    // 🔧 CORREÇÃO: antes retornava 'NÃO' aqui como padrão — quase nunca
+    // aparecia na prática porque o SIM vinha marcado (checked) por
+    // padrão em toda pergunta (ver correção em renderizarTabelaSimNaoM4).
+    // Agora que nenhuma pergunta vem pré-marcada, esse "padrão NÃO"
+    // passaria a aparecer pra QUALQUER pergunta esquecida em branco —
+    // fabricando uma resposta negativa que ninguém realmente deu. null
+    // = pergunta em branco fica em branco no PDF (nem X no SIM, nem no
+    // NÃO), honesto com o que de fato foi respondido.
+    return null;
 }
 
 export function getCheckboxValue(id) {
@@ -182,30 +190,55 @@ const checklistsM4 = {
 // ==============================================================
 // FUNÇÕES DE RENDERIZAÇÃO - MOLDE MCC 4
 // ==============================================================
-function renderizarTabelaSimNaoM4(containerId, array, prefix, isFinal = false) {
+function renderizarTabelaSimNaoM4(containerId, array, prefix, isFinal = false, invertidas = []) {
     const container = document.getElementById(containerId);
     if (!container) return;
-    let html = `<table class="premium-table" style="font-size:10px;">
-        <thead><tr><th style="width:5%;">ITEM</th><th>DESCRIÇÃO</th>`;
-    if (isFinal) html += `<th style="width:15%;">MEDIDA ENCONTRADA</th>`;
-    html += `<th style="width:8%;">SIM</th><th style="width:8%;">NÃO</th></tr></thead><tbody>`;
+
+    // 🔧 REFORMULADO ("ficou espremido no celular"): antes era uma
+    // <table> com 4 colunas (ITEM, DESCRIÇÃO, SIM, NÃO) — no celular a
+    // tela é estreita demais pra isso, a DESCRIÇÃO quebrava em várias
+    // linhas e os botões SIM/NÃO ficavam cortados/minúsculos.
+    //
+    // 🖥️ CORRIGIDO ("os cards só funcionam no celular, não no PC"): o
+    // grid/card agora usa classes (.sim-nao-card-grid / .sim-nao-card /
+    // .sim-nao-card-options etc., ver CSS no app.html) em vez de estilo
+    // inline fixo. No celular continua empilhado (texto em cima, SIM/NÃO
+    // embaixo, fácil de tocar). A partir de telas largas (>=900px) o
+    // card vira uma linha: texto à esquerda, botões SIM/NÃO numa faixa
+    // fixa à direita — como uma lista, não um formulário de celular
+    // esticado.
+    const invertidasSet = new Set(invertidas);
+    let html = `<div class="sim-nao-card-grid">`;
     array.forEach((item, i) => {
         const desc = isFinal ? item.text : item;
         const num = isFinal ? item.num : (i + 1);
         const name = `${prefix}-${i}`;
-        html += `<tr><td style="text-align:center;font-weight:bold;">${num}</td><td>${desc}</td>`;
-        if (isFinal) html += `<td><input id="${name}-med" class="w-100"></td>`;
-        // 🔧 CORREÇÃO CRÍTICA: antes o "SIM" vinha marcado (checked) por
-        // padrão em TODAS as perguntas, mesmo sem ninguém ter respondido
-        // nada — o formulário parecia "todo preenchido" na hora de abrir,
-        // escondendo tanto se o técnico esqueceu de responder quanto se a
-        // ponte com o Checklist de Execução realmente funcionou. Agora
-        // nenhuma das duas vem marcada; a resposta só aparece quando for
-        // de verdade (manual ou pela ponte).
-        html += `<td style="text-align:center;"><input type="radio" name="${name}" value="SIM"></td>
-                 <td style="text-align:center;"><input type="radio" name="${name}" value="NÃO"></td></tr>`;
+        // 🐛 CORRIGIDO: perguntas com fraseado invertido (ex: "está
+        // danificado?", "houve vazamento?") marcam data-inverte="1" —
+        // usado por mostrarDadosPuxadosChecklist() pra saber que aqui é
+        // o SIM que indica problema, não o NÃO.
+        const inverte = invertidasSet.has(i) ? '1' : '0';
+        html += `
+            <div class="sim-nao-card" data-inverte="${inverte}">
+                <div class="sim-nao-card-header">
+                    <span class="sim-nao-card-num">${num}.</span>
+                    <span class="sim-nao-card-text">${desc}</span>
+                </div>
+                <div class="sim-nao-card-options">
+                    ${isFinal ? `<input id="${name}-med" class="premium-input w-100" placeholder="Medida encontrada" style="margin-bottom:8px; font-size:12px;">` : ''}
+                    <div class="sim-nao-card-options-row">
+                        <label class="sim-nao-option">
+                            <input type="radio" name="${name}" value="SIM" style="width:17px; height:17px; flex-shrink:0; accent-color:var(--success, #10b981);"> SIM
+                        </label>
+                        <label class="sim-nao-option">
+                            <input type="radio" name="${name}" value="NÃO" style="width:17px; height:17px; flex-shrink:0; accent-color:var(--danger, #ef4444);"> NÃO
+                        </label>
+                    </div>
+                </div>
+            </div>
+        `;
     });
-    html += `</tbody></table>`;
+    html += `</div>`;
     container.innerHTML += html;
 }
 
@@ -277,8 +310,24 @@ async function preencherFolhaoComChecklistExecucao(id, item) {
         let preenchidos = 0;
         let naoEncontrados = 0;
 
+        // 🐛 CORRIGIDO ("MOTIVO sempre voltava com 100000 mesmo apagando"):
+        // um folhao_campo mal configurado numa etapa do Checklist de
+        // Execução pode apontar, por engano, pra um campo de cabeçalho
+        // do Folhão (Motivo, Nº Molde, Líder, Desempenho...). Esses
+        // campos são sempre preenchidos manualmente pelo técnico pra
+        // aquela ordem de serviço específica — nunca fazem sentido vindo
+        // do Checklist (que é por TIPO de equipamento, não por OS). Essa
+        // lista bloqueia a ponte de mexer neles, não importa o que
+        // esteja mapeado do lado do Checklist.
+        const camposProtegidos = new Set([
+            'molde4-tag-name', 'molde4-num-molde', 'molde4-motivo',
+            'molde4-tipo-exec', 'molde4-data-inicio', 'molde4-data-fim',
+            'molde4-lider-responsavel', 'molde4-desempenho', 'molde4-nova-meta'
+        ]);
+
         Object.entries(valores).forEach(([campo, valor]) => {
             if (!valor) return; // etapa ainda não respondida — não mexe no campo
+            if (camposProtegidos.has(campo)) return; // 🐛 ver comentário acima
 
             // 🆕 Destaca visualmente o campo preenchido pelo Checklist —
             // sem isso, numa tabela com dezenas de campos minúsculos (ex:
@@ -308,7 +357,15 @@ async function preencherFolhaoComChecklistExecucao(id, item) {
                         // 🔧 Destacar só o <input type="radio"> quase não
                         // aparece (é um círculo pequeno). Destaca a linha
                         // (<tr>) inteira da tabela, bem mais visível.
-                        destacarCampo(r.closest('tr') || r.closest('label') || r, r.value === 'NÃO');
+                        const cardEl = r.closest('.sim-nao-card');
+                        // 🐛 CORRIGIDO: nem toda pergunta segue "NÃO = problema".
+                        // Perguntas escritas ao contrário (ex: "está danificado?",
+                        // "houve vazamento?") têm data-inverte="1" — nelas, SIM
+                        // é que indica atenção. Sem isso, o card ficava verde
+                        // justamente quando a resposta apontava um defeito.
+                        const invertida = cardEl && cardEl.dataset.inverte === '1';
+                        const ehAtencao = invertida ? r.value === 'SIM' : r.value === 'NÃO';
+                        destacarCampo(cardEl || r.closest('tr') || r.closest('label') || r, ehAtencao);
                         algumMarcado = true;
                     }
                 });
@@ -677,7 +734,7 @@ function renderizarM4Materiais() {
 // ==============================================================
 // FUNÇÃO PRINCIPAL - ABRIR FOLHÃO (DISPATCHER)
 // ==============================================================
-export function abrirFolhaoMCC4(id) {
+export async function abrirFolhaoMCC4(id) {
     ID_FOLHAO_ATUAL = id;
     let item = BANCO_ATIVOS.find(a => a.id === id);
     if (!item) return alert('Equipamento não encontrado!');
@@ -749,7 +806,7 @@ export function abrirFolhaoMCC4(id) {
 
         // Restaura progresso salvo (ex: chegada já feita, aguardando saída)
         // e liga o auto-salvamento pra nada mais se perder.
-        restaurarRascunhoNoModal("modal-folhao-mcc4", id);
+        await restaurarRascunhoNoModal("modal-folhao-mcc4", id);
         ativarAutoSalvamentoFolhao("modal-folhao-mcc4", id, "Bender");
         return;
     }
@@ -778,7 +835,12 @@ export function abrirFolhaoMCC4(id) {
 
         // Renderiza tudo
         renderizarM4Identificacao();
-        renderizarTabelaSimNaoM4('container-m4-recebimento', checklistsM4.recebimentoMecanica, 'm4-rec');
+        // 🐛 Índices (a partir de 0) das perguntas de recebimentoMecanica
+        // que são escritas ao contrário ("está danificado?", "houve
+        // vazamento?", "ocorreu obstrução?") — nelas SIM é que indica
+        // problema, não NÃO. Ver comentário em renderizarTabelaSimNaoM4.
+        const invertidasRecebimentoMecanica = [2, 3, 5, 7, 9, 10, 11];
+        renderizarTabelaSimNaoM4('container-m4-recebimento', checklistsM4.recebimentoMecanica, 'm4-rec', false, invertidasRecebimentoMecanica);
         renderizarTabelaSimNaoM4('container-m4-eletrica', checklistsM4.recebimentoEletrica, 'm4-ele');
         renderizarTabelaSimNaoM4('container-m4-revisao', checklistsM4.revisao, 'm4-rev');
         renderizarTabelaSimNaoM4('container-m4-final', checklistsM4.inspecaoFinal, 'm4-fin', true);
@@ -791,21 +853,29 @@ export function abrirFolhaoMCC4(id) {
         renderizarM4Mecanica();
         renderizarM4Materiais();
 
-        // 🆕 Depois de tudo desenhado na tela, tenta puxar os valores já
-        // respondidos no Checklist de Execução e preencher os campos
-        // correspondentes sozinho. Roda em paralelo (não bloqueia a
-        // abertura do modal) — se falhar ou não achar nada, o formulário
-        // segue 100% manual, do jeito que já era.
-        preencherFolhaoComChecklistExecucao(id, item);
+        // 🐛 CORRIGIDO ("preenchi um monte de coisa e não aparece no
+        // folhão"): antes essas duas chamadas rodavam em paralelo sem
+        // se esperar (nenhuma tinha "await"). Ambas mexem nos MESMOS
+        // campos (ex: m4-fa-1000-es) — uma restaura o rascunho salvo
+        // (que pode ter esses campos em branco, de uma sessão anterior
+        // antes do Checklist de Execução ser respondido) e a outra
+        // preenche com os valores reais do Checklist. Quem terminava o
+        // fetch por último "ganhava" e apagava o valor do outro — na
+        // prática, virava loteria dependendo da rede.
+        //
+        // Agora é sequencial: primeiro espera restaurar o rascunho
+        // (progresso manual salvo), e só DEPOIS disso terminar é que
+        // preenche com o Checklist de Execução por cima — assim o dado
+        // mais recente e mais confiável (o que já foi de fato marcado
+        // na execução do reparo) sempre vence, nunca é sobrescrito por
+        // um rascunho antigo em branco.
+        await restaurarRascunhoNoModal("modal-folhao-molde4", id);
+        await preencherFolhaoComChecklistExecucao(id, item);
+        ativarAutoSalvamentoFolhao("modal-folhao-molde4", id, "Molde");
 
         const firstTabM4 = modalM4.querySelector('.folhao-tab');
         if (firstTabM4) firstTabM4.click();
         modalM4.classList.remove("hidden");
-
-        // Restaura progresso salvo (ex: chegada já feita, aguardando saída)
-        // e liga o auto-salvamento pra nada mais se perder.
-        restaurarRascunhoNoModal("modal-folhao-molde4", id);
-        ativarAutoSalvamentoFolhao("modal-folhao-molde4", id, "Molde");
         return;
     }
 
@@ -813,35 +883,91 @@ export function abrirFolhaoMCC4(id) {
 }
 
 // ==============================================================
-// SALVAR E IMPRIMIR - MOLDE MCC 4 (PDF NATIVO + NUVEM)
+// SALVAR FOLHÃO - MOLDE MCC 4 (sem imprimir)
 // ==============================================================
-export async function salvarEImprimirFolhaoMolde4() {
+// 🔧 SEPARADO ("Salvar e Imprimir" virou só "Salvar"): antes, o único
+// botão do Folhão já mandava pra impressora na hora. Agora ele só
+// grava o laudo (dados + HTML pronto) no banco — a impressão só
+// acontece depois, quando o Checklist de Execução estiver 100% e o
+// técnico clicar em "Concluir" (ver window.concluirEImprimirFolhao,
+// chamado por renderizarBotaoConcluirReparo em checklist-execucao.js).
+// Isso também é o que já fazia falta pra destravar o botão Concluir:
+// ele só liga quando existe pelo menos 1 laudo salvo pra aquela peça
+// (ver folhaoSalvo em checklist-execucao.js) — e antes NADA aqui
+// jamais criava um laudo, então Concluir nunca destravava sozinho.
+export async function salvarFolhaoMolde4() {
     if (!ID_FOLHAO_ATUAL) return alert("Nenhuma TAG carregada.");
     let tag = ID_FOLHAO_ATUAL;
 
-    // 1. CAPTURA OS DADOS DA TELA
-    const dtIni = getV('molde4-data-inicio') || new Date().toLocaleDateString('pt-BR');
-    const dtFim = getV('molde4-data-fim') || new Date().toLocaleDateString('pt-BR');
-    const num = getV('molde4-num-molde');
-    const mot = getV('molde4-motivo');
-    const tipoE = getV('molde4-tipo-exec'); 
-    const novaMeta = getV('molde4-nova-meta') || 'Manter Atual';
-    const lider = getV('molde4-lider-responsavel'); // 🆕
-    const desempenho = getV('molde4-desempenho'); // 🆕
+    const htmlPDF = montarHtmlLaudoMolde4(tag);
+    const lider = getV('molde4-lider-responsavel');
 
-    // 2. ATUALIZA O EQUIPAMENTO NO BANCO (rota real que já existe na API)
-    // 🔧 CORREÇÃO: antes essa etapa chamava POST /api/salvar_folhao, uma
-    // rota que nunca existiu no backend (main.py não tem ela). Isso
-    // fazia essa tela SEMPRE cair no alerta "Erro no Banco de Dados" e
-    // travar antes de imprimir. Trocado pela mesma rota que o resto do
-    // sistema usa (/api/atualizar_peca) e, se falhar, avisa mas deixa
-    // o técnico imprimir mesmo assim (o PDF não pode ficar refém da rede).
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/laudos`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                peca_id: tag,
+                tipo: "Molde MCC4",
+                html: htmlPDF,
+                operador: lider || "Sistema"
+            })
+        });
+        if (!resp.ok) throw new Error("A API não confirmou o salvamento do laudo.");
+    } catch (e) {
+        console.error("Erro ao salvar laudo do Folhão:", e);
+        alert(`❌ Não consegui salvar o Folhão no banco.\n\nMotivo: ${e.message}\n\nSeu progresso continua salvo como rascunho — tente salvar de novo, ou confira sua conexão.`);
+        return;
+    }
+
+    // Força o rascunho a refletir o estado mais recente na hora (sem
+    // esperar o debounce de 800ms do auto-salvamento) — garante que o
+    // que acabou de ser salvo como laudo também fica no rascunho.
+    if (typeof window.salvarRascunhoFolhao === 'function' && typeof window.coletarDadosModal === 'function') {
+        window.salvarRascunhoFolhao(tag, "Molde", window.coletarDadosModal("modal-folhao-molde4"));
+    }
+
+    if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Folhão de manutenção (Molde MCC4) salvo — aguardando conclusão do reparo.`);
+
+    // Avisa o Checklist de Execução que o status mudou (folhaoSalvo passa
+    // a valer true), pra destravar o botão Concluir sem precisar recarregar.
+    if (typeof window.carregarStatusChecklistExecucaoReparo === 'function') {
+        window.carregarStatusChecklistExecucaoReparo([tag], true);
+    }
+    if (typeof window.renderReparos === 'function') window.renderReparos();
+
+    alert("✅ Folhão salvo. Assim que o Checklist de Execução estiver 100%, clique em \"Concluir\" para gerar e imprimir o documento final.");
+    fecharFolhaoMolde4();
+}
+window.salvarFolhaoMolde4 = salvarFolhaoMolde4;
+
+// ==============================================================
+// CONCLUIR E IMPRIMIR - MOLDE MCC 4 (chamado pelo botão "Concluir" do
+// Checklist de Execução, só depois de 100% + Folhão salvo)
+// ==============================================================
+window.concluirEImprimirFolhaoMolde4 = async function(tag) {
+    let htmlPDF;
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/laudos?peca_id=${encodeURIComponent(tag)}&limite=1`, { cache: 'no-store' });
+        const laudos = resp.ok ? await resp.json() : [];
+        if (!Array.isArray(laudos) || laudos.length === 0) {
+            alert('Nenhum Folhão salvo encontrado pra essa peça ainda. Abra o Folhão e clique em "Salvar" primeiro.');
+            return;
+        }
+        htmlPDF = laudos[0].html;
+    } catch (e) {
+        console.error("Erro ao buscar laudo salvo pra imprimir:", e);
+        alert(`❌ Não consegui buscar o Folhão salvo pra imprimir.\n\nMotivo: ${e.message}`);
+        return;
+    }
+
     let item = BANCO_ATIVOS.find(a => a.id === tag);
     if (item) {
         item.local = "Oficina / Reserva";
         item.ton = 0;
         item.dias = 0;
-        if (novaMeta && !isNaN(parseFloat(novaMeta))) item.meta = parseFloat(novaMeta);
         localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
     }
     try {
@@ -851,18 +977,6 @@ export async function salvarEImprimirFolhaoMolde4() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 id: tag,
-                // 🔧 CORREÇÃO CRÍTICA ("Molde MCC4 virava Molde 2/3 ao
-                // finalizar"): antes esse POST não mandava tipo/mcc_compat.
-                // Se por qualquer motivo essa peça ainda não existisse de
-                // verdade no Postgres (ex: falha silenciosa de rede num
-                // salvarPecaNoPython anterior), o backend caía no fallback
-                // de INSERT e gravava tipo="" e mcc_compat="" (peca.tipo or
-                // "" / peca.mcc_compat or ""). Como o front-end usa
-                // `a.mcc_compat || "2/3"` em vários lugares, uma string
-                // vazia é "falsy" e a peça passava a ser tratada como
-                // Molde 2/3 em todo o sistema. Mandando os dois campos
-                // sempre, o valor certo fica travado não importa o que
-                // aconteça no banco.
                 tipo: item?.tipo || "Molde",
                 mcc_compat: item?.mcc_compat || "4",
                 local: "Oficina / Reserva",
@@ -871,16 +985,48 @@ export async function salvarEImprimirFolhaoMolde4() {
                 status: "Reserva"
             })
         });
-        console.log("✅ Peça atualizada no banco!");
     } catch (e) {
         console.error("Erro ao atualizar peça na nuvem:", e);
-        // Não bloqueia a impressão — o técnico já preencheu o folhão todo,
-        // ele precisa poder imprimir mesmo se a internet cair.
     }
 
-    // Folhão concluído: apaga o rascunho salvo (chegada+saída já foram
-    // impressas, não precisa mais restaurar progresso pra essa TAG).
     finalizarRascunhoFolhao(tag, "Molde 4");
+    if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Reparo concluído — Folhão de manutenção (Molde MCC4) impresso.`);
+
+    const printDiv = document.getElementById('print-content');
+    if (printDiv) printDiv.innerHTML = htmlPDF;
+
+    if (typeof renderReparos === 'function') renderReparos();
+    if (typeof renderReservas === 'function') renderReservas();
+    if (typeof renderAtivos === 'function') renderAtivos();
+    if (window.calcularKpisGlobais) window.calcularKpisGlobais();
+
+    setTimeout(() => window.print(), 500);
+};
+
+// ==============================================================
+// MONTA O HTML DO LAUDO (PDF) - MOLDE MCC 4
+// ==============================================================
+// 🔧 EXTRAÍDO: essa montagem de HTML era feita dentro da função de
+// salvar/imprimir antiga — agora vira uma função à parte porque
+// precisa ser chamada em dois momentos diferentes: ao SALVAR (grava
+// o HTML pronto no banco) e ao CONCLUIR (usa o HTML já salvo, sem
+// precisar reabrir/remontar o Folhão).
+function montarHtmlLaudoMolde4(tag) {
+    // 1. CAPTURA OS DADOS DA TELA
+    const dtIni = getV('molde4-data-inicio') || new Date().toLocaleDateString('pt-BR');
+    const dtFim = getV('molde4-data-fim') || new Date().toLocaleDateString('pt-BR');
+    const num = getV('molde4-num-molde');
+    const mot = getV('molde4-motivo');
+    const tipoE = getV('molde4-tipo-exec');
+    const novaMeta = getV('molde4-nova-meta') || 'Manter Atual';
+    const lider = getV('molde4-lider-responsavel');
+    const desempenho = getV('molde4-desempenho');
+
+    let item = BANCO_ATIVOS.find(a => a.id === tag);
+    if (item && novaMeta && !isNaN(parseFloat(novaMeta))) {
+        item.meta = parseFloat(novaMeta);
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    }
 
     // 3. FUNÇÃO AUXILIAR DA TABELA DO PDF
     function gerarTabelaCheckPDF(prefix, arr, isFinal = false) {
@@ -1233,21 +1379,8 @@ export async function salvarEImprimirFolhaoMolde4() {
         </div>
     </div>`;
 
-    // 5. JOGA O HTML NO CONTAINER DE IMPRESSÃO
-    const printDiv = document.getElementById('print-content');
-    if (printDiv) printDiv.innerHTML = htmlPDF;
-    
-    // 6. FECHA A JANELA E SÓ AGORA CHAMA O PRINT
-    fecharFolhaoMolde4();
-    if (typeof renderReparos === 'function') renderReparos();
-    if (typeof renderReservas === 'function') renderReservas();
-    if (typeof renderAtivos === 'function') renderAtivos();
-    
-    setTimeout(() => window.print(), 500);
+    return htmlPDF;
 }
-
-// GARANTE QUE O NAVEGADOR VAI RECONHECER A NOVA FUNÇÃO
-window.salvarEImprimirFolhaoMolde4 = salvarEImprimirFolhaoMolde4;
 
 // ==============================================================
 // SALVAR LAUDO INTELIGENTE (BENDER)
@@ -1283,7 +1416,6 @@ window.fecharFolhaoMolde4 = fecharFolhaoMolde4;
 window.trocarAbaFolhao = trocarAbaFolhao;
 window.trocarAbaMolde4 = trocarAbaMolde4;
 window.salvarLaudoInteligente = salvarLaudoInteligente;
-window.salvarEImprimirFolhaoMolde4 = salvarEImprimirFolhaoMolde4;
 window.adicionarLinhaMaterialBender = window.adicionarLinhaMaterialBender || function() {};
 window.getV = getV;
 

@@ -7862,3 +7862,99 @@ window.excluirQualidade = async function(id) {
         }
     }, () => window.carregarListaQualidade());
 };
+
+// ==========================================================================
+// 🆕 BOTÃO "VOLTAR" DO CELULAR FECHA MODAL EM VEZ DE SAIR DO APP
+// ==========================================================================
+// Problema: no celular (principalmente instalado como PWA), abrir um
+// modal (Folhão, Checklist de Execução, "Quem executou", etc.) NÃO
+// registra nada no histórico do navegador. Resultado: o botão/gesto de
+// "voltar" do Android (ou o botão físico) não fecha o modal — ele volta
+// a página inteira, o que geralmente tira a pessoa do app.
+//
+// A correção é genérica (cobre QUALQUER modal do sistema, atual ou
+// futuro, sem precisar editar cada "abrirModalX" espalhado por vários
+// arquivos): um MutationObserver fica de olho em toda troca da classe
+// "hidden" em qualquer ".modal-overlay". Quando um modal ABRE, empilha
+// 1 estado no histórico do navegador. Quando ESSE estado é "consumido"
+// pelo botão voltar (evento popstate), a gente fecha o modal que
+// estiver aberto no topo — sem sair da página. Se o modal for fechado
+// do jeito normal (botão "Fechar"/"X"/"Cancelar"), a gente consome
+// sozinho o estado extra que tínhamos empilhado, pra não sobrar um
+// "voltar" fantasma que não muda nada visualmente.
+// ==========================================================================
+(function () {
+    let fechandoViaBotaoVoltar = false;
+
+    function modaisAbertos() {
+        return Array.from(document.querySelectorAll('.modal-overlay:not(.hidden)'));
+    }
+
+    // Tenta fechar um modal "do jeito certo": clicando no botão de
+    // fechar/cancelar de verdade dele (isso é importante pros modais
+    // dinâmicos que ficam esperando uma Promise resolver — ex: "Sim ou
+    // Não?", "Quem executou?" — clicar o botão de cancelar de verdade
+    // resolve a Promise como cancelado, em vez de travar aquela etapa
+    // esperando pra sempre por uma resposta que nunca vai chegar).
+    function tentarFecharModal(modalEl) {
+        const btn = modalEl.querySelector(
+            '[id$="-cancelar"], .btn-close-emergency, .btn-close-modal'
+        );
+        if (btn) { btn.click(); return; }
+        modalEl.classList.add('hidden');
+    }
+
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((m) => {
+            if (m.type !== 'attributes' || m.attributeName !== 'class') return;
+            const el = m.target;
+            if (!(el.classList && el.classList.contains('modal-overlay'))) return;
+
+            const estaEscondidoAgora = el.classList.contains('hidden');
+            const estavaEscondidoAntes = (m.oldValue || '').split(' ').includes('hidden');
+
+            if (estavaEscondidoAntes && !estaEscondidoAgora) {
+                // Modal ABRIU agora — empilha o estado no histórico.
+                try { history.pushState({ omsModal: true }, ''); } catch (e) { /* ambiente sem History API — segue sem quebrar */ }
+            } else if (!estavaEscondidoAntes && estaEscondidoAgora && !fechandoViaBotaoVoltar) {
+                // Modal FECHOU (por um botão normal, não pelo "voltar")
+                // — consome o estado extra que tínhamos empilhado.
+                if (history.state && history.state.omsModal) {
+                    try { history.back(); } catch (e) { /* nada a fazer */ }
+                }
+            }
+        });
+    });
+
+    function iniciarObservadorModais() {
+        observer.observe(document.body, {
+            attributes: true,
+            attributeFilter: ['class'],
+            attributeOldValue: true,
+            subtree: true
+        });
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarObservadorModais);
+    } else {
+        iniciarObservadorModais();
+    }
+
+    window.addEventListener('popstate', () => {
+        const abertos = modaisAbertos();
+        if (abertos.length === 0) return; // nenhum modal aberto — deixa o navegador seguir normal
+
+        // Fecha o modal "de cima" (maior z-index calculado) — geralmente
+        // o último a ter sido aberto.
+        let topo = abertos[0];
+        let maiorZ = -1;
+        abertos.forEach((m) => {
+            const z = parseInt(window.getComputedStyle(m).zIndex, 10) || 0;
+            if (z >= maiorZ) { maiorZ = z; topo = m; }
+        });
+
+        fechandoViaBotaoVoltar = true;
+        tentarFecharModal(topo);
+        setTimeout(() => { fechandoViaBotaoVoltar = false; }, 0);
+    });
+})();

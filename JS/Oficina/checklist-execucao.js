@@ -180,7 +180,13 @@ window.renderizarBotaoConcluirReparo = function(equipamentoId) {
     const status = window.CHECKLIST_EXECUCAO_STATUS_CACHE[equipamentoId];
     const pronto = !!(status && status.completo && status.folhaoSalvo);
     if (pronto) {
-        return `<button class="btn-premium btn-success" onclick="window.abrirFolhaoPorTipo('${equipamentoId}')" title="Checklist 100% e Folhão salvos">
+        // 🔧 CORRIGIDO: antes o "Concluir" só reabria o Folhão
+        // (abrirFolhaoPorTipo) — não imprimia nada, e reabrir de novo
+        // depois de já ter salvo não fazia sentido. Agora ele busca o
+        // laudo que já foi salvo no Folhão e manda direto pra
+        // impressão — a impressão só acontece aqui, no fim do processo,
+        // nunca antes.
+        return `<button class="btn-premium btn-success" onclick="window.concluirEImprimirFolhaoMolde4('${equipamentoId}')" title="Checklist 100% e Folhão salvos">
             <i class="fas fa-check-double"></i> Concluir
         </button>`;
     }
@@ -439,11 +445,11 @@ window.renderizarChecklistExecucao = function() {
 
         html += `
             <div class="glass-panel" style="padding:12px; margin-bottom:12px; border-left:4px solid ${secao.cor};">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
                     <div style="font-weight:700; color:${secao.cor}; font-size:13px;">
                         <i class="fas ${secao.icone}"></i> ${secao.nome}
                     </div>
-                    ${isAdmin ? `<button class="btn-premium" style="padding:3px 8px; font-size:11px;" onclick="window.formNovaEtapaChecklistExecucao('${secao.chave}')"><i class="fas fa-plus"></i> Etapa</button>` : ''}
+                    ${isAdmin ? `<button class="btn-premium" style="padding:5px 10px; font-size:11px;" onclick="window.formNovaEtapaChecklistExecucao('${secao.chave}')"><i class="fas fa-plus"></i> Etapa</button>` : ''}
                 </div>
                 ${etapasDaSecao.length === 0 ? `<div class="text-muted" style="font-size:11.5px;">Nenhuma etapa cadastrada ainda nesta seção.</div>` : ''}
                 ${etapasDaSecao.map((e, idx) => renderizarLinhaEtapaChecklistExecucao(e, secao, isAdmin)).join('')}
@@ -474,18 +480,18 @@ window.renderizarChecklistExecucao = function() {
 function renderizarLinhaEtapaChecklistExecucao(e, secao, isAdmin) {
     const tipoResposta = e.tipo_resposta || 'sim_nao';
     const botoesAdmin = isAdmin ? `
-        <div style="display:flex; flex-direction:column; gap:3px;">
-            <button class="btn-premium" style="padding:2px 6px; font-size:10px;" title="Editar (texto e mapeamento com o Folhão)" onclick='window.editarEtapaChecklistExecucao(${e.id})'><i class="fas fa-pen"></i></button>
-            <button class="btn-premium" style="padding:2px 6px; font-size:10px;" title="Mover pra cima" onclick="window.moverEtapaChecklistExecucao(${e.id}, '${secao.chave}', -1)"><i class="fas fa-arrow-up"></i></button>
-            <button class="btn-premium" style="padding:2px 6px; font-size:10px;" title="Mover pra baixo" onclick="window.moverEtapaChecklistExecucao(${e.id}, '${secao.chave}', 1)"><i class="fas fa-arrow-down"></i></button>
-            <button class="btn-outline-danger" style="padding:2px 6px; font-size:10px;" title="Excluir etapa" onclick="window.excluirEtapaChecklistExecucao(${e.id})"><i class="fas fa-trash"></i></button>
+        <div style="display:flex; flex-wrap:wrap; gap:4px; flex-shrink:0;">
+            <button class="btn-premium" style="padding:6px 8px; font-size:11px;" title="Editar (texto e mapeamento com o Folhão)" onclick='window.editarEtapaChecklistExecucao(${e.id})'><i class="fas fa-pen"></i></button>
+            <button class="btn-premium" style="padding:6px 8px; font-size:11px;" title="Mover pra cima" onclick="window.moverEtapaChecklistExecucao(${e.id}, '${secao.chave}', -1)"><i class="fas fa-arrow-up"></i></button>
+            <button class="btn-premium" style="padding:6px 8px; font-size:11px;" title="Mover pra baixo" onclick="window.moverEtapaChecklistExecucao(${e.id}, '${secao.chave}', 1)"><i class="fas fa-arrow-down"></i></button>
+            <button class="btn-outline-danger" style="padding:6px 8px; font-size:11px;" title="Excluir etapa" onclick="window.excluirEtapaChecklistExecucao(${e.id})"><i class="fas fa-trash"></i></button>
         </div>
     ` : '';
 
     if (tipoResposta === 'medicao') {
         const preenchida = !!(e.valor && e.valor.trim());
         return `
-            <div style="display:flex; gap:10px; align-items:flex-start; padding:8px; border-radius:8px; background:${preenchida ? 'var(--success-bg)' : 'var(--bg-td)'}; margin-bottom:6px;">
+            <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start; padding:8px; border-radius:8px; background:${preenchida ? 'var(--success-bg)' : 'var(--bg-td)'}; margin-bottom:6px;">
                 <div style="flex:1; min-width:0;">
                     <div style="font-size:13px; color:var(--text-heading);">${e.texto}</div>
                     ${preenchida
@@ -511,7 +517,7 @@ function renderizarLinhaEtapaChecklistExecucao(e, secao, isAdmin) {
         } catch (err) { /* mapa mal formado — mostra 0/0 */ }
         const completo = totalCampos > 0 && preenchidos === totalCampos;
         return `
-            <div style="display:flex; gap:10px; align-items:flex-start; padding:8px; border-radius:8px; background:${completo ? 'var(--success-bg)' : 'var(--bg-td)'}; margin-bottom:6px;">
+            <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start; padding:8px; border-radius:8px; background:${completo ? 'var(--success-bg)' : 'var(--bg-td)'}; margin-bottom:6px;">
                 <div style="flex:1; min-width:0;">
                     <div style="font-size:13px; color:var(--text-heading);">${e.texto}</div>
                     <div class="text-muted" style="font-size:11px; margin-top:2px;"><i class="fas fa-ruler-combined"></i> ${preenchidos} / ${totalCampos} medições preenchidas</div>
@@ -536,7 +542,7 @@ function renderizarLinhaEtapaChecklistExecucao(e, secao, isAdmin) {
         ? `<span style="font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px; margin-left:6px; background:${e.valor === 'SIM' ? 'var(--success)' : 'var(--danger)'}; color:#fff;">${e.valor}</span>`
         : '';
     return `
-        <div style="display:flex; gap:10px; align-items:flex-start; padding:8px; border-radius:8px; background:${corFundo}; margin-bottom:6px;">
+        <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start; padding:8px; border-radius:8px; background:${corFundo}; margin-bottom:6px;">
             <input type="checkbox" ${e.marcado ? 'checked' : ''} style="margin-top:3px; width:18px; height:18px; flex-shrink:0;" onchange="window.marcarEtapaChecklistExecucao(${e.id}, this.checked)">
             <div style="flex:1; min-width:0;">
                 <div style="font-size:13px; color:var(--text-heading);">${e.texto}${badgeResposta}</div>
