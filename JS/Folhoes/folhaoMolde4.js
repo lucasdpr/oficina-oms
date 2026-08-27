@@ -214,6 +214,33 @@ function renderizarTabelaSimNaoM4(containerId, array, prefix, isFinal = false) {
 // Não sobrescreve com valor vazio: se uma etapa ainda não foi marcada,
 // o campo do folhão fica do jeito que já estava (em branco ou como o
 // técnico tiver digitado manualmente).
+// ==============================================================
+// 🆕 AVISO DE PREENCHIMENTO AUTOMÁTICO (toast simples, sem depender de
+// nenhuma lib externa) — some sozinho depois de alguns segundos, não
+// atrapalha o técnico preenchendo o resto do Folhão manualmente.
+// ==============================================================
+function mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados) {
+    const existente = document.getElementById('toast-preenchimento-checklist');
+    if (existente) existente.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'toast-preenchimento-checklist';
+    toast.style.cssText = 'position:fixed; top:16px; right:16px; z-index:10500; max-width:340px; padding:12px 16px; border-radius:10px; font-size:13px; line-height:1.4; box-shadow:0 10px 30px rgba(0,0,0,0.4); animation:fadeInModal 0.25s ease-out;';
+
+    if (naoEncontrados === 0) {
+        toast.style.background = 'rgba(16, 185, 129, 0.95)';
+        toast.style.color = '#fff';
+        toast.innerHTML = `<i class="fas fa-check-circle"></i> <strong>${preenchidos}</strong> campo(s) preenchido(s) automaticamente pelo Checklist de Execução (destacados em verde no formulário).`;
+    } else {
+        toast.style.background = 'rgba(245, 158, 11, 0.95)';
+        toast.style.color = '#1a1a1a';
+        toast.innerHTML = `<i class="fas fa-triangle-exclamation"></i> ${preenchidos} campo(s) preenchido(s), mas <strong>${naoEncontrados}</strong> não foram encontrados no Folhão — o mapeamento (folhao_campo) de alguma etapa está apontando pro id errado. Corrija em Editar Etapa no Checklist.`;
+    }
+
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), naoEncontrados > 0 ? 12000 : 6000);
+}
+
 async function preencherFolhaoComChecklistExecucao(id, item) {
     try {
         // Mesmo cálculo de "tipo de equipamento" usado no Checklist de
@@ -240,25 +267,56 @@ async function preencherFolhaoComChecklistExecucao(id, item) {
         const respValores = await fetch(`${apiBase}/api/checklist-execucao/folhao/${encodeURIComponent(tipoEquipamento)}?execucao_id=${status.execucao_id}`, { cache: 'no-store' });
         const valores = respValores.ok ? await respValores.json() : {};
 
+        let preenchidos = 0;
+        let naoEncontrados = 0;
+
         Object.entries(valores).forEach(([campo, valor]) => {
             if (!valor) return; // etapa ainda não respondida — não mexe no campo
+
+            // 🆕 Destaca visualmente o campo preenchido pelo Checklist —
+            // sem isso, numa tabela com dezenas de campos minúsculos (ex:
+            // "Relatório Folga de Aresta", 57 campos de 40px), fica
+            // impossível saber de relance se a ponte funcionou ou não.
+            const destacarCampo = (el) => {
+                if (!el) return;
+                el.style.background = 'rgba(16, 185, 129, 0.18)';
+                el.style.borderColor = 'var(--success, #10b981)';
+                el.title = '🔗 Preenchido automaticamente pelo Checklist de Execução';
+            };
 
             // Campo pode ser: par de radios SIM/NÃO (name="campo"), um
             // checkbox simples (id="campo", tipo checkbox) ou um
             // <input>/<textarea> comum (id="campo") — tenta os três.
             const radios = document.getElementsByName(campo);
             if (radios && radios.length > 0) {
-                radios.forEach(r => { r.checked = (valor === 'OK' && r.value === 'SIM') || r.value === valor; });
+                let algumMarcado = false;
+                radios.forEach(r => {
+                    r.checked = (valor === 'OK' && r.value === 'SIM') || r.value === valor;
+                    if (r.checked) { destacarCampo(r.closest('label') || r); algumMarcado = true; }
+                });
+                if (algumMarcado) preenchidos++; else naoEncontrados++;
                 return;
             }
             const inputEl = document.getElementById(campo);
-            if (!inputEl) return;
+            if (!inputEl) { naoEncontrados++; return; }
             if (inputEl.type === 'checkbox') {
                 inputEl.checked = (valor === 'OK');
             } else {
                 inputEl.value = valor;
             }
+            destacarCampo(inputEl);
+            preenchidos++;
         });
+
+        // 🆕 RESUMO VISÍVEL: sem isso, o técnico só descobre se a ponte
+        // funcionou catando campo por campo numa tabela de 57 linhas. Um
+        // aviso simples resolve tanto "funcionou" (confirma rápido) quanto
+        // "não funcionou" (avisa que o mapeamento (folhao_campo) de
+        // alguma etapa está apontando pro campo errado, em vez de falhar
+        // silenciosamente igual antes).
+        if (preenchidos > 0 || naoEncontrados > 0) {
+            mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados);
+        }
     } catch (e) {
         console.error('⚠️ Não consegui puxar os valores do Checklist de Execução pro folhão:', e);
         // Falha aqui não deve travar a abertura do folhão — só segue sem
