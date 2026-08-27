@@ -775,6 +775,20 @@ export async function salvarEImprimirFolhaoMolde4() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 id: tag,
+                // 🔧 CORREÇÃO CRÍTICA ("Molde MCC4 virava Molde 2/3 ao
+                // finalizar"): antes esse POST não mandava tipo/mcc_compat.
+                // Se por qualquer motivo essa peça ainda não existisse de
+                // verdade no Postgres (ex: falha silenciosa de rede num
+                // salvarPecaNoPython anterior), o backend caía no fallback
+                // de INSERT e gravava tipo="" e mcc_compat="" (peca.tipo or
+                // "" / peca.mcc_compat or ""). Como o front-end usa
+                // `a.mcc_compat || "2/3"` em vários lugares, uma string
+                // vazia é "falsy" e a peça passava a ser tratada como
+                // Molde 2/3 em todo o sistema. Mandando os dois campos
+                // sempre, o valor certo fica travado não importa o que
+                // aconteça no banco.
+                tipo: item?.tipo || "Molde",
+                mcc_compat: item?.mcc_compat || "4",
                 local: "Oficina / Reserva",
                 tonelagem: 0,
                 dias: 0,
@@ -819,11 +833,12 @@ export async function salvarEImprimirFolhaoMolde4() {
     <style>
         /* Margens de página no padrão de documento técnico formal
            (3cm esquerda p/ encadernação, 2cm nas demais). */
-        @page { size: A4; margin: 2cm 2cm 2cm 3cm; }
+        @page { size: A4; margin: 1.2cm; }
 
         .pdf-base { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #000; line-height: 1.35; }
-        .pdf-base table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-        .pdf-base th, .pdf-base td { border: 1px solid #333; padding: 4px 6px; font-size: 9pt; }
+        .pdf-base *, .pdf-base *::before, .pdf-base *::after { box-sizing: border-box; }
+        .pdf-base table { width: 100%; max-width: 100%; border-collapse: collapse; margin-bottom: 10px; table-layout: auto; }
+        .pdf-base th, .pdf-base td { border: 1px solid #333; padding: 2px 3px; font-size: 8pt; word-wrap: break-word; overflow-wrap: break-word; }
         .pdf-base th { background: #e8e8e8; text-align: center; font-weight: bold; }
         /* Repete o cabeçalho da tabela em toda página nova, se a tabela
            quebrar no meio — padrão de documento técnico bem formatado. */

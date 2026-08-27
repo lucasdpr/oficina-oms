@@ -673,7 +673,18 @@ window.salvarEImprimirFolhaoMolde23 = async function() {
         await fetch(`${apiBase}/api/atualizar_peca`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: tag, local: "Oficina / Reserva", tonelagem: 0, dias: 0, status: "Reserva" })
+            // 🔧 CORREÇÃO (mesmo problema do Molde MCC4): sempre manda
+            // tipo/mcc_compat pra não correr o risco do backend cair no
+            // fallback de INSERT com esses campos em branco.
+            body: JSON.stringify({
+                id: tag,
+                tipo: item?.tipo || "Molde",
+                mcc_compat: item?.mcc_compat || "2/3",
+                local: "Oficina / Reserva",
+                tonelagem: 0,
+                dias: 0,
+                status: "Reserva"
+            })
         });
         console.log("✅ Peça atualizada no banco!");
     } catch (e) {
