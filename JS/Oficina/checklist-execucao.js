@@ -105,6 +105,57 @@ window.carregarStatusChecklistExecucaoReparo = async function(idsEquipamentos, f
     }
 };
 
+// ==========================================================================
+// 🆕 EXECUÇÕES ATIVAS — igual RASCUNHOS_IDS_ATIVOS (folhão) faz pro
+// script.js saber quem já tem rascunho salvo, isso aqui é o equivalente
+// pro Checklist de Execução: quais equipamentos já têm uma execução
+// 'em_andamento' (mesmo que o Folhão nunca tenha sido aberto/salvo).
+// Sem isso, "Iniciar Reparo" e "Reparo em Andamento" não conseguem se
+// falar sobre reparo iniciado só pelo checklist.
+// ==========================================================================
+window.EXECUCOES_CHECKLIST_IDS_ATIVAS = window.EXECUCOES_CHECKLIST_IDS_ATIVAS || new Set();
+
+window.carregarExecucoesChecklistAtivas = async function() {
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/checklist-execucao/execucoes/todas`, { cache: 'no-store' });
+        const execucoes = resp.ok ? await resp.json() : [];
+        window.EXECUCOES_CHECKLIST_IDS_ATIVAS = new Set(execucoes.map(e => e.equipamento_id));
+    } catch (e) {
+        console.error('⚠️ Não consegui carregar as execuções de checklist ativas:', e);
+    }
+    return window.EXECUCOES_CHECKLIST_IDS_ATIVAS;
+};
+
+// ==========================================================================
+// 🆕 BOTÃO "INICIAR REPARO" — usado só na sub-aba "Iniciar Reparo".
+// Diferente de abrirChecklistExecucao (que também é chamado de dentro
+// de "Reparo em Andamento" pra CONTINUAR um reparo já iniciado), esta
+// função marca o começo do reparo: cria/abre a execução do checklist e,
+// assim que ela existe, já marca o equipamento como "ativo" localmente
+// (sem esperar um novo fetch) pra sumir na hora de "Iniciar Reparo" e
+// aparecer em "Reparo em Andamento".
+// ==========================================================================
+window.iniciarReparoEAbrirChecklist = async function(equipamentoId) {
+    window.EXECUCOES_CHECKLIST_IDS_ATIVAS.add(equipamentoId);
+    if (typeof renderReparos === 'function') renderReparos();
+
+    await window.abrirChecklistExecucao(equipamentoId);
+
+    // Se algo deu errado ao criar/abrir a execução (ex: tipo não
+    // identificado), desfaz a marcação otimista acima pra não sumir o
+    // equipamento de "Iniciar Reparo" à toa.
+    if (!CHECKLIST_EXECUCAO_EXECUCAO_ATUAL) {
+        window.EXECUCOES_CHECKLIST_IDS_ATIVAS.delete(equipamentoId);
+        if (typeof renderReparos === 'function') renderReparos();
+        return;
+    }
+
+    if (document.getElementById('reparos-lista-andamento') && typeof window.carregarReparosAndamento === 'function') {
+        window.carregarReparosAndamento();
+    }
+};
+
 window.renderizarBotaoChecklistExecucao = function(equipamentoId) {
     const status = window.CHECKLIST_EXECUCAO_STATUS_CACHE[equipamentoId];
     const label = status ? `${status.percentual}%` : '...';

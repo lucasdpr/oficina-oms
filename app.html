@@ -985,6 +985,24 @@
                 <option value="">Selecionar posição...</option>
             </select>
         </div>
+        <!-- 🆕 DATA DE ENTRADA + INSTALAÇÃO RETROATIVA: cobre o caso de a
+             peça já estar fisicamente instalada há alguns dias e ninguém
+             ter atualizado o sistema ainda — sem isso, ela só entrava
+             "hoje" (dias = 0), mesmo já estando desgastando há dias. -->
+        <div class="input-group">
+            <label>Data de Entrada</label>
+            <input type="date" id="add-data-entrada" class="premium-input">
+        </div>
+        <div class="input-group" style="grid-column: span 3; display:flex; align-items:center; gap:8px; padding-top: 22px;">
+            <input type="checkbox" id="add-ja-instalada" onchange="window.toggleCadastroJaInstalada()" style="width:18px; height:18px;">
+            <label for="add-ja-instalada" style="margin:0; cursor:pointer;">Peça já está instalada no Veio (pular Reserva)</label>
+        </div>
+        <div id="bloco-add-veio-instalacao" class="input-group hidden" style="grid-column: span 4;">
+            <label>Veio onde já está instalada</label>
+            <select id="add-veio-instalacao" class="premium-select">
+                <option value="">Selecionar veio...</option>
+            </select>
+        </div>
         <div style="grid-column: span 4; display: flex; justify-content: flex-end; margin-top: 10px;">
             <button class="btn-premium btn-success" onclick="window.processarCadastroPeca()">
                 <i class="fas fa-check"></i> Confirmar Cadastro

@@ -178,6 +178,12 @@ async function atualizarRascunhosAtivos() {
     } catch (e) {
         console.error('⚠️ Não consegui atualizar rascunhos ativos (lista "Iniciar Reparo" pode mostrar item já em andamento):', e);
     }
+    // 🆕 Reparo pode ter sido "iniciado" só pelo Checklist de Execução,
+    // sem nenhum Folhão salvo ainda — sem carregar isso também, esse
+    // equipamento continuaria aparecendo em "Iniciar Reparo".
+    if (typeof window.carregarExecucoesChecklistAtivas === 'function') {
+        await window.carregarExecucoesChecklistAtivas();
+    }
     if (typeof renderReparos === 'function') renderReparos();
 }
 window.atualizarRascunhosAtivos = atualizarRascunhosAtivos;
@@ -1557,7 +1563,10 @@ export function renderReparos() {
     // — não faz sentido continuar oferecendo "Iniciar" pra ele também.
     // Agora esses IDs são excluídos daqui e só aparecem na sub-aba
     // "Reparo em Andamento".
-    const reparosBrutos = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reparo" && !RASCUNHOS_IDS_ATIVOS.has(a.id));
+    const execucoesAtivas = window.EXECUCOES_CHECKLIST_IDS_ATIVAS || new Set();
+    const reparosBrutos = BANCO_ATIVOS.filter(a =>
+        a.local === "Oficina / Reparo" && !RASCUNHOS_IDS_ATIVOS.has(a.id) && !execucoesAtivas.has(a.id)
+    );
     const { lista: reparos, semArea } = filtrarPorAreaTecnico(reparosBrutos);
 
     if (semArea) {
@@ -1624,11 +1633,8 @@ export function renderReparos() {
                         <td data-label="Dias em Reparo" style="font-weight:bold; color:var(--warning);">${dias} dias</td>
                         <td data-label="Ações">
                             <div class="flex-align-center gap-10 action-buttons-mobile" style="flex-wrap:wrap;">
-                                <button class="btn-premium btn-warning" onclick="window.abrirFolhaoPorTipo('${a.id}')"><i class="fas fa-file-alt"></i> Folhão</button>
-                                ${window.renderizarBotaoChecklistExecucao(a.id)}
-                                ${window.renderizarBotaoConcluirReparo(a.id)}
                                 <button class="btn-premium" style="background:transparent; border-color:var(--text-accent); color:var(--text-accent); padding: 8px 12px;" onclick="abrirHistoricoIndividual('${a.id}')" title="Ver Prontuário"><i class="fas fa-book-open"></i></button>
-                                <button class="btn-outline-danger" style="border-color:var(--danger); color:var(--danger); padding: 4px 8px;" onclick="excluirEquipamento('${a.id}')" title="Excluir equipamento"><i class="fas fa-trash"></i></button>
+                                <button class="btn-premium btn-success" onclick="window.iniciarReparoEAbrirChecklist('${a.id}')"><i class="fas fa-play"></i> Iniciar Reparo</button>
                             </div>
                         </td>
                     </tr>
@@ -2077,14 +2083,24 @@ window.atualizarPosicoesCadastro = function() {
     if (!selectPos || !inputMeta) return;
     selectPos.innerHTML = "";
 
+    // 🆕 Data de Entrada default = hoje (só preenche se ainda estiver
+    // vazio, pra não sobrescrever o que o técnico já digitou).
+    const inputDataEntrada = document.getElementById("add-data-entrada");
+    if (inputDataEntrada && !inputDataEntrada.value) {
+        inputDataEntrada.value = new Date().toISOString().slice(0, 10);
+    }
+
     if (!tipo) {
         selectPos.innerHTML = `<option value="">Selecione um tipo primeiro...</option>`;
         inputMeta.value = "";
+        window.atualizarVeiosCadastro();
         return;
     }
 
     const familia = tipo.split("|")[0] || "";
     const mcc = tipo.split("|")[1] || "";
+
+    window.atualizarVeiosCadastro();
 
     // 1. AUTO-PREENCHER A META
     const metas = {
@@ -2147,6 +2163,37 @@ window.atualizarPosicoesCadastro = function() {
 // ⚠️ A implementação de verdade do cadastro fica em
 // window.processarCadastroPeca, mais abaixo neste arquivo — é ela que
 // o botão "Confirmar Cadastro" chama (onclick="window.processarCadastroPeca()").
+
+// 🆕 Monta as opções de Veio do bloco "já está instalada", de acordo
+// com o MCC do tipo escolhido — Veios C/D são MCC 2, E/F são MCC 3
+// (por isso entram nos dois quando o tipo é "2/3", já que a peça pode
+// estar em qualquer um), G/H são MCC 4 (ver botões de
+// mudarVeioVisualizado no Sequenciamento de Veios, no app.html).
+window.atualizarVeiosCadastro = function() {
+    const tipo = document.getElementById("add-tipo")?.value || "";
+    const selectVeio = document.getElementById("add-veio-instalacao");
+    if (!selectVeio) return;
+
+    const mcc = tipo.split("|")[1] || "";
+    let opcoes = [];
+    if (mcc === "4") opcoes = [["G", "Veio G (MCC 4)"], ["H", "Veio H (MCC 4)"]];
+    else if (mcc === "2/3") opcoes = [["C", "Veio C (MCC 2)"], ["D", "Veio D (MCC 2)"], ["E", "Veio E (MCC 3)"], ["F", "Veio F (MCC 3)"]];
+
+    selectVeio.innerHTML = opcoes.length
+        ? `<option value="">Selecionar veio...</option>` + opcoes.map(([v, label]) => `<option value="${v}">${label}</option>`).join("")
+        : `<option value="">Selecione um tipo primeiro...</option>`;
+};
+
+// 🆕 Mostra/esconde o bloco de Veio quando o técnico marca "peça já
+// está instalada" — não faz sentido pedir Veio pra quem vai mandar pro
+// Estoque Reserva normalmente.
+window.toggleCadastroJaInstalada = function() {
+    const checkbox = document.getElementById("add-ja-instalada");
+    const bloco = document.getElementById("bloco-add-veio-instalacao");
+    if (!checkbox || !bloco) return;
+    bloco.classList.toggle("hidden", !checkbox.checked);
+    if (checkbox.checked) window.atualizarVeiosCadastro();
+};
 
 function renderRolos() {
     const tbody = document.getElementById("rolos-table-body");
@@ -2532,6 +2579,12 @@ window.processarCadastroPeca = async function() {
     const metaInput = document.getElementById('add-meta');
     const tonInput = document.getElementById('add-ton-atual');
     const posicaoSelect = document.getElementById('add-posicao');
+    // 🆕 Data de Entrada + instalação retroativa: cobre o caso da peça já
+    // estar fisicamente no Veio há alguns dias sem o sistema ter sido
+    // atualizado ainda.
+    const dataEntradaInput = document.getElementById('add-data-entrada');
+    const jaInstaladaCheckbox = document.getElementById('add-ja-instalada');
+    const veioInstalacaoSelect = document.getElementById('add-veio-instalacao');
 
     if (!tagInput || !tipoSelect || !metaInput) {
         alert("Erro: Elementos do formulário não encontrados no HTML.");
@@ -2543,9 +2596,28 @@ window.processarCadastroPeca = async function() {
     const meta = parseFloat(metaInput.value) || 0;
     const tonAtual = parseFloat(tonInput?.value) || 0; // 0 = peça nova, sem desgaste
     const posicao = posicaoSelect ? posicaoSelect.value : "";
+    const jaInstalada = !!(jaInstaladaCheckbox && jaInstaladaCheckbox.checked);
+    const veioInstalacao = veioInstalacaoSelect ? veioInstalacaoSelect.value : "";
 
     if (!id || !tipoCompleto) {
         alert("Por favor, preencha a TAG e selecione o Tipo de Família.");
+        return;
+    }
+
+    if (jaInstalada && !veioInstalacao) {
+        alert("Selecione em qual Veio a peça já está instalada, ou desmarque a opção 'já instalada'.");
+        return;
+    }
+
+    // Data de Entrada: se o técnico não preencheu, assume hoje. Vira o
+    // timestamp usado por calcularDias() pra calcular "dias em operação"
+    // — se for uma data passada (ex: peça já entrou há 5 dias), os dias
+    // aparecem certos na hora, sem precisar esperar o tempo passar de
+    // fato.
+    const dataEntradaStr = dataEntradaInput?.value || "";
+    const dataEntradaMs = dataEntradaStr ? new Date(`${dataEntradaStr}T00:00:00`).getTime() : Date.now();
+    if (dataEntradaStr && dataEntradaMs > Date.now()) {
+        alert("A Data de Entrada não pode ser no futuro.");
         return;
     }
 
@@ -2583,7 +2655,37 @@ window.processarCadastroPeca = async function() {
         else if (tipoUpper.includes("SEGMENTO") && !tipoUpper.includes("ZERO") && posicao) posicaoFixa = `SEG-${posicao}`;
     }
 
-    const novoItem = {
+    // 🆕 Se marcado como "já instalada", checa se esse slot (veio +
+    // posição) já está ocupado por outro equipamento — mesma checagem
+    // de segurança que o Swap Automático (iniciarSwapAlocacao) faz, pra
+    // não sobrescrever silenciosamente uma peça que já está lá.
+    if (jaInstalada && posicaoFixa) {
+        const jaOcupado = BANCO_ATIVOS.find(a =>
+            a.status === "Instalado" && a.veio === veioInstalacao && a.posicaoFixa === posicaoFixa
+        );
+        if (jaOcupado) {
+            alert(`⚠️ O slot ${posicaoFixa} do Veio ${veioInstalacao} já está ocupado por ${jaOcupado.id}. Verifique antes de cadastrar.`);
+            return;
+        }
+    }
+
+    const novoItem = jaInstalada ? {
+        id: id,
+        tipo: tipo,
+        mcc_compat: mcc_compat,
+        meta: meta,
+        ton: tonAtual,
+        local: `MCC ${mcc_compat} - Veio ${veioInstalacao}`,
+        veio: veioInstalacao,
+        posicaoFixa: posicaoFixa,
+        pos: posicaoFixa || "GERAL",
+        status: "Instalado",
+        dias: 0, // calcularDias() recalcula pela dataEntradaVeio
+        ordem: typeof getOrdemPadrao === 'function' ? getOrdemPadrao(tipo) : 999,
+        dataReparo: null,
+        dataEntradaVeio: dataEntradaMs,
+        substituidoPor: null
+    } : {
         id: id,
         tipo: tipo,
         mcc_compat: mcc_compat,
@@ -2612,12 +2714,17 @@ window.processarCadastroPeca = async function() {
 
     if (typeof registrarHistorico === 'function') {
         const rotuloDesgaste = tonAtual > 0 ? ` (cadastrada já com ${tonAtual.toLocaleString('pt-BR')} de desgaste)` : ' (peça nova, sem uso)';
-        registrarHistorico(id, `📦 Peça cadastrada no Estoque Reserva${rotuloDesgaste}.`);
+        const dataFormatada = new Date(dataEntradaMs).toLocaleDateString('pt-BR');
+        const rotuloLocal = jaInstalada
+            ? `📦 Peça cadastrada já Instalada no Veio ${veioInstalacao} (entrada em ${dataFormatada})${rotuloDesgaste}.`
+            : `📦 Peça cadastrada no Estoque Reserva${rotuloDesgaste}.`;
+        registrarHistorico(id, rotuloLocal);
     }
 
     // Atualiza as telas do sistema
     if (typeof window.renderAtivos === 'function') window.renderAtivos();
     if (typeof window.renderReservas === 'function') window.renderReservas();
+    if (typeof window.renderReparos === 'function') window.renderReparos();
     if (typeof window.renderPainelVeios === 'function') window.renderPainelVeios();
     if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
 
@@ -2626,11 +2733,17 @@ window.processarCadastroPeca = async function() {
     metaInput.value = '';
     if (tonInput) tonInput.value = '';
     tipoSelect.value = '';
+    if (dataEntradaInput) dataEntradaInput.value = '';
+    if (jaInstaladaCheckbox) jaInstaladaCheckbox.checked = false;
+    if (veioInstalacaoSelect) veioInstalacaoSelect.innerHTML = '<option value="">Selecionar veio...</option>';
+    if (typeof window.toggleCadastroJaInstalada === 'function') window.toggleCadastroJaInstalada();
     if (typeof window.toggleFormAdicionar === 'function') {
         window.toggleFormAdicionar();
     }
 
-    alert(`✅ Equipamento [${id}] cadastrado com sucesso no Estoque Reserva!`);
+    alert(jaInstalada
+        ? `✅ Equipamento [${id}] cadastrado já Instalado no Veio ${veioInstalacao} (entrada retroativa em ${new Date(dataEntradaMs).toLocaleDateString('pt-BR')})!`
+        : `✅ Equipamento [${id}] cadastrado com sucesso no Estoque Reserva!`);
 };
 
 // 🔧 CORREÇÃO CRÍTICA: aqui embaixo existia uma SEGUNDA definição de
@@ -3017,38 +3130,61 @@ window.carregarReparosAndamento = async function() {
 
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/folhao/rascunhos/todos`);
-        if (!resp.ok) throw new Error("Falha ao buscar rascunhos.");
-        const rascunhos = await resp.json();
+        // 🆕 Busca as duas fontes de "reparo iniciado" em paralelo:
+        // rascunho de Folhão (folhoes_rascunho) E execução de Checklist
+        // (checklist_execucao_execucoes) — um técnico pode ter começado
+        // só por um dos dois lados, e os dois contam como "em andamento".
+        const [respRascunhos, respExecucoes] = await Promise.all([
+            fetch(`${apiBase}/api/folhao/rascunhos/todos`),
+            fetch(`${apiBase}/api/checklist-execucao/execucoes/todas`)
+        ]);
+        if (!respRascunhos.ok) throw new Error("Falha ao buscar rascunhos.");
+        const rascunhos = await respRascunhos.json();
+        const execucoes = respExecucoes.ok ? await respExecucoes.json() : [];
 
-        // Reaproveita esse mesmo fetch pra manter RASCUNHOS_IDS_ATIVOS em
-        // dia (usado por renderReparos() na sub-aba "Iniciar Reparo").
+        // Reaproveita esses fetches pra manter RASCUNHOS_IDS_ATIVOS e
+        // EXECUCOES_CHECKLIST_IDS_ATIVAS em dia (usados por renderReparos()
+        // na sub-aba "Iniciar Reparo").
         RASCUNHOS_IDS_ATIVOS = new Set(rascunhos.map(r => r.equipamento_id));
+        window.EXECUCOES_CHECKLIST_IDS_ATIVAS = new Set(execucoes.map(e => e.equipamento_id));
         if (typeof renderReparos === 'function') renderReparos();
 
-        // Cruza cada rascunho com o cadastro do equipamento (BANCO_ATIVOS)
-        // pra saber o tipo dele e poder aplicar o filtro de área.
-        const equipamentosComRascunho = rascunhos
-            .map(r => BANCO_ATIVOS.find(a => a.id === r.equipamento_id))
+        // Junta as duas listas por equipamento_id — um mesmo equipamento
+        // pode ter as duas coisas (rascunho E execução); nesse caso, só
+        // guarda uma entrada só, preferindo a data mais recente pra
+        // exibir em "Atualizado".
+        const porEquipamento = new Map();
+        rascunhos.forEach(r => porEquipamento.set(r.equipamento_id, { rascunho: r, execucao: null }));
+        execucoes.forEach(e => {
+            const atual = porEquipamento.get(e.equipamento_id) || { rascunho: null, execucao: null };
+            atual.execucao = e;
+            porEquipamento.set(e.equipamento_id, atual);
+        });
+
+        // Cruza cada equipamento_id com o cadastro (BANCO_ATIVOS) pra
+        // saber o tipo dele e poder aplicar o filtro de área.
+        const equipamentosEmAndamento = [...porEquipamento.keys()]
+            .map(id => BANCO_ATIVOS.find(a => a.id === id))
             .filter(Boolean);
-        const { lista: equipamentosFiltrados } = filtrarPorAreaTecnico(equipamentosComRascunho);
+        const { lista: equipamentosFiltrados } = filtrarPorAreaTecnico(equipamentosEmAndamento);
         const idsPermitidos = new Set(equipamentosFiltrados.map(e => e.id));
 
-        let itens = rascunhos
-            .map(r => {
-                const equipamento = BANCO_ATIVOS.find(a => a.id === r.equipamento_id);
-                return equipamento ? { rascunho: r, equipamento } : null;
+        let itens = [...porEquipamento.entries()]
+            .map(([id, dados]) => {
+                const equipamento = BANCO_ATIVOS.find(a => a.id === id);
+                return equipamento ? { ...dados, equipamento } : null;
             })
             .filter(Boolean)
             .filter(x => idsPermitidos.has(x.equipamento.id));
 
         if (itens.length === 0) {
-            listaAndamento.innerHTML = linhaVazia("Nenhum folhão em andamento no momento.");
+            listaAndamento.innerHTML = linhaVazia("Nenhum reparo em andamento no momento.");
             return;
         }
 
-        listaAndamento.innerHTML = itens.map(({ rascunho, equipamento }) => {
-            const atualizado = rascunho.atualizado_em ? new Date(rascunho.atualizado_em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
+        listaAndamento.innerHTML = itens.map(({ rascunho, execucao, equipamento }) => {
+            const dataRef = rascunho?.atualizado_em || execucao?.iniciada_em;
+            const atualizado = dataRef ? new Date(dataRef).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
             return `
                 <div class="tecnico-item-linha" style="flex-direction:column; align-items:stretch; gap:10px; cursor:default;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
