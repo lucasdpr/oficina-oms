@@ -16,6 +16,7 @@
 
 import { resolverApiBase, OPERADOR_LOGADO, BANCO_ATIVOS } from '../Core/banco.js?v=5';
 import { CHECKLIST_EXECUCAO_SECOES } from '../Core/dados.js';
+import { resolverTipoEquipamento } from '../Core/checklistFolhaoPonte.js';
 // 🔧 CORREÇÃO CRÍTICA: NÃO importar MATRICULAS_ADM/OFICINA_EQUIPE_ATUAL/
 // verificarAcesso/renderReparos de '../script.js' aqui. O app.html
 // carrega o script.js como './JS/script.js?v=27' — uma URL diferente
@@ -31,22 +32,14 @@ import { CHECKLIST_EXECUCAO_SECOES } from '../Core/dados.js';
 
 // ==========================================================================
 // 🆕 TIPO DE EQUIPAMENTO — as etapas agora são cadastradas por TIPO (ex:
-// "molde-mcc4"), não mais por tag específica (ex: "M4-12"). Essa função
-// resolve o tipo a partir da tag, usando o que já existe no BANCO_ATIVOS
-// (a.tipo + a.mcc_compat). Se um dia mudar a nomenclatura do tipo no
-// cadastro, só precisa ajustar aqui — o resto do arquivo não muda.
+// "molde-mcc4"), não mais por tag específica (ex: "M4-12"). O cálculo
+// do slug vive em '../Core/checklistFolhaoPonte.js' (resolverTipoEquipamento,
+// importado acima) — ANTES esse cálculo estava copiado e colado aqui E
+// dentro do folhaoMolde4.js; se um mudasse sem o outro, o Checklist e o
+// Folhão passavam a calcular tipos diferentes pro mesmo equipamento, e
+// a ponte de autopreenchimento parava de achar nada, silenciosamente.
+// Agora é uma função só, usada nos dois lugares.
 // ==========================================================================
-function resolverTipoEquipamento(equipamentoId) {
-    const item = BANCO_ATIVOS.find(a => a.id === equipamentoId);
-    if (!item) return null;
-    const tipoSlug = (item.tipo || '')
-        .toLowerCase()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acento
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
-    const mcc = (item.mcc_compat || '').replace('/', '-'); // "2/3" -> "2-3"
-    return mcc ? `${tipoSlug}-mcc${mcc}` : tipoSlug;
-}
 
 // ==========================================================================
 // 🆕 CHECKLIST DE EXECUÇÃO — passo a passo real do reparo, por
@@ -186,7 +179,12 @@ window.renderizarBotaoConcluirReparo = function(equipamentoId) {
         // laudo que já foi salvo no Folhão e manda direto pra
         // impressão — a impressão só acontece aqui, no fim do processo,
         // nunca antes.
-        return `<button class="btn-premium btn-success" onclick="window.concluirEImprimirFolhaoMolde4('${equipamentoId}')" title="Checklist 100% e Folhão salvos">
+        // 🔧 CORRIGIDO: antes chamava window.concluirEImprimirFolhaoMolde4
+        // direto — fixo pro Molde. Agora passa pelo dispatcher
+        // (window.concluirEImprimirFolhaoPorTipo, em script.js) que decide
+        // a função certa pelo tipo do equipamento, com fallback genérico
+        // pra qualquer área que ainda não tenha função própria.
+        return `<button class="btn-premium btn-success" onclick="window.concluirEImprimirFolhaoPorTipo('${equipamentoId}')" title="Checklist 100% e Folhão salvos">
             <i class="fas fa-check-double"></i> Concluir
         </button>`;
     }
@@ -331,7 +329,7 @@ window.escolherTipoExecucaoChecklist = function() {
 
 window.abrirChecklistExecucao = async function(equipamentoId) {
     CHECKLIST_EXECUCAO_EQUIPAMENTO_ATUAL = equipamentoId;
-    CHECKLIST_EXECUCAO_TIPO_ATUAL = resolverTipoEquipamento(equipamentoId);
+    CHECKLIST_EXECUCAO_TIPO_ATUAL = resolverTipoEquipamento(BANCO_ATIVOS.find(a => a.id === equipamentoId));
     const modal = document.getElementById('modal-checklist-execucao');
     const titulo = document.getElementById('checklist-execucao-titulo');
     if (titulo) titulo.textContent = `Checklist de Execução — ${equipamentoId}`;

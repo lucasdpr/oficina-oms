@@ -4,8 +4,13 @@
 // (local ou Render) em vez de bater fixo em localhost:8000.
 import { BANCO_ATIVOS, resolverApiBase } from '../Core/banco.js?v=5';
 import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
+import { buscarPonteChecklist, preencherCamposFolhao, ligarListenerEdicaoManualFolhao, mostrarAvisoPreenchimentoChecklist } from '../Core/checklistFolhaoPonte.js';
 
 let ID_FOLHAO_MOLDE23_ATUAL = null;
+
+// 🆕 Contexto da ponte com o Checklist de Execução do folhão aberto no
+// momento — mesmo padrão do PONTE_CHECKLIST_M4 (folhaoMolde4.js).
+let PONTE_CHECKLIST_M23 = { execucaoId: null, tipoEquipamento: null, mapaCampoParaEtapa: {} };
 
 // ==============================================================
 // 1. DADOS DAS TABELAS (transcritos do documento)
@@ -633,18 +638,50 @@ window.abrirFolhaoMolde23 = function(id) {
     // e liga o auto-salvamento pra nada mais se perder.
     restaurarRascunhoNoModal('modal-folhao-molde23', id);
     ativarAutoSalvamentoFolhao('modal-folhao-molde23', id, 'Molde 2/3');
+
+    // 🆕 PONTE COM O CHECKLIST DE EXECUÇÃO — autopreenche os campos que
+    // já foram respondidos lá, igual o Molde MCC4 já fazia (ver
+    // '../Core/checklistFolhaoPonte.js'). Falha aqui não deve travar a
+    // abertura do folhão — só segue sem autopreencher.
+    preencherFolhao23ComChecklistExecucao(id);
 };
 
-// ==============================================================
-// 20. GERAR PDF E SALVAR NO BANCO (NUVEM + PDF NATIVO) - MOLDE 2/3
-// ==============================================================
-window.salvarEImprimirFolhaoMolde23 = async function() {
-    if (!window.verificarAcesso || !window.verificarAcesso()) { alert("Acesso negado."); return; }
-    if (!ID_FOLHAO_MOLDE23_ATUAL) { alert("Nenhuma TAG carregada."); return; }
+async function preencherFolhao23ComChecklistExecucao(id) {
+    ligarListenerEdicaoManualFolhao('modal-folhao-molde23', () => PONTE_CHECKLIST_M23);
+    try {
+        const item = BANCO_ATIVOS.find(a => a.id === id);
+        const ponte = await buscarPonteChecklist(id, item);
+        if (!ponte) return; // sem reparo em andamento — segue tudo manual
 
-    const tag = ID_FOLHAO_MOLDE23_ATUAL;
+        PONTE_CHECKLIST_M23 = ponte;
 
-    // 1. COLETA DADOS DO CABEÇALHO
+        // Campos de cabeçalho da OS — sempre preenchidos na mão pelo
+        // técnico, nunca vêm do Checklist (mesmo motivo do Molde MCC4).
+        const camposProtegidos = new Set([
+            'molde23-tag-name', 'molde23-num-molde', 'molde23-motivo',
+            'molde23-tipo-exec', 'molde23-data-inicio', 'molde23-data-fim',
+            'molde23-lider', 'molde23-desempenho', 'molde23-nova-meta'
+        ]);
+
+        const { preenchidos, naoEncontrados } = preencherCamposFolhao(ponte.valores, camposProtegidos);
+        if (preenchidos > 0 || naoEncontrados > 0) {
+            mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados);
+        }
+    } catch (e) {
+        console.error('⚠️ Não consegui puxar os valores do Checklist de Execução pro folhão (Molde 2/3):', e);
+    }
+}
+
+// ==============================================================
+// 20. MONTA O HTML DO LAUDO (PDF) - MOLDE 2/3
+// ==============================================================
+// 🔧 EXTRAÍDO (mesmo padrão do Molde MCC4, montarHtmlLaudoMolde4): essa
+// montagem de HTML era feita dentro da função de salvar/imprimir antiga
+// — agora vira uma função à parte porque precisa ser chamada em dois
+// momentos diferentes: ao SALVAR (grava o HTML pronto no banco) e ao
+// CONCLUIR (usa o HTML já salvo, sem precisar reabrir o Folhão).
+function montarHtmlLaudoMolde23(tag) {
+    // COLETA DADOS DO CABEÇALHO
     const lider = getV('molde23-lider') || '_______________';
     const dataInicio = getV('molde23-data-inicio') || new Date().toLocaleDateString('pt-BR');
     const dataFim = getV('molde23-data-fim') || new Date().toLocaleDateString('pt-BR');
@@ -652,47 +689,20 @@ window.salvarEImprimirFolhaoMolde23 = async function() {
     const motivo = getV('molde23-motivo') || '_______________';
     const tipoExec = document.getElementById('molde23-tipo-exec')?.value || 'GERAL';
     const desempenho = getV('molde23-desempenho') || '_______________';
-    const novaMeta = getV('molde23-nova-meta') || 'Manter Atual'; // 🔥 PEGA A NOVA META
+    const novaMeta = getV('molde23-nova-meta') || 'Manter Atual';
 
-    // 2. ATUALIZA O EQUIPAMENTO NO BANCO (rota real que já existe na API)
-    // 🔧 CORREÇÃO: antes essa etapa chamava POST /api/salvar_folhao, uma
-    // rota que nunca existiu no backend. Isso fazia essa tela SEMPRE cair
-    // no alerta "Erro no Banco de Dados" e travar antes de imprimir.
-    // Trocado pela rota real (/api/atualizar_peca) e, se a rede falhar,
-    // avisa mas deixa o técnico imprimir mesmo assim.
-    let item = BANCO_ATIVOS.find(a => a.id === tag);
-    if (item) {
-        item.local = "Oficina / Reserva";
-        item.ton = 0;
-        item.dias = 0;
-        if (novaMeta && !isNaN(parseFloat(novaMeta))) item.meta = parseFloat(novaMeta);
+    // 🐛 CORRIGIDO: a atualização de item.meta (nova meta de vida útil)
+    // precisa acontecer AQUI, enquanto o modal ainda está aberto e
+    // getV() consegue ler o campo — não em concluirEImprimirFolhaoMolde23,
+    // que roda depois, chamado pelo botão "Concluir" do Checklist, com o
+    // Folhão já fechado (getV de um campo que não existe mais na tela
+    // sempre volta '', e a meta nova silenciosamente não era salva).
+    // Mesmo padrão que montarHtmlLaudoMolde4 já usa.
+    let itemParaMeta = BANCO_ATIVOS.find(a => a.id === tag);
+    if (itemParaMeta && novaMeta && !isNaN(parseFloat(novaMeta))) {
+        itemParaMeta.meta = parseFloat(novaMeta);
         localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
     }
-    try {
-        const apiBase = await resolverApiBase();
-        await fetch(`${apiBase}/api/atualizar_peca`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            // 🔧 CORREÇÃO (mesmo problema do Molde MCC4): sempre manda
-            // tipo/mcc_compat pra não correr o risco do backend cair no
-            // fallback de INSERT com esses campos em branco.
-            body: JSON.stringify({
-                id: tag,
-                tipo: item?.tipo || "Molde",
-                mcc_compat: item?.mcc_compat || "2/3",
-                local: "Oficina / Reserva",
-                tonelagem: 0,
-                dias: 0,
-                status: "Reserva"
-            })
-        });
-        console.log("✅ Peça atualizada no banco!");
-    } catch (e) {
-        console.error("Erro ao atualizar peça na nuvem:", e);
-    }
-
-    // Folhão concluído: apaga o rascunho salvo dessa TAG.
-    finalizarRascunhoFolhao(tag, "Molde 2/3");
 
     // FUNÇÃO AUXILIAR PARA CHECKLISTS DO PDF
     function gerarLinhasChecklist(prefix, array, isMatricula = false) {
@@ -886,17 +896,143 @@ window.salvarEImprimirFolhaoMolde23 = async function() {
         </div>
     </div>`;
 
-    // 5. IMPRIME E ATUALIZA A INTERFACE (SÓ DEPOIS DO BANCO SALVAR)
-    const printDiv = document.getElementById('print-content');
-    if (!printDiv) { alert("Div 'print-content' não encontrada!"); return; }
-    printDiv.innerHTML = htmlPDF;
-    
+    return htmlPDF;
+}
+
+// ==============================================================
+// 21. SALVAR FOLHÃO - MOLDE 2/3 (sem imprimir)
+// ==============================================================
+// 🔧 SEPARADO (mesmo padrão do Molde MCC4, ver salvarFolhaoMolde4):
+// antes, "Salvar e Imprimir" fazia tudo num clique só, e NUNCA gravava
+// um laudo em /api/laudos — o que deixava o botão "Concluir" do
+// Checklist de Execução travado pra sempre (ele só destrava quando
+// existe laudo salvo). Agora este botão só grava o laudo (dados + HTML
+// pronto) no banco. A impressão E o envio da peça pra Oficina/Reserva
+// só acontecem depois, quando o Checklist estiver 100% e o técnico
+// clicar em "Concluir" (ver window.concluirEImprimirFolhaoMolde23,
+// chamado pelo dispatcher em script.js).
+window.salvarFolhaoMolde23 = async function() {
+    if (!window.verificarAcesso || !window.verificarAcesso()) { alert("Acesso negado."); return; }
+    if (!ID_FOLHAO_MOLDE23_ATUAL) { alert("Nenhuma TAG carregada."); return; }
+
+    const tag = ID_FOLHAO_MOLDE23_ATUAL;
+    const lider = getV('molde23-lider');
+    const htmlPDF = montarHtmlLaudoMolde23(tag);
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/laudos`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                peca_id: tag,
+                tipo: "Molde MCC2/3",
+                html: htmlPDF,
+                operador: lider || "Sistema"
+            })
+        });
+        if (!resp.ok) throw new Error("A API não confirmou o salvamento do laudo.");
+    } catch (e) {
+        console.error("Erro ao salvar laudo do Folhão (Molde 2/3):", e);
+        alert(`❌ Não consegui salvar o Folhão no banco.\n\nMotivo: ${e.message}\n\nSeu progresso continua salvo como rascunho — tente salvar de novo, ou confira sua conexão.`);
+        return;
+    }
+
+    // Quem guarda os dados pra reabrir o Folhão depois é o rascunho
+    // (/api/folhao/salvar), NÃO o /api/laudos (que só grava o HTML
+    // pronto pra impressão) — mesma lógica do Molde MCC4.
+    let rascunhoSalvoComSucesso = true;
+    if (typeof window.salvarRascunhoFolhao === 'function' && typeof window.coletarDadosModal === 'function') {
+        try {
+            const resultado = await window.salvarRascunhoFolhao(tag, "Molde", window.coletarDadosModal("modal-folhao-molde23"));
+            rascunhoSalvoComSucesso = resultado !== false;
+        } catch (e) {
+            rascunhoSalvoComSucesso = false;
+        }
+    }
+
+    if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Folhão de manutenção (Molde 2/3) salvo — aguardando conclusão do reparo.`);
+
+    // Avisa o Checklist de Execução que o status mudou (folhaoSalvo passa
+    // a valer true), pra destravar o botão Concluir sem precisar recarregar.
+    if (typeof window.carregarStatusChecklistExecucaoReparo === 'function') {
+        window.carregarStatusChecklistExecucaoReparo([tag], true);
+    }
+    if (typeof window.renderReparos === 'function') window.renderReparos();
+
+    if (rascunhoSalvoComSucesso) {
+        alert("✅ Folhão salvo. Assim que o Checklist de Execução estiver 100%, clique em \"Concluir\" para gerar e imprimir o documento final.");
+    } else {
+        alert("⚠️ O laudo foi gravado, mas NÃO consegui salvar o progresso do formulário pra reabrir depois (falha ao falar com /api/folhao/salvar). Confira sua conexão e clique em \"Salvar\" de novo antes de fechar — senão os campos digitados podem não vir de volta.");
+    }
     window.fecharFolhaoMolde23();
+};
+
+// ==============================================================
+// 22. CONCLUIR E IMPRIMIR - MOLDE 2/3 (chamado pelo botão "Concluir"
+// do Checklist de Execução, só depois de 100% + Folhão salvo)
+// ==============================================================
+window.concluirEImprimirFolhaoMolde23 = async function(tag) {
+    let htmlPDF;
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/laudos?peca_id=${encodeURIComponent(tag)}&limite=1`, { cache: 'no-store' });
+        const laudos = resp.ok ? await resp.json() : [];
+        if (!Array.isArray(laudos) || laudos.length === 0) {
+            alert('Nenhum Folhão salvo encontrado pra essa peça ainda. Abra o Folhão e clique em "Salvar" primeiro.');
+            return;
+        }
+        htmlPDF = laudos[0].html;
+    } catch (e) {
+        console.error("Erro ao buscar laudo salvo pra imprimir (Molde 2/3):", e);
+        alert(`❌ Não consegui buscar o Folhão salvo pra imprimir.\n\nMotivo: ${e.message}`);
+        return;
+    }
+
+    // ATUALIZA O EQUIPAMENTO NO BANCO — só agora, na conclusão de
+    // verdade, a peça sai do Reparo e vai pra Oficina/Reserva (mesmo
+    // padrão do Molde MCC4: salvar o Folhão não "termina" o reparo,
+    // Concluir no Checklist é que termina). A NOVA META já foi
+    // aplicada lá em montarHtmlLaudoMolde23, no momento do Salvar —
+    // não repete aqui (nesse ponto o Folhão já está fechado, então não
+    // haveria campo pra ler mesmo).
+    let item = BANCO_ATIVOS.find(a => a.id === tag);
+    if (item) {
+        item.local = "Oficina / Reserva";
+        item.ton = 0;
+        item.dias = 0;
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    }
+    try {
+        const apiBase = await resolverApiBase();
+        await fetch(`${apiBase}/api/atualizar_peca`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                id: tag,
+                tipo: item?.tipo || "Molde",
+                mcc_compat: item?.mcc_compat || "2/3",
+                local: "Oficina / Reserva",
+                tonelagem: 0,
+                dias: 0,
+                status: "Reserva"
+            })
+        });
+    } catch (e) {
+        console.error("Erro ao atualizar peça na nuvem (Molde 2/3):", e);
+    }
+
+    finalizarRascunhoFolhao(tag, "Molde 2/3");
+    if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Reparo concluído — Folhão de manutenção (Molde 2/3) impresso.`);
+
+    const printDiv = document.getElementById('print-content');
+    if (printDiv) printDiv.innerHTML = htmlPDF;
+
     if (typeof renderReparos === 'function') renderReparos();
     if (typeof renderReservas === 'function') renderReservas();
     if (typeof renderAtivos === 'function') renderAtivos();
     if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
-    
+
     setTimeout(() => window.print(), 500);
 };
 

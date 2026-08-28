@@ -12,8 +12,13 @@ import { BANCO_ATIVOS, resolverApiBase } from '../Core/banco.js?v=5';
 import { renderAtivos, renderReparos, renderReservas } from '../ui.js';
 import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
 import { MATERIAIS_SEG_GRUPO1, MATERIAIS_SEG_GRUPO2, MATERIAIS_SEG_GRUPO3 } from '../Oficina/dadosMateriaisSegmentoGrupo.js';
+import { buscarPonteChecklist, preencherCamposFolhao, ligarListenerEdicaoManualFolhao, mostrarAvisoPreenchimentoChecklist } from '../Core/checklistFolhaoPonte.js';
 
 let ID_FOLHAO_SEGGRUPO_ATUAL = null;
+
+// 🆕 Contexto da ponte com o Checklist de Execução do folhão aberto no
+// momento — mesmo padrão do PONTE_CHECKLIST_M4 (folhaoMolde4.js).
+let PONTE_CHECKLIST_SEGGRUPO = { execucaoId: null, tipoEquipamento: null, mapaCampoParaEtapa: {} };
 let GRUPO_ATUAL = "1";
 
 function getV(id) {
@@ -291,7 +296,33 @@ window.abrirFolhaoSegmentoGrupo = function (id) {
     // e liga o auto-salvamento pra nada mais se perder.
     restaurarRascunhoNoModal('modal-folhao-seg-grupo', id);
     ativarAutoSalvamentoFolhao('modal-folhao-seg-grupo', id, `Segmento Grupo ${GRUPO_ATUAL}`);
+
+    // 🆕 PONTE COM O CHECKLIST DE EXECUÇÃO — autopreenche os campos já
+    // respondidos lá (ver '../Core/checklistFolhaoPonte.js').
+    preencherFolhaoSegGrupoComChecklistExecucao(id);
 };
+
+async function preencherFolhaoSegGrupoComChecklistExecucao(id) {
+    ligarListenerEdicaoManualFolhao('modal-folhao-seg-grupo', () => PONTE_CHECKLIST_SEGGRUPO);
+    try {
+        const item = BANCO_ATIVOS.find(a => a.id === id);
+        const ponte = await buscarPonteChecklist(id, item);
+        if (!ponte) return;
+        PONTE_CHECKLIST_SEGGRUPO = ponte;
+
+        const camposProtegidos = new Set([
+            'segg-tag-name', 'segg-num-segmento', 'segg-veio', 'segg-desempenho',
+            'segg-motivo', 'segg-tipo-execucao', 'segg-data-inicio', 'segg-data-fim'
+        ]);
+
+        const { preenchidos, naoEncontrados } = preencherCamposFolhao(ponte.valores, camposProtegidos);
+        if (preenchidos > 0 || naoEncontrados > 0) {
+            mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados);
+        }
+    } catch (e) {
+        console.error('⚠️ Não consegui puxar os valores do Checklist de Execução pro folhão (Segmento Grupo):', e);
+    }
+}
 
 window.fecharFolhaoSegmentoGrupo = function () {
     const modal = document.getElementById('modal-folhao-seg-grupo');
@@ -310,13 +341,10 @@ window.trocarAbaSegGrupo = function (evt, abaId) {
 };
 
 // ==============================================================
-// 5. SALVAR E IMPRIMIR
+// 5. MONTA O HTML DO LAUDO (PDF) - SEGMENTO GRUPO 1/2/3
 // ==============================================================
-window.salvarEImprimirFolhaoSegmentoGrupo = async function () {
-    if (!ID_FOLHAO_SEGGRUPO_ATUAL) { alert('Nenhuma TAG carregada.'); return; }
-    const tag = ID_FOLHAO_SEGGRUPO_ATUAL;
+function montarHtmlLaudoSegGrupo(tag) {
     const grupo = GRUPO_ATUAL;
-
     const dtIni = getV('segg-data-inicio') || new Date().toLocaleDateString('pt-BR');
     const dtFim = getV('segg-data-fim') || new Date().toLocaleDateString('pt-BR');
     const numSeg = getV('segg-num-segmento') || '______';
@@ -324,26 +352,6 @@ window.salvarEImprimirFolhaoSegmentoGrupo = async function () {
     const desempenho = getV('segg-desempenho') || '';
     const motivo = getV('segg-motivo') || '_______________';
     const tipoExec = getV('segg-tipo-execucao') || 'GERAL';
-
-    // Atualiza o equipamento no banco (rota real /api/atualizar_peca)
-    const item = BANCO_ATIVOS.find(a => a.id === tag);
-    if (item) {
-        item.local = "Oficina / Reserva";
-        item.ton = 0;
-        item.dias = 0;
-        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-    }
-    try {
-        const apiBase = await resolverApiBase();
-        await fetch(`${apiBase}/api/atualizar_peca`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: tag, local: "Oficina / Reserva", tonelagem: 0, dias: 0, status: "Reserva" })
-        });
-    } catch (e) {
-        console.error("Erro ao atualizar peça na nuvem:", e);
-    }
-    finalizarRascunhoFolhao(tag, "Segmento de Grupo");
 
     // Monta o PDF (padrão visual igual aos demais folhões)
     const gerarTabelaChecklistPDF = (itens, prefix) => {
@@ -452,10 +460,102 @@ window.salvarEImprimirFolhaoSegmentoGrupo = async function () {
         </div>
     </div>`;
 
+    return htmlPDF;
+}
+
+// ==============================================================
+// 6. SALVAR FOLHÃO - SEGMENTO GRUPO 1/2/3 (sem imprimir)
+// ==============================================================
+window.salvarFolhaoSegmentoGrupo = async function () {
+    if (!ID_FOLHAO_SEGGRUPO_ATUAL) { alert('Nenhuma TAG carregada.'); return; }
+    const tag = ID_FOLHAO_SEGGRUPO_ATUAL;
+    const grupo = GRUPO_ATUAL;
+
+    const htmlPDF = montarHtmlLaudoSegGrupo(tag);
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/laudos`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ peca_id: tag, tipo: `Segmento Grupo ${grupo}`, html: htmlPDF, operador: "Sistema" })
+        });
+        if (!resp.ok) throw new Error("A API não confirmou o salvamento do laudo.");
+    } catch (e) {
+        console.error("Erro ao salvar laudo do Folhão (Segmento Grupo):", e);
+        alert(`❌ Não consegui salvar o Folhão no banco.\n\nMotivo: ${e.message}\n\nSeu progresso continua salvo como rascunho — tente salvar de novo, ou confira sua conexão.`);
+        return;
+    }
+
+    let rascunhoSalvoComSucesso = true;
+    if (typeof window.salvarRascunhoFolhao === 'function' && typeof window.coletarDadosModal === 'function') {
+        try {
+            const resultado = await window.salvarRascunhoFolhao(tag, `Segmento Grupo ${grupo}`, window.coletarDadosModal("modal-folhao-seg-grupo"));
+            rascunhoSalvoComSucesso = resultado !== false;
+        } catch (e) {
+            rascunhoSalvoComSucesso = false;
+        }
+    }
+
+    if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Folhão de manutenção (Segmento Grupo ${grupo}) salvo — aguardando conclusão do reparo.`);
+    if (typeof window.carregarStatusChecklistExecucaoReparo === 'function') {
+        window.carregarStatusChecklistExecucaoReparo([tag], true);
+    }
+    if (typeof window.renderReparos === 'function') window.renderReparos();
+
+    if (rascunhoSalvoComSucesso) {
+        alert("✅ Folhão salvo. Assim que o Checklist de Execução estiver 100%, clique em \"Concluir\" para gerar e imprimir o documento final.");
+    } else {
+        alert("⚠️ O laudo foi gravado, mas NÃO consegui salvar o progresso do formulário pra reabrir depois. Confira sua conexão e clique em \"Salvar\" de novo antes de fechar.");
+    }
+    window.fecharFolhaoSegmentoGrupo();
+};
+
+// ==============================================================
+// 7. CONCLUIR E IMPRIMIR - SEGMENTO GRUPO 1/2/3 (chamado pelo botão
+// "Concluir" do Checklist de Execução, só depois de 100% + Folhão salvo)
+// ==============================================================
+window.concluirEImprimirFolhaoSegmentoGrupo = async function (tag) {
+    let htmlPDF;
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/laudos?peca_id=${encodeURIComponent(tag)}&limite=1`, { cache: 'no-store' });
+        const laudos = resp.ok ? await resp.json() : [];
+        if (!Array.isArray(laudos) || laudos.length === 0) {
+            alert('Nenhum Folhão salvo encontrado pra essa peça ainda. Abra o Folhão e clique em "Salvar" primeiro.');
+            return;
+        }
+        htmlPDF = laudos[0].html;
+    } catch (e) {
+        console.error("Erro ao buscar laudo salvo pra imprimir (Segmento Grupo):", e);
+        alert(`❌ Não consegui buscar o Folhão salvo pra imprimir.\n\nMotivo: ${e.message}`);
+        return;
+    }
+
+    const item = BANCO_ATIVOS.find(a => a.id === tag);
+    if (item) {
+        item.local = "Oficina / Reserva";
+        item.ton = 0;
+        item.dias = 0;
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    }
+    try {
+        const apiBase = await resolverApiBase();
+        await fetch(`${apiBase}/api/atualizar_peca`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: tag, local: "Oficina / Reserva", tonelagem: 0, dias: 0, status: "Reserva" })
+        });
+    } catch (e) {
+        console.error("Erro ao atualizar peça na nuvem (Segmento Grupo):", e);
+    }
+
+    finalizarRascunhoFolhao(tag, "Segmento de Grupo");
+    if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Reparo concluído — Folhão de manutenção (Segmento de Grupo) impresso.`);
+
     const printDiv = document.getElementById('print-content');
     if (printDiv) printDiv.innerHTML = htmlPDF;
 
-    window.fecharFolhaoSegmentoGrupo();
     if (typeof renderReparos === 'function') renderReparos();
     if (typeof renderReservas === 'function') renderReservas();
     if (typeof renderAtivos === 'function') renderAtivos();

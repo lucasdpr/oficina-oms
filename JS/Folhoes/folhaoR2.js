@@ -1,8 +1,14 @@
 // folhao_straightener_r2.js - Módulo específico do STRAIGHTENER R-II (padrão BENDER)
 
+import { resolverApiBase } from '../Core/banco.js?v=5';
 import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
+import { buscarPonteChecklist, preencherCamposFolhao, ligarListenerEdicaoManualFolhao, mostrarAvisoPreenchimentoChecklist } from '../Core/checklistFolhaoPonte.js';
 
 let ID_FOLHAO_R2_ATUAL = null;
+
+// 🆕 Contexto da ponte com o Checklist de Execução do folhão aberto no
+// momento — mesmo padrão do PONTE_CHECKLIST_M4 (folhaoMolde4.js).
+let PONTE_CHECKLIST_R2 = { execucaoId: null, tipoEquipamento: null, mapaCampoParaEtapa: {} };
 
 // ==============================================================
 // 1. CONSTANTES - CHECKLIST DE CHEGADA (do PDF R2)
@@ -412,55 +418,38 @@ window.abrirFolhaoR2 = function(id) {
     // e liga o auto-salvamento pra nada mais se perder.
     restaurarRascunhoNoModal('modal-folhao-r2', id);
     ativarAutoSalvamentoFolhao('modal-folhao-r2', id, 'Straightener R2');
+
+    // 🆕 PONTE COM O CHECKLIST DE EXECUÇÃO — autopreenche os campos já
+    // respondidos lá (ver '../Core/checklistFolhaoPonte.js').
+    preencherFolhaoR2ComChecklistExecucao(id);
 };
 
+async function preencherFolhaoR2ComChecklistExecucao(id) {
+    ligarListenerEdicaoManualFolhao('modal-folhao-r2', () => PONTE_CHECKLIST_R2);
+    try {
+        const item = window.BANCO_ATIVOS.find(a => a.id === id);
+        const ponte = await buscarPonteChecklist(id, item);
+        if (!ponte) return;
+        PONTE_CHECKLIST_R2 = ponte;
+
+        const camposProtegidos = new Set([
+            'r2-tag-name', 'r2-num-segmento', 'r2-motivo',
+            'r2-tipo-exec', 'r2-data-inicio', 'r2-data-fim'
+        ]);
+
+        const { preenchidos, naoEncontrados } = preencherCamposFolhao(ponte.valores, camposProtegidos);
+        if (preenchidos > 0 || naoEncontrados > 0) {
+            mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados);
+        }
+    } catch (e) {
+        console.error('⚠️ Não consegui puxar os valores do Checklist de Execução pro folhão (R2):', e);
+    }
+}
+
 // ==============================================================
-// 7. SALVAR E IMPRIMIR PDF (R2) - CORRIGIDO
+// 7. MONTA O HTML DO LAUDO (PDF) - STRAIGHTENER R2
 // ==============================================================
-window.salvarEImprimirFolhaoR2 = function() {
-    console.log("Iniciando geração de PDF para STRAIGHTENER R-II...");
-
-    if (!ID_FOLHAO_R2_ATUAL) {
-        alert("Erro: Nenhuma TAG R2 carregada no momento.");
-        return;
-    }
-
-    let tag = ID_FOLHAO_R2_ATUAL;
-    let item = window.BANCO_ATIVOS.find(a => a.id === tag);
-
-    if (!item) {
-        alert(`Erro: A TAG ${tag} não foi encontrada no BANCO_ATIVOS.`);
-        return;
-    }
-
-    item.ton = 0;
-    item.dias = 0;
-    item.local = "Oficina / Reserva";
-    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(window.BANCO_ATIVOS));
-
-    // 🔧 CORREÇÃO: faltava avisar o Postgres dessa conclusão. Sem essa
-    // linha, a mudança só existia no navegador — na próxima sincronização
-    // (F5, ou outro usuário abrindo o sistema), o banco real (que nunca
-    // soube dessa conclusão) sobrescrevia tudo de volta pro estado antigo.
-    if (typeof window.salvarPecaNoPython === 'function') {
-        window.salvarPecaNoPython(item);
-    }
-
-    // Folhão concluído: apaga o rascunho salvo dessa TAG.
-    finalizarRascunhoFolhao(tag, "Straightener R2");
-
-    let btnPDF = `<button onclick="window.abrirFolhaoR2('${tag}')" class="btn-outline-danger" style="padding: 2px 8px; font-size: 10px; margin-left: 10px; cursor: pointer;"><i class="fas fa-file-pdf"></i> Visualizar Folhão</button>`;
-
-    if (window.registrarHistorico) {
-        window.registrarHistorico(tag, `Laudo Oficial (STRAIGHTENER R-II) concluído. <br><div style="margin-top: 5px;">${btnPDF}</div>`);
-    }
-
-    if (typeof renderReparos === 'function') renderReparos();
-    if (typeof renderReservas === 'function') renderReservas();
-    if (typeof renderAtivos === 'function') renderAtivos();
-    if (window.calcularKpisGlobais) window.calcularKpisGlobais();
-
-    // ========== CONSTRUÇÃO DO PDF ==========
+function montarHtmlLaudoR2(tag) {
     const hoje = new Date().toLocaleDateString('pt-BR');
     const dataInicio = document.getElementById('r2-data-inicio')?.value || hoje;
     const dataFim = document.getElementById('r2-data-fim')?.value || hoje;
@@ -725,13 +714,113 @@ window.salvarEImprimirFolhaoR2 = function() {
         </div>
     </div>`;
 
+    return html;
+}
+
+// ==============================================================
+// 8. SALVAR FOLHÃO - STRAIGHTENER R2 (sem imprimir)
+// ==============================================================
+// 🔧 SEPARADO (mesmo padrão do Molde MCC4): antes, "Salvar e Imprimir"
+// fazia tudo num clique só e NUNCA gravava um laudo em /api/laudos —
+// o Folhão do R2 só existia no navegador de quem imprimia. Agora
+// grava o laudo no banco; a impressão e o envio pra Oficina/Reserva
+// só acontecem no "Concluir" do Checklist de Execução.
+window.salvarFolhaoR2 = async function() {
+    if (!ID_FOLHAO_R2_ATUAL) { alert("Erro: Nenhuma TAG R2 carregada no momento."); return; }
+    const tag = ID_FOLHAO_R2_ATUAL;
+    const item = window.BANCO_ATIVOS.find(a => a.id === tag);
+    if (!item) { alert(`Erro: A TAG ${tag} não foi encontrada no BANCO_ATIVOS.`); return; }
+
+    const html = montarHtmlLaudoR2(tag);
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/laudos`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ peca_id: tag, tipo: "Straightener R2", html: html, operador: "Sistema" })
+        });
+        if (!resp.ok) throw new Error("A API não confirmou o salvamento do laudo.");
+    } catch (e) {
+        console.error("Erro ao salvar laudo do Folhão (R2):", e);
+        alert(`❌ Não consegui salvar o Folhão no banco.\n\nMotivo: ${e.message}\n\nSeu progresso continua salvo como rascunho — tente salvar de novo, ou confira sua conexão.`);
+        return;
+    }
+
+    let rascunhoSalvoComSucesso = true;
+    if (typeof window.salvarRascunhoFolhao === 'function' && typeof window.coletarDadosModal === 'function') {
+        try {
+            const resultado = await window.salvarRascunhoFolhao(tag, "Straightener R2", window.coletarDadosModal("modal-folhao-r2"));
+            rascunhoSalvoComSucesso = resultado !== false;
+        } catch (e) {
+            rascunhoSalvoComSucesso = false;
+        }
+    }
+
+    if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Folhão de manutenção (Straightener R2) salvo — aguardando conclusão do reparo.`);
+    if (typeof window.carregarStatusChecklistExecucaoReparo === 'function') {
+        window.carregarStatusChecklistExecucaoReparo([tag], true);
+    }
+    if (typeof window.renderReparos === 'function') window.renderReparos();
+
+    if (rascunhoSalvoComSucesso) {
+        alert("✅ Folhão salvo. Assim que o Checklist de Execução estiver 100%, clique em \"Concluir\" para gerar e imprimir o documento final.");
+    } else {
+        alert("⚠️ O laudo foi gravado, mas NÃO consegui salvar o progresso do formulário pra reabrir depois. Confira sua conexão e clique em \"Salvar\" de novo antes de fechar.");
+    }
+    window.fecharFolhaoR2?.();
+};
+
+// ==============================================================
+// 9. CONCLUIR E IMPRIMIR - STRAIGHTENER R2 (chamado pelo botão
+// "Concluir" do Checklist de Execução, só depois de 100% + Folhão salvo)
+// ==============================================================
+window.concluirEImprimirFolhaoR2 = async function(tag) {
+    let html;
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/laudos?peca_id=${encodeURIComponent(tag)}&limite=1`, { cache: 'no-store' });
+        const laudos = resp.ok ? await resp.json() : [];
+        if (!Array.isArray(laudos) || laudos.length === 0) {
+            alert('Nenhum Folhão salvo encontrado pra essa peça ainda. Abra o Folhão e clique em "Salvar" primeiro.');
+            return;
+        }
+        html = laudos[0].html;
+    } catch (e) {
+        console.error("Erro ao buscar laudo salvo pra imprimir (R2):", e);
+        alert(`❌ Não consegui buscar o Folhão salvo pra imprimir.\n\nMotivo: ${e.message}`);
+        return;
+    }
+
+    let item = window.BANCO_ATIVOS.find(a => a.id === tag);
+    if (item) {
+        item.ton = 0;
+        item.dias = 0;
+        item.local = "Oficina / Reserva";
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(window.BANCO_ATIVOS));
+        if (typeof window.salvarPecaNoPython === 'function') {
+            await window.salvarPecaNoPython(item);
+        }
+    }
+
+    finalizarRascunhoFolhao(tag, "Straightener R2");
+
+    let btnPDF = `<button onclick="window.abrirFolhaoR2('${tag}')" class="btn-outline-danger" style="padding: 2px 8px; font-size: 10px; margin-left: 10px; cursor: pointer;"><i class="fas fa-file-pdf"></i> Visualizar Folhão</button>`;
+    if (window.registrarHistorico) {
+        window.registrarHistorico(tag, `📋 Reparo concluído — Laudo Oficial (STRAIGHTENER R-II) impresso. <br><div style="margin-top: 5px;">${btnPDF}</div>`);
+    }
+
+    if (typeof renderReparos === 'function') renderReparos();
+    if (typeof renderReservas === 'function') renderReservas();
+    if (typeof renderAtivos === 'function') renderAtivos();
+    if (window.calcularKpisGlobais) window.calcularKpisGlobais();
+
     let printContent = document.getElementById('print-content');
     if (!printContent) {
         alert("Erro: A div com id 'print-content' não foi encontrada no HTML.");
         return;
     }
     printContent.innerHTML = html;
-    window.fecharFolhaoR2?.();
     setTimeout(() => window.print(), 500);
 };
 

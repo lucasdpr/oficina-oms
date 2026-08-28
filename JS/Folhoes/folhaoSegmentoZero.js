@@ -8,9 +8,15 @@
 // verdade. Agora o formulário é o checklist real de Segmento Zero.
 // ==============================================================
 
+import { resolverApiBase } from '../Core/banco.js?v=5';
 import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
+import { buscarPonteChecklist, preencherCamposFolhao, ligarListenerEdicaoManualFolhao, mostrarAvisoPreenchimentoChecklist } from '../Core/checklistFolhaoPonte.js';
 
 let ID_FOLHAO_SEGZERO_ATUAL = null;
+
+// 🆕 Contexto da ponte com o Checklist de Execução do folhão aberto no
+// momento — mesmo padrão do PONTE_CHECKLIST_M4 (folhaoMolde4.js).
+let PONTE_CHECKLIST_SEGZERO = { execucaoId: null, tipoEquipamento: null, mapaCampoParaEtapa: {} };
 
 // ==============================================================
 // 1. DADOS DAS TABELAS (transcritos do documento oficial)
@@ -403,7 +409,33 @@ window.abrirFolhaoSegmentoZero = function(id) {
     // Neon via /api/folhao/salvar, não só no navegador).
     restaurarRascunhoNoModal('modal-folhao-segmento-zero', id);
     ativarAutoSalvamentoFolhao('modal-folhao-segmento-zero', id, 'Segmento Zero');
+
+    // 🆕 PONTE COM O CHECKLIST DE EXECUÇÃO — autopreenche os campos já
+    // respondidos lá (ver '../Core/checklistFolhaoPonte.js').
+    preencherFolhaoSegZeroComChecklistExecucao(id);
 };
+
+async function preencherFolhaoSegZeroComChecklistExecucao(id) {
+    ligarListenerEdicaoManualFolhao('modal-folhao-segmento-zero', () => PONTE_CHECKLIST_SEGZERO);
+    try {
+        const item = window.BANCO_ATIVOS.find(a => a.id === id);
+        const ponte = await buscarPonteChecklist(id, item);
+        if (!ponte) return;
+        PONTE_CHECKLIST_SEGZERO = ponte;
+
+        const camposProtegidos = new Set([
+            'segzero-tag-ativo', 'segzero-num-segmento', 'segzero-veio', 'segzero-desempenho',
+            'segzero-motivo', 'segzero-tipo-execucao', 'segzero-data-inicio', 'segzero-data-fim'
+        ]);
+
+        const { preenchidos, naoEncontrados } = preencherCamposFolhao(ponte.valores, camposProtegidos);
+        if (preenchidos > 0 || naoEncontrados > 0) {
+            mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados);
+        }
+    } catch (e) {
+        console.error('⚠️ Não consegui puxar os valores do Checklist de Execução pro folhão (Segmento Zero):', e);
+    }
+}
 
 // ==============================================================
 // 11. FECHAR E TROCAR ABA
@@ -425,26 +457,9 @@ window.trocarAbaSegZero = function(evt, abaId) {
 };
 
 // ==============================================================
-// 12. SALVAR, GERAR LAUDO E IMPRIMIR
+// 12. MONTA O HTML DO LAUDO (PDF) - SEGMENTO ZERO
 // ==============================================================
-window.salvarEImprimirFolhaoSegmentoZero = function() {
-    if (!window.verificarAcesso || !window.verificarAcesso()) { alert("Acesso negado."); return; }
-    if (!ID_FOLHAO_SEGZERO_ATUAL) { alert("Nenhuma TAG carregada."); return; }
-
-    const tag = ID_FOLHAO_SEGZERO_ATUAL;
-    const item = window.BANCO_ATIVOS.find(a => a.id === tag);
-    if (item) {
-        item.ton = 0;
-        item.dias = 0;
-        item.local = "Oficina / Reserva";
-        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(window.BANCO_ATIVOS));
-        // Persiste no Postgres — sem isso a conclusão só existiria no
-        // navegador e sumiria no próximo carregamento do Neon.
-        if (typeof window.salvarPecaNoPython === 'function') {
-            window.salvarPecaNoPython(item);
-        }
-    }
-
+function montarHtmlLaudoSegZero(tag) {
     const dtInicio = getV('segzero-data-inicio') || new Date().toLocaleDateString('pt-BR');
     const dtFim = getV('segzero-data-fim') || new Date().toLocaleDateString('pt-BR');
     const numSeg = getV('segzero-num-segmento') || '______';
@@ -697,19 +712,89 @@ window.salvarEImprimirFolhaoSegmentoZero = function() {
         </div>
     </div>`;
 
-    // ===== SALVA NO HISTÓRICO =====
+    return htmlPDF;
+}
+
+// ==============================================================
+// 13. SALVAR FOLHÃO - SEGMENTO ZERO (sem imprimir)
+// ==============================================================
+window.salvarFolhaoSegmentoZero = async function() {
+    if (!window.verificarAcesso || !window.verificarAcesso()) { alert("Acesso negado."); return; }
+    if (!ID_FOLHAO_SEGZERO_ATUAL) { alert("Nenhuma TAG carregada."); return; }
+
+    const tag = ID_FOLHAO_SEGZERO_ATUAL;
+    const htmlPDF = montarHtmlLaudoSegZero(tag);
+
+    let laudoId = null;
     if (typeof window.salvarLaudoNoHistorico === 'function') {
-        window.salvarLaudoNoHistorico(tag, "Segmento Zero MCC 2/3", htmlPDF);
+        laudoId = await window.salvarLaudoNoHistorico(tag, "Segmento Zero MCC 2/3", htmlPDF);
+    }
+    if (!laudoId) {
+        alert("❌ Não consegui salvar o Folhão no banco. Tente novamente ou confira sua conexão.");
+        return;
     }
 
-    // Folhão concluído: apaga o rascunho salvo dessa TAG.
-    finalizarRascunhoFolhao(tag, "Segmento Zero");
+    let rascunhoSalvoComSucesso = true;
+    if (typeof window.salvarRascunhoFolhao === 'function' && typeof window.coletarDadosModal === 'function') {
+        try {
+            const resultado = await window.salvarRascunhoFolhao(tag, "Segmento Zero", window.coletarDadosModal("modal-folhao-segmento-zero"));
+            rascunhoSalvoComSucesso = resultado !== false;
+        } catch (e) {
+            rascunhoSalvoComSucesso = false;
+        }
+    }
 
-    // ===== IMPRIME =====
-    const printDiv = document.getElementById('print-content');
-    if (!printDiv) { alert("Div 'print-content' não encontrada!"); return; }
-    printDiv.innerHTML = htmlPDF;
+    if (typeof window.carregarStatusChecklistExecucaoReparo === 'function') {
+        window.carregarStatusChecklistExecucaoReparo([tag], true);
+    }
+    if (typeof window.renderReparos === 'function') window.renderReparos();
+
+    if (rascunhoSalvoComSucesso) {
+        alert("✅ Folhão salvo. Assim que o Checklist de Execução estiver 100%, clique em \"Concluir\" para gerar e imprimir o documento final.");
+    } else {
+        alert("⚠️ O laudo foi gravado, mas NÃO consegui salvar o progresso do formulário pra reabrir depois. Confira sua conexão e clique em \"Salvar\" de novo antes de fechar.");
+    }
     window.fecharFolhaoSegmentoZero();
+};
+
+// ==============================================================
+// 14. CONCLUIR E IMPRIMIR - SEGMENTO ZERO (chamado pelo botão
+// "Concluir" do Checklist de Execução, só depois de 100% + Folhão salvo)
+// ==============================================================
+window.concluirEImprimirFolhaoSegmentoZero = async function(tag) {
+    let htmlPDF;
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/laudos?peca_id=${encodeURIComponent(tag)}&limite=1`, { cache: 'no-store' });
+        const laudos = resp.ok ? await resp.json() : [];
+        if (!Array.isArray(laudos) || laudos.length === 0) {
+            alert('Nenhum Folhão salvo encontrado pra essa peça ainda. Abra o Folhão e clique em "Salvar" primeiro.');
+            return;
+        }
+        htmlPDF = laudos[0].html;
+    } catch (e) {
+        console.error("Erro ao buscar laudo salvo pra imprimir (Segmento Zero):", e);
+        alert(`❌ Não consegui buscar o Folhão salvo pra imprimir.\n\nMotivo: ${e.message}`);
+        return;
+    }
+
+    const item = window.BANCO_ATIVOS.find(a => a.id === tag);
+    if (item) {
+        item.ton = 0;
+        item.dias = 0;
+        item.local = "Oficina / Reserva";
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(window.BANCO_ATIVOS));
+        if (typeof window.salvarPecaNoPython === 'function') {
+            await window.salvarPecaNoPython(item);
+        }
+    }
+
+    finalizarRascunhoFolhao(tag, "Segmento Zero");
+    if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Reparo concluído — Folhão de manutenção (Segmento Zero) impresso.`);
+
+    const printDiv = document.getElementById('print-content');
+    if (printDiv) printDiv.innerHTML = htmlPDF;
+
     if (typeof renderReparos === 'function') renderReparos();
     if (typeof renderReservas === 'function') renderReservas();
     if (typeof renderAtivos === 'function') renderAtivos();
@@ -717,6 +802,7 @@ window.salvarEImprimirFolhaoSegmentoZero = function() {
     if (typeof renderHistorico === 'function') renderHistorico();
     if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
     if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
+
     setTimeout(() => window.print(), 500);
 };
 

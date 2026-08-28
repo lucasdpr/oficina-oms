@@ -336,9 +336,14 @@ export function gerarTelasBenderHTML() {
 // ==========================================
 // IMPRESSÃO PDF DO BENDER (com todas as informações)
 // ==========================================
-export function imprimirPDFBender(tag, motivo, getVFunc) {
+// ==============================================================
+// 🆕 MONTA O HTML DO LAUDO (PDF) - BENDER, sem imprimir. Extraído de
+// imprimirPDFBender (mesmo padrão do montarHtmlLaudoMolde4): precisa
+// existir separado porque é chamado em dois momentos — ao SALVAR
+// (grava o HTML pronto no banco) e ao CONCLUIR (usa o HTML já salvo).
+// ==============================================================
+export function montarHtmlLaudoBender(tag, motivo, getVFunc) {
   const getV = getVFunc || ((id) => document.getElementById(id)?.value || '');
-  const printDiv = document.getElementById("print-content");
 
   const cssBase = `
     <style>
@@ -517,7 +522,16 @@ export function imprimirPDFBender(tag, motivo, getVFunc) {
     </div>
   </div>`;
 
-  printDiv.innerHTML = html;
+  return html;
+}
+
+// Wrapper de retrocompatibilidade: monta e já imprime, como a função
+// original sempre fez. Mantido caso algum outro lugar ainda chame
+// imprimirPDFBender diretamente.
+export function imprimirPDFBender(tag, motivo, getVFunc) {
+  const html = montarHtmlLaudoBender(tag, motivo, getVFunc);
+  const printDiv = document.getElementById("print-content");
+  if (printDiv) printDiv.innerHTML = html;
   setTimeout(() => { window.print(); }, 500);
 }
 

@@ -3,8 +3,13 @@
 import { BANCO_ATIVOS, resolverApiBase } from '../Core/banco.js?v=5';
 import { renderAtivos, renderReparos, renderReservas } from '../ui.js';
 import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
+import { buscarPonteChecklist, preencherCamposFolhao, ligarListenerEdicaoManualFolhao, mostrarAvisoPreenchimentoChecklist } from '../Core/checklistFolhaoPonte.js';
 
 let ID_FOLHAO_BOW_ATUAL = null;
+
+// 🆕 Contexto da ponte com o Checklist de Execução do folhão aberto no
+// momento — mesmo padrão do PONTE_CHECKLIST_M4 (folhaoMolde4.js).
+let PONTE_CHECKLIST_BOW = { execucaoId: null, tipoEquipamento: null, mapaCampoParaEtapa: {} };
 
 // ==============================================================
 // 1. DADOS DAS TABELAS (transcritos do documento)
@@ -511,7 +516,34 @@ window.abrirFolhaoBow = function(id) {
     // e liga o auto-salvamento pra nada mais se perder.
     restaurarRascunhoNoModal('modal-folhao-bow', id);
     ativarAutoSalvamentoFolhao('modal-folhao-bow', id, 'Bow');
+
+    // 🆕 PONTE COM O CHECKLIST DE EXECUÇÃO — autopreenche os campos já
+    // respondidos lá (ver '../Core/checklistFolhaoPonte.js').
+    preencherFolhaoBowComChecklistExecucao(id);
 };
+
+async function preencherFolhaoBowComChecklistExecucao(id) {
+    ligarListenerEdicaoManualFolhao('modal-folhao-bow', () => PONTE_CHECKLIST_BOW);
+    try {
+        const item = BANCO_ATIVOS.find(a => a.id === id);
+        const ponte = await buscarPonteChecklist(id, item);
+        if (!ponte) return;
+        PONTE_CHECKLIST_BOW = ponte;
+
+        const camposProtegidos = new Set([
+            'bow-tag-name', 'bow-num-segmento', 'bow-motivo',
+            'bow-tipo-execucao', 'bow-data-inicio', 'bow-data-fim',
+            'bow-veio', 'bow-nova-meta'
+        ]);
+
+        const { preenchidos, naoEncontrados } = preencherCamposFolhao(ponte.valores, camposProtegidos);
+        if (preenchidos > 0 || naoEncontrados > 0) {
+            mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados);
+        }
+    } catch (e) {
+        console.error('⚠️ Não consegui puxar os valores do Checklist de Execução pro folhão (Bow):', e);
+    }
+}
 
 // ==============================================================
 // 14. FECHAR E TROCAR ABA
@@ -533,53 +565,29 @@ window.trocarAbaBow = function(evt, abaId) {
 };
 
 // ==============================================================
-// 15. GERAR PDF COMPLETO E SALVAR NO BANCO (NUVEM + PDF NATIVO)
 // ==============================================================
-window.salvarEImprimirFolhaoBow = async function() {
-    if (!window.verificarAcesso || !window.verificarAcesso()) { alert("Acesso negado."); return; }
-    if (!ID_FOLHAO_BOW_ATUAL) { alert("Nenhuma TAG carregada."); return; }
-
-    const tag = ID_FOLHAO_BOW_ATUAL;
-
-    // 1. CAPTURA DOS DADOS DO CABEÇALHO
+// 15. MONTA O HTML DO LAUDO (PDF) - BOW
+// ==============================================================
+// 🔧 EXTRAÍDO (mesmo padrão do Molde MCC4/2-3): montagem de HTML numa
+// função à parte, chamada em dois momentos — SALVAR (grava o HTML
+// pronto no banco) e CONCLUIR (usa o HTML já salvo). A NOVA META é
+// aplicada AQUI, não em concluirEImprimirFolhaoBow, porque só agora
+// (com o modal aberto) getV() ainda consegue ler o campo.
+function montarHtmlLaudoBow(tag) {
     const dtInicio = getV('bow-data-inicio') || new Date().toLocaleDateString('pt-BR');
     const dtFim = getV('bow-data-fim') || new Date().toLocaleDateString('pt-BR');
     const numSeg = getV('bow-num-segmento') || '______';
     const veio = document.getElementById('bow-veio')?.value || '';
     const motivo = getV('bow-motivo') || '_______________';
     const tipoExec = document.getElementById('bow-tipo-execucao')?.value || 'GERAL';
-    const novaMeta = getV('bow-nova-meta') || 'Manter Atual'; // 🔥 CAPTURA A NOVA META
+    const novaMeta = getV('bow-nova-meta') || 'Manter Atual';
 
-    // 2. ATUALIZA O EQUIPAMENTO NO BANCO (rota real que já existe na API)
-    // 🔧 CORREÇÃO: antes chamava POST /api/salvar_folhao, rota que nunca
-    // existiu no backend — travava aqui com "Erro no Banco de Dados"
-    // antes de imprimir. Trocado pela rota real /api/atualizar_peca.
-    let item = BANCO_ATIVOS.find(a => a.id === tag);
-    if (item) {
-        item.local = "Oficina / Reserva";
-        item.ton = 0;
-        item.dias = 0;
-        if (novaMeta && !isNaN(parseFloat(novaMeta))) item.meta = parseFloat(novaMeta);
+    let itemParaMeta = BANCO_ATIVOS.find(a => a.id === tag);
+    if (itemParaMeta && novaMeta && !isNaN(parseFloat(novaMeta))) {
+        itemParaMeta.meta = parseFloat(novaMeta);
         localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
     }
-    try {
-        const apiBase = await resolverApiBase();
-        await fetch(`${apiBase}/api/atualizar_peca`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: tag, local: "Oficina / Reserva", tonelagem: 0, dias: 0, status: "Reserva" })
-        });
-        console.log("✅ Peça atualizada no banco!");
-    } catch (e) {
-        console.error("Erro ao atualizar peça na nuvem:", e);
-    }
 
-    // Folhão concluído: apaga o rascunho salvo dessa TAG.
-    finalizarRascunhoFolhao(tag, "Bow");
-
-    // ==========================================================
-    // FUNÇÕES AUXILIARES DO PDF (Mantidas do original)
-    // ==========================================================
     function gerarLinhasChegada() {
         let html = '';
         let categorias = {};
@@ -963,12 +971,102 @@ window.salvarEImprimirFolhaoBow = async function() {
         </div>
     </div>`;
 
-    // 5. ATUALIZA A INTERFACE E IMPRIME SÓ DEPOIS DE TUDO CERTO
-    const printDiv = document.getElementById('print-content');
-    if (!printDiv) { alert("Div 'print-content' não encontrada!"); return; }
-    printDiv.innerHTML = htmlPDF;
-    
+    return htmlPDF;
+}
+
+// ==============================================================
+// 16. SALVAR FOLHÃO - BOW (sem imprimir)
+// ==============================================================
+window.salvarFolhaoBow = async function() {
+    if (!window.verificarAcesso || !window.verificarAcesso()) { alert("Acesso negado."); return; }
+    if (!ID_FOLHAO_BOW_ATUAL) { alert("Nenhuma TAG carregada."); return; }
+
+    const tag = ID_FOLHAO_BOW_ATUAL;
+    const htmlPDF = montarHtmlLaudoBow(tag);
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/laudos`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ peca_id: tag, tipo: "Bow", html: htmlPDF, operador: "Sistema" })
+        });
+        if (!resp.ok) throw new Error("A API não confirmou o salvamento do laudo.");
+    } catch (e) {
+        console.error("Erro ao salvar laudo do Folhão (Bow):", e);
+        alert(`❌ Não consegui salvar o Folhão no banco.\n\nMotivo: ${e.message}\n\nSeu progresso continua salvo como rascunho — tente salvar de novo, ou confira sua conexão.`);
+        return;
+    }
+
+    let rascunhoSalvoComSucesso = true;
+    if (typeof window.salvarRascunhoFolhao === 'function' && typeof window.coletarDadosModal === 'function') {
+        try {
+            const resultado = await window.salvarRascunhoFolhao(tag, "Bow", window.coletarDadosModal("modal-folhao-bow"));
+            rascunhoSalvoComSucesso = resultado !== false;
+        } catch (e) {
+            rascunhoSalvoComSucesso = false;
+        }
+    }
+
+    if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Folhão de manutenção (Bow) salvo — aguardando conclusão do reparo.`);
+    if (typeof window.carregarStatusChecklistExecucaoReparo === 'function') {
+        window.carregarStatusChecklistExecucaoReparo([tag], true);
+    }
+    if (typeof window.renderReparos === 'function') window.renderReparos();
+
+    if (rascunhoSalvoComSucesso) {
+        alert("✅ Folhão salvo. Assim que o Checklist de Execução estiver 100%, clique em \"Concluir\" para gerar e imprimir o documento final.");
+    } else {
+        alert("⚠️ O laudo foi gravado, mas NÃO consegui salvar o progresso do formulário pra reabrir depois. Confira sua conexão e clique em \"Salvar\" de novo antes de fechar.");
+    }
     window.fecharFolhaoBow();
+};
+
+// ==============================================================
+// 17. CONCLUIR E IMPRIMIR - BOW (chamado pelo botão "Concluir" do
+// Checklist de Execução, só depois de 100% + Folhão salvo)
+// ==============================================================
+window.concluirEImprimirFolhaoBow = async function(tag) {
+    let htmlPDF;
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/laudos?peca_id=${encodeURIComponent(tag)}&limite=1`, { cache: 'no-store' });
+        const laudos = resp.ok ? await resp.json() : [];
+        if (!Array.isArray(laudos) || laudos.length === 0) {
+            alert('Nenhum Folhão salvo encontrado pra essa peça ainda. Abra o Folhão e clique em "Salvar" primeiro.');
+            return;
+        }
+        htmlPDF = laudos[0].html;
+    } catch (e) {
+        console.error("Erro ao buscar laudo salvo pra imprimir (Bow):", e);
+        alert(`❌ Não consegui buscar o Folhão salvo pra imprimir.\n\nMotivo: ${e.message}`);
+        return;
+    }
+
+    let item = BANCO_ATIVOS.find(a => a.id === tag);
+    if (item) {
+        item.local = "Oficina / Reserva";
+        item.ton = 0;
+        item.dias = 0;
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    }
+    try {
+        const apiBase = await resolverApiBase();
+        await fetch(`${apiBase}/api/atualizar_peca`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: tag, local: "Oficina / Reserva", tonelagem: 0, dias: 0, status: "Reserva" })
+        });
+    } catch (e) {
+        console.error("Erro ao atualizar peça na nuvem (Bow):", e);
+    }
+
+    finalizarRascunhoFolhao(tag, "Bow");
+    if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Reparo concluído — Folhão de manutenção (Bow) impresso.`);
+
+    const printDiv = document.getElementById('print-content');
+    if (printDiv) printDiv.innerHTML = htmlPDF;
+
     if (typeof renderReparos === 'function') renderReparos();
     if (typeof renderReservas === 'function') renderReservas();
     if (typeof renderAtivos === 'function') renderAtivos();
@@ -976,6 +1074,6 @@ window.salvarEImprimirFolhaoBow = async function() {
     if (typeof renderHistorico === 'function') renderHistorico();
     if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
     if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
-    
+
     setTimeout(() => window.print(), 500);
 };

@@ -1,8 +1,14 @@
 // folhaoStraightenerR1.js - VERSÃO COMPLETA PARA STRAIGHTENER R1
 
+import { BANCO_ATIVOS, resolverApiBase } from '../Core/banco.js?v=5';
 import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
+import { buscarPonteChecklist, preencherCamposFolhao, ligarListenerEdicaoManualFolhao, mostrarAvisoPreenchimentoChecklist } from '../Core/checklistFolhaoPonte.js';
 
 let ID_FOLHAO_R1_ATUAL = null;
+
+// 🆕 Contexto da ponte com o Checklist de Execução do folhão aberto no
+// momento — mesmo padrão do PONTE_CHECKLIST_M4 (folhaoMolde4.js).
+let PONTE_CHECKLIST_R1 = { execucaoId: null, tipoEquipamento: null, mapaCampoParaEtapa: {} };
 
 // ==============================================================
 // 1. DADOS DAS TABELAS (transcritos do documento oficial R1)
@@ -514,7 +520,33 @@ window.abrirFolhaoR1 = function(id) {
     // e liga o auto-salvamento pra nada mais se perder.
     restaurarRascunhoNoModal('modal-folhao-r1', id);
     ativarAutoSalvamentoFolhao('modal-folhao-r1', id, 'Straightener R1');
+
+    // 🆕 PONTE COM O CHECKLIST DE EXECUÇÃO — autopreenche os campos já
+    // respondidos lá (ver '../Core/checklistFolhaoPonte.js').
+    preencherFolhaoR1ComChecklistExecucao(id);
 };
+
+async function preencherFolhaoR1ComChecklistExecucao(id) {
+    ligarListenerEdicaoManualFolhao('modal-folhao-r1', () => PONTE_CHECKLIST_R1);
+    try {
+        const item = BANCO_ATIVOS.find(a => a.id === id);
+        const ponte = await buscarPonteChecklist(id, item);
+        if (!ponte) return;
+        PONTE_CHECKLIST_R1 = ponte;
+
+        const camposProtegidos = new Set([
+            'r1-tag-name', 'r1-num-segmento', 'r1-motivo',
+            'r1-tipo-execucao', 'r1-data-inicio', 'r1-data-fim', 'r1-veio'
+        ]);
+
+        const { preenchidos, naoEncontrados } = preencherCamposFolhao(ponte.valores, camposProtegidos);
+        if (preenchidos > 0 || naoEncontrados > 0) {
+            mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados);
+        }
+    } catch (e) {
+        console.error('⚠️ Não consegui puxar os valores do Checklist de Execução pro folhão (Straightener R1):', e);
+    }
+}
 
 // ==============================================================
 // 14. FECHAR E TROCAR ABA
@@ -536,26 +568,9 @@ window.trocarAbaR1 = function(evt, abaId) {
 };
 
 // ==============================================================
-// 15. GERAR PDF COMPLETO
+// 15. MONTA O HTML DO LAUDO (PDF) - STRAIGHTENER R1
 // ==============================================================
-window.salvarEImprimirFolhaoR1 = function() {
-    if (!window.verificarAcesso || !window.verificarAcesso()) { alert("Acesso negado."); return; }
-    if (!ID_FOLHAO_R1_ATUAL) { alert("Nenhuma TAG carregada."); return; }
-
-    const tag = ID_FOLHAO_R1_ATUAL;
-    const item = BANCO_ATIVOS.find(a => a.id === tag);
-    if (item) {
-        item.ton = 0;
-        item.dias = 0;
-        item.local = "Oficina / Reserva";
-        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-        // 🔧 CORREÇÃO: faltava avisar o Postgres dessa conclusão — sem
-        // isso, a mudança só existia no navegador e sumia no próximo F5.
-        if (typeof window.salvarPecaNoPython === 'function') {
-            window.salvarPecaNoPython(item);
-        }
-    }
-
+function montarHtmlLaudoR1(tag) {
     // Coleta dados do cabeçalho
     const dtInicio = getV('r1-data-inicio') || new Date().toLocaleDateString('pt-BR');
     const dtFim = getV('r1-data-fim') || new Date().toLocaleDateString('pt-BR');
@@ -951,19 +966,95 @@ window.salvarEImprimirFolhaoR1 = function() {
         </div>
     </div>`;
 
-    // ===== SALVA NO HISTÓRICO =====
+    return htmlPDF;
+}
+
+// ==============================================================
+// 16. SALVAR FOLHÃO - STRAIGHTENER R1 (sem imprimir)
+// ==============================================================
+// 🔧 SEPARADO (mesmo padrão do Molde MCC4): antes, "Salvar e Imprimir"
+// fazia tudo num clique só. Também corrigido aqui: o arquivo usava
+// `BANCO_ATIVOS` sem nunca importar — qualquer clique nesse botão
+// derrubava a função inteira com "BANCO_ATIVOS is not defined" antes
+// de fazer qualquer coisa. Agora importado corretamente (ver import no
+// topo do arquivo).
+window.salvarFolhaoR1 = async function() {
+    if (!window.verificarAcesso || !window.verificarAcesso()) { alert("Acesso negado."); return; }
+    if (!ID_FOLHAO_R1_ATUAL) { alert("Nenhuma TAG carregada."); return; }
+
+    const tag = ID_FOLHAO_R1_ATUAL;
+    const htmlPDF = montarHtmlLaudoR1(tag);
+
+    let laudoId = null;
     if (typeof window.salvarLaudoNoHistorico === 'function') {
-        window.salvarLaudoNoHistorico(tag, "Straightener R1 MCC 4", htmlPDF);
+        laudoId = await window.salvarLaudoNoHistorico(tag, "Straightener R1 MCC 4", htmlPDF);
+    }
+    if (!laudoId) {
+        alert("❌ Não consegui salvar o Folhão no banco. Tente novamente ou confira sua conexão.");
+        return;
     }
 
-    // Folhão concluído: apaga o rascunho salvo dessa TAG.
-    finalizarRascunhoFolhao(tag, "Straightener R1");
+    let rascunhoSalvoComSucesso = true;
+    if (typeof window.salvarRascunhoFolhao === 'function' && typeof window.coletarDadosModal === 'function') {
+        try {
+            const resultado = await window.salvarRascunhoFolhao(tag, "Straightener R1", window.coletarDadosModal("modal-folhao-r1"));
+            rascunhoSalvoComSucesso = resultado !== false;
+        } catch (e) {
+            rascunhoSalvoComSucesso = false;
+        }
+    }
 
-    // ===== IMPRIME =====
-    const printDiv = document.getElementById('print-content');
-    if (!printDiv) { alert("Div 'print-content' não encontrada!"); return; }
-    printDiv.innerHTML = htmlPDF;
+    if (typeof window.carregarStatusChecklistExecucaoReparo === 'function') {
+        window.carregarStatusChecklistExecucaoReparo([tag], true);
+    }
+    if (typeof window.renderReparos === 'function') window.renderReparos();
+
+    if (rascunhoSalvoComSucesso) {
+        alert("✅ Folhão salvo. Assim que o Checklist de Execução estiver 100%, clique em \"Concluir\" para gerar e imprimir o documento final.");
+    } else {
+        alert("⚠️ O laudo foi gravado, mas NÃO consegui salvar o progresso do formulário pra reabrir depois. Confira sua conexão e clique em \"Salvar\" de novo antes de fechar.");
+    }
     window.fecharFolhaoR1();
+};
+
+// ==============================================================
+// 17. CONCLUIR E IMPRIMIR - STRAIGHTENER R1 (chamado pelo botão
+// "Concluir" do Checklist de Execução, só depois de 100% + Folhão salvo)
+// ==============================================================
+window.concluirEImprimirFolhaoR1 = async function(tag) {
+    let htmlPDF;
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/laudos?peca_id=${encodeURIComponent(tag)}&limite=1`, { cache: 'no-store' });
+        const laudos = resp.ok ? await resp.json() : [];
+        if (!Array.isArray(laudos) || laudos.length === 0) {
+            alert('Nenhum Folhão salvo encontrado pra essa peça ainda. Abra o Folhão e clique em "Salvar" primeiro.');
+            return;
+        }
+        htmlPDF = laudos[0].html;
+    } catch (e) {
+        console.error("Erro ao buscar laudo salvo pra imprimir (Straightener R1):", e);
+        alert(`❌ Não consegui buscar o Folhão salvo pra imprimir.\n\nMotivo: ${e.message}`);
+        return;
+    }
+
+    const item = BANCO_ATIVOS.find(a => a.id === tag);
+    if (item) {
+        item.ton = 0;
+        item.dias = 0;
+        item.local = "Oficina / Reserva";
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+        if (typeof window.salvarPecaNoPython === 'function') {
+            await window.salvarPecaNoPython(item);
+        }
+    }
+
+    finalizarRascunhoFolhao(tag, "Straightener R1");
+    if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Reparo concluído — Folhão de manutenção (Straightener R1) impresso.`);
+
+    const printDiv = document.getElementById('print-content');
+    if (printDiv) printDiv.innerHTML = htmlPDF;
+
     if (typeof renderReparos === 'function') renderReparos();
     if (typeof renderReservas === 'function') renderReservas();
     if (typeof renderAtivos === 'function') renderAtivos();
@@ -971,6 +1062,7 @@ window.salvarEImprimirFolhaoR1 = function() {
     if (typeof renderHistorico === 'function') renderHistorico();
     if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
     if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
+
     setTimeout(() => window.print(), 500);
 };
 

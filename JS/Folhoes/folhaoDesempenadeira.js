@@ -2,9 +2,15 @@
 // FOLHÃO DESEMPENADEIRA (CADEIRA SUPERIOR/INFERIOR)
 // ==========================================
 
+import { resolverApiBase } from '../Core/banco.js?v=5';
 import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
+import { buscarPonteChecklist, preencherCamposFolhao, ligarListenerEdicaoManualFolhao, mostrarAvisoPreenchimentoChecklist } from '../Core/checklistFolhaoPonte.js';
 
 let ID_DESEMP_ATUAL = null;
+
+// 🆕 Contexto da ponte com o Checklist de Execução do folhão aberto no
+// momento — mesmo padrão do PONTE_CHECKLIST_M4 (folhaoMolde4.js).
+let PONTE_CHECKLIST_DESEMP = { execucaoId: null, tipoEquipamento: null, mapaCampoParaEtapa: {} };
 
 // 1. INSPEÇÃO DE SAÍDA (15 itens)
 const itensInspecaoDesemp = [
@@ -265,7 +271,34 @@ window.abrirFolhaoDesempenadeira = function(id) {
     // e liga o auto-salvamento pra nada mais se perder.
     restaurarRascunhoNoModal('modal-folhao-desempenadeira', id);
     ativarAutoSalvamentoFolhao('modal-folhao-desempenadeira', id, 'Desempenadeira');
+
+    // 🆕 PONTE COM O CHECKLIST DE EXECUÇÃO — autopreenche os campos já
+    // respondidos lá (ver '../Core/checklistFolhaoPonte.js').
+    preencherFolhaoDesempComChecklistExecucao(id);
 };
+
+async function preencherFolhaoDesempComChecklistExecucao(id) {
+    ligarListenerEdicaoManualFolhao('modal-folhao-desempenadeira', () => PONTE_CHECKLIST_DESEMP);
+    try {
+        const item = window.BANCO_ATIVOS.find(a => a.id === id);
+        const ponte = await buscarPonteChecklist(id, item);
+        if (!ponte) return;
+        PONTE_CHECKLIST_DESEMP = ponte;
+
+        const camposProtegidos = new Set([
+            'desemp-tag-ativo', 'desemp-num-cadeira', 'desemp-veio',
+            'desemp-tipo-cadeira', 'desemp-tipo-cadeira-dados', 'desemp-num-rolo',
+            'desemp-motivo', 'desemp-tipo-exec', 'desemp-data-montagem', 'desemp-data-troca'
+        ]);
+
+        const { preenchidos, naoEncontrados } = preencherCamposFolhao(ponte.valores, camposProtegidos);
+        if (preenchidos > 0 || naoEncontrados > 0) {
+            mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados);
+        }
+    } catch (e) {
+        console.error('⚠️ Não consegui puxar os valores do Checklist de Execução pro folhão (Desempenadeira):', e);
+    }
+}
 
 // 7. Fechar Folhão
 window.fecharFolhaoDesempenadeira = function() {
@@ -274,18 +307,12 @@ window.fecharFolhaoDesempenadeira = function() {
 };
 
 // 8. Salvar e Imprimir PDF
-window.salvarEImprimirFolhaoDesemp = function() {
-    if (!ID_DESEMP_ATUAL) {
-        alert('Nenhuma TAG carregada.');
-        return;
-    }
-
-    const tag = ID_DESEMP_ATUAL;
+// ==============================================================
+// MONTA O HTML DO LAUDO (PDF) - DESEMPENADEIRA (CADEIRA SUP/INF)
+// ==============================================================
+function montarHtmlLaudoDesemp(tag) {
     const item = window.BANCO_ATIVOS.find(a => a.id === tag);
-    if (!item) {
-        alert('Equipamento não encontrado!');
-        return;
-    }
+    if (!item) { alert('Equipamento não encontrado!'); return null; }
 
     // Coleta dados do formulário
     const dataMontagem = document.getElementById('desemp-data-montagem')?.value || '';
@@ -472,32 +499,105 @@ window.salvarEImprimirFolhaoDesemp = function() {
         </div>
     </div>`;
 
-    const printContent = document.getElementById('print-content');
-    if (!printContent) {
-        alert('Elemento print-content não encontrado.');
+    return html;
+}
+
+// 8. SALVAR FOLHÃO - DESEMPENADEIRA (sem imprimir)
+// ==============================================================
+// 🔧 SEPARADO (mesmo padrão do Molde MCC4): antes, "Salvar e Imprimir"
+// fazia tudo num clique só e NUNCA gravava um laudo em /api/laudos —
+// o que deixava o botão "Concluir" do Checklist de Execução travado
+// pra sempre. Agora este botão só grava o laudo no banco; a impressão
+// e o envio pra Oficina/Reserva só acontecem no "Concluir".
+window.salvarFolhaoDesemp = async function() {
+    if (!ID_DESEMP_ATUAL) { alert('Nenhuma TAG carregada.'); return; }
+    const tag = ID_DESEMP_ATUAL;
+
+    const html = montarHtmlLaudoDesemp(tag);
+    if (html === null) return; // equipamento não encontrado, já alertou
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/laudos`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ peca_id: tag, tipo: "Desempenadeira", html: html, operador: "Sistema" })
+        });
+        if (!resp.ok) throw new Error("A API não confirmou o salvamento do laudo.");
+    } catch (e) {
+        console.error("Erro ao salvar laudo do Folhão (Desempenadeira):", e);
+        alert(`❌ Não consegui salvar o Folhão no banco.\n\nMotivo: ${e.message}\n\nSeu progresso continua salvo como rascunho — tente salvar de novo, ou confira sua conexão.`);
         return;
     }
+
+    let rascunhoSalvoComSucesso = true;
+    if (typeof window.salvarRascunhoFolhao === 'function' && typeof window.coletarDadosModal === 'function') {
+        try {
+            const resultado = await window.salvarRascunhoFolhao(tag, "Desempenadeira (Cadeira)", window.coletarDadosModal("modal-folhao-desempenadeira"));
+            rascunhoSalvoComSucesso = resultado !== false;
+        } catch (e) {
+            rascunhoSalvoComSucesso = false;
+        }
+    }
+
+    if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Folhão de manutenção (Desempenadeira) salvo — aguardando conclusão do reparo.`);
+    if (typeof window.carregarStatusChecklistExecucaoReparo === 'function') {
+        window.carregarStatusChecklistExecucaoReparo([tag], true);
+    }
+    if (typeof window.renderReparos === 'function') window.renderReparos();
+
+    if (rascunhoSalvoComSucesso) {
+        alert("✅ Folhão salvo. Assim que o Checklist de Execução estiver 100%, clique em \"Concluir\" para gerar e imprimir o documento final.");
+    } else {
+        alert("⚠️ O laudo foi gravado, mas NÃO consegui salvar o progresso do formulário pra reabrir depois. Confira sua conexão e clique em \"Salvar\" de novo antes de fechar.");
+    }
+    window.fecharFolhaoDesempenadeira?.();
+};
+
+// 9. CONCLUIR E IMPRIMIR - DESEMPENADEIRA (chamado pelo botão
+// "Concluir" do Checklist de Execução, só depois de 100% + Folhão salvo)
+// ==============================================================
+window.concluirEImprimirFolhaoDesemp = async function(tag) {
+    let html;
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/laudos?peca_id=${encodeURIComponent(tag)}&limite=1`, { cache: 'no-store' });
+        const laudos = resp.ok ? await resp.json() : [];
+        if (!Array.isArray(laudos) || laudos.length === 0) {
+            alert('Nenhum Folhão salvo encontrado pra essa peça ainda. Abra o Folhão e clique em "Salvar" primeiro.');
+            return;
+        }
+        html = laudos[0].html;
+    } catch (e) {
+        console.error("Erro ao buscar laudo salvo pra imprimir (Desempenadeira):", e);
+        alert(`❌ Não consegui buscar o Folhão salvo pra imprimir.\n\nMotivo: ${e.message}`);
+        return;
+    }
+
+    const item = window.BANCO_ATIVOS.find(a => a.id === tag);
+
+    const printContent = document.getElementById('print-content');
+    if (!printContent) { alert('Elemento print-content não encontrado.'); return; }
     printContent.innerHTML = html;
 
     // Atualiza o banco
-    item.ton = 0;
-    item.dias = 0;
-    item.local = "Oficina / Reserva";
-    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(window.BANCO_ATIVOS));
-
-    // 🔧 CORREÇÃO: faltava avisar o Postgres dessa conclusão — sem isso,
-    // a mudança só existia no navegador e sumia no próximo F5.
-    if (typeof window.salvarPecaNoPython === 'function') {
-        window.salvarPecaNoPython(item);
+    if (item) {
+        item.ton = 0;
+        item.dias = 0;
+        item.local = "Oficina / Reserva";
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(window.BANCO_ATIVOS));
+        if (typeof window.salvarPecaNoPython === 'function') {
+            await window.salvarPecaNoPython(item);
+        }
     }
 
-    // Folhão concluído: apaga o rascunho salvo dessa TAG.
     finalizarRascunhoFolhao(tag, "Desempenadeira (Cadeira)");
+    if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Reparo concluído — Laudo Desempenadeira (${item?.tipo === 'Cadeira Superior' ? 'SUPERIOR' : 'INFERIOR'}) impresso.`);
 
-    if (window.registrarHistorico) {
-        window.registrarHistorico(tag, `Laudo Desempenadeira (${tipoCadeira}) concluído.`);
-    }
+    if (typeof renderReparos === 'function') renderReparos();
+    if (typeof renderReservas === 'function') renderReservas();
+    if (typeof renderAtivos === 'function') renderAtivos();
+    if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
 
-    window.fecharFolhaoDesempenadeira?.();
     setTimeout(() => window.print(), 500);
 };

@@ -4,8 +4,13 @@
 // (local ou Render) em vez de bater fixo em localhost:8000.
 import { BANCO_ATIVOS, resolverApiBase } from '../Core/banco.js?v=5';
 import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
+import { buscarPonteChecklist, preencherCamposFolhao, ligarListenerEdicaoManualFolhao, mostrarAvisoPreenchimentoChecklist } from '../Core/checklistFolhaoPonte.js';
 
 let ID_FOLHAO_HORIZ_ATUAL = null;
+
+// 🆕 Contexto da ponte com o Checklist de Execução do folhão aberto no
+// momento — mesmo padrão do PONTE_CHECKLIST_M4 (folhaoMolde4.js).
+let PONTE_CHECKLIST_HORIZ = { execucaoId: null, tipoEquipamento: null, mapaCampoParaEtapa: {} };
 
 // ==============================================================
 // 1. DADOS DAS TABELAS (transcritos do documento)
@@ -512,7 +517,34 @@ window.abrirFolhaoHorizontal = function(id) {
     // e liga o auto-salvamento pra nada mais se perder.
     restaurarRascunhoNoModal('modal-folhao-horizontal', id);
     ativarAutoSalvamentoFolhao('modal-folhao-horizontal', id, 'Horizontal');
+
+    // 🆕 PONTE COM O CHECKLIST DE EXECUÇÃO — autopreenche os campos já
+    // respondidos lá (ver '../Core/checklistFolhaoPonte.js').
+    preencherFolhaoHorizontalComChecklistExecucao(id);
 };
+
+async function preencherFolhaoHorizontalComChecklistExecucao(id) {
+    ligarListenerEdicaoManualFolhao('modal-folhao-horizontal', () => PONTE_CHECKLIST_HORIZ);
+    try {
+        const item = BANCO_ATIVOS.find(a => a.id === id);
+        const ponte = await buscarPonteChecklist(id, item);
+        if (!ponte) return;
+        PONTE_CHECKLIST_HORIZ = ponte;
+
+        const camposProtegidos = new Set([
+            'horizontal-tag-name', 'horiz-num-segmento', 'horiz-motivo',
+            'horiz-tipo-execucao', 'horiz-data-inicio', 'horiz-data-fim',
+            'horiz-veio', 'horiz-nova-meta'
+        ]);
+
+        const { preenchidos, naoEncontrados } = preencherCamposFolhao(ponte.valores, camposProtegidos);
+        if (preenchidos > 0 || naoEncontrados > 0) {
+            mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados);
+        }
+    } catch (e) {
+        console.error('⚠️ Não consegui puxar os valores do Checklist de Execução pro folhão (Horizontal):', e);
+    }
+}
 
 // ==============================================================
 // 14. FECHAR E TROCAR ABA
@@ -534,53 +566,23 @@ window.trocarAbaHorizontal = function(evt, abaId) {
 };
 
 // ==============================================================
-// 15. GERAR PDF COMPLETO E SALVAR NO BANCO (NUVEM + PDF NATIVO)
+// 15. MONTA O HTML DO LAUDO (PDF) - HORIZONTAL
 // ==============================================================
-window.salvarEImprimirFolhaoHorizontal = async function() {
-    if (!window.verificarAcesso || !window.verificarAcesso()) { alert("Acesso negado."); return; }
-    if (!ID_FOLHAO_HORIZ_ATUAL) { alert("Nenhuma TAG carregada."); return; }
-
-    const tag = ID_FOLHAO_HORIZ_ATUAL;
-
-    // 1. CAPTURA DOS DADOS DO CABEÇALHO
+function montarHtmlLaudoHorizontal(tag) {
     const dtInicio = getV('horiz-data-inicio') || new Date().toLocaleDateString('pt-BR');
     const dtFim = getV('horiz-data-fim') || new Date().toLocaleDateString('pt-BR');
     const numSeg = getV('horiz-num-segmento') || '______';
     const veio = document.getElementById('horiz-veio')?.value || '';
     const motivo = getV('horiz-motivo') || '_______________';
     const tipoExec = document.getElementById('horiz-tipo-execucao')?.value || 'GERAL';
-    const novaMeta = getV('horiz-nova-meta') || 'Manter Atual'; // 🔥 CAPTURA A NOVA META
+    const novaMeta = getV('horiz-nova-meta') || 'Manter Atual';
 
-    // 2. ATUALIZA O EQUIPAMENTO NO BANCO (rota real que já existe na API)
-    // 🔧 CORREÇÃO: antes chamava POST /api/salvar_folhao, rota que nunca
-    // existiu no backend — travava aqui com "Erro no Banco de Dados"
-    // antes de imprimir. Trocado pela rota real /api/atualizar_peca.
-    let item = BANCO_ATIVOS.find(a => a.id === tag);
-    if (item) {
-        item.local = "Oficina / Reserva";
-        item.ton = 0;
-        item.dias = 0;
-        if (novaMeta && !isNaN(parseFloat(novaMeta))) item.meta = parseFloat(novaMeta);
+    let itemParaMeta = BANCO_ATIVOS.find(a => a.id === tag);
+    if (itemParaMeta && novaMeta && !isNaN(parseFloat(novaMeta))) {
+        itemParaMeta.meta = parseFloat(novaMeta);
         localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
     }
-    try {
-        const apiBase = await resolverApiBase();
-        await fetch(`${apiBase}/api/atualizar_peca`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: tag, local: "Oficina / Reserva", tonelagem: 0, dias: 0, status: "Reserva" })
-        });
-        console.log("✅ Peça atualizada no banco!");
-    } catch (e) {
-        console.error("Erro ao atualizar peça na nuvem:", e);
-    }
 
-    // Folhão concluído: apaga o rascunho salvo dessa TAG.
-    finalizarRascunhoFolhao(tag, "Horizontal");
-
-    // ==========================================================
-    // FUNÇÕES AUXILIARES DO PDF (Mantidas do original)
-    // ==========================================================
     function gerarLinhasChegada() {
         let html = '';
         let categorias = {};
@@ -964,12 +966,102 @@ window.salvarEImprimirFolhaoHorizontal = async function() {
         </div>
     </div>`;
 
-    // 5. ATUALIZA A INTERFACE E IMPRIME SÓ DEPOIS DE TUDO CERTO
-    const printDiv = document.getElementById('print-content');
-    if (!printDiv) { alert("Div 'print-content' não encontrada!"); return; }
-    printDiv.innerHTML = htmlPDF;
-    
+    return htmlPDF;
+}
+
+// ==============================================================
+// 16. SALVAR FOLHÃO - HORIZONTAL (sem imprimir)
+// ==============================================================
+window.salvarFolhaoHorizontal = async function() {
+    if (!window.verificarAcesso || !window.verificarAcesso()) { alert("Acesso negado."); return; }
+    if (!ID_FOLHAO_HORIZ_ATUAL) { alert("Nenhuma TAG carregada."); return; }
+
+    const tag = ID_FOLHAO_HORIZ_ATUAL;
+    const htmlPDF = montarHtmlLaudoHorizontal(tag);
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/laudos`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ peca_id: tag, tipo: "Horizontal", html: htmlPDF, operador: "Sistema" })
+        });
+        if (!resp.ok) throw new Error("A API não confirmou o salvamento do laudo.");
+    } catch (e) {
+        console.error("Erro ao salvar laudo do Folhão (Horizontal):", e);
+        alert(`❌ Não consegui salvar o Folhão no banco.\n\nMotivo: ${e.message}\n\nSeu progresso continua salvo como rascunho — tente salvar de novo, ou confira sua conexão.`);
+        return;
+    }
+
+    let rascunhoSalvoComSucesso = true;
+    if (typeof window.salvarRascunhoFolhao === 'function' && typeof window.coletarDadosModal === 'function') {
+        try {
+            const resultado = await window.salvarRascunhoFolhao(tag, "Horizontal", window.coletarDadosModal("modal-folhao-horizontal"));
+            rascunhoSalvoComSucesso = resultado !== false;
+        } catch (e) {
+            rascunhoSalvoComSucesso = false;
+        }
+    }
+
+    if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Folhão de manutenção (Horizontal) salvo — aguardando conclusão do reparo.`);
+    if (typeof window.carregarStatusChecklistExecucaoReparo === 'function') {
+        window.carregarStatusChecklistExecucaoReparo([tag], true);
+    }
+    if (typeof window.renderReparos === 'function') window.renderReparos();
+
+    if (rascunhoSalvoComSucesso) {
+        alert("✅ Folhão salvo. Assim que o Checklist de Execução estiver 100%, clique em \"Concluir\" para gerar e imprimir o documento final.");
+    } else {
+        alert("⚠️ O laudo foi gravado, mas NÃO consegui salvar o progresso do formulário pra reabrir depois. Confira sua conexão e clique em \"Salvar\" de novo antes de fechar.");
+    }
     window.fecharFolhaoHorizontal();
+};
+
+// ==============================================================
+// 17. CONCLUIR E IMPRIMIR - HORIZONTAL (chamado pelo botão "Concluir"
+// do Checklist de Execução, só depois de 100% + Folhão salvo)
+// ==============================================================
+window.concluirEImprimirFolhaoHorizontal = async function(tag) {
+    let htmlPDF;
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/laudos?peca_id=${encodeURIComponent(tag)}&limite=1`, { cache: 'no-store' });
+        const laudos = resp.ok ? await resp.json() : [];
+        if (!Array.isArray(laudos) || laudos.length === 0) {
+            alert('Nenhum Folhão salvo encontrado pra essa peça ainda. Abra o Folhão e clique em "Salvar" primeiro.');
+            return;
+        }
+        htmlPDF = laudos[0].html;
+    } catch (e) {
+        console.error("Erro ao buscar laudo salvo pra imprimir (Horizontal):", e);
+        alert(`❌ Não consegui buscar o Folhão salvo pra imprimir.\n\nMotivo: ${e.message}`);
+        return;
+    }
+
+    let item = BANCO_ATIVOS.find(a => a.id === tag);
+    if (item) {
+        item.local = "Oficina / Reserva";
+        item.ton = 0;
+        item.dias = 0;
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    }
+    try {
+        const apiBase = await resolverApiBase();
+        await fetch(`${apiBase}/api/atualizar_peca`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: tag, local: "Oficina / Reserva", tonelagem: 0, dias: 0, status: "Reserva" })
+        });
+    } catch (e) {
+        console.error("Erro ao atualizar peça na nuvem (Horizontal):", e);
+    }
+
+    finalizarRascunhoFolhao(tag, "Horizontal");
+    if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Reparo concluído — Folhão de manutenção (Horizontal) impresso.`);
+
+    const printDiv = document.getElementById('print-content');
+    if (printDiv) printDiv.innerHTML = htmlPDF;
+
     if (typeof renderReparos === 'function') renderReparos();
     if (typeof renderReservas === 'function') renderReservas();
     if (typeof renderAtivos === 'function') renderAtivos();
@@ -977,6 +1069,6 @@ window.salvarEImprimirFolhaoHorizontal = async function() {
     if (typeof renderHistorico === 'function') renderHistorico();
     if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
     if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
-    
+
     setTimeout(() => window.print(), 500);
 };

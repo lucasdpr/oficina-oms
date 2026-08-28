@@ -4,8 +4,9 @@
 
 import { BANCO_ATIVOS, resolverApiBase, OPERADOR_LOGADO } from '../Core/banco.js?v=5';
 import { renderAtivos, renderReparos, renderReservas } from '../ui.js';
-import { gerarTelasBenderHTML, imprimirPDFBender } from './folhao_bender.js';
+import { gerarTelasBenderHTML, montarHtmlLaudoBender } from './folhao_bender.js';
 import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
+import { buscarPonteChecklist, preencherCamposFolhao, ligarListenerEdicaoManualFolhao, mostrarAvisoPreenchimentoChecklist } from '../Core/checklistFolhaoPonte.js';
 
 let ID_FOLHAO_ATUAL = null;
 
@@ -14,6 +15,10 @@ let ID_FOLHAO_ATUAL = null;
 // (chamada quando o técnico edita um campo na mão) saber PRA QUAL
 // etapa/execução mandar a correção de volta.
 let PONTE_CHECKLIST_M4 = { execucaoId: null, tipoEquipamento: null, mapaCampoParaEtapa: {} };
+
+// 🆕 Mesmo esquema, só que pro Bender (que compartilha este arquivo
+// com o Molde MCC4, mas tem seu próprio modal e seus próprios campos).
+let PONTE_CHECKLIST_BENDER = { execucaoId: null, tipoEquipamento: null, mapaCampoParaEtapa: {} };
 
 // ==============================================================
 // FUNÇÕES AUXILIARES
@@ -261,133 +266,31 @@ function renderizarTabelaSimNaoM4(containerId, array, prefix, isFinal = false, i
 // o campo do folhão fica do jeito que já estava (em branco ou como o
 // técnico tiver digitado manualmente).
 // ==============================================================
-// 🆕 AVISO DE PREENCHIMENTO AUTOMÁTICO (toast simples, sem depender de
-// nenhuma lib externa) — some sozinho depois de alguns segundos, não
-// atrapalha o técnico preenchendo o resto do Folhão manualmente.
+// 🆕 AVISO DE PREENCHIMENTO AUTOMÁTICO — movido pra
+// '../Core/checklistFolhaoPonte.js' (mostrarAvisoPreenchimentoChecklist,
+// importado acima), porque o Folhão do Molde 2/3 agora usa a ponte
+// também e precisava do mesmo aviso, sem copiar a função de novo.
 // ==============================================================
-function mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados) {
-    const existente = document.getElementById('toast-preenchimento-checklist');
-    if (existente) existente.remove();
-
-    const toast = document.createElement('div');
-    toast.id = 'toast-preenchimento-checklist';
-    toast.style.cssText = 'position:fixed; top:16px; right:16px; z-index:10500; max-width:340px; padding:12px 16px; border-radius:10px; font-size:13px; line-height:1.4; box-shadow:0 10px 30px rgba(0,0,0,0.4); animation:fadeInModal 0.25s ease-out;';
-
-    if (naoEncontrados === 0) {
-        toast.style.background = 'rgba(16, 185, 129, 0.95)';
-        toast.style.color = '#fff';
-        toast.innerHTML = `<i class="fas fa-check-circle"></i> <strong>${preenchidos}</strong> campo(s) preenchido(s) automaticamente pelo Checklist de Execução (destacados em verde no formulário).`;
-    } else {
-        toast.style.background = 'rgba(245, 158, 11, 0.95)';
-        toast.style.color = '#1a1a1a';
-        toast.innerHTML = `<i class="fas fa-triangle-exclamation"></i> ${preenchidos} campo(s) preenchido(s), mas <strong>${naoEncontrados}</strong> não foram encontrados no Folhão — o mapeamento (folhao_campo) de alguma etapa está apontando pro id errado. Corrija em Editar Etapa no Checklist.`;
-    }
-
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), naoEncontrados > 0 ? 12000 : 6000);
-}
 
 // ==============================================================
 // 🆕 REFLETE EDIÇÃO MANUAL DO FOLHÃO DE VOLTA NO CHECKLIST DE EXECUÇÃO
 // ==============================================================
-// Ouve o evento disparado por folhaoPersistencia.js sempre que o
-// técnico edita um campo na mão dentro do Folhão. Se aquele campo tiver
-// uma etapa correspondente no Checklist de Execução (ver
-// PONTE_CHECKLIST_M4.mapaCampoParaEtapa), grava a correção lá também —
-// usando a MESMA rota que o próprio Checklist usa pra marcar etapas
-// (/api/checklist-execucao/marcar), que já registra tecnico_nome,
-// tecnico_matricula e data_hora sozinha. O "colaborador" leva a marca
-// "(via Folhão)" pra ficar visível na tela do Checklist quem editou e
-// de onde veio a mudança.
-let LISTENER_EDICAO_MANUAL_M4_LIGADO = false;
-function ligarListenerEdicaoManualM4() {
-    if (LISTENER_EDICAO_MANUAL_M4_LIGADO) return;
-    LISTENER_EDICAO_MANUAL_M4_LIGADO = true;
-
-    document.addEventListener('folhao:campo-editado-manualmente', async (ev) => {
-        const { modalId, campo, valor } = ev.detail || {};
-        if (modalId !== 'modal-folhao-molde4') return;
-        if (!campo.startsWith('radio:')) return; // só sim_nao tem etapa correspondente hoje
-
-        const folhaoCampo = campo.slice('radio:'.length);
-        const etapaId = PONTE_CHECKLIST_M4.mapaCampoParaEtapa[folhaoCampo];
-        if (!etapaId || !PONTE_CHECKLIST_M4.execucaoId) return; // esse campo não tem etapa mapeada — nada a refletir
-
-        const tecnico = OPERADOR_LOGADO || {};
-        try {
-            const apiBase = await resolverApiBase();
-            await fetch(`${apiBase}/api/checklist-execucao/marcar`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    etapa_id: etapaId,
-                    execucao_id: PONTE_CHECKLIST_M4.execucaoId,
-                    equipamento_id: PONTE_CHECKLIST_M4.equipamentoId,
-                    marcado: true,
-                    valor: valor,
-                    colaborador: `${tecnico.nome || 'Técnico'} (via Folhão)`,
-                    tecnico_matricula: tecnico.matricula || null,
-                    tecnico_nome: tecnico.nome || 'Técnico'
-                })
-            });
-            // Atualiza o cache do Checklist pra próxima vez que a tela dele
-            // for aberta/redesenhada já vir com a correção.
-            if (typeof window.carregarStatusChecklistExecucaoReparo === 'function') {
-                window.carregarStatusChecklistExecucaoReparo([PONTE_CHECKLIST_M4.equipamentoId], true);
-            }
-        } catch (e) {
-            console.error('⚠️ Não consegui refletir a edição manual do Folhão no Checklist de Execução:', e);
-        }
-    });
-}
-
+// A lógica de fato (ouvir o evento, montar o payload, chamar
+// /api/checklist-execucao/marcar) foi extraída pra
+// '../Core/checklistFolhaoPonte.js' (ligarListenerEdicaoManualFolhao),
+// porque era código que qualquer área nova ia precisar copiar igual.
+// Aqui só passamos o modalId do Molde 4 e um "getter" do estado atual
+// da ponte (PONTE_CHECKLIST_M4) — cada Folhão guarda o seu próprio.
 async function preencherFolhaoComChecklistExecucao(id, item) {
-    ligarListenerEdicaoManualM4();
+    ligarListenerEdicaoManualFolhao('modal-folhao-molde4', () => PONTE_CHECKLIST_M4);
     try {
-        // Mesmo cálculo de "tipo de equipamento" usado no Checklist de
-        // Execução (ex: "molde-mcc4") — precisa bater com o que foi usado
-        // lá no cadastro das etapas, senão a ponte não acha nada.
-        const tipoSlug = (item.tipo || '')
-            .toLowerCase()
-            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/(^-|-$)/g, '');
-        const mcc = (item.mcc_compat || '').replace('/', '-');
-        const tipoEquipamento = mcc ? `${tipoSlug}-mcc${mcc}` : tipoSlug;
-
-        const apiBase = await resolverApiBase();
-
+        const ponte = await buscarPonteChecklist(id, item);
         // Só faz sentido puxar valor se existir um reparo em andamento
         // pra essa tag. Se não tiver (ex: abriu o folhão sem ter aberto o
         // Checklist de Execução ainda), não tem de onde puxar — segue
         // tudo manual normalmente.
-        const respStatus = await fetch(`${apiBase}/api/checklist-execucao/status/${encodeURIComponent(id)}`, { cache: 'no-store' });
-        const status = respStatus.ok ? await respStatus.json() : null;
-        if (!status || !status.execucao_id) return;
-
-        const respValores = await fetch(`${apiBase}/api/checklist-execucao/folhao/${encodeURIComponent(tipoEquipamento)}?execucao_id=${status.execucao_id}`, { cache: 'no-store' });
-        const valores = respValores.ok ? await respValores.json() : {};
-
-        // 🆕 Monta o mapa folhao_campo -> etapa_id (inclui só etapas
-        // sim_nao, que são as que dá pra editar direto num radio SIM/NÃO
-        // no Folhão). É isso que permite mandar a correção manual do
-        // Folhão de volta pro Checklist de Execução — sem esse mapa, a
-        // gente sabe QUE campo mudou, mas não sabe qual etapa lá no
-        // Checklist corresponde a ele.
-        try {
-            const respEtapas = await fetch(`${apiBase}/api/checklist-execucao/etapas/${encodeURIComponent(tipoEquipamento)}?execucao_id=${status.execucao_id}`, { cache: 'no-store' });
-            const etapas = respEtapas.ok ? await respEtapas.json() : [];
-            const mapa = {};
-            etapas.forEach(et => {
-                if (et.folhao_campo && et.tipo_resposta === 'sim_nao') mapa[et.folhao_campo] = et.id;
-            });
-            PONTE_CHECKLIST_M4 = { execucaoId: status.execucao_id, tipoEquipamento, mapaCampoParaEtapa: mapa, equipamentoId: id };
-        } catch (e) {
-            console.error('⚠️ Não consegui montar o mapa campo→etapa pra edição manual refletir no Checklist:', e);
-        }
-
-        let preenchidos = 0;
-        let naoEncontrados = 0;
+        if (!ponte) return;
+        PONTE_CHECKLIST_M4 = ponte;
 
         // 🐛 CORRIGIDO ("MOTIVO sempre voltava com 100000 mesmo apagando"):
         // um folhao_campo mal configurado numa etapa do Checklist de
@@ -404,71 +307,7 @@ async function preencherFolhaoComChecklistExecucao(id, item) {
             'molde4-lider-responsavel', 'molde4-desempenho', 'molde4-nova-meta'
         ]);
 
-        Object.entries(valores).forEach(([campo, valor]) => {
-            if (!valor) return; // etapa ainda não respondida — não mexe no campo
-            if (camposProtegidos.has(campo)) return; // 🐛 ver comentário acima
-
-            // 🆕 Destaca visualmente o campo preenchido pelo Checklist —
-            // sem isso, numa tabela com dezenas de campos minúsculos (ex:
-            // "Relatório Folga de Aresta", 57 campos de 40px), fica
-            // impossível saber de relance se a ponte funcionou ou não.
-            // Resposta NÃO vem destacada em vermelho/atenção em vez de
-            // verde — geralmente significa que algo precisa de reparo, não
-            // "tá tudo certo".
-            const destacarCampo = (el, ehAtencao = false) => {
-                if (!el) return;
-                el.style.background = ehAtencao ? 'rgba(239, 68, 68, 0.18)' : 'rgba(16, 185, 129, 0.18)';
-                el.style.borderColor = ehAtencao ? 'var(--danger, #ef4444)' : 'var(--success, #10b981)';
-                el.title = ehAtencao
-                    ? '🔗 Preenchido automaticamente pelo Checklist de Execução — resposta NÃO, requer atenção'
-                    : '🔗 Preenchido automaticamente pelo Checklist de Execução';
-            };
-
-            // Campo pode ser: par de radios SIM/NÃO (name="campo"), um
-            // checkbox simples (id="campo", tipo checkbox) ou um
-            // <input>/<textarea> comum (id="campo") — tenta os três.
-            const radios = document.getElementsByName(campo);
-            if (radios && radios.length > 0) {
-                // 🆕 Se o técnico já editou essa resposta manualmente no
-                // Folhão (marcado por ativarAutoSalvamentoFolhao), respeita
-                // a edição dele e não sobrescreve mais com o valor do
-                // Checklist de Execução.
-                const jaEditadoManualmente = Array.from(radios).some(r => r.dataset.editadoManual === '1');
-                if (jaEditadoManualmente) return;
-
-                let algumMarcado = false;
-                radios.forEach(r => {
-                    r.checked = (valor === 'OK' && r.value === 'SIM') || r.value === valor;
-                    if (r.checked) {
-                        // 🔧 Destacar só o <input type="radio"> quase não
-                        // aparece (é um círculo pequeno). Destaca a linha
-                        // (<tr>) inteira da tabela, bem mais visível.
-                        const cardEl = r.closest('.sim-nao-card');
-                        // 🐛 CORRIGIDO: nem toda pergunta segue "NÃO = problema".
-                        // Perguntas escritas ao contrário (ex: "está danificado?",
-                        // "houve vazamento?") têm data-inverte="1" — nelas, SIM
-                        // é que indica atenção. Sem isso, o card ficava verde
-                        // justamente quando a resposta apontava um defeito.
-                        const invertida = cardEl && cardEl.dataset.inverte === '1';
-                        const ehAtencao = invertida ? r.value === 'SIM' : r.value === 'NÃO';
-                        destacarCampo(cardEl || r.closest('tr') || r.closest('label') || r, ehAtencao);
-                        algumMarcado = true;
-                    }
-                });
-                if (algumMarcado) preenchidos++; else naoEncontrados++;
-                return;
-            }
-            const inputEl = document.getElementById(campo);
-            if (!inputEl) { naoEncontrados++; return; }
-            if (inputEl.dataset.editadoManual === '1') return; // 🆕 idem, mas pra input/checkbox comuns
-            if (inputEl.type === 'checkbox') {
-                inputEl.checked = (valor === 'OK');
-            } else {
-                inputEl.value = valor;
-            }
-            destacarCampo(inputEl);
-            preenchidos++;
-        });
+        const { preenchidos, naoEncontrados } = preencherCamposFolhao(ponte.valores, camposProtegidos);
 
         // 🆕 RESUMO VISÍVEL: sem isso, o técnico só descobre se a ponte
         // funcionou catando campo por campo numa tabela de 57 linhas. Um
@@ -483,6 +322,26 @@ async function preencherFolhaoComChecklistExecucao(id, item) {
         console.error('⚠️ Não consegui puxar os valores do Checklist de Execução pro folhão:', e);
         // Falha aqui não deve travar a abertura do folhão — só segue sem
         // autopreencher, técnico preenche manual como sempre.
+    }
+}
+
+async function preencherFolhaoBenderComChecklistExecucao(id, item) {
+    ligarListenerEdicaoManualFolhao('modal-folhao-mcc4', () => PONTE_CHECKLIST_BENDER);
+    try {
+        const ponte = await buscarPonteChecklist(id, item);
+        if (!ponte) return;
+        PONTE_CHECKLIST_BENDER = ponte;
+
+        const camposProtegidos = new Set([
+            'mcc4-tag-name', 'mcc4-data-inicio', 'mcc4-data-fim', 'mcc4-motivo'
+        ]);
+
+        const { preenchidos, naoEncontrados } = preencherCamposFolhao(ponte.valores, camposProtegidos);
+        if (preenchidos > 0 || naoEncontrados > 0) {
+            mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados);
+        }
+    } catch (e) {
+        console.error('⚠️ Não consegui puxar os valores do Checklist de Execução pro folhão (Bender):', e);
     }
 }
 
@@ -895,6 +754,13 @@ export async function abrirFolhaoMCC4(id) {
         // e liga o auto-salvamento pra nada mais se perder.
         await restaurarRascunhoNoModal("modal-folhao-mcc4", id);
         ativarAutoSalvamentoFolhao("modal-folhao-mcc4", id, "Bender");
+
+        // 🆕 PONTE COM O CHECKLIST DE EXECUÇÃO — autopreenche os campos
+        // já respondidos lá (ver '../Core/checklistFolhaoPonte.js').
+        // Faltava aqui: o Bender era a única área com Folhão ativo que
+        // nunca puxava nada do Checklist, mesmo o Molde MCC4 (logo
+        // abaixo, no mesmo arquivo) já fazendo isso.
+        preencherFolhaoBenderComChecklistExecucao(id, item);
         return;
     }
 
@@ -1095,6 +961,77 @@ window.concluirEImprimirFolhaoMolde4 = async function(tag) {
 
     finalizarRascunhoFolhao(tag, "Molde 4");
     if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Reparo concluído — Folhão de manutenção (Molde MCC4) impresso.`);
+
+    const printDiv = document.getElementById('print-content');
+    if (printDiv) printDiv.innerHTML = htmlPDF;
+
+    if (typeof renderReparos === 'function') renderReparos();
+    if (typeof renderReservas === 'function') renderReservas();
+    if (typeof renderAtivos === 'function') renderAtivos();
+    if (window.calcularKpisGlobais) window.calcularKpisGlobais();
+
+    setTimeout(() => window.print(), 500);
+};
+
+// ==============================================================
+// 🆕 CONCLUIR E IMPRIMIR — GENÉRICO (qualquer área que ainda não tenha
+// uma função própria de conclusão). Mesma lógica de cima
+// (concluirEImprimirFolhaoMolde4), só que sem nada fixo de "Molde":
+// o tipo/label vem do próprio cadastro do equipamento (item.tipo).
+// Usado pelo dispatcher window.concluirEImprimirFolhaoPorTipo, em
+// script.js, como fallback pra qualquer tipo sem função dedicada —
+// mesmo padrão que window.abrirFolhaoGenerico já usa pro Folhão.
+// Quando uma área precisar de uma lógica de conclusão diferente da
+// padrão (campos extras, validação própria etc.), aí sim vale criar
+// uma window.concluirEImprimirFolhaoX específica, e cadastrar ela no
+// dispatcher — até lá, essa genérica resolve.
+// ==============================================================
+window.concluirEImprimirFolhaoGenerico = async function(tag) {
+    let htmlPDF;
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/laudos?peca_id=${encodeURIComponent(tag)}&limite=1`, { cache: 'no-store' });
+        const laudos = resp.ok ? await resp.json() : [];
+        if (!Array.isArray(laudos) || laudos.length === 0) {
+            alert('Nenhum Folhão salvo encontrado pra essa peça ainda. Abra o Folhão e clique em "Salvar" primeiro.');
+            return;
+        }
+        htmlPDF = laudos[0].html;
+    } catch (e) {
+        console.error("Erro ao buscar laudo salvo pra imprimir:", e);
+        alert(`❌ Não consegui buscar o Folhão salvo pra imprimir.\n\nMotivo: ${e.message}`);
+        return;
+    }
+
+    let item = BANCO_ATIVOS.find(a => a.id === tag);
+    const tipoLabel = item?.tipo || 'Equipamento';
+    if (item) {
+        item.local = "Oficina / Reserva";
+        item.ton = 0;
+        item.dias = 0;
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    }
+    try {
+        const apiBase = await resolverApiBase();
+        await fetch(`${apiBase}/api/atualizar_peca`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                id: tag,
+                tipo: item?.tipo || tipoLabel,
+                mcc_compat: item?.mcc_compat || "",
+                local: "Oficina / Reserva",
+                tonelagem: 0,
+                dias: 0,
+                status: "Reserva"
+            })
+        });
+    } catch (e) {
+        console.error("Erro ao atualizar peça na nuvem:", e);
+    }
+
+    finalizarRascunhoFolhao(tag, tipoLabel);
+    if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Reparo concluído — Folhão de manutenção (${tipoLabel}) impresso.`);
 
     const printDiv = document.getElementById('print-content');
     if (printDiv) printDiv.innerHTML = htmlPDF;
@@ -1487,29 +1424,102 @@ function montarHtmlLaudoMolde4(tag) {
 }
 
 // ==============================================================
-// SALVAR LAUDO INTELIGENTE (BENDER)
+// SALVAR FOLHÃO - BENDER (sem imprimir)
 // ==============================================================
-export function salvarLaudoInteligente() {
-    if (!ID_FOLHAO_ATUAL) return;
-    let tag = ID_FOLHAO_ATUAL;
-    let item = BANCO_ATIVOS.find(a => a.id === tag);
-    if (!item) return;
+// 🔧 SEPARADO (mesmo padrão do Molde MCC4): "salvarLaudoInteligente"
+// fazia tudo num clique só e NUNCA gravava um laudo em /api/laudos —
+// o Bender era a única área do arquivo que não seguia esse padrão,
+// mesmo dividindo o arquivo com o Molde MCC4 que já seguia. Isso
+// deixava o "Concluir" do Checklist de Execução travado pra sempre
+// pro Bender. Agora salva o laudo primeiro; a impressão e o envio pra
+// Oficina/Reserva só acontecem no "Concluir".
+export async function salvarFolhaoBender() {
+    if (!ID_FOLHAO_ATUAL) return alert("Nenhuma TAG carregada.");
+    const tag = ID_FOLHAO_ATUAL;
+    const motivo = document.getElementById("mcc4-motivo")?.value || "Manutenção";
+    const htmlPDF = montarHtmlLaudoBender(tag, motivo, getV);
 
-    item.ton = 0; item.dias = 0; item.local = "Oficina / Reserva";
-    localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-    finalizarRascunhoFolhao(tag, "Bender");
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/laudos`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ peca_id: tag, tipo: "Bender", html: htmlPDF, operador: "Sistema" })
+        });
+        if (!resp.ok) throw new Error("A API não confirmou o salvamento do laudo.");
+    } catch (e) {
+        console.error("Erro ao salvar laudo do Folhão (Bender):", e);
+        alert(`❌ Não consegui salvar o Folhão no banco.\n\nMotivo: ${e.message}\n\nSeu progresso continua salvo como rascunho — tente salvar de novo, ou confira sua conexão.`);
+        return;
+    }
 
-    let motivo = document.getElementById("mcc4-motivo")?.value || "Manutenção";
-    if (window.registrarHistorico) {
-        window.registrarHistorico(tag, `Laudo Bender finalizado. Motivo: ${motivo}`);
+    let rascunhoSalvoComSucesso = true;
+    if (typeof window.salvarRascunhoFolhao === 'function' && typeof window.coletarDadosModal === 'function') {
+        try {
+            const resultado = await window.salvarRascunhoFolhao(tag, "Bender", window.coletarDadosModal("modal-folhao-mcc4"));
+            rascunhoSalvoComSucesso = resultado !== false;
+        } catch (e) {
+            rascunhoSalvoComSucesso = false;
+        }
+    }
+
+    if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Folhão de manutenção (Bender) salvo — aguardando conclusão do reparo.`);
+    if (typeof window.carregarStatusChecklistExecucaoReparo === 'function') {
+        window.carregarStatusChecklistExecucaoReparo([tag], true);
+    }
+    if (typeof window.renderReparos === 'function') window.renderReparos();
+
+    if (rascunhoSalvoComSucesso) {
+        alert("✅ Folhão salvo. Assim que o Checklist de Execução estiver 100%, clique em \"Concluir\" para gerar e imprimir o documento final.");
+    } else {
+        alert("⚠️ O laudo foi gravado, mas NÃO consegui salvar o progresso do formulário pra reabrir depois. Confira sua conexão e clique em \"Salvar\" de novo antes de fechar.");
     }
     fecharFolhaoMCC4();
+}
+window.salvarFolhaoBender = salvarFolhaoBender;
+
+// ==============================================================
+// CONCLUIR E IMPRIMIR - BENDER (chamado pelo botão "Concluir" do
+// Checklist de Execução, só depois de 100% + Folhão salvo)
+// ==============================================================
+window.concluirEImprimirFolhaoBender = async function(tag) {
+    let htmlPDF;
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/laudos?peca_id=${encodeURIComponent(tag)}&limite=1`, { cache: 'no-store' });
+        const laudos = resp.ok ? await resp.json() : [];
+        if (!Array.isArray(laudos) || laudos.length === 0) {
+            alert('Nenhum Folhão salvo encontrado pra essa peça ainda. Abra o Folhão e clique em "Salvar" primeiro.');
+            return;
+        }
+        htmlPDF = laudos[0].html;
+    } catch (e) {
+        console.error("Erro ao buscar laudo salvo pra imprimir (Bender):", e);
+        alert(`❌ Não consegui buscar o Folhão salvo pra imprimir.\n\nMotivo: ${e.message}`);
+        return;
+    }
+
+    let item = BANCO_ATIVOS.find(a => a.id === tag);
+    if (item) {
+        item.ton = 0; item.dias = 0; item.local = "Oficina / Reserva";
+        localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+    }
+
+    finalizarRascunhoFolhao(tag, "Bender");
+    const motivo = document.getElementById("mcc4-motivo")?.value || "Manutenção";
+    if (window.registrarHistorico) {
+        window.registrarHistorico(tag, `📋 Reparo concluído — Laudo Bender finalizado. Motivo: ${motivo}`);
+    }
+
     if (renderReparos) renderReparos();
     if (renderReservas) renderReservas();
     if (renderAtivos) renderAtivos();
     if (window.calcularKpisGlobais) window.calcularKpisGlobais();
-    imprimirPDFBender(tag, motivo, getV);
-}
+
+    const printDiv = document.getElementById('print-content');
+    if (printDiv) printDiv.innerHTML = htmlPDF;
+    setTimeout(() => window.print(), 500);
+};
 
 // ==============================================================
 // EXPOSIÇÃO GLOBAL
@@ -1519,7 +1529,6 @@ window.fecharFolhaoMCC4 = fecharFolhaoMCC4;
 window.fecharFolhaoMolde4 = fecharFolhaoMolde4;
 window.trocarAbaFolhao = trocarAbaFolhao;
 window.trocarAbaMolde4 = trocarAbaMolde4;
-window.salvarLaudoInteligente = salvarLaudoInteligente;
 window.adicionarLinhaMaterialBender = window.adicionarLinhaMaterialBender || function() {};
 window.getV = getV;
 

@@ -5673,6 +5673,129 @@ window.abrirFolhaoPorTipo = function(id) {
     // Se nada funcionar, exibe uma mensagem amigável (sem alert)
     console.warn(`Nenhum folhão disponível para o tipo: ${tipo}`);
 };
+
+// ==========================================================================
+// 🆕 CONCLUIR E IMPRIMIR — POR TIPO. Chamado pelo botão "Concluir" do
+// Checklist de Execução (renderizarBotaoConcluirReparo, em
+// checklist-execucao.js), que ANTES chamava window.concluirEImprimirFolhaoMolde4
+// direto, fixo — funcionava só pro Molde, ia quebrar (ou imprimir o
+// Folhão errado) assim que outra área fosse cadastrada. Agora decide
+// pelo tipo do equipamento, igual window.abrirFolhaoPorTipo já faz pro
+// Folhão: se a área tiver uma função de conclusão própria, usa ela; se
+// não tiver ainda, cai na genérica (window.concluirEImprimirFolhaoGenerico,
+// em folhaoMolde4.js) até que uma específica seja implementada.
+// ==========================================================================
+window.concluirEImprimirFolhaoPorTipo = function(id) {
+    const item = BANCO_ATIVOS.find(a => a.id === id);
+    if (!item) {
+        console.warn(`Concluir: equipamento ${id} não encontrado no BANCO_ATIVOS.`);
+        return;
+    }
+    const tipo = item.tipo || '';
+    const mcc = item.mcc_compat || '';
+
+    // ---- MOLDE MCC4 (e Molde sem MCC 2/3) ----
+    if (tipo === 'Molde' && mcc !== '2/3') {
+        if (typeof window.concluirEImprimirFolhaoMolde4 === 'function') {
+            window.concluirEImprimirFolhaoMolde4(id);
+            return;
+        }
+    }
+
+    // ---- MOLDE MCC 2/3 ----
+    if (tipo === 'Molde' && mcc === '2/3') {
+        if (typeof window.concluirEImprimirFolhaoMolde23 === 'function') {
+            window.concluirEImprimirFolhaoMolde23(id);
+            return;
+        }
+    }
+
+    // ---- MOLDE MCC 2/3 ----
+    if (tipo === 'Molde' && mcc === '2/3') {
+        if (typeof window.concluirEImprimirFolhaoMolde23 === 'function') {
+            window.concluirEImprimirFolhaoMolde23(id);
+            return;
+        }
+    }
+
+    // ---- BOW ----
+    if (tipo === 'Bow') {
+        if (typeof window.concluirEImprimirFolhaoBow === 'function') {
+            window.concluirEImprimirFolhaoBow(id);
+            return;
+        }
+    }
+
+    // ---- HORIZONTAL ----
+    if (tipo === 'Horizontal') {
+        if (typeof window.concluirEImprimirFolhaoHorizontal === 'function') {
+            window.concluirEImprimirFolhaoHorizontal(id);
+            return;
+        }
+    }
+
+    // ---- STRAIGHTENER (R1 e R2) — mesma regra de identificação do
+    // abrirFolhaoPorTipo, pra Concluir abrir o mesmo laudo que foi salvo.
+    if (tipo === 'Straightener' || tipo === 'Straightener R1' || tipo === 'Straightener R2') {
+        if (tipo === 'Straightener R1' || id.includes('STR-1') || id.includes('R1')) {
+            if (typeof window.concluirEImprimirFolhaoR1 === 'function') {
+                window.concluirEImprimirFolhaoR1(id);
+                return;
+            }
+        } else if (tipo === 'Straightener R2' || id.includes('STR-2') || id.includes('R2')) {
+            if (typeof window.concluirEImprimirFolhaoR2 === 'function') {
+                window.concluirEImprimirFolhaoR2(id);
+                return;
+            }
+        }
+    }
+
+    // ---- CADEIRA SUPERIOR E INFERIOR (DESEMPENADEIRA) ----
+    if (tipo === 'Cadeira Superior' || tipo === 'Cadeira Inferior') {
+        if (typeof window.concluirEImprimirFolhaoDesemp === 'function') {
+            window.concluirEImprimirFolhaoDesemp(id);
+            return;
+        }
+    }
+
+    // ---- SEGMENTO GRUPO 1, 2 E 3 (MCC 2/3) ----
+    if (tipo === 'Grupo 1' || tipo === 'Grupo 2' || tipo === 'Grupo 3' ||
+        tipo === 'Segmento Grupo 1' || tipo === 'Segmento Grupo 2' || tipo === 'Segmento Grupo 3') {
+        if (typeof window.concluirEImprimirFolhaoSegmentoGrupo === 'function') {
+            window.concluirEImprimirFolhaoSegmentoGrupo(id);
+            return;
+        }
+    }
+
+    // ---- SEGMENTO ZERO ----
+    if (tipo === 'Seguimento Zero' || tipo === 'Segmento Zero') {
+        if (typeof window.concluirEImprimirFolhaoSegmentoZero === 'function') {
+            window.concluirEImprimirFolhaoSegmentoZero(id);
+            return;
+        }
+    }
+
+    // ---- BENDER ----
+    if (tipo === 'Bender') {
+        if (typeof window.concluirEImprimirFolhaoBender === 'function') {
+            window.concluirEImprimirFolhaoBender(id);
+            return;
+        }
+    }
+
+    // ---- QUALQUER OUTRO TIPO (e o que faltar implementar) ----
+    // Ainda sem função de conclusão própria — usa a genérica, que faz a
+    // mesma coisa (busca o laudo salvo, manda pra Reserva, imprime) sem
+    // nada fixo de Molde. Quando uma área precisar de regra diferente,
+    // cria window.concluirEImprimirFolhaoX e adiciona um bloco aqui, no
+    // mesmo padrão dos blocos de cima.
+    if (typeof window.concluirEImprimirFolhaoGenerico === 'function') {
+        window.concluirEImprimirFolhaoGenerico(id);
+        return;
+    }
+
+    console.warn(`Concluir: nenhuma função de conclusão disponível para o tipo "${tipo}".`);
+};
 // ==========================================================================
 // MÓDULO INTELIGENTE: APONTAMENTO DIÁRIO E DESCONTO DE VIDA ÚTIL EM LOTE
 // ==========================================================================
@@ -7885,6 +8008,7 @@ window.excluirQualidade = async function(id) {
 // ==========================================================================
 (function () {
     let fechandoViaBotaoVoltar = false;
+    let consumindoEstadoInterno = false;
 
     function modaisAbertos() {
         return Array.from(document.querySelectorAll('.modal-overlay:not(.hidden)'));
@@ -7919,8 +8043,21 @@ window.excluirQualidade = async function(id) {
             } else if (!estavaEscondidoAntes && estaEscondidoAgora && !fechandoViaBotaoVoltar) {
                 // Modal FECHOU (por um botão normal, não pelo "voltar")
                 // — consome o estado extra que tínhamos empilhado.
+                //
+                // 🐛 CORRIGIDO ("marco a etapa, escolho o colaborador, e o
+                // Checklist inteiro fecha junto"): o history.back() abaixo
+                // TAMBÉM dispara um evento popstate — só que esse popstate
+                // é gerado por NÓS MESMOS consumindo o estado empilhado,
+                // não pelo usuário clicando em voltar de verdade. Sem essa
+                // flag, o listener de popstate lá embaixo não conseguia
+                // diferenciar os dois casos, achava que era o botão voltar
+                // físico e fechava o modal que estivesse "no topo" nesse
+                // instante — no caso, o Checklist de Execução por trás do
+                // modal "Quem executou" que tinha acabado de fechar.
                 if (history.state && history.state.omsModal) {
+                    consumindoEstadoInterno = true;
                     try { history.back(); } catch (e) { /* nada a fazer */ }
+                    setTimeout(() => { consumindoEstadoInterno = false; }, 0);
                 }
             }
         });
@@ -7941,6 +8078,8 @@ window.excluirQualidade = async function(id) {
     }
 
     window.addEventListener('popstate', () => {
+        if (consumindoEstadoInterno) return; // popstate gerado por nós mesmos — ignora
+
         const abertos = modaisAbertos();
         if (abertos.length === 0) return; // nenhum modal aberto — deixa o navegador seguir normal
 
