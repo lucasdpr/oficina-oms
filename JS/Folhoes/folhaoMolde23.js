@@ -155,7 +155,7 @@ function renderizarChecklist(containerId, array, prefix, isMatricula = false) {
         if (isMatricula) {
             html += `<td><input id="${name}-nome" class="w-100"></td><td><input id="${name}-mat" class="w-100"></td>`;
         } else {
-            html += `<td style="text-align:center;"><input type="radio" name="${name}" value="SIM" checked></td>
+            html += `<td style="text-align:center;"><input type="radio" name="${name}" value="SIM"></td>
                      <td style="text-align:center;"><input type="radio" name="${name}" value="NÃO"></td>`;
         }
         html += `</tr>`;
@@ -469,10 +469,10 @@ function renderizarPeritagemPlacasEstreitas(tipo) {
     const html = `
         <h3 style="color:var(--text-heading);">PERITAGEM DAS PLACAS ESTREITAS ${titulo}</h3>
         <div>
-            <label>PLACA ESQUERDA AFASTADA: <input type="radio" name="${prefix}-esq-af" value="SIM"> SIM <input type="radio" name="${prefix}-esq-af" value="NÃO" checked> NÃO</label>
+            <label>PLACA ESQUERDA AFASTADA: <input type="radio" name="${prefix}-esq-af" value="SIM"> SIM <input type="radio" name="${prefix}-esq-af" value="NÃO"> NÃO</label>
         </div>
         <div>
-            <label>PLACA DIREITA AFASTADA: <input type="radio" name="${prefix}-dir-af" value="SIM"> SIM <input type="radio" name="${prefix}-dir-af" value="NÃO" checked> NÃO</label>
+            <label>PLACA DIREITA AFASTADA: <input type="radio" name="${prefix}-dir-af" value="SIM"> SIM <input type="radio" name="${prefix}-dir-af" value="NÃO"> NÃO</label>
         </div>
         <table class="premium-table" style="font-size:10px;">
             <tr><th>PONTO</th><th>ESQUERDA</th><th>DIREITA</th></tr>
@@ -900,6 +900,51 @@ function montarHtmlLaudoMolde23(tag) {
 }
 
 // ==============================================================
+// 🆕 20.5 VALIDAÇÃO — nenhum item sim/não pode ficar sem resposta
+// ==============================================================
+// Antes, todo radio SIM/NÃO nascia com "checked" fixo no SIM (ou no
+// NÃO, nos dois campos de "placa afastada") — então um item que o
+// técnico nunca tocou ia pro laudo como se tivesse sido verificado e
+// estivesse OK. Removemos o "checked" padrão do HTML (ver
+// renderizarChecklist e renderizarPeritagemPlacasEstreitas) e agora
+// bloqueamos o Salvar se sobrar algum par SIM/NÃO sem nenhum marcado.
+// Genérico de propósito: não depende de saber os nomes dos campos —
+// funciona pra qualquer checklist sim/não do formulário, atual ou
+// futuro.
+function validarChecklistsRespondidos() {
+    const modal = document.getElementById('modal-folhao-molde23');
+    if (!modal) return { ok: true, pendentes: [] };
+
+    const grupos = new Map(); // name -> { elementos, respondido }
+    modal.querySelectorAll('input[type="radio"][value="SIM"], input[type="radio"][value="NÃO"]').forEach(r => {
+        if (!grupos.has(r.name)) grupos.set(r.name, []);
+        grupos.get(r.name).push(r);
+    });
+
+    const pendentes = [];
+    grupos.forEach((radios, nome) => {
+        const respondido = radios.some(r => r.checked);
+        if (!respondido) pendentes.push({ nome, elemento: radios[0] });
+    });
+
+    return { ok: pendentes.length === 0, pendentes };
+}
+
+// Leva o técnico direto pra aba com o primeiro item pendente, pra não
+// precisar caçar manualmente qual das 18 abas está faltando resposta.
+function focarPrimeiroPendente(pendentes) {
+    if (!pendentes.length) return;
+    const el = pendentes[0].elemento;
+    const abaContent = el.closest('.folhao-content');
+    if (abaContent && typeof window.trocarAbaMolde23 === 'function') {
+        window.trocarAbaMolde23(null, abaContent.id);
+        const botao = document.querySelector(`.folhao-tab[onclick*="'${abaContent.id}'"]`);
+        if (botao) botao.classList.add('active');
+    }
+    setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+}
+
+// ==============================================================
 // 21. SALVAR FOLHÃO - MOLDE 2/3 (sem imprimir)
 // ==============================================================
 // 🔧 SEPARADO (mesmo padrão do Molde MCC4, ver salvarFolhaoMolde4):
@@ -914,6 +959,16 @@ function montarHtmlLaudoMolde23(tag) {
 window.salvarFolhaoMolde23 = async function() {
     if (!window.verificarAcesso || !window.verificarAcesso()) { alert("Acesso negado."); return; }
     if (!ID_FOLHAO_MOLDE23_ATUAL) { alert("Nenhuma TAG carregada."); return; }
+
+    // 🆕 Bloqueia o Salvar se sobrar item sim/não sem resposta (ver
+    // validarChecklistsRespondidos acima) — evita que item nunca
+    // verificado vá pro laudo como se estivesse "SIM".
+    const { ok, pendentes } = validarChecklistsRespondidos();
+    if (!ok) {
+        alert(`⚠️ Ainda faltam ${pendentes.length} item(ns) sim/não sem resposta. Vou te levar até o primeiro — responda todos antes de salvar.`);
+        focarPrimeiroPendente(pendentes);
+        return;
+    }
 
     const tag = ID_FOLHAO_MOLDE23_ATUAL;
     const lider = getV('molde23-lider');
