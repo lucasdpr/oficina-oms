@@ -15,7 +15,7 @@
 // ==========================================================================
 
 import { resolverApiBase, OPERADOR_LOGADO, BANCO_ATIVOS } from '../Core/banco.js?v=5';
-import { CHECKLIST_EXECUCAO_SECOES } from '../Core/dados.js';
+import { CHECKLIST_EXECUCAO_SECOES, obterSecoesChecklistExecucao } from '../Core/dados.js';
 import { resolverTipoEquipamento } from '../Core/checklistFolhaoPonte.js';
 // 🔧 CORREÇÃO CRÍTICA: NÃO importar MATRICULAS_ADM/OFICINA_EQUIPE_ATUAL/
 // verificarAcesso/renderReparos de '../script.js' aqui. O app.html
@@ -435,9 +435,10 @@ window.renderizarChecklistExecucao = function() {
 
     const isAdmin = ehAdminChecklistExecucao();
     const equipe = Array.isArray(window.getOficinaEquipeAtual()) ? window.getOficinaEquipeAtual() : [];
+    const secoesDoTipo = obterSecoesChecklistExecucao(CHECKLIST_EXECUCAO_TIPO_ATUAL);
 
     let html = '';
-    CHECKLIST_EXECUCAO_SECOES.forEach(secao => {
+    secoesDoTipo.forEach(secao => {
         const etapasDaSecao = CHECKLIST_EXECUCAO_ETAPAS_ATUAIS.filter(e => e.area === secao.chave);
         if (etapasDaSecao.length === 0 && !isAdmin) return; // técnico não vê seção vazia
 
@@ -461,7 +462,7 @@ window.renderizarChecklistExecucao = function() {
             ${isAdmin ? 'Use os botões "+ Etapa" acima assim que houver alguma seção, ou adicione pela primeira vez abaixo.' : 'Fale com um responsável pelo Checklist de Execução.'}
         </p>`;
         if (isAdmin) {
-            html += `<div style="display:flex; gap:8px; flex-wrap:wrap;">${CHECKLIST_EXECUCAO_SECOES.map(s => `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.formNovaEtapaChecklistExecucao('${s.chave}')"><i class="fas ${s.icone}"></i> ${s.nome}</button>`).join('')}</div>`;
+            html += `<div style="display:flex; gap:8px; flex-wrap:wrap;">${secoesDoTipo.map(s => `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.formNovaEtapaChecklistExecucao('${s.chave}')"><i class="fas ${s.icone}"></i> ${s.nome}</button>`).join('')}</div>`;
         }
     }
 
@@ -955,6 +956,11 @@ function garantirModalEditarEtapa() {
             </div>
 
             <div class="input-group" style="margin-bottom:12px;">
+                <label>Área / Bloco</label>
+                <select id="editar-etapa-area" class="premium-select"></select>
+            </div>
+
+            <div class="input-group" style="margin-bottom:12px;">
                 <label>Tipo de resposta</label>
                 <select id="editar-etapa-tipo-resposta" class="premium-select" onchange="window.atualizarAjudaFolhaoCampoEtapa()">
                     <option value="sim_nao">Sim / Não</option>
@@ -1002,6 +1008,22 @@ window.editarEtapaChecklistExecucao = function(etapaId) {
     document.getElementById('editar-etapa-texto').value = etapa.texto || '';
     document.getElementById('editar-etapa-tipo-resposta').value = etapa.tipo_resposta || 'sim_nao';
 
+    // 🆕 Popula o select de Área com as seções do TIPO desse equipamento
+    // (ex: Chegada/Manutenção/Saída pro Molde MCC4, ou as seções
+    // genéricas de sempre pra qualquer outro tipo) — assim dá pra mover
+    // uma etapa antiga (ex: "mecanica") pro bloco novo.
+    const selectArea = document.getElementById('editar-etapa-area');
+    const secoesDesteTipo = obterSecoesChecklistExecucao(CHECKLIST_EXECUCAO_TIPO_ATUAL);
+    selectArea.innerHTML = secoesDesteTipo.map(s => `<option value="${s.chave}">${s.nome}</option>`).join('');
+    // Se a área atual da etapa não existir mais nessa lista (ex: uma
+    // etapa antiga com area="mecanica" que ainda não foi migrada pro
+    // bloco novo), adiciona ela mesmo assim como opção, marcada — pra
+    // não sumir/trocar de área sem querer só de abrir o "Editar".
+    if (etapa.area && !secoesDesteTipo.some(s => s.chave === etapa.area)) {
+        selectArea.innerHTML += `<option value="${etapa.area}">${etapa.area} (área antiga, fora da lista atual)</option>`;
+    }
+    selectArea.value = etapa.area || (secoesDesteTipo[0] && secoesDesteTipo[0].chave) || '';
+
     // Mostra o folhao_campo já formatado (com identação), pra quem for
     // consertar um JSON de medição múltipla conseguir ler/editar direito
     // em vez de uma linha só ilegível.
@@ -1028,6 +1050,7 @@ window.editarEtapaChecklistExecucao = function(etapaId) {
     btnSalvar.onclick = async () => {
         const texto = document.getElementById('editar-etapa-texto').value.trim();
         if (!texto) { alert('O texto da etapa não pode ficar vazio.'); return; }
+        const area = document.getElementById('editar-etapa-area').value;
         const tipoResposta = document.getElementById('editar-etapa-tipo-resposta').value;
         // Comprime de volta pra 1 linha só antes de mandar pro servidor
         // (a identação bonitinha é só pra facilitar a leitura na hora de
@@ -1047,6 +1070,7 @@ window.editarEtapaChecklistExecucao = function(etapaId) {
                 body: JSON.stringify({
                     id: etapaId,
                     texto,
+                    area,
                     operador: tecnico.matricula || '',
                     folhao_campo: folhaoCampo,
                     tipo_resposta: tipoResposta

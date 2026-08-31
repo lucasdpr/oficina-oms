@@ -22,7 +22,8 @@ import {
     salvarAjusteRoloNoPython,
     sincronizarHidraulicaReal,
     salvarAjusteHidraulicaNoPython,
-    resolverApiBase
+    resolverApiBase,
+    setOperador as setOperadorBanco
 } from './Core/banco.js?v=5';
 
 // ==========================================
@@ -487,6 +488,7 @@ async function finalizarLogin(nome, cargo, matricula, area, isAdm) {
         isAdm: !!isAdm || MATRICULAS_ADM.includes(matricula)
     };
     localStorage.setItem("oms_operador_v32_local", JSON.stringify(OPERADOR_LOGADO));
+    setOperadorBanco(OPERADOR_LOGADO); // 🔧 mantém a cópia do banco.js sincronizada (ver comentário em window.setOperadorLogado)
 
     document.getElementById("tela-login-home").style.display = "none";
     document.getElementById("container-sistema-oms").style.display = "flex";
@@ -569,6 +571,7 @@ async function entrarComoVisitante(nomeDigitado) {
     const nome = (nomeDigitado || "Visitante").trim();
     OPERADOR_LOGADO = { matricula: null, nome: nome, visitante: true };
     localStorage.setItem("oms_operador_v32_local", JSON.stringify(OPERADOR_LOGADO));
+    setOperadorBanco(OPERADOR_LOGADO); // 🔧 mantém a cópia do banco.js sincronizada (ver comentário em window.setOperadorLogado)
 
     document.getElementById("tela-login-home").style.display = "none";
     document.getElementById("container-sistema-oms").style.display = "flex";
@@ -6347,7 +6350,18 @@ window.MATRICULAS_ADM = MATRICULAS_ADM;
 window.getOficinaEquipeAtual = function() { return OFICINA_EQUIPE_ATUAL; };
 if (typeof entrarComoVisitante !== 'undefined') window.entrarComoVisitante = entrarComoVisitante;
 if (typeof processarAutenticacaoHome !== 'undefined') window.processarAutenticacaoHome = processarAutenticacaoHome;
-window.setOperadorLogado = function(op) { OPERADOR_LOGADO = op; };
+window.setOperadorLogado = function(op) {
+    OPERADOR_LOGADO = op;
+    // 🔧 CORREÇÃO: banco.js tem sua PRÓPRIA cópia de OPERADOR_LOGADO,
+    // separada dessa aqui — checklist-execucao.js, folhaoMolde4.js e a
+    // ponte com o Folhão importam a cópia de lá, não essa. Sem essa
+    // linha, um login feito NESSA sessão (sem recarregar a página)
+    // nunca chegava na cópia do banco.js, e por isso, por exemplo,
+    // ehAdminChecklistExecucao() sempre via a pessoa como "não ADM"
+    // (matrícula vazia/null), escondendo os botões de mover/editar/
+    // excluir etapa mesmo pra quem realmente é ADM.
+    setOperadorBanco(op);
+};
 window.getOperadorLogado = function() { return OPERADOR_LOGADO; };
 if (typeof abrirCriticos !== 'undefined') window.abrirCriticos = abrirCriticos;
 if (typeof abrirHistoricoIndividual !== 'undefined') window.abrirHistoricoIndividual = abrirHistoricoIndividual;

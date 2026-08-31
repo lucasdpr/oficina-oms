@@ -242,6 +242,25 @@ export const CHECKLIST_EXECUCAO_SECOES = [
     { chave: 'jato',        nome: 'Jato/Pintura', icone: 'fa-spray-can', cor: '#7c8aa5' },
 ];
 
+// 🆕 SEÇÕES POR TIPO DE EQUIPAMENTO — o Molde MCC4 pediu pra ver o
+// Checklist de Execução dividido em Chegada/Manutenção/Saída (igual o
+// Folhão dele já é: aba de Chegada, execução, Saída), em vez das
+// seções genéricas acima (Mecânica/Elétrica/...). Só o Molde MCC4 usa
+// isso — todo o resto do sistema continua com CHECKLIST_EXECUCAO_SECOES
+// normal. Use obterSecoesChecklistExecucao(tipoEquipamento) em vez de
+// ler CHECKLIST_EXECUCAO_SECOES direto, pra sempre pegar a lista certa.
+export const CHECKLIST_EXECUCAO_SECOES_POR_TIPO = {
+    'molde-mcc4': [
+        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#38bdf8' },
+        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
+        { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
+    ],
+};
+
+export function obterSecoesChecklistExecucao(tipoEquipamento) {
+    return CHECKLIST_EXECUCAO_SECOES_POR_TIPO[tipoEquipamento] || CHECKLIST_EXECUCAO_SECOES;
+}
+
 export const ABAS_PADRAO_OFICINA = [
     { chave: 'atividades',    label: 'Atividades',    icone: 'fa-clipboard-list' },
     { chave: 'materiais',     label: 'Materiais',     icone: 'fa-boxes-stacked' },
