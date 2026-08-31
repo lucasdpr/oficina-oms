@@ -4,10 +4,24 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
     <title>OMS | Oficina de Moldes e Segmentos – CSN</title>
+    <meta name="description" content="OMS — sistema de gestão de manutenção da Oficina de Moldes e Segmentos da CSN. Digitalização, rastreabilidade e controle operacional de moldes e segmentos das MCC 2, 3 e 4, do registro em campo à decisão baseada em dados.">
+    <link rel="canonical" href="https://oms.csn.com.br/">
 
-    <!-- ============ PWA ============ -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="OMS — CSN">
+    <meta property="og:title" content="OMS | Oficina de Moldes e Segmentos – CSN">
+    <meta property="og:description" content="Digitalização, rastreabilidade e controle operacional de moldes e segmentos das MCC 2, 3 e 4 — do registro em campo à decisão baseada em dados.">
+    <meta property="og:image" content="https://oms.csn.com.br/JS/assets/USINAGEM.jpg">
+    <meta property="og:url" content="https://oms.csn.com.br/">
+    <meta property="og:locale" content="pt_BR">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="OMS | Oficina de Moldes e Segmentos – CSN">
+    <meta name="twitter:description" content="Digitalização, rastreabilidade e controle operacional de moldes e segmentos das MCC 2, 3 e 4.">
+    <meta name="twitter:image" content="https://oms.csn.com.br/JS/assets/USINAGEM.jpg">
+
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#f59e0b">
+    <meta name="theme-color" content="#0d0b08">
     <link rel="icon" href="JS/assets/icon-192.png?v=2">
     <link rel="apple-touch-icon" href="JS/assets/icon-192.png?v=2">
     <meta name="mobile-web-app-capable" content="yes">
@@ -15,2737 +29,1293 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="OMS CSN">
 
-    <!-- ============ Import Map para Three.js ============ -->
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
-            }
-        }
-    </script>
-
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
-
-    <style>
-        /* ===== RESET E VARIÁVEIS ===== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --bg-base: #0a0e17;
-            --bg-surface: #111827;
-            --bg-card: #1a2332;
-            --primary: #f59e0b;
-            --primary-hover: #d97706;
-            --secondary: #3b82f6;
-            --text-title: #ffffff;
-            --text-body: #c8d2e0;
-            --text-muted: #8a9bb5;
-            --border: #1f2a3f;
-            --radius: 12px;
-            --radius-lg: 20px;
-            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
-            --glow-primary: 0 0 40px rgba(245, 158, 11, 0.35);
-            --glow-secondary: 0 0 40px rgba(59, 130, 246, 0.3);
-        }
-
-        /* ===== CAMADA PREMIUM ===== */
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: 2;
-            opacity: 0.02;
-            mix-blend-mode: overlay;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-        }
-
-        .aurora-bg {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            pointer-events: none;
-            overflow: hidden;
-        }
-        .aurora-bg span {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(100px);
-            opacity: 0.12;
-            animation: auroraFloat 26s ease-in-out infinite;
-        }
-        .aurora-bg span:nth-child(1) {
-            width: 520px; height: 520px;
-            top: -10%; left: -8%;
-            background: var(--primary);
-            animation-delay: 0s;
-        }
-        .aurora-bg span:nth-child(2) {
-            width: 460px; height: 460px;
-            top: 30%; right: -10%;
-            background: var(--secondary);
-            animation-delay: -7s;
-        }
-        .aurora-bg span:nth-child(3) {
-            width: 400px; height: 400px;
-            bottom: -12%; left: 30%;
-            background: #ec4899;
-            opacity: 0.10;
-            animation-delay: -14s;
-        }
-        @keyframes auroraFloat {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(40px, -30px) scale(1.08); }
-            66% { transform: translate(-30px, 20px) scale(0.95); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-            .aurora-bg span { animation: none; }
-        }
-
-        /* ===== SCROLL REVEAL ===== */
-        .reveal {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .reveal.in-view {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* ===== SHIMMER ===== */
-        .btn-primary {
-            position: relative;
-            overflow: hidden;
-            isolation: isolate;
-        }
-        .btn-primary::after {
-            content: '';
-            position: absolute;
-            top: 0; left: -60%;
-            width: 40%; height: 100%;
-            background: linear-gradient(120deg, transparent, rgba(255,255,255,0.55), transparent);
-            transform: skewX(-20deg);
-            z-index: -1;
-            transition: left 0.7s ease;
-        }
-        .btn-primary:hover::after {
-            left: 130%;
-        }
-        .btn-primary:hover {
-            box-shadow: var(--glow-primary), 0 8px 30px rgba(245, 158, 11, 0.3);
-        }
-
-        .badge {
-            box-shadow: 0 0 24px rgba(245, 158, 11, 0.12);
-        }
-        .badge-csn { box-shadow: 0 0 24px rgba(59, 130, 246, 0.12); }
-        .badge-rosa { box-shadow: 0 0 24px rgba(236, 72, 153, 0.12); }
-
-        .navbar {
-            box-shadow: 0 1px 0 rgba(255,255,255,0.03), 0 20px 40px -20px rgba(0,0,0,0.5);
-        }
-        .navbar, .hero, section, footer { position: relative; z-index: 1; }
-
-        html {
-            scroll-behavior: smooth;
-            overflow-x: hidden;
-            max-width: 100%;
-        }
-
-        body {
-            background-color: var(--bg-base);
-            color: var(--text-body);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.6;
-            overflow-x: hidden;
-            max-width: 100%;
-            touch-action: pan-y;
-            padding-top: env(safe-area-inset-top);
-            padding-left: env(safe-area-inset-left);
-            padding-right: env(safe-area-inset-right);
-        }
-
-        section[id] {
-            scroll-margin-top: 84px;
-        }
-
-        .btn-primary, .btn-outline, .btn-ghost, .btn-login, .nav-links a {
-            min-height: 44px;
-        }
-
-        a {
-            text-decoration: none;
-            color: inherit;
-        }
-
-        a:focus-visible,
-        button:focus-visible,
-        .btn-primary:focus-visible,
-        .btn-outline:focus-visible,
-        .btn-ghost:focus-visible,
-        .btn-login:focus-visible,
-        .nav-links a:focus-visible,
-        .mcc-card:focus-visible,
-        [tabindex]:focus-visible {
-            outline: 2px solid var(--primary);
-            outline-offset: 3px;
-            border-radius: 4px;
-        }
-        a:focus:not(:focus-visible),
-        button:focus:not(:focus-visible) {
-            outline: none;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 24px;
-        }
-
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: var(--bg-base);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--primary);
-            border-radius: 10px;
-        }
-
-        /* ===== BUTTONS ===== */
-        .btn-primary {
-            background: var(--primary);
-            color: #0a0e17;
-            padding: 12px 28px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 14px;
-            transition: all var(--transition), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            border: none;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .btn-primary:hover {
-            background: var(--primary-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(245, 158, 11, 0.3);
-        }
-
-        .btn-outline {
-            background: transparent;
-            color: var(--text-title);
-            border: 1px solid var(--border);
-            padding: 12px 28px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all var(--transition);
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .btn-outline:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-            transform: translateY(-2px);
-        }
-
-        .btn-ghost {
-            background: rgba(245, 158, 11, 0.08);
-            color: var(--primary);
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 13px;
-            transition: all var(--transition);
-            border: 1px solid rgba(245, 158, 11, 0.15);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .btn-ghost:hover {
-            background: rgba(245, 158, 11, 0.15);
-            transform: translateY(-2px);
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 6px 18px;
-            background: rgba(245, 158, 11, 0.12);
-            color: var(--primary);
-            border: 1px solid rgba(245, 158, 11, 0.2);
-            border-radius: 30px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            margin-bottom: 20px;
-        }
-
-        .badge-csn {
-            background: rgba(59, 130, 246, 0.12);
-            color: var(--secondary);
-            border-color: rgba(59, 130, 246, 0.2);
-        }
-
-        .badge-rosa {
-            background: rgba(236, 72, 153, 0.12);
-            color: #ec4899;
-            border-color: rgba(236, 72, 153, 0.2);
-        }
-
-        /* ===== NAVBAR ===== */
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 5%;
-            padding-top: calc(16px + env(safe-area-inset-top));
-            padding-left: calc(5% + env(safe-area-inset-left));
-            padding-right: calc(5% + env(safe-area-inset-right));
-            background: rgba(10, 14, 23, 0.92);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            position: fixed;
-            width: 100%;
-            top: 0;
-            z-index: 1000;
-            border-bottom: 1px solid var(--border);
-            transition: background var(--transition);
-        }
-
-        .logo {
-            color: var(--text-title);
-            font-size: 24px;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .logo i {
-            color: var(--primary);
-            font-size: 26px;
-        }
-        .logo span {
-            color: var(--text-muted);
-            font-weight: 400;
-            font-size: 14px;
-            margin-left: 4px;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 32px;
-        }
-        .nav-links a {
-            color: var(--text-body);
-            font-size: 14px;
-            font-weight: 500;
-            transition: color var(--transition);
-            position: relative;
-        }
-        .nav-links a::after {
-            content: '';
-            position: absolute;
-            bottom: -4px;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background: var(--primary);
-            transition: width var(--transition);
-        }
-        .nav-links a:hover {
-            color: var(--text-title);
-        }
-        .nav-links a:hover::after {
-            width: 100%;
-        }
-
-        .nav-actions {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        .nav-actions .btn-login {
-            color: var(--text-title);
-            font-weight: 600;
-            font-size: 14px;
-            transition: color var(--transition);
-        }
-        .nav-actions .btn-login:hover {
-            color: var(--primary);
-        }
-
-        /* ===== MENU MOBILE ===== */
-        .nav-hamburger {
-            display: none;
-            width: 44px;
-            height: 44px;
-            align-items: center;
-            justify-content: center;
-            background: transparent;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-title);
-            font-size: 18px;
-            cursor: pointer;
-        }
-
-        .mobile-drawer-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(2px);
-            z-index: 1100;
-            opacity: 0;
-            transition: opacity var(--transition);
-        }
-        .mobile-drawer-overlay.open {
-            display: block;
-            opacity: 1;
-        }
-
-        .mobile-drawer {
-            position: fixed;
-            top: 0;
-            right: 0;
-            height: 100%;
-            width: min(80vw, 320px);
-            background: var(--bg-surface);
-            border-left: 1px solid var(--border);
-            z-index: 1200;
-            transform: translateX(100%);
-            transition: transform var(--transition);
-            padding: 24px 20px;
-            padding-top: calc(24px + env(safe-area-inset-top));
-            padding-right: calc(20px + env(safe-area-inset-right));
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            overflow-y: auto;
-        }
-        .mobile-drawer.open {
-            transform: translateX(0);
-        }
-        .mobile-drawer-close {
-            align-self: flex-end;
-            width: 40px;
-            height: 40px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: transparent;
-            color: var(--text-title);
-            font-size: 18px;
-            margin-bottom: 16px;
-            cursor: pointer;
-        }
-        .mobile-drawer a {
-            padding: 14px 10px;
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text-body);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .mobile-drawer a i {
-            color: var(--primary);
-            width: 20px;
-            text-align: center;
-        }
-        .mobile-drawer .btn-primary {
-            justify-content: center;
-            margin-top: 16px;
-        }
-
-        /* ===== HERO ===== */
-        .hero {
-            padding: 140px 5% 80px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 60px;
-            align-items: center;
-            max-width: 1400px;
-            margin: 0 auto;
-            min-height: 100vh;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: -20%;
-            right: -10%;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(245, 158, 11, 0.06) 0%, transparent 70%);
-            border-radius: 50%;
-            filter: blur(80px);
-            z-index: 0;
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 1;
-        }
-
-        .hero-content .badge {
-            margin-bottom: 24px;
-        }
-
-        .live-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(16, 185, 129, 0.08);
-            border: 1px solid rgba(16, 185, 129, 0.25);
-            color: #10b981;
-            font-size: 12.5px;
-            font-weight: 600;
-            padding: 7px 14px;
-            border-radius: 30px;
-            margin-bottom: 20px;
-        }
-        .status-indicator {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background-color: #10b981;
-            border-radius: 50%;
-            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-            animation: pulse 1.6s infinite;
-            flex-shrink: 0;
-        }
-        .status-indicator.offline {
-            background-color: var(--text-muted);
-            animation: none;
-            box-shadow: none;
-        }
-        @keyframes pulse {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-        }
-
-        .conn-status {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-muted);
-            padding: 6px 10px;
-            border: 1px solid var(--border);
-            border-radius: 20px;
-        }
-        .conn-status.online { color: #10b981; }
-        .conn-status.offline { color: var(--text-muted); }
-
-        .dashboard-mockup, .diff-card, .history-card, .recurso-card {
-            background: rgba(26, 35, 50, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .hero-content h1 {
-            color: var(--text-title);
-            font-size: clamp(30px, 7vw, 52px);
-            font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 24px;
-            letter-spacing: -1px;
-        }
-        .hero-content h1 span {
-            color: var(--primary);
-            text-shadow: 0 0 20px rgba(245, 158, 11, 0.25);
-        }
-
-        .hero-content .badge,
-        .hero-content .live-pill,
-        .hero-content h1,
-        .hero-content p,
-        .hero-content > div[style],
-        .hero-content .hero-stats {
-            opacity: 0;
-            filter: blur(8px);
-            transform: translateY(24px);
-            animation: heroIn 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        .hero-content .badge { animation-delay: 0.05s; }
-        .hero-content .live-pill { animation-delay: 0.15s; }
-        .hero-content h1 { animation-delay: 0.25s; }
-        .hero-content p { animation-delay: 0.4s; }
-        .hero-content > div[style] { animation-delay: 0.55s; }
-        .hero-content .hero-stats { animation-delay: 0.7s; }
-        @keyframes heroIn {
-            to { opacity: 1; filter: blur(0); transform: translateY(0); }
-        }
-
-        .hero-image-wrapper {
-            opacity: 0;
-            filter: blur(10px);
-            transform: translateY(30px) scale(0.96);
-            animation: heroIn 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            animation-delay: 0.35s;
-            perspective: 1200px;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .hero-content .badge, .hero-content .live-pill, .hero-content h1,
-            .hero-content p, .hero-content > div[style], .hero-content .hero-stats,
-            .hero-image-wrapper {
-                animation: none; opacity: 1; filter: none; transform: none;
-            }
-        }
-
-        .dashboard-mockup {
-            transform-style: preserve-3d;
-            will-change: transform;
-        }
-
-        .diff-card, .recurso-card, .mcc-card, .servico-item {
-            position: relative;
-        }
-        .diff-card::after, .recurso-card::after, .mcc-card::after, .servico-item::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: inherit;
-            background: radial-gradient(200px circle at var(--mx, 50%) var(--my, 50%), rgba(245, 158, 11, 0.08), transparent 70%);
-            opacity: 0;
-            transition: opacity 0.4s ease;
-            pointer-events: none;
-        }
-        .diff-card:hover::after, .recurso-card:hover::after,
-        .mcc-card:hover::after, .servico-item:hover::after {
-            opacity: 1;
-        }
-
-        .aurora-bg span {
-            will-change: transform;
-        }
-
-        /* ===== SEÇÕES ===== */
-        .antes-depois { padding: 80px 5%; background: var(--bg-base); text-align: center; }
-        .antes-depois h2 { color: var(--text-title); font-size: clamp(26px, 5vw, 40px); margin-bottom: 48px; }
-        .antes-depois-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        .ad-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 32px 24px;
-            text-align: left;
-            transition: all var(--transition);
-        }
-        .ad-card:hover { transform: translateY(-4px); }
-        .ad-oms { border-color: rgba(245, 158, 11, 0.35); background: rgba(245, 158, 11, 0.04); }
-        .ad-icon {
-            width: 44px; height: 44px; border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            background: rgba(255,255,255,0.05); margin-bottom: 16px;
-            color: var(--text-muted); font-size: 18px;
-        }
-        .ad-oms .ad-icon { background: rgba(245, 158, 11, 0.15); color: var(--primary); }
-        .ad-depois .ad-icon { background: rgba(59, 130, 246, 0.15); color: var(--secondary); }
-        .ad-card h3 { color: var(--text-title); font-size: 18px; margin-bottom: 14px; }
-        .ad-card ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
-        .ad-card li { color: var(--text-body); font-size: 14px; padding-left: 18px; position: relative; }
-        .ad-antes li::before { content: '–'; position: absolute; left: 0; color: var(--text-muted); }
-        .ad-oms li::before { content: '✓'; position: absolute; left: 0; color: var(--primary); }
-        .ad-depois li::before { content: '↑'; position: absolute; left: 0; color: var(--secondary); }
-
-        .pilares { padding: 80px 5%; background: var(--bg-base); text-align: center; }
-        .pilares h2 { color: var(--text-title); font-size: clamp(26px, 5vw, 40px); margin-bottom: 12px; }
-        .pilares > p { max-width: 640px; margin: 0 auto 48px; font-size: 16px; }
-        .pilares-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
-            max-width: 1100px;
-            margin: 0 auto;
-            text-align: left;
-        }
-        .pilar-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 32px 26px;
-            transition: all var(--transition);
-        }
-        .pilar-card:hover { border-color: var(--primary); transform: translateY(-4px); }
-        .pilar-icon {
-            width: 48px; height: 48px; border-radius: 12px;
-            background: rgba(245, 158, 11, 0.12);
-            display: flex; align-items: center; justify-content: center;
-            margin-bottom: 18px; color: var(--primary); font-size: 20px;
-        }
-        .pilar-card h3 { color: var(--text-title); font-size: 19px; margin-bottom: 14px; }
-        .pilar-card ul { list-style: none; display: flex; flex-direction: column; gap: 9px; }
-        .pilar-card li { color: var(--text-body); font-size: 14px; padding-left: 16px; position: relative; }
-        .pilar-card li::before { content: '•'; position: absolute; left: 0; color: var(--primary); }
-
-        .como-funciona { padding: 80px 5%; background: var(--bg-base); text-align: center; }
-        .como-funciona h2 { color: var(--text-title); font-size: clamp(26px, 5vw, 40px); margin-bottom: 48px; }
-        .ciclo-timeline {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 12px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .ciclo-step {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 22px 14px;
-            transition: all var(--transition);
-        }
-        .ciclo-step:hover { border-color: var(--secondary); transform: translateY(-3px); }
-        .ciclo-num { display: block; font-size: 22px; font-weight: 800; color: var(--secondary); margin-bottom: 8px; }
-        .ciclo-step h3 { color: var(--text-title); font-size: 14px; margin-bottom: 6px; }
-        .ciclo-step p { color: var(--text-muted); font-size: 12px; }
-        @media (max-width: 900px) {
-            .ciclo-timeline { grid-template-columns: repeat(3, 1fr); }
-        }
-        @media (max-width: 560px) {
-            .ciclo-timeline, .pilares-grid, .antes-depois-grid { grid-template-columns: 1fr; }
-        }
-
-        .evolucao { padding: 70px 5%; background: var(--bg-base); text-align: center; }
-        .evolucao h2 { color: var(--text-title); font-size: clamp(22px, 4.5vw, 34px); margin-bottom: 40px; line-height: 1.35; }
-        .evolucao-flow {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 14px;
-            flex-wrap: wrap;
-            max-width: 900px;
-            margin: 0 auto;
-        }
-        .evolucao-flow i { color: var(--text-muted); font-size: 13px; }
-        .evolucao-item {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            color: var(--text-body);
-            font-weight: 700;
-            font-size: 14px;
-            padding: 10px 20px;
-            border-radius: 30px;
-        }
-        .evolucao-final { background: rgba(245, 158, 11, 0.12); border-color: var(--primary); color: var(--primary); }
-        .hero-content h1 {
-            text-shadow: 0 2px 24px rgba(0,0,0,0.3);
-        }
-
-        .hero-content p {
-            font-size: 18px;
-            color: var(--text-body);
-            max-width: 90%;
-            margin-bottom: 32px;
-        }
-
-        .hero-stats {
-            display: flex;
-            gap: 40px;
-            margin-top: 40px;
-            padding-top: 32px;
-            border-top: 1px solid var(--border);
-        }
-        .hero-stats div {
-            text-align: left;
-        }
-        .hero-stats strong {
-            display: block;
-            color: var(--text-title);
-            font-size: 28px;
-            font-weight: 800;
-        }
-        .hero-stats span {
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        .hero-image-wrapper {
-            position: relative;
-            z-index: 1;
-        }
-
-        .hero-image-wrapper .mockup-label {
-            position: absolute;
-            top: -20px;
-            right: -10px;
-            background: var(--primary);
-            color: #0a0e17;
-            font-weight: 700;
-            font-size: 11px;
-            padding: 6px 16px;
-            border-radius: 30px;
-            letter-spacing: 0.5px;
-            z-index: 2;
-        }
-
-        .dashboard-mockup {
-            background: var(--bg-surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 16px;
-            box-shadow: var(--shadow), 0 0 0 1px rgba(255,255,255,0.03) inset;
-            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease;
-        }
-        .hero-image-wrapper:hover .dashboard-mockup {
-            transform: translateY(-6px) rotateX(2deg);
-            box-shadow: var(--shadow), var(--glow-primary);
-        }
-
-        .mockup-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 12px;
-        }
-        .mockup-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #3f3f46;
-        }
-        .mockup-dot:nth-child(1) { background: #ef4444; }
-        .mockup-dot:nth-child(2) { background: #f59e0b; }
-        .mockup-dot:nth-child(3) { background: #10b981; }
-        .mockup-header span {
-            margin-left: 8px;
-            font-size: 11px;
-            color: var(--text-muted);
-            font-weight: 600;
-        }
-
-        .mockup-body {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 12px;
-            height: 280px;
-        }
-        .mockup-sidebar {
-            background: #1a2332;
-            border-radius: 8px;
-            padding: 14px 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .mockup-sidebar span {
-            display: block;
-            height: 8px;
-            border-radius: 4px;
-            background: #2a3548;
-        }
-        .mockup-sidebar span:first-child {
-            width: 60%;
-            background: var(--primary);
-            opacity: 0.8;
-        }
-        .mockup-main {
-            display: grid;
-            grid-template-rows: auto 1fr;
-            gap: 12px;
-            height: 100%;
-        }
-        .mockup-kpi {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px;
-        }
-        .mockup-kpi > div {
-            background: #1a2332;
-            border-radius: 8px;
-            padding: 10px 12px;
-        }
-        .mockup-kpi strong {
-            display: block;
-            font-size: 18px;
-            color: #fff;
-            font-weight: 800;
-            line-height: 1.2;
-        }
-        .mockup-kpi small {
-            font-size: 10px;
-            color: var(--text-muted);
-        }
-
-        /* ===== Container Three.js ===== */
-        #three-container {
-            width: 100%;
-            height: 100%;
-            min-height: 100px;
-            background: #0a0e17;
-            border-radius: 8px;
-            overflow: hidden;
-            position: relative;
-        }
-        #three-container canvas {
-            display: block;
-            width: 100% !important;
-            height: 100% !important;
-        }
-
-        /* ===== PROPÓSITO ===== */
-        .proposito {
-            position: relative;
-            padding: 100px 5%;
-            background:
-                linear-gradient(180deg, rgba(10,14,23,0.88), rgba(10,14,23,0.93)),
-                url('WhatsApp%20Image%202026-06-08%20at%2014.06.56.jpeg') center/cover no-repeat;
-            text-align: center;
-        }
-        .proposito .badge {
-            margin-bottom: 24px;
-            position: relative;
-            z-index: 1;
-        }
-        .proposito blockquote {
-            position: relative;
-            z-index: 1;
-            max-width: 900px;
-            margin: 0 auto;
-            font-size: 22px;
-            font-weight: 500;
-            color: var(--text-title);
-            line-height: 1.5;
-            font-style: italic;
-            padding: 0 20px;
-        }
-        .proposito blockquote::before {
-            content: '"';
-            font-size: clamp(26px, 5vw, 40px);
-            color: var(--primary);
-            opacity: 0.4;
-        }
-        .proposito blockquote::after {
-            content: '"';
-            font-size: clamp(26px, 5vw, 40px);
-            color: var(--primary);
-            opacity: 0.4;
-        }
-        .proposito .assinatura {
-            position: relative;
-            z-index: 1;
-            margin-top: 24px;
-            font-size: 14px;
-            color: var(--text-muted);
-            letter-spacing: 2px;
-        }
-        .proposito .assinatura strong {
-            color: var(--primary);
-        }
-
-        /* ===== EQUIPE ===== */
-        .equipe {
-            padding: 80px 5%;
-            background: var(--bg-base);
-            text-align: center;
-        }
-        .equipe h2 {
-            color: var(--text-title);
-            font-size: clamp(26px, 5vw, 40px);
-            margin-bottom: 16px;
-        }
-        .equipe > p {
-            max-width: 650px;
-            margin: 0 auto 40px;
-            font-size: 16px;
-        }
-        .galeria-imagens {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        .galeria-imagens .img-wrapper {
-            background: var(--bg-surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            overflow: hidden;
-            transition: all var(--transition);
-        }
-        .galeria-imagens .img-wrapper:hover {
-            border-color: var(--primary);
-            transform: translateY(-4px);
-        }
-        .galeria-imagens .img-wrapper img {
-            width: 100%;
-            height: 280px;
-            object-fit: cover;
-            display: block;
-        }
-        .galeria-imagens .img-wrapper .legenda {
-            padding: 16px 20px;
-            color: var(--text-body);
-            font-size: 14px;
-            background: var(--bg-card);
-            border-top: 1px solid var(--border);
-        }
-        .galeria-imagens .img-wrapper .legenda strong {
-            color: var(--text-title);
-        }
-
-        /* ===== DIVERSIDADE ===== */
-        .diversidade {
-            padding: 80px 5%;
-            background: var(--bg-base);
-            text-align: center;
-        }
-        .diversidade .badge-rosa {
-            margin-bottom: 24px;
-        }
-        .diversidade h2 {
-            color: var(--text-title);
-            font-size: clamp(26px, 5vw, 40px);
-            margin-bottom: 16px;
-        }
-        .diversidade h2 span {
-            color: var(--primary);
-        }
-        .diversidade > p {
-            max-width: 700px;
-            margin: 0 auto 40px;
-            font-size: 16px;
-        }
-        .diversidade-numero {
-            display: flex;
-            align-items: baseline;
-            justify-content: center;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 24px;
-        }
-        .diversidade-numero strong {
-            font-size: clamp(40px, 8vw, 64px);
-            font-weight: 800;
-            color: #ec4899;
-            line-height: 1;
-        }
-        .diversidade-numero span {
-            font-size: 14px;
-            color: var(--text-muted);
-            max-width: 180px;
-            text-align: left;
-        }
-        .diversidade-quote {
-            max-width: 600px;
-            margin: 0 auto 40px;
-            font-size: 16px;
-            font-style: italic;
-            color: var(--text-body);
-            border-left: 3px solid #ec4899;
-            padding-left: 16px;
-            text-align: left;
-        }
-        .diversidade-quote cite {
-            display: block;
-            margin-top: 8px;
-            font-size: 13px;
-            font-style: normal;
-            color: var(--text-muted);
-        }
-        .diversidade .galeria-imagens {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 24px;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        .diversidade .galeria-imagens .img-wrapper {
-            background: var(--bg-surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            overflow: hidden;
-            transition: all var(--transition);
-        }
-        .diversidade .galeria-imagens .img-wrapper:hover {
-            border-color: var(--primary);
-            transform: translateY(-4px);
-        }
-        .diversidade .galeria-imagens .img-wrapper img {
-            width: 100%;
-            height: 320px;
-            object-fit: cover;
-            display: block;
-        }
-        .diversidade .galeria-imagens .img-wrapper .legenda {
-            padding: 16px 20px;
-            color: var(--text-body);
-            font-size: 14px;
-            background: var(--bg-card);
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .diversidade .galeria-imagens .img-wrapper .legenda strong {
-            color: var(--text-title);
-        }
-
-        /* ===== RECURSOS ===== */
-        .recursos {
-            padding: 80px 5%;
-            background: var(--bg-base);
-            text-align: center;
-        }
-        .recursos h2 {
-            color: var(--text-title);
-            font-size: clamp(26px, 5vw, 40px);
-            margin-bottom: 16px;
-        }
-        .recursos > p {
-            max-width: 700px;
-            margin: 0 auto 48px;
-            font-size: 16px;
-        }
-        .recursos-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-            text-align: left;
-        }
-        .recurso-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            padding: 26px 22px;
-            border-radius: var(--radius);
-            transition: all var(--transition);
-            position: relative;
-        }
-        .recurso-card:hover {
-            border-color: var(--secondary);
-            transform: translateY(-5px);
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
-        }
-        .recurso-card .recurso-icon {
-            width: 46px;
-            height: 46px;
-            border-radius: 10px;
-            background: rgba(59, 130, 246, 0.12);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 16px;
-        }
-        .recurso-card .recurso-icon i {
-            font-size: 20px;
-            color: var(--secondary);
-        }
-        .recurso-card h3 {
-            color: var(--text-title);
-            font-size: 16px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        .recurso-card p {
-            color: var(--text-body);
-            font-size: 13.5px;
-        }
-        .recurso-card .recurso-tag {
-            position: absolute;
-            top: 18px;
-            right: 18px;
-            font-size: 10px;
-            font-weight: 700;
-            color: var(--primary);
-            background: rgba(245, 158, 11, 0.12);
-            border: 1px solid rgba(245, 158, 11, 0.2);
-            padding: 3px 8px;
-            border-radius: 20px;
-            letter-spacing: 0.5px;
-        }
-
-        /* ===== DIFERENCIAIS ===== */
-        .diferenciais {
-            padding: 80px 5%;
-            background: var(--bg-base);
-            text-align: center;
-        }
-        .diferenciais h2 {
-            color: var(--text-title);
-            font-size: clamp(26px, 5vw, 40px);
-            margin-bottom: 16px;
-        }
-        .diferenciais > p {
-            max-width: 700px;
-            margin: 0 auto 60px;
-            font-size: 16px;
-        }
-        .diferenciais-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 24px;
-            max-width: 1200px;
-            margin: 0 auto;
-            text-align: left;
-        }
-        .diff-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            padding: 32px 28px;
-            border-radius: var(--radius);
-            transition: all var(--transition);
-            position: relative;
-            overflow: hidden;
-        }
-        .diff-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            opacity: 0;
-            transition: opacity var(--transition);
-        }
-        .diff-card:hover {
-            border-color: var(--primary);
-            transform: translateY(-6px);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-        }
-        .diff-card:hover::before {
-            opacity: 1;
-        }
-        .diff-card i {
-            font-size: 32px;
-            color: var(--primary);
-            margin-bottom: 18px;
-            display: inline-block;
-        }
-        .diff-card h3 {
-            color: var(--text-title);
-            font-size: 20px;
-            margin-bottom: 12px;
-            font-weight: 700;
-        }
-        .diff-card p {
-            color: var(--text-body);
-            font-size: 15px;
-        }
-
-        /* ===== SERVIÇOS ===== */
-        .servicos {
-            padding: 80px 5%;
-            background: var(--bg-base);
-            text-align: center;
-        }
-        .servicos h2 {
-            color: var(--text-title);
-            font-size: clamp(26px, 5vw, 40px);
-            margin-bottom: 16px;
-        }
-        .servicos > p {
-            max-width: 700px;
-            margin: 0 auto 60px;
-            font-size: 16px;
-        }
-        .servicos-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 24px;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        .servico-item {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            padding: 28px 20px;
-            border-radius: var(--radius);
-            transition: all var(--transition);
-            text-align: center;
-        }
-        .servico-item:hover {
-            border-color: var(--primary);
-            transform: translateY(-4px);
-        }
-        .servico-item i {
-            font-size: 32px;
-            color: var(--primary);
-            margin-bottom: 16px;
-            display: inline-block;
-        }
-        .servico-item h3 {
-            color: var(--text-title);
-            font-size: 18px;
-            margin-bottom: 8px;
-        }
-        .servico-item p {
-            font-size: 14px;
-            color: var(--text-muted);
-        }
-
-        /* ===== MCCs ===== */
-        .sobre-mcc {
-            padding: 80px 5%;
-            background: var(--bg-base);
-            text-align: center;
-        }
-        .sobre-mcc h2 {
-            color: var(--text-title);
-            font-size: clamp(26px, 5vw, 40px);
-            margin-bottom: 16px;
-        }
-        .sobre-mcc > p {
-            max-width: 700px;
-            margin: 0 auto 40px;
-            font-size: 16px;
-        }
-        .mcc-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
-            max-width: 900px;
-            margin: 0 auto;
-        }
-        .mcc-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            padding: 32px 20px;
-            border-radius: var(--radius);
-            transition: all var(--transition);
-            text-align: center;
-            cursor: pointer;
-        }
-        .mcc-card:hover {
-            border-color: var(--primary);
-            transform: translateY(-4px);
-        }
-        .mcc-card.active {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 1px var(--primary);
-        }
-        .mcc-detalhe {
-            display: none;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 6px;
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px dashed var(--border);
-        }
-        .mcc-card.active .mcc-detalhe {
-            display: flex;
-        }
-        .mcc-chip {
-            background: rgba(245, 158, 11, 0.1);
-            color: var(--primary);
-            font-size: 11px;
-            font-weight: 600;
-            padding: 4px 10px;
-            border-radius: 20px;
-            border: 1px solid rgba(245, 158, 11, 0.2);
-        }
-        .mcc-dica {
-            text-align: center;
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-top: 24px;
-        }
-        .mcc-dica i {
-            color: var(--primary);
-            margin-right: 6px;
-        }
-        .mcc-card .numero {
-            font-size: 48px;
-            font-weight: 800;
-            color: var(--primary);
-            display: block;
-            margin-bottom: 8px;
-        }
-        .mcc-card h3 {
-            color: var(--text-title);
-            font-size: 18px;
-            margin-bottom: 4px;
-        }
-        .mcc-card span {
-            font-size: 14px;
-            color: var(--text-muted);
-        }
-
-        /* ===== HISTÓRIA ===== */
-        .historia {
-            padding: 100px 5%;
-            background: var(--bg-base);
-        }
-        .historia-header {
-            text-align: center;
-            margin-bottom: 60px;
-        }
-        .historia-header h2 {
-            font-size: clamp(26px, 5vw, 40px);
-            color: var(--text-title);
-            margin-bottom: 16px;
-        }
-        .historia-header p {
-            max-width: 700px;
-            margin: 0 auto;
-            color: var(--text-muted);
-            font-size: 16px;
-        }
-        .historia-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 60px;
-            max-width: 1400px;
-            margin: 0 auto;
-            align-items: center;
-        }
-        .historia-text .history-quote {
-            font-size: 22px;
-            font-weight: 700;
-            color: var(--text-title);
-            margin-bottom: 24px;
-            line-height: 1.4;
-        }
-        .historia-text > p {
-            font-size: 15px;
-            color: var(--text-muted);
-            margin-bottom: 32px;
-        }
-        .history-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            transition: all var(--transition);
-        }
-        .history-card:hover {
-            border-color: var(--primary);
-            transform: translateX(8px);
-        }
-        .history-card i {
-            font-size: 24px;
-            color: var(--primary);
-            background: rgba(245, 158, 11, 0.1);
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 12px;
-            flex-shrink: 0;
-        }
-        .history-card.blue i { color: var(--secondary); background: rgba(59, 130, 246, 0.1); }
-        .history-card.green i { color: #10b981; background: rgba(16, 185, 129, 0.1); }
-        .history-card h3 {
-            color: var(--text-title);
-            font-size: 16px;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-        .history-card p {
-            color: var(--text-muted);
-            font-size: 14px;
-        }
-        .photo-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-        }
-        .photo-item {
-            position: relative;
-            border-radius: 16px;
-            overflow: hidden;
-            border: 1px solid var(--border);
-            background: var(--bg-surface);
-            aspect-ratio: 4 / 3;
-        }
-        .photo-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-            transition: transform 0.6s ease;
-        }
-        .photo-item:hover img {
-            transform: scale(1.05);
-        }
-        .photo-overlay {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            padding: 20px;
-            background: linear-gradient(to top, rgba(10, 14, 23, 0.9), transparent);
-            color: white;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        .photo-item:hover .photo-overlay {
-            opacity: 1;
-        }
-
-        /* ===== CTA FINAL ===== */
-        .cta-final {
-            padding: 80px 5%;
-            background: linear-gradient(135deg, var(--bg-base), var(--bg-surface));
-            text-align: center;
-        }
-        .cta-final h2 {
-            color: var(--text-title);
-            font-size: clamp(26px, 5vw, 40px);
-            margin-bottom: 16px;
-        }
-        .cta-final p {
-            max-width: 550px;
-            margin: 0 auto 32px;
-            font-size: 16px;
-        }
-        .cta-final .cta-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-
-        /* ===== FOOTER ===== */
-        .footer {
-            padding: 40px 5%;
-            border-top: 1px solid var(--border);
-            text-align: center;
-            font-size: 14px;
-            color: var(--text-muted);
-            background: var(--bg-base);
-        }
-        .footer span {
-            color: var(--primary);
-            font-weight: 600;
-        }
-        .footer .footer-links {
-            display: flex;
-            justify-content: center;
-            gap: 24px;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-        }
-        .footer .footer-links a {
-            color: var(--text-muted);
-            font-size: 13px;
-            transition: color var(--transition);
-        }
-        .footer .footer-links a:hover {
-            color: var(--text-title);
-        }
-
-        /* ===== RESPONSIVO ===== */
-        @media (max-width: 992px) {
-            .hero {
-                grid-template-columns: 1fr;
-                text-align: center;
-                padding-top: 120px;
-            }
-            .hero-content p {
-                max-width: 100%;
-                margin-left: auto;
-                margin-right: auto;
-            }
-            .hero-stats {
-                justify-content: center;
-            }
-            .hero-stats div {
-                text-align: center;
-            }
-            .nav-links {
-                display: none;
-            }
-            .nav-hamburger {
-                display: flex;
-            }
-            .nav-actions .btn-login {
-                display: none;
-            }
-            .mockup-body {
-                height: 200px;
-            }
-            .galeria-imagens {
-                grid-template-columns: 1fr;
-            }
-            .mcc-grid {
-                grid-template-columns: 1fr;
-                max-width: 300px;
-            }
-            .historia-grid { 
-                grid-template-columns: 1fr; 
-            }
-        }
-
-        @media (max-width: 600px) {
-            .navbar {
-                padding: 12px 5%;
-            }
-            .logo {
-                font-size: 20px;
-            }
-            .nav-actions {
-                gap: 8px;
-            }
-            #conn-status-text {
-                display: none;
-            }
-            .conn-status {
-                padding: 6px 8px;
-            }
-            #btn-install-pwa span.btn-full-text-install {
-                display: none;
-            }
-            #btn-install-pwa {
-                padding: 8px 10px;
-            }
-            .nav-actions .btn-primary {
-                padding: 10px 14px;
-                font-size: 12px;
-            }
-            .hero {
-                padding: 100px 5% 60px;
-                gap: 36px;
-                min-height: auto;
-            }
-            .dashboard-mockup {
-                transform: none;
-            }
-            .mockup-body {
-                height: 160px;
-            }
-            .mockup-kpi {
-                grid-template-columns: 1fr;
-            }
-            .hero-stats {
-                flex-direction: column;
-                gap: 16px;
-            }
-            .proposito {
-                padding: 56px 6%;
-            }
-            .proposito blockquote {
-                font-size: 17px;
-            }
-            .diferenciais, .servicos, .sobre-mcc, .equipe, .diversidade, .historia, .cta-final {
-                padding: 56px 6%;
-            }
-            .servicos-grid {
-                grid-template-columns: 1fr 1fr;
-                gap: 14px;
-            }
-            .diferenciais-grid {
-                gap: 16px;
-            }
-            .diff-card {
-                padding: 24px 20px;
-            }
-            .photo-grid { 
-                grid-template-columns: 1fr; 
-            }
-            .cta-buttons {
-                flex-direction: column;
-                width: 100%;
-            }
-            .cta-buttons a {
-                width: 100%;
-                justify-content: center;
-            }
-            .footer-links {
-                gap: 14px 20px;
-            }
-        }
-
-        @media (max-width: 380px) {
-            .servicos-grid {
-                grid-template-columns: 1fr;
-            }
-            .logo span {
-                display: none;
-            }
-        }
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   OMS — Oficina de Moldes e Segmentos — CSN
+   Dossiê técnico de manutenção. Reconstrução completa.
+   ============================================================ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --ink: #0d0b08;
+    --panel: #16130f;
+    --panel-2: #1e1a14;
+    --line: rgba(255, 250, 240, 0.10);
+    --steel: #8a8577;
+    --paper: #f2ede2;
+    --paper-dim: #c9c2b3;
+    --amber: #f0a334;
+    --amber-deep: #c97a12;
+    --font-display: 'Big Shoulders', 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-body: 'Inter', -apple-system, sans-serif;
+    --ease: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html { scroll-behavior: smooth; overflow-x: hidden; background: var(--ink); }
+body {
+    background: var(--ink);
+    color: var(--paper-dim);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    overflow-x: hidden;
+    padding-top: env(safe-area-inset-top);
+}
+a, button {
+    -webkit-tap-highlight-color: transparent;
+}
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; display: block; }
+.container { max-width: 1240px; margin: 0 auto; padding: 0 32px; }
+
+a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 3px;
+}
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--ink); }
+::-webkit-scrollbar-thumb { background: var(--amber-deep); }
+
+/* ===== rótulo técnico reutilizável ===== */
+.tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--amber);
+    padding-left: 10px;
+    border-left: 2px solid var(--amber);
+    line-height: 1.3;
+}
+
+/* ===== BOTÕES ===== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 30px;
+    font-weight: 600;
+    font-size: 15px;
+    border-radius: 3px;
+    border: 1px solid transparent;
+    min-height: 48px;
+    cursor: pointer;
+    transition: background var(--ease), border-color var(--ease), color var(--ease);
+}
+.btn-solid { background: var(--amber); color: #17130c; }
+.btn-solid:hover { background: #ffb547; }
+.btn-line {
+    border-color: var(--line);
+    color: var(--paper);
+}
+.btn-line:hover { border-color: var(--amber); color: var(--amber); }
+
+/* ===== NAVBAR ===== */
+.navbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px clamp(20px, 4vw, 48px);
+    padding-top: calc(20px + env(safe-area-inset-top));
+    background: rgba(13, 11, 8, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+    transition: padding var(--ease);
+}
+.brand {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--paper);
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+.brand small {
+    font-family: var(--font-mono);
+    text-transform: none;
+    font-size: 11px;
+    color: var(--steel);
+    font-weight: 400;
+}
+.nav-links { display: flex; gap: 30px; }
+.nav-links a {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--paper-dim);
+    transition: color var(--ease);
+}
+.nav-links a:hover { color: var(--amber); }
+.nav-actions { display: flex; align-items: center; gap: 18px; }
+.conn-status {
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px; color: var(--steel);
+}
+.conn-status .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #4caf6a;
+    box-shadow: 0 0 0 0 rgba(76,175,106,0.6);
+    animation: dotPulse 1.8s infinite;
+}
+.conn-status.offline .dot { background: var(--steel); animation: none; }
+@keyframes dotPulse {
+    0% { box-shadow: 0 0 0 0 rgba(76,175,106,0.55); }
+    70% { box-shadow: 0 0 0 6px rgba(76,175,106,0); }
+    100% { box-shadow: 0 0 0 0 rgba(76,175,106,0); }
+}
+.nav-login { font-size: 13px; font-weight: 600; color: var(--paper-dim); }
+.nav-login:hover { color: var(--amber); }
+.nav-hamburger {
+    display: none;
+    width: 44px; height: 44px;
+    align-items: center; justify-content: center;
+    background: transparent; border: 1px solid var(--line);
+    color: var(--paper); font-size: 18px; cursor: pointer;
+}
+
+.drawer-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); z-index: 1100; opacity: 0;
+    transition: opacity var(--ease);
+}
+.drawer-overlay.open { display: block; opacity: 1; }
+.drawer {
+    position: fixed; top: 0; right: 0; height: 100%;
+    width: min(82vw, 320px);
+    background: var(--panel);
+    border-left: 1px solid var(--line);
+    z-index: 1200;
+    transform: translateX(100%);
+    transition: transform var(--ease);
+    padding: 28px 24px;
+    padding-top: calc(28px + env(safe-area-inset-top));
+    display: flex; flex-direction: column; gap: 4px;
+}
+.drawer.open { transform: translateX(0); }
+.drawer a {
+    padding: 14px 4px;
+    font-size: 15px;
+    border-bottom: 1px solid var(--line);
+    color: var(--paper-dim);
+}
+.drawer-close {
+    align-self: flex-end;
+    width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: 1px solid var(--line); color: var(--paper);
+    margin-bottom: 12px; cursor: pointer;
+}
+.drawer .btn { justify-content: center; margin-top: 20px; }
+
+/* ===== HERO — foto full-bleed ===== */
+.hero {
+    position: relative;
+    min-height: 100svh;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+}
+.hero-bg {
+    position: absolute; inset: 0;
+    background-image:
+        linear-gradient(180deg, rgba(13,11,8,0.72) 0%, rgba(13,11,8,0.5) 22%, rgba(13,11,8,0.55) 45%, rgba(13,11,8,0.97) 92%),
+        linear-gradient(100deg, rgba(13,11,8,0.78) 0%, rgba(13,11,8,0.3) 55%),
+        url('JS/assets/USINAGEM.jpg');
+    background-size: cover;
+    background-position: center 30%;
+    filter: saturate(1) contrast(1.05) brightness(0.85);
+    will-change: transform;
+}
+.hero-content {
+    position: relative; z-index: 1;
+    width: 100%;
+    padding: 0 clamp(20px, 4vw, 48px) 72px;
+    max-width: 1240px;
+    margin: 0 auto;
+}
+.hero .tag { margin-bottom: 22px; }
+.hero h1 {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    color: var(--paper);
+    font-size: clamp(46px, 9vw, 122px);
+    font-weight: 700;
+    line-height: 0.92;
+    letter-spacing: -1px;
+    max-width: 16ch;
+}
+.hero h1 em {
+    font-style: normal;
+    color: var(--amber);
+}
+.hero-sub {
+    margin-top: 24px;
+    max-width: 54ch;
+    font-size: clamp(16px, 2vw, 19px);
+    color: var(--paper-dim);
+}
+.hero-actions {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    margin-top: 36px;
+}
+.hero-trust {
+    display: flex; gap: 24px; flex-wrap: wrap;
+    margin-top: 32px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--steel);
+}
+.hero-trust span { display: inline-flex; align-items: center; gap: 7px; }
+.hero-trust .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #4caf6a;
+    box-shadow: 0 0 0 0 rgba(76,175,106,0.6);
+    animation: dotPulse 1.8s infinite;
+}
+.hero-scroll {
+    position: absolute;
+    right: clamp(20px, 4vw, 48px);
+    bottom: 28px;
+    z-index: 1;
+    writing-mode: vertical-rl;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--steel);
+    display: flex; align-items: center; gap: 10px;
+    letter-spacing: 1px;
+}
+.hero-scroll::after {
+    content: '';
+    display: block;
+    width: 1px; height: 40px;
+    background: linear-gradient(var(--steel), transparent);
+}
+@media (max-width: 640px) {
+    .hero-scroll { display: none; }
+    .hero-bg { background-position: 62% 22%; }
+}
+
+/* ===== FAIXA DE ESPECIFICAÇÕES (logo abaixo do hero) ===== */
+.specs {
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+}
+.specs-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    max-width: 1240px;
+    margin: 0 auto;
+}
+.specs-row > div {
+    padding: 28px clamp(20px, 4vw, 48px);
+    border-left: 1px solid var(--line);
+}
+.specs-row > div:first-child { border-left: none; }
+.specs-row strong {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 34px;
+    font-weight: 700;
+    color: var(--amber);
+    line-height: 1;
+    margin-bottom: 8px;
+}
+.specs-row span { font-size: 13px; color: var(--steel); }
+
+/* ===== SEÇÕES GERAIS ===== */
+section { padding: 128px clamp(20px, 4vw, 48px); position: relative; }
+.section-head {
+    max-width: 1240px; margin: 0 auto 60px;
+}
+.section-head h2 {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    color: var(--paper);
+    font-size: clamp(32px, 5vw, 58px);
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    line-height: 1;
+    max-width: 16ch;
+    margin-top: 18px;
+}
+.section-head p {
+    max-width: 56ch;
+    margin-top: 20px;
+    font-size: 16px;
+    color: var(--steel);
+}
+.section-inner { max-width: 1240px; margin: 0 auto; }
+
+/* ===== ANTES / DEPOIS — tabela técnica, não cards ===== */
+.compare {
+    background: var(--panel);
+    border: 1px solid var(--line);
+}
+.compare-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+.compare-col {
+    padding: 40px clamp(24px, 3vw, 48px);
+}
+.compare-col + .compare-col { border-left: 1px solid var(--line); }
+.compare-col h3 {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--steel);
+    margin-bottom: 22px;
+}
+.compare-col.is-oms h3 { color: var(--amber); }
+.compare-col ul { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+.compare-col li {
+    font-size: 15px;
+    color: var(--paper-dim);
+    padding-left: 22px;
+    position: relative;
+}
+.compare-col li::before {
+    position: absolute; left: 0; top: 1px;
+    font-family: var(--font-mono); font-size: 13px;
+}
+.compare-col.is-before li::before { content: '×'; color: var(--steel); }
+.compare-col.is-oms li::before { content: '✓'; color: var(--amber); }
+
+/* ===== PILARES — grade técnica com numeração real (3 pilares reais) ===== */
+.pillars {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--line);
+    border-left: 1px solid var(--line);
+}
+.pillars.cols-4 { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 1100px) {
+    .pillars.cols-4 { grid-template-columns: repeat(2, 1fr); }
+}
+.pillar {
+    padding: 40px clamp(20px, 3vw, 36px);
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+}
+.pillar .idx {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--amber);
+    margin-bottom: 18px;
+    display: block;
+}
+.pillar h3 {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--paper);
+    margin-bottom: 18px;
+}
+.pillar ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.pillar li {
+    font-size: 14px; color: var(--steel);
+    padding-left: 16px; position: relative;
+}
+.pillar li::before {
+    content: '—'; position: absolute; left: 0; color: var(--line);
+}
+
+/* ===== DIAGRAMA DE FLUXO — Operação/Manutenção/Gestão → Dados → Histórico → Decisão ===== */
+.flow {
+    margin-top: 64px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 640px;
+}
+.flow-top {
+    display: flex;
+    gap: 16px;
+    width: 100%;
+}
+.flow-node {
+    flex: 1;
+    text-align: center;
+    padding: 16px 12px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--paper-dim);
+}
+.flow-wide { width: 100%; }
+.flow-final { border-color: var(--amber); color: var(--amber); }
+.flow-merge {
+    position: relative;
+    width: 100%;
+    height: 34px;
+}
+.flow-merge::before {
+    /* linha horizontal unindo os 3 nós de cima */
+    content: '';
+    position: absolute;
+    top: 0; left: 16.5%; right: 16.5%;
+    height: 1px;
+    background: var(--line);
+}
+.flow-merge span {
+    position: absolute;
+    top: 0; left: 50%;
+    width: 1px; height: 100%;
+    background: var(--line);
+}
+.flow-line {
+    width: 1px; height: 24px;
+    background: var(--line);
+}
+@media (max-width: 640px) {
+    .flow-top { flex-direction: column; }
+    .flow-merge::before { left: 50%; right: 50%; }
+}
+
+/* ===== CICLO — sequência real, numeração justificada ===== */
+.cycle {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+}
+.cycle-step {
+    background: var(--ink);
+    padding: 28px 18px;
+    position: relative;
+    transition: background var(--ease), transform var(--ease), opacity var(--ease);
+}
+.cycle:hover .cycle-step { opacity: 0.55; }
+.cycle-step:hover {
+    background: var(--panel-2);
+    opacity: 1 !important;
+    transform: translateY(-4px);
+    z-index: 1;
+}
+.cycle-step::before {
+    content: '';
+    position: absolute;
+    left: 0; bottom: 0;
+    height: 2px; width: 0%;
+    background: var(--amber);
+    transition: width var(--ease);
+}
+.cycle-step:hover::before { width: 100%; }
+.cycle-step .num {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--amber);
+    display: block;
+    margin-bottom: 14px;
+    transition: transform var(--ease);
+}
+.cycle-step:hover .num { transform: scale(1.15); transform-origin: left; }
+.cycle-step h4 {
+    font-size: 14px; font-weight: 600; color: var(--paper);
+    margin-bottom: 6px;
+}
+.cycle-step p { font-size: 12px; color: var(--steel); }
+@media (max-width: 640px) {
+    .cycle:hover .cycle-step { opacity: 1; }
+    .cycle-step:hover { transform: none; }
+}
+
+/* ===== FOTO CHEIA COM CITAÇÃO (usado 2x) ===== */
+.photo-break {
+    position: relative;
+    min-height: 74vh;
+    display: flex;
+    align-items: flex-end;
+    padding: 0 clamp(20px, 4vw, 48px) 72px;
+    overflow: hidden;
+}
+.photo-break-bg {
+    position: absolute; inset: 0;
+    background-size: cover; background-position: center;
+    filter: saturate(1.05) contrast(1.02);
+    will-change: transform;
+}
+.photo-break-bg::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(0deg, rgba(13,11,8,0.85) 0%, rgba(13,11,8,0.35) 32%, transparent 60%);
+}
+.photo-break-content {
+    position: relative; z-index: 1;
+    max-width: 780px;
+    background: rgba(13, 11, 8, 0.72);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    padding: 32px clamp(20px, 3vw, 40px);
+    border-left: 2px solid var(--amber);
+}
+.photo-break blockquote {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    color: var(--paper);
+    font-size: clamp(26px, 4vw, 46px);
+    font-weight: 600;
+    line-height: 1.08;
+    letter-spacing: -0.3px;
+}
+.photo-break cite {
+    display: block;
+    font-style: normal;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--amber);
+    margin-top: 24px;
+}
+.photo-break p.lede {
+    margin-top: 22px;
+    font-size: 16px;
+    color: var(--paper-dim);
+    max-width: 60ch;
+}
+
+/* ===== RECURSOS — lista técnica, sem grade de caixas ===== */
+.features {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    column-gap: clamp(32px, 5vw, 80px);
+    row-gap: 4px;
+}
+.feature {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 18px;
+    padding: 34px 0;
+    border-top: 1px solid var(--line);
+}
+.feature .fi {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--amber);
+    padding-top: 6px;
+    letter-spacing: 0.5px;
+}
+.feature h4 {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--paper);
+    margin-bottom: 8px;
+}
+.feature p { font-size: 14px; color: var(--steel); }
+
+/* ===== EQUIPE — banda de foto grande ===== */
+.team-band {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 66vh;
+}
+.team-photo { position: relative; overflow: hidden; }
+.team-photo img {
+    width: 100%; height: 100%; object-fit: cover;
+    filter: saturate(1.08) contrast(1.02) brightness(1.08);
+}
+.team-text {
+    padding: 80px clamp(24px, 4vw, 64px);
+    display: flex; flex-direction: column; justify-content: center;
+    background: var(--panel);
+}
+.team-text .stat {
+    font-family: var(--font-display);
+    color: var(--amber);
+    font-size: clamp(48px, 6vw, 88px);
+    font-weight: 700;
+    line-height: 1;
+    margin: 18px 0 20px;
+}
+.team-text p { font-size: 16px; color: var(--paper-dim); max-width: 44ch; }
+@media (max-width: 900px) {
+    .team-band { grid-template-columns: 1fr; }
+    .team-photo { min-height: 320px; }
+}
+
+/* ===== MCC — abas técnicas ===== */
+.mcc-tabs {
+    display: flex; gap: 1px; background: var(--line);
+    border: 1px solid var(--line); margin-bottom: 1px;
+    flex-wrap: wrap;
+}
+.mcc-tab {
+    flex: 1; min-width: 140px;
+    background: var(--ink);
+    border: none; cursor: pointer;
+    padding: 20px 16px;
+    text-align: left;
+    color: var(--steel);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    transition: background var(--ease), color var(--ease);
+}
+.mcc-tab strong { display: block; color: var(--paper-dim); font-family: var(--font-body); font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.mcc-tab.active { background: var(--panel-2); color: var(--amber); }
+.mcc-tab.active strong { color: var(--paper); }
+.mcc-panel {
+    display: none;
+    border: 1px solid var(--line); border-top: none;
+    padding: 36px clamp(20px, 3vw, 40px);
+    background: var(--panel);
+}
+.mcc-panel.active { display: block; }
+.veio-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+}
+.veio-col {
+    padding-left: 20px;
+    border-left: 2px solid var(--amber);
+}
+.veio-label {
+    display: block;
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--paper);
+    margin-bottom: 18px;
+}
+.mcc-panel .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+.mcc-panel .chip {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--paper-dim);
+    border: 1px solid var(--line);
+    padding: 8px 14px;
+}
+@media (max-width: 640px) {
+    .veio-grid { grid-template-columns: 1fr; gap: 28px; }
+}
+
+/* ===== MANIFESTO — frase de efeito ===== */
+.manifesto {
+    background: var(--ink);
+    border-top: 1px solid var(--line);
+    text-align: left;
+    padding: 140px clamp(20px, 4vw, 48px);
+}
+.manifesto .section-inner { max-width: 980px; }
+.manifesto-tag { margin-bottom: 28px; }
+.manifesto-line {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    line-height: 1.02;
+    letter-spacing: -0.5px;
+    color: var(--steel);
+}
+.manifesto-line.line-1 { font-size: clamp(24px, 3.4vw, 36px); font-weight: 500; }
+.manifesto-line.line-2 { font-size: clamp(24px, 3.4vw, 36px); font-weight: 500; margin-bottom: 28px; }
+.manifesto-line.line-3,
+.manifesto-line.line-4 {
+    font-size: clamp(36px, 6.2vw, 76px);
+    font-weight: 700;
+    color: var(--paper);
+}
+.manifesto-line em {
+    font-style: normal;
+    color: var(--amber);
+}
+@media (max-width: 640px) {
+    .manifesto { padding: 88px 20px; }
+    .manifesto-line.line-2 { margin-bottom: 18px; }
+}
+
+/* ===== CTA FINAL ===== */
+.cta-final {
+    background: var(--panel);
+    border-top: 1px solid var(--line);
+    text-align: left;
+}
+.cta-final .section-inner {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    flex-wrap: wrap; gap: 32px;
+}
+.cta-final h2 {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    color: var(--paper);
+    font-size: clamp(32px, 5.5vw, 64px);
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    line-height: 1;
+    max-width: 14ch;
+}
+
+/* ===== FOOTER ===== */
+footer {
+    border-top: 1px solid var(--line);
+    padding: 48px clamp(20px, 4vw, 48px) calc(32px + env(safe-area-inset-bottom));
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 20px;
+    font-size: 13px; color: var(--steel);
+}
+footer .foot-links { display: flex; gap: 22px; flex-wrap: wrap; }
+footer a:hover { color: var(--amber); }
+
+/* ===== REVEAL — um único tipo de entrada, discreto ===== */
+.reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.in-view { opacity: 1; transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* ===== RESPONSIVO ===== */
+@media (max-width: 992px) {
+    .nav-links { display: none; }
+    .nav-hamburger { display: flex; }
+    .nav-login { display: none; }
+    .specs-row { grid-template-columns: 1fr; }
+    .specs-row > div { border-left: none; border-top: 1px solid var(--line); }
+    .specs-row > div:first-child { border-top: none; }
+    .compare-row { grid-template-columns: 1fr; }
+    .compare-col + .compare-col { border-left: none; border-top: 1px solid var(--line); }
+    .pillars { grid-template-columns: 1fr; }
+    .cycle { grid-template-columns: repeat(3, 1fr); }
+    .features { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+    section { padding: 80px 20px; }
+    .cycle { grid-template-columns: repeat(2, 1fr); }
+    .cta-final .section-inner { flex-direction: column; align-items: flex-start; }
+    .feature { grid-template-columns: 56px 1fr; gap: 14px; padding: 24px 20px; }
+    .hero-content { padding-bottom: 48px; }
+    .photo-break { min-height: 60vh; padding: 0 20px 48px; }
+}
+</style>
 </head>
 <body>
-    <div class="aurora-bg" aria-hidden="true"><span></span><span></span><span></span></div>
 
-    <nav class="navbar">
-        <a href="#" class="logo" aria-label="OMS — Oficina de Moldes e Segmentos, CSN — voltar ao topo">
-            <i class="fas fa-layer-group" aria-hidden="true"></i> OMS <span>| CSN</span>
-        </a>
-        <div class="nav-links">
-            <a href="#proposito">Nosso Propósito</a>
-            <a href="#recursos">Recursos</a>
-            <a href="#diferenciais">Serviços</a>
-            <a href="#equipe">Time</a>
-            <a href="#diversidade">Diversidade</a>
-            <a href="#historia">História</a>
-            <a href="#mcc">MCCs</a>
-        </div>
-        <div class="nav-actions">
-            <span class="conn-status online" id="conn-status">
-                <i class="fas fa-circle" style="font-size:8px;" aria-hidden="true"></i> <span id="conn-status-text">On-line</span>
-            </span>
-            <button class="btn-ghost" id="btn-install-pwa" style="display:none;">
-                <i class="fas fa-mobile-alt" aria-hidden="true"></i> <span class="btn-full-text-install">Instalar App</span>
-            </button>
-            <a href="app.html" class="btn-login">Entrar</a>
-            <a href="app.html" class="btn-primary">
-                <i class="fas fa-rocket" aria-hidden="true"></i> <span class="btn-full-text">Acessar Sistema</span>
-            </a>
-            <button class="nav-hamburger" id="nav-hamburger" aria-label="Abrir menu" aria-expanded="false">
-                <i class="fas fa-bars" aria-hidden="true"></i>
-            </button>
-        </div>
-    </nav>
-
-    <!-- ===== DRAWER MOBILE ===== -->
-    <div class="mobile-drawer-overlay" id="mobile-drawer-overlay"></div>
-    <div class="mobile-drawer" id="mobile-drawer">
-        <button class="mobile-drawer-close" id="mobile-drawer-close" aria-label="Fechar menu">
-            <i class="fas fa-times" aria-hidden="true"></i>
-        </button>
-        <a href="#proposito"><i class="fas fa-bullseye" aria-hidden="true"></i> Nosso Propósito</a>
-        <a href="#recursos"><i class="fas fa-layer-group" aria-hidden="true"></i> Recursos do Sistema</a>
-        <a href="#diferenciais"><i class="fas fa-cogs" aria-hidden="true"></i> Serviços</a>
-        <a href="#equipe"><i class="fas fa-users" aria-hidden="true"></i> Time</a>
-        <a href="#diversidade"><i class="fas fa-venus-mars" aria-hidden="true"></i> Diversidade</a>
-        <a href="#historia"><i class="fas fa-landmark" aria-hidden="true"></i> História</a>
-        <a href="#mcc"><i class="fas fa-industry" aria-hidden="true"></i> MCCs</a>
-        <a href="app.html" class="btn-primary">
-            <i class="fas fa-rocket" aria-hidden="true"></i> Acessar Sistema
-        </a>
+<nav class="navbar">
+    <a href="#top" class="brand">OMS <small>CSN — GMLC/GGMA</small></a>
+    <div class="nav-links">
+        <a href="#transformacao">Transformação</a>
+        <a href="#arquitetura">Sistema</a>
+        <a href="#recursos">Recursos</a>
+        <a href="#equipe">Equipe</a>
+        <a href="#mcc">MCCs</a>
+        <a href="#resultados">Resultados</a>
+        <a href="#historia">História</a>
     </div>
+    <div class="nav-actions">
+        <span class="conn-status online" id="conn-status">
+            <span class="dot"></span><span id="conn-status-text">On-line</span>
+        </span>
+        <a href="app.html" class="nav-login">Entrar</a>
+        <a href="app.html" class="btn btn-solid" style="padding:11px 22px; min-height:auto; font-size:13px;">Acessar OMS</a>
+        <button class="nav-hamburger" id="nav-hamburger" aria-label="Abrir menu" aria-expanded="false">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+    </div>
+</nav>
 
-    <section class="hero">
-        <div class="hero-content">
-            <span class="badge">🏭 CSN – Volta Redonda · GMLC / GGMA</span>
-            <div class="live-pill">
-                <span class="status-indicator"></span> Sistema operando na Aciaria — MCC 2, 3 e 4
-            </div>
-            <h1>OMS — Gestão Inteligente<br>da <span>Manutenção</span></h1>
-            <p>
-                Digitalização, rastreabilidade e controle operacional de moldes
-                e segmentos. Do registro operacional à decisão baseada em dados.
-            </p>
-            <div style="display: flex; gap: 14px; flex-wrap: wrap;">
-                <a href="app.html" class="btn-primary">
-                    <i class="fas fa-arrow-right" aria-hidden="true"></i> Acessar OMS
-                </a>
-                <a href="#como-funciona" class="btn-outline">
-                    <i class="fas fa-play-circle" aria-hidden="true"></i> Ver como funciona
-                </a>
-            </div>
-            <div class="hero-stats">
-                <div>
-                    <strong>MCC 2 · 3 · 4</strong>
-                    <span>Cobertura completa da Aciaria</span>
-                </div>
-                <div>
-                    <strong>100%</strong>
-                    <span>Folhões digitais, sem papel</span>
-                </div>
-                <div>
-                    <strong>PWA</strong>
-                    <span>Instalável, com uso offline</span>
-                </div>
-            </div>
+<div class="drawer-overlay" id="drawer-overlay"></div>
+<div class="drawer" id="drawer">
+    <button class="drawer-close" id="drawer-close" aria-label="Fechar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
+    <a href="#transformacao">Transformação</a>
+    <a href="#arquitetura">Sistema</a>
+    <a href="#recursos">Recursos</a>
+    <a href="#equipe">Equipe</a>
+    <a href="#mcc">MCCs</a>
+        <a href="#resultados">Resultados</a>
+    <a href="#historia">História</a>
+    <a href="app.html" class="btn btn-solid">Acessar OMS</a>
+</div>
+
+<div id="top"></div>
+
+<!-- ============ HERO — foto real, sem mockup fake ============ -->
+<section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+        <span class="tag">GMLC / GGMA — Volta Redonda, RJ</span>
+        <h1>Controle total<br>da <em>manutenção</em></h1>
+        <p class="hero-sub">
+            Digitalização, rastreabilidade e controle operacional de moldes e segmentos
+            das MCC 2, 3 e 4 — do registro em campo à decisão baseada em dados.
+        </p>
+        <div class="hero-actions">
+            <a href="app.html" class="btn btn-solid">Acessar OMS</a>
+            <a href="#arquitetura" class="btn btn-line">Explorar o sistema</a>
         </div>
-
-        <div class="hero-image-wrapper">
-            <span class="mockup-label">Demonstração — Sistema OMS</span>
-            <div class="dashboard-mockup">
-                <div class="mockup-header">
-                    <div class="mockup-dot"></div>
-                    <div class="mockup-dot"></div>
-                    <div class="mockup-dot"></div>
-                    <span>oms.csn.com.br</span>
-                </div>
-                <div class="mockup-body">
-                    <div class="mockup-sidebar">
-                        <span></span><span></span><span></span><span></span><span></span>
-                    </div>
-                    <div class="mockup-main">
-                        <div class="mockup-kpi">
-                            <div><strong data-count="128">0</strong><small>Ativos</small></div>
-                            <div><strong data-count="14">0</strong><small>Em Reparo</small></div>
-                            <div><strong data-count="96" data-suffix="%">0</strong><small>Disponível</small></div>
-                        </div>
-                        <!-- ===== Container Three.js ===== -->
-                        <div id="three-container"></div>
-                    </div>
-                </div>
-            </div>
+        <div class="hero-trust">
+            <span><span class="dot"></span>Sistema operacional</span>
+            <span>Dados rastreáveis</span>
+            <span>MCC 2 · 3 · 4</span>
         </div>
-    </section>
+    </div>
+    <span class="hero-scroll">ROLAR</span>
+</section>
 
-    <!-- ===== DEMAIS SEÇÕES (mantidas intactas) ===== -->
-    <section id="antes-depois" class="reveal antes-depois">
-        <span class="badge badge-csn">A Transformação</span>
+<div class="specs">
+    <div class="specs-row">
+        <div><strong>MCC 2 · 3 · 4</strong><span>Cobertura completa da Aciaria</span></div>
+        <div><strong>100%</strong><span>Folhões digitais, sem papel</span></div>
+        <div><strong>PWA</strong><span>Instalável, com uso offline em campo</span></div>
+    </div>
+</div>
+
+<!-- ============ TRANSFORMAÇÃO ============ -->
+<section id="transformacao">
+    <div class="section-head reveal">
+        <span class="tag">A Transformação</span>
         <h2>Do controle manual ao fluxo digital único</h2>
-        <div class="antes-depois-grid">
-            <div class="ad-card ad-antes">
-                <div class="ad-icon"><i class="fas fa-file-alt" aria-hidden="true"></i></div>
-                <h3>Antes</h3>
+    </div>
+    <div class="section-inner compare reveal">
+        <div class="compare-row">
+            <div class="compare-col is-before">
+                <h3>Antes — papel</h3>
                 <ul>
-                    <li>Papel</li>
                     <li>Planilhas soltas</li>
                     <li>Dados dispersos</li>
                     <li>Busca manual</li>
                     <li>Histórico fragmentado</li>
                 </ul>
             </div>
-            <div class="ad-card ad-oms">
-                <div class="ad-icon"><i class="fas fa-microchip" aria-hidden="true"></i></div>
-                <h3>OMS</h3>
+            <div class="compare-col is-oms">
+                <h3>Depois — OMS</h3>
                 <ul>
-                    <li>Fluxo digital único</li>
                     <li>Dados centralizados</li>
                     <li>Folhões digitais</li>
                     <li>Rastreabilidade por peça</li>
                     <li>Auditoria de ações</li>
                 </ul>
             </div>
-            <div class="ad-card ad-depois">
-                <div class="ad-icon"><i class="fas fa-chart-line" aria-hidden="true"></i></div>
-                <h3>Depois</h3>
-                <ul>
-                    <li>Mais controle</li>
-                    <li>Mais agilidade</li>
-                    <li>Mais rastreabilidade</li>
-                    <li>Dados para decisão</li>
-                </ul>
-            </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <section id="pilares" class="reveal pilares">
-        <span class="badge">Arquitetura Funcional</span>
+<!-- ============ ARQUITETURA ============ -->
+<section id="arquitetura" style="padding-top:0;">
+    <div class="section-head reveal">
+        <span class="tag">Arquitetura Funcional</span>
         <h2>Um sistema. Toda a operação.</h2>
         <p>Três pilares que conectam a oficina, a manutenção e a gestão em um único ecossistema.</p>
-        <div class="pilares-grid">
-            <div class="pilar-card">
-                <div class="pilar-icon"><i class="fas fa-cogs" aria-hidden="true"></i></div>
-                <h3>Operação</h3>
-                <ul>
-                    <li>Sequenciamento de Veios</li>
-                    <li>Swap Automático</li>
-                    <li>Sinótico Visual 3D</li>
-                    <li>Painel do Técnico</li>
-                </ul>
-            </div>
-            <div class="pilar-card">
-                <div class="pilar-icon"><i class="fas fa-tools" aria-hidden="true"></i></div>
-                <h3>Manutenção</h3>
-                <ul>
-                    <li>Folhões Digitais</li>
-                    <li>Checklists por Equipamento</li>
-                    <li>Laudos em PDF</li>
-                    <li>Prontuário por Peça</li>
-                </ul>
-            </div>
-            <div class="pilar-card">
-                <div class="pilar-icon"><i class="fas fa-chart-pie" aria-hidden="true"></i></div>
-                <h3>Gestão</h3>
-                <ul>
-                    <li>Auditoria Global</li>
-                    <li>Estoque Reserva</li>
-                    <li>Estoque de Materiais</li>
-                    <li>Rastreabilidade Completa</li>
-                </ul>
-            </div>
+    </div>
+    <div class="section-inner pillars">
+        <div class="pillar reveal">
+            <span class="idx">01 — Operação</span>
+            <h3>Chão de fábrica</h3>
+            <ul>
+                <li>Sequenciamento de Veios</li>
+                <li>Swap Automático</li>
+                <li>Sinótico Visual 3D</li>
+                <li>Painel do Técnico</li>
+            </ul>
         </div>
-    </section>
+        <div class="pillar reveal">
+            <span class="idx">02 — Manutenção</span>
+            <h3>Registro técnico</h3>
+            <ul>
+                <li>Folhões Digitais</li>
+                <li>Checklists por Equipamento</li>
+                <li>Laudos em PDF</li>
+                <li>Prontuário por Peça</li>
+            </ul>
+        </div>
+        <div class="pillar reveal">
+            <span class="idx">03 — Gestão</span>
+            <h3>Visão e controle</h3>
+            <ul>
+                <li>Auditoria Global</li>
+                <li>Estoque Reserva</li>
+                <li>Estoque de Materiais</li>
+                <li>Rastreabilidade Completa</li>
+            </ul>
+        </div>
+    </div>
 
-    <section id="como-funciona" class="reveal como-funciona">
-        <span class="badge badge-csn">O Ciclo</span>
+    <div class="section-inner flow reveal">
+        <div class="flow-top">
+            <div class="flow-node">Operação</div>
+            <div class="flow-node">Manutenção</div>
+            <div class="flow-node">Gestão</div>
+        </div>
+        <div class="flow-merge" aria-hidden="true"><span></span></div>
+        <div class="flow-node flow-wide">Dados centralizados</div>
+        <div class="flow-line" aria-hidden="true"></div>
+        <div class="flow-node flow-wide">Histórico &amp; KPIs</div>
+        <div class="flow-line" aria-hidden="true"></div>
+        <div class="flow-node flow-wide flow-final">Decisão</div>
+    </div>
+</section>
+
+<section id="como-funciona">
+    <div class="section-head reveal">
+        <span class="tag">O Ciclo</span>
         <h2>Como funciona</h2>
-        <div class="ciclo-timeline">
-            <div class="ciclo-step"><span class="ciclo-num">01</span><h3>Cadastro</h3><p>Peça entra no sistema</p></div>
-            <div class="ciclo-step"><span class="ciclo-num">02</span><h3>Alocação</h3><p>Instalação em um veio</p></div>
-            <div class="ciclo-step"><span class="ciclo-num">03</span><h3>Monitoramento</h3><p>Desgaste x meta em tempo real</p></div>
-            <div class="ciclo-step"><span class="ciclo-num">04</span><h3>Swap</h3><p>Troca guiada com a reserva</p></div>
-            <div class="ciclo-step"><span class="ciclo-num">05</span><h3>Manutenção</h3><p>Folhão e laudo em PDF</p></div>
-            <div class="ciclo-step"><span class="ciclo-num">06</span><h3>Retorno</h3><p>Peça volta pronta pra linha</p></div>
-        </div>
-    </section>
+    </div>
+    <div class="section-inner cycle">
+        <div class="cycle-step reveal"><span class="num">01</span><h4>Cadastro</h4><p>Peça entra no sistema</p></div>
+        <div class="cycle-step reveal"><span class="num">02</span><h4>Alocação</h4><p>Instalação em um veio</p></div>
+        <div class="cycle-step reveal"><span class="num">03</span><h4>Monitoramento</h4><p>Desgaste × meta em tempo real</p></div>
+        <div class="cycle-step reveal"><span class="num">04</span><h4>Swap</h4><p>Troca guiada com a reserva</p></div>
+        <div class="cycle-step reveal"><span class="num">05</span><h4>Manutenção</h4><p>Folhão e laudo em PDF</p></div>
+        <div class="cycle-step reveal"><span class="num">06</span><h4>Retorno</h4><p>Peça volta pronta pra linha</p></div>
+    </div>
+</section>
 
-    <section id="proposito" class="reveal proposito">
-        <span class="badge">Nosso Propósito</span>
-        <blockquote>
-            Cuidar da vida é o que nos move: promovemos um ambiente seguro e
-            saudável com conhecimento, técnica, ética e colaboração, porque
-            acreditamos que a segurança é um valor inegociável e a base que
-            transforma pessoas, equipes, organizações e o futuro da CSN.
-        </blockquote>
-        <div class="assinatura">
-            — <strong>OMS</strong> · GMLC / <strong>GGMA</strong>
-        </div>
-    </section>
+<!-- ============ FOTO — PROPÓSITO ============ -->
+<section class="photo-break" style="padding-top:0; padding-bottom:0;">
+    <div class="photo-break-bg" style="background-image:url('JS/assets/Valor.jpeg');"></div>
+    <div class="photo-break-content reveal">
+        <blockquote>Cuidar da vida é o que nos move.</blockquote>
+        <p class="lede">
+            Promovemos um ambiente seguro e saudável com conhecimento, técnica, ética e colaboração —
+            porque a segurança é um valor inegociável e a base que transforma pessoas, equipes e o futuro da CSN.
+        </p>
+        <cite>— Nosso Propósito, OMS · GMLC/GGMA</cite>
+    </div>
+</section>
 
-    <section id="recursos" class="reveal recursos">
-        <span class="badge badge-csn">Dentro do Sistema</span>
+<!-- ============ RECURSOS ============ -->
+<section id="recursos">
+    <div class="section-head reveal">
+        <span class="tag">Dentro do Sistema</span>
         <h2>Tudo que o OMS faz por você</h2>
-        <p>
-            Um único sistema para acompanhar o ciclo completo de vida de cada
-            equipamento — da chegada na oficina até a liberação para a linha.
-        </p>
-        <div class="recursos-grid">
-            <div class="recurso-card">
-                <span class="recurso-tag">3D</span>
-                <div class="recurso-icon"><i class="fas fa-cube" aria-hidden="true"></i></div>
-                <h3>Sinótico 3D</h3>
-                <p>Visualização em 3D da posição real de cada equipamento nas MCCs, em tempo real.</p>
-            </div>
-            <div class="recurso-card">
-                <div class="recurso-icon"><i class="fas fa-clipboard-list" aria-hidden="true"></i></div>
-                <h3>Folhões Digitais por Equipamento</h3>
-                <p>Checklists específicos para Molde, Bow, Horizontal, R1/R2, Bender, Segmento Zero, Segmento de Grupo e Desempenadeira.</p>
-            </div>
-            <div class="recurso-card">
-                <span class="recurso-tag">Auto-save</span>
-                <div class="recurso-icon"><i class="fas fa-save" aria-hidden="true"></i></div>
-                <h3>Progresso Salvo Automaticamente</h3>
-                <p>Se o folhão for fechado no meio do preenchimento, o progresso continua salvo — nada se perde.</p>
-            </div>
-            <div class="recurso-card">
-                <div class="recurso-icon"><i class="fas fa-exchange-alt" aria-hidden="true"></i></div>
-                <h3>Swap Inteligente</h3>
-                <p>Troca rápida de peças entre oficina e linha, com validação automática de posição e veio.</p>
-            </div>
-            <div class="recurso-card">
-                <div class="recurso-icon"><i class="fas fa-warehouse" aria-hidden="true"></i></div>
-                <h3>Estoque e Materiais</h3>
-                <p>Controle de peças em reserva, rolos e materiais consumíveis com localização e valores.</p>
-            </div>
-            <div class="recurso-card">
-                <div class="recurso-icon"><i class="fas fa-chart-line" aria-hidden="true"></i></div>
-                <h3>KPIs e Gráficos por MCC</h3>
-                <p>Painéis com disponibilidade, tonelagem e dias em operação por veio e por MCC.</p>
-            </div>
-            <div class="recurso-card">
-                <div class="recurso-icon"><i class="fas fa-history" aria-hidden="true"></i></div>
-                <h3>Histórico e Rastreabilidade</h3>
-                <p>Cada ação fica registrada por equipamento, com data, autor e o que foi feito.</p>
-            </div>
-            <div class="recurso-card">
-                <span class="recurso-tag">PWA</span>
-                <div class="recurso-icon"><i class="fas fa-mobile-alt" aria-hidden="true"></i></div>
-                <h3>Instalável no Celular</h3>
-                <p>Funciona como app nativo no Android e iPhone, inclusive com uso offline.</p>
-            </div>
-            <div class="recurso-card">
-                <div class="recurso-icon"><i class="fas fa-adjust" aria-hidden="true"></i></div>
-                <h3>Modo Claro e Escuro</h3>
-                <p>Interface adaptada para qualquer ambiente da oficina, de dia ou à noite.</p>
-            </div>
-        </div>
-    </section>
+        <p>Um único sistema para acompanhar o ciclo completo de vida de cada equipamento — da chegada na oficina até a liberação para a linha.</p>
+    </div>
+    <div class="section-inner features">
+        <div class="feature reveal"><span class="fi">3D</span><div><h4>Sinótico 3D</h4><p>Visualização em 3D da posição real de cada equipamento nas MCCs, em tempo real.</p></div></div>
+        <div class="feature reveal"><span class="fi">PDF</span><div><h4>Folhões digitais por equipamento</h4><p>Checklists específicos para Molde, Bow, Horizontal, R1/R2, Bender, Segmento Zero, Segmento de Grupo e Desempenadeira.</p></div></div>
+        <div class="feature reveal"><span class="fi">AUTO</span><div><h4>Progresso salvo automaticamente</h4><p>Se o folhão for fechado no meio do preenchimento, nada se perde.</p></div></div>
+        <div class="feature reveal"><span class="fi">SWAP</span><div><h4>Swap inteligente</h4><p>Troca rápida de peças entre oficina e linha, com validação automática de posição e veio.</p></div></div>
+        <div class="feature reveal"><span class="fi">EST</span><div><h4>Estoque e materiais</h4><p>Controle de peças em reserva, rolos e materiais consumíveis com localização e valores.</p></div></div>
+        <div class="feature reveal"><span class="fi">KPI</span><div><h4>KPIs e gráficos por MCC</h4><p>Painéis com disponibilidade, tonelagem e dias em operação por veio e por MCC.</p></div></div>
+        <div class="feature reveal"><span class="fi">LOG</span><div><h4>Histórico e rastreabilidade</h4><p>Cada ação fica registrada por equipamento, com data, autor e o que foi feito.</p></div></div>
+        <div class="feature reveal"><span class="fi">PWA</span><div><h4>Instalável no celular</h4><p>Funciona como app nativo no Android e iPhone, inclusive com uso offline.</p></div></div>
+    </div>
+</section>
 
-    <section id="equipe" class="reveal equipe">
-        <span class="badge badge-csn">Nosso Time</span>
-        <h2>Mais de 150 profissionais capacitados</h2>
-        <p>
-            Equipe multidisciplinar composta por engenheiros, técnicos e
-            especialistas que atuam com excelência na recuperação de moldes
-            e segmentos para as máquinas de lingotamento contínuo.
-        </p>
-        <div class="galeria-imagens">
-            <div class="img-wrapper">
-                <img src="JS/assets/Equipe.jpeg" alt="Oficina de Moldes e Segmentos - CSN" loading="lazy" decoding="async" onerror="this.style.display='none'">
-                <div class="legenda">
-                    <strong>Oficina de Moldes e Segmentos</strong> — CSN Volta Redonda
-                </div>
-            </div>
-            <div class="img-wrapper">
-                <img src="JS/assets/Valor.jpeg" alt="Propósito OMS - GMLC/GGMA" loading="lazy" decoding="async" onerror="this.style.display='none'">
-                <div class="legenda">
-                    <strong>Propósito OMS</strong> — GMLC / GGMA
-                </div>
-            </div>
+<!-- ============ EQUIPE ============ -->
+<section id="equipe" style="padding:0;">
+    <div class="team-band">
+        <div class="team-photo">
+            <img src="JS/assets/Equipe.jpeg" alt="Oficina de Moldes e Segmentos - CSN" loading="lazy" decoding="async" onerror="this.parentElement.style.display='none'">
         </div>
-    </section>
-
-    <section id="diversidade" class="reveal diversidade">
-        <span class="badge badge-rosa">
-            <i class="fas fa-venus-mars" aria-hidden="true"></i> Diversidade que Transforma
-        </span>
-        <h2>O Maior Efetivo de Mulheres <br><span>das Oficina CSN</span></h2>
-        <p>
-            Na OMS, a força feminina é protagonista. Temos orgulho de contar com o
-            maior número de mulheres atuando diretamente na manutenção de moldes e
-            segmentos, rompendo barreiras e trazendo inovação, precisão e cuidado
-            para cada serviço executado.
-        </p>
-        
-     
-        </blockquote>
-        <div class="galeria-imagens">
-            <div class="img-wrapper">
-                <img src="JS/assets/Equipe%20feminino.png" alt="Equipe feminina da OMS - CSN" loading="lazy" decoding="async" onerror="this.style.display='none'">
-                <div class="legenda">
-                    <div>
-                        <strong style="color: var(--text-title);">Equipe feminina OMS</strong>
-                    </div>
-                    <div style="color: var(--text-muted); font-size: 13px;">
-                        <i class="fas fa-quote-left" style="color: var(--primary); opacity: 0.5;" aria-hidden="true"></i>
-                        Excelência com olhar feminino
-                    </div>
-                </div>
-            </div>
+        <div class="team-text reveal">
+            <span class="tag">Nosso Time</span>
+            <span class="stat">150+</span>
+            <p>Profissionais capacitados — engenheiros, técnicos e especialistas que atuam com excelência na recuperação de moldes e segmentos para as máquinas de lingotamento contínuo.</p>
         </div>
-    </section>
+    </div>
+</section>
 
-    <section id="diferenciais" class="reveal diferenciais">
-        <span class="badge">Excelência em Manutenção</span>
-        <h2>O coração do lingotamento contínuo</h2>
-        <p>
-            Somos a oficina especializada em moldes e segmentos da CSN,
-            garantindo a máxima disponibilidade e qualidade dos equipamentos
-            que fazem a diferença na produção de aço.
-        </p>
-        <div class="diferenciais-grid">
-            <div class="diff-card">
-                <i class="fas fa-cogs" aria-hidden="true"></i>
-                <h3>Recuperação de Moldes</h3>
-                <p>
-                    Serviço completo de inspeção, reparo e liberação de moldes,
-                    com rastreabilidade total e laudos técnicos detalhados.
-                </p>
-            </div>
-            <div class="diff-card">
-                <i class="fas fa-ruler-combined" aria-hidden="true"></i>
-                <h3>Manutenção de Segmentos</h3>
-                <p>
-                    Atuação em todos os segmentos do lingotamento, incluindo
-                    Bender, Bow, Straightener e horizontais, com precisão métrica.
-                </p>
-            </div>
-            <div class="diff-card">
-                <i class="fas fa-clipboard-list" aria-hidden="true"></i>
-                <h3>Laudos Digitais (Folhões)</h3>
-                <p>
-                    Cada equipamento liberado recebe um folhão digital completo,
-                    com checklists e medições de pass-line, hidráulica e elétrica.
-                </p>
-            </div>
-            <div class="diff-card">
-                <i class="fas fa-exchange-alt" aria-hidden="true"></i>
-                <h3>Swap Inteligente</h3>
-                <p>
-                    Sistema integrado que permite a troca rápida de componentes
-                    entre a oficina e a linha de produção, com histórico automático.
-                </p>
-            </div>
-            <div class="diff-card">
-                <i class="fas fa-warehouse" aria-hidden="true"></i>
-                <h3>Gestão de Estoque</h3>
-                <p>
-                    Controle preciso de peças em reserva, rolos e materiais
-                    consumíveis, com alertas de nível mínimo.
-                </p>
-            </div>
-            <div class="diff-card">
-                <i class="fas fa-chart-bar" aria-hidden="true"></i>
-                <h3>Análise de Desgaste</h3>
-                <p>
-                    Acompanhamento contínuo da tonelagem e dias de operação,
-                    permitindo decisões baseadas em dados reais.
-                </p>
-            </div>
+<!-- ============ DIVERSIDADE ============ -->
+<section id="diversidade" style="padding:0;">
+    <div class="team-band">
+        <div class="team-text reveal">
+            <span class="tag">Diversidade que Transforma</span>
+            <h2 style="font-family:var(--font-display); text-transform:uppercase; color:var(--paper); font-size:clamp(28px,4vw,42px); font-weight:700; line-height:1.05; margin:18px 0 20px;">O maior efetivo de mulheres da oficina CSN</h2>
+            <p>Na OMS, a força feminina é protagonista — o maior número de mulheres atuando diretamente na manutenção de moldes e segmentos, rompendo barreiras e trazendo inovação, precisão e cuidado para cada serviço.</p>
         </div>
-    </section>
-
-    <section id="servicos" class="reveal servicos">
-        <span class="badge badge-csn">Nossas Frentes</span>
-        <h2>O que fazemos</h2>
-        <p>
-            Da chegada do equipamento à liberação para a linha, cada etapa é
-            executada com rigor técnico e documentada digitalmente.
-        </p>
-        <div class="servicos-grid">
-            <div class="servico-item">
-                <i class="fas fa-clipboard-check" aria-hidden="true"></i>
-                <h3>Inspeção de Chegada</h3>
-                <p>Análise crítica de cada componente, com checklists padronizados.</p>
-            </div>
-            <div class="servico-item">
-                <i class="fas fa-tools" aria-hidden="true"></i>
-                <h3>Execução de Reparo</h3>
-                <p>Intervenções mecânicas, hidráulicas e elétricas com alta qualidade.</p>
-            </div>
-            <div class="servico-item">
-                <i class="fas fa-ruler" aria-hidden="true"></i>
-                <h3>Aferição Pass-Line</h3>
-                <p>Medições precisas para garantir o alinhamento e desempenho.</p>
-            </div>
-            <div class="servico-item">
-                <i class="fas fa-check-double" aria-hidden="true"></i>
-                <h3>Liberação Final</h3>
-                <p>Laudo completo e envio do equipamento à reserva ou linha.</p>
-            </div>
+        <div class="team-photo">
+            <img src="JS/assets/Equipe%20feminino.png" alt="Equipe feminina da OMS - CSN" loading="lazy" decoding="async" onerror="this.parentElement.style.display='none'">
         </div>
-    </section>
+    </div>
+</section>
 
-    <section id="mcc" class="reveal sobre-mcc">
-        <span class="badge">Lingotamento Contínuo</span>
+<!-- ============ MCC — abas ============ -->
+<section id="mcc">
+    <div class="section-head reveal">
+        <span class="tag">Lingotamento Contínuo</span>
         <h2>Atuação nas 3 MCCs</h2>
-        <p>
-            A OMS atende as três máquinas de lingotamento contínuo da CSN,
-            garantindo a disponibilidade e a qualidade dos componentes críticos.
-        </p>
-        <div class="mcc-grid">
-            <div class="mcc-card" data-mcc="2" tabindex="0" role="button" aria-expanded="false">
-                <span class="numero">MCC 2</span>
-                <h3>Veios C e D</h3>
-                <span>Moldes, segmentos e cadeiras</span>
-                <div class="mcc-detalhe">
-                    <span class="mcc-chip">Molde</span>
-                    <span class="mcc-chip">Segmento</span>
-                    <span class="mcc-chip">Cadeira Superior</span>
-                    <span class="mcc-chip">Cadeira Inferior</span>
-                </div>
-            </div>
-            <div class="mcc-card" data-mcc="3" tabindex="0" role="button" aria-expanded="false">
-                <span class="numero">MCC 3</span>
-                <h3>Veios E e F</h3>
-                <span>Moldes, segmentos e cadeiras</span>
-                <div class="mcc-detalhe">
-                    <span class="mcc-chip">Molde</span>
-                    <span class="mcc-chip">Segmento</span>
-                    <span class="mcc-chip">Cadeira Superior</span>
-                    <span class="mcc-chip">Cadeira Inferior</span>
-                </div>
-            </div>
-            <div class="mcc-card" data-mcc="4" tabindex="0" role="button" aria-expanded="false">
-                <span class="numero">MCC 4</span>
-                <h3>Veios G e H</h3>
-                <span>Moldes, bender, bow, straightener e horizontais</span>
-                <div class="mcc-detalhe">
-                    <span class="mcc-chip">Molde</span>
-                    <span class="mcc-chip">Bender</span>
-                    <span class="mcc-chip">Bow</span>
-                    <span class="mcc-chip">Straightener R1</span>
-                    <span class="mcc-chip">Straightener R2</span>
-                    <span class="mcc-chip">Horizontal</span>
-                </div>
-            </div>
+        <p>A OMS atende as três máquinas de lingotamento contínuo da CSN, garantindo a disponibilidade e a qualidade dos componentes críticos.</p>
+    </div>
+    <div class="section-inner reveal">
+        <div class="mcc-tabs">
+            <button class="mcc-tab active" data-mcc="mcc2" onclick="window.trocarMcc('mcc2', this)"><strong>MCC 2</strong>Veios C e D</button>
+            <button class="mcc-tab" data-mcc="mcc3" onclick="window.trocarMcc('mcc3', this)"><strong>MCC 3</strong>Veios E e F</button>
+            <button class="mcc-tab" data-mcc="mcc4" onclick="window.trocarMcc('mcc4', this)"><strong>MCC 4</strong>Veios G e H</button>
         </div>
-        <p class="mcc-dica"><i class="fas fa-hand-pointer" aria-hidden="true"></i> Toque em uma MCC para ver os equipamentos atendidos.</p>
-    </section>
-
-    <section id="historia" class="reveal historia">
-        <div class="historia-header">
-            <span class="badge badge-csn">Nossa Origem</span>
-            <h2>A Força por Trás da Aciaria</h2>
-            <p>O OMS não nasceu em um escritório convencional. Ele foi forjado no calor da operação, por engenheiros e mecânicos que vivem as dores reais do chão de fábrica todos os dias.</p>
-        </div>
-        <div class="historia-grid">
-            <div class="historia-text">
-                <div class="history-quote">
-                    "Construímos o software e os processos que nós mesmos sempre buscamos na manutenção industrial."
-                </div>
-                <p>
-                    Uma ferramenta que fala a língua da manutenção siderúrgica, elimina a burocracia do papel e foca no que realmente importa: a disponibilidade e a segurança dos ativos. Hoje, unimos a nossa vasta experiência técnica com a simplicidade digital.
-                </p>
-                <div class="history-card">
-                    <i class="fas fa-users-cog" aria-hidden="true"></i>
-                    <div>
-                        <h3>Vasta experiência na operação</h3>
-                        <p>Engenheiros e mecânicos que vivem a siderurgia na prática, garantindo que o sistema funcione na realidade do chão de fábrica.</p>
+        <div class="mcc-panel active" id="mcc2">
+            <div class="veio-grid">
+                <div class="veio-col">
+                    <span class="veio-label">Veio C</span>
+                    <div class="chips">
+                        <span class="chip">Molde</span><span class="chip">Segmento</span>
+                        <span class="chip">Cadeira Superior</span><span class="chip">Cadeira Inferior</span>
                     </div>
                 </div>
-                <div class="history-card blue">
-                    <i class="fas fa-shield-alt" aria-hidden="true"></i>
-                    <div>
-                        <h3>Segurança e rastreabilidade</h3>
-                        <p>Cada laudo, check-list e medição é salvo em nuvem com assinatura digital, garantindo 100% de integridade nos processos.</p>
-                    </div>
-                </div>
-                <div class="history-card green">
-                    <i class="fas fa-sync-alt" aria-hidden="true"></i>
-                    <div>
-                        <h3>Evolução contínua</h3>
-                        <p>As atualizações do sistema acompanham as reais necessidades dos operadores, supervisores e líderes da CSN.</p>
+                <div class="veio-col">
+                    <span class="veio-label">Veio D</span>
+                    <div class="chips">
+                        <span class="chip">Molde</span><span class="chip">Segmento</span>
+                        <span class="chip">Cadeira Superior</span><span class="chip">Cadeira Inferior</span>
                     </div>
                 </div>
             </div>
-            <div class="photo-grid">
-                <div class="photo-item">
-                    <img src="JS/assets/USINAGEM.jpg" alt="Mecânico operando torno na Usinagem" loading="lazy" decoding="async" onerror="this.style.display='none'">
-                    <div class="photo-overlay">Usinagem de Precisão</div>
+        </div>
+        <div class="mcc-panel" id="mcc3">
+            <div class="veio-grid">
+                <div class="veio-col">
+                    <span class="veio-label">Veio E</span>
+                    <div class="chips">
+                        <span class="chip">Molde</span><span class="chip">Segmento</span>
+                        <span class="chip">Cadeira Superior</span><span class="chip">Cadeira Inferior</span>
+                    </div>
                 </div>
-                <div class="photo-item">
-                    <img src="JS/assets/ELETRICA%20.jpg" alt="Manutenção Elétrica CSN" loading="lazy" decoding="async" onerror="this.style.display='none'">
-                    <div class="photo-overlay">Manutenção Elétrica</div>
-                </div>
-                <div class="photo-item">
-                    <img src="JS/assets/SOLDA%20FOTO.jpg" alt="Soldador na manutenção" loading="lazy" decoding="async" onerror="this.style.display='none'">
-                    <div class="photo-overlay">Soldagem e Caldeiraria</div>
-                </div>
-                <div class="photo-item">
-                    <img src="JS/assets/SILLAS%20IAMGEM.png" alt="Montagem de cilindro hidráulico" loading="lazy" decoding="async" onerror="this.style.display='none'">
-                    <div class="photo-overlay">Montagem Hidráulica</div>
+                <div class="veio-col">
+                    <span class="veio-label">Veio F</span>
+                    <div class="chips">
+                        <span class="chip">Molde</span><span class="chip">Segmento</span>
+                        <span class="chip">Cadeira Superior</span><span class="chip">Cadeira Inferior</span>
+                    </div>
                 </div>
             </div>
         </div>
-    </section>
-
-    <section id="evolucao" class="reveal evolucao">
-        <span class="badge badge-csn">Visão</span>
-        <h2>Cada segundo conta. Cada decisão importa.<br>Com o OMS, dados viram ação<br>e a oficina vira performance.</h2>
-        <div class="evolucao-flow">
-            <span class="evolucao-item">Operar</span>
-            <i class="fas fa-arrow-right" aria-hidden="true"></i>
-            <span class="evolucao-item">Controlar</span>
-            <i class="fas fa-arrow-right" aria-hidden="true"></i>
-            <span class="evolucao-item">Rastrear</span>
-            <i class="fas fa-arrow-right" aria-hidden="true"></i>
-            <span class="evolucao-item">Analisar</span>
-            <i class="fas fa-arrow-right" aria-hidden="true"></i>
-            <span class="evolucao-item evolucao-final">Decidir</span>
+        <div class="mcc-panel" id="mcc4">
+            <div class="veio-grid">
+                <div class="veio-col">
+                    <span class="veio-label">Veio G</span>
+                    <div class="chips">
+                        <span class="chip">Molde</span><span class="chip">Bender</span><span class="chip">Bow</span>
+                        <span class="chip">Straightener R1</span><span class="chip">Straightener R2</span><span class="chip">Horizontal</span>
+                    </div>
+                </div>
+                <div class="veio-col">
+                    <span class="veio-label">Veio H</span>
+                    <div class="chips">
+                        <span class="chip">Molde</span><span class="chip">Bender</span><span class="chip">Bow</span>
+                        <span class="chip">Straightener R1</span><span class="chip">Straightener R2</span><span class="chip">Horizontal</span>
+                    </div>
+                </div>
+            </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <section class="cta-final reveal">
-        <span class="badge">Pronto para otimizar sua manutenção?</span>
-        <h2>Acesse o sistema OMS</h2>
-        <p>
-            Gerencie os serviços da oficina, acompanhe laudos e tenha total
-            visibilidade do fluxo de reparos.
+<!-- ============ FOTO — HISTÓRIA ============ -->
+<section class="photo-break" id="historia" style="padding-top:0; padding-bottom:0;">
+    <div class="photo-break-bg" style="background-image:url('JS/assets/SOLDA%20FOTO.jpg');"></div>
+    <div class="photo-break-content reveal">
+        <span class="tag" style="margin-bottom:20px; display:inline-block;">Nossa Origem</span>
+        <blockquote>Forjado no calor da operação.</blockquote>
+        <p class="lede">
+            O OMS não nasceu em um escritório convencional — foi construído por engenheiros e mecânicos
+            que vivem as dores reais do chão de fábrica todos os dias. Uma ferramenta que fala a língua
+            da manutenção siderúrgica, elimina a burocracia do papel e foca no que realmente importa:
+            a disponibilidade e a segurança dos ativos.
         </p>
-        <div class="cta-buttons">
-            <a href="app.html" class="btn-primary">
-                <i class="fas fa-rocket" aria-hidden="true"></i> Acessar Sistema
-            </a>
-            <a href="#proposito" class="btn-outline">
-                <i class="fas fa-info-circle" aria-hidden="true"></i> Conheça a OMS
-            </a>
+    </div>
+</section>
+
+<!-- ============ RESULTADOS — o que muda na operação, por papel ============ -->
+<section id="resultados">
+    <div class="section-head reveal">
+        <span class="tag">Resultados</span>
+        <h2>O que muda na operação</h2>
+    </div>
+    <div class="section-inner pillars cols-4">
+        <div class="pillar reveal">
+            <span class="idx">Operador</span>
+            <h3>Mais clareza</h3>
+            <ul>
+                <li>Sinótico visual do que está instalado em cada veio</li>
+                <li>Registro do folhão direto no equipamento</li>
+                <li>Painel do técnico com atalhos do dia a dia</li>
+            </ul>
         </div>
-    </section>
-
-    <footer class="footer">
-        <div class="footer-links">
-            <a href="#proposito">Propósito</a>
-            <a href="#recursos">Recursos</a>
-            <a href="#diferenciais">Serviços</a>
-            <a href="#equipe">Time</a>
-            <a href="#diversidade">Diversidade</a>
-            <a href="#historia">Nossa História</a>
-            <a href="#mcc">MCCs</a>
-            <a href="app.html">Sistema</a>
+        <div class="pillar reveal">
+            <span class="idx">Técnico</span>
+            <h3>Menos retrabalho</h3>
+            <ul>
+                <li>Checklist específico por tipo de equipamento</li>
+                <li>Progresso salvo automaticamente</li>
+                <li>Swap com validação de posição e veio</li>
+            </ul>
         </div>
-        <p>
-            &copy; 2026 <span>OMS</span> – Oficina de Moldes e Segmentos &bull;
-            CSN Volta Redonda &bull; GMLC / GGMA
-        </p>
-    </footer>
+        <div class="pillar reveal">
+            <span class="idx">Supervisão</span>
+            <h3>Mais rastreabilidade</h3>
+            <ul>
+                <li>Prontuário completo por peça</li>
+                <li>Histórico de cada ação, com autor e data</li>
+                <li>Laudos em PDF no padrão da engenharia</li>
+            </ul>
+        </div>
+        <div class="pillar reveal">
+            <span class="idx">Gestão</span>
+            <h3>Melhor visão dos indicadores</h3>
+            <ul>
+                <li>KPIs de disponibilidade e tonelagem por MCC</li>
+                <li>Auditoria global do sistema</li>
+                <li>Estoque de reserva e materiais centralizado</li>
+            </ul>
+        </div>
+    </div>
+</section>
 
-    <!-- ============ SCRIPTS ============ -->
-    <!-- Script Three.js (módulo) – Engrenagem 3D premium -->
-    <script type="module">
-        import * as THREE from 'three';
-        import { RoomEnvironment } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/environments/RoomEnvironment.js';
+<!-- ============ MANIFESTO ============ -->
+<section class="manifesto">
+    <div class="section-inner">
+        <span class="tag manifesto-tag reveal">Visão</span>
+        <p class="manifesto-line line-1 reveal">Cada segundo conta.</p>
+        <p class="manifesto-line line-2 reveal">Cada decisão importa.</p>
+        <p class="manifesto-line line-3 reveal">Com o OMS, dados viram <em>ação</em></p>
+        <p class="manifesto-line line-4 reveal">e a oficina vira <em>performance</em>.</p>
+    </div>
+</section>
 
-        const container = document.getElementById('three-container');
-        if (!container) {
-            console.warn('Container #three-container não encontrado.');
-        } else {
-            container.style.minHeight = '100px';
-            container.style.backgroundColor = '#0a0e17';
+<!-- ============ CTA FINAL ============ -->
+<section class="cta-final">
+    <div class="section-inner">
+        <div>
+            <span class="tag">A operação continua</span>
+            <h2>Agora, com mais controle.</h2>
+        </div>
+        <div style="display:flex; gap:16px; flex-wrap:wrap;">
+            <a href="app.html" class="btn btn-solid">Acessar OMS</a>
+            <a href="#arquitetura" class="btn btn-line">Conhecer o sistema</a>
+        </div>
+    </div>
+</section>
 
-            let width = container.clientWidth || 200;
-            let height = container.clientHeight || 120;
+<footer>
+    <span>&copy; 2026 OMS — Oficina de Moldes e Segmentos · CSN Volta Redonda · GMLC/GGMA</span>
+    <div class="foot-links">
+        <a href="#transformacao">Transformação</a>
+        <a href="#recursos">Recursos</a>
+        <a href="#equipe">Equipe</a>
+        <a href="#mcc">MCCs</a>
+        <a href="#resultados">Resultados</a>
+        <a href="app.html">Sistema</a>
+    </div>
+</footer>
 
-            // --- Cena ---
-            const scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x0a0e17);
-
-            // --- Câmera ---
-            const camera = new THREE.PerspectiveCamera(30, width / height, 0.1, 20);
-            camera.position.set(2.2, 1.2, 4.5);
-            camera.lookAt(0, 0, 0);
-
-            // --- Renderer ---
-            const renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(width, height);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 1.2;
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            container.appendChild(renderer.domElement);
-
-            // --- Ambiente HDR ---
-            const pmremGenerator = new THREE.PMREMGenerator(renderer);
-            const envTexture = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
-            scene.environment = envTexture;
-
-            // --- Iluminação de estúdio ---
-            const keyLight = new THREE.DirectionalLight(0xffeedd, 2.5);
-            keyLight.position.set(3, 4, 5);
-            keyLight.castShadow = true;
-            scene.add(keyLight);
-
-            const fillLight = new THREE.DirectionalLight(0x88aaff, 1.0);
-            fillLight.position.set(-4, 1, 2);
-            scene.add(fillLight);
-
-            const rimLight = new THREE.DirectionalLight(0xffaa44, 1.8);
-            rimLight.position.set(-1, -0.5, -5);
-            scene.add(rimLight);
-
-            const pointLight = new THREE.PointLight(0x88aaff, 0.6, 8);
-            pointLight.position.set(0, 2, 1);
-            scene.add(pointLight);
-
-            // --- Parâmetros da engrenagem ---
-            const numTeeth = 18;
-            const innerRadius = 1.2;
-            const outerRadius = 1.85;
-            const holeRadius = 0.45;
-            const numRays = 6;
-            const rayWidth = 0.22;
-            const toothTopWidth = 0.35;
-            const toothBaseWidth = 0.65;
-            const step = (Math.PI * 2) / numTeeth;
-            const halfStep = step / 2;
-
-            function createGearShape() {
-                const shape = new THREE.Shape();
-                const startAngle = -halfStep * 0.5;
-                for (let i = 0; i < numTeeth; i++) {
-                    const ang = i * step + startAngle;
-                    const angBaseStart = ang;
-                    const angBaseEnd = ang + step * toothBaseWidth;
-                    const angTopStart = ang + (step - step * toothTopWidth) / 2;
-                    const angTopEnd = angTopStart + step * toothTopWidth;
-                    const x1 = innerRadius * Math.cos(angBaseStart);
-                    const y1 = innerRadius * Math.sin(angBaseStart);
-                    const x4 = innerRadius * Math.cos(angBaseEnd);
-                    const y4 = innerRadius * Math.sin(angBaseEnd);
-                    const x2 = outerRadius * Math.cos(angTopStart);
-                    const y2 = outerRadius * Math.sin(angTopStart);
-                    const x3 = outerRadius * Math.cos(angTopEnd);
-                    const y3 = outerRadius * Math.sin(angTopEnd);
-                    if (i === 0) shape.moveTo(x1, y1);
-                    shape.lineTo(x2, y2);
-                    shape.lineTo(x3, y3);
-                    shape.lineTo(x4, y4);
-                }
-                shape.closePath();
-                return shape;
-            }
-
-            const mainShape = createGearShape();
-
-            // Furo central
-            const holePath = new THREE.Path();
-            const segments = 32;
-            for (let i = 0; i <= segments; i++) {
-                const theta = (i / segments) * Math.PI * 2;
-                const x = holeRadius * Math.cos(theta);
-                const y = holeRadius * Math.sin(theta);
-                if (i === 0) holePath.moveTo(x, y);
-                else holePath.lineTo(x, y);
-            }
-            mainShape.holes.push(holePath);
-
-            // Vãos entre raios
-            const rayAngleStep = (Math.PI * 2) / numRays;
-            const rayLengthInner = holeRadius + 0.06;
-            const rayLengthOuter = innerRadius - 0.06;
-            const avgRadius = (rayLengthInner + rayLengthOuter) / 2;
-            const angularWidth = rayWidth / avgRadius;
-            for (let i = 0; i < numRays; i++) {
-                const angleCenter = i * rayAngleStep + rayAngleStep / 2;
-                const angleStart = angleCenter - angularWidth / 2;
-                const angleEnd = angleCenter + angularWidth / 2;
-                const hole = new THREE.Path();
-                const r1 = rayLengthInner, r2 = rayLengthOuter;
-                const p1x = r1 * Math.cos(angleStart), p1y = r1 * Math.sin(angleStart);
-                hole.moveTo(p1x, p1y);
-                const p2x = r2 * Math.cos(angleStart), p2y = r2 * Math.sin(angleStart);
-                hole.lineTo(p2x, p2y);
-                const p3x = r2 * Math.cos(angleEnd), p3y = r2 * Math.sin(angleEnd);
-                hole.lineTo(p3x, p3y);
-                const p4x = r1 * Math.cos(angleEnd), p4y = r1 * Math.sin(angleEnd);
-                hole.lineTo(p4x, p4y);
-                hole.closePath();
-                mainShape.holes.push(hole);
-            }
-
-            // Extrusão com bevel
-            const extrudeSettings = {
-                depth: 0.45,
-                bevelEnabled: true,
-                bevelThickness: 0.08,
-                bevelSize: 0.04,
-                bevelSegments: 10,
-            };
-            const geometry = new THREE.ExtrudeGeometry(mainShape, extrudeSettings);
-            geometry.computeBoundingBox();
-            const box = geometry.boundingBox;
-            const centerX = (box.max.x + box.min.x) / 2;
-            const centerY = (box.max.y + box.min.y) / 2;
-            const centerZ = (box.max.z + box.min.z) / 2;
-            geometry.translate(-centerX, -centerY, -centerZ);
-
-            // Material premium (aço escovado com toque de bronze)
-            const material = new THREE.MeshPhysicalMaterial({
-                color: 0xccd0d8,
-                metalness: 0.98,
-                roughness: 0.18,
-                clearcoat: 0.4,
-                clearcoatRoughness: 0.15,
-                envMapIntensity: 1.8,
-                emissive: new THREE.Color(0x333344).multiplyScalar(0.06),
-                emissiveIntensity: 0.3,
-                side: THREE.DoubleSide,
-            });
-
-            const gear = new THREE.Mesh(geometry, material);
-            gear.castShadow = true;
-            gear.receiveShadow = true;
-            gear.rotation.x = 0.2;
-            gear.rotation.z = -0.1;
-            scene.add(gear);
-
-            // --- Eixo central (hub) ---
-            const hubGeo = new THREE.CylinderGeometry(holeRadius - 0.02, holeRadius - 0.02, 0.55, 32);
-            const hubMat = new THREE.MeshPhysicalMaterial({
-                color: 0xaaaac0,
-                metalness: 0.98,
-                roughness: 0.15,
-                emissive: new THREE.Color(0x334466).multiplyScalar(0.06),
-            });
-            const hub = new THREE.Mesh(hubGeo, hubMat);
-            hub.position.z = 0;
-            hub.rotation.x = Math.PI / 2;
-            gear.add(hub);
-
-            // --- Parafusos decorativos no hub ---
-            const screwMat = new THREE.MeshPhysicalMaterial({
-                color: 0x8888aa,
-                metalness: 0.9,
-                roughness: 0.25,
-            });
-            for (let i = 0; i < 6; i++) {
-                const angle = (i / 6) * Math.PI * 2;
-                const radius = holeRadius + 0.18;
-                const screw = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), screwMat);
-                screw.position.set(Math.cos(angle) * radius, Math.sin(angle) * radius, 0.1);
-                gear.add(screw);
-            }
-
-            // --- Interação com mouse ---
-            let targetRotX = 0.2, targetRotY = 0;
-            const handleMouseMove = (event) => {
-                const x = (event.clientX / window.innerWidth) * 2 - 1;
-                const y = -(event.clientY / window.innerHeight) * 2 + 1;
-                targetRotX = 0.2 + y * 0.15;
-                targetRotY = x * 0.25;
-            };
-            document.addEventListener('mousemove', handleMouseMove);
-
-            // --- Animação ---
-            function animate() {
-                requestAnimationFrame(animate);
-                gear.rotation.z += 0.004;
-                gear.rotation.x += (targetRotX - gear.rotation.x) * 0.04;
-                gear.rotation.y += (targetRotY - gear.rotation.y) * 0.04;
-                renderer.render(scene, camera);
-            }
-            animate();
-
-            // --- Redimensionamento ---
-            function onResize() {
-                const w = container.clientWidth;
-                const h = container.clientHeight || 120;
-                if (w > 0 && h > 0) {
-                    camera.aspect = w / h;
-                    camera.updateProjectionMatrix();
-                    renderer.setSize(w, h);
-                }
-            }
-            const resizeObserver = new ResizeObserver(() => onResize());
-            resizeObserver.observe(container);
-            window.addEventListener('resize', onResize);
-            setTimeout(onResize, 200);
-
-            window.addEventListener('beforeunload', () => {
-                document.removeEventListener('mousemove', handleMouseMove);
-                renderer.dispose();
-                pmremGenerator.dispose();
-            });
-
-            console.log('✅ Engrenagem 3D premium inicializada.');
+<script>
+// ---- Menu mobile ----
+    (function () {
+        const abrir = document.getElementById('nav-hamburger');
+        const fechar = document.getElementById('drawer-close');
+        const overlay = document.getElementById('drawer-overlay');
+        const drawer = document.getElementById('drawer');
+        function open() {
+            drawer.classList.add('open'); overlay.classList.add('open');
+            abrir.setAttribute('aria-expanded', 'true');
+            document.body.style.overflow = 'hidden';
         }
-    </script>
-
-    <!-- ============ SCRIPTS LEGACY (não-modulares) ============ -->
-    <script>
-        // ---- EFEITOS ESTILO APPLE ----
-        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
-
-        if (!prefersReducedMotion) {
-            (function () {
-                const blobs = document.querySelectorAll('.aurora-bg span');
-                if (!blobs.length) return;
-                let ticking = false;
-                function atualizar() {
-                    const y = window.scrollY;
-                    blobs.forEach((b, i) => {
-                        const velocidade = 0.04 + i * 0.02;
-                        b.style.transform = `translateY(${y * velocidade}px)`;
-                    });
-                    ticking = false;
-                }
-                window.addEventListener('scroll', () => {
-                    if (!ticking) {
-                        requestAnimationFrame(atualizar);
-                        ticking = true;
-                    }
-                }, { passive: true });
-            })();
-
-            (function () {
-                const nav = document.querySelector('.navbar');
-                if (!nav) return;
-                function atualizar() {
-                    if (window.scrollY > 40) {
-                        nav.style.background = 'rgba(10, 14, 23, 0.98)';
-                        nav.style.boxShadow = '0 1px 0 rgba(255,255,255,0.04), 0 24px 48px -20px rgba(0,0,0,0.65)';
-                    } else {
-                        nav.style.background = 'rgba(10, 14, 23, 0.92)';
-                        nav.style.boxShadow = '0 1px 0 rgba(255,255,255,0.03), 0 20px 40px -20px rgba(0,0,0,0.5)';
-                    }
-                }
-                window.addEventListener('scroll', atualizar, { passive: true });
-                atualizar();
-            })();
+        function close() {
+            drawer.classList.remove('open'); overlay.classList.remove('open');
+            abrir.setAttribute('aria-expanded', 'false');
+            document.body.style.overflow = '';
         }
+        abrir?.addEventListener('click', open);
+        fechar?.addEventListener('click', close);
+        overlay?.addEventListener('click', close);
+        drawer?.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+    })();
 
-        if (!prefersReducedMotion && hasFinePointer) {
-            (function () {
-                const wrapper = document.querySelector('.hero-image-wrapper');
-                const card = document.querySelector('.dashboard-mockup');
-                if (!wrapper || !card) return;
-                wrapper.addEventListener('mousemove', (e) => {
-                    const rect = wrapper.getBoundingClientRect();
-                    const px = (e.clientX - rect.left) / rect.width - 0.5;
-                    const py = (e.clientY - rect.top) / rect.height - 0.5;
-                    const rotY = px * 8;
-                    const rotX = -py * 8;
-                    card.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) translateZ(10px)`;
-                });
-                wrapper.addEventListener('mouseleave', () => {
-                    card.style.transform = 'rotateX(0deg) rotateY(0deg) translateZ(0)';
-                });
-            })();
+    // ---- Abas MCC ----
+    window.trocarMcc = function (id, btn) {
+        document.querySelectorAll('.mcc-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.mcc-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(id).classList.add('active');
+    };
 
-            (function () {
-                const cards = document.querySelectorAll('.diff-card, .recurso-card, .mcc-card, .servico-item');
-                cards.forEach((c) => {
-                    c.addEventListener('mousemove', (e) => {
-                        const rect = c.getBoundingClientRect();
-                        c.style.setProperty('--mx', `${e.clientX - rect.left}px`);
-                        c.style.setProperty('--my', `${e.clientY - rect.top}px`);
-                    });
-                });
-            })();
-
-            (function () {
-                const botoes = document.querySelectorAll('.btn-primary, .btn-outline');
-                botoes.forEach((btn) => {
-                    btn.addEventListener('mousemove', (e) => {
-                        const rect = btn.getBoundingClientRect();
-                        const x = (e.clientX - rect.left - rect.width / 2) * 0.12;
-                        const y = (e.clientY - rect.top - rect.height / 2) * 0.16;
-                        btn.style.transform = `translate(${x}px, ${y}px)`;
-                    });
-                    btn.addEventListener('mouseleave', () => {
-                        btn.style.transform = 'translate(0, 0)';
-                    });
-                });
-            })();
+    // ---- Status de conexão ----
+    (function () {
+        const pill = document.getElementById('conn-status');
+        const texto = document.getElementById('conn-status-text');
+        if (!pill || !texto) return;
+        function atualizar() {
+            if (navigator.onLine) {
+                pill.classList.remove('offline'); pill.classList.add('online');
+                texto.textContent = 'On-line';
+            } else {
+                pill.classList.remove('online'); pill.classList.add('offline');
+                texto.textContent = 'Off-line';
+            }
         }
+        window.addEventListener('online', atualizar);
+        window.addEventListener('offline', atualizar);
+        atualizar();
+    })();
 
-        // ---- SCROLL REVEAL ----
-        (function () {
-            const alvos = document.querySelectorAll('.reveal');
-            if (!alvos.length) return;
-            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                alvos.forEach((el) => el.classList.add('in-view'));
-                return;
-            }
-            const observer = new IntersectionObserver((entradas) => {
-                entradas.forEach((entrada) => {
-                    if (entrada.isIntersecting) {
-                        entrada.target.classList.add('in-view');
-                        observer.unobserve(entrada.target);
-                    }
-                });
-            }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
-            alvos.forEach((el) => observer.observe(el));
-        })();
-
-        // ---- CONTADORES ----
-        (function () {
-            const els = document.querySelectorAll('[data-count]');
-            if (!els.length) return;
-            function animar(el) {
-                const alvo = parseInt(el.dataset.count, 10) || 0;
-                const sufixo = el.dataset.suffix || '';
-                const duracao = 1200;
-                const inicio = performance.now();
-                function passo(agora) {
-                    const progresso = Math.min((agora - inicio) / duracao, 1);
-                    const valor = Math.floor(progresso * alvo);
-                    el.textContent = valor + sufixo;
-                    if (progresso < 1) requestAnimationFrame(passo);
-                    else el.textContent = alvo + sufixo;
-                }
-                requestAnimationFrame(passo);
-            }
-            const observer = new IntersectionObserver((entradas) => {
-                entradas.forEach((entrada) => {
-                    if (entrada.isIntersecting) {
-                        animar(entrada.target);
-                        observer.unobserve(entrada.target);
-                    }
-                });
-            }, { threshold: 0.4 });
-            els.forEach((el) => observer.observe(el));
-        })();
-
-        // ---- STATUS DE CONEXÃO ----
-        (function () {
-            const pill = document.getElementById('conn-status');
-            const texto = document.getElementById('conn-status-text');
-            if (!pill || !texto) return;
-            function atualizar() {
-                if (navigator.onLine) {
-                    pill.classList.remove('offline');
-                    pill.classList.add('online');
-                    texto.textContent = 'On-line';
-                } else {
-                    pill.classList.remove('online');
-                    pill.classList.add('offline');
-                    texto.textContent = 'Off-line (leitura)';
-                }
-            }
-            window.addEventListener('online', atualizar);
-            window.addEventListener('offline', atualizar);
-            atualizar();
-        })();
-
-        // ---- INSTALAR PWA ----
-        (function () {
-            const btn = document.getElementById('btn-install-pwa');
-            if (!btn) return;
-            let promptEvento = null;
-            window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
-                promptEvento = e;
-                btn.style.display = 'inline-flex';
-            });
-            btn.addEventListener('click', async () => {
-                if (!promptEvento) return;
-                promptEvento.prompt();
-                await promptEvento.userChoice;
-                promptEvento = null;
-                btn.style.display = 'none';
-            });
-            window.addEventListener('appinstalled', () => {
-                btn.style.display = 'none';
-            });
-        })();
-
-        // ---- CARDS MCC ----
-        (function () {
-            const cards = document.querySelectorAll('.mcc-card');
-            cards.forEach((card) => {
-                function toggle() {
-                    const estaAtivo = card.classList.contains('active');
-                    cards.forEach((c) => { c.classList.remove('active'); c.setAttribute('aria-expanded', 'false'); });
-                    if (!estaAtivo) {
-                        card.classList.add('active');
-                        card.setAttribute('aria-expanded', 'true');
-                    }
-                }
-                card.addEventListener('click', toggle);
-                card.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
-                });
-            });
-        })();
-
-        // ---- MENU MOBILE ----
-        (function () {
-            const btnAbrir = document.getElementById('nav-hamburger');
-            const btnFechar = document.getElementById('mobile-drawer-close');
-            const overlay = document.getElementById('mobile-drawer-overlay');
-            const drawer = document.getElementById('mobile-drawer');
-            function abrirMenu() {
-                drawer.classList.add('open');
-                overlay.classList.add('open');
-                btnAbrir.setAttribute('aria-expanded', 'true');
-                document.body.style.overflow = 'hidden';
-            }
-            function fecharMenu() {
-                drawer.classList.remove('open');
-                overlay.classList.remove('open');
-                btnAbrir.setAttribute('aria-expanded', 'false');
-                document.body.style.overflow = '';
-            }
-            btnAbrir?.addEventListener('click', abrirMenu);
-            btnFechar?.addEventListener('click', fecharMenu);
-            overlay?.addEventListener('click', fecharMenu);
-            drawer?.querySelectorAll('a').forEach(a => a.addEventListener('click', fecharMenu));
-            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fecharMenu(); });
-        })();
-
-        // ---- SERVICE WORKER ----
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('service-worker.js')
-                    .then(() => console.log('✅ Service worker registrado.'))
-                    .catch((err) => console.warn('⚠️ Falha ao registrar service worker:', err));
-            });
+    // ---- Scroll reveal em cascata (grades revelam item por item) ----
+    (function () {
+        const alvos = document.querySelectorAll('.reveal');
+        if (!alvos.length) return;
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            alvos.forEach(el => el.classList.add('in-view'));
+            return;
         }
-    </script>
+        // agrupa por elemento-pai pra escalonar o delay dentro de cada grade
+        const grupos = new Map();
+        alvos.forEach(el => {
+            const pai = el.parentElement;
+            if (!grupos.has(pai)) grupos.set(pai, []);
+            grupos.get(pai).push(el);
+        });
+        grupos.forEach(irmaos => {
+            irmaos.forEach((el, i) => {
+                el.style.transitionDelay = Math.min(i * 70, 280) + 'ms';
+            });
+        });
+        const obs = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('in-view');
+                    obs.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+        alvos.forEach(el => obs.observe(el));
+    })();
+
+    // ---- Parallax sutil nas fotos de fundo ao rolar ----
+    (function () {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        const fundos = document.querySelectorAll('.hero-bg, .photo-break-bg');
+        if (!fundos.length) return;
+        let ticking = false;
+        function atualizar() {
+            fundos.forEach((bg) => {
+                const rect = bg.parentElement.getBoundingClientRect();
+                const meio = rect.top + rect.height / 2 - window.innerHeight / 2;
+                const desloc = meio * -0.08;
+                bg.style.transform = `translateY(${desloc}px) scale(1.12)`;
+            });
+            ticking = false;
+        }
+        window.addEventListener('scroll', () => {
+            if (!ticking) { requestAnimationFrame(atualizar); ticking = true; }
+        }, { passive: true });
+        atualizar();
+    })();
+
+    // ---- Service worker (PWA) ----
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('service-worker.js').catch(() => {});
+        });
+    }
+</script>
 </body>
 </html>
