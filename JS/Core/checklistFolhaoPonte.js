@@ -85,6 +85,7 @@ export function preencherCamposFolhao(valores, camposProtegidos) {
     const protegidos = camposProtegidos instanceof Set ? camposProtegidos : new Set(camposProtegidos || []);
     let preenchidos = 0;
     let naoEncontrados = 0;
+    const camposNaoEncontrados = []; // 🆕 nomes de verdade, não só a contagem
 
     const destacarCampo = (el, ehAtencao = false) => {
         if (!el) return;
@@ -120,15 +121,45 @@ export function preencherCamposFolhao(valores, camposProtegidos) {
                     algumMarcado = true;
                 }
             });
-            if (algumMarcado) preenchidos++; else naoEncontrados++;
+            if (algumMarcado) { preenchidos++; } else { naoEncontrados++; camposNaoEncontrados.push(campo); }
             return;
         }
 
         const inputEl = document.getElementById(campo);
-        if (!inputEl) { naoEncontrados++; return; }
+        if (!inputEl) { naoEncontrados++; camposNaoEncontrados.push(campo); return; }
         if (inputEl.dataset.editadoManual === '1') return;
+
+        if (inputEl.tagName === 'SELECT') {
+            // 🐛 CORRIGIDO: elemento.value = valor exige bater exatamente
+            // (maiúsculo/minúsculo incluso) com uma <option> existente —
+            // "ok" não batia com a opção "OK" e o select ficava sem
+            // selecionar nada, silenciosamente. Agora compara sem
+            // diferenciar maiúsculas/minúsculas nem espaços nas pontas,
+            // olhando tanto o value quanto o texto de cada option.
+            const valorNormalizado = String(valor).trim().toUpperCase();
+            const opcaoCompativel = Array.from(inputEl.options).find(op =>
+                op.value.trim().toUpperCase() === valorNormalizado ||
+                op.textContent.trim().toUpperCase() === valorNormalizado
+            );
+            if (opcaoCompativel) {
+                inputEl.value = opcaoCompativel.value;
+                destacarCampo(inputEl);
+                preenchidos++;
+            } else {
+                // Achou o campo, mas o valor não bate com nenhuma opção —
+                // mais informativo que só "não encontrado".
+                naoEncontrados++;
+                camposNaoEncontrados.push(`${campo} (valor "${valor}" não bate com nenhuma opção do select)`);
+            }
+            return;
+        }
+
         if (inputEl.type === 'checkbox') {
-            inputEl.checked = (valor === 'OK');
+            // 🐛 CORRIGIDO: só aceitava valor === 'OK'. Etapas do tipo
+            // sim_nao guardam 'SIM'/'NÃO' hoje (não mais só 'OK' como
+            // antes) — sem aceitar 'SIM' aqui, o checkbox nunca marcava,
+            // mesmo com a etapa respondida corretamente como SIM.
+            inputEl.checked = (valor === 'OK' || valor === 'SIM');
         } else {
             inputEl.value = valor;
         }
@@ -136,7 +167,13 @@ export function preencherCamposFolhao(valores, camposProtegidos) {
         preenchidos++;
     });
 
-    return { preenchidos, naoEncontrados };
+    // 🆕 Sempre loga a lista completa no console — é o único jeito de
+    // saber QUAIS etapas corrigir em "Editar Etapa" sem adivinhar.
+    if (camposNaoEncontrados.length > 0) {
+        console.warn('⚠️ folhao_campo não encontrado no formulário (verifique/corrija em "Editar Etapa" no Checklist de Execução):', camposNaoEncontrados);
+    }
+
+    return { preenchidos, naoEncontrados, camposNaoEncontrados };
 }
 
 // --------------------------------------------------------------
@@ -145,13 +182,13 @@ export function preencherCamposFolhao(valores, camposProtegidos) {
 // existia só dentro do folhaoMolde4.js; agora fica aqui pra qualquer
 // Folhão que use a ponte poder chamar.
 // --------------------------------------------------------------
-export function mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados) {
+export function mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados, camposNaoEncontrados = []) {
     const existente = document.getElementById('toast-preenchimento-checklist');
     if (existente) existente.remove();
 
     const toast = document.createElement('div');
     toast.id = 'toast-preenchimento-checklist';
-    toast.style.cssText = 'position:fixed; top:16px; right:16px; z-index:10500; max-width:340px; padding:12px 16px; border-radius:10px; font-size:13px; line-height:1.4; box-shadow:0 10px 30px rgba(0,0,0,0.4); animation:fadeInModal 0.25s ease-out;';
+    toast.style.cssText = 'position:fixed; top:16px; right:16px; z-index:10500; max-width:380px; max-height:70vh; overflow-y:auto; padding:12px 16px; border-radius:10px; font-size:13px; line-height:1.4; box-shadow:0 10px 30px rgba(0,0,0,0.4); animation:fadeInModal 0.25s ease-out;';
 
     if (naoEncontrados === 0) {
         toast.style.background = 'rgba(16, 185, 129, 0.95)';
@@ -160,11 +197,18 @@ export function mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados) 
     } else {
         toast.style.background = 'rgba(245, 158, 11, 0.95)';
         toast.style.color = '#1a1a1a';
-        toast.innerHTML = `<i class="fas fa-triangle-exclamation"></i> ${preenchidos} campo(s) preenchido(s), mas <strong>${naoEncontrados}</strong> não foram encontrados no Folhão — o mapeamento (folhao_campo) de alguma etapa está apontando pro id errado. Corrija em Editar Etapa no Checklist.`;
+        // 🆕 Lista os nomes de verdade (até 20) em vez de só o número —
+        // sem isso não dá pra saber qual etapa corrigir em "Editar Etapa".
+        const listaVisivel = camposNaoEncontrados.slice(0, 20);
+        const sobrando = camposNaoEncontrados.length - listaVisivel.length;
+        const listaHtml = listaVisivel.length > 0
+            ? `<div style="margin-top:8px; padding:8px; background:rgba(0,0,0,0.12); border-radius:6px; font-family:monospace; font-size:11px; word-break:break-all;">${listaVisivel.join('<br>')}${sobrando > 0 ? `<br>… e mais ${sobrando}` : ''}</div>`
+            : '';
+        toast.innerHTML = `<i class="fas fa-triangle-exclamation"></i> ${preenchidos} campo(s) preenchido(s), mas <strong>${naoEncontrados}</strong> não foram encontrados no Folhão — o mapeamento (folhao_campo) das etapas abaixo está apontando pro id errado. Corrija em Editar Etapa no Checklist.${listaHtml}`;
     }
 
     document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), naoEncontrados > 0 ? 12000 : 6000);
+    setTimeout(() => toast.remove(), naoEncontrados > 0 ? 20000 : 6000);
 }
 
 // --------------------------------------------------------------

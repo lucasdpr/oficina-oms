@@ -307,7 +307,7 @@ async function preencherFolhaoComChecklistExecucao(id, item) {
             'molde4-lider-responsavel', 'molde4-desempenho', 'molde4-nova-meta'
         ]);
 
-        const { preenchidos, naoEncontrados } = preencherCamposFolhao(ponte.valores, camposProtegidos);
+        const { preenchidos, naoEncontrados, camposNaoEncontrados } = preencherCamposFolhao(ponte.valores, camposProtegidos);
 
         // 🆕 RESUMO VISÍVEL: sem isso, o técnico só descobre se a ponte
         // funcionou catando campo por campo numa tabela de 57 linhas. Um
@@ -316,7 +316,7 @@ async function preencherFolhaoComChecklistExecucao(id, item) {
         // alguma etapa está apontando pro campo errado, em vez de falhar
         // silenciosamente igual antes).
         if (preenchidos > 0 || naoEncontrados > 0) {
-            mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados);
+            mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados, camposNaoEncontrados);
         }
     } catch (e) {
         console.error('⚠️ Não consegui puxar os valores do Checklist de Execução pro folhão:', e);
@@ -336,9 +336,9 @@ async function preencherFolhaoBenderComChecklistExecucao(id, item) {
             'mcc4-tag-name', 'mcc4-data-inicio', 'mcc4-data-fim', 'mcc4-motivo'
         ]);
 
-        const { preenchidos, naoEncontrados } = preencherCamposFolhao(ponte.valores, camposProtegidos);
+        const { preenchidos, naoEncontrados, camposNaoEncontrados } = preencherCamposFolhao(ponte.valores, camposProtegidos);
         if (preenchidos > 0 || naoEncontrados > 0) {
-            mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados);
+            mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados, camposNaoEncontrados);
         }
     } catch (e) {
         console.error('⚠️ Não consegui puxar os valores do Checklist de Execução pro folhão (Bender):', e);
@@ -934,9 +934,24 @@ window.concluirEImprimirFolhaoMolde4 = async function(tag) {
     }
 
     let item = BANCO_ATIVOS.find(a => a.id === tag);
+    // 🆕 Parcial x Geral: Geral zera tudo (comportamento de sempre).
+    // Parcial não zera — o inspetor informa quantas corridas o molde
+    // entra no veio (ex: trocou placa, mas o corpo do molde continua
+    // com desgaste acumulado, então não é "vida nova" nem "zero").
+    // Sem valor informado no Parcial, mantém a tonelagem como estava
+    // (mais seguro que zerar por engano).
+    const tipoExecucaoM4 = (getV('molde4-tipo-exec') || 'GERAL').toUpperCase();
+    const tonEntradaParcial = getV('molde4-ton-entrada');
     if (item) {
         item.local = "Oficina / Reserva";
-        item.ton = 0;
+        if (tipoExecucaoM4 === 'PARCIAL') {
+            if (tonEntradaParcial !== '' && !isNaN(parseFloat(tonEntradaParcial))) {
+                item.ton = parseFloat(tonEntradaParcial);
+            }
+            // sem valor informado: mantém item.ton como já estava
+        } else {
+            item.ton = 0;
+        }
         item.dias = 0;
         localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
     }
@@ -950,7 +965,7 @@ window.concluirEImprimirFolhaoMolde4 = async function(tag) {
                 tipo: item?.tipo || "Molde",
                 mcc_compat: item?.mcc_compat || "4",
                 local: "Oficina / Reserva",
-                tonelagem: 0,
+                tonelagem: item?.ton ?? 0,
                 dias: 0,
                 status: "Reserva"
             })
@@ -1500,8 +1515,16 @@ window.concluirEImprimirFolhaoBender = async function(tag) {
     }
 
     let item = BANCO_ATIVOS.find(a => a.id === tag);
+    // 🆕 Parcial x Geral: Geral zera (como sempre). Parcial NÃO mexe em
+    // tonelagem/dias — Bender e equipamentos não-molde não têm o
+    // conceito de "entra com X corridas" que o molde tem.
+    const tipoExecucaoBender = (getV('mcc4-tipo-exec') || 'GERAL').toUpperCase();
     if (item) {
-        item.ton = 0; item.dias = 0; item.local = "Oficina / Reserva";
+        item.local = "Oficina / Reserva";
+        if (tipoExecucaoBender !== 'PARCIAL') {
+            item.ton = 0;
+            item.dias = 0;
+        }
         localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
     }
 

@@ -850,12 +850,29 @@ window.abrirMedicaoMultiplaChecklistExecucao = function(etapaId) {
             </div>
             <p class="text-muted" style="font-size:11.5px; margin-bottom:12px;">Preenche o que já mediu — não precisa fazer tudo de uma vez, dá pra voltar e completar depois.</p>
             <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:8px; margin-bottom:14px;">
-                ${chaves.map(chave => `
+                ${chaves.map(chave => {
+                    // 🆕 RESTRIÇÃO NA ORIGEM: se a chave termina com "(OK/NOK)",
+                    // esse valor SÓ pode ser OK ou NOK — mostra um select
+                    // travado em vez de texto livre. Sem isso, um técnico
+                    // podia digitar "qq", "q", qualquer coisa, e o valor só
+                    // ia falhar silenciosamente (ou com aviso confuso) lá no
+                    // Folhão, sem ninguém no Checklist saber que tinha erro.
+                    const ehOkNok = /\(OK\/NOK\)\s*$/i.test(chave);
+                    const rotulo = ehOkNok ? chave.replace(/\s*\(OK\/NOK\)\s*$/i, '') : chave;
+                    const valorSalvo = valoresAtuais[chave] || '';
+                    const campoHtml = ehOkNok
+                        ? `<select data-chave-medicao="${chave}" class="premium-select" style="width:100%; padding:4px 6px; font-size:12px;">
+                               <option value="" ${!valorSalvo ? 'selected' : ''}>—</option>
+                               <option value="OK" ${valorSalvo === 'OK' ? 'selected' : ''}>OK</option>
+                               <option value="NOK" ${valorSalvo === 'NOK' ? 'selected' : ''}>NOK</option>
+                           </select>`
+                        : `<input type="text" data-chave-medicao="${chave}" value="${valorSalvo}" class="premium-select" style="width:100%; padding:4px 6px; font-size:12px;">`;
+                    return `
                     <div>
-                        <label style="font-size:10.5px; color:var(--text-muted); display:block; margin-bottom:2px;">${chave}</label>
-                        <input type="text" data-chave-medicao="${chave}" value="${valoresAtuais[chave] || ''}" class="premium-select" style="width:100%; padding:4px 6px; font-size:12px;">
+                        <label style="font-size:10.5px; color:var(--text-muted); display:block; margin-bottom:2px;">${rotulo}</label>
+                        ${campoHtml}
                     </div>
-                `).join('')}
+                `;}).join('')}
             </div>
             <button class="btn-premium btn-success" style="width:100%;" onclick="window.salvarMedicaoMultiplaChecklistExecucao(${etapaId})">
                 <i class="fas fa-save"></i> Salvar medições
