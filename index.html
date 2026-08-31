@@ -651,7 +651,8 @@ section { padding: 128px clamp(20px, 4vw, 48px); position: relative; }
 .team-text p { font-size: 16px; color: var(--paper-dim); max-width: 44ch; }
 @media (max-width: 900px) {
     .team-band { grid-template-columns: 1fr; }
-    .team-photo { min-height: 320px; }
+    .team-photo { min-height: 320px; order: 2; }
+    .team-text { order: 1; }
 }
 
 /* ===== MCC — abas técnicas ===== */
