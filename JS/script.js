@@ -5966,7 +5966,7 @@ window.processarProducaoDiaria = async function() {
         const apiBase = await resolverApiBase();
         const resposta = await fetchComRetry(`${apiBase}/api/apontar_producao_geral`, {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ qtd_mcc2: prodMcc2, qtd_mcc3: prodMcc3, qtd_mcc4: prodMcc4, operador: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Sistema" })
+            body: JSON.stringify({ qtd_mcc2: prodMcc2, qtd_mcc3: prodMcc3, qtd_mcc4: prodMcc4, operador: OPERADOR_LOGADO ? OPERADOR_LOGADO.nome : "Sistema" })
         });
         const resultado = await resposta.json();
         
@@ -6014,7 +6014,7 @@ window.salvarApontamentoMoldes = async function(event) {
         const apiBase = await resolverApiBase();
         const resposta = await fetchComRetry(`${apiBase}/api/apontar_moldes`, {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ qtd_mcc2: m2, qtd_mcc3: m3, qtd_mcc4: m4, operador: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Desconhecido" })
+            body: JSON.stringify({ qtd_mcc2: m2, qtd_mcc3: m3, qtd_mcc4: m4, operador: OPERADOR_LOGADO ? OPERADOR_LOGADO.nome : "Desconhecido" })
         });
         const resultado = await resposta.json();
         
@@ -6084,7 +6084,7 @@ window.desfazerApontamentoGeral = async function(id_log) {
         const apiBase = await resolverApiBase();
         const res = await fetchComRetry(`${apiBase}/api/desfazer_apontamento_geral`, {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ log_id: id_log, operador: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Desconhecido" })
+            body: JSON.stringify({ log_id: id_log, operador: OPERADOR_LOGADO ? OPERADOR_LOGADO.nome : "Desconhecido" })
         });
         const json = await res.json();
         
@@ -6106,7 +6106,7 @@ window.desfazerApontamentoMolde = async function(id_log) {
         const apiBase = await resolverApiBase();
         const res = await fetchComRetry(`${apiBase}/api/desfazer_apontamento_moldes`, {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ log_id: id_log, operador: window.OPERADOR_LOGADO ? window.OPERADOR_LOGADO.nome : "Desconhecido" })
+            body: JSON.stringify({ log_id: id_log, operador: OPERADOR_LOGADO ? OPERADOR_LOGADO.nome : "Desconhecido" })
         });
         const json = await res.json();
         
@@ -7592,6 +7592,9 @@ window.abrirModalSaidaQualidade = function(registroId, pecaId) {
                         </button>
                         <div id="qualidade-fotos-saida-preview" class="hidden" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;"></div>
                     </div>
+                    <button class="btn-premium" id="btn-abrir-checklist-qualidade" style="width:100%; margin-bottom:10px; border-color:#a78bfa; color:#a78bfa;">
+                        <i class="fas fa-clipboard-check"></i> Preencher Checklist de Saída
+                    </button>
                     <button class="btn-premium btn-success w-100" id="btn-confirmar-saida-qualidade">
                         <i class="fas fa-check"></i> Confirmar Saída
                     </button>
@@ -7606,6 +7609,7 @@ window.abrirModalSaidaQualidade = function(registroId, pecaId) {
     document.getElementById('qualidade-obs-saida').value = '';
     renderPreviewFotosQualidade('saida');
     document.getElementById('btn-confirmar-saida-qualidade').onclick = () => window.confirmarSaidaQualidade(registroId);
+    document.getElementById('btn-abrir-checklist-qualidade').onclick = () => window.abrirChecklistQualidadeSaida(registroId, pecaId);
     overlay.classList.remove('hidden');
 };
 

@@ -192,8 +192,8 @@
         }
         .mcc-grafico-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); border-color: var(--primary); }
         /* ===== RESPONSIVE ===== */
-        @media (max-width: 992px) { .kpi-container { grid-template-columns: 1fr 1fr; } .graficos-container { grid-template-columns: 1fr; } .welcome-box { flex-direction: column; align-items: flex-start; } }
-        @media (max-width: 600px) { .kpi-container { grid-template-columns: 1fr; } .kpi-data h4 { font-size: 1.5rem; } .btn-premium { font-size: 0.75rem; padding: 8px 14px; } }
+        @media (max-width: 992px) { .kpi-container { grid-template-columns: 1fr 1fr; } .graficos-container { grid-template-columns: 1fr; } .welcome-box { flex-direction: column; align-items: flex-start; } .painel-geral-grid-3 { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 600px) { .kpi-container { grid-template-columns: 1fr; } .kpi-data h4 { font-size: 1.5rem; } .btn-premium { font-size: 0.75rem; padding: 8px 14px; } .painel-geral-grid-3 { grid-template-columns: 1fr; } }
         /* ===== MODAL ===== */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 9999; padding: 20px; }
         .modal-overlay:not(.hidden) { display: flex; animation: modalOverlayFade 0.2s ease-out; }
@@ -681,10 +681,10 @@
     </div>
 
     <!-- 3. GRID PRINCIPAL (Módulos de Controle) -->
-    <div class="dashboard-main-grid">
+    <div class="dashboard-main-grid" style="display:block;">
         
         <!-- COLUNA ESQUERDA: Fila de Críticos e Gargalos -->
-        <div class="glass-panel" style="padding: 24px; display: flex; flex-direction: column;">
+        <div class="glass-panel" style="padding: 24px; display: flex; flex-direction: column; height:auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
                 <div>
                     <h3 style="color:var(--text-title); font-size:1.1rem;">
@@ -698,7 +698,7 @@
             </div>
             
             <!-- O Container original que o JS popula -->
-            <div id="top-criticos-container" style="flex: 1; max-height: 400px; overflow-y: auto; padding-right: 8px;">
+            <div id="top-criticos-container" style="max-height: 400px; overflow-y: auto; padding-right: 8px;">
                 <!-- Fallback enquanto o JS não carrega -->
                 <div class="text-muted" style="text-align:center; padding: 40px 0; border: 1px dashed var(--border); border-radius: var(--radius);">
                     <i class="fas fa-satellite-dish fa-spin" style="font-size: 2rem; margin-bottom: 10px; color: var(--primary);"></i>
@@ -706,103 +706,37 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- COLUNA DIREITA: Comando & Controle -->
-        <div class="glass-panel" style="padding: 24px;">
-            <h3 style="color:var(--text-title); font-size:1.1rem; margin-bottom: 8px;">
-                <i class="fas fa-gamepad" style="color:var(--primary);"></i> Painel de Comando
+    <!-- NOVO: reforço do Painel Geral — pensado pra supervisor/gerente -->
+    <div class="painel-geral-grid-3" style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 24px;">
+        <div class="glass-panel" style="padding: 20px;">
+            <h3 style="color:var(--text-title); font-size:1rem; margin-bottom: 4px;">
+                <i class="fas fa-ranking-star" style="color:#f59e0b;"></i> Risco por Veio
             </h3>
-            <p class="text-muted" style="font-size: 0.8rem;">Acessos rápidos às operações de turno.</p>
-
-            <div class="quick-actions-grid">
-                <button class="btn-quick-action action-success" onclick="window.abrirAba(event,'aba-producao')">
-                    <i class="fas fa-calculator"></i>
-                    Lançar Produção
-                </button>
-                <button class="btn-quick-action" onclick="window.abrirAba(event,'aba-fluxo')">
-                    <i class="fas fa-stream"></i>
-                    Ver Sequenciamento
-                </button>
-                <button class="btn-quick-action action-danger" onclick="window.toggleFormAdicionar()">
-                    <i class="fas fa-tools"></i>
-                    Nova Manutenção
-                </button>
-                <button class="btn-quick-action" onclick="window.abrirAba(event,'aba-almoxarifado')">
-                    <i class="fas fa-pallet"></i>
-                    Almoxarifado
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 4. KPIs MICRO (Detalhamento por Família de Ativos) -->
-    <h3 style="color:var(--text-title); font-size:1.1rem; margin: 32px 0 16px 0;">
-        <i class="fas fa-layer-group" style="color:var(--text-muted);"></i> Distribuição por Família
-    </h3>
-    <div class="kpi-container kpi-container-familia">
-        <div class="kpi-card" style="border-top:3px solid #8b5cf6; background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), transparent);">
-            <div class="kpi-icon" style="color:#8b5cf6; border-color:rgba(139, 92, 246, 0.2);">
-                <i class="fas fa-industry"></i>
-            </div>
-            <div class="kpi-data">
-                <h4 id="kpi-moldes-reparo">0</h4>
-                <p>Moldes em Reparo</p>
-            </div>
-        </div>
-        
-        <div class="kpi-card" style="border-top:3px solid #ec4899; background: linear-gradient(135deg, rgba(236, 72, 153, 0.05), transparent);">
-            <div class="kpi-icon" style="color:#ec4899; border-color:rgba(236, 72, 153, 0.2);">
-                <i class="fas fa-cogs"></i>
-            </div>
-            <div class="kpi-data">
-                <h4 id="kpi-segmentos-reparo">0</h4>
-                <p>Segmentos em Reparo</p>
-            </div>
-        </div>
-        
-        <div class="kpi-card" style="border-top:3px solid #f59e0b; background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), transparent);">
-            <div class="kpi-icon" style="color:#f59e0b; border-color:rgba(245, 158, 11, 0.2);">
-                <i class="fas fa-scroll"></i>
-            </div>
-            <div class="kpi-data">
-                <h4 id="kpi-total-rolos">0</h4>
-                <p>Rolos em Estoque</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- 5. INDICADORES DE DESEMPENHO (dados reais calculados) -->
-    <h3 style="color:var(--text-title); font-size:1.1rem; margin: 32px 0 16px 0;">
-        <i class="fas fa-chart-line" style="color:var(--text-muted);"></i> Indicadores de Desempenho
-    </h3>
-    <div class="kpi-container kpi-container-familia">
-        <div class="kpi-card" style="border-top:3px solid #22d3ee; background: linear-gradient(135deg, rgba(34, 211, 238, 0.05), transparent);">
-            <div class="kpi-icon" style="color:#22d3ee; border-color:rgba(34, 211, 238, 0.2);">
-                <i class="fas fa-gauge-high"></i>
-            </div>
-            <div class="kpi-data">
-                <h4 id="kpi-media-desgaste">0%</h4>
-                <p>Desgaste Médio (Ativos Instalados)</p>
+            <p class="text-muted" style="font-size: 0.75rem; margin-bottom: 14px;">Desgaste médio, dos veios mais críticos aos mais tranquilos.</p>
+            <div id="painel-ranking-veios">
+                <div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>
             </div>
         </div>
 
-        <div class="kpi-card" style="border-top:3px solid #f97316; background: linear-gradient(135deg, rgba(249, 115, 22, 0.05), transparent);">
-            <div class="kpi-icon" style="color:#f97316; border-color:rgba(249, 115, 22, 0.2);">
-                <i class="fas fa-clock-rotate-left"></i>
-            </div>
-            <div class="kpi-data">
-                <h4 id="kpi-media-reparo">0 dias</h4>
-                <p>Tempo Médio em Reparo</p>
+        <div class="glass-panel" style="padding: 20px;">
+            <h3 style="color:var(--text-title); font-size:1rem; margin-bottom: 4px;">
+                <i class="fas fa-triangle-exclamation" style="color:var(--danger);"></i> Atividades Atrasadas
+            </h3>
+            <p class="text-muted" style="font-size: 0.75rem; margin-bottom: 14px;">Em todas as áreas da Oficina, com prazo vencido.</p>
+            <div id="painel-atrasadas-globais">
+                <div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>
             </div>
         </div>
 
-        <div class="kpi-card" style="border-top:3px solid #10b981; background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), transparent);">
-            <div class="kpi-icon" style="color:#10b981; border-color:rgba(16, 185, 129, 0.2);">
-                <i class="fas fa-check-double"></i>
-            </div>
-            <div class="kpi-data">
-                <h4 id="kpi-disponibilidade">0%</h4>
-                <p>Disponibilidade da Frota</p>
+        <div class="glass-panel" style="padding: 20px;">
+            <h3 style="color:var(--text-title); font-size:1rem; margin-bottom: 4px;">
+                <i class="fas fa-industry" style="color:#3b82f6;"></i> Produção Lançada
+            </h3>
+            <p class="text-muted" style="font-size: 0.75rem; margin-bottom: 14px;">Toneladas apontadas por MCC, hoje e nos últimos 7 dias.</p>
+            <div id="painel-producao-lancada">
+                <div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>
             </div>
         </div>
     </div>
@@ -923,6 +857,18 @@
                             <button class="btn-premium btn-warning w-100" onclick="window.salvarApontamentoMoldes(event)"><i class="fas fa-check"></i> Salvar Corridas (Moldes)</button>
                         </div>
 
+                    </div>
+                </div>
+
+                <div class="glass-panel" style="padding:24px; margin-bottom: 24px;">
+                    <h3 style="color:var(--text-heading); font-size: 16px; margin-bottom: 16px;"><i class="fas fa-history"></i> Auditoria de Lançamento de Tonelagem</h3>
+                    <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                        <table class="premium-table" style="font-size: 12px; text-align:center;">
+                            <thead>
+                                <tr><th>Data / Hora</th><th>Responsável</th><th>MCC 2</th><th>MCC 3</th><th>MCC 4</th><th>Desfazer</th></tr>
+                            </thead>
+                            <tbody id="tabela-historico-geral"></tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -2318,6 +2264,7 @@
         import './JS/script.js?v=27';
         import './JS/Oficina/procedimentosOficina.js?v=1';
         import './JS/ui.js?v=13';
+        import './JS/painelGeralExtra.js?v=1';
         import './JS/Folhoes/folhaoMolde4.js?v=6';
         import './JS/Folhoes/folhao_bender.js?v=2';
         import './JS/Folhoes/folhaoR2.js?v=3';
@@ -2328,6 +2275,7 @@
         import './JS/Folhoes/folhaoMolde23.js?v=7';
         import './JS/Folhoes/folhaoStraightenerR1.js?v=3';
         import './JS/Folhoes/folhaoSegmentoGrupo.js?v=4';
+        import './JS/Folhoes/checklistQualidadeSaida.js?v=1';
 
         console.log("✅ Sistema OMS inicializado!");
 
@@ -2343,6 +2291,16 @@
             }
         }, 1000);
 
+        // Reforço do Painel Geral (ranking por veio, atrasadas, produção
+        // lançada): atualiza a cada 30s — não precisa da cadência de 1s do
+        // reconciliador acima, que é só pra número de KPI simples.
+        setInterval(() => {
+            const logado = !!localStorage.getItem('oms_operador_v32_local');
+            if (logado && typeof window.renderPainelGeralExtra === 'function') {
+                window.renderPainelGeralExtra();
+            }
+        }, 30000);
+
         // Verifica se já tem operador logado
         const operadorSalvo = localStorage.getItem("oms_operador_v32_local");
         if (operadorSalvo) {
@@ -2356,6 +2314,7 @@
                 if (window.renderPainelVeios) window.renderPainelVeios();
                 if (window.renderAtivos) window.renderAtivos();
                 if (window.renderReparos) window.renderReparos();
+                if (window.renderPainelGeralExtra) window.renderPainelGeralExtra();
                 if (window.renderReservas) window.renderReservas();
                 if (window.renderRolos) window.renderRolos();
                 if (window.renderMateriais) window.renderMateriais();
