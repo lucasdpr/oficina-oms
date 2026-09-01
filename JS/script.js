@@ -4728,6 +4728,9 @@ function renderizarAtividadesArea() {
             </div>
             <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
                 ${botoesAcao}
+                <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.abrirConversaAtividade(${x.id})" title="Conversa">
+                    <i class="fas fa-comments"></i>
+                </button>
                 <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.editarAtividadeOficina(${x.id})">
                     <i class="fas fa-pen"></i>
                 </button>
@@ -4868,11 +4871,21 @@ window.mudarStatusAtividadeOficina = async function(id, novoStatus) {
     // 🆕 "Recusado" e "Aguardando" exigem motivo — o backend também
     // valida isso (não dá pra contornar só chamando a API direto), mas
     // pedir aqui já evita a ida e volta com erro pro técnico.
+    // Iniciar/Concluir agora também aceitam uma observação — opcional
+    // (cancelar o prompt não bloqueia a ação, diferente de
+    // Recusado/Aguardando) — dá pra deixar uma nota tipo "trocado o
+    // parafuso X" que chega pro solicitante junto do aviso.
     let motivo = null;
     if (novoStatus === 'Recusado' || novoStatus === 'Aguardando') {
         const rotulo = novoStatus === 'Recusado' ? 'Por que está recusando essa atividade?' : 'Por que está pausando essa atividade? (ex: aguardando material)';
         motivo = prompt(rotulo);
         if (!motivo || !motivo.trim()) { alert('É preciso informar um motivo.'); return; }
+    } else if (novoStatus === 'Concluído') {
+        // Iniciar dispara notificação automática sem interromper o
+        // técnico com um prompt — só Concluir pede observação (e
+        // mesmo assim é opcional: cancelar/deixar em branco conclui
+        // sem nota).
+        motivo = prompt('Observação ao concluir (opcional):') || null;
     }
 
     try {
@@ -4916,6 +4929,92 @@ window.excluirAtividadeOficina = async function(id) {
         console.error('⚠️ Erro ao excluir atividade da oficina:', e);
         alert('Não foi possível conectar ao servidor.');
     }
+};
+
+// --------------------------------------------------------------
+// 🆕 CONVERSA DA ATIVIDADE — mensagens de mão dupla numa atividade
+// específica. Mesmo modal/thread é usado tanto aqui (quadro da área)
+// quanto na lista de Atividade Extra do Checklist de Execução (ver
+// checklist-execucao.js), então essas funções ficam em window.* pra
+// os dois lados chamarem.
+// --------------------------------------------------------------
+let CONVERSA_ATIVIDADE_ID_ATUAL = null;
+
+window.abrirConversaAtividade = async function(atividadeId) {
+    CONVERSA_ATIVIDADE_ID_ATUAL = atividadeId;
+    const modal = document.getElementById('modal-conversa-atividade');
+    if (!modal) return;
+    document.getElementById('conversa-atividade-texto').value = '';
+    modal.classList.remove('hidden');
+    await window.carregarMensagensConversaAtividade();
+};
+
+window.fecharConversaAtividade = function() {
+    const modal = document.getElementById('modal-conversa-atividade');
+    if (modal) modal.classList.add('hidden');
+    CONVERSA_ATIVIDADE_ID_ATUAL = null;
+};
+
+window.carregarMensagensConversaAtividade = async function() {
+    if (!CONVERSA_ATIVIDADE_ID_ATUAL) return;
+    const lista = document.getElementById('conversa-atividade-lista');
+    if (!lista) return;
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/atividade/mensagens/${CONVERSA_ATIVIDADE_ID_ATUAL}`, { cache: 'no-store' });
+        const mensagens = resp.ok ? await resp.json() : [];
+        const minhaMatricula = (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula || '').toUpperCase();
+
+        lista.innerHTML = mensagens.length === 0
+            ? `<p class="text-muted" style="text-align:center; font-size:11.5px; padding:12px;">Nenhuma mensagem ainda — escreva a primeira abaixo.</p>`
+            : mensagens.map(m => {
+                const minha = (m.autor_matricula || '').toUpperCase() === minhaMatricula && minhaMatricula !== '';
+                const quando = m.criado_em ? new Date(m.criado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+                return `
+                    <div style="margin-bottom:8px; text-align:${minha ? 'right' : 'left'};">
+                        <div style="display:inline-block; max-width:80%; padding:6px 10px; border-radius:10px; font-size:12.5px; text-align:left;
+                                    background:${minha ? 'var(--text-accent, #3b82f6)' : 'var(--bg-card, #1f2937)'}; color:${minha ? '#fff' : 'var(--text-body)'};">
+                            <div style="font-weight:700; font-size:10.5px; opacity:0.85; margin-bottom:2px;">${m.autor_nome || 'Sistema'}</div>
+                            ${m.mensagem}
+                        </div>
+                        <div style="font-size:9.5px; color:var(--text-muted); margin-top:2px;">${quando}</div>
+                    </div>
+                `;
+            }).join('');
+        lista.scrollTop = lista.scrollHeight;
+    } catch (e) {
+        console.error('⚠️ Erro ao carregar mensagens da atividade:', e);
+        lista.innerHTML = `<p class="text-muted" style="text-align:center; font-size:11.5px;">Não foi possível carregar a conversa.</p>`;
+    }
+};
+
+window.enviarMensagemConversaAtividade = async function() {
+    if (!CONVERSA_ATIVIDADE_ID_ATUAL) return;
+    const input = document.getElementById('conversa-atividade-texto');
+    const mensagem = input.value.trim();
+    if (!mensagem) return;
+
+    const tecnico = OPERADOR_LOGADO || {};
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/atividade/mensagem`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                atividade_id: CONVERSA_ATIVIDADE_ID_ATUAL,
+                autor_matricula: tecnico.matricula || '',
+                autor_nome: tecnico.nome || tecnico.matricula || 'Sistema',
+                mensagem
+            })
+        });
+        if (!resp.ok) { alert('Não foi possível enviar a mensagem.'); return; }
+    } catch (e) {
+        console.error('⚠️ Erro ao enviar mensagem da atividade:', e);
+        alert('Não foi possível conectar ao servidor.');
+        return;
+    }
+    input.value = '';
+    await window.carregarMensagensConversaAtividade();
 };
 
 // --------------------------------------------------------------

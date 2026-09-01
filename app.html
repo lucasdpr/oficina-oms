@@ -1532,6 +1532,25 @@
         </div>
     </div>
 
+    <!-- 🆕 Modal "Conversa da Atividade" — mensagens de mão dupla numa
+         atividade específica (funciona tanto aberto do quadro da área
+         quanto da lista de Atividade Extra no Checklist de Execução —
+         os dois lados usam o mesmo modal/thread). -->
+    <div id="modal-conversa-atividade" class="modal-overlay hidden" style="z-index:10001;">
+        <div class="modal-content" style="max-width:560px; max-height:85vh; display:flex; flex-direction:column; text-align:left;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                <h2 style="color:var(--text-heading); margin:0;"><i class="fas fa-comments"></i> Conversa da Atividade</h2>
+                <button class="btn-close-emergency" onclick="window.fecharConversaAtividade()"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="conversa-atividade-lista" style="flex:1; overflow-y:auto; min-height:120px; max-height:50vh; padding:6px; border:1px solid var(--border-color); border-radius:8px; margin-bottom:12px; background:var(--bg-td);">
+            </div>
+            <div style="display:flex; gap:8px;">
+                <input id="conversa-atividade-texto" class="premium-input" style="flex:1;" placeholder="Escreva uma mensagem..." onkeydown="if(event.key==='Enter'){window.enviarMensagemConversaAtividade();}">
+                <button class="btn-premium btn-success" onclick="window.enviarMensagemConversaAtividade()"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
             <section id="aba-painel-adm" class="tab-content">
                 <div class="glass-panel" style="border-top:4px solid #38bdf8; padding:24px; margin-bottom:20px;">
                     <h2 style="color:#38bdf8;"><i class="fas fa-file-lines"></i> Painel — ADM</h2>
