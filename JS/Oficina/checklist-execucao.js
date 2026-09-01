@@ -432,9 +432,16 @@ window.renderizarAtividadesExtraChecklist = async function() {
                 ${atividades.map(a => {
                     const especialidade = obterEspecialidade(a.area);
                     const quando = a.criado_em ? new Date(a.criado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+                    // 🆕 Status vem da atividade REAL criada no quadro da
+                    // área (oficina_atividades) — reflete o que a área
+                    // marcou lá (Pendente/Em Andamento/Concluído), não é
+                    // mais só um registro solto sem retorno.
+                    const status = a.status_atividade || 'Pendente';
+                    const corStatus = status === 'Concluído' ? 'var(--success, #10b981)' : (status === 'Em Andamento' ? '#eab308' : 'var(--text-muted)');
                     return `
                         <div style="padding:6px 0; border-top:1px solid var(--border-color); font-size:11.5px;">
                             <span style="font-weight:700; color:${especialidade.cor};"><i class="fas ${especialidade.icone}"></i> ${especialidade.nome}</span>
+                            <span style="font-weight:700; color:${corStatus}; margin-left:6px;">[${status}]</span>
                             <span class="text-muted"> — ${quando} — ${a.operador_nome || 'Sistema'}</span>
                             <div style="margin-top:2px;">${a.descricao}</div>
                         </div>
