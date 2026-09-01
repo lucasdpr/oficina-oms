@@ -452,9 +452,16 @@ window.renderizarAtividadesExtraChecklist = async function() {
                                 <div style="margin-top:2px;">${a.descricao}</div>
                                 ${a.motivo_status ? `<div style="margin-top:2px; color:${corStatus};"><i class="fas fa-circle-info"></i> ${a.motivo_status}</div>` : ''}
                             </div>
-                            <button class="btn-outline-danger" style="padding:3px 8px; font-size:10.5px; flex-shrink:0;" title="Excluir (cancela também na área)" onclick="window.excluirAtividadeExtraChecklist(${a.id})">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                            <div style="display:flex; gap:4px; flex-shrink:0;">
+                                ${a.oficina_atividade_id ? `
+                                    <button class="btn-premium" style="padding:3px 8px; font-size:10.5px;" title="Conversa" onclick="window.abrirConversaAtividade(${a.oficina_atividade_id})">
+                                        <i class="fas fa-comments"></i>
+                                    </button>
+                                ` : ''}
+                                <button class="btn-outline-danger" style="padding:3px 8px; font-size:10.5px;" title="Excluir (cancela também na área)" onclick="window.excluirAtividadeExtraChecklist(${a.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
                         </div>
                     `;
                 }).join('')}
