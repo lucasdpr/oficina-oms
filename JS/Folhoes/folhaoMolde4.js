@@ -1126,32 +1126,65 @@ function montarHtmlLaudoMolde4(tag) {
 
     let htmlPDF = `
     <style>
-        /* Margens de página no padrão de documento técnico formal
-           (3cm esquerda p/ encadernação, 2cm nas demais). */
-        @page { size: A4; margin: 1.2cm; }
+        /* 🔧 REFEITO ("não está bonito, padrão ABNT"): duas causas raiz do
+           problema visual original —
+           1) o "PDF" aqui é o Ctrl+P do próprio navegador (window.print,
+              ver checklist-execucao.js), e por padrão o Chrome NÃO
+              imprime cor de fundo a menos que o usuário marque "Gráficos
+              de segundo plano" na hora de imprimir — por isso as barras
+              azuis dos títulos saíam cinza-claro sem cor nenhuma.
+              print-color-adjust:exact abaixo resolve isso de vez, sem
+              depender do técnico lembrar de marcar checkbox nenhum.
+           2) tinha uma quebra de página forçada (.quebra-pagina) antes de
+              CADA seção, mesmo as curtas — gerando várias páginas quase
+              em branco (ver print anterior). Removidas: o fluxo natural
+              do navegador agora decide onde quebrar, aproveitando a
+              folha inteira; só as tabelas grandes (Folga de Aresta, por
+              exemplo) continuam sem quebrar uma LINHA no meio, via
+              page-break-inside:avoid nas linhas.
 
-        .pdf-base { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #000; line-height: 1.35; }
-        .pdf-base *, .pdf-base *::before, .pdf-base *::after { box-sizing: border-box; }
-        .pdf-base table { width: 100%; max-width: 100%; border-collapse: collapse; margin-bottom: 10px; table-layout: auto; }
-        .pdf-base th, .pdf-base td { border: 1px solid #333; padding: 2px 3px; font-size: 8pt; word-wrap: break-word; overflow-wrap: break-word; }
-        .pdf-base th { background: #e8e8e8; text-align: center; font-weight: bold; }
+           Margens no padrão ABNT (NBR 14724): 3cm superior/esquerda,
+           2cm inferior/direita. */
+        @page { size: A4; margin: 3cm 2cm 2cm 3cm; }
+
+        .pdf-base {
+            font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #000; line-height: 1.4;
+            -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact;
+        }
+        .pdf-base *, .pdf-base *::before, .pdf-base *::after {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact;
+        }
+        .pdf-base table { width: 100%; max-width: 100%; border-collapse: collapse; margin-bottom: 12px; table-layout: auto; page-break-inside: auto; }
+        .pdf-base th, .pdf-base td { border: 1px solid #444; padding: 3px 4px; font-size: 8pt; word-wrap: break-word; overflow-wrap: break-word; }
+        .pdf-base th { background: #eef1f5; text-align: center; font-weight: bold; }
         /* Repete o cabeçalho da tabela em toda página nova, se a tabela
            quebrar no meio — padrão de documento técnico bem formatado. */
         .pdf-base thead { display: table-header-group; }
         .pdf-base tr { page-break-inside: avoid; }
 
+        /* Título de seção no padrão ABNT: numerado, caixa alta, sem
+           depender de fundo colorido pra ficar legível — um friso à
+           esquerda (accent) + linha inferior dupla é o que dá o ar
+           "documento oficial", e sobrevive mesmo se o navegador não
+           imprimir cor nenhuma. */
         .pdf-base .titulo-secao {
-            background: #002b5e; color: #fff; font-weight: bold;
-            padding: 6px 8px; text-align: left; margin: 16px 0 6px 0;
-            font-size: 10.5pt; text-transform: uppercase; letter-spacing: 0.3px;
+            color: #001f3f; font-weight: bold;
+            padding: 3px 0 4px 8px; text-align: left; margin: 14px 0 8px 0;
+            font-size: 10.5pt; text-transform: uppercase; letter-spacing: 0.4px;
+            border-left: 4px solid #001f3f; border-bottom: 1.5px solid #001f3f;
+            background: #f2f4f7;
+            page-break-after: avoid; break-after: avoid-page;
         }
-        .pdf-base .assinatura-box { margin: 6px 0 4px 0; font-size: 9pt; font-weight: bold; }
+        .pdf-base .assinatura-box { margin: 8px 0 4px 0; font-size: 9pt; font-weight: bold; }
+        /* 🔧 Testado com Chromium headless: position:fixed NÃO repete
+           em toda página do print-to-pdf (fica preso na posição em que
+           o conteúdo natural empurrou, virando página extra sozinho) —
+           então o rodapé volta a ser só o fechamento do documento, no
+           fluxo normal, depois da assinatura final. */
         .pdf-base .rodape-documento {
-            margin-top: 24px; padding-top: 6px; border-top: 1px solid #999;
+            margin-top: 20px; padding-top: 4px; border-top: 1px solid #999;
             font-size: 7.5pt; color: #444; display: flex; justify-content: space-between;
-        }
-        @media print {
-            .quebra-pagina { break-before: page; page-break-before: always; margin-top: 10px; }
         }
     </style>
     <div class="pdf-base">
@@ -1198,7 +1231,6 @@ function montarHtmlLaudoMolde4(tag) {
         <div class="titulo-secao">2. Inspeção de Recebimento Elétrica</div>
         ${gerarTabelaCheckPDF('m4-ele', checklistsM4.recebimentoEletrica)}
 
-        <div class="quebra-pagina"></div>
         <div class="titulo-secao">3. Revisão dos Moldes</div>
         ${gerarTabelaCheckPDF('m4-rev', checklistsM4.revisao)}
 
@@ -1206,7 +1238,6 @@ function montarHtmlLaudoMolde4(tag) {
         ${gerarTabelaCheckPDF('m4-fin', checklistsM4.inspecaoFinal, true)}
         <div class="assinatura-box">DATA: ____/____/____ &nbsp; NOME: ______________________________________ &nbsp; MATRÍCULA: _________</div>
 
-        <div class="quebra-pagina"></div>
         <div class="titulo-secao">5. Planilha de Ajuste e Medidas Nominais do Molde</div>
         <table>
             <thead><tr><th>ITEM</th><th>DESCRIÇÃO</th><th>NOMINAL</th><th>REAL</th><th>ASSINATURA</th></tr></thead>
@@ -1237,7 +1268,6 @@ function montarHtmlLaudoMolde4(tag) {
             </tbody>
         </table>
 
-        <div class="quebra-pagina"></div>
         <div class="titulo-secao">7. Diâmetros e Alinhamento (Foot Roll e Edge Roll)</div>
         ${(() => {
             const secRolosPDF = (titulo, prefix) => `
@@ -1265,7 +1295,6 @@ function montarHtmlLaudoMolde4(tag) {
         })()}
         <div class="assinatura-box">DATA: ____/____/____ &nbsp; NOME: ______________________________________ &nbsp; MATRÍCULA: _________</div>
 
-        <div class="quebra-pagina"></div>
         <div class="titulo-secao">8. Planilha de Ajuste do Sensor de Nível</div>
         <table>
             <thead><tr><th>ITEM</th><th>DESCRIÇÃO</th><th>OK</th></tr></thead>
@@ -1288,7 +1317,6 @@ function montarHtmlLaudoMolde4(tag) {
             </tbody>
         </table>
 
-        <div class="quebra-pagina"></div>
         <div class="titulo-secao">9. Teste de Resistência das Placas (Termopares)</div>
         <table>
             <thead><tr><th>TERMOPAR</th><th>FACE FIXA (10-30 Ω)</th><th>FACE MÓVEL (10-30 Ω)</th></tr></thead>
@@ -1316,7 +1344,6 @@ function montarHtmlLaudoMolde4(tag) {
             </tbody>
         </table>
 
-        <div class="quebra-pagina"></div>
         <div class="titulo-secao">10. Peritagem Placas Largas</div>
         ${(() => {
             const medidasPlacaLargaPDF = [
@@ -1346,7 +1373,6 @@ function montarHtmlLaudoMolde4(tag) {
             `;
         })()}
 
-        <div class="quebra-pagina"></div>
         <div class="titulo-secao">11. Peritagem Placas Estreitas</div>
         <p style="font-size:8pt; color:#555;">Tolerâncias: B ≤ 1,0mm | E/F ≤ 2,0mm</p>
         ${(() => {
@@ -1364,7 +1390,6 @@ function montarHtmlLaudoMolde4(tag) {
         })()}
         <div class="assinatura-box">DATA: ____/____/____ &nbsp; NOME: ______________________________________ &nbsp; MATRÍCULA: _________</div>
 
-        <div class="quebra-pagina"></div>
         <div class="titulo-secao">12. Caixas de Engrenagem, Chavetas e Folga Aresta</div>
         <h4 style="margin-top:10px;">FOLGAS NAS CAIXAS DE ENGRENAGEM (BITOLA 1300 ± 1MM)</h4>
         <table>
@@ -1402,7 +1427,6 @@ function montarHtmlLaudoMolde4(tag) {
         </table>
         <div class="assinatura-box">DATA: ____/____/____ &nbsp; NOME: ______________________________________ &nbsp; MATRÍCULA: _________</div>
 
-        <div class="quebra-pagina"></div>
         <div class="titulo-secao">13. Aferição Eixo Excêntrico, Cardans e Transmissões</div>
         <table>
             <thead><tr><th>COTA</th><th>MEDIDA DO DESENHO</th><th>MEDIDA TOLERÁVEL</th><th>LADO DIREITO</th><th>LADO ESQUERDO</th></tr></thead>
@@ -1435,7 +1459,6 @@ function montarHtmlLaudoMolde4(tag) {
         </table>
         <div class="assinatura-box">DATA: ____/____/____ &nbsp; NOME: ______________________________________ &nbsp; MATRÍCULA: _________</div>
 
-        <div class="quebra-pagina"></div>
         <div class="titulo-secao">14. Materiais Utilizados na Manutenção</div>
         <table>
             <thead><tr><th style="width:80%;">DESCRIÇÃO DO MATERIAL / SKU</th><th style="width:20%;">QUANTIDADE</th></tr></thead>
