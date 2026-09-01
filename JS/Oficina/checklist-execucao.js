@@ -203,6 +203,16 @@ window.renderizarBotaoConcluirReparo = function(equipamentoId) {
 // --------------------------------------------------------------
 let CHECKLIST_EXECUCAO_EQUIPAMENTO_ATUAL = null; // tag específica, ex: "M4-12"
 let CHECKLIST_EXECUCAO_TIPO_ATUAL = null;        // tipo, ex: "molde-mcc4" — dono das etapas
+
+// 🆕 SEÇÕES POR FASE (Chegada/Manutenção/Saída, hoje só Molde MCC4)
+// COLAPSÁVEIS — pedido de quem usa: antes, pra abrir Manutenção era
+// preciso rolar a tela inteira passando por todos os itens de Chegada.
+// Agora cada fase abre/fecha no clique do cabeçalho, e uma fase 100%
+// concluída já entra fechada sozinha (com um "✅ Finalizado" no
+// cabeçalho) — abre Manutenção direto sem precisar arrastar nada.
+// Chave: chave da seção (ex: "chegada"). Valor: true = aberta, false =
+// fechada. Ausente = usa o padrão (fase concluída começa fechada).
+let SECOES_EXECUCAO_ABERTAS = {};
 let CHECKLIST_EXECUCAO_EXECUCAO_ATUAL = null;    // 🆕 id do reparo (execução) em andamento
 let CHECKLIST_EXECUCAO_ETAPAS_ATUAIS = [];
 
@@ -551,6 +561,13 @@ window.fecharModalChecklistExecucao = function() {
     CHECKLIST_EXECUCAO_TIPO_ATUAL = null;
     CHECKLIST_EXECUCAO_EXECUCAO_ATUAL = null;
     CHECKLIST_EXECUCAO_ETAPAS_ATUAIS = [];
+    SECOES_EXECUCAO_ABERTAS = {}; // próximo equipamento aberto começa do zero (padrão)
+};
+
+// Abre/fecha uma fase (Chegada/Manutenção/Saída) no clique do cabeçalho.
+window.alternarSecaoChecklistExecucao = function(chave, estaAberta) {
+    SECOES_EXECUCAO_ABERTAS[chave] = !estaAberta;
+    window.renderizarChecklistExecucao();
 };
 
 function ehAdminChecklistExecucao() {
@@ -581,6 +598,19 @@ window.renderizarChecklistExecucao = function() {
         const etapasDaSecao = CHECKLIST_EXECUCAO_ETAPAS_ATUAIS.filter(e => e.area === secao.chave);
         if (etapasDaSecao.length === 0 && !isAdmin) return; // técnico não vê seção vazia
 
+        // 🆕 Fase 100% concluída (só faz sentido pra quem separa por fase,
+        // ex: Molde MCC4 — Chegada/Manutenção/Saída). Usado pro badge
+        // "Finalizado" e pra decidir se a fase já nasce fechada.
+        const concluida = subagrupar && etapasDaSecao.length > 0 && etapasDaSecao.every(e => e.marcado);
+        // Aberta por padrão, EXCETO fase já concluída (essa já nasce
+        // fechada sozinha) — a não ser que o usuário já tenha decidido
+        // manualmente (abriu ou fechou) essa fase nesta sessão.
+        const aberta = subagrupar
+            ? (Object.prototype.hasOwnProperty.call(SECOES_EXECUCAO_ABERTAS, secao.chave)
+                ? SECOES_EXECUCAO_ABERTAS[secao.chave]
+                : !concluida)
+            : true; // seções genéricas (não por fase) continuam sempre abertas, como antes
+
         // 🆕 Dentro de cada etapa (Chegada/Manutenção/Saída), separa por
         // especialidade (Mecânica/Elétrica/Hidráulica) — sem isso tudo
         // cai numa lista só e dá a impressão de que elétrica/hidráulica
@@ -609,15 +639,20 @@ window.renderizarChecklistExecucao = function() {
             corpoSecao = etapasDaSecao.map(e => renderizarLinhaEtapaChecklistExecucao(e, secao, isAdmin)).join('');
         }
 
+        const marcadasDaSecao = etapasDaSecao.filter(e => e.marcado).length;
         html += `
-            <div class="glass-panel" style="padding:12px; margin-bottom:12px; border-left:4px solid ${secao.cor};">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
-                    <div style="font-weight:700; color:${secao.cor}; font-size:13px;">
+            <div class="glass-panel" style="padding:12px; margin-bottom:12px; border-left:4px solid ${secao.cor}; ${concluida ? 'opacity:0.85;' : ''}">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:${aberta ? '8px' : '0'}; flex-wrap:wrap; gap:8px; ${subagrupar ? 'cursor:pointer;' : ''}"
+                     ${subagrupar ? `onclick="window.alternarSecaoChecklistExecucao('${secao.chave}', ${aberta})"` : ''}>
+                    <div style="font-weight:700; color:${secao.cor}; font-size:13px; display:flex; align-items:center; gap:8px;">
+                        ${subagrupar ? `<i class="fas ${aberta ? 'fa-chevron-down' : 'fa-chevron-right'}" style="font-size:11px; color:var(--text-muted);"></i>` : ''}
                         <i class="fas ${secao.icone}"></i> ${secao.nome}
+                        ${subagrupar ? `<span class="text-muted" style="font-weight:500; font-size:11px;">(${marcadasDaSecao}/${etapasDaSecao.length})</span>` : ''}
+                        ${concluida ? `<span style="background:#22c55e; color:#0a0e17; padding:2px 8px; border-radius:20px; font-size:10.5px; font-weight:700;"><i class="fas fa-check"></i> Finalizado</span>` : ''}
                     </div>
-                    ${isAdmin ? `<button class="btn-premium" style="padding:5px 10px; font-size:11px;" onclick="window.formNovaEtapaChecklistExecucao('${secao.chave}')"><i class="fas fa-plus"></i> Etapa</button>` : ''}
+                    ${isAdmin ? `<button class="btn-premium" style="padding:5px 10px; font-size:11px;" onclick="event.stopPropagation(); window.formNovaEtapaChecklistExecucao('${secao.chave}')"><i class="fas fa-plus"></i> Etapa</button>` : ''}
                 </div>
-                ${etapasDaSecao.length === 0 ? `<div class="text-muted" style="font-size:11.5px;">Nenhuma etapa cadastrada ainda nesta seção.</div>` : corpoSecao}
+                ${aberta ? (etapasDaSecao.length === 0 ? `<div class="text-muted" style="font-size:11.5px;">Nenhuma etapa cadastrada ainda nesta seção.</div>` : corpoSecao) : ''}
             </div>
         `;
     });
