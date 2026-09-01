@@ -959,9 +959,12 @@ function renderPainelDevTeste() {
                 <td class="font-code">${item.id}</td>
                 <td>${item.tipo || "-"}</td>
                 <td>${item.local || "-"}</td>
-                <td>
+                <td style="display:flex; gap:6px; flex-wrap:wrap;">
                     <button class="btn-premium" style="padding:4px 12px; font-size:12px;" onclick="window.abrirFolhaoPorTipo('${item.id}')">
                         <i class="fas fa-file-alt"></i> Abrir Folhão
+                    </button>
+                    <button class="btn-premium" style="padding:4px 12px; font-size:12px;" onclick="window.previsualizarFolhaoDoReparo('${item.id}')" title="Ver como o Folhão está ficando, sem precisar completar o Checklist de Execução">
+                        <i class="fas fa-eye"></i> Pré-visualizar
                     </button>
                 </td>
             </tr>
@@ -3236,7 +3239,6 @@ window.carregarReparosAndamento = async function() {
                     </div>
                     <div class="flex-align-center gap-10" style="flex-wrap:wrap;">
                         <button class="btn-premium btn-warning" onclick="window.abrirFolhaoPorTipo('${equipamento.id}')"><i class="fas fa-file-alt"></i> Folhão</button>
-                        <button class="btn-premium" onclick="window.previsualizarFolhaoDoReparo('${equipamento.id}')" title="Ver como o Folhão está ficando, sem precisar completar o Checklist de Execução"><i class="fas fa-eye"></i> Pré-visualizar</button>
                         ${window.renderizarBotaoChecklistExecucao(equipamento.id)}
                         ${window.renderizarBotaoConcluirReparo(equipamento.id)}
                     </div>
@@ -5679,11 +5681,12 @@ window.abrirFolhaoPorTipo = function(id) {
 };
 
 // ==========================================================================
-// 🆕 PRÉ-VISUALIZAR — chamado direto da tela do Checklist de Execução
-// ("Reparo em Andamento"), não de dentro do Folhão. Pedido do técnico:
-// antes só dava pra conferir o documento final abrindo o Folhão na mão
-// e clicando num botão lá dentro — queria isso aqui, junto com os
-// outros botões (Folhão / Checklist de Execução / Concluir).
+// 🆕 PRÉ-VISUALIZAR — chamado direto do painel "Teste de Folhões"
+// (renderPainelDevTeste), não de dentro do Folhão nem da tela do
+// Checklist de Execução. Pedido do técnico: antes só dava pra
+// conferir o documento final abrindo o Folhão na mão e clicando num
+// botão lá dentro — queria isso junto do "Abrir Folhão" já existente
+// nesse painel de teste.
 //
 // Abre o Folhão certo pro tipo do equipamento (populado com o rascunho
 // + o que já foi preenchido no Checklist de Execução, igual o botão
