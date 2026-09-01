@@ -1019,7 +1019,7 @@ function garantirModalEditarEtapa() {
 
             <div class="input-group" style="margin-bottom:6px;">
                 <label>Mapeamento com o Folhão (folhao_campo) — deixe em branco pra não jogar em nenhum campo</label>
-                <textarea id="editar-etapa-folhao-campo" class="premium-input" style="width:100%; min-height:90px; font-family:monospace; font-size:12px;" placeholder='Ex: "m4-aj-tfr" (sim/não ou medição única) ou {"1000-inf":"m4-fa-1000-ei", "1000-meio":"m4-fa-1000-em"} (medição múltipla)'></textarea>
+                <textarea id="editar-etapa-folhao-campo" class="premium-input" style="width:100%; min-height:90px; font-family:monospace; font-size:12px;" placeholder='Ex: "m4-aj-tfr" (sim/não ou medição única) ou {"1000-esq-fix":"m4-fa-1000-esq-fix", "1000-esq-mov":"m4-fa-1000-esq-mov"} (medição múltipla)'></textarea>
             </div>
             <p id="editar-etapa-ajuda" class="text-muted" style="font-size:11px; margin-bottom:16px;"></p>
 
@@ -1040,7 +1040,7 @@ window.atualizarAjudaFolhaoCampoEtapa = function() {
     const ajuda = document.getElementById('editar-etapa-ajuda');
     if (!ajuda) return;
     if (tipo === 'medicao_multipla') {
-        ajuda.innerHTML = 'Formato: <code>{"nome_mostrado_no_checklist": "id_real_do_input_no_folhão", ...}</code> — o lado esquerdo é só o rótulo que aparece pro técnico preencher; o lado direito TEM que ser o <code>id</code> exato do campo no HTML do Folhão (ex: <code>m4-fa-1000-ei</code>), senão o valor não aparece lá.';
+        ajuda.innerHTML = 'Formato: <code>{"nome_mostrado_no_checklist": "id_real_do_input_no_folhão", ...}</code> — o lado esquerdo é só o rótulo que aparece pro técnico preencher; o lado direito TEM que ser o <code>id</code> exato do campo no HTML do Folhão (ex: <code>m4-fa-1000-esq-fix</code>), senão o valor não aparece lá.';
     } else {
         ajuda.innerHTML = 'Formato: o <code>id</code> exato de UM campo do Folhão (texto simples, sem chaves), ex: <code>m4-aj-tfr</code>. Deixe vazio se essa etapa não deve preencher nada no Folhão sozinha.';
     }
