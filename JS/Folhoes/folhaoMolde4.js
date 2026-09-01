@@ -382,24 +382,32 @@ function renderizarM4AjustesHidraulica() {
     });
     htmlHidr += `</tbody></table>`;
 
+    // 🔧 CORRIGIDO ("bater com o documento oficial"): faltava a coluna
+    // ASSINATURA (o oficial tem MOLDE|NOMINAL|REAL|ASSINATURA) e o "CHECK
+    // ELÉTRICO" estava só como texto solto dentro da Hidráulica — no
+    // oficial é uma tabela própria (CHECK LIST ELÉTRICO), separada da
+    // Hidráulica, mesmo padrão ITEM/DESCRIÇÃO/NOME/MATRÍCULA.
     container.innerHTML = `
         <h3 style="color:var(--text-heading);">PLANILHA DE AJUSTE E MEDIDAS NOMINAIS</h3>
         <table class="premium-table" style="font-size:10px;">
-            <thead><tr><th>ITEM</th><th>DESCRIÇÃO</th><th>NOMINAL</th><th>REAL</th></tr></thead>
+            <thead><tr><th>ITEM</th><th>DESCRIÇÃO</th><th>NOMINAL</th><th>REAL</th><th>ASSINATURA</th></tr></thead>
             <tbody>
-                <tr><td>1</td><td>APERTO DO PARAFUSO EXCÊNTRICO (DIR/ESQ)</td><td>-</td><td>Dir: <input id="m4-aj-exc-dir" style="width:80px;"> Esq: <input id="m4-aj-exc-esq" style="width:80px;"></td></tr>
-                <tr><td>2</td><td>TORQUE PARAFUSO FIXAÇÃO FOOT ROLL</td><td>300 + 5 Nm</td><td><input id="m4-aj-tfr"></td></tr>
-                <tr><td>3</td><td>TORQUE PARAFUSO FIXAÇÃO PLACA LATERAL</td><td>200 + 5 Nm</td><td><input id="m4-aj-tpl"></td></tr>
-                <tr><td>4</td><td>TIRANTE FIXAÇÃO GUIAS LATERAIS</td><td>100 Nm</td><td><input id="m4-aj-tir"></td></tr>
-                <tr><td>5</td><td>FOLGA GABARITO CLAMP (SUP/INF) - Ø250</td><td>1,60 ± 0,15 mm</td><td>Sup: <input id="m4-aj-clp-sup" style="width:80px;"> Inf: <input id="m4-aj-clp-inf" style="width:80px;"></td></tr>
+                <tr><td>1</td><td>APERTO DO PARAFUSO EXCÊNTRICO (DIR/ESQ)</td><td>-</td><td>Dir: <input id="m4-aj-exc-dir" style="width:80px;"> Esq: <input id="m4-aj-exc-esq" style="width:80px;"></td><td><input id="m4-aj-exc-ass" class="w-100"></td></tr>
+                <tr><td>2</td><td>TORQUE PARAFUSO FIXAÇÃO FOOT ROLL</td><td>300 + 5 Nm</td><td><input id="m4-aj-tfr"></td><td><input id="m4-aj-tfr-ass" class="w-100"></td></tr>
+                <tr><td>3</td><td>TORQUE PARAFUSO FIXAÇÃO PLACA LATERAL</td><td>200 + 5 Nm</td><td><input id="m4-aj-tpl"></td><td><input id="m4-aj-tpl-ass" class="w-100"></td></tr>
+                <tr><td>4</td><td>TIRANTE FIXAÇÃO GUIAS LATERAIS</td><td>100 Nm</td><td><input id="m4-aj-tir"></td><td><input id="m4-aj-tir-ass" class="w-100"></td></tr>
+                <tr><td>5</td><td>FOLGA GABARITO CLAMP (SUP/INF) - Ø250</td><td>1,60 ± 0,15 mm</td><td>Sup: <input id="m4-aj-clp-sup" style="width:80px;"> Inf: <input id="m4-aj-clp-inf" style="width:80px;"></td><td><input id="m4-aj-clp-ass" class="w-100"></td></tr>
             </tbody>
         </table>
-        <h3 style="color:var(--text-heading); margin-top:20px;">CHECK LIST HIDRÁULICO E ELÉTRICO</h3>
+        <h3 style="color:var(--text-heading); margin-top:20px;">CHECK LIST HIDRÁULICO</h3>
         ${htmlHidr}
-        <div style="margin-top:10px;">
-            <strong>CHECK ELÉTRICO:</strong> OS CONECTORES DO DBO E VUHZ ESTÃO LIMPOS, TAMPONADOS E PROTEGIDOS? 
-            <input id="m4-ele-nome" placeholder="Nome" style="margin-left:10px;"> <input id="m4-ele-mat" placeholder="Matrícula">
-        </div>
+        <h3 style="color:var(--text-heading); margin-top:20px;">CHECK LIST ELÉTRICO</h3>
+        <table class="premium-table" style="font-size:10px;">
+            <thead><tr><th style="width:5%;">ITEM</th><th>DESCRIÇÃO (ELÉTRICA)</th><th>NOME</th><th>MATRÍCULA</th></tr></thead>
+            <tbody>
+                <tr><td style="text-align:center;">1</td><td>OS CONECTORES DO DBO E VUHZ ESTÃO LIMPOS, TAMPONADOS E PROTEGIDOS?</td><td><input id="m4-ele-nome" class="w-100"></td><td><input id="m4-ele-mat" class="w-100"></td></tr>
+            </tbody>
+        </table>
     `;
 }
 
@@ -570,11 +578,20 @@ function renderizarM4ChavetasEngrenagem() {
     const container = document.getElementById('container-m4-chavetas');
     if (!container) return;
 
+    // 🔧 CORRIGIDO ("bater com o documento oficial"): o desenho técnico
+    // do CHECK LIST GERAL DO MOLDE MCC4 (Word oficial) mostra a Folga de
+    // Aresta medida em MÓVEL/FIXO por lado (Esquerda-Móvel, Esquerda-Fixo,
+    // Direita-Móvel, Direita-Fixo) — não em 3 alturas Sup/Meio/Inf como
+    // estava aqui antes (isso parece ter vindo copiado de outro molde).
+    // IDs trocados de "-es/-em/-ei/-ds/-dm/-di" pra "-esq-mov/-esq-fix/
+    // -dir-mov/-dir-fix" — ver migração da ponte com o Checklist de
+    // Execução (etapas "Verificar bitola/aresta") que precisou ser
+    // atualizada junto pra apontar pros IDs novos.
     let htmlFolga = `<table class="premium-table" style="font-size:10px;"><tr><th>LARGURA</th><th>ESQUERDA</th><th>DIREITA</th></tr>`;
     [1000, 1030, 1040, 1090, 1100, 1160, 1180, 1230, 1290, 1360, 1380, 1420, 1460, 1500, 1530, 1550, 1560, 1580, 1620].forEach(l => {
         htmlFolga += `<tr><td style="font-weight:bold;">${l}</td>
-            <td>Sup:<input id="m4-fa-${l}-es" style="width:40px;"> Mei:<input id="m4-fa-${l}-em" style="width:40px;"> Inf:<input id="m4-fa-${l}-ei" style="width:40px;"></td>
-            <td>Sup:<input id="m4-fa-${l}-ds" style="width:40px;"> Mei:<input id="m4-fa-${l}-dm" style="width:40px;"> Inf:<input id="m4-fa-${l}-di" style="width:40px;"></td>
+            <td>Móvel:<input id="m4-fa-${l}-esq-mov" style="width:50px;"> Fixo:<input id="m4-fa-${l}-esq-fix" style="width:50px;"></td>
+            <td>Móvel:<input id="m4-fa-${l}-dir-mov" style="width:50px;"> Fixo:<input id="m4-fa-${l}-dir-fix" style="width:50px;"></td>
         </tr>`;
     });
     htmlFolga += `</table>`;
@@ -1192,17 +1209,17 @@ function montarHtmlLaudoMolde4(tag) {
         <div class="quebra-pagina"></div>
         <div class="titulo-secao">5. Planilha de Ajuste e Medidas Nominais do Molde</div>
         <table>
-            <thead><tr><th>ITEM</th><th>DESCRIÇÃO</th><th>NOMINAL</th><th>REAL</th></tr></thead>
+            <thead><tr><th>ITEM</th><th>DESCRIÇÃO</th><th>NOMINAL</th><th>REAL</th><th>ASSINATURA</th></tr></thead>
             <tbody>
-            <tr><td style="text-align:center;">1</td><td>APERTO DO PARAFUSO EXCÊNTRICO</td><td>-</td><td>Dir: ${getV('m4-aj-exc-dir')} | Esq: ${getV('m4-aj-exc-esq')}</td></tr>
-            <tr><td style="text-align:center;">2</td><td>TORQUE DO PARAFUSO DE FIXAÇÃO DO FOOT ROLL</td><td>300 + 5 Nm</td><td style="text-align:center;">${getV('m4-aj-tfr')}</td></tr>
-            <tr><td style="text-align:center;">3</td><td>TORQUE DO PARAFUSO DE FIXAÇÃO DA PLACA LATERAL</td><td>200 + 5 Nm</td><td style="text-align:center;">${getV('m4-aj-tpl')}</td></tr>
-            <tr><td style="text-align:center;">4</td><td>TIRANTE FIXAÇÃO DAS GUIAS LATERAIS</td><td>100 Nm</td><td style="text-align:center;">${getV('m4-aj-tir')}</td></tr>
-            <tr><td style="text-align:center;">5</td><td>FOLGA DE GABARITO DO CLAMP (Ø250)</td><td>1,60 ± 0,15 mm</td><td>Sup: ${getV('m4-aj-clp-sup')} | Inf: ${getV('m4-aj-clp-inf')}</td></tr>
+            <tr><td style="text-align:center;">1</td><td>APERTO DO PARAFUSO EXCÊNTRICO</td><td>-</td><td>Dir: ${getV('m4-aj-exc-dir')} | Esq: ${getV('m4-aj-exc-esq')}</td><td>${getV('m4-aj-exc-ass')}</td></tr>
+            <tr><td style="text-align:center;">2</td><td>TORQUE DO PARAFUSO DE FIXAÇÃO DO FOOT ROLL</td><td>300 + 5 Nm</td><td style="text-align:center;">${getV('m4-aj-tfr')}</td><td>${getV('m4-aj-tfr-ass')}</td></tr>
+            <tr><td style="text-align:center;">3</td><td>TORQUE DO PARAFUSO DE FIXAÇÃO DA PLACA LATERAL</td><td>200 + 5 Nm</td><td style="text-align:center;">${getV('m4-aj-tpl')}</td><td>${getV('m4-aj-tpl-ass')}</td></tr>
+            <tr><td style="text-align:center;">4</td><td>TIRANTE FIXAÇÃO DAS GUIAS LATERAIS</td><td>100 Nm</td><td style="text-align:center;">${getV('m4-aj-tir')}</td><td>${getV('m4-aj-tir-ass')}</td></tr>
+            <tr><td style="text-align:center;">5</td><td>FOLGA DE GABARITO DO CLAMP (Ø250)</td><td>1,60 ± 0,15 mm</td><td>Sup: ${getV('m4-aj-clp-sup')} | Inf: ${getV('m4-aj-clp-inf')}</td><td>${getV('m4-aj-clp-ass')}</td></tr>
             </tbody>
         </table>
 
-        <div class="titulo-secao">6. Check List Hidráulico e Elétrico</div>
+        <div class="titulo-secao">6. Check List Hidráulico</div>
         <table>
             <thead><tr><th style="width:5%;">ITEM</th><th>DESCRIÇÃO SERVIÇO</th><th>NOME</th><th>MATRÍCULA</th></tr></thead>
             <tbody>
@@ -1211,8 +1228,14 @@ function montarHtmlLaudoMolde4(tag) {
             `).join('')}
             </tbody>
         </table>
-        <p style="font-size:9pt; margin:6px 0;"><strong>CHECK ELÉTRICO:</strong> Os conectores do DBO e VUHZ estão limpos, tamponados e protegidos? &nbsp;
-            Nome: ${getV('m4-ele-nome')} &nbsp; Matrícula: ${getV('m4-ele-mat')}</p>
+
+        <div class="titulo-secao">Check List Elétrico</div>
+        <table>
+            <thead><tr><th style="width:5%;">ITEM</th><th>DESCRIÇÃO SERVIÇO</th><th>NOME</th><th>MATRÍCULA</th></tr></thead>
+            <tbody>
+            <tr><td style="text-align:center;">1</td><td>OS CONECTORES DO DBO E VUHZ ESTÃO LIMPOS, TAMPONADOS E PROTEGIDOS?</td><td>${getV('m4-ele-nome')}</td><td>${getV('m4-ele-mat')}</td></tr>
+            </tbody>
+        </table>
 
         <div class="quebra-pagina"></div>
         <div class="titulo-secao">7. Diâmetros e Alinhamento (Foot Roll e Edge Roll)</div>
@@ -1368,12 +1391,12 @@ function montarHtmlLaudoMolde4(tag) {
         </table>
         <h4 style="margin-top:10px;">RELATÓRIO FOLGA DE ARESTA (Tolerância = 0,25mm por face)</h4>
         <table>
-            <thead><tr><th>LARGURA</th><th>ESQUERDA (Sup/Meio/Inf)</th><th>DIREITA (Sup/Meio/Inf)</th></tr></thead>
+            <thead><tr><th>LARGURA</th><th>ESQUERDA (Móvel/Fixo)</th><th>DIREITA (Móvel/Fixo)</th></tr></thead>
             <tbody>
             ${[1000, 1030, 1040, 1090, 1100, 1160, 1180, 1230, 1290, 1360, 1380, 1420, 1460, 1500, 1530, 1550, 1560, 1580, 1620].map(l => `
                 <tr><td style="font-weight:bold;">${l}</td>
-                    <td>${getV(`m4-fa-${l}-es`)} / ${getV(`m4-fa-${l}-em`)} / ${getV(`m4-fa-${l}-ei`)}</td>
-                    <td>${getV(`m4-fa-${l}-ds`)} / ${getV(`m4-fa-${l}-dm`)} / ${getV(`m4-fa-${l}-di`)}</td></tr>
+                    <td>${getV(`m4-fa-${l}-esq-mov`)} / ${getV(`m4-fa-${l}-esq-fix`)}</td>
+                    <td>${getV(`m4-fa-${l}-dir-mov`)} / ${getV(`m4-fa-${l}-dir-fix`)}</td></tr>
             `).join('')}
             </tbody>
         </table>
