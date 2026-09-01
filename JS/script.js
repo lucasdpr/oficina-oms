@@ -3236,6 +3236,7 @@ window.carregarReparosAndamento = async function() {
                     </div>
                     <div class="flex-align-center gap-10" style="flex-wrap:wrap;">
                         <button class="btn-premium btn-warning" onclick="window.abrirFolhaoPorTipo('${equipamento.id}')"><i class="fas fa-file-alt"></i> Folhão</button>
+                        <button class="btn-premium" onclick="window.previsualizarFolhaoDoReparo('${equipamento.id}')" title="Ver como o Folhão está ficando, sem precisar completar o Checklist de Execução"><i class="fas fa-eye"></i> Pré-visualizar</button>
                         ${window.renderizarBotaoChecklistExecucao(equipamento.id)}
                         ${window.renderizarBotaoConcluirReparo(equipamento.id)}
                     </div>
@@ -5675,6 +5676,36 @@ window.abrirFolhaoPorTipo = function(id) {
 
     // Se nada funcionar, exibe uma mensagem amigável (sem alert)
     console.warn(`Nenhum folhão disponível para o tipo: ${tipo}`);
+};
+
+// ==========================================================================
+// 🆕 PRÉ-VISUALIZAR — chamado direto da tela do Checklist de Execução
+// ("Reparo em Andamento"), não de dentro do Folhão. Pedido do técnico:
+// antes só dava pra conferir o documento final abrindo o Folhão na mão
+// e clicando num botão lá dentro — queria isso aqui, junto com os
+// outros botões (Folhão / Checklist de Execução / Concluir).
+//
+// Abre o Folhão certo pro tipo do equipamento (populado com o rascunho
+// + o que já foi preenchido no Checklist de Execução, igual o botão
+// "Folhão" já faz) e, assim que terminar de carregar, dispara a
+// pré-visualização sozinho — sem precisar clicar em mais nada.
+window.previsualizarFolhaoDoReparo = async function(id) {
+    const item = window.BANCO_ATIVOS.find(a => a.id === id);
+    if (!item) { alert('Equipamento não encontrado.'); return; }
+
+    const tipo = item.tipo || '';
+    const mcc = item.mcc_compat || '';
+
+    // Só o Molde MCC4 tem pré-visualização própria por enquanto — os
+    // outros folhões ainda não têm uma função previsualizarFolhaoX
+    // equivalente. Adicionar aqui conforme cada área ganhar a sua.
+    if (tipo === 'Molde' && mcc !== '2/3' && typeof window.abrirFolhaoMCC4 === 'function' && typeof window.previsualizarFolhaoMolde4 === 'function') {
+        await window.abrirFolhaoMCC4(id);
+        window.previsualizarFolhaoMolde4();
+        return;
+    }
+
+    alert('Pré-visualização ainda não disponível pra esse tipo de equipamento — use o botão "Folhão" pra conferir manualmente.');
 };
 
 // ==========================================================================
