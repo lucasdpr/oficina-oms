@@ -959,9 +959,12 @@ function renderPainelDevTeste() {
                 <td class="font-code">${item.id}</td>
                 <td>${item.tipo || "-"}</td>
                 <td>${item.local || "-"}</td>
-                <td>
+                <td style="display:flex; gap:6px; flex-wrap:wrap;">
                     <button class="btn-premium" style="padding:4px 12px; font-size:12px;" onclick="window.abrirFolhaoPorTipo('${item.id}')">
                         <i class="fas fa-file-alt"></i> Abrir Folhão
+                    </button>
+                    <button class="btn-premium" style="padding:4px 12px; font-size:12px;" onclick="window.previsualizarFolhaoDoReparo('${item.id}')" title="Ver como o Folhão está ficando, sem precisar completar o Checklist de Execução">
+                        <i class="fas fa-eye"></i> Pré-visualizar
                     </button>
                 </td>
             </tr>
@@ -5675,6 +5678,37 @@ window.abrirFolhaoPorTipo = function(id) {
 
     // Se nada funcionar, exibe uma mensagem amigável (sem alert)
     console.warn(`Nenhum folhão disponível para o tipo: ${tipo}`);
+};
+
+// ==========================================================================
+// 🆕 PRÉ-VISUALIZAR — chamado direto do painel "Teste de Folhões"
+// (renderPainelDevTeste), não de dentro do Folhão nem da tela do
+// Checklist de Execução. Pedido do técnico: antes só dava pra
+// conferir o documento final abrindo o Folhão na mão e clicando num
+// botão lá dentro — queria isso junto do "Abrir Folhão" já existente
+// nesse painel de teste.
+//
+// Abre o Folhão certo pro tipo do equipamento (populado com o rascunho
+// + o que já foi preenchido no Checklist de Execução, igual o botão
+// "Folhão" já faz) e, assim que terminar de carregar, dispara a
+// pré-visualização sozinho — sem precisar clicar em mais nada.
+window.previsualizarFolhaoDoReparo = async function(id) {
+    const item = window.BANCO_ATIVOS.find(a => a.id === id);
+    if (!item) { alert('Equipamento não encontrado.'); return; }
+
+    const tipo = item.tipo || '';
+    const mcc = item.mcc_compat || '';
+
+    // Só o Molde MCC4 tem pré-visualização própria por enquanto — os
+    // outros folhões ainda não têm uma função previsualizarFolhaoX
+    // equivalente. Adicionar aqui conforme cada área ganhar a sua.
+    if (tipo === 'Molde' && mcc !== '2/3' && typeof window.abrirFolhaoMCC4 === 'function' && typeof window.previsualizarFolhaoMolde4 === 'function') {
+        await window.abrirFolhaoMCC4(id);
+        window.previsualizarFolhaoMolde4();
+        return;
+    }
+
+    alert('Pré-visualização ainda não disponível pra esse tipo de equipamento — use o botão "Folhão" pra conferir manualmente.');
 };
 
 // ==========================================================================
