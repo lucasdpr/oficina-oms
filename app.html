@@ -1496,7 +1496,39 @@
                 <div id="checklist-execucao-barra-fill" style="height:100%; width:0%; background:var(--success); border-radius:6px; transition:width 0.2s;"></div>
             </div>
 
+            <!-- 🆕 Atividade Extra: pra registrar algo fora do checklist
+                 padrão (ex: precisou envolver Caldeiraria/Usinagem num
+                 reparo que normalmente não passa por elas). -->
+            <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+                <button class="btn-premium" style="padding:6px 12px; font-size:12px;" onclick="window.abrirFormAtividadeExtraChecklist()">
+                    <i class="fas fa-triangle-exclamation"></i> Registrar Atividade Extra
+                </button>
+            </div>
+            <div id="checklist-execucao-atividades-extra"></div>
+
             <div id="checklist-execucao-secoes"></div>
+        </div>
+    </div>
+
+    <!-- 🆕 Modal "Registrar Atividade Extra" — área envolvida + descrição -->
+    <div id="modal-atividade-extra-checklist" class="modal-overlay hidden" style="z-index:10000;">
+        <div class="modal-content" style="max-width:520px; text-align:left;">
+            <h2 style="color:var(--text-heading); margin-bottom:14px;"><i class="fas fa-triangle-exclamation"></i> Registrar Atividade Extra</h2>
+            <p class="text-muted" style="font-size:11.5px; margin-bottom:14px;">
+                Use isso quando surgir algo fora do checklist padrão desse equipamento (ex: precisou de Caldeiraria ou Usinagem numa peça que normalmente não passa por elas). Fica registrado no histórico do reparo e avisa a área escolhida na hora.
+            </p>
+            <div class="input-group" style="margin-bottom:12px;">
+                <label>Área envolvida</label>
+                <select id="atividade-extra-area" class="premium-select"></select>
+            </div>
+            <div class="input-group" style="margin-bottom:16px;">
+                <label>O que aconteceu / o que precisa ser feito</label>
+                <textarea id="atividade-extra-descricao" class="premium-textarea" rows="4" placeholder="Ex: Trinca encontrada na base, precisa de solda da Caldeiraria antes de continuar a montagem."></textarea>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+                <button class="btn-outline-danger" style="padding:8px 14px;" onclick="window.fecharFormAtividadeExtraChecklist()">Cancelar</button>
+                <button class="btn-premium btn-success" style="padding:8px 16px;" onclick="window.salvarAtividadeExtraChecklist()"><i class="fas fa-paper-plane"></i> Registrar e Avisar</button>
+            </div>
         </div>
     </div>
 

@@ -401,9 +401,99 @@ window.recarregarChecklistExecucao = async function() {
         CHECKLIST_EXECUCAO_ETAPAS_ATUAIS = [];
     }
     window.renderizarChecklistExecucao();
+    window.renderizarAtividadesExtraChecklist();
     // Atualiza também o cache/botões da tabela de Reparo por trás do modal
     // (forçado, porque o status realmente mudou).
     window.carregarStatusChecklistExecucaoReparo([CHECKLIST_EXECUCAO_EQUIPAMENTO_ATUAL], true);
+};
+
+// ==========================================================================
+// 🆕 ATIVIDADE EXTRA — registro de algo fora do checklist padrão (ex:
+// precisou envolver Caldeiraria ou Usinagem numa peça que normalmente
+// não passa por elas). Fica ligado à execução (histórico do reparo) e
+// avisa a área escolhida na hora do registro (push, via backend).
+// ==========================================================================
+window.renderizarAtividadesExtraChecklist = async function() {
+    const container = document.getElementById('checklist-execucao-atividades-extra');
+    if (!container) return;
+    if (!CHECKLIST_EXECUCAO_EXECUCAO_ATUAL) { container.innerHTML = ''; return; }
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/checklist-execucao/atividades-extra/${CHECKLIST_EXECUCAO_EXECUCAO_ATUAL}`, { cache: 'no-store' });
+        const atividades = resp.ok ? await resp.json() : [];
+        if (atividades.length === 0) { container.innerHTML = ''; return; }
+
+        container.innerHTML = `
+            <div style="margin-bottom:14px; padding:10px; border:1px dashed var(--border-color); border-radius:8px; background:var(--bg-td);">
+                <div style="font-weight:700; font-size:11.5px; color:var(--text-heading); margin-bottom:6px;">
+                    <i class="fas fa-triangle-exclamation" style="color:#f59e0b;"></i> Atividades extra registradas nesse reparo
+                </div>
+                ${atividades.map(a => {
+                    const especialidade = obterEspecialidade(a.area);
+                    const quando = a.criado_em ? new Date(a.criado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+                    return `
+                        <div style="padding:6px 0; border-top:1px solid var(--border-color); font-size:11.5px;">
+                            <span style="font-weight:700; color:${especialidade.cor};"><i class="fas ${especialidade.icone}"></i> ${especialidade.nome}</span>
+                            <span class="text-muted"> — ${quando} — ${a.operador_nome || 'Sistema'}</span>
+                            <div style="margin-top:2px;">${a.descricao}</div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    } catch (e) {
+        console.error('⚠️ Erro ao carregar atividades extra do Checklist de Execução:', e);
+    }
+};
+
+window.abrirFormAtividadeExtraChecklist = function() {
+    if (!CHECKLIST_EXECUCAO_EXECUCAO_ATUAL) {
+        alert('Esse reparo ainda não tem uma execução iniciada — abra o Checklist de Execução normalmente primeiro.');
+        return;
+    }
+    const modal = document.getElementById('modal-atividade-extra-checklist');
+    if (!modal) return;
+    const select = document.getElementById('atividade-extra-area');
+    select.innerHTML = CHECKLIST_EXECUCAO_SECOES.map(s => `<option value="${s.chave}">${s.nome}</option>`).join('');
+    document.getElementById('atividade-extra-descricao').value = '';
+    modal.classList.remove('hidden');
+};
+
+window.fecharFormAtividadeExtraChecklist = function() {
+    const modal = document.getElementById('modal-atividade-extra-checklist');
+    if (modal) modal.classList.add('hidden');
+};
+
+window.salvarAtividadeExtraChecklist = async function() {
+    const area = document.getElementById('atividade-extra-area').value;
+    const descricao = document.getElementById('atividade-extra-descricao').value.trim();
+    if (!descricao) { alert('Descreva o que aconteceu antes de registrar.'); return; }
+
+    const tecnico = OPERADOR_LOGADO || {};
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/checklist-execucao/atividade-extra`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                execucao_id: CHECKLIST_EXECUCAO_EXECUCAO_ATUAL,
+                equipamento_id: CHECKLIST_EXECUCAO_EQUIPAMENTO_ATUAL,
+                area,
+                descricao,
+                operador_matricula: tecnico.matricula || '',
+                operador_nome: tecnico.nome || tecnico.matricula || 'Sistema'
+            })
+        });
+        if (!resp.ok) { alert('Não foi possível registrar a atividade extra.'); return; }
+    } catch (e) {
+        console.error('⚠️ Erro ao registrar atividade extra:', e);
+        alert('Não foi possível conectar ao servidor.');
+        return;
+    }
+
+    window.fecharFormAtividadeExtraChecklist();
+    window.renderizarAtividadesExtraChecklist();
 };
 
 window.fecharModalChecklistExecucao = function() {
