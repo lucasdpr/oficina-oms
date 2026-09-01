@@ -15,7 +15,7 @@
 // ==========================================================================
 
 import { resolverApiBase, OPERADOR_LOGADO, BANCO_ATIVOS } from '../Core/banco.js?v=5';
-import { CHECKLIST_EXECUCAO_SECOES, obterSecoesChecklistExecucao } from '../Core/dados.js';
+import { CHECKLIST_EXECUCAO_SECOES, obterSecoesChecklistExecucao, usaSubagrupamentoEspecialidade, obterEspecialidade } from '../Core/dados.js';
 import { resolverTipoEquipamento } from '../Core/checklistFolhaoPonte.js';
 // 🔧 CORREÇÃO CRÍTICA: NÃO importar MATRICULAS_ADM/OFICINA_EQUIPE_ATUAL/
 // verificarAcesso/renderReparos de '../script.js' aqui. O app.html
@@ -436,11 +436,40 @@ window.renderizarChecklistExecucao = function() {
     const isAdmin = ehAdminChecklistExecucao();
     const equipe = Array.isArray(window.getOficinaEquipeAtual()) ? window.getOficinaEquipeAtual() : [];
     const secoesDoTipo = obterSecoesChecklistExecucao(CHECKLIST_EXECUCAO_TIPO_ATUAL);
+    const subagrupar = usaSubagrupamentoEspecialidade(CHECKLIST_EXECUCAO_TIPO_ATUAL);
 
     let html = '';
     secoesDoTipo.forEach(secao => {
         const etapasDaSecao = CHECKLIST_EXECUCAO_ETAPAS_ATUAIS.filter(e => e.area === secao.chave);
         if (etapasDaSecao.length === 0 && !isAdmin) return; // técnico não vê seção vazia
+
+        // 🆕 Dentro de cada etapa (Chegada/Manutenção/Saída), separa por
+        // especialidade (Mecânica/Elétrica/Hidráulica) — sem isso tudo
+        // cai numa lista só e dá a impressão de que elétrica/hidráulica
+        // "não têm nada", quando na verdade estão lá, só misturadas.
+        let corpoSecao;
+        if (subagrupar) {
+            const especialidadesPresentes = [...new Set(etapasDaSecao.map(e => e.especialidade || 'mecanica'))];
+            // Ordem fixa (mecânica, elétrica, hidráulica, ...) em vez da
+            // ordem em que apareceram nas etapas, pra ficar previsível.
+            const ordemEspecialidade = CHECKLIST_EXECUCAO_SECOES.map(s => s.chave);
+            especialidadesPresentes.sort((a, b) => ordemEspecialidade.indexOf(a) - ordemEspecialidade.indexOf(b));
+
+            corpoSecao = especialidadesPresentes.map(chaveEsp => {
+                const especialidade = obterEspecialidade(chaveEsp);
+                const etapasDaEspecialidade = etapasDaSecao.filter(e => (e.especialidade || 'mecanica') === chaveEsp);
+                return `
+                    <div style="margin-bottom:10px;">
+                        <div style="font-weight:600; color:${especialidade.cor}; font-size:11.5px; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                            <i class="fas ${especialidade.icone}"></i> ${especialidade.nome}
+                        </div>
+                        ${etapasDaEspecialidade.map(e => renderizarLinhaEtapaChecklistExecucao(e, secao, isAdmin)).join('')}
+                    </div>
+                `;
+            }).join('');
+        } else {
+            corpoSecao = etapasDaSecao.map(e => renderizarLinhaEtapaChecklistExecucao(e, secao, isAdmin)).join('');
+        }
 
         html += `
             <div class="glass-panel" style="padding:12px; margin-bottom:12px; border-left:4px solid ${secao.cor};">
@@ -450,8 +479,7 @@ window.renderizarChecklistExecucao = function() {
                     </div>
                     ${isAdmin ? `<button class="btn-premium" style="padding:5px 10px; font-size:11px;" onclick="window.formNovaEtapaChecklistExecucao('${secao.chave}')"><i class="fas fa-plus"></i> Etapa</button>` : ''}
                 </div>
-                ${etapasDaSecao.length === 0 ? `<div class="text-muted" style="font-size:11.5px;">Nenhuma etapa cadastrada ainda nesta seção.</div>` : ''}
-                ${etapasDaSecao.map((e, idx) => renderizarLinhaEtapaChecklistExecucao(e, secao, isAdmin)).join('')}
+                ${etapasDaSecao.length === 0 ? `<div class="text-muted" style="font-size:11.5px;">Nenhuma etapa cadastrada ainda nesta seção.</div>` : corpoSecao}
             </div>
         `;
     });
@@ -910,6 +938,16 @@ window.formNovaEtapaChecklistExecucao = async function(areaChave) {
     const texto = prompt('Texto da nova etapa:');
     if (!texto || !texto.trim()) return;
 
+    // 🆕 Só pergunta a especialidade nos tipos que sub-agrupam por ela
+    // dentro da etapa (ex: Molde MCC4). Nos demais, a "area" já É a
+    // especialidade — perguntar de novo seria redundante.
+    let especialidade = 'mecanica';
+    if (usaSubagrupamentoEspecialidade(CHECKLIST_EXECUCAO_TIPO_ATUAL)) {
+        const opcoes = CHECKLIST_EXECUCAO_SECOES.map(s => s.chave).join(' / ');
+        const resposta = (prompt(`Especialidade desta etapa (${opcoes}):`, 'mecanica') || '').trim().toLowerCase();
+        if (resposta) especialidade = resposta;
+    }
+
     const tecnico = OPERADOR_LOGADO || {};
     try {
         const apiBase = await resolverApiBase();
@@ -919,6 +957,7 @@ window.formNovaEtapaChecklistExecucao = async function(areaChave) {
             body: JSON.stringify({
                 equipamento_id: CHECKLIST_EXECUCAO_TIPO_ATUAL, // 🆕 tipo, não a tag
                 area: areaChave,
+                especialidade,
                 texto: texto.trim(),
                 operador: tecnico.matricula || ''
             })
@@ -958,6 +997,15 @@ function garantirModalEditarEtapa() {
             <div class="input-group" style="margin-bottom:12px;">
                 <label>Área / Bloco</label>
                 <select id="editar-etapa-area" class="premium-select"></select>
+            </div>
+
+            <div class="input-group" style="margin-bottom:12px;" id="editar-etapa-especialidade-wrap">
+                <label>Especialidade</label>
+                <select id="editar-etapa-especialidade" class="premium-select">
+                    <option value="mecanica">Mecânica</option>
+                    <option value="eletrica">Elétrica</option>
+                    <option value="hidraulica">Hidráulica</option>
+                </select>
             </div>
 
             <div class="input-group" style="margin-bottom:12px;">
@@ -1024,6 +1072,16 @@ window.editarEtapaChecklistExecucao = function(etapaId) {
     }
     selectArea.value = etapa.area || (secoesDesteTipo[0] && secoesDesteTipo[0].chave) || '';
 
+    // 🆕 Só mostra o select de Especialidade nos tipos que sub-agrupam
+    // por ela (ex: Molde MCC4) — nos demais a "area" já é a
+    // especialidade, então o campo fica escondido pra não confundir.
+    const wrapEspecialidade = document.getElementById('editar-etapa-especialidade-wrap');
+    const subagrupa = usaSubagrupamentoEspecialidade(CHECKLIST_EXECUCAO_TIPO_ATUAL);
+    wrapEspecialidade.style.display = subagrupa ? '' : 'none';
+    if (subagrupa) {
+        document.getElementById('editar-etapa-especialidade').value = etapa.especialidade || 'mecanica';
+    }
+
     // Mostra o folhao_campo já formatado (com identação), pra quem for
     // consertar um JSON de medição múltipla conseguir ler/editar direito
     // em vez de uma linha só ilegível.
@@ -1051,6 +1109,9 @@ window.editarEtapaChecklistExecucao = function(etapaId) {
         const texto = document.getElementById('editar-etapa-texto').value.trim();
         if (!texto) { alert('O texto da etapa não pode ficar vazio.'); return; }
         const area = document.getElementById('editar-etapa-area').value;
+        const especialidade = usaSubagrupamentoEspecialidade(CHECKLIST_EXECUCAO_TIPO_ATUAL)
+            ? document.getElementById('editar-etapa-especialidade').value
+            : null;
         const tipoResposta = document.getElementById('editar-etapa-tipo-resposta').value;
         // Comprime de volta pra 1 linha só antes de mandar pro servidor
         // (a identação bonitinha é só pra facilitar a leitura na hora de
@@ -1071,6 +1132,7 @@ window.editarEtapaChecklistExecucao = function(etapaId) {
                     id: etapaId,
                     texto,
                     area,
+                    especialidade,
                     operador: tecnico.matricula || '',
                     folhao_campo: folhaoCampo,
                     tipo_resposta: tipoResposta

@@ -261,6 +261,26 @@ export function obterSecoesChecklistExecucao(tipoEquipamento) {
     return CHECKLIST_EXECUCAO_SECOES_POR_TIPO[tipoEquipamento] || CHECKLIST_EXECUCAO_SECOES;
 }
 
+// 🆕 Tipos que usam CHECKLIST_EXECUCAO_SECOES_POR_TIPO (ex: molde-mcc4,
+// dividido em Chegada/Manutenção/Saída) já usaram a "area" da etapa pra
+// guardar a ETAPA, não mais a especialidade — por isso essas etapas
+// também carregam "especialidade" (mecanica/eletrica/hidraulica) num
+// campo à parte, e a tela precisa sub-agrupar por ela dentro de cada
+// aba. Nos tipos que usam as seções genéricas (mecanica/eletrica/...
+// como "area" mesmo), sub-agrupar de novo por especialidade seria
+// redundante (cada seção já É uma especialidade só).
+export function usaSubagrupamentoEspecialidade(tipoEquipamento) {
+    return Boolean(CHECKLIST_EXECUCAO_SECOES_POR_TIPO[tipoEquipamento]);
+}
+
+// Metadados (nome/ícone/cor) de cada especialidade — reaproveita a
+// mesma lista genérica (CHECKLIST_EXECUCAO_SECOES) que já tem
+// mecanica/eletrica/hidraulica definidos.
+export function obterEspecialidade(chave) {
+    return CHECKLIST_EXECUCAO_SECOES.find(s => s.chave === chave)
+        || { chave, nome: chave, icone: 'fa-gear', cor: '#8a97ab' };
+}
+
 export const ABAS_PADRAO_OFICINA = [
     { chave: 'atividades',    label: 'Atividades',    icone: 'fa-clipboard-list' },
     { chave: 'materiais',     label: 'Materiais',     icone: 'fa-boxes-stacked' },
