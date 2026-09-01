@@ -214,7 +214,7 @@ function renderizarInspecaoChegadaHorizontal() {
         html += `<h4 style="margin: 20px 0 10px 0; color: var(--text-accent); border-bottom: 1px dashed var(--border-color); padding-bottom: 5px;"><i class="fas fa-tasks"></i> ${nomeCategoria}</h4><div class="checklist-container">`;
         perguntas.forEach((pergunta, index) => {
             const name = `hz-g${groupIndex}-q${index}`;
-            html += `<div class="check-item"><p>${index + 1}. ${pergunta}</p><div class="check-options"><label><input type="radio" name="${name}" value="SIM" checked> SIM</label><label><input type="radio" name="${name}" value="NÃO"> NÃO</label></div></div>`;
+            html += `<div class="check-item"><p>${index + 1}. ${pergunta}</p><div class="check-options"><label><input type="radio" name="${name}" value="SIM"> SIM</label><label><input type="radio" name="${name}" value="NÃO"> NÃO</label></div></div>`;
         });
         html += `</div>`;
         groupIndex++;
@@ -257,9 +257,9 @@ function renderizarCangalhasHorizontal() {
                 <tr><th></th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th></tr>`;
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td>${i}ª</td>
-                <td style="text-align:center;"><input type="radio" name="hcang-${prefix}-${i}-a" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="hcang-${prefix}-${i}-a" value="OK"></td>
                 <td style="text-align:center;"><input type="radio" name="hcang-${prefix}-${i}-a" value="NOK"></td>
-                <td style="text-align:center;"><input type="radio" name="hcang-${prefix}-${i}-b" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="hcang-${prefix}-${i}-b" value="OK"></td>
                 <td style="text-align:center;"><input type="radio" name="hcang-${prefix}-${i}-b" value="NOK"></td></tr>`;
         }
         html += `</table>`;
@@ -313,7 +313,7 @@ function renderizarCilindrosChegadaHorizontal() {
             html += `<tr><td style="text-align:center;font-weight:bold;">${p}</td>
                 <td><input id="hcil-${t.prefix}-num-${p}"></td>
                 <td><input id="hcil-${t.prefix}-prod-${p}"></td>
-                <td style="text-align:center;"><input type="radio" name="hcil-${t.prefix}-${p}" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="hcil-${t.prefix}-${p}" value="OK"></td>
                 <td style="text-align:center;"><input type="radio" name="hcil-${t.prefix}-${p}" value="NOK"></td>
                 <td><input id="hcil-${t.prefix}-obs-${p}"></td></tr>`;
         });
@@ -373,7 +373,7 @@ function renderizarInspecaoRolosHorizontal(tipo) {
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>`;
             for (let j = 1; j <= 4; j++) {
-                html += `<td style="text-align:center;"><input type="radio" name="hrol-${prefix}-${bPrefix}-${i}-${j}" value="OK" checked></td>
+                html += `<td style="text-align:center;"><input type="radio" name="hrol-${prefix}-${bPrefix}-${i}-${j}" value="OK"></td>
                          <td style="text-align:center;"><input type="radio" name="hrol-${prefix}-${bPrefix}-${i}-${j}" value="NOK"></td>`;
             }
             html += `</tr>`;
@@ -386,7 +386,7 @@ function renderizarInspecaoRolosHorizontal(tipo) {
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>`;
             for (let j = 1; j <= 4; j++) {
-                html += `<td style="text-align:center;"><input type="radio" name="hhid-${prefix}-${bPrefix}-${i}-${j}" value="OK" checked></td>
+                html += `<td style="text-align:center;"><input type="radio" name="hhid-${prefix}-${bPrefix}-${i}-${j}" value="OK"></td>
                          <td style="text-align:center;"><input type="radio" name="hhid-${prefix}-${bPrefix}-${i}-${j}" value="NOK"></td>`;
             }
             html += `</tr>`;
@@ -428,7 +428,7 @@ function renderizarGraxaHorizontal() {
                 <tr><th></th><th>OK</th><th>VT</th><th>SA</th><th></th><th></th></tr>`;
         for (let i = 7; i >= 1; i--) {
             html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>
-                <td style="text-align:center;"><input type="radio" name="hgrx-${prefix}-${i}" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="hgrx-${prefix}-${i}" value="OK"></td>
                 <td style="text-align:center;"><input type="radio" name="hgrx-${prefix}-${i}" value="VT"></td>
                 <td style="text-align:center;"><input type="radio" name="hgrx-${prefix}-${i}" value="SA"></td>
                 <td></td>
@@ -604,9 +604,12 @@ function montarHtmlLaudoHorizontal(tag) {
             perguntas.forEach((pergunta, index) => {
                 const name = `hz-g${groupIndex}-q${index}`;
                 const val = getRadioValue(name);
+                // 🔧 val vem null quando a pergunta não foi respondida (ver
+                // getRadioValue) — sem o "|| ''" aqui, o template literal
+                // imprime a palavra "null" de verdade na célula do PDF.
                 html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px;">${index+1}</td>
                     <td style="border:1px solid #000; padding:3px;">${pergunta}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${val}</td></tr>`;
+                    <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${val || ''}</td></tr>`;
             });
             groupIndex++;
         }
