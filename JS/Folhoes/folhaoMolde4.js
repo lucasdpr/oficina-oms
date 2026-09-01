@@ -865,6 +865,31 @@ export async function abrirFolhaoMCC4(id) {
 // ele só liga quando existe pelo menos 1 laudo salvo pra aquela peça
 // (ver folhaoSalvo em checklist-execucao.js) — e antes NADA aqui
 // jamais criava um laudo, então Concluir nunca destravava sozinho.
+// ==============================================================
+// 🆕 PRÉ-VISUALIZAR (sem salvar, sem precisar concluir 100%)
+// ==============================================================
+// Pedido direto do técnico: "não consigo testar o Folhão antes de
+// responder tudo". Antes, o único jeito de ver como o documento final
+// ficava era ou (a) clicar Salvar e nunca ver o resultado, ou (b)
+// completar o Checklist de Execução inteiro e clicar Concluir. Isso
+// gera exatamente o mesmo HTML que o Salvar/Concluir gerariam — só
+// que abre numa aba nova pra olhar, sem gravar nada no banco nem
+// mexer no status do Checklist de Execução. Os campos ainda em branco
+// aparecem em branco mesmo, então dá pra conferir o layout a qualquer
+// momento do preenchimento.
+export function previsualizarFolhaoMolde4() {
+    if (!ID_FOLHAO_ATUAL) return alert("Nenhuma TAG carregada.");
+    const htmlPreview = montarHtmlLaudoMolde4(ID_FOLHAO_ATUAL);
+    const win = window.open('', '_blank', 'width=1100,height=800');
+    if (win) {
+        win.document.write(htmlPreview);
+        win.document.close();
+    } else {
+        alert('Seu navegador bloqueou a janela de pré-visualização (pop-up). Permita pop-ups pra este site e tente de novo.');
+    }
+}
+window.previsualizarFolhaoMolde4 = previsualizarFolhaoMolde4;
+
 export async function salvarFolhaoMolde4() {
     if (!ID_FOLHAO_ATUAL) return alert("Nenhuma TAG carregada.");
     let tag = ID_FOLHAO_ATUAL;
