@@ -102,7 +102,14 @@ function getV(id) {
 function getRadioValue(name) {
     const radios = document.getElementsByName(name);
     for (let r of radios) if (r.checked) return r.value;
-    return 'NÃO';
+    // 🔧 CORREÇÃO (mesmo bug já corrigido no Molde MCC4, ver getRadioValue
+    // em folhaoMolde4.js — esse arquivo foi copiado antes da correção):
+    // retornar 'NÃO' aqui fabrica uma resposta negativa pra QUALQUER
+    // pergunta ainda em branco, marcando X em "NÃO" pra tudo que o
+    // técnico nem chegou a responder. null = pergunta em branco fica em
+    // branco no PDF (nem X no SIM, nem no NÃO), honesto com o que foi
+    // realmente respondido.
+    return null;
 }
 
 function getCheckboxValue(id) {
