@@ -4669,13 +4669,38 @@ function renderizarAtividadesArea() {
         return;
     }
 
-    const corStatus = { 'Pendente': 'var(--warning)', 'Em Andamento': 'var(--info)', 'Concluído': 'var(--success)' };
+    // 🆕 "Aguardando" (travou depois de já ter começado, ex: esperando
+    // material chegar) e "Recusado" (nem chegou a iniciar, ex: pediram
+    // e não forneceram material) — ambos SEMPRE vêm com motivo (ver
+    // mudarStatusAtividadeOficina), e avisam quem pediu a atividade.
+    const corStatus = { 'Pendente': 'var(--warning)', 'Em Andamento': 'var(--info)', 'Concluído': 'var(--success)', 'Aguardando': '#f97316', 'Recusado': 'var(--danger)' };
     const iconePrioridade = { 'Alta': '🔴', 'Baixa': '🔵' };
 
     container.innerHTML = statsHtml + itens.map(x => {
         const atrasada = atividadeEstaAtrasada(x);
         const prazoFormatado = x.prazo ? x.prazo.split('-').reverse().join('/') : null;
         const corBorda = atrasada ? 'var(--danger)' : (corStatus[x.status] || 'var(--text-muted)');
+
+        // Botões de ação variam por status — sempre um jeito de avançar
+        // (ou pausar/recusar com motivo), nunca "passar por cima" sem
+        // justificar.
+        let botoesAcao = '';
+        if (x.status === 'Pendente') {
+            botoesAcao = `
+                <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Em Andamento')">Iniciar</button>
+                <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Recusado')">Recusar</button>
+            `;
+        } else if (x.status === 'Em Andamento') {
+            botoesAcao = `
+                <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Concluído')">Concluir</button>
+                <button class="btn-premium" style="padding:4px 10px; font-size:11px; background:#f97316; border-color:#f97316;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Aguardando')">Aguardando</button>
+            `;
+        } else if (x.status === 'Aguardando') {
+            botoesAcao = `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Em Andamento')"><i class="fas fa-play"></i> Retomar</button>`;
+        } else if (x.status === 'Recusado') {
+            botoesAcao = `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Pendente')"><i class="fas fa-rotate-left"></i> Reabrir</button>`;
+        }
+
         return `
         <div class="atividade-card" style="--card-accent:${corBorda};">
             ${x.foto_base64 ? `
@@ -4694,6 +4719,7 @@ function renderizarAtividadesArea() {
                     ${atrasada ? `<span style="font-size:10px; background:var(--danger); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">ATRASADA</span>` : ''}
                 </div>
                 <div style="font-size:13px; color:var(--text-body);">${x.descricao}</div>
+                ${x.motivo_status ? `<div style="font-size:11.5px; color:${corStatus[x.status]}; margin-top:4px;"><i class="fas fa-circle-info"></i> ${x.motivo_status}</div>` : ''}
                 <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
                     ${x.responsavel ? `${x.responsavel} · ` : ''}${x.criado_em || ''}
                     ${x.data_inicio ? ` · <span style="color:var(--text-accent, #3b82f6);">Início salvo: ${x.data_inicio.split('-').reverse().join('/')}</span>` : ''}
@@ -4701,11 +4727,7 @@ function renderizarAtividadesArea() {
                 </div>
             </div>
             <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
-                ${x.status !== 'Concluído' ? `
-                    <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, '${x.status === 'Pendente' ? 'Em Andamento' : 'Concluído'}')">
-                        ${x.status === 'Pendente' ? 'Iniciar' : 'Concluir'}
-                    </button>
-                ` : ''}
+                ${botoesAcao}
                 <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.editarAtividadeOficina(${x.id})">
                     <i class="fas fa-pen"></i>
                 </button>
@@ -4842,15 +4864,27 @@ window.confirmarAtividadeOficina = async function() {
 // --------------------------------------------------------------
 window.mudarStatusAtividadeOficina = async function(id, novoStatus) {
     if (!verificarAcesso()) return;
+
+    // 🆕 "Recusado" e "Aguardando" exigem motivo — o backend também
+    // valida isso (não dá pra contornar só chamando a API direto), mas
+    // pedir aqui já evita a ida e volta com erro pro técnico.
+    let motivo = null;
+    if (novoStatus === 'Recusado' || novoStatus === 'Aguardando') {
+        const rotulo = novoStatus === 'Recusado' ? 'Por que está recusando essa atividade?' : 'Por que está pausando essa atividade? (ex: aguardando material)';
+        motivo = prompt(rotulo);
+        if (!motivo || !motivo.trim()) { alert('É preciso informar um motivo.'); return; }
+    }
+
     try {
         const apiBase = await resolverApiBase();
         const resp = await fetch(`${apiBase}/api/oficina/atividade/status`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id, status: novoStatus })
+            body: JSON.stringify({ id, status: novoStatus, motivo })
         });
         if (!resp.ok) {
-            alert('Não foi possível atualizar o status.');
+            const erro = await resp.json().catch(() => null);
+            alert(erro?.detail || 'Não foi possível atualizar o status.');
             return;
         }
         await window.carregarOficina();

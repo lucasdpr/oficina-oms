@@ -437,7 +437,12 @@ window.renderizarAtividadesExtraChecklist = async function() {
                     // marcou lá (Pendente/Em Andamento/Concluído), não é
                     // mais só um registro solto sem retorno.
                     const status = a.status_atividade || 'Pendente';
-                    const corStatus = status === 'Concluído' ? 'var(--success, #10b981)' : (status === 'Em Andamento' ? '#eab308' : 'var(--text-muted)');
+                    // 🆕 Aguardando/Recusado sempre vêm com motivo — é
+                    // exatamente o que o técnico que registrou precisa
+                    // ver aqui (já chega por push também, mas fica
+                    // registrado igual pra quem abrir depois).
+                    const CORES_STATUS = { 'Concluído': 'var(--success, #10b981)', 'Em Andamento': '#eab308', 'Aguardando': '#f97316', 'Recusado': 'var(--danger, #ef4444)' };
+                    const corStatus = CORES_STATUS[status] || 'var(--text-muted)';
                     return `
                         <div style="padding:6px 0; border-top:1px solid var(--border-color); font-size:11.5px; display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
                             <div>
@@ -445,6 +450,7 @@ window.renderizarAtividadesExtraChecklist = async function() {
                                 <span style="font-weight:700; color:${corStatus}; margin-left:6px;">[${status}]</span>
                                 <span class="text-muted"> — ${quando} — ${a.operador_nome || 'Sistema'}</span>
                                 <div style="margin-top:2px;">${a.descricao}</div>
+                                ${a.motivo_status ? `<div style="margin-top:2px; color:${corStatus};"><i class="fas fa-circle-info"></i> ${a.motivo_status}</div>` : ''}
                             </div>
                             <button class="btn-outline-danger" style="padding:3px 8px; font-size:10.5px; flex-shrink:0;" title="Excluir (cancela também na área)" onclick="window.excluirAtividadeExtraChecklist(${a.id})">
                                 <i class="fas fa-trash"></i>
