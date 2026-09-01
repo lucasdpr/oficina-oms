@@ -264,7 +264,7 @@ export const CHECKLIST_EXECUCAO_SECOES_POR_TIPO = {
         { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
         { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
     ],
-    'horizontal': [
+    'horizontal-mcc4': [
         { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#38bdf8' },
         { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
         { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
