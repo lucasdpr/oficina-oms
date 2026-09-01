@@ -945,6 +945,28 @@ function focarPrimeiroPendente(pendentes) {
 }
 
 // ==============================================================
+// 🆕 PRÉ-VISUALIZAR (sem salvar, sem precisar concluir 100%)
+// ==============================================================
+// Mesmo padrão do Molde MCC4 (ver previsualizarFolhaoMolde4, em
+// folhaoMolde4.js) — faltava aqui, por isso o painel "Teste de
+// Folhões" caía no alert genérico ("Pré-visualização ainda não
+// disponível") pro Molde 2/3. Gera o mesmo HTML que Salvar geraria e
+// abre numa aba nova, sem gravar nada no banco — os campos ainda em
+// branco aparecem em branco mesmo, dá pra conferir o layout a
+// qualquer momento do preenchimento.
+window.previsualizarFolhaoMolde23 = function() {
+    if (!ID_FOLHAO_MOLDE23_ATUAL) { alert("Nenhuma TAG carregada."); return; }
+    const htmlPreview = montarHtmlLaudoMolde23(ID_FOLHAO_MOLDE23_ATUAL);
+    const win = window.open('', '_blank', 'width=1100,height=800');
+    if (win) {
+        win.document.write(htmlPreview);
+        win.document.close();
+    } else {
+        alert('Seu navegador bloqueou a janela de pré-visualização (pop-up). Permita pop-ups pra este site e tente de novo.');
+    }
+};
+
+// ==============================================================
 // 21. SALVAR FOLHÃO - MOLDE 2/3 (sem imprimir)
 // ==============================================================
 // 🔧 SEPARADO (mesmo padrão do Molde MCC4, ver salvarFolhaoMolde4):

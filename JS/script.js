@@ -5832,12 +5832,17 @@ window.previsualizarFolhaoDoReparo = async function(id) {
     const tipo = item.tipo || '';
     const mcc = item.mcc_compat || '';
 
-    // Só o Molde MCC4 tem pré-visualização própria por enquanto — os
-    // outros folhões ainda não têm uma função previsualizarFolhaoX
-    // equivalente. Adicionar aqui conforme cada área ganhar a sua.
+    // Molde MCC4 e Molde MCC2/3 têm pré-visualização própria. Os outros
+    // folhões ainda não têm uma função previsualizarFolhaoX equivalente
+    // — adicionar aqui conforme cada área ganhar a sua.
     if (tipo === 'Molde' && mcc !== '2/3' && typeof window.abrirFolhaoMCC4 === 'function' && typeof window.previsualizarFolhaoMolde4 === 'function') {
         await window.abrirFolhaoMCC4(id);
         window.previsualizarFolhaoMolde4();
+        return;
+    }
+    if (tipo === 'Molde' && mcc === '2/3' && typeof window.abrirFolhaoMolde23 === 'function' && typeof window.previsualizarFolhaoMolde23 === 'function') {
+        await window.abrirFolhaoMolde23(id);
+        window.previsualizarFolhaoMolde23();
         return;
     }
 
