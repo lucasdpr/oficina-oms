@@ -167,7 +167,12 @@ function getV(id) {
 function getRadioValue(name) {
     const radios = document.getElementsByName(name);
     for (let r of radios) if (r.checked) return r.value;
-    return 'NÃO';
+    // 🔧 CORREÇÃO (mesmo bug já corrigido no Molde MCC4 e no Molde MCC2/3,
+    // ver getRadioValue em folhaoMolde4.js): retornar 'NÃO' aqui fabrica
+    // uma resposta negativa pra QUALQUER pergunta ainda em branco. null =
+    // pergunta em branco fica em branco no PDF, honesto com o que foi
+    // realmente respondido.
+    return null;
 }
 
 function getCheckboxValue(id) {
@@ -968,6 +973,26 @@ function montarHtmlLaudoHorizontal(tag) {
 
     return htmlPDF;
 }
+
+// ==============================================================
+// 🆕 PRÉ-VISUALIZAR (sem salvar, sem precisar concluir 100%)
+// ==============================================================
+// Mesmo padrão do Molde MCC4/MCC2-3 (ver previsualizarFolhaoMolde4,
+// em folhaoMolde4.js) — faltava aqui, por isso o painel "Teste de
+// Folhões" caía no alert genérico ("Pré-visualização ainda não
+// disponível") pro Horizontal. Gera o mesmo HTML que Salvar geraria e
+// abre numa aba nova, sem gravar nada no banco.
+window.previsualizarFolhaoHorizontal = function() {
+    if (!ID_FOLHAO_HORIZ_ATUAL) { alert("Nenhuma TAG carregada."); return; }
+    const htmlPreview = montarHtmlLaudoHorizontal(ID_FOLHAO_HORIZ_ATUAL);
+    const win = window.open('', '_blank', 'width=1100,height=800');
+    if (win) {
+        win.document.write(htmlPreview);
+        win.document.close();
+    } else {
+        alert('Seu navegador bloqueou a janela de pré-visualização (pop-up). Permita pop-ups pra este site e tente de novo.');
+    }
+};
 
 // ==============================================================
 // 16. SALVAR FOLHÃO - HORIZONTAL (sem imprimir)
