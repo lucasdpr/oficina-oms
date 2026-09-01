@@ -174,7 +174,11 @@ self.addEventListener("push", (event) => {
 // --------------------------------------------------------------
 self.addEventListener("notificationclick", (event) => {
     event.notification.close();
-    const url = event.notification.data && event.notification.data.url ? event.notification.data.url : "/";
+    const urlRecebida = event.notification.data && event.notification.data.url ? event.notification.data.url : "/";
+    // Resolve a URL contra o escopo do service worker (ex.: "/oficina-oms/"),
+    // e não contra a raiz do domínio — senão "/" abre https://usuario.github.io/
+    // (404), em vez de https://usuario.github.io/oficina-oms/.
+    const url = new URL(urlRecebida, self.registration.scope).href;
 
     event.waitUntil(
         clients.matchAll({ type: "window", includeUncontrolled: true }).then((janelas) => {
