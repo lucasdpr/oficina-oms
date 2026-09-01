@@ -439,11 +439,16 @@ window.renderizarAtividadesExtraChecklist = async function() {
                     const status = a.status_atividade || 'Pendente';
                     const corStatus = status === 'Concluído' ? 'var(--success, #10b981)' : (status === 'Em Andamento' ? '#eab308' : 'var(--text-muted)');
                     return `
-                        <div style="padding:6px 0; border-top:1px solid var(--border-color); font-size:11.5px;">
-                            <span style="font-weight:700; color:${especialidade.cor};"><i class="fas ${especialidade.icone}"></i> ${especialidade.nome}</span>
-                            <span style="font-weight:700; color:${corStatus}; margin-left:6px;">[${status}]</span>
-                            <span class="text-muted"> — ${quando} — ${a.operador_nome || 'Sistema'}</span>
-                            <div style="margin-top:2px;">${a.descricao}</div>
+                        <div style="padding:6px 0; border-top:1px solid var(--border-color); font-size:11.5px; display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+                            <div>
+                                <span style="font-weight:700; color:${especialidade.cor};"><i class="fas ${especialidade.icone}"></i> ${especialidade.nome}</span>
+                                <span style="font-weight:700; color:${corStatus}; margin-left:6px;">[${status}]</span>
+                                <span class="text-muted"> — ${quando} — ${a.operador_nome || 'Sistema'}</span>
+                                <div style="margin-top:2px;">${a.descricao}</div>
+                            </div>
+                            <button class="btn-outline-danger" style="padding:3px 8px; font-size:10.5px; flex-shrink:0;" title="Excluir (cancela também na área)" onclick="window.excluirAtividadeExtraChecklist(${a.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </div>
                     `;
                 }).join('')}
@@ -500,6 +505,29 @@ window.salvarAtividadeExtraChecklist = async function() {
     }
 
     window.fecharFormAtividadeExtraChecklist();
+    window.renderizarAtividadesExtraChecklist();
+};
+
+// 🆕 Exclui a Atividade Extra E cancela automaticamente a atividade
+// real que ela criou no quadro da área (o backend cuida das duas —
+// ver excluir_atividade_extra_checklist_execucao) — sem isso, apagar
+// só aqui deixaria uma atividade "fantasma" pendente pra sempre na
+// tela da área, que pro Checklist de Execução nem existe mais.
+window.excluirAtividadeExtraChecklist = async function(id) {
+    if (!confirm('Excluir essa atividade extra? Isso também cancela a atividade correspondente no quadro da área.')) return;
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/checklist-execucao/atividade-extra/excluir`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+        });
+        if (!resp.ok) { alert('Não foi possível excluir a atividade extra.'); return; }
+    } catch (e) {
+        console.error('⚠️ Erro ao excluir atividade extra:', e);
+        alert('Não foi possível conectar ao servidor.');
+        return;
+    }
     window.renderizarAtividadesExtraChecklist();
 };
 
