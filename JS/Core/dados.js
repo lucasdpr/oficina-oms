@@ -245,12 +245,21 @@ export const CHECKLIST_EXECUCAO_SECOES = [
 // 🆕 SEÇÕES POR TIPO DE EQUIPAMENTO — o Molde MCC4 pediu pra ver o
 // Checklist de Execução dividido em Chegada/Manutenção/Saída (igual o
 // Folhão dele já é: aba de Chegada, execução, Saída), em vez das
-// seções genéricas acima (Mecânica/Elétrica/...). Só o Molde MCC4 usa
-// isso — todo o resto do sistema continua com CHECKLIST_EXECUCAO_SECOES
-// normal. Use obterSecoesChecklistExecucao(tipoEquipamento) em vez de
-// ler CHECKLIST_EXECUCAO_SECOES direto, pra sempre pegar a lista certa.
+// seções genéricas acima (Mecânica/Elétrica/...). O Molde MCC2/3 pediu
+// a mesma lógica depois — em vez do Molde MCC4 continuar sendo o único
+// (com if/tipo espalhado), qualquer tipo que entrar aqui já ganha o
+// mesmo comportamento nos dois lugares que checam isso (esta tela E o
+// aviso de fase concluída no backend, que usa a mesma lista — ver
+// TIPOS_CHECKLIST_POR_FASE em main.py). Use
+// obterSecoesChecklistExecucao(tipoEquipamento) em vez de ler
+// CHECKLIST_EXECUCAO_SECOES direto, pra sempre pegar a lista certa.
 export const CHECKLIST_EXECUCAO_SECOES_POR_TIPO = {
     'molde-mcc4': [
+        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#38bdf8' },
+        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
+        { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
+    ],
+    'molde-mcc2-3': [
         { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#38bdf8' },
         { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
         { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
