@@ -1863,10 +1863,11 @@
             </div>
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:10px; margin-bottom:15px; background:var(--bg-th); padding:12px; border-radius:8px;">
                 <div class="input-group"><label>TAG</label><input type="text" id="horizontal-tag-name" readonly></div>
-                <div class="input-group"><label>Nº SEGMENTO</label><input type="text" id="horiz-num-segmento" placeholder="Ex: HOR-08"></div>
+                <div class="input-group"><label>Nº SEGMENTO</label><input type="text" id="horiz-num-segmento" readonly title="Vem do próprio equipamento — não precisa digitar."></div>
                 <div class="input-group"><label>VEIO (SAÍDA)</label><select id="horiz-veio" class="premium-select"><option value="G">G</option><option value="H">H</option></select></div>
-                <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="horiz-data-inicio"></div>
-                <div class="input-group"><label>DATA FIM</label><input type="date" id="horiz-data-fim"></div>
+                <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="horiz-data-inicio" readonly title="Travada — é a data real em que o reparo entrou em andamento."></div>
+                <div class="input-group"><label>DATA FIM</label><input type="date" id="horiz-data-fim" readonly title="Travada — preenchida sozinha quando o reparo é concluído."></div>
+                <div class="input-group"><label>LÍDER RESPONSÁVEL</label><input type="text" id="horiz-lider-responsavel" readonly title="Travado — é quem iniciou o reparo no Checklist de Execução."></div>
                 <div class="input-group"><label>MOTIVO</label><input type="text" id="horiz-motivo" placeholder="Motivo da OS"></div>
                 <div class="input-group"><label>TIPO EXECUÇÃO</label><select id="horiz-tipo-execucao" class="premium-select"><option value="GERAL">GERAL</option><option value="PARCIAL">PARCIAL</option></select></div>
             </div>
@@ -2156,10 +2157,10 @@
                 
                 <div class="input-group"><label style="color: var(--success-color); font-weight: bold;">AJUSTE DE VIDA (Se Parcial)</label><input type="number" id="molde23-nova-meta" placeholder="Ex: 120000" style="border-color: var(--success-color);"></div>
 
-                <div class="input-group"><label>LÍDER RESPONSÁVEL</label><input type="text" id="molde23-lider"></div>
+                <div class="input-group"><label>LÍDER RESPONSÁVEL</label><input type="text" id="molde23-lider" readonly title="Travado — é quem iniciou o reparo no Checklist de Execução."></div>
                 <div class="input-group"><label>DESEMPENHO</label><input type="text" id="molde23-desempenho" placeholder="Ex: BOM, REGULAR"></div>
-                <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="molde23-data-inicio"></div>
-                <div class="input-group"><label>DATA FIM</label><input type="date" id="molde23-data-fim"></div>
+                <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="molde23-data-inicio" readonly title="Travada — é a data real em que o reparo entrou em andamento."></div>
+                <div class="input-group"><label>DATA FIM</label><input type="date" id="molde23-data-fim" readonly title="Travada — preenchida sozinha quando o reparo é concluído."></div>
             </div>
             <div class="folhao-tabs">
                 <button class="folhao-tab active" onclick="window.trocarAbaMolde23(event, 'aba-m23-identificacao')">1. Identificação</button>
@@ -2221,10 +2222,10 @@
                 <div class="input-group"><label>Nº MOLDE</label><input type="text" id="molde4-num-molde" placeholder="Ex: 4H-01" class="premium-input"></div>
                 <div class="input-group"><label>MOTIVO</label><input type="text" id="molde4-motivo" placeholder="Motivo da OS" class="premium-input"></div>
                 <div class="input-group"><label>TIPO EXECUÇÃO</label><select id="molde4-tipo-exec" class="premium-select"><option value="GERAL">GERAL</option><option value="PARCIAL">PARCIAL</option></select></div>
-                <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="molde4-data-inicio" class="premium-input"></div>
-                <div class="input-group"><label>DATA FIM</label><input type="date" id="molde4-data-fim" class="premium-input"></div>
+                <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="molde4-data-inicio" readonly class="premium-input" title="Travada — é a data real em que o reparo entrou em andamento."></div>
+                <div class="input-group"><label>DATA FIM</label><input type="date" id="molde4-data-fim" readonly class="premium-input" title="Travada — preenchida sozinha quando o reparo é concluído."></div>
                 <!-- 🆕 Campos que existem no documento oficial e faltavam na tela -->
-                <div class="input-group"><label>LÍDER RESPONSÁVEL</label><input type="text" id="molde4-lider-responsavel" placeholder="Nome do líder" class="premium-input"></div>
+                <div class="input-group"><label>LÍDER RESPONSÁVEL</label><input type="text" id="molde4-lider-responsavel" readonly class="premium-input" title="Travado — é quem iniciou o reparo no Checklist de Execução."></div>
                 <div class="input-group"><label>DESEMPENHO</label><input type="text" id="molde4-desempenho" placeholder="Ex: OK / Observação" class="premium-input"></div>
 
                 <div class="input-group">
