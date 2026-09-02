@@ -488,10 +488,17 @@ window.abrirFolhaoBow = function(id) {
     // Preenche cabeçalho
     const tagNameEl = document.getElementById('bow-tag-name');
     if (tagNameEl) tagNameEl.innerText = id;
+    // 🆕 Nº SEGMENTO, DATA INÍCIO/FIM e LÍDER RESPONSÁVEL não são mais
+    // digitados pelo técnico — mesmo tratamento do Horizontal (ver
+    // preencherCabecalhoExecucaoHorizontal em folhaoHorizontal.js).
+    const numSegEl = document.getElementById('bow-num-segmento');
+    if (numSegEl) numSegEl.value = id;
     const dataInicio = document.getElementById('bow-data-inicio');
     const dataFim = document.getElementById('bow-data-fim');
-    if (dataInicio) dataInicio.valueAsDate = new Date();
-    if (dataFim) dataFim.valueAsDate = new Date();
+    const liderEl = document.getElementById('bow-lider-responsavel');
+    if (dataInicio) dataInicio.value = '';
+    if (dataFim) dataFim.value = '';
+    if (liderEl) liderEl.value = '';
     const motivoEl = document.getElementById('bow-motivo');
     if (motivoEl) motivoEl.value = '';
 
@@ -520,7 +527,35 @@ window.abrirFolhaoBow = function(id) {
     // 🆕 PONTE COM O CHECKLIST DE EXECUÇÃO — autopreenche os campos já
     // respondidos lá (ver '../Core/checklistFolhaoPonte.js').
     preencherFolhaoBowComChecklistExecucao(id);
+
+    // 🆕 Trava DATA INÍCIO/FIM e LÍDER RESPONSÁVEL com o que o servidor
+    // registrou de verdade (mesmo padrão do Horizontal).
+    preencherCabecalhoExecucaoBow(id);
 };
+
+// --------------------------------------------------------------
+// 🆕 CABEÇALHO TRAVADO (DATA INÍCIO/FIM + LÍDER RESPONSÁVEL) — Bow.
+// Ver preencherCabecalhoExecucaoHorizontal em folhaoHorizontal.js.
+// --------------------------------------------------------------
+async function preencherCabecalhoExecucaoBow(id) {
+    const dataInicio = document.getElementById('bow-data-inicio');
+    const dataFim = document.getElementById('bow-data-fim');
+    const liderEl = document.getElementById('bow-lider-responsavel');
+    if (!dataInicio && !dataFim && !liderEl) return;
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/checklist-execucao/status/${encodeURIComponent(id)}`, { cache: 'no-store' });
+        const status = resp.ok ? await resp.json() : null;
+        if (!status) return;
+
+        if (dataInicio) dataInicio.value = status.iniciada_em ? status.iniciada_em.slice(0, 10) : '';
+        if (dataFim) dataFim.value = status.concluida_em ? status.concluida_em.slice(0, 10) : '';
+        if (liderEl) liderEl.value = status.tecnico_nome || '';
+    } catch (e) {
+        console.error('⚠️ Não consegui buscar início/fim/líder reais da execução (Bow):', e);
+    }
+}
 
 async function preencherFolhaoBowComChecklistExecucao(id) {
     ligarListenerEdicaoManualFolhao('modal-folhao-bow', () => PONTE_CHECKLIST_BOW);
@@ -533,7 +568,7 @@ async function preencherFolhaoBowComChecklistExecucao(id) {
         const camposProtegidos = new Set([
             'bow-tag-name', 'bow-num-segmento', 'bow-motivo',
             'bow-tipo-execucao', 'bow-data-inicio', 'bow-data-fim',
-            'bow-veio', 'bow-nova-meta'
+            'bow-lider-responsavel', 'bow-veio', 'bow-nova-meta'
         ]);
 
         const { preenchidos, naoEncontrados } = preencherCamposFolhao(ponte.valores, camposProtegidos);
@@ -581,6 +616,7 @@ function montarHtmlLaudoBow(tag) {
     const motivo = getV('bow-motivo') || '_______________';
     const tipoExec = document.getElementById('bow-tipo-execucao')?.value || 'GERAL';
     const novaMeta = getV('bow-nova-meta') || 'Manter Atual';
+    const lider = getV('bow-lider-responsavel') || '_______________';
 
     let itemParaMeta = BANCO_ATIVOS.find(a => a.id === tag);
     if (itemParaMeta && novaMeta && !isNaN(parseFloat(novaMeta))) {
@@ -966,7 +1002,7 @@ function montarHtmlLaudoBow(tag) {
 
         <!-- ASSINATURAS -->
         <div style="margin-top:40px; display:flex; justify-content:space-around; text-align:center; font-size:10px; font-weight:bold;">
-            <div><p>___________________________________</p><p>Líder Responsável / Operador</p></div>
+            <div><p>${lider}</p><p>Líder Responsável / Operador</p></div>
             <div><p>___________________________________</p><p>Inspetor de Qualidade</p></div>
         </div>
     </div>`;
@@ -1059,6 +1095,23 @@ window.concluirEImprimirFolhaoBow = async function(tag) {
         });
     } catch (e) {
         console.error("Erro ao atualizar peça na nuvem (Bow):", e);
+    }
+
+    // 🆕 Fecha a execução do Checklist de Execução de verdade (mesmo
+    // padrão do Horizontal) — sem isso "concluida_em" nunca era gravada.
+    try {
+        const apiBase = await resolverApiBase();
+        const respStatus = await fetch(`${apiBase}/api/checklist-execucao/status/${encodeURIComponent(tag)}`, { cache: 'no-store' });
+        const status = respStatus.ok ? await respStatus.json() : null;
+        if (status && status.execucao_id) {
+            await fetch(`${apiBase}/api/checklist-execucao/execucoes/finalizar`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ execucao_id: status.execucao_id })
+            });
+        }
+    } catch (e) {
+        console.error("Erro ao finalizar a execução do Checklist (Bow):", e);
     }
 
     finalizarRascunhoFolhao(tag, "Bow");
