@@ -694,6 +694,38 @@ function renderizarM4Materiais() {
     `;
 }
 
+// --------------------------------------------------------------
+// 🆕 CABEÇALHO TRAVADO (DATA INÍCIO/FIM + LÍDER RESPONSÁVEL) — Molde
+// MCC4. Mesma lógica do Folhão Horizontal (ver
+// preencherCabecalhoExecucaoHorizontal em folhaoHorizontal.js): busca
+// a execução dessa tag no Checklist de Execução e usa
+// iniciada_em/concluida_em/tecnico_nome, gravados pelo servidor em
+// /execucoes/iniciar e /execucoes/finalizar — sem isso o técnico tinha
+// que digitar a data toda vez, e ela virava "hoje" de novo a cada
+// reabertura do Folhão.
+// --------------------------------------------------------------
+async function preencherCabecalhoExecucaoMolde4(id) {
+    const dataInicio = document.getElementById('molde4-data-inicio');
+    const dataFim = document.getElementById('molde4-data-fim');
+    const liderEl = document.getElementById('molde4-lider-responsavel');
+    if (!dataInicio && !dataFim && !liderEl) return;
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/checklist-execucao/status/${encodeURIComponent(id)}`, { cache: 'no-store' });
+        const status = resp.ok ? await resp.json() : null;
+        if (!status) return;
+
+        // iniciada_em/concluida_em vêm como ISO ("2026-09-02T10:15:23-03:00")
+        // — <input type="date"> só aceita "YYYY-MM-DD".
+        if (dataInicio) dataInicio.value = status.iniciada_em ? status.iniciada_em.slice(0, 10) : '';
+        if (dataFim) dataFim.value = status.concluida_em ? status.concluida_em.slice(0, 10) : '';
+        if (liderEl) liderEl.value = status.tecnico_nome || '';
+    } catch (e) {
+        console.error('⚠️ Não consegui buscar início/fim/líder reais da execução (Molde MCC4):', e);
+    }
+}
+
 // ==============================================================
 // FUNÇÃO PRINCIPAL - ABRIR FOLHÃO (DISPATCHER)
 // ==============================================================
@@ -792,10 +824,17 @@ export async function abrirFolhaoMCC4(id) {
 
         const tagInput = document.getElementById("molde4-tag-name");
         if (tagInput) tagInput.value = id;
+        // 🆕 DATA INÍCIO/FIM e LÍDER RESPONSÁVEL não são mais digitados
+        // pelo técnico nem resetados pra "hoje" toda vez que reabre —
+        // ver preencherCabecalhoExecucaoMolde4, que trava os três com o
+        // que o servidor registrou de verdade no Checklist de Execução.
         const dataInicio = document.getElementById("molde4-data-inicio");
-        if (dataInicio) dataInicio.valueAsDate = new Date();
         const dataFim = document.getElementById("molde4-data-fim");
-        if (dataFim) dataFim.valueAsDate = new Date();
+        const liderM4 = document.getElementById("molde4-lider-responsavel");
+        if (dataInicio) dataInicio.value = '';
+        if (dataFim) dataFim.value = '';
+        if (liderM4) liderM4.value = '';
+        preencherCabecalhoExecucaoMolde4(id);
 
         // Limpa as divs vitais
         const recebDiv = document.getElementById('m4-aba-receb');
@@ -1014,6 +1053,25 @@ window.concluirEImprimirFolhaoMolde4 = async function(tag) {
         });
     } catch (e) {
         console.error("Erro ao atualizar peça na nuvem:", e);
+    }
+
+    // 🆕 Fecha a execução do Checklist de Execução de verdade — sem isso
+    // "concluida_em" nunca era gravada no servidor, e a DATA FIM travada
+    // no Folhão (ver preencherCabecalhoExecucaoMolde4) ficava sempre
+    // vazia mesmo com o reparo concluído.
+    try {
+        const apiBase = await resolverApiBase();
+        const respStatus = await fetch(`${apiBase}/api/checklist-execucao/status/${encodeURIComponent(tag)}`, { cache: 'no-store' });
+        const status = respStatus.ok ? await respStatus.json() : null;
+        if (status && status.execucao_id) {
+            await fetch(`${apiBase}/api/checklist-execucao/execucoes/finalizar`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ execucao_id: status.execucao_id })
+            });
+        }
+    } catch (e) {
+        console.error("Erro ao finalizar a execução do Checklist (Molde MCC4):", e);
     }
 
     finalizarRascunhoFolhao(tag, "Molde 4");

@@ -598,6 +598,35 @@ function renderizarMateriais() {
 // ==============================================================
 // 19. FUNÇÃO PRINCIPAL DE ABRIR O FOLHÃO
 // ==============================================================
+// --------------------------------------------------------------
+// 🆕 CABEÇALHO TRAVADO (DATA INÍCIO/FIM + LÍDER RESPONSÁVEL) — Molde
+// MCC2/3. Mesma lógica do Folhão Horizontal e do Molde MCC4: busca a
+// execução dessa tag no Checklist de Execução e usa
+// iniciada_em/concluida_em/tecnico_nome, gravados pelo servidor em
+// /execucoes/iniciar e /execucoes/finalizar.
+// --------------------------------------------------------------
+async function preencherCabecalhoExecucaoMolde23(id) {
+    const dataInicio = document.getElementById('molde23-data-inicio');
+    const dataFim = document.getElementById('molde23-data-fim');
+    const liderEl = document.getElementById('molde23-lider');
+    if (!dataInicio && !dataFim && !liderEl) return;
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/checklist-execucao/status/${encodeURIComponent(id)}`, { cache: 'no-store' });
+        const status = resp.ok ? await resp.json() : null;
+        if (!status) return;
+
+        // iniciada_em/concluida_em vêm como ISO ("2026-09-02T10:15:23-03:00")
+        // — <input type="date"> só aceita "YYYY-MM-DD".
+        if (dataInicio) dataInicio.value = status.iniciada_em ? status.iniciada_em.slice(0, 10) : '';
+        if (dataFim) dataFim.value = status.concluida_em ? status.concluida_em.slice(0, 10) : '';
+        if (liderEl) liderEl.value = status.tecnico_nome || '';
+    } catch (e) {
+        console.error('⚠️ Não consegui buscar início/fim/líder reais da execução (Molde MCC2/3):', e);
+    }
+}
+
 window.abrirFolhaoMolde23 = function(id) {
     ID_FOLHAO_MOLDE23_ATUAL = id;
     const modal = document.getElementById('modal-folhao-molde23');
@@ -610,10 +639,17 @@ window.abrirFolhaoMolde23 = function(id) {
     // Preenche cabeçalho
     const tagNameEl = document.getElementById('molde23-tag-name');
     if (tagNameEl) tagNameEl.innerText = id;
+    // 🆕 DATA INÍCIO/FIM e LÍDER RESPONSÁVEL não são mais digitados pelo
+    // técnico nem resetados pra "hoje" toda vez que reabre — ver
+    // preencherCabecalhoExecucaoMolde23, que trava os três com o que o
+    // servidor registrou de verdade no Checklist de Execução.
     const dataInicio = document.getElementById('molde23-data-inicio');
     const dataFim = document.getElementById('molde23-data-fim');
-    if (dataInicio) dataInicio.valueAsDate = new Date();
-    if (dataFim) dataFim.valueAsDate = new Date();
+    const liderM23 = document.getElementById('molde23-lider');
+    if (dataInicio) dataInicio.value = '';
+    if (dataFim) dataFim.value = '';
+    if (liderM23) liderM23.value = '';
+    preencherCabecalhoExecucaoMolde23(id);
 
     // Renderiza todas as seções (com fallback de containers)
     renderizarIdentificacao();
@@ -1104,6 +1140,25 @@ window.concluirEImprimirFolhaoMolde23 = async function(tag) {
         });
     } catch (e) {
         console.error("Erro ao atualizar peça na nuvem (Molde 2/3):", e);
+    }
+
+    // 🆕 Fecha a execução do Checklist de Execução de verdade — sem isso
+    // "concluida_em" nunca era gravada no servidor, e a DATA FIM travada
+    // no Folhão (ver preencherCabecalhoExecucaoMolde23) ficava sempre
+    // vazia mesmo com o reparo concluído.
+    try {
+        const apiBase = await resolverApiBase();
+        const respStatus = await fetch(`${apiBase}/api/checklist-execucao/status/${encodeURIComponent(tag)}`, { cache: 'no-store' });
+        const status = respStatus.ok ? await respStatus.json() : null;
+        if (status && status.execucao_id) {
+            await fetch(`${apiBase}/api/checklist-execucao/execucoes/finalizar`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ execucao_id: status.execucao_id })
+            });
+        }
+    } catch (e) {
+        console.error("Erro ao finalizar a execução do Checklist (Molde 2/3):", e);
     }
 
     finalizarRascunhoFolhao(tag, "Molde 2/3");
