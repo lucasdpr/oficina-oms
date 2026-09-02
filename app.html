@@ -1817,10 +1817,11 @@
             </div>
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:10px; margin-bottom:15px; background:var(--bg-th); padding:12px; border-radius:8px;">
                 <div class="input-group"><label>TAG</label><input type="text" id="bow-tag-name" readonly></div>
-                <div class="input-group"><label>Nº SEGMENTO</label><input type="text" id="bow-num-segmento" placeholder="Ex: BOW-01"></div>
+                <div class="input-group"><label>Nº SEGMENTO</label><input type="text" id="bow-num-segmento" readonly title="Vem do próprio equipamento — não precisa digitar."></div>
                 <div class="input-group"><label>VEIO (SAÍDA)</label><select id="bow-veio" class="premium-select"><option value="G">G</option><option value="H">H</option></select></div>
-                <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="bow-data-inicio"></div>
-                <div class="input-group"><label>DATA FIM</label><input type="date" id="bow-data-fim"></div>
+                <div class="input-group"><label>DATA INÍCIO</label><input type="date" id="bow-data-inicio" readonly title="Travada — é a data real em que o reparo entrou em andamento."></div>
+                <div class="input-group"><label>DATA FIM</label><input type="date" id="bow-data-fim" readonly title="Travada — preenchida sozinha quando o reparo é concluído."></div>
+                <div class="input-group"><label>LÍDER RESPONSÁVEL</label><input type="text" id="bow-lider-responsavel" readonly title="Travado — é quem iniciou o reparo no Checklist de Execução."></div>
                 <div class="input-group"><label>MOTIVO</label><input type="text" id="bow-motivo" placeholder="Motivo da OS"></div>
                 <div class="input-group"><label>TIPO EXECUÇÃO</label><select id="bow-tipo-execucao" class="premium-select"><option value="GERAL">GERAL</option><option value="PARCIAL">PARCIAL</option></select></div>
             </div>
