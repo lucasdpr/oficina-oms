@@ -5850,6 +5850,11 @@ window.previsualizarFolhaoDoReparo = async function(id) {
         window.previsualizarFolhaoHorizontal();
         return;
     }
+    if (tipo === 'Bow' && typeof window.abrirFolhaoBow === 'function' && typeof window.previsualizarFolhaoBow === 'function') {
+        await window.abrirFolhaoBow(id);
+        window.previsualizarFolhaoBow();
+        return;
+    }
 
     alert('Pré-visualização ainda não disponível pra esse tipo de equipamento — use o botão "Folhão" pra conferir manualmente.');
 };
