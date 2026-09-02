@@ -1187,6 +1187,7 @@ function garantirModalEditarEtapa() {
                     <option value="sim_nao">Sim / Não</option>
                     <option value="medicao">Medição única (1 valor)</option>
                     <option value="medicao_multipla">Medição múltipla (vários valores)</option>
+                    <option value="sim_nao_assinatura">Sim / Não com assinatura (preenche Executante/Matrícula/Data)</option>
                 </select>
             </div>
 
@@ -1214,6 +1215,8 @@ window.atualizarAjudaFolhaoCampoEtapa = function() {
     if (!ajuda) return;
     if (tipo === 'medicao_multipla') {
         ajuda.innerHTML = 'Formato: <code>{"nome_mostrado_no_checklist": "id_real_do_input_no_folhão", ...}</code> — o lado esquerdo é só o rótulo que aparece pro técnico preencher; o lado direito TEM que ser o <code>id</code> exato do campo no HTML do Folhão (ex: <code>m4-fa-1000-esq-fix</code>), senão o valor não aparece lá.';
+    } else if (tipo === 'sim_nao_assinatura') {
+        ajuda.innerHTML = 'Formato: <code>{"checkbox_geral": "id-se-geral", "checkbox_parcial": "id-se-parcial", "executante": "id-do-nome", "matricula": "id-da-matricula", "data": "id-da-data"}</code> — todas as chaves são opcionais. Ao marcar a etapa, o servidor preenche sozinho com quem marcou (o checkbox certo conforme o TIPO EXECUÇÃO do reparo) — não precisa perguntar isso de novo pro técnico.';
     } else {
         ajuda.innerHTML = 'Formato: o <code>id</code> exato de UM campo do Folhão (texto simples, sem chaves), ex: <code>m4-aj-tfr</code>. Deixe vazio se essa etapa não deve preencher nada no Folhão sozinha.';
     }
