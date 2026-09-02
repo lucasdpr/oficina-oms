@@ -1011,6 +1011,26 @@ function montarHtmlLaudoBow(tag) {
 }
 
 // ==============================================================
+// 🆕 PRÉ-VISUALIZAR (sem salvar) — mesmo padrão do Horizontal/Molde
+// MCC4: gera o mesmo HTML que Salvar/Concluir gerariam, só que numa
+// aba nova, sem gravar nada no banco. Faltava aqui — por isso o botão
+// "Pré-visualizar" da tabela de Reparo dizia "ainda não disponível
+// pra esse tipo de equipamento" pro Bow (ver window.previsualizarFolhaoPorTipo
+// em script.js, que só conhecia Molde MCC4/2-3 e Horizontal).
+// ==============================================================
+window.previsualizarFolhaoBow = function() {
+    if (!ID_FOLHAO_BOW_ATUAL) { alert("Nenhuma TAG carregada."); return; }
+    const htmlPreview = montarHtmlLaudoBow(ID_FOLHAO_BOW_ATUAL);
+    const win = window.open('', '_blank', 'width=1100,height=800');
+    if (win) {
+        win.document.write(htmlPreview);
+        win.document.close();
+    } else {
+        alert('Seu navegador bloqueou a janela de pré-visualização (pop-up). Permita pop-ups pra este site e tente de novo.');
+    }
+};
+
+// ==============================================================
 // 16. SALVAR FOLHÃO - BOW (sem imprimir)
 // ==============================================================
 window.salvarFolhaoBow = async function() {
