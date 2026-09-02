@@ -129,17 +129,28 @@ const resultado = await page.evaluate(({ funcaoAbrir, tagExemplo, containers }) 
         const camposComId = container.querySelectorAll('input[id]:not([type="radio"]), select[id], textarea[id]');
         camposComId.forEach(el => adicionar(rotuloPara(el), el.id));
 
-        // 🆕 Grupos de radio (OK/NOK, SIM/NÃO) — não têm id, só `name`,
-        // e várias <input> compartilham o mesmo name (1 grupo). O
-        // técnico responde isso no modal de "Medição múltipla" (um
-        // select travado, não clicando direto no Folhão), por isso o
-        // rótulo ganha o sufixo "(OK/NOK)" — mesma convenção que o
-        // Checklist de Execução já usa pra travar a resposta num select.
+        // 🆕 Grupos de radio (OK/NOK, SIM/NÃO, ou qualquer outro conjunto
+        // de valores fixos) — não têm id, só `name`, e várias <input>
+        // compartilham o mesmo name (1 grupo). O técnico responde isso
+        // no modal de "Medição múltipla" (um select, não clicando
+        // direto no Folhão) — mas o Checklist de Execução SÓ trava um
+        // select de verdade quando o rótulo termina EXATAMENTE em
+        // "(OK/NOK)" (ver ehOkNok em checklist-execucao.js). Por isso:
+        // só usa esse sufixo quando o grupo tem exatamente os valores
+        // OK/NOK — senão (ex: Graxa, que é OK/VT/SA) o técnico digita o
+        // valor certo num campo de texto livre, em vez de ficar travado
+        // num select que nem lista as opções reais.
         const nomesJaVistos = new Set();
         container.querySelectorAll('input[type="radio"][name]').forEach(r => {
             if (nomesJaVistos.has(r.name)) return;
             nomesJaVistos.add(r.name);
-            adicionar(`${rotuloPara(r)} (OK/NOK)`, r.name);
+            const valoresDoGrupo = new Set(
+                Array.from(container.querySelectorAll(`input[type="radio"][name="${CSS.escape(r.name)}"]`))
+                    .map(x => (x.value || '').toUpperCase())
+            );
+            const ehOkNokPuro = valoresDoGrupo.size === 2 && valoresDoGrupo.has('OK') && valoresDoGrupo.has('NOK');
+            const sufixo = ehOkNokPuro ? ' (OK/NOK)' : ` (valores possíveis: ${Array.from(valoresDoGrupo).join('/')})`;
+            adicionar(`${rotuloPara(r)}${sufixo}`, r.name);
         });
     });
 
