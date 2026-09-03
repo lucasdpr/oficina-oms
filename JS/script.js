@@ -3225,11 +3225,24 @@ window.carregarReparosAndamento = async function() {
             return;
         }
 
-        listaAndamento.innerHTML = itens.map(({ rascunho, execucao, equipamento }) => {
+        // 🆕 Agrupa por MCC → Tipo, igual a sub-aba "Iniciar Reparo"
+        // (renderReparos). O técnico já só vê a área dele aqui — quem
+        // sente falta do agrupamento é o ADM, que vê tudo junto e sem
+        // essa separação a lista fica uma bagunça de máquinas diferentes
+        // misturadas.
+        const coresMCC = { "2": "#3b82f6", "3": "#8b5cf6", "4": "#ec4899" };
+        const grupos = {};
+        itens.forEach(item => {
+            const mcc = item.equipamento.mcc_compat || "2/3";
+            if (!grupos[mcc]) grupos[mcc] = [];
+            grupos[mcc].push(item);
+        });
+
+        const linhaItem = ({ rascunho, execucao, equipamento }) => {
             const dataRef = rascunho?.atualizado_em || execucao?.iniciada_em;
             const atualizado = dataRef ? new Date(dataRef).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
             return `
-                <div class="tecnico-item-linha" style="flex-direction:column; align-items:stretch; gap:10px; cursor:default;">
+                <div class="tecnico-item-linha" style="flex-direction:column; align-items:stretch; gap:10px; cursor:default; margin-left:14px;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <div>
                             <span class="font-code" style="font-weight:700; color:var(--text-heading);">${equipamento.id}</span>
@@ -3243,6 +3256,33 @@ window.carregarReparosAndamento = async function() {
                         ${window.renderizarBotaoConcluirReparo(equipamento.id)}
                     </div>
                 </div>`;
+        };
+
+        listaAndamento.innerHTML = Object.keys(grupos).sort().map(mcc => {
+            const porTipo = {};
+            grupos[mcc].forEach(item => {
+                const tipo = item.equipamento.tipo || "Outros";
+                if (!porTipo[tipo]) porTipo[tipo] = [];
+                porTipo[tipo].push(item);
+            });
+
+            const blocoTipos = Object.keys(porTipo).sort().map(tipo => `
+                <div style="font-weight:600; color:var(--text-muted); font-size:13px; margin:10px 0 8px 6px;">
+                    <i class="fas fa-tag"></i> ${tipo}
+                </div>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    ${porTipo[tipo].map(linhaItem).join("")}
+                </div>
+            `).join("");
+
+            return `
+                <div style="margin-bottom:18px;">
+                    <div style="padding:10px 12px; font-weight:700; color:var(--text-heading); font-size:15px; background:${coresMCC[mcc] || '#f59e0b'}20; border-top:3px solid ${coresMCC[mcc] || '#f59e0b'}; border-radius:6px 6px 0 0;">
+                        <i class="fas fa-server"></i> MCC ${mcc}
+                    </div>
+                    ${blocoTipos}
+                </div>
+            `;
         }).join("");
 
         // 🆕 Igual acontece na sub-aba "Iniciar Reparo": busca em segundo
