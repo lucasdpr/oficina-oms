@@ -1568,6 +1568,27 @@ function montarHtmlLaudoMolde4(tag) {
 }
 
 // ==============================================================
+// 🆕 PRÉ-VISUALIZAR (sem salvar, sem precisar concluir 100%)
+// ==============================================================
+// Mesmo padrão do Horizontal/Bow/Straightener (ver previsualizarFolhaoHorizontal,
+// em folhaoHorizontal.js) — faltava aqui, então o botão "Pré-visualizar"
+// caía no alert genérico ("Pré-visualização ainda não disponível") pro
+// Bender. Gera o mesmo HTML que Salvar geraria e abre numa aba nova,
+// sem gravar nada no banco.
+window.previsualizarFolhaoBender = function() {
+    if (!ID_FOLHAO_ATUAL) { alert("Nenhuma TAG carregada."); return; }
+    const motivo = document.getElementById("mcc4-motivo")?.value || "Manutenção";
+    const htmlPreview = montarHtmlLaudoBender(ID_FOLHAO_ATUAL, motivo, getV);
+    const win = window.open('', '_blank', 'width=1100,height=800');
+    if (win) {
+        win.document.write(htmlPreview);
+        win.document.close();
+    } else {
+        alert('Seu navegador bloqueou a janela de pré-visualização (pop-up). Permita pop-ups pra este site e tente de novo.');
+    }
+};
+
+// ==============================================================
 // SALVAR FOLHÃO - BENDER (sem imprimir)
 // ==============================================================
 // 🔧 SEPARADO (mesmo padrão do Molde MCC4): "salvarLaudoInteligente"

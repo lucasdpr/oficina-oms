@@ -296,6 +296,16 @@ export const CHECKLIST_EXECUCAO_SECOES_POR_TIPO = {
         { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
         { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
     ],
+    // 🆕 Bender (bender-mcc4) — mesmo bug do Straightener: resolverTipoEquipamento
+    // já gerava esse slug e a ponte (checklistFolhaoPonte.js/folhaoMolde4.js)
+    // já tentava puxar os dados pra cá, mas faltava tanto essa entrada
+    // (sem ela, cai nas seções genéricas Mecânica/Elétrica/... e as etapas
+    // com area="chegada" ficam invisíveis) quanto as etapas em si no banco.
+    'bender-mcc4': [
+        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#38bdf8' },
+        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
+        { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
+    ],
 };
 
 export function obterSecoesChecklistExecucao(tipoEquipamento) {
