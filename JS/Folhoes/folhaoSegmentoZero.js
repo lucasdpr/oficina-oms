@@ -258,14 +258,20 @@ function renderizarTabelaMancais(containerId, titulo, prefixo) {
             <tr><th rowspan="2">Posição</th><th colspan="2">1</th><th colspan="2">2</th><th colspan="2">3</th></tr>
             <tr><th>OK</th><th>Ñ/OK</th><th>OK</th><th>Ñ/OK</th><th>OK</th><th>Ñ/OK</th></tr>`;
     for (let i = 1; i <= 10; i++) {
+        // 🔧 CORREÇÃO: os radios não tinham atributo "value" — os dois
+        // (OK e Ñ/OK) do mesmo par ficavam indistinguíveis pro
+        // navegador (ambos assumiam o valor padrão "on"), então
+        // getRadioValue() no PDF (que compara com 'OK'/'Ñ/OK') nunca
+        // achava o marcado certo. O PDF sempre saía em branco nessa
+        // seção, mesmo com o técnico marcando a opção.
         const par3 = i >= 5
             ? `<td style="text-align:center; color:var(--text-muted);">-</td><td style="text-align:center; color:var(--text-muted);">-</td>`
-            : `<td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p3"></td><td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p3"></td>`;
+            : `<td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p3" value="OK"></td><td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p3" value="Ñ/OK"></td>`;
         html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>
-            <td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p1"></td>
-            <td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p1"></td>
-            <td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p2"></td>
-            <td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p2"></td>
+            <td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p1" value="OK"></td>
+            <td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p1" value="Ñ/OK"></td>
+            <td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p2" value="OK"></td>
+            <td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p2" value="Ñ/OK"></td>
             ${par3}</tr>`;
     }
     html += `</table>`;
@@ -318,7 +324,9 @@ function renderizarTabelaRolosSaida(containerId, titulo, prefixo, numPosicoes) {
     for (let i = 1; i <= 10; i++) {
         html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>`;
         for (let p = 1; p <= numPosicoes; p++) {
-            html += `<td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p${p}"></td><td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p${p}"></td>`;
+            // 🔧 CORREÇÃO: mesmo bug da Inspeção de Mancais — faltava
+            // "value" nos radios (ver renderizarTabelaMancais acima).
+            html += `<td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p${p}" value="OK"></td><td style="text-align:center;"><input type="radio" name="${prefixo}-${i}-p${p}" value="Ñ/OK"></td>`;
         }
         html += `</tr>`;
     }
@@ -574,7 +582,12 @@ function montarHtmlLaudoSegZero(tag) {
     // ==============================================================
     let htmlPDF = `
     <style>
-        .pdf-base { font-family: Arial, sans-serif; font-size: 9px; color: #000; }
+        /* 🔧 CORREÇÃO (mesmo problema já resolvido no Molde MCC4/Cadeira/
+           Segmento Grupo): sem print-color-adjust, o navegador não
+           imprime cor de fundo a menos que o usuário marque "Gráficos
+           de segundo plano" na hora de imprimir. */
+        .pdf-base { font-family: Arial, sans-serif; font-size: 9px; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
+        .pdf-base *, .pdf-base *::before, .pdf-base *::after { -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
         .pdf-base table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
         .pdf-base th, .pdf-base td { border: 1px solid #000; padding: 3px; }
         .pdf-base th { background: #e0e0e0; text-align: center; font-weight: bold; font-size: 9px; }
