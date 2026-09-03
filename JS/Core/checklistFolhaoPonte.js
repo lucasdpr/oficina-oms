@@ -44,6 +44,19 @@ export function resolverTipoEquipamento(item) {
         else if (idUpper.includes('STR-2') || idUpper.includes('R2')) tipoBase = 'Straightener R2';
     }
 
+    // 🆕 Cadeira Superior e Cadeira Inferior (Desempenadeira) são o
+    // CONTRÁRIO do caso do Straightener: dois tipos canônicos
+    // diferentes, mas que compartilham o mesmo Folhão e os mesmos ids
+    // de campo (ver folhaoDesempenadeira.js — montarHtmlLaudoDesemp,
+    // itensInspecaoDesemp e motivosSaidaDesemp são idênticos pros dois;
+    // só muda a lista de materiais carregada). Sem essa unificação,
+    // teriam slugs diferentes (cadeira-superior-mcc2-3 vs
+    // cadeira-inferior-mcc2-3) e duplicariam o cadastro do checklist à
+    // toa pra um formulário que é, na prática, o mesmo.
+    if (tipoBase === 'Cadeira Superior' || tipoBase === 'Cadeira Inferior') {
+        tipoBase = 'Cadeira';
+    }
+
     const tipoSlug = tipoBase
         .toLowerCase()
         .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acento
