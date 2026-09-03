@@ -5895,6 +5895,14 @@ window.previsualizarFolhaoDoReparo = async function(id) {
         window.previsualizarFolhaoBow();
         return;
     }
+    // 🆕 Bender — mesmo gap que existia pro Straightener (ver abaixo):
+    // abrirFolhaoMCC4 + previsualizarFolhaoBender já existem, só faltava
+    // o caso aqui pra Pré-visualizar não cair no alert genérico.
+    if (tipo === 'Bender' && typeof window.abrirFolhaoMCC4 === 'function' && typeof window.previsualizarFolhaoBender === 'function') {
+        await window.abrirFolhaoMCC4(id);
+        window.previsualizarFolhaoBender();
+        return;
+    }
     // 🆕 Straightener (R1 e R2) — mesma regra de identificação usada em
     // abrirFolhaoPorTipo (por id, já que os dois compartilham o tipo
     // canônico "Straightener").
