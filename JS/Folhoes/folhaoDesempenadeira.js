@@ -372,7 +372,15 @@ function montarHtmlLaudoDesemp(tag) {
     // Geração do PDF
     let html = `
     <style>
-        .pdf-base { font-family: Arial, sans-serif; font-size: 10px; color: #000; }
+        /* 🔧 CORREÇÃO (mesmo problema já resolvido no Molde MCC4, ver
+           montarHtmlLaudoMolde4): sem print-color-adjust, o navegador
+           não imprime cor de fundo a menos que o usuário marque
+           "Gráficos de segundo plano" na hora de imprimir — por isso as
+           barras azuis dos títulos saíam cinza-claro sem cor nenhuma.
+           print-color-adjust:exact resolve isso sem depender do técnico
+           lembrar de marcar checkbox nenhum. */
+        .pdf-base { font-family: Arial, sans-serif; font-size: 10px; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
+        .pdf-base *, .pdf-base *::before, .pdf-base *::after { -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
         .pdf-base table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
         .pdf-base th, .pdf-base td { border: 1px solid #000; padding: 4px; }
         .pdf-base th { background: #f0f0f0; text-align: center; font-weight: bold; }
@@ -416,7 +424,7 @@ function montarHtmlLaudoDesemp(tag) {
             <td style="text-align:center;">${sim}</td>
             <td style="text-align:center;">${nao}</td></tr>`;
     });
-    html += `</table><div class="quebra-pagina"></div>`;
+    html += `</table>`;
 
     // 2. MOTIVO DE SAÍDA
     html += `<div class="titulo-secao">2. MOTIVO DE SAÍDA DA MCC</div>
@@ -435,7 +443,7 @@ function montarHtmlLaudoDesemp(tag) {
     if (outrosMotivo) {
         html += `<tr><td style="font-weight:bold;">OUTROS: ${outrosMotivo}</td><td style="text-align:center;">X</td><td style="text-align:center;"></td></tr>`;
     }
-    html += `</table><div class="quebra-pagina"></div>`;
+    html += `</table>`;
 
     // 3. MANCAIS
     html += `<div class="titulo-secao">3. INSPEÇÃO DOS MANCAIS</div>
@@ -448,8 +456,7 @@ function montarHtmlLaudoDesemp(tag) {
             <tr><td><strong>Fixo</strong></td><td>${mancalFixo}</td></tr>
             <tr><td><strong>Móvel</strong></td><td>${mancalMovel}</td></tr>
         </table>
-        <div style="margin-top:5px;"><strong>Máximo:</strong> 240,15 mm | <strong>Mínima:</strong> 240,05 mm</div>
-        <div class="quebra-pagina"></div>`;
+        <div style="margin-top:5px;"><strong>Máximo:</strong> 240,15 mm | <strong>Mínima:</strong> 240,05 mm</div>`;
 
     // 4. SOBRESSALENTES
     html += `<div class="titulo-secao">4. SOBRESSALENTES DE MONTAGEM</div>
@@ -460,7 +467,7 @@ function montarHtmlLaudoDesemp(tag) {
         <tr><td>Rolamento Nu 1032</td><td style="text-align:center;">${sobNuNovo}</td><td style="text-align:center;">${sobNuReut}</td></tr>
         <tr><td>Rolamento 24032</td><td style="text-align:center;">${sob24032Novo}</td><td style="text-align:center;">${sob24032Reut}</td></tr>
         <tr><td>Junta rotativa</td><td style="text-align:center;">${sobJuntaNovo}</td><td style="text-align:center;">${sobJuntaReut}</td></tr>
-    </table><div class="quebra-pagina"></div>`;
+    </table>`;
 
     // 5. CILINDROS
     html += `<div class="titulo-secao">5. CILINDROS</div>
