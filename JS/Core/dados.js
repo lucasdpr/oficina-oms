@@ -315,6 +315,16 @@ export const CHECKLIST_EXECUCAO_SECOES_POR_TIPO = {
         { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
         { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
     ],
+    // 🆕 Cadeira (Superior + Inferior, unificadas — ver resolverTipoEquipamento
+    // em checklistFolhaoPonte.js). O Folhão dela (folhaoDesempenadeira.js) não
+    // tem uma aba "Saída" separada — só Inspeção/Motivo (chegada à oficina)
+    // e Mancais/Cilindros/Sobressalentes (feito durante a manutenção) —
+    // por isso a seção "Saída" fica sem etapas, o que é o esperado aqui.
+    'cadeira-mcc2-3': [
+        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#38bdf8' },
+        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
+        { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
+    ],
 };
 
 export function obterSecoesChecklistExecucao(tipoEquipamento) {

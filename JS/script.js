@@ -5909,6 +5909,12 @@ window.previsualizarFolhaoDoReparo = async function(id) {
         window.previsualizarFolhaoSegZero();
         return;
     }
+    // 🆕 Cadeira Superior/Inferior (Desempenadeira) — mesmo gap.
+    if ((tipo === 'Cadeira Superior' || tipo === 'Cadeira Inferior') && typeof window.abrirFolhaoDesempenadeira === 'function' && typeof window.previsualizarFolhaoDesemp === 'function') {
+        await window.abrirFolhaoDesempenadeira(id);
+        window.previsualizarFolhaoDesemp();
+        return;
+    }
     // 🆕 Straightener (R1 e R2) — mesma regra de identificação usada em
     // abrirFolhaoPorTipo (por id, já que os dois compartilham o tipo
     // canônico "Straightener").

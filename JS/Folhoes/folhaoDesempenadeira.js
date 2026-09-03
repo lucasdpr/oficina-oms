@@ -502,6 +502,25 @@ function montarHtmlLaudoDesemp(tag) {
     return html;
 }
 
+// 🆕 PRÉ-VISUALIZAR (sem salvar, sem precisar concluir 100%)
+// ==============================================================
+// Mesmo padrão do Horizontal/Bow/Bender/Straightener/Segmento Zero —
+// faltava aqui, então o botão "Pré-visualizar" caía no alert genérico
+// pra Cadeira Superior/Inferior. Gera o mesmo HTML que Salvar geraria
+// e abre numa aba nova, sem gravar nada no banco.
+window.previsualizarFolhaoDesemp = function() {
+    if (!ID_DESEMP_ATUAL) { alert("Nenhuma TAG carregada."); return; }
+    const htmlPreview = montarHtmlLaudoDesemp(ID_DESEMP_ATUAL);
+    if (htmlPreview === null) return; // equipamento não encontrado, já alertou
+    const win = window.open('', '_blank', 'width=1100,height=800');
+    if (win) {
+        win.document.write(htmlPreview);
+        win.document.close();
+    } else {
+        alert('Seu navegador bloqueou a janela de pré-visualização (pop-up). Permita pop-ups pra este site e tente de novo.');
+    }
+};
+
 // 8. SALVAR FOLHÃO - DESEMPENADEIRA (sem imprimir)
 // ==============================================================
 // 🔧 SEPARADO (mesmo padrão do Molde MCC4): antes, "Salvar e Imprimir"
