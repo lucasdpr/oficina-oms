@@ -28,7 +28,23 @@ import { resolverApiBase, OPERADOR_LOGADO } from './banco.js?v=5';
 // --------------------------------------------------------------
 export function resolverTipoEquipamento(item) {
     if (!item) return null;
-    const tipoSlug = (item.tipo || '')
+
+    // \ud83c\udd95 R1 e R2 (Straightener MCC4) precisam de checklists SEPARADOS,
+    // n\u00e3o mais compartilhados: os campos de medida (GAP, Pass Line,
+    // Cangalhas, Cilindros, Rolos) autopreenchem o Folh\u00e3o via
+    // folhao_campo, e os dois Folh\u00f5es (folhaoStraightenerR1.js,
+    // folhaoR2.js) usam ids de campo diferentes \u2014 um checklist s\u00f3 nunca
+    // bateria com os dois formul\u00e1rios ao mesmo tempo. Desambigua pelo
+    // id da tag (mesmo padr\u00e3o j\u00e1 usado em script.js/ui.js pra R1 x R2),
+    // sem mexer no tipo can\u00f4nico usado no resto do sistema.
+    const idUpper = String(item.id || '').toUpperCase();
+    let tipoBase = item.tipo || '';
+    if (tipoBase === 'Straightener') {
+        if (idUpper.includes('STR-1') || idUpper.includes('R1')) tipoBase = 'Straightener R1';
+        else if (idUpper.includes('STR-2') || idUpper.includes('R2')) tipoBase = 'Straightener R2';
+    }
+
+    const tipoSlug = tipoBase
         .toLowerCase()
         .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acento
         .replace(/[^a-z0-9]+/g, '-')
