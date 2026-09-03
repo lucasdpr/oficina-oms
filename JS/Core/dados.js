@@ -276,6 +276,18 @@ export const CHECKLIST_EXECUCAO_SECOES_POR_TIPO = {
         { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
         { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
     ],
+    // 🆕 Straightener (R1/R2) faltava aqui — sem essa entrada, o
+    // Checklist de Execução caía nas seções genéricas (Mecânica/
+    // Elétrica/...) e as etapas cadastradas com area="chegada" ficavam
+    // invisíveis (nenhuma seção genérica bate com essas chaves). R1 e
+    // R2 usam o MESMO tipo canônico "Straightener" (banco.js) — a
+    // calibração diferente entre eles é só do Folhão impresso, o
+    // Checklist de Execução é compartilhado, igual Bow/Horizontal.
+    'straightener-mcc4': [
+        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#38bdf8' },
+        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
+        { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
+    ],
 };
 
 export function obterSecoesChecklistExecucao(tipoEquipamento) {
