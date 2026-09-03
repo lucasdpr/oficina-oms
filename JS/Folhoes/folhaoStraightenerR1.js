@@ -972,6 +972,26 @@ function montarHtmlLaudoR1(tag) {
 // ==============================================================
 // 16. SALVAR FOLHÃO - STRAIGHTENER R1 (sem imprimir)
 // ==============================================================
+// ==============================================================
+// 🆕 PRÉ-VISUALIZAR (sem salvar, sem precisar concluir 100%)
+// ==============================================================
+// Mesmo padrão do Horizontal/Molde (ver previsualizarFolhaoHorizontal,
+// em folhaoHorizontal.js) — faltava aqui, por isso o painel "Teste de
+// Folhões" caía no alert genérico ("Pré-visualização ainda não
+// disponível") pro Straightener R1. Gera o mesmo HTML que Salvar
+// geraria e abre numa aba nova, sem gravar nada no banco.
+window.previsualizarFolhaoR1 = function() {
+    if (!ID_FOLHAO_R1_ATUAL) { alert("Nenhuma TAG carregada."); return; }
+    const htmlPreview = montarHtmlLaudoR1(ID_FOLHAO_R1_ATUAL);
+    const win = window.open('', '_blank', 'width=1100,height=800');
+    if (win) {
+        win.document.write(htmlPreview);
+        win.document.close();
+    } else {
+        alert('Seu navegador bloqueou a janela de pré-visualização (pop-up). Permita pop-ups pra este site e tente de novo.');
+    }
+};
+
 // 🔧 SEPARADO (mesmo padrão do Molde MCC4): antes, "Salvar e Imprimir"
 // fazia tudo num clique só. Também corrigido aqui: o arquivo usava
 // `BANCO_ATIVOS` sem nunca importar — qualquer clique nesse botão

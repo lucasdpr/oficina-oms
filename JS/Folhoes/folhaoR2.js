@@ -718,6 +718,26 @@ function montarHtmlLaudoR2(tag) {
 }
 
 // ==============================================================
+// 🆕 PRÉ-VISUALIZAR (sem salvar, sem precisar concluir 100%)
+// ==============================================================
+// Mesmo padrão do Horizontal/Molde/R1 (ver previsualizarFolhaoR1, em
+// folhaoStraightenerR1.js) — faltava aqui, por isso o painel "Teste de
+// Folhões" caía no alert genérico ("Pré-visualização ainda não
+// disponível") pro Straightener R2. Gera o mesmo HTML que Salvar
+// geraria e abre numa aba nova, sem gravar nada no banco.
+window.previsualizarFolhaoR2 = function() {
+    if (!ID_FOLHAO_R2_ATUAL) { alert("Nenhuma TAG carregada."); return; }
+    const htmlPreview = montarHtmlLaudoR2(ID_FOLHAO_R2_ATUAL);
+    const win = window.open('', '_blank', 'width=1100,height=800');
+    if (win) {
+        win.document.write(htmlPreview);
+        win.document.close();
+    } else {
+        alert('Seu navegador bloqueou a janela de pré-visualização (pop-up). Permita pop-ups pra este site e tente de novo.');
+    }
+};
+
+// ==============================================================
 // 8. SALVAR FOLHÃO - STRAIGHTENER R2 (sem imprimir)
 // ==============================================================
 // 🔧 SEPARADO (mesmo padrão do Molde MCC4): antes, "Salvar e Imprimir"
