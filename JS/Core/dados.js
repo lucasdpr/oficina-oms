@@ -279,11 +279,19 @@ export const CHECKLIST_EXECUCAO_SECOES_POR_TIPO = {
     // 🆕 Straightener (R1/R2) faltava aqui — sem essa entrada, o
     // Checklist de Execução caía nas seções genéricas (Mecânica/
     // Elétrica/...) e as etapas cadastradas com area="chegada" ficavam
-    // invisíveis (nenhuma seção genérica bate com essas chaves). R1 e
-    // R2 usam o MESMO tipo canônico "Straightener" (banco.js) — a
-    // calibração diferente entre eles é só do Folhão impresso, o
-    // Checklist de Execução é compartilhado, igual Bow/Horizontal.
-    'straightener-mcc4': [
+    // invisíveis (nenhuma seção genérica bate com essas chaves).
+    // Diferente de Bow/Horizontal: R1 e R2 têm checklist SEPARADO cada
+    // um (ver resolverTipoEquipamento em checklistFolhaoPonte.js) — os
+    // campos de medida (GAP, Pass Line, Cangalhas, Cilindros, Rolos)
+    // autopreenchem o Folhão via folhao_campo, e os dois Folhões usam
+    // ids de campo diferentes, então um checklist compartilhado nunca
+    // bateria certo com os dois formulários ao mesmo tempo.
+    'straightener-r1-mcc4': [
+        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#38bdf8' },
+        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
+        { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
+    ],
+    'straightener-r2-mcc4': [
         { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#38bdf8' },
         { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
         { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
