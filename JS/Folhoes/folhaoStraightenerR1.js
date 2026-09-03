@@ -820,7 +820,12 @@ function montarHtmlLaudoR1(tag) {
     // ==============================================================
     let htmlPDF = `
     <style>
-        .pdf-base { font-family: Arial, sans-serif; font-size: 9px; color: #000; }
+        /* 🔧 CORREÇÃO (mesmo problema já resolvido no Molde MCC4/Cadeira/
+           Segmento Grupo/Segmento Zero): sem print-color-adjust, o
+           navegador não imprime cor de fundo a menos que o usuário
+           marque "Gráficos de segundo plano" na hora de imprimir. */
+        .pdf-base { font-family: Arial, sans-serif; font-size: 9px; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
+        .pdf-base *, .pdf-base *::before, .pdf-base *::after { -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
         .pdf-base table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
         .pdf-base th, .pdf-base td { border: 1px solid #000; padding: 3px; }
         .pdf-base th { background: #e0e0e0; text-align: center; font-weight: bold; font-size: 9px; }

@@ -220,8 +220,12 @@ function montarHtmlChecklistQualidade(pecaId) {
     <style>
         /* Margens ABNT (NBR 14724): superior/esquerda 3cm, inferior/direita 2cm */
         @page { size: A4; margin: 3cm 2cm 2cm 3cm; }
-        .pdf-base { font-family: 'Times New Roman', Times, serif; font-size: 12pt; color: #000; line-height: 1.5; width: 16cm; margin: 0 auto; }
-        .pdf-base *, .pdf-base *::before, .pdf-base *::after { box-sizing: border-box; }
+        /* 🔧 CORREÇÃO (mesmo problema já resolvido no Molde MCC4/Cadeira/
+           Segmento Grupo/Segmento Zero): sem print-color-adjust, o
+           navegador não imprime cor de fundo a menos que o usuário
+           marque "Gráficos de segundo plano" na hora de imprimir. */
+        .pdf-base { font-family: 'Times New Roman', Times, serif; font-size: 12pt; color: #000; line-height: 1.5; width: 16cm; margin: 0 auto; -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
+        .pdf-base *, .pdf-base *::before, .pdf-base *::after { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
         .pdf-base h2 { font-family: Arial, Helvetica, sans-serif; }
         .pdf-base table { width: 16cm; max-width: 16cm; border-collapse: collapse; margin-bottom: 10px; table-layout: fixed; font-family: Arial, Helvetica, sans-serif; line-height: 1.2; }
         .pdf-base th, .pdf-base td { border: 1px solid #333; padding: 3px 4px; font-size: 8.5pt; white-space: normal !important; word-wrap: break-word !important; overflow-wrap: break-word !important; word-break: break-word; vertical-align: top; }

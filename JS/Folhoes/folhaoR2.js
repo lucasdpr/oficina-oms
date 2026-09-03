@@ -458,7 +458,12 @@ function montarHtmlLaudoR2(tag) {
 
     let html = `
     <style>
-        .pdf-base { font-family: Arial, sans-serif; font-size: 10px; color: #000; }
+        /* 🔧 CORREÇÃO (mesmo problema já resolvido no Molde MCC4/Cadeira/
+           Segmento Grupo/Segmento Zero): sem print-color-adjust, o
+           navegador não imprime cor de fundo a menos que o usuário
+           marque "Gráficos de segundo plano" na hora de imprimir. */
+        .pdf-base { font-family: Arial, sans-serif; font-size: 10px; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
+        .pdf-base *, .pdf-base *::before, .pdf-base *::after { -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
         .pdf-base table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
         .pdf-base th, .pdf-base td { border: 1px solid #000; padding: 4px; }
         .pdf-base th { background: #f0f0f0; text-align: center; font-weight: bold; }
@@ -520,7 +525,7 @@ function montarHtmlLaudoR2(tag) {
             <td style="text-align:center;">${document.getElementById(`gap-r2-cheg-c-${i}`)?.value || ''}</td>
         </tr>`;
     }
-    html += `</table><div class="quebra-pagina"></div>`;
+    html += `</table>`;
 
     // GAP Saída
     html += `<div class="titulo-secao">3. AFERIÇÃO DE GAP (SAÍDA) - 255+0,3/-0,3</div>
@@ -533,7 +538,7 @@ function montarHtmlLaudoR2(tag) {
             <td style="text-align:center;">${document.getElementById(`gap-r2-sai-c-${i}`)?.value || ''}</td>
         </tr>`;
     }
-    html += `</table><div class="quebra-pagina"></div>`;
+    html += `</table>`;
 
     // Pass Line Chegada
     function gerarPassLineR2PDF(pfx, refs) {
@@ -554,7 +559,6 @@ function montarHtmlLaudoR2(tag) {
     html += `<div class="titulo-secao">4. PASS LINE (CHEGADA)</div>`;
     html += `<h4 style="font-size:11px;">Base Inferior</h4>${gerarPassLineR2PDF('inf-cheg', refPassLineInfChegR2)}`;
     html += `<h4 style="font-size:11px;">Base Superior</h4>${gerarPassLineR2PDF('sup-cheg', refPassLineSupChegR2)}`;
-    html += `<div class="quebra-pagina"></div>`;
 
     // Pass Line Saída
     html += `<div class="titulo-secao">5. PASS LINE (SAÍDA)</div>`;
@@ -573,7 +577,6 @@ function montarHtmlLaudoR2(tag) {
         }
         html += `</table>`;
     });
-    html += `<div class="quebra-pagina"></div>`;
 
     // Cilindros Hidráulicos
     html += `<div class="titulo-secao">7. CILINDROS HIDRÁULICOS</div>`;
@@ -598,6 +601,8 @@ function montarHtmlLaudoR2(tag) {
     html += `<div class="quebra-pagina"></div>`;
 
     // Check Lubrificação
+    // (mantém quebra aqui: fecha o bloco "chegada de peritagem" antes
+    // do bloco de inspeção/medição de rolos, que é grande)
     function gerarLubR2PDF(pfx) {
         let html = `<table><tr><th>Rolo</th><th>Status</th><th>Observação</th></tr>`;
         for (let i = 0; i < 7; i++) {
@@ -611,7 +616,6 @@ function montarHtmlLaudoR2(tag) {
     html += `<div class="titulo-secao">8. CHECK DE LUBRIFICAÇÃO</div>`;
     html += `<h4 style="font-size:11px;">Base Inferior</h4>${gerarLubR2PDF('inf')}`;
     html += `<h4 style="font-size:11px;">Base Superior</h4>${gerarLubR2PDF('sup')}`;
-    html += `<div class="quebra-pagina"></div>`;
 
     // Inspeção de Rolos
     function gerarRolR2PDF(pfx) {
@@ -631,7 +635,6 @@ function montarHtmlLaudoR2(tag) {
     html += `<div class="titulo-secao">9. INSPEÇÃO DE ROLOS (CHEGADA)</div>`;
     html += `<h4 style="font-size:11px;">Base Inferior</h4>${gerarRolR2PDF('inf-cheg')}`;
     html += `<h4 style="font-size:11px;">Base Superior</h4>${gerarRolR2PDF('sup-cheg')}`;
-    html += `<div class="quebra-pagina"></div>`;
 
     html += `<div class="titulo-secao">10. INSPEÇÃO DE ROLOS (SAÍDA)</div>`;
     html += `<h4 style="font-size:11px;">Base Inferior</h4>${gerarRolR2PDF('inf-sai')}`;
@@ -661,7 +664,6 @@ function montarHtmlLaudoR2(tag) {
     html += `<div class="titulo-secao">11. MEDIDAS DOS ROLOS (CHEGADA)</div>`;
     html += `<h4 style="font-size:11px;">Base Inferior</h4>${gerarMedR2PDF('inf-cheg')}`;
     html += `<h4 style="font-size:11px;">Base Superior</h4>${gerarMedR2PDF('sup-cheg')}`;
-    html += `<div class="quebra-pagina"></div>`;
 
     html += `<div class="titulo-secao">12. MEDIDAS DOS ROLOS (SAÍDA)</div>`;
     html += `<h4 style="font-size:11px;">Base Inferior</h4>${gerarMedR2PDF('inf-sai')}`;
