@@ -28,7 +28,25 @@ import { resolverApiBase, OPERADOR_LOGADO } from './banco.js?v=5';
 // --------------------------------------------------------------
 export function resolverTipoEquipamento(item) {
     if (!item) return null;
-    const tipoSlug = (item.tipo || '')
+
+    // \ud83c\udd95 CORRE\u00c7\u00c3O: R1 e R2 (Straightener MCC4) ca\u00edam no MESMO tipo
+    // can\u00f4nico "Straightener" (ver TIPO_CANONICO_MAP em banco.js) \u2014 e
+    // por isso geravam o MESMO slug "straightener-mcc4", embora sejam
+    // duas m\u00e1quinas fisicamente diferentes (calibra\u00e7\u00e3o de Pass Line
+    // distinta) com Folh\u00f5es totalmente separados e ids de campo
+    // diferentes (folhaoStraightenerR1.js usa "r1-...", folhaoR2.js usa
+    // "...-r2-..."). Um checklist s\u00f3 nunca bateria com o formul\u00e1rio dos
+    // dois ao mesmo tempo. Desambigua aqui pelo id da tag (mesmo padr\u00e3o
+    // j\u00e1 usado em script.js/ui.js pra identificar R1 x R2), sem mexer
+    // no tipo can\u00f4nico usado no resto do sistema.
+    const idUpper = String(item.id || '').toUpperCase();
+    let tipoBase = item.tipo || '';
+    if (tipoBase === 'Straightener') {
+        if (idUpper.includes('STR-1') || idUpper.includes('R1')) tipoBase = 'Straightener R1';
+        else if (idUpper.includes('STR-2') || idUpper.includes('R2')) tipoBase = 'Straightener R2';
+    }
+
+    const tipoSlug = tipoBase
         .toLowerCase()
         .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acento
         .replace(/[^a-z0-9]+/g, '-')
