@@ -325,6 +325,15 @@ export const CHECKLIST_EXECUCAO_SECOES_POR_TIPO = {
         { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
         { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
     ],
+    // 🆕 Segmento Grupo 1/2/3 (unificados — ver resolverTipoEquipamento
+    // em checklistFolhaoPonte.js). Esse Folhão não tem fase de
+    // "Manutenção" separada (só Chegada e Saída), igual o Segmento
+    // Zero — por isso essa seção fica sem etapas, o que é esperado.
+    'segmento-grupo-mcc2-3': [
+        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#38bdf8' },
+        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
+        { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
+    ],
 };
 
 export function obterSecoesChecklistExecucao(tipoEquipamento) {

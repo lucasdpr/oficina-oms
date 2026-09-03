@@ -57,6 +57,19 @@ export function resolverTipoEquipamento(item) {
         tipoBase = 'Cadeira';
     }
 
+    // 🆕 Segmento Grupo 1, 2 e 3 — mesmo caso da Cadeira: 3 tipos
+    // canônicos diferentes (e ainda 2 variantes de nome, "Grupo N" e
+    // "Segmento Grupo N", dependendo de como a peça foi cadastrada —
+    // ver traduzirTipo em banco.js e a checagem correspondente em
+    // script.js), mas compartilham o MESMO Folhão e os mesmos ids de
+    // campo (ver folhaoSegmentoGrupo.js — comentário do próprio
+    // arquivo: "Os três grupos usam O MESMO checklist de chegada e
+    // saída ... Só muda: a tolerância do GAP ... a lista de materiais
+    // aplicados"). Unifica os 6 nomes possíveis num slug só.
+    if (/^(Segmento )?Grupo [123]$/.test(tipoBase)) {
+        tipoBase = 'Segmento Grupo';
+    }
+
     const tipoSlug = tipoBase
         .toLowerCase()
         .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acento
