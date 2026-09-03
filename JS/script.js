@@ -5903,6 +5903,12 @@ window.previsualizarFolhaoDoReparo = async function(id) {
         window.previsualizarFolhaoBender();
         return;
     }
+    // 🆕 Segmento Zero — mesmo gap do Bender/Straightener.
+    if (tipo === 'Segmento Zero' && typeof window.abrirFolhaoSegmentoZero === 'function' && typeof window.previsualizarFolhaoSegZero === 'function') {
+        await window.abrirFolhaoSegmentoZero(id);
+        window.previsualizarFolhaoSegZero();
+        return;
+    }
     // 🆕 Straightener (R1 e R2) — mesma regra de identificação usada em
     // abrirFolhaoPorTipo (por id, já que os dois compartilham o tipo
     // canônico "Straightener").

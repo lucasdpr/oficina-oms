@@ -306,6 +306,15 @@ export const CHECKLIST_EXECUCAO_SECOES_POR_TIPO = {
         { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
         { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
     ],
+    // 🆕 Segmento Zero (MCC 2/3) — mesma classe de bug do Bender/Straightener,
+    // com um agravante: os 4 equipamentos (SEG-0-2C/D/E/F) também estavam
+    // com mcc_compat NULL no banco (corrigido pra '2/3'), então o slug
+    // nem se formava direito antes disso.
+    'segmento-zero-mcc2-3': [
+        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#38bdf8' },
+        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
+        { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
+    ],
 };
 
 export function obterSecoesChecklistExecucao(tipoEquipamento) {
