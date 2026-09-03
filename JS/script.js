@@ -5915,6 +5915,12 @@ window.previsualizarFolhaoDoReparo = async function(id) {
         window.previsualizarFolhaoDesemp();
         return;
     }
+    // 🆕 Segmento Grupo 1/2/3 — mesmo gap.
+    if (/^(Grupo|Segmento Grupo) [123]$/.test(tipo) && typeof window.abrirFolhaoSegmentoGrupo === 'function' && typeof window.previsualizarFolhaoSegGrupo === 'function') {
+        await window.abrirFolhaoSegmentoGrupo(id);
+        window.previsualizarFolhaoSegGrupo();
+        return;
+    }
     // 🆕 Straightener (R1 e R2) — mesma regra de identificação usada em
     // abrirFolhaoPorTipo (por id, já que os dois compartilham o tipo
     // canônico "Straightener").

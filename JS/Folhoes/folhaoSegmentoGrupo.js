@@ -401,7 +401,13 @@ function montarHtmlLaudoSegGrupo(tag) {
 
     const htmlPDF = `
     <style>
-        .pdf-base { font-family: Arial, sans-serif; font-size: 9px; color: #000; }
+        /* 🔧 CORREÇÃO (mesmo problema já resolvido no Molde MCC4 e na
+           Cadeira/Desempenadeira): sem print-color-adjust, o navegador
+           não imprime cor de fundo a menos que o usuário marque
+           "Gráficos de segundo plano" na hora de imprimir — as barras
+           azuis dos títulos saíam cinza sem cor nenhuma. */
+        .pdf-base { font-family: Arial, sans-serif; font-size: 9px; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
+        .pdf-base *, .pdf-base *::before, .pdf-base *::after { -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
         .pdf-base table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
         .pdf-base th, .pdf-base td { border: 1px solid #000; padding: 3px; }
         .pdf-base th { background: #e0e0e0; text-align: center; font-weight: bold; font-size: 9px; }
@@ -462,6 +468,23 @@ function montarHtmlLaudoSegGrupo(tag) {
 
     return htmlPDF;
 }
+
+// ==============================================================
+// 🆕 PRÉ-VISUALIZAR (sem salvar, sem precisar concluir 100%)
+// ==============================================================
+// Mesmo padrão dos demais Folhões — faltava aqui, então o botão
+// "Pré-visualizar" caía no alert genérico pro Segmento Grupo.
+window.previsualizarFolhaoSegGrupo = function () {
+    if (!ID_FOLHAO_SEGGRUPO_ATUAL) { alert("Nenhuma TAG carregada."); return; }
+    const htmlPreview = montarHtmlLaudoSegGrupo(ID_FOLHAO_SEGGRUPO_ATUAL);
+    const win = window.open('', '_blank', 'width=1100,height=800');
+    if (win) {
+        win.document.write(htmlPreview);
+        win.document.close();
+    } else {
+        alert('Seu navegador bloqueou a janela de pré-visualização (pop-up). Permita pop-ups pra este site e tente de novo.');
+    }
+};
 
 // ==============================================================
 // 6. SALVAR FOLHÃO - SEGMENTO GRUPO 1/2/3 (sem imprimir)
