@@ -5895,6 +5895,21 @@ window.previsualizarFolhaoDoReparo = async function(id) {
         window.previsualizarFolhaoBow();
         return;
     }
+    // 🆕 Straightener (R1 e R2) — mesma regra de identificação usada em
+    // abrirFolhaoPorTipo (por id, já que os dois compartilham o tipo
+    // canônico "Straightener").
+    if (tipo === 'Straightener' || tipo === 'Straightener R1' || tipo === 'Straightener R2') {
+        if ((tipo === 'Straightener R1' || id.includes('STR-1') || id.includes('R1')) && typeof window.abrirFolhaoR1 === 'function' && typeof window.previsualizarFolhaoR1 === 'function') {
+            await window.abrirFolhaoR1(id);
+            window.previsualizarFolhaoR1();
+            return;
+        }
+        if ((tipo === 'Straightener R2' || id.includes('STR-2') || id.includes('R2')) && typeof window.abrirFolhaoR2 === 'function' && typeof window.previsualizarFolhaoR2 === 'function') {
+            await window.abrirFolhaoR2(id);
+            window.previsualizarFolhaoR2();
+            return;
+        }
+    }
 
     alert('Pré-visualização ainda não disponível pra esse tipo de equipamento — use o botão "Folhão" pra conferir manualmente.');
 };
