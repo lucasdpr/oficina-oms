@@ -7713,6 +7713,13 @@ let NOTIF_ATIVIDADES_CACHE = [];
 // notificação, não os de atividade.
 let NOTIF_GRADE_BUSCA = '';
 let NOTIF_GRADE_FILTRO_STATUS = '';
+// 🐛 CORREÇÃO: digitar na busca ou clicar num filtro depois de uma falha
+// no servidor chamava renderizarGradeNotificacoes(NOTIF_ATIVIDADES_CACHE, …)
+// — que é sempre um array (nunca null) — apagando o aviso de "não
+// consegui verificar as áreas" e mostrando uma grade normal (vazia ou
+// desatualizada) por cima, exatamente a falsa sensação de "tá tudo bem"
+// que a distinção null/[] foi feita pra evitar.
+let NOTIF_ULTIMO_FETCH_FALHOU = false;
 
 window.carregarCentralNotificacoes = async function() {
     try {
@@ -7733,6 +7740,7 @@ window.carregarCentralNotificacoes = async function() {
 
         NOTIF_FEED_CACHE = feed;
         NOTIF_ATIVIDADES_CACHE = Array.isArray(atividades) ? atividades : [];
+        NOTIF_ULTIMO_FETCH_FALHOU = !Array.isArray(atividades);
         renderizarGradeNotificacoes(Array.isArray(atividades) ? atividades : null, feed);
         // Se a pessoa já estiver dentro do detalhe de uma área, atualiza
         // ele também — sem isso, o polling de 30s só atualizaria a grade
@@ -7833,7 +7841,13 @@ function renderizarGradeNotificacoes(atividades, feed) {
     const PESO_STATUS = { 'Crítico': 0, 'Restrição': 1, 'Atenção': 2, 'Novo': 3, 'Normal': 4, 'Sem novidade': 5 };
 
     const cards = todasAreas.map(a => {
-        const doArea = atividades.filter(x => x.area === a.chave);
+        // 🐛 CORREÇÃO: sem excluir "ainda não começou" aqui, uma atividade
+        // com data de início futura contava como Pendente/em aberto no
+        // card (podendo acender Atenção/Restrição), mas o detalhe (ver
+        // renderizarDetalheAreaNotificacao) já excluía ela de propósito
+        // — reproduzindo o mesmo bug já corrigido antes (card avisa,
+        // detalhe abre vazio), só que pra esse caso específico.
+        const doArea = atividades.filter(x => x.area === a.chave && !atividadeAindaNaoComecou(x));
         const pendentes = doArea.filter(x => x.status === 'Pendente').length;
         const andamento = doArea.filter(x => x.status === 'Em Andamento').length;
         const atrasadas = doArea.filter(x => atividadeEstaAtrasada(x)).length;
@@ -7902,14 +7916,14 @@ function renderizarGradeNotificacoes(atividades, feed) {
 
 window.buscarGradeNotificacoes = function(valor) {
     NOTIF_GRADE_BUSCA = (valor || '').toLowerCase().trim();
-    renderizarGradeNotificacoes(NOTIF_ATIVIDADES_CACHE, NOTIF_FEED_CACHE);
+    renderizarGradeNotificacoes(NOTIF_ULTIMO_FETCH_FALHOU ? null : NOTIF_ATIVIDADES_CACHE, NOTIF_FEED_CACHE);
 };
 
 window.filtrarGradeNotificacoes = function(statusLabel, botao) {
     NOTIF_GRADE_FILTRO_STATUS = statusLabel;
     document.querySelectorAll('#notificacoes-grade-filtros .btn-filter-mcc').forEach(b => b.classList.remove('active'));
     if (botao) botao.classList.add('active');
-    renderizarGradeNotificacoes(NOTIF_ATIVIDADES_CACHE, NOTIF_FEED_CACHE);
+    renderizarGradeNotificacoes(NOTIF_ULTIMO_FETCH_FALHOU ? null : NOTIF_ATIVIDADES_CACHE, NOTIF_FEED_CACHE);
 };
 
 // Resumo no topo — visão de supervisor/ADM sem contar card por card:
@@ -8108,9 +8122,13 @@ function renderizarDetalheAreaNotificacao(chave) {
     // realmente define o status do card na grade (Crítico/Restrição/
     // Atenção), então precisam aparecer aqui, senão o detalhe fica vazio
     // mesmo quando o card avisou que tinha algo pra ver.
-    const atividadesArea = NOTIF_ATIVIDADES_CACHE
-        .filter(x => x.area === chave && x.status !== 'Concluído' && x.status !== 'Recusado' && !atividadeAindaNaoComecou(x))
-        .slice(0, MAX_ITENS_NOTIFICACOES);
+    const atividadesAreaTodas = NOTIF_ATIVIDADES_CACHE
+        .filter(x => x.area === chave && x.status !== 'Concluído' && x.status !== 'Recusado' && !atividadeAindaNaoComecou(x));
+    // 🐛 CORREÇÃO: o cabeçalho mostrava o tamanho da lista já cortada em
+    // MAX_ITENS_NOTIFICACOES, então uma área com, digamos, 15 atividades
+    // em aberto anunciava "(10)" — a pessoa lia um número errado antes
+    // de rolar a lista.
+    const atividadesArea = atividadesAreaTodas.slice(0, MAX_ITENS_NOTIFICACOES);
 
     if (visiveis.length === 0 && atividadesArea.length === 0) {
         container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">✅ Nada de novo nessa área nos últimos ${DIAS_RECENCIA_NOTIFICACOES} dias.</div>`;
@@ -8119,13 +8137,27 @@ function renderizarDetalheAreaNotificacao(chave) {
 
     const blocoAtividades = atividadesArea.length === 0 ? '' : `
         <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--text-muted); margin:2px 0 8px;">
-            <i class="fas fa-clipboard-list"></i> Atividades em aberto (${atividadesArea.length})
+            <i class="fas fa-clipboard-list"></i> Atividades em aberto (${atividadesAreaTodas.length})
         </div>
         ${atividadesArea.map(x => renderItemAtividadeNotificacao(x, chave)).join('')}
         ${visiveis.length > 0 ? `<div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--text-muted); margin:16px 0 8px;"><i class="fas fa-bell"></i> Notificações</div>` : ''}
     `;
 
     container.innerHTML = blocoAtividades + visiveis.map(renderItemNotificacao).join('');
+}
+
+// 🐛 CORREÇÃO: descrição/autor/responsável/referência são texto livre
+// (o operador digita), mas iam direto pro innerHTML sem escapar — um
+// simples "<" ou aspas na descrição de uma Ocorrência/OS quebrava o
+// cartão (ou pior, injetava HTML). escapeHtmlNotif() é pro texto
+// exibido; escapeAtributoNotif() é pra valor indo dentro de um
+// onclick="...('...')" — sem isso, uma aspas dupla no meio do valor
+// fecha o atributo antes da hora.
+function escapeHtmlNotif(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function escapeAtributoNotif(s) {
+    return String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
 
 // Mesmo cartão visual do feed, mas pra uma atividade em aberto (não tem
@@ -8136,17 +8168,17 @@ function renderItemAtividadeNotificacao(x, chave) {
     const atrasada = atividadeEstaAtrasada(x);
     const cor = atrasada ? 'var(--danger)' : (x.status === 'Em Andamento' ? 'var(--text-accent)' : 'var(--warning)');
     return `
-    <div class="notificacoes-item" style="--item-cor:${cor};" onclick="window.irParaAreaOficinaViaNotificacao('${chave}')">
+    <div class="notificacoes-item" style="--item-cor:${cor};" onclick="window.irParaAreaOficinaViaNotificacao('${escapeAtributoNotif(chave)}')">
         <div class="notificacoes-item-icone" style="color:${cor};">${atrasada ? '⏰' : '🔧'}</div>
         <div class="notificacoes-item-corpo">
             <div class="notificacoes-item-topo">
                 <span class="font-code" style="font-weight:700; color:var(--text-heading);">
-                    ${x.equipamento_id || '-'}
+                    ${escapeHtmlNotif(x.equipamento_id) || '-'}
                 </span>
                 <span style="font-size:10.5px; color:${cor};">${atrasada ? 'Atrasada' : x.status}</span>
             </div>
-            <div class="notificacoes-item-linha">${x.descricao || ''}</div>
-            <div style="font-size:10.5px; color:var(--text-accent);">${x.responsavel || 'Sem responsável'}</div>
+            <div class="notificacoes-item-linha">${escapeHtmlNotif(x.descricao)}</div>
+            <div style="font-size:10.5px; color:var(--text-accent);">${escapeHtmlNotif(x.responsavel) || 'Sem responsável'}</div>
         </div>
     </div>
     `;
@@ -8159,17 +8191,17 @@ function renderItemNotificacao(item) {
     const referencia = item.referencia;
     return `
     <div class="notificacoes-item" style="--item-cor:${cor}; ${naoLida ? 'background:color-mix(in srgb, var(--danger) 6%, var(--bg-card));' : ''}"
-         onclick="window.abrirItemNotificacao('${item.tipo}', '${item.evento_id}', '${String(referencia || '').replace(/'/g, "\\'")}')">
+         onclick="window.abrirItemNotificacao('${escapeAtributoNotif(item.tipo)}', '${escapeAtributoNotif(item.evento_id)}', '${escapeAtributoNotif(referencia)}')">
         <div class="notificacoes-item-icone" style="${naoLida ? 'color:var(--danger);' : ''}">${icone}</div>
         <div class="notificacoes-item-corpo">
             <div class="notificacoes-item-topo">
                 <span class="font-code" style="font-weight:700; color:var(--text-heading);">
-                    ${naoLida ? '<span style="color:var(--danger);">●</span> ' : ''}${item.referencia || '-'}
+                    ${naoLida ? '<span style="color:var(--danger);">●</span> ' : ''}${escapeHtmlNotif(item.referencia) || '-'}
                 </span>
-                <span style="font-size:10.5px; color:var(--text-muted);">${item.data_hora || ''}</span>
+                <span style="font-size:10.5px; color:var(--text-muted);">${escapeHtmlNotif(item.data_hora)}</span>
             </div>
-            <div class="notificacoes-item-linha">${item.descricao || ''}</div>
-            <div style="font-size:10.5px; color:var(--text-accent);">${item.autor || 'Sistema'}</div>
+            <div class="notificacoes-item-linha">${escapeHtmlNotif(item.descricao)}</div>
+            <div style="font-size:10.5px; color:var(--text-accent);">${escapeHtmlNotif(item.autor) || 'Sistema'}</div>
         </div>
     </div>
     `;
