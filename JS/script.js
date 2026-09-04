@@ -7722,6 +7722,19 @@ window.irParaOsEspecifica = async function(termoBusca) {
     if (typeof window.buscarOrdensServico === 'function') window.buscarOrdensServico(termoBusca || '');
 };
 
+// Mesma ideia pra Achado de Qualidade — a lista de Qualidade é por
+// equipamento (não por achado individual), então filtra pela peça do
+// registro que tem o achado; a pessoa acha ele dentro do card.
+window.irParaAchadoEspecifico = async function(pecaId) {
+    window.abrirAba(null, 'aba-qualidade');
+    document.getElementById('nav-qualidade')?.classList.add('active');
+    document.getElementById('nav-notificacoes')?.classList.remove('active');
+    await window.carregarListaQualidade();
+    const input = document.getElementById('qualidade-busca');
+    if (input) input.value = pecaId || '';
+    if (typeof window.buscarQualidade === 'function') window.buscarQualidade(pecaId || '');
+};
+
 function renderizarAreasNotificacoes(atividades, feed) {
     const container = document.getElementById('notificacoes-areas-container');
     if (!container) return;
@@ -7809,9 +7822,8 @@ function dataDentroDaJanelaRecente(dataHoraStr) {
 }
 
 // Clique num item do feed: marca como lido PRA ESSA MATRÍCULA (não
-// afeta o que outras pessoas já viram) e navega pro lugar certo —
-// Ocorrência/OS têm tela própria; achado e evento de auditoria não têm
-// uma tela dedicada de "ver este item", então só marca como visto.
+// afeta o que outras pessoas já viram) e leva pra tela de onde aquilo
+// veio — cada tipo tem sua própria rota.
 window.abrirItemNotificacao = async function(tipo, eventoId, referencia) {
     try {
         if (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula) {
@@ -7830,8 +7842,9 @@ window.abrirItemNotificacao = async function(tipo, eventoId, referencia) {
         window.irParaOsEspecifica(referencia);
     } else if (tipo === 'evento') {
         window.irParaOcorrenciaEspecifica(referencia);
+    } else if (tipo === 'achado') {
+        window.irParaAchadoEspecifico(referencia);
     } else {
-        // achado (sem tela dedicada) — só atualiza o feed pra sumir o "não lido"
         window.carregarCentralNotificacoes();
     }
 };
@@ -7853,7 +7866,7 @@ function renderizarFeedNotificacoes(feed) {
         return;
     }
 
-    container.innerHTML = visiveis.map(item => {
+    const renderItem = (item) => {
         const naoLida = !item.lida;
         const icone = ICONE_POR_TIPO_NOTIFICACAO[item.tipo] || '📋';
         const cor = naoLida ? 'var(--danger)' : 'var(--border-color)';
@@ -7870,7 +7883,41 @@ function renderizarFeedNotificacoes(feed) {
                     <span style="font-size:10.5px; color:var(--text-muted);">${item.data_hora || ''}</span>
                 </div>
                 <div class="notificacoes-item-linha">${item.descricao || ''}</div>
-                <div style="font-size:10.5px; color:var(--text-accent);">${item.autor || 'Sistema'}${item.area ? ` · ${nomeAreaOficina(item.area)}` : ''}</div>
+                <div style="font-size:10.5px; color:var(--text-accent);">${item.autor || 'Sistema'}</div>
+            </div>
+        </div>
+        `;
+    };
+
+    // 🆕 "não quero um embaixo do outro, separadinho" — agrupa por área
+    // em vez de uma lista corrida só. Cada área com notificação vira um
+    // bloco próprio (com sua contagem de não lidas), na ordem: quem tem
+    // não lida primeiro, depois quem só tem lida recente. Item sem área
+    // (achado, por enquanto) cai num grupo "Outros" ao final.
+    const grupos = new Map(); // chave da área (ou '__sem_area__') -> itens
+    for (const item of visiveis) {
+        const chave = item.area || '__sem_area__';
+        if (!grupos.has(chave)) grupos.set(chave, []);
+        grupos.get(chave).push(item);
+    }
+
+    const gruposOrdenados = [...grupos.entries()].sort((a, b) => {
+        const naoLidoA = a[1].some(i => !i.lida) ? 0 : 1;
+        const naoLidoB = b[1].some(i => !i.lida) ? 0 : 1;
+        return naoLidoA - naoLidoB;
+    });
+
+    container.innerHTML = gruposOrdenados.map(([chave, itens]) => {
+        const nome = chave === '__sem_area__' ? 'Outros' : nomeAreaOficina(chave);
+        const naoLidasGrupo = itens.filter(i => !i.lida).length;
+        return `
+        <div class="notificacoes-grupo-area">
+            <div class="notificacoes-grupo-area-titulo">
+                <span>${nome}</span>
+                ${naoLidasGrupo > 0 ? `<span class="notificacoes-grupo-area-badge">${naoLidasGrupo} não lida${naoLidasGrupo > 1 ? 's' : ''}</span>` : ''}
+            </div>
+            <div class="notificacoes-grupo-area-itens">
+                ${itens.map(renderItem).join('')}
             </div>
         </div>
         `;
