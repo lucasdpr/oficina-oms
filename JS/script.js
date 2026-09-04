@@ -7708,6 +7708,11 @@ let NOTIF_FEED_CACHE = [];
 // card acendia "Atenção" e o detalhe abria vazio. Guarda as atividades
 // também pra poder mostrar as em aberto no detalhe.
 let NOTIF_ATIVIDADES_CACHE = [];
+// 🆕 Busca + filtro por status na grade — mesma UX da Central de Áreas
+// (ver renderizarGridCentralAreas), só que aqui filtrando os CARDS de
+// notificação, não os de atividade.
+let NOTIF_GRADE_BUSCA = '';
+let NOTIF_GRADE_FILTRO_STATUS = '';
 
 window.carregarCentralNotificacoes = async function() {
     try {
@@ -7859,31 +7864,24 @@ function renderizarGradeNotificacoes(atividades, feed) {
 
     cards.sort((x, y) => (PESO_STATUS[x.status.label] ?? 9) - (PESO_STATUS[y.status.label] ?? 9));
 
-    // 🆕 Resumo no topo — visão de supervisor/ADM sem contar card por
-    // card: quantas áreas em cada status, e total de notificações não
-    // vistas (por qualquer matrícula ADM, já que a marcação é pessoal).
-    const resumoEl = document.getElementById('notificacoes-resumo');
-    if (resumoEl) {
-        const porStatus = { 'Crítico': 0, 'Restrição': 0, 'Atenção': 0 };
-        let naoLidasTotal = 0;
-        for (const { status: s, contagem } of cards) {
-            if (s.label in porStatus) porStatus[s.label]++;
-            naoLidasTotal += contagem.naoLidas;
-        }
-        const pill = (emoji, label, valor, cor) => valor > 0
-            ? `<span style="display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:20px; background:${cor}22; color:${cor}; font-size:12px; font-weight:600;">${emoji} ${valor} ${label}</span>`
-            : '';
-        resumoEl.innerHTML = [
-            pill('🔴', porStatus['Crítico'] === 1 ? 'área crítica' : 'áreas críticas', porStatus['Crítico'], 'var(--danger)'),
-            pill('🟠', 'em restrição', porStatus['Restrição'], 'var(--limit)'),
-            pill('🟡', 'em atenção', porStatus['Atenção'], 'var(--warning)'),
-            pill('🔵', naoLidasTotal === 1 ? 'notificação não vista' : 'notificações não vistas', naoLidasTotal, 'var(--text-accent)'),
-        ].join('') || `<span class="text-muted" style="font-size:12px;">🟢 Tudo normal — nenhuma área precisa de atenção agora.</span>`;
+    // 🆕 Resumo sempre reflete TODAS as áreas (mesmo com busca/filtro
+    // ativos na grade) — senão o gerente filtra "Crítico" pra focar e o
+    // resumo no topo muda de número junto, o que confunde mais do que
+    // ajuda.
+    atualizarResumoNotificacoes(cards);
+
+    let visiveis = cards;
+    if (NOTIF_GRADE_BUSCA) visiveis = visiveis.filter(({ area: a }) => a.nome.toLowerCase().includes(NOTIF_GRADE_BUSCA));
+    if (NOTIF_GRADE_FILTRO_STATUS) visiveis = visiveis.filter(({ status: s }) => s.label === NOTIF_GRADE_FILTRO_STATUS);
+
+    if (visiveis.length === 0) {
+        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;"><i class="fas fa-magnifying-glass"></i> Nenhuma área encontrada com esse filtro/busca.</div>`;
+        return;
     }
 
     container.innerHTML = `
         <div class="oficina-grade">
-            ${cards.map(({ area: a, status: s, contagem }) => `
+            ${visiveis.map(({ area: a, status: s, contagem }) => `
                 <div class="oficina-area-card" style="--area-color:${a.cor}; position:relative;" onclick="window.abrirDetalheAreaNotificacao('${a.chave}')">
                     ${contagem.naoLidas > 0 ? `<span style="position:absolute; top:8px; right:8px; width:9px; height:9px; border-radius:50%; background:var(--danger); box-shadow:0 0 0 2px var(--bg-card);" title="Tem novidade não vista"></span>` : ''}
                     <div class="oficina-area-topo">
@@ -7900,6 +7898,42 @@ function renderizarGradeNotificacoes(atividades, feed) {
             `).join('')}
         </div>
     `;
+}
+
+window.buscarGradeNotificacoes = function(valor) {
+    NOTIF_GRADE_BUSCA = (valor || '').toLowerCase().trim();
+    renderizarGradeNotificacoes(NOTIF_ATIVIDADES_CACHE, NOTIF_FEED_CACHE);
+};
+
+window.filtrarGradeNotificacoes = function(statusLabel, botao) {
+    NOTIF_GRADE_FILTRO_STATUS = statusLabel;
+    document.querySelectorAll('#notificacoes-grade-filtros .btn-filter-mcc').forEach(b => b.classList.remove('active'));
+    if (botao) botao.classList.add('active');
+    renderizarGradeNotificacoes(NOTIF_ATIVIDADES_CACHE, NOTIF_FEED_CACHE);
+};
+
+// Resumo no topo — visão de supervisor/ADM sem contar card por card:
+// quantas áreas em cada status, e total de notificações não vistas (por
+// qualquer matrícula ADM, já que a marcação é pessoal). Sempre calculado
+// com TODOS os cards, mesmo com busca/filtro ativos na grade.
+function atualizarResumoNotificacoes(cards) {
+    const resumoEl = document.getElementById('notificacoes-resumo');
+    if (!resumoEl) return;
+    const porStatus = { 'Crítico': 0, 'Restrição': 0, 'Atenção': 0 };
+    let naoLidasTotal = 0;
+    for (const { status: s, contagem } of cards) {
+        if (s.label in porStatus) porStatus[s.label]++;
+        naoLidasTotal += contagem.naoLidas;
+    }
+    const pill = (emoji, label, valor, cor) => valor > 0
+        ? `<span style="display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:20px; background:${cor}22; color:${cor}; font-size:12px; font-weight:600;">${emoji} ${valor} ${label}</span>`
+        : '';
+    resumoEl.innerHTML = [
+        pill('🔴', porStatus['Crítico'] === 1 ? 'área crítica' : 'áreas críticas', porStatus['Crítico'], 'var(--danger)'),
+        pill('🟠', 'em restrição', porStatus['Restrição'], 'var(--limit)'),
+        pill('🟡', 'em atenção', porStatus['Atenção'], 'var(--warning)'),
+        pill('🔵', naoLidasTotal === 1 ? 'notificação não vista' : 'notificações não vistas', naoLidasTotal, 'var(--text-accent)'),
+    ].join('') || `<span class="text-muted" style="font-size:12px;">🟢 Tudo normal — nenhuma área precisa de atenção agora.</span>`;
 }
 
 // Abre o "detalhe" de uma área — some com a grade, mostra só as
@@ -8021,6 +8055,37 @@ window.abrirItemNotificacao = async function(tipo, eventoId, referencia) {
     }
 };
 
+// 🆕 Marca de uma vez todas as notificações não lidas da área aberta —
+// só pra essa matrícula (a marcação sempre foi individual, ver
+// /api/notificacoes/marcar_lido). Não mexe nas atividades em aberto
+// (aquilo se resolve na área de verdade, não aqui).
+window.marcarTodasLidasDaArea = async function() {
+    const chave = NOTIF_AREA_SELECIONADA;
+    if (!chave || !OPERADOR_LOGADO || !OPERADOR_LOGADO.matricula) return;
+
+    const naoLidas = NOTIF_FEED_CACHE.filter(item =>
+        (chave === '__sem_area__' ? !item.area : item.area === chave) && !item.lida
+    );
+    if (naoLidas.length === 0) return;
+
+    const botao = document.getElementById('notificacoes-detalhe-marcar-todas');
+    if (botao) { botao.disabled = true; botao.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Marcando...'; }
+
+    try {
+        const apiBase = await resolverApiBase();
+        await Promise.all(naoLidas.map(item => fetch(`${apiBase}/api/notificacoes/marcar_lido`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tipo: item.tipo, evento_id: String(item.evento_id), matricula: OPERADOR_LOGADO.matricula })
+        })));
+    } catch (e) {
+        console.error('⚠️ Erro ao marcar todas como lidas:', e);
+    } finally {
+        if (botao) { botao.disabled = false; botao.innerHTML = '<i class="fas fa-check-double"></i> Marcar todas como lidas'; }
+        window.carregarCentralNotificacoes();
+    }
+};
+
 // 🆕 Detalhe de UMA área — chamado ao clicar num card da grade (ou de
 // novo pelo polling, se a pessoa já estiver dentro do detalhe). Não
 // agrupa mais por área (já é uma área só aqui); a separação por área
@@ -8033,6 +8098,7 @@ function renderizarDetalheAreaNotificacao(chave) {
     const itensArea = NOTIF_FEED_CACHE.filter(item => chave === '__sem_area__' ? !item.area : item.area === chave);
     const naoLidas = itensArea.filter(item => !item.lida).length;
     if (contagemEl) contagemEl.innerText = naoLidas > 0 ? `${naoLidas} não lida${naoLidas > 1 ? 's' : ''}` : 'tudo em dia ✅';
+    document.getElementById('notificacoes-detalhe-marcar-todas')?.classList.toggle('hidden', naoLidas === 0);
 
     const visiveis = itensArea
         .filter(item => !item.lida || dataDentroDaJanelaRecente(item.data_hora))
