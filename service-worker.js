@@ -11,8 +11,16 @@
 // usando a copia antiga guardada em cache.
 // ==============================================================
 
-const CACHE_VERSION = "oms-v61";
+const CACHE_VERSION = "oms-v62";
 
+// 🔧 CORREÇÃO: essa lista estava com os caminhos de uma estrutura de
+// pastas antiga (tudo direto na raiz) — o projeto hoje guarda os JS
+// dentro de JS/ (e subpastas Core/Oficina/Folhoes/). Toda essa lista
+// dava 404 silencioso (cada cache.add() falha é pega individualmente
+// lá embaixo, então a instalação nunca quebrava, mas NENHUM desses
+// arquivos ficava realmente salvo pra uso offline). Caminhos abaixo
+// batem com os <script> reais de app.html/index.html.
+//
 // Arquivos baixados e guardados assim que o app é instalado.
 // (não inclui chamadas de API - essas nunca ficam em cache)
 const ARQUIVOS_PARA_CACHE = [
@@ -20,27 +28,32 @@ const ARQUIVOS_PARA_CACHE = [
     "./index.html",
     "./app.html",
     "./style.css",
-    "./script.js",
-    "./ui.js",
-    "./banco.js",
-    "./dados.js",
-    "./procedimentosOficina.js",
-    "./dadosMateriaisSegmentoGrupo.js",
-    "./folhaoMolde4.js",
-    "./folhaoMolde23.js",
-    "./folhaoR2.js",
-    "./folhaoSegmentoGrupo.js",
-    "./folhaoSegmentoZero.js",
-    "./folhaoStraightenerR1.js",
-    "./folhao_bender.js",
-    "./folhaoBow.js",
-    "./folhaoDesempenadeira.js",
-    "./folhaoHorizontal.js",
-    "./folhaoPersistencia.js",
+    "./JS/script.js",
+    "./JS/ui.js",
+    "./JS/tema.js",
+    "./JS/painelGeralExtra.js",
+    "./JS/Core/banco.js",
+    "./JS/Core/dados.js",
+    "./JS/Core/checklistFolhaoPonte.js",
+    "./JS/Oficina/procedimentosOficina.js",
+    "./JS/Oficina/checklist-execucao.js",
+    "./JS/Oficina/dadosMateriaisSegmentoGrupo.js",
+    "./JS/Folhoes/folhaoMolde4.js",
+    "./JS/Folhoes/folhaoMolde23.js",
+    "./JS/Folhoes/folhaoR2.js",
+    "./JS/Folhoes/folhaoSegmentoGrupo.js",
+    "./JS/Folhoes/folhaoSegmentoZero.js",
+    "./JS/Folhoes/folhaoStraightenerR1.js",
+    "./JS/Folhoes/folhao_bender.js",
+    "./JS/Folhoes/folhaoBow.js",
+    "./JS/Folhoes/folhaoDesempenadeira.js",
+    "./JS/Folhoes/folhaoHorizontal.js",
+    "./JS/Folhoes/folhaoPersistencia.js",
+    "./JS/Folhoes/checklistQualidadeSaida.js",
     "./Sinotico3d.html",
     "./manifest.json",
-    "./icon-192.png?v=2",
-    "./icon-512.png?v=2"
+    "./JS/assets/icon-192.png?v=2",
+    "./JS/assets/icon-512.png?v=2"
 ];
 
 // --------------------------------------------------------------
@@ -159,8 +172,8 @@ self.addEventListener("push", (event) => {
     event.waitUntil(
         self.registration.showNotification(dados.titulo, {
             body: dados.corpo,
-            icon: "./icon-192.png?v=2",
-            badge: "./icon-192.png?v=2",
+            icon: "./JS/assets/icon-192.png?v=2",
+            badge: "./JS/assets/icon-192.png?v=2",
             data: { url: dados.url || "/" },
             vibrate: [200, 100, 200],
             tag: "oms-notificacao" // notificações novas substituem a anterior na tela

@@ -578,6 +578,16 @@
                         <span id="badge-cargo-operador" class="operator-role-badge"></span>
                     </div>
                 </div>
+                <!-- 🆕 Botão manual de ativar notificações — some sozinho quando
+                     já está ativado ou quando o navegador não suporta. Existe
+                     porque no iPhone o pedido de permissão só funciona quando
+                     é resposta DIRETA de um toque (ver ativarPushNotification
+                     em script.js); chamar automático depois do login (que já
+                     passou por uma chamada de rede) não funciona no Safari/iOS
+                     — o toque neste botão é o gesto "fresco" que falta. -->
+                <button id="btn-ativar-notificacoes" class="btn-auth hidden" style="margin-top:8px; background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);" onclick="window.ativarPushNotification()">
+                    <i class="fas fa-bell"></i> Ativar Notificações
+                </button>
                 <button class="btn-auth" onclick="window.fazerLogout()">Encerrar Turno</button>
             </div>
             <nav class="sidebar-nav">
