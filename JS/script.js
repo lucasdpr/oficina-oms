@@ -2335,7 +2335,11 @@ async function alterarSaldoRolo(id, fator) {
         if (rolo.qtd + fator < 0) { return alert("O saldo em estoque não pode ser negativo."); }
         rolo.qtd += fator;
         localStorage.setItem("oms_rolos_v32_local", JSON.stringify(BANCO_ROLOS));
-        registrarHistorico("ALMOXARIFADO", `Ajuste de estoque do rolo [${rolo.nome}]. Novo saldo: ${rolo.qtd} Pçs.`);
+        // 🔧 Log de auditoria + notificação agora é feito pelo próprio
+        // backend (POST /api/rolos/ajustar), com a matrícula certa — o
+        // registro daqui duplicava sem a tag certa pra aparecer na
+        // Central de Notificações (ver enviar_push_para_area em
+        // ajustar_rolo, main.py).
         renderRolos();
 
         // Persiste no Neon — sem isso, o ajuste sumia assim que a página
@@ -2402,12 +2406,13 @@ async function alterarSaldoHidraulica(id, local, fator) {
     if (!peca) return;
 
     const campo = local === 'aplicado' ? 'qtd_aplicado' : 'qtd_reserva';
-    const rotulo = local === 'aplicado' ? 'Aplicado na Máquina' : 'Reserva (Oficina)';
 
     if ((peca[campo] || 0) + fator < 0) { return alert("O saldo em estoque não pode ser negativo."); }
     peca[campo] = (peca[campo] || 0) + fator;
     localStorage.setItem("oms_hidraulica_v32_local", JSON.stringify(BANCO_HIDRAULICA));
-    registrarHistorico("ALMOXARIFADO", `Ajuste hidráulico [${peca.nome}] — ${rotulo}. Novo saldo: ${peca[campo]} Pçs.`);
+    // 🔧 Log de auditoria + notificação agora é feito pelo próprio
+    // backend (POST /api/hidraulica/ajustar) — ver comentário equivalente
+    // em alterarSaldoRolo.
     renderHidraulica();
 
     // Persiste no Neon — sem isso, o ajuste sumia assim que a página
@@ -6274,6 +6279,9 @@ window.abrirAba = function(event, idAba) {
         window.carregarListaOrdensServico();
     }
     if (idAba === "aba-notificacoes" && typeof window.carregarCentralNotificacoes === 'function') {
+        // Sempre entra pela grade — não deixa "preso" no detalhe de uma
+        // área de uma visita anterior.
+        if (typeof window.fecharDetalheAreaNotificacao === 'function') window.fecharDetalheAreaNotificacao();
         window.carregarCentralNotificacoes();
     } else if (typeof window.pararPollingCentralNotificacoes === 'function') {
         // Saiu da Central de Notificações pra outra aba — para o
@@ -7176,11 +7184,24 @@ window.renderizarListaOcorrencias = function() {
     `).join("");
 };
 
-// Nome legível de uma área (chave -> nome de AREAS_OFICINA), com
-// fallback pra própria chave se não achar — usado nos registros de
-// Ocorrência/OS (campo "area" opcional) e na Central de Notificações.
+// 🆕 Áreas "sintéticas" só pra Central de Notificações — Estoque de
+// Rolos e Hidráulica (estoque) não são áreas de reparo (não estão em
+// AREAS_OFICINA, não têm atividade/status), mas ajuste nelas agora gera
+// notificação (ver ajustar_rolo/ajustar_hidraulica no backend) e
+// precisam aparecer como área própria na grade, do jeito que o usuário
+// pediu. "hidraulica-estoque" (não "hidraulica") pra não colidir com a
+// área de reparo Hidráulica de AREAS_OFICINA — são coisas diferentes.
+const AREAS_NOTIFICACAO_EXTRAS = [
+    { chave: 'rolos', nome: 'Estoque de Rolos', icone: 'fa-scroll', cor: '#22d3ee' },
+    { chave: 'hidraulica-estoque', nome: 'Hidráulica (Estoque)', icone: 'fa-oil-can', cor: '#0ea5e9' },
+];
+
+// Nome legível de uma área (chave -> nome de AREAS_OFICINA ou das
+// extras acima), com fallback pra própria chave se não achar — usado
+// nos registros de Ocorrência/OS (campo "area" opcional) e na Central
+// de Notificações.
 function nomeAreaOficina(chave) {
-    const a = AREAS_OFICINA.find(x => x.chave === chave);
+    const a = AREAS_OFICINA.find(x => x.chave === chave) || AREAS_NOTIFICACAO_EXTRAS.find(x => x.chave === chave);
     return a ? a.nome : chave;
 }
 
@@ -7669,6 +7690,12 @@ window.atualizarBadgeNotificacoesNaoLidas = async function() {
     }
 };
 
+// Estado da navegação estilo Central de Áreas: null = mostrando a
+// grade de todas as áreas; com valor = mostrando só as notificações
+// daquela área (ver abrirDetalheAreaNotificacao/fecharDetalhe...).
+let NOTIF_AREA_SELECIONADA = null;
+let NOTIF_FEED_CACHE = [];
+
 window.carregarCentralNotificacoes = async function() {
     try {
         const apiBase = await resolverApiBase();
@@ -7686,8 +7713,13 @@ window.carregarCentralNotificacoes = async function() {
             window.carregarFeedNotificacoes(),
         ]);
 
-        renderizarAreasNotificacoes(Array.isArray(atividades) ? atividades : null, feed);
-        renderizarFeedNotificacoes(feed);
+        NOTIF_FEED_CACHE = feed;
+        renderizarGradeNotificacoes(Array.isArray(atividades) ? atividades : null, feed);
+        // Se a pessoa já estiver dentro do detalhe de uma área, atualiza
+        // ele também — sem isso, o polling de 30s só atualizaria a grade
+        // por trás, e a lista de itens ficaria parada até voltar/entrar
+        // de novo.
+        if (NOTIF_AREA_SELECIONADA) renderizarDetalheAreaNotificacao(NOTIF_AREA_SELECIONADA);
 
         const marcador = document.getElementById('notificacoes-ultima-atualizacao');
         if (marcador) marcador.innerText = `Atualizado às ${new Date().toLocaleTimeString('pt-BR')}`;
@@ -7744,8 +7776,14 @@ window.irParaAchadoEspecifico = async function(pecaId) {
     if (typeof window.buscarQualidade === 'function') window.buscarQualidade(pecaId || '');
 };
 
-function renderizarAreasNotificacoes(atividades, feed) {
-    const container = document.getElementById('notificacoes-areas-container');
+// 🆕 Grade única com TODAS as áreas (oficina + administrativo + estoque
+// de Rolos/Hidráulica) — mesmo modelo de navegação da Central de Áreas.
+// Cada card mostra status (quando é área de reparo, com atividades) e
+// quantas notificações tem (total/não lidas); clicar abre o detalhe só
+// daquela área (ver abrirDetalheAreaNotificacao). Substitui a antiga
+// lista "Atividade Recente" com tudo misturado.
+function renderizarGradeNotificacoes(atividades, feed) {
+    const container = document.getElementById('notificacoes-grade-container');
     if (!container) return;
 
     // `null` = a busca no servidor falhou (ver carregarCentralNotificacoes)
@@ -7757,66 +7795,122 @@ function renderizarAreasNotificacoes(atividades, feed) {
         return;
     }
 
-    // 🆕 Áreas que têm pelo menos 1 item não lido no feed (ocorrência,
-    // OS, evento) ganham um selo "Novo" — sinaliza que "aquela área
-    // sofreu ação" mesmo sem estar Crítica/em Restrição.
-    const areasComNaoLido = new Set(
-        (feed || []).filter(item => !item.lida && item.area).map(item => item.area)
-    );
-
-    const ORDEM_STATUS = { 'Crítico': 0, 'Restrição': 1, 'Atenção': 2 };
-
-    const areas = AREAS_OFICINA
-        .filter(a => a.tipo === 'oficina')
-        .map(a => {
-            const doArea = atividades.filter(x => x.area === a.chave);
-            const pendentes = doArea.filter(x => x.status === 'Pendente').length;
-            const andamento = doArea.filter(x => x.status === 'Em Andamento').length;
-            const atrasadas = doArea.filter(x => atividadeEstaAtrasada(x)).length;
-            const emAberto = pendentes + andamento;
-            const temNaoLido = areasComNaoLido.has(a.chave);
-
-            let status = null;
-            if (atrasadas > 0) status = { emoji: '🔴', label: 'Crítico', cor: 'var(--danger)' };
-            else if (emAberto >= 5) status = { emoji: '🟠', label: 'Restrição', cor: 'var(--limit)' };
-            else if (emAberto >= 1) status = { emoji: '🟡', label: 'Atenção', cor: 'var(--warning)' };
-            else if (temNaoLido) status = { emoji: '🔵', label: 'Novo', cor: 'var(--text-accent)' };
-
-            return { area: a, status, pendentes, andamento, atrasadas, temNaoLido };
-        })
-        .filter(v => v.status)
-        .sort((x, y) => (x.temNaoLido === y.temNaoLido ? 0 : x.temNaoLido ? -1 : 1) || (ORDEM_STATUS[x.status.label] ?? 9) - (ORDEM_STATUS[y.status.label] ?? 9));
-
-    if (areas.length === 0) {
-        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">✅ Nenhuma área precisa de atenção agora.</div>`;
-        return;
+    const contagemPorArea = new Map(); // chave (ou '__sem_area__') -> {total, naoLidas}
+    for (const item of feed) {
+        const chave = item.area || '__sem_area__';
+        if (!contagemPorArea.has(chave)) contagemPorArea.set(chave, { total: 0, naoLidas: 0 });
+        const c = contagemPorArea.get(chave);
+        c.total++;
+        if (!item.lida) c.naoLidas++;
     }
 
-    // 🔧 Mesmo card (e mesma classe CSS) já usado na Central de Áreas —
-    // antes cada área era só uma linha de lista encostada na outra
-    // (parecia um bloco só de texto). Como card de grade, cada área vira
-    // uma unidade visualmente separada da vizinha, igual o resto do app.
+    const todasAreas = [
+        ...AREAS_OFICINA.filter(a => a.tipo === 'oficina' || a.tipo === 'administrativo'),
+        ...AREAS_NOTIFICACAO_EXTRAS,
+    ];
+
+    const PESO_STATUS = { 'Crítico': 0, 'Restrição': 1, 'Atenção': 2, 'Novo': 3, 'Normal': 4, 'Sem novidade': 5 };
+
+    const cards = todasAreas.map(a => {
+        const doArea = atividades.filter(x => x.area === a.chave);
+        const pendentes = doArea.filter(x => x.status === 'Pendente').length;
+        const andamento = doArea.filter(x => x.status === 'Em Andamento').length;
+        const atrasadas = doArea.filter(x => atividadeEstaAtrasada(x)).length;
+        const emAberto = pendentes + andamento;
+        const contagem = contagemPorArea.get(a.chave) || { total: 0, naoLidas: 0 };
+
+        let status;
+        if (atrasadas > 0) status = { emoji: '🔴', label: 'Crítico', cor: 'var(--danger)' };
+        else if (emAberto >= 5) status = { emoji: '🟠', label: 'Restrição', cor: 'var(--limit)' };
+        else if (emAberto >= 1) status = { emoji: '🟡', label: 'Atenção', cor: 'var(--warning)' };
+        else if (contagem.naoLidas > 0) status = { emoji: '🔵', label: 'Novo', cor: 'var(--text-accent)' };
+        else status = { emoji: '🟢', label: 'Normal', cor: 'var(--success)' };
+
+        return { area: a, status, contagem };
+    });
+
+    // "Outros" — item sem área nenhuma (achado, ou ocorrência/OS sem a
+    // área escolhida no formulário). Só entra na grade se tiver alguma
+    // notificação; sempre por último.
+    const semArea = contagemPorArea.get('__sem_area__');
+    if (semArea && semArea.total > 0) {
+        cards.push({
+            area: { chave: '__sem_area__', nome: 'Outros', icone: 'fa-ellipsis', cor: '#8a97ab' },
+            status: semArea.naoLidas > 0 ? { emoji: '🔵', label: 'Novo', cor: 'var(--text-accent)' } : { emoji: '⚪', label: 'Sem novidade', cor: 'var(--text-muted)' },
+            contagem: semArea,
+        });
+    }
+
+    cards.sort((x, y) => (PESO_STATUS[x.status.label] ?? 9) - (PESO_STATUS[y.status.label] ?? 9));
+
     container.innerHTML = `
         <div class="oficina-grade">
-            ${areas.map(({ area: a, status: s, pendentes, andamento, atrasadas, temNaoLido }) => `
-                <div class="oficina-area-card" style="--area-color:${a.cor}; position:relative;" onclick="window.irParaAreaOficinaViaNotificacao('${a.chave}')">
-                    ${temNaoLido ? `<span style="position:absolute; top:8px; right:8px; width:9px; height:9px; border-radius:50%; background:var(--danger); box-shadow:0 0 0 2px var(--bg-card);" title="Tem novidade não vista"></span>` : ''}
+            ${cards.map(({ area: a, status: s, contagem }) => `
+                <div class="oficina-area-card" style="--area-color:${a.cor}; position:relative;" onclick="window.abrirDetalheAreaNotificacao('${a.chave}')">
+                    ${contagem.naoLidas > 0 ? `<span style="position:absolute; top:8px; right:8px; width:9px; height:9px; border-radius:50%; background:var(--danger); box-shadow:0 0 0 2px var(--bg-card);" title="Tem novidade não vista"></span>` : ''}
                     <div class="oficina-area-topo">
                         <div class="oficina-area-icone" style="color:${a.cor};"><i class="fas ${a.icone}"></i></div>
                         <span class="oficina-area-status-badge" style="color:${s.cor};">${s.emoji} ${s.label}</span>
                     </div>
                     <h4>${a.nome}</h4>
                     <div class="oficina-area-resumo">
-                        <span title="Pendentes"><i class="fas fa-hourglass-half"></i> ${pendentes}</span>
-                        <span title="Em andamento"><i class="fas fa-person-running"></i> ${andamento}</span>
-                        ${atrasadas > 0 ? `<span style="color:var(--danger);" title="Atrasadas"><i class="fas fa-triangle-exclamation"></i> ${atrasadas}</span>` : ''}
+                        <span title="Notificações"><i class="fas fa-bell"></i> ${contagem.total}</span>
+                        ${contagem.naoLidas > 0 ? `<span style="color:var(--danger);" title="Não lidas"><i class="fas fa-circle-exclamation"></i> ${contagem.naoLidas}</span>` : ''}
                     </div>
-                    <button class="oficina-area-acessar" style="color:${a.cor};">Acessar Área <i class="fas fa-arrow-right"></i></button>
+                    <button class="oficina-area-acessar" style="color:${a.cor};">Ver Notificações <i class="fas fa-arrow-right"></i></button>
                 </div>
             `).join('')}
         </div>
     `;
 }
+
+// Abre o "detalhe" de uma área — some com a grade, mostra só as
+// notificações dessa área (mesmo padrão de abrirAreaOficina/
+// fecharAreaOficina já usado na Central de Áreas de verdade).
+window.abrirDetalheAreaNotificacao = function(chave) {
+    NOTIF_AREA_SELECIONADA = chave;
+    document.getElementById('notificacoes-grade-painel')?.classList.add('hidden');
+    document.getElementById('notificacoes-detalhe-painel')?.classList.remove('hidden');
+    const a = AREAS_OFICINA.find(x => x.chave === chave) || AREAS_NOTIFICACAO_EXTRAS.find(x => x.chave === chave);
+    const titulo = document.getElementById('notificacoes-detalhe-titulo');
+    if (titulo) titulo.innerHTML = `<i class="fas ${a ? a.icone : 'fa-ellipsis'}"></i> ${chave === '__sem_area__' ? 'Outros' : (a ? a.nome : chave)}`;
+    document.getElementById('notificacoes-detalhe-acessar')?.classList.toggle('hidden', chave === '__sem_area__');
+    renderizarDetalheAreaNotificacao(chave);
+};
+
+window.fecharDetalheAreaNotificacao = function() {
+    NOTIF_AREA_SELECIONADA = null;
+    document.getElementById('notificacoes-detalhe-painel')?.classList.add('hidden');
+    document.getElementById('notificacoes-grade-painel')?.classList.remove('hidden');
+};
+
+// Botão "Acessar Área" do detalhe — leva pra tela de verdade daquela
+// área (Central de Áreas, painel administrativo, ou o estoque de
+// Rolos/Hidráulica), não só pras notificações dela. Sem parâmetro de
+// propósito: lê NOTIF_AREA_SELECIONADA direto (variável de módulo, não
+// dá pra referenciar num onclick inline do HTML).
+window.irParaTelaDaAreaNotificacao = function() {
+    const chave = NOTIF_AREA_SELECIONADA;
+    if (!chave || chave === '__sem_area__') return;
+    const a = AREAS_OFICINA.find(x => x.chave === chave);
+    if (a && a.tipo === 'administrativo' && a.abaDestino) {
+        window.abrirAba(null, a.abaDestino);
+        return;
+    }
+    if (a && a.tipo === 'oficina') {
+        window.irParaAreaOficinaViaNotificacao(chave);
+        return;
+    }
+    if (chave === 'rolos') {
+        window.abrirAba(null, 'aba-rolos');
+        document.getElementById('nav-rolos')?.classList.add('active');
+        return;
+    }
+    if (chave === 'hidraulica-estoque') {
+        window.abrirAba(null, 'aba-hidraulica');
+        document.getElementById('nav-hidraulica')?.classList.add('active');
+    }
+};
 
 // Ícone por tipo de item do feed unificado — tipo='evento' cobre tanto
 // Ocorrência (categoria Intervenção/Melhoria/...) quanto Auditoria geral
@@ -7867,79 +7961,52 @@ window.abrirItemNotificacao = async function(tipo, eventoId, referencia) {
     }
 };
 
-function renderizarFeedNotificacoes(feed) {
+// 🆕 Detalhe de UMA área — chamado ao clicar num card da grade (ou de
+// novo pelo polling, se a pessoa já estiver dentro do detalhe). Não
+// agrupa mais por área (já é uma área só aqui); a separação por área
+// agora é a própria navegação da grade -> detalhe.
+function renderizarDetalheAreaNotificacao(chave) {
     const container = document.getElementById('notificacoes-feed-container');
     const contagemEl = document.getElementById('notificacoes-contagem-nao-lidas');
     if (!container) return;
 
-    const naoLidas = feed.filter(item => !item.lida).length;
+    const itensArea = NOTIF_FEED_CACHE.filter(item => chave === '__sem_area__' ? !item.area : item.area === chave);
+    const naoLidas = itensArea.filter(item => !item.lida).length;
     if (contagemEl) contagemEl.innerText = naoLidas > 0 ? `${naoLidas} não lida${naoLidas > 1 ? 's' : ''}` : 'tudo em dia ✅';
 
-    const visiveis = feed
+    const visiveis = itensArea
         .filter(item => !item.lida || dataDentroDaJanelaRecente(item.data_hora))
         .slice(0, MAX_ITENS_NOTIFICACOES);
 
     if (visiveis.length === 0) {
-        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">✅ Nada de novo — sem atividade nos últimos ${DIAS_RECENCIA_NOTIFICACOES} dias.</div>`;
+        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">✅ Nada de novo nessa área nos últimos ${DIAS_RECENCIA_NOTIFICACOES} dias.</div>`;
         return;
     }
 
-    const renderItem = (item) => {
-        const naoLida = !item.lida;
-        const icone = ICONE_POR_TIPO_NOTIFICACAO[item.tipo] || '📋';
-        const cor = naoLida ? 'var(--danger)' : 'var(--border-color)';
-        const referencia = item.tipo === 'os' ? (item.referencia || '') : item.referencia;
-        return `
-        <div class="notificacoes-item" style="--item-cor:${cor}; ${naoLida ? 'background:color-mix(in srgb, var(--danger) 6%, var(--bg-card));' : ''}"
-             onclick="window.abrirItemNotificacao('${item.tipo}', '${item.evento_id}', '${String(referencia || '').replace(/'/g, "\\'")}')">
-            <div class="notificacoes-item-icone" style="${naoLida ? 'color:var(--danger);' : ''}">${icone}</div>
-            <div class="notificacoes-item-corpo">
-                <div class="notificacoes-item-topo">
-                    <span class="font-code" style="font-weight:700; color:var(--text-heading);">
-                        ${naoLida ? '<span style="color:var(--danger);">●</span> ' : ''}${item.referencia || '-'}
-                    </span>
-                    <span style="font-size:10.5px; color:var(--text-muted);">${item.data_hora || ''}</span>
-                </div>
-                <div class="notificacoes-item-linha">${item.descricao || ''}</div>
-                <div style="font-size:10.5px; color:var(--text-accent);">${item.autor || 'Sistema'}</div>
+    container.innerHTML = visiveis.map(renderItemNotificacao).join('');
+}
+
+function renderItemNotificacao(item) {
+    const naoLida = !item.lida;
+    const icone = ICONE_POR_TIPO_NOTIFICACAO[item.tipo] || '📋';
+    const cor = naoLida ? 'var(--danger)' : 'var(--border-color)';
+    const referencia = item.referencia;
+    return `
+    <div class="notificacoes-item" style="--item-cor:${cor}; ${naoLida ? 'background:color-mix(in srgb, var(--danger) 6%, var(--bg-card));' : ''}"
+         onclick="window.abrirItemNotificacao('${item.tipo}', '${item.evento_id}', '${String(referencia || '').replace(/'/g, "\\'")}')">
+        <div class="notificacoes-item-icone" style="${naoLida ? 'color:var(--danger);' : ''}">${icone}</div>
+        <div class="notificacoes-item-corpo">
+            <div class="notificacoes-item-topo">
+                <span class="font-code" style="font-weight:700; color:var(--text-heading);">
+                    ${naoLida ? '<span style="color:var(--danger);">●</span> ' : ''}${item.referencia || '-'}
+                </span>
+                <span style="font-size:10.5px; color:var(--text-muted);">${item.data_hora || ''}</span>
             </div>
+            <div class="notificacoes-item-linha">${item.descricao || ''}</div>
+            <div style="font-size:10.5px; color:var(--text-accent);">${item.autor || 'Sistema'}</div>
         </div>
-        `;
-    };
-
-    // 🆕 "não quero um embaixo do outro, separadinho" — agrupa por área
-    // em vez de uma lista corrida só. Cada área com notificação vira um
-    // bloco próprio (com sua contagem de não lidas), na ordem: quem tem
-    // não lida primeiro, depois quem só tem lida recente. Item sem área
-    // (achado, por enquanto) cai num grupo "Outros" ao final.
-    const grupos = new Map(); // chave da área (ou '__sem_area__') -> itens
-    for (const item of visiveis) {
-        const chave = item.area || '__sem_area__';
-        if (!grupos.has(chave)) grupos.set(chave, []);
-        grupos.get(chave).push(item);
-    }
-
-    const gruposOrdenados = [...grupos.entries()].sort((a, b) => {
-        const naoLidoA = a[1].some(i => !i.lida) ? 0 : 1;
-        const naoLidoB = b[1].some(i => !i.lida) ? 0 : 1;
-        return naoLidoA - naoLidoB;
-    });
-
-    container.innerHTML = gruposOrdenados.map(([chave, itens]) => {
-        const nome = chave === '__sem_area__' ? 'Outros' : nomeAreaOficina(chave);
-        const naoLidasGrupo = itens.filter(i => !i.lida).length;
-        return `
-        <div class="notificacoes-grupo-area">
-            <div class="notificacoes-grupo-area-titulo">
-                <span>${nome}</span>
-                ${naoLidasGrupo > 0 ? `<span class="notificacoes-grupo-area-badge">${naoLidasGrupo} não lida${naoLidasGrupo > 1 ? 's' : ''}</span>` : ''}
-            </div>
-            <div class="notificacoes-grupo-area-itens">
-                ${itens.map(renderItem).join('')}
-            </div>
-        </div>
-        `;
-    }).join('');
+    </div>
+    `;
 }
 
 // ==========================================

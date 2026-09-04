@@ -1120,17 +1120,30 @@
                     </div>
                 </div>
 
-                <div class="glass-panel" style="padding:24px; margin-bottom:24px;">
-                    <h3 style="font-size:1rem; margin-bottom:14px;"><i class="fas fa-industry"></i> Áreas em Atenção</h3>
-                    <div id="notificacoes-areas-container">
+                <!-- 🆕 Mesmo modelo de navegação da Central de Áreas: uma
+                     grade com TODAS as áreas (oficina, administrativo e
+                     estoque de Rolos/Hidráulica) — clicar numa entra num
+                     modo "detalhe" que mostra só as notificações
+                     daquela área, com botão de voltar pra grade. -->
+                <div id="notificacoes-grade-painel" class="glass-panel" style="padding:24px;">
+                    <h3 style="font-size:1rem; margin-bottom:14px;"><i class="fas fa-industry"></i> Áreas</h3>
+                    <div id="notificacoes-grade-container">
                         <div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>
                     </div>
                 </div>
 
-                <div class="glass-panel" style="padding:24px;">
-                    <div class="flex-between" style="margin-bottom:14px;">
-                        <h3 style="font-size:1rem; margin:0;"><i class="fas fa-list-check"></i> Atividade Recente</h3>
-                        <span id="notificacoes-contagem-nao-lidas" class="text-muted" style="font-size:12px;"></span>
+                <div id="notificacoes-detalhe-painel" class="glass-panel hidden" style="padding:24px;">
+                    <div class="flex-between" style="margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+                        <button class="btn-premium" onclick="window.fecharDetalheAreaNotificacao()">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </button>
+                        <h3 id="notificacoes-detalhe-titulo" style="font-size:1rem; margin:0;"></h3>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <button id="notificacoes-detalhe-acessar" class="btn-premium hidden" onclick="window.irParaTelaDaAreaNotificacao()">
+                                Acessar Área <i class="fas fa-arrow-right"></i>
+                            </button>
+                            <span id="notificacoes-contagem-nao-lidas" class="text-muted" style="font-size:12px;"></span>
+                        </div>
                     </div>
                     <div id="notificacoes-feed-container">
                         <div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>

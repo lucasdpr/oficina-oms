@@ -760,7 +760,7 @@ export async function salvarAjusteRoloNoPython(id, fator) {
         const resposta = await fetchDadosComTimeout(`${apiBase}/api/rolos/ajustar`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id, fator })
+            body: JSON.stringify({ id, fator, operador: OPERADOR_LOGADO ? OPERADOR_LOGADO.nome : "Sistema" })
         }, { tentativas: 2 });
         const resultado = await resposta.json().catch(() => ({}));
         if (!resposta.ok || !resultado.sucesso) {
@@ -817,7 +817,7 @@ export async function salvarAjusteHidraulicaNoPython(id, local, fator) {
         const resposta = await fetchDadosComTimeout(`${apiBase}/api/hidraulica/ajustar`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id, local, fator })
+            body: JSON.stringify({ id, local, fator, operador: OPERADOR_LOGADO ? OPERADOR_LOGADO.nome : "Sistema" })
         }, { tentativas: 2 });
         const resultado = await resposta.json().catch(() => ({}));
         if (!resposta.ok || !resultado.sucesso) {
