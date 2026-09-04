@@ -7672,12 +7672,21 @@ window.atualizarBadgeNotificacoesNaoLidas = async function() {
 window.carregarCentralNotificacoes = async function() {
     try {
         const apiBase = await resolverApiBase();
+        // 🔧 CORREÇÃO ("cadê as áreas, você tirou tudo"): uma falha real
+        // no servidor (ex: pool de conexão do banco esgotado por um
+        // instante) fazia essa busca cair no `[]` do catch — e uma lista
+        // vazia de atividades é EXATAMENTE o mesmo formato de "nenhuma
+        // área crítica agora", então a tela mostrava "tudo certo ✅" bem
+        // na hora que os dados não tinham nem chegado. `null` marca "não
+        // consegui buscar" separado de "busquei e não tem nada".
         const [atividades, feed] = await Promise.all([
-            fetch(`${apiBase}/api/oficina/atividades`, { cache: 'no-store' }).then(r => r.ok ? r.json() : []).catch(() => []),
+            fetch(`${apiBase}/api/oficina/atividades`, { cache: 'no-store' })
+                .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+                .catch(e => { console.error('⚠️ Não consegui buscar atividades da oficina:', e); return null; }),
             window.carregarFeedNotificacoes(),
         ]);
 
-        renderizarAreasNotificacoes(Array.isArray(atividades) ? atividades : [], feed);
+        renderizarAreasNotificacoes(Array.isArray(atividades) ? atividades : null, feed);
         renderizarFeedNotificacoes(feed);
 
         const marcador = document.getElementById('notificacoes-ultima-atualizacao');
@@ -7738,6 +7747,15 @@ window.irParaAchadoEspecifico = async function(pecaId) {
 function renderizarAreasNotificacoes(atividades, feed) {
     const container = document.getElementById('notificacoes-areas-container');
     if (!container) return;
+
+    // `null` = a busca no servidor falhou (ver carregarCentralNotificacoes)
+    // — bem diferente de "busquei certinho e não tem nenhuma área crítica".
+    // Mostrar isso como erro em vez de "tudo certo" evita o susto de achar
+    // que perdeu dado que nunca chegou a sumir de verdade.
+    if (atividades === null) {
+        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0; color:var(--warning);">⚠️ Não foi possível verificar as áreas agora (falha ao consultar o servidor). Toque em "Atualizar" pra tentar de novo.</div>`;
+        return;
+    }
 
     // 🆕 Áreas que têm pelo menos 1 item não lido no feed (ocorrência,
     // OS, evento) ganham um selo "Novo" — sinaliza que "aquela área
