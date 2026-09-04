@@ -6929,16 +6929,24 @@ let FILTRO_OCORRENCIA_ATUAL = '';
 let OCORRENCIA_CACHE = [];
 let BUSCA_OCORRENCIA_ATUAL = '';
 
-// 🆕 Preenche um <select> de área da oficina (opções de AREAS_OFICINA,
-// tipo 'oficina') — usado nos formulários de Ocorrência e OS, pra dar
-// contexto de área nesses registros (sem isso a Central de Notificações
-// não tem como saber onde a ocorrência/OS aconteceu).
+// 🆕 Preenche um <select> de área (TODAS as áreas de AREAS_OFICINA —
+// oficina + administrativo, igual a Central de Áreas mostra as duas) —
+// usado nos formulários de Ocorrência e OS, pra dar contexto de área
+// nesses registros (sem isso a Central de Notificações não tem como
+// saber onde a ocorrência/OS aconteceu). 🔧 CORREÇÃO: antes filtrava só
+// tipo 'oficina', deixando de fora Almoxarifado/Ponte Rolante/ADM/
+// Logística — uma ocorrência pode acontecer em qualquer uma delas.
 function popularSelectAreaOficina(idSelect) {
     const select = document.getElementById(idSelect);
     if (!select || select.dataset.preenchido) return;
+    const grupos = [
+        { label: 'Oficina', itens: AREAS_OFICINA.filter(a => a.tipo === 'oficina') },
+        { label: 'Administrativo', itens: AREAS_OFICINA.filter(a => a.tipo === 'administrativo') },
+    ];
     select.innerHTML = `<option value="">Não informar</option>` +
-        AREAS_OFICINA.filter(a => a.tipo === 'oficina')
-            .map(a => `<option value="${a.chave}">${a.nome}</option>`).join("");
+        grupos.map(g => `<optgroup label="${g.label}">${
+            g.itens.map(a => `<option value="${a.chave}">${a.nome}</option>`).join("")
+        }</optgroup>`).join("");
     select.dataset.preenchido = "1";
 }
 
