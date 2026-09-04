@@ -597,7 +597,7 @@
                 <!-- 🆕 Central de Notificações — só supervisor/ADM/admin do
                      sistema (ver ativarCentralNotificacoesSeAutorizado em
                      script.js). Começa escondida; JS decide quem vê. -->
-                <a href="#" id="nav-notificacoes" class="nav-link hidden" style="color:#f43f5e;" onclick="window.abrirAba(event,'aba-notificacoes')"><i class="fas fa-bell"></i> Central de Notificações</a>
+                <a href="#" id="nav-notificacoes" class="nav-link hidden" style="color:#f43f5e;" onclick="window.abrirAba(event,'aba-notificacoes')"><i class="fas fa-bell"></i> Central de Notificações <span id="badge-notificacoes-nao-lidas" class="hidden" style="background:var(--danger); color:#fff; font-size:10px; font-weight:700; padding:1px 6px; border-radius:10px; margin-left:4px;">0</span></a>
 
                 <div class="nav-divider">Monitoramento de Máquinas</div>
                 <a href="#" id="nav-fluxo" class="nav-link" onclick="window.abrirAba(event,'aba-fluxo')"><i class="fas fa-stream"></i> Sequenciamento Veios</a>
@@ -1106,7 +1106,9 @@
                         <div>
                             <h2 style="color:#f43f5e; margin:0;"><i class="fas fa-bell"></i> Central de Notificações</h2>
                             <p class="text-muted" style="font-size:13px; margin:6px 0 0;">
-                                Tudo que precisa de atenção agora: áreas críticas, ocorrências e OS em aberto — de todas as áreas.
+                                Tudo que precisa de atenção agora: áreas críticas, e a atividade recente (ocorrências, OS, achados de
+                                Qualidade e eventos gerais, como travamento de rolo no Sinótico 3D) — de todas as áreas. O que você
+                                ainda não abriu fica marcado; abrir marca como visto só pra você.
                             </p>
                         </div>
                         <div style="text-align:right;">
@@ -1125,16 +1127,12 @@
                     </div>
                 </div>
 
-                <div class="glass-panel" style="padding:24px; margin-bottom:24px;">
-                    <h3 style="font-size:1rem; margin-bottom:14px;"><i class="fas fa-triangle-exclamation"></i> Ocorrências Recentes</h3>
-                    <div id="notificacoes-ocorrencias-container">
-                        <div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>
-                    </div>
-                </div>
-
                 <div class="glass-panel" style="padding:24px;">
-                    <h3 style="font-size:1rem; margin-bottom:14px;"><i class="fas fa-file-invoice"></i> OS em Aberto</h3>
-                    <div id="notificacoes-os-container">
+                    <div class="flex-between" style="margin-bottom:14px;">
+                        <h3 style="font-size:1rem; margin:0;"><i class="fas fa-list-check"></i> Atividade Recente</h3>
+                        <span id="notificacoes-contagem-nao-lidas" class="text-muted" style="font-size:12px;"></span>
+                    </div>
+                    <div id="notificacoes-feed-container">
                         <div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>
                     </div>
                 </div>
@@ -2453,6 +2451,16 @@
                 if (window.renderHistorico) window.renderHistorico();
                 if (window.atualizarPainelCompleto) window.atualizarPainelCompleto();
                 console.log("✅ Usuário logado:", operador.nome);
+
+                // 🆕 Clicar numa notificação push abre o app direto na
+                // Central de Notificações (ver enviar_push_para_area no
+                // backend, url="/app.html#notificacoes") — sem isso, o
+                // clique só abria a tela inicial e a pessoa tinha que
+                // navegar manualmente até lá.
+                if (location.hash === '#notificacoes' && typeof window.abrirAba === 'function') {
+                    const navNotif = document.getElementById('nav-notificacoes');
+                    if (navNotif) window.abrirAba({ preventDefault(){}, currentTarget: navNotif }, 'aba-notificacoes');
+                }
             } catch(e) {
                 console.warn("Erro ao restaurar sessão:", e);
             }
