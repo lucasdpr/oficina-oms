@@ -3786,17 +3786,22 @@ window.renderRegistroRecenteCompleto = async function() {
         }).join('');
     };
 
-    // 🔧 CORREÇÃO ("fica mudando sozinho, mesma aba, sem eu mexer"):
-    // antes mostrava o HISTORICO_ACOES local (formato de data dd/mm/aaaa)
-    // e, pouco depois, TROCAVA pela lista do servidor (formato
-    // aaaa-mm-dd) — dois formatos e duas ordens diferentes brigando na
-    // tela. Pior: essa função é chamada de novo toda vez que QUALQUER
-    // evento acontece no app inteiro (renderizarFeedAtividadeRecente),
-    // não só quando esta aba está em uso — então a lista "piscava"
-    // sozinha em segundo plano. Agora só renderiza uma vez, direto do
-    // servidor (fonte única de verdade); local só entra como fallback
-    // se a busca falhar de verdade (sem internet).
-    lista.innerHTML = `<li class="text-muted" style="text-align:center; padding: 10px 0;">Carregando...</li>`;
+    // 🔧 CORREÇÃO ("mudando sozinho" → depois "piscando pra Carregando"):
+    // essa função é re-chamada toda vez que QUALQUER evento acontece no
+    // app inteiro (renderizarFeedAtividadeRecente), não só quando esta
+    // aba está em uso. A tentativa anterior resolveu o "duas fontes
+    // brigando" mas trocou por "pisca pro Carregando" a cada chamada de
+    // fundo. Agora: só mostra "Carregando..." na PRIMEIRA vez (lista
+    // ainda vazia); atualizações seguintes buscam em segundo plano e só
+    // trocam o conteúdo quando o resultado chegar — sem apagar a tela
+    // no meio do caminho. Uma trava (dataset.buscando) evita empilhar
+    // buscas se vários eventos disparam quase juntos.
+    if (lista.dataset.buscando === "1") return;
+    lista.dataset.buscando = "1";
+
+    if (!lista.childElementCount) {
+        lista.innerHTML = `<li class="text-muted" style="text-align:center; padding: 10px 0;">Carregando...</li>`;
+    }
 
     try {
         const apiBase = await resolverApiBase();
@@ -3814,7 +3819,14 @@ window.renderRegistroRecenteCompleto = async function() {
         lista.innerHTML = montarItens(itensServidor);
     } catch (e) {
         console.error('⚠️ Não consegui buscar o Registro Recente completo do servidor — usando o que tinha local:', e);
-        lista.innerHTML = montarItens((HISTORICO_ACOES || []).slice(0, 50));
+        // Só cai pro cache local se a tela ainda estiver vazia — uma
+        // atualização de fundo que falhou não deve apagar uma lista que
+        // já estava certa na tela.
+        if (!lista.childElementCount || lista.querySelector('.text-muted')) {
+            lista.innerHTML = montarItens((HISTORICO_ACOES || []).slice(0, 50));
+        }
+    } finally {
+        lista.dataset.buscando = "0";
     }
 };
 
