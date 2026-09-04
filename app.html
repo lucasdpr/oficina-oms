@@ -584,6 +584,10 @@
                 <a href="#" id="nav-painel" class="nav-link active" onclick="window.abrirAba(event,'aba-painel')"><i class="fas fa-chart-pie"></i> Painel Geral OMS</a>
                 <a href="#" id="nav-tecnico" class="nav-link" style="color:#22c55e;" onclick="window.abrirAba(event,'aba-tecnico')"><i class="fas fa-hard-hat"></i> Painel do Técnico</a>
                 <a href="#" id="nav-oficina" class="nav-link" onclick="window.abrirAba(event,'aba-oficina')"><i class="fas fa-industry"></i> 🏭 Central de Áreas</a>
+                <!-- 🆕 Central de Notificações — só supervisor/ADM/admin do
+                     sistema (ver ativarCentralNotificacoesSeAutorizado em
+                     script.js). Começa escondida; JS decide quem vê. -->
+                <a href="#" id="nav-notificacoes" class="nav-link hidden" style="color:#f43f5e;" onclick="window.abrirAba(event,'aba-notificacoes')"><i class="fas fa-bell"></i> Central de Notificações</a>
 
                 <div class="nav-divider">Monitoramento de Máquinas</div>
                 <a href="#" id="nav-fluxo" class="nav-link" onclick="window.abrirAba(event,'aba-fluxo')"><i class="fas fa-stream"></i> Sequenciamento Veios</a>
@@ -1077,6 +1081,51 @@
                     </div>
                     <div id="catalogo-materiais-oficina-lista" style="max-height:360px; overflow-y:auto;">
                         <div class="text-muted" style="font-size:12px;">Carregando...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 🆕 CENTRAL DE NOTIFICAÇÕES — visão agregada pro supervisor/
+                 ADM: áreas em atenção, ocorrências recentes e OS em aberto,
+                 tudo num feed só, sem precisar abrir cada aba separada.
+                 Atualiza sozinha enquanto a aba estiver aberta (polling —
+                 ver INTERVALO_POLLING_NOTIFICACOES em script.js). -->
+            <section id="aba-notificacoes" class="tab-content">
+                <div class="glass-panel" style="padding:24px; margin-bottom:24px;">
+                    <div class="flex-between" style="flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <h2 style="color:#f43f5e; margin:0;"><i class="fas fa-bell"></i> Central de Notificações</h2>
+                            <p class="text-muted" style="font-size:13px; margin:6px 0 0;">
+                                Tudo que precisa de atenção agora: áreas críticas, ocorrências e OS em aberto — de todas as áreas.
+                            </p>
+                        </div>
+                        <div style="text-align:right;">
+                            <button class="btn-premium" onclick="window.carregarCentralNotificacoes()">
+                                <i class="fas fa-rotate"></i> Atualizar
+                            </button>
+                            <div id="notificacoes-ultima-atualizacao" class="text-muted" style="font-size:11px; margin-top:6px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel" style="padding:24px; margin-bottom:24px;">
+                    <h3 style="font-size:1rem; margin-bottom:14px;"><i class="fas fa-industry"></i> Áreas em Atenção</h3>
+                    <div id="notificacoes-areas-container">
+                        <div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>
+                    </div>
+                </div>
+
+                <div class="glass-panel" style="padding:24px; margin-bottom:24px;">
+                    <h3 style="font-size:1rem; margin-bottom:14px;"><i class="fas fa-triangle-exclamation"></i> Ocorrências Recentes</h3>
+                    <div id="notificacoes-ocorrencias-container">
+                        <div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>
+                    </div>
+                </div>
+
+                <div class="glass-panel" style="padding:24px;">
+                    <h3 style="font-size:1rem; margin-bottom:14px;"><i class="fas fa-file-invoice"></i> OS em Aberto</h3>
+                    <div id="notificacoes-os-container">
+                        <div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>
                     </div>
                 </div>
             </section>

@@ -904,6 +904,42 @@ function ativarAuditoriaSeAutorizado() {
 }
 window.ativarAuditoriaSeAutorizado = ativarAuditoriaSeAutorizado;
 
+// ==========================================
+// 🆕 CENTRAL DE NOTIFICAÇÕES — visível pra ADM (admin do sistema, as 3
+// matrículas fixas de MATRICULAS_ADM) e pra quem tem "Supervisor" no
+// cargo (mesmo texto livre que já aparece entre colchetes no nome, ex:
+// "Filipe [Supervisor]" — não existe uma coluna de cargo separada pra
+// isso hoje, então reaproveita a mesma extração já usada no badge).
+// ==========================================
+function operadorEhSupervisorOuAdm() {
+    if (!OPERADOR_LOGADO || OPERADOR_LOGADO.visitante) return false;
+    if (OPERADOR_LOGADO.isAdm) return true;
+    const match = (OPERADOR_LOGADO.nome || "").match(/\[(.+?)\]/);
+    const cargo = match ? match[1] : "";
+    return /supervisor/i.test(cargo);
+}
+window.operadorEhSupervisorOuAdm = operadorEhSupervisorOuAdm;
+
+function ativarCentralNotificacoesSeAutorizado() {
+    const link = document.getElementById("nav-notificacoes");
+    if (!link) return;
+
+    const autorizado = operadorEhSupervisorOuAdm();
+
+    if (autorizado) {
+        link.classList.remove("hidden");
+    } else {
+        link.classList.add("hidden");
+        if (typeof window.pararPollingCentralNotificacoes === 'function') window.pararPollingCentralNotificacoes();
+        const aba = document.getElementById("aba-notificacoes");
+        if (aba && aba.classList.contains("active") && typeof window.abrirAba === 'function') {
+            const navPainel = document.getElementById("nav-painel");
+            if (navPainel) window.abrirAba({ preventDefault(){}, currentTarget: navPainel }, "aba-painel");
+        }
+    }
+}
+window.ativarCentralNotificacoesSeAutorizado = ativarCentralNotificacoesSeAutorizado;
+
 function ativarPainelDevSeAutorizado() {
     const link = document.getElementById("nav-dev-teste");
     const divisor = document.getElementById("nav-divider-dev");
@@ -989,6 +1025,7 @@ function atualizarInterfaceUsuario() {
         renderHistorico();
         ativarPainelDevSeAutorizado();
         ativarAuditoriaSeAutorizado();
+        ativarCentralNotificacoesSeAutorizado();
         return;
     }
 
@@ -1006,6 +1043,7 @@ function atualizarInterfaceUsuario() {
         renderHistorico();
         ativarPainelDevSeAutorizado();
         ativarAuditoriaSeAutorizado();
+        ativarCentralNotificacoesSeAutorizado();
         return;
     }
 
@@ -1029,6 +1067,7 @@ function atualizarInterfaceUsuario() {
     renderHistorico();
     ativarPainelDevSeAutorizado();
     ativarAuditoriaSeAutorizado();
+    ativarCentralNotificacoesSeAutorizado();
     aplicarRestricaoNavTecnico();
 }
 
@@ -1046,7 +1085,12 @@ function aplicarRestricaoNavTecnico() {
     const restrito = !!(OPERADOR_LOGADO && !OPERADOR_LOGADO.visitante && !OPERADOR_LOGADO.isAdm && OPERADOR_LOGADO.area);
 
     document.querySelectorAll('.sidebar-nav .nav-link').forEach(el => {
-        const liberado = NAV_IDS_LIBERADOS_TECNICO.includes(el.id);
+        // 🆕 Supervisor com área cadastrada cai no "restrito" acima (não é
+        // ADM), mas ainda precisa ver a Central de Notificações — sem essa
+        // exceção o link ficaria escondido por aqui mesmo já autorizado
+        // por ativarCentralNotificacoesSeAutorizado().
+        const excecaoNotificacoes = el.id === 'nav-notificacoes' && operadorEhSupervisorOuAdm();
+        const liberado = NAV_IDS_LIBERADOS_TECNICO.includes(el.id) || excecaoNotificacoes;
         el.style.display = (restrito && !liberado) ? 'none' : '';
     });
     // Dividers de seção ("Monitoramento de Máquinas", "Oficina"...) só
@@ -6161,6 +6205,13 @@ window.abrirAba = function(event, idAba) {
     }
     if (idAba === "aba-ocorrencia" && typeof window.renderAbaOcorrencia === 'function') window.renderAbaOcorrencia();
     if (idAba === "aba-ordens-servico" && typeof window.carregarListaOrdensServico === 'function') window.carregarListaOrdensServico();
+    if (idAba === "aba-notificacoes" && typeof window.carregarCentralNotificacoes === 'function') {
+        window.carregarCentralNotificacoes();
+    } else if (typeof window.pararPollingCentralNotificacoes === 'function') {
+        // Saiu da Central de Notificações pra outra aba — para o
+        // polling na hora, não espera o próximo tick de 30s pra notar.
+        window.pararPollingCentralNotificacoes();
+    }
     if (idAba === "aba-qualidade" && typeof window.renderAbaQualidade === 'function') window.renderAbaQualidade();
     if (idAba === "aba-painel-adm" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('adm');
     if (idAba === "aba-painel-almoxarifado" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('almoxarifado');
@@ -7447,6 +7498,170 @@ window.excluirOrdemServico = async function(id) {
         alert('Não foi possível conectar ao servidor.');
     }
 };
+
+// ==========================================
+// 🆕 CENTRAL DE NOTIFICAÇÕES — só supervisor/ADM (visibilidade decidida
+// em ativarCentralNotificacoesSeAutorizado, mais abaixo). Não é uma
+// aba de cadastro nova: só AGREGA o que já existe em outras abas
+// (Central de Áreas, Ocorrência, OS) num feed único, lendo as mesmas
+// APIs — não duplica lógica nenhuma de negócio.
+// ==========================================
+const INTERVALO_POLLING_NOTIFICACOES_MS = 30000;
+let TIMER_POLLING_NOTIFICACOES = null;
+
+// Enquanto a aba estiver aberta, atualiza sozinha a cada 30s. Se a
+// pessoa sair da aba (ou trocar de operador), o próprio timer se
+// desarma sozinho no próximo tick — não fica batendo no servidor à toa
+// com a aba em segundo plano.
+window.iniciarPollingCentralNotificacoes = function() {
+    window.pararPollingCentralNotificacoes();
+    TIMER_POLLING_NOTIFICACOES = setInterval(() => {
+        const aba = document.getElementById('aba-notificacoes');
+        if (!aba || !aba.classList.contains('active')) {
+            window.pararPollingCentralNotificacoes();
+            return;
+        }
+        window.carregarCentralNotificacoes();
+    }, INTERVALO_POLLING_NOTIFICACOES_MS);
+};
+
+window.pararPollingCentralNotificacoes = function() {
+    if (TIMER_POLLING_NOTIFICACOES) {
+        clearInterval(TIMER_POLLING_NOTIFICACOES);
+        TIMER_POLLING_NOTIFICACOES = null;
+    }
+};
+
+window.carregarCentralNotificacoes = async function() {
+    try {
+        const apiBase = await resolverApiBase();
+        const [atividades, ocorrencias, ordens] = await Promise.all([
+            fetch(`${apiBase}/api/oficina/atividades`, { cache: 'no-store' }).then(r => r.ok ? r.json() : []).catch(() => []),
+            fetch(`${apiBase}/api/registros_ocorrencia`, { cache: 'no-store' }).then(r => r.ok ? r.json() : []).catch(() => []),
+            fetch(`${apiBase}/api/ordens_servico`, { cache: 'no-store' }).then(r => r.ok ? r.json() : []).catch(() => []),
+        ]);
+
+        renderizarAreasNotificacoes(Array.isArray(atividades) ? atividades : []);
+        renderizarOcorrenciasNotificacoes(Array.isArray(ocorrencias) ? ocorrencias : []);
+        renderizarOsNotificacoes(Array.isArray(ordens) ? ordens : []);
+
+        const marcador = document.getElementById('notificacoes-ultima-atualizacao');
+        if (marcador) marcador.innerText = `Atualizado às ${new Date().toLocaleTimeString('pt-BR')}`;
+    } catch (e) {
+        console.error('⚠️ Erro ao carregar a Central de Notificações:', e);
+    } finally {
+        window.iniciarPollingCentralNotificacoes();
+    }
+};
+
+window.irParaAreaOficinaViaNotificacao = function(chave) {
+    window.abrirAba(null, 'aba-oficina');
+    document.getElementById('nav-oficina')?.classList.add('active');
+    document.getElementById('nav-notificacoes')?.classList.remove('active');
+    if (typeof window.abrirAreaOficina === 'function') window.abrirAreaOficina(chave);
+};
+
+window.irParaAbaViaNotificacao = function(idAba, idNav) {
+    window.abrirAba(null, idAba);
+    document.getElementById(idNav)?.classList.add('active');
+    document.getElementById('nav-notificacoes')?.classList.remove('active');
+};
+
+function renderizarAreasNotificacoes(atividades) {
+    const container = document.getElementById('notificacoes-areas-container');
+    if (!container) return;
+
+    const ORDEM_STATUS = { 'Crítico': 0, 'Restrição': 1, 'Atenção': 2 };
+
+    const areas = AREAS_OFICINA
+        .filter(a => a.tipo === 'oficina')
+        .map(a => {
+            const doArea = atividades.filter(x => x.area === a.chave);
+            const pendentes = doArea.filter(x => x.status === 'Pendente').length;
+            const andamento = doArea.filter(x => x.status === 'Em Andamento').length;
+            const atrasadas = doArea.filter(x => atividadeEstaAtrasada(x)).length;
+            const emAberto = pendentes + andamento;
+
+            let status = null;
+            if (atrasadas > 0) status = { emoji: '🔴', label: 'Crítico' };
+            else if (emAberto >= 5) status = { emoji: '🟠', label: 'Restrição' };
+            else if (emAberto >= 1) status = { emoji: '🟡', label: 'Atenção' };
+
+            return { area: a, status, pendentes, andamento, atrasadas };
+        })
+        .filter(v => v.status)
+        .sort((x, y) => ORDEM_STATUS[x.status.label] - ORDEM_STATUS[y.status.label]);
+
+    if (areas.length === 0) {
+        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">✅ Nenhuma área precisa de atenção agora.</div>`;
+        return;
+    }
+
+    container.innerHTML = areas.map(({ area: a, status: s, pendentes, andamento, atrasadas }) => `
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); cursor:pointer;"
+             onclick="window.irParaAreaOficinaViaNotificacao('${a.chave}')">
+            <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+                <i class="fas ${a.icone}" style="color:${a.cor}; width:20px; text-align:center; flex-shrink:0;"></i>
+                <strong>${a.nome}</strong>
+            </div>
+            <div style="display:flex; align-items:center; gap:14px; font-size:12px; flex-shrink:0;">
+                <span>${s.emoji} ${s.label}</span>
+                <span title="Pendentes"><i class="fas fa-hourglass-half"></i> ${pendentes}</span>
+                <span title="Em andamento"><i class="fas fa-person-running"></i> ${andamento}</span>
+                ${atrasadas > 0 ? `<span style="color:var(--danger);" title="Atrasadas"><i class="fas fa-triangle-exclamation"></i> ${atrasadas}</span>` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderizarOcorrenciasNotificacoes(ocorrencias) {
+    const container = document.getElementById('notificacoes-ocorrencias-container');
+    if (!container) return;
+
+    const recentes = ocorrencias.slice(0, 8); // já vêm do backend ordenadas da mais nova pra mais antiga
+    if (recentes.length === 0) {
+        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhuma ocorrência registrada ainda.</div>`;
+        return;
+    }
+
+    container.innerHTML = recentes.map(r => `
+        <div style="padding:10px 0; border-bottom:1px solid var(--border); cursor:pointer;"
+             onclick="window.irParaAbaViaNotificacao('aba-ocorrencia', 'nav-ocorrencia')">
+            <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+                <span class="font-code" style="font-weight:700; color:var(--text-heading);">${r.peca_id || '-'}</span>
+                <span style="font-size:11px; color:var(--text-muted);">${r.data_hora || ''}</span>
+            </div>
+            <div style="font-size:13px; color:var(--text-body);">${r.acao || ''}</div>
+            <div style="font-size:11px; color:var(--text-accent);">${r.operador || 'Sistema'} · ${r.categoria || ''}</div>
+        </div>
+    `).join('');
+}
+
+function renderizarOsNotificacoes(ordens) {
+    const container = document.getElementById('notificacoes-os-container');
+    if (!container) return;
+
+    const abertas = ordens.filter(os => os.status !== 'Concluído').slice(0, 10);
+    if (abertas.length === 0) {
+        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">✅ Nenhuma OS em aberto agora.</div>`;
+        return;
+    }
+
+    container.innerHTML = abertas.map(os => {
+        const naoExecutada = os.status === 'Não Executada';
+        return `
+        <div style="padding:10px 0; border-bottom:1px solid var(--border); cursor:pointer;"
+             onclick="window.irParaAbaViaNotificacao('aba-ordens-servico', 'nav-ordens-servico')">
+            <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+                <span class="font-code" style="font-weight:700; color:var(--text-heading);">${os.numero_os ? `OS ${os.numero_os}` : `#${os.id}`}</span>
+                <span style="font-size:11px; font-weight:700; color:${naoExecutada ? 'var(--danger)' : 'var(--warning)'};">${naoExecutada ? '🚫' : '🔧'} ${os.status}</span>
+            </div>
+            ${os.descricao ? `<div style="font-size:13px; color:var(--text-body);">${os.descricao}</div>` : ''}
+            <div style="font-size:11px; color:var(--text-accent);">${os.criado_por || 'Sistema'} · ${os.criado_em || ''}</div>
+        </div>
+        `;
+    }).join('');
+}
 
 // ==========================================
 // 🆕 QUALIDADE (Entrada/Saída) — o responsável pela Qualidade registra
