@@ -7665,16 +7665,25 @@ window.pararPollingCentralNotificacoes = function() {
 // backend (/api/notificacoes/feed) — nada de "lido" calculado no
 // cliente, senão cada aba/dispositivo teria sua própria ideia do que
 // já foi visto.
+// 🐛 CORREÇÃO: essa função sempre devolveu `[]` tanto pra "busquei e não
+// tem notificação nenhuma" quanto pra "o servidor falhou" (resp não-ok,
+// exceção de rede) — exatamente o mesmo bug de "cadê as áreas, tirou
+// tudo" já corrigido pro `/api/oficina/atividades`, só que nunca tinha
+// sido corrigido aqui: um 500 (ex: pool de conexão esgotado, já
+// aconteceu em produção) fazia a Central e o sininho mostrarem "nenhuma
+// notificação" bem na hora que tinha alguma sem conseguir avisar.
+// `null` = falhou; `[]` = buscou certinho e realmente não tem nada.
 window.carregarFeedNotificacoes = async function() {
     if (!OPERADOR_LOGADO || !OPERADOR_LOGADO.matricula) return [];
     try {
         const apiBase = await resolverApiBase();
         const resp = await fetch(`${apiBase}/api/notificacoes/feed?matricula=${encodeURIComponent(OPERADOR_LOGADO.matricula)}&limite=30`, { cache: 'no-store' });
-        const feed = resp.ok ? await resp.json() : [];
-        return Array.isArray(feed) ? feed : [];
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const feed = await resp.json();
+        return Array.isArray(feed) ? feed : null;
     } catch (e) {
         console.error('⚠️ Erro ao carregar feed de notificações:', e);
-        return [];
+        return null;
     }
 };
 
@@ -7686,6 +7695,10 @@ window.atualizarBadgeNotificacoesNaoLidas = async function() {
     if (!badge) return;
     if (!operadorEhSupervisorOuAdm()) { badge.classList.add('hidden'); return; }
     const feed = await window.carregarFeedNotificacoes();
+    // `null` = a busca falhou — mantém o sino como já estava (não dá
+    // pra saber se tem novidade ou não) em vez de escondê-lo como se
+    // tivesse zero, e sem quebrar num "null.filter".
+    if (feed === null) return;
     const naoLidas = feed.filter(item => !item.lida).length;
     if (naoLidas > 0) {
         badge.innerText = naoLidas > 99 ? '99+' : String(naoLidas);
@@ -7738,10 +7751,17 @@ window.carregarCentralNotificacoes = async function() {
             window.carregarFeedNotificacoes(),
         ]);
 
-        NOTIF_FEED_CACHE = feed;
+        // 🐛 CORREÇÃO: `feed` também pode vir `null` agora (falha do
+        // servidor) — antes disso, NOTIF_FEED_CACHE virava `[]` numa
+        // falha, e como esse cache alimenta a contagem de notificações
+        // por área E o cálculo do resumo do topo, um 500 no meio do
+        // caminho fazia tudo parecer "zero notificação" em vez de "não
+        // consegui verificar". Mantém o último feed bom em cache em vez
+        // de apagar com uma falha.
+        if (Array.isArray(feed)) NOTIF_FEED_CACHE = feed;
         NOTIF_ATIVIDADES_CACHE = Array.isArray(atividades) ? atividades : [];
-        NOTIF_ULTIMO_FETCH_FALHOU = !Array.isArray(atividades);
-        renderizarGradeNotificacoes(Array.isArray(atividades) ? atividades : null, feed);
+        NOTIF_ULTIMO_FETCH_FALHOU = !Array.isArray(atividades) || !Array.isArray(feed);
+        renderizarGradeNotificacoes(Array.isArray(atividades) ? atividades : null, Array.isArray(feed) ? feed : null);
         // Se a pessoa já estiver dentro do detalhe de uma área, atualiza
         // ele também — sem isso, o polling de 30s só atualizaria a grade
         // por trás, e a lista de itens ficaria parada até voltar/entrar
@@ -7816,8 +7836,12 @@ function renderizarGradeNotificacoes(atividades, feed) {
     // `null` = a busca no servidor falhou (ver carregarCentralNotificacoes)
     // — bem diferente de "busquei certinho e não tem nenhuma área crítica".
     // Mostrar isso como erro em vez de "tudo certo" evita o susto de achar
-    // que perdeu dado que nunca chegou a sumir de verdade.
-    if (atividades === null) {
+    // que perdeu dado que nunca chegou a sumir de verdade. Vale tanto pra
+    // atividades quanto pro feed (🐛 CORREÇÃO: feed === null nunca foi
+    // tratado aqui — um feed que falhou renderizava normal com 0
+    // notificação em toda área, escondendo justamente o que a pessoa
+    // mais precisava ver numa instabilidade do servidor).
+    if (atividades === null || feed === null) {
         container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0; color:var(--warning);">⚠️ Não foi possível verificar as áreas agora (falha ao consultar o servidor). Toque em "Atualizar" pra tentar de novo.</div>`;
         const resumoErro = document.getElementById('notificacoes-resumo');
         if (resumoErro) resumoErro.innerHTML = '';
