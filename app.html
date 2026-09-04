@@ -1154,6 +1154,14 @@
                                 <option value="Atividade Pendente">⏳ Atividade Pendente</option>
                             </select>
                         </div>
+                        <div class="input-group">
+                            <!-- 🆕 Opcional — dá contexto de área pra Central de
+                                 Notificações conseguir agrupar por área de verdade. -->
+                            <label>Área (opcional)</label>
+                            <select id="ocorrencia-area" class="premium-select" style="width:100%;">
+                                <option value="">Não informar</option>
+                            </select>
+                        </div>
                         <div class="input-group" style="grid-column: span 2;">
                             <label>Descrição</label>
                             <textarea id="ocorrencia-texto" class="premium-textarea" rows="1" placeholder="Ex: Vazamento de graxa no rolo #4, precisa trocar o retentor..."></textarea>
@@ -1210,7 +1218,15 @@
                             <label>Número da OS (opcional)</label>
                             <input type="text" id="os-numero" class="premium-input" placeholder="Ex: 12345" style="width:100%;">
                         </div>
-                        <div class="input-group" style="grid-column: span 3;">
+                        <div class="input-group">
+                            <!-- 🆕 Opcional — dá contexto de área pra Central de
+                                 Notificações conseguir agrupar por área de verdade. -->
+                            <label>Área (opcional)</label>
+                            <select id="os-area" class="premium-select" style="width:100%;">
+                                <option value="">Não informar</option>
+                            </select>
+                        </div>
+                        <div class="input-group" style="grid-column: span 2;">
                             <label>Descrição (opcional)</label>
                             <textarea id="os-descricao" class="premium-textarea" rows="1" placeholder="Ex: Troca de rolamento no Bender..."></textarea>
                         </div>

@@ -6204,7 +6204,10 @@ window.abrirAba = function(event, idAba) {
         if (typeof carregarCatalogoMateriaisOficina === 'function') carregarCatalogoMateriaisOficina();
     }
     if (idAba === "aba-ocorrencia" && typeof window.renderAbaOcorrencia === 'function') window.renderAbaOcorrencia();
-    if (idAba === "aba-ordens-servico" && typeof window.carregarListaOrdensServico === 'function') window.carregarListaOrdensServico();
+    if (idAba === "aba-ordens-servico" && typeof window.carregarListaOrdensServico === 'function') {
+        popularSelectAreaOficina("os-area");
+        window.carregarListaOrdensServico();
+    }
     if (idAba === "aba-notificacoes" && typeof window.carregarCentralNotificacoes === 'function') {
         window.carregarCentralNotificacoes();
     } else if (typeof window.pararPollingCentralNotificacoes === 'function') {
@@ -6882,6 +6885,19 @@ let FILTRO_OCORRENCIA_ATUAL = '';
 let OCORRENCIA_CACHE = [];
 let BUSCA_OCORRENCIA_ATUAL = '';
 
+// 🆕 Preenche um <select> de área da oficina (opções de AREAS_OFICINA,
+// tipo 'oficina') — usado nos formulários de Ocorrência e OS, pra dar
+// contexto de área nesses registros (sem isso a Central de Notificações
+// não tem como saber onde a ocorrência/OS aconteceu).
+function popularSelectAreaOficina(idSelect) {
+    const select = document.getElementById(idSelect);
+    if (!select || select.dataset.preenchido) return;
+    select.innerHTML = `<option value="">Não informar</option>` +
+        AREAS_OFICINA.filter(a => a.tipo === 'oficina')
+            .map(a => `<option value="${a.chave}">${a.nome}</option>`).join("");
+    select.dataset.preenchido = "1";
+}
+
 window.renderAbaOcorrencia = function() {
     const select = document.getElementById("ocorrencia-equipamento");
     if (select) {
@@ -6889,6 +6905,7 @@ window.renderAbaOcorrencia = function() {
         select.innerHTML = `<option value="">Selecione...</option>` +
             ordenados.map(a => `<option value="${a.id}">${a.id} — ${a.tipo} (${a.local || 'Sem local'})</option>`).join("");
     }
+    popularSelectAreaOficina("ocorrencia-area");
     window.carregarListaOcorrencias();
 };
 
@@ -6950,6 +6967,7 @@ window.confirmarOcorrencia = async function() {
     const equipamentoId = document.getElementById("ocorrencia-equipamento")?.value;
     const texto = document.getElementById("ocorrencia-texto")?.value.trim();
     const categoria = document.getElementById("ocorrencia-categoria")?.value || "Intervenção";
+    const area = document.getElementById("ocorrencia-area")?.value || null;
 
     if (!equipamentoId) return alert("Selecione o equipamento.");
     if (!texto) return alert("Escreva a descrição.");
@@ -6974,7 +6992,8 @@ window.confirmarOcorrencia = async function() {
                 acao: acaoFormatada,
                 operador: operador,
                 categoria: categoria,
-                foto_base64: FOTO_OCORRENCIA_BASE64 || null
+                foto_base64: FOTO_OCORRENCIA_BASE64 || null,
+                area: area
             })
         }, `Ocorrência em ${equipamentoId}`);
 
@@ -7078,11 +7097,19 @@ window.renderizarListaOcorrencias = function() {
                     <span style="font-size:11px; color:var(--text-muted);">${r.data_hora}</span>
                 </div>
                 <div style="font-size:13px; color:var(--text-body); margin-bottom:4px;">${r.acao}</div>
-                <div style="font-size:11px; color:var(--text-accent);">${r.operador}</div>
+                <div style="font-size:11px; color:var(--text-accent);">${r.operador}${r.area ? ` · ${nomeAreaOficina(r.area)}` : ''}</div>
             </div>
         </div>
     `).join("");
 };
+
+// Nome legível de uma área (chave -> nome de AREAS_OFICINA), com
+// fallback pra própria chave se não achar — usado nos registros de
+// Ocorrência/OS (campo "area" opcional) e na Central de Notificações.
+function nomeAreaOficina(chave) {
+    const a = AREAS_OFICINA.find(x => x.chave === chave);
+    return a ? a.nome : chave;
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (typeof carregarTema === 'function') carregarTema();
@@ -7246,6 +7273,7 @@ window.confirmarOrdemServico = async function() {
 
     const numero = document.getElementById('os-numero')?.value.trim();
     const descricao = document.getElementById('os-descricao')?.value.trim();
+    const area = document.getElementById('os-area')?.value || null;
 
     if (FOTOS_OS_BASE64.length === 0) return alert('Tire ou anexe pelo menos 1 foto da OS antes de registrar.');
 
@@ -7260,7 +7288,8 @@ window.confirmarOrdemServico = async function() {
                 numero_os: numero || null,
                 descricao: descricao || null,
                 fotos_base64: FOTOS_OS_BASE64,
-                operador
+                operador,
+                area
             })
         }, `OS ${numero || '(sem número)'}`);
 
@@ -7369,7 +7398,7 @@ window.renderizarListaOrdensServico = function() {
                     </div>
                 ` : ''}
                 <div style="font-size:11px; color:var(--text-accent);">
-                    ${os.criado_por || 'Sistema'} · ${os.criado_em || ''}
+                    ${os.criado_por || 'Sistema'} · ${os.criado_em || ''}${os.area ? ` · ${nomeAreaOficina(os.area)}` : ''}
                     ${concluida && os.concluido_por ? `<br>Concluída por ${os.concluido_por} · ${os.concluido_em || ''}` : ''}
                     ${naoExecutada && os.encerrado_por ? `<br>Encerrada por ${os.encerrado_por} · ${os.encerrado_em || ''}` : ''}
                 </div>
@@ -7561,10 +7590,30 @@ window.irParaAreaOficinaViaNotificacao = function(chave) {
     if (typeof window.abrirAreaOficina === 'function') window.abrirAreaOficina(chave);
 };
 
-window.irParaAbaViaNotificacao = function(idAba, idNav) {
-    window.abrirAba(null, idAba);
-    document.getElementById(idNav)?.classList.add('active');
+// 🆕 Vai direto pra Ocorrência clicada (não só abre a aba genérica) —
+// abre "Registro de Ocorrência", espera a lista carregar e já filtra
+// pela peça daquele registro, usando a mesma busca que a aba já tem.
+window.irParaOcorrenciaEspecifica = async function(pecaId) {
+    window.abrirAba(null, 'aba-ocorrencia');
+    document.getElementById('nav-ocorrencia')?.classList.add('active');
     document.getElementById('nav-notificacoes')?.classList.remove('active');
+    await window.carregarListaOcorrencias();
+    const input = document.getElementById('ocorrencia-busca');
+    if (input) input.value = pecaId || '';
+    if (typeof window.buscarOcorrencias === 'function') window.buscarOcorrencias(pecaId || '');
+};
+
+// Mesma ideia pra OS — filtra pelo número (ou, se a OS não tiver
+// número, por um trecho da descrição) assim que a lista carregar.
+window.irParaOsEspecifica = async function(termoBusca) {
+    window.abrirAba(null, 'aba-ordens-servico');
+    document.getElementById('nav-ordens-servico')?.classList.add('active');
+    document.getElementById('nav-notificacoes')?.classList.remove('active');
+    popularSelectAreaOficina('os-area');
+    await window.carregarListaOrdensServico();
+    const input = document.getElementById('os-busca');
+    if (input) input.value = termoBusca || '';
+    if (typeof window.buscarOrdensServico === 'function') window.buscarOrdensServico(termoBusca || '');
 };
 
 function renderizarAreasNotificacoes(atividades) {
@@ -7632,26 +7681,43 @@ const ICONE_CATEGORIA_OCORRENCIA = {
     'Atividade Pendente': '⏳',
 };
 
+// 🔧 CORREÇÃO ("mostra os antigos, não quero isso"): antes só pegava os
+// N mais recentes SEM olhar a data — se não tivesse nada novo, mostrava
+// registro de semanas atrás igual fosse notificação do momento. Agora
+// só entra quem aconteceu dentro da janela abaixo; sem nada dentro
+// dela, mostra "nada recente" em vez de cavar o histórico antigo.
+const DIAS_RECENCIA_NOTIFICACOES = 3;
+const MAX_ITENS_NOTIFICACOES = 5;
+
+function dataDentroDaJanelaRecente(dataHoraStr) {
+    if (!dataHoraStr) return false;
+    const data = new Date(String(dataHoraStr).replace(' ', 'T'));
+    if (isNaN(data.getTime())) return false;
+    const diffMs = Date.now() - data.getTime();
+    return diffMs >= 0 && diffMs <= DIAS_RECENCIA_NOTIFICACOES * 24 * 60 * 60 * 1000;
+}
+
 function renderizarOcorrenciasNotificacoes(ocorrencias) {
     const container = document.getElementById('notificacoes-ocorrencias-container');
     if (!container) return;
 
-    const recentes = ocorrencias.slice(0, 8); // já vêm do backend ordenadas da mais nova pra mais antiga
+    // já vêm do backend ordenadas da mais nova pra mais antiga
+    const recentes = ocorrencias.filter(r => dataDentroDaJanelaRecente(r.data_hora)).slice(0, MAX_ITENS_NOTIFICACOES);
     if (recentes.length === 0) {
-        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhuma ocorrência registrada ainda.</div>`;
+        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:14px 0;">Nenhuma ocorrência nos últimos ${DIAS_RECENCIA_NOTIFICACOES} dias.</div>`;
         return;
     }
 
     container.innerHTML = recentes.map(r => `
-        <div class="notificacoes-item" onclick="window.irParaAbaViaNotificacao('aba-ocorrencia', 'nav-ocorrencia')">
+        <div class="notificacoes-item" onclick="window.irParaOcorrenciaEspecifica('${(r.peca_id || '').replace(/'/g, "\\'")}')">
             <div class="notificacoes-item-icone">${ICONE_CATEGORIA_OCORRENCIA[r.categoria] || '📋'}</div>
             <div class="notificacoes-item-corpo">
                 <div class="notificacoes-item-topo">
                     <span class="font-code" style="font-weight:700; color:var(--text-heading);">${r.peca_id || '-'}</span>
-                    <span style="font-size:11px; color:var(--text-muted);">${r.data_hora || ''}</span>
+                    <span style="font-size:10.5px; color:var(--text-muted);">${r.data_hora || ''}</span>
                 </div>
-                <div style="font-size:13px; color:var(--text-body);">${r.acao || ''}</div>
-                <div style="font-size:11px; color:var(--text-accent);">${r.operador || 'Sistema'} · ${r.categoria || ''}</div>
+                <div class="notificacoes-item-linha">${r.acao || ''}</div>
+                <div style="font-size:10.5px; color:var(--text-accent);">${r.operador || 'Sistema'} · ${r.categoria || ''}${r.area ? ` · ${nomeAreaOficina(r.area)}` : ''}</div>
             </div>
         </div>
     `).join('');
@@ -7661,25 +7727,28 @@ function renderizarOsNotificacoes(ordens) {
     const container = document.getElementById('notificacoes-os-container');
     if (!container) return;
 
-    const abertas = ordens.filter(os => os.status !== 'Concluído').slice(0, 10);
+    const abertas = ordens
+        .filter(os => os.status !== 'Concluído' && dataDentroDaJanelaRecente(os.criado_em))
+        .slice(0, MAX_ITENS_NOTIFICACOES);
     if (abertas.length === 0) {
-        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">✅ Nenhuma OS em aberto agora.</div>`;
+        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:14px 0;">✅ Nenhuma OS aberta nos últimos ${DIAS_RECENCIA_NOTIFICACOES} dias.</div>`;
         return;
     }
 
     container.innerHTML = abertas.map(os => {
         const naoExecutada = os.status === 'Não Executada';
         const cor = naoExecutada ? 'var(--danger)' : 'var(--warning)';
+        const buscaAlvo = (os.numero_os || (os.descricao || '').slice(0, 20) || '').replace(/'/g, "\\'");
         return `
-        <div class="notificacoes-item" style="--item-cor:${cor};" onclick="window.irParaAbaViaNotificacao('aba-ordens-servico', 'nav-ordens-servico')">
+        <div class="notificacoes-item" style="--item-cor:${cor};" onclick="window.irParaOsEspecifica('${buscaAlvo}')">
             <div class="notificacoes-item-icone" style="color:${cor};">${naoExecutada ? '🚫' : '🔧'}</div>
             <div class="notificacoes-item-corpo">
                 <div class="notificacoes-item-topo">
                     <span class="font-code" style="font-weight:700; color:var(--text-heading);">${os.numero_os ? `OS ${os.numero_os}` : `#${os.id}`}</span>
-                    <span style="font-size:11px; font-weight:700; color:${cor};">${os.status}</span>
+                    <span style="font-size:10.5px; font-weight:700; color:${cor};">${os.status}</span>
                 </div>
-                ${os.descricao ? `<div style="font-size:13px; color:var(--text-body);">${os.descricao}</div>` : ''}
-                <div style="font-size:11px; color:var(--text-accent);">${os.criado_por || 'Sistema'} · ${os.criado_em || ''}</div>
+                ${os.descricao ? `<div class="notificacoes-item-linha">${os.descricao}</div>` : ''}
+                <div style="font-size:10.5px; color:var(--text-accent);">${os.criado_por || 'Sistema'} · ${os.criado_em || ''}${os.area ? ` · ${nomeAreaOficina(os.area)}` : ''}</div>
             </div>
         </div>
         `;
