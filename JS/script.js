@@ -67,11 +67,23 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 window.ativarPushNotification = async function () {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+        // No Safari/iOS isso é normal enquanto o app não foi instalado na
+        // tela de início — Web Push só existe ali quando roda em modo
+        // standalone (instalado). Não é erro, é a plataforma mesmo.
         console.warn("⚠️ Este navegador não suporta push notification.");
         return false;
     }
+    // 🔧 IMPORTANTE: requestPermission tem que ser a PRIMEIRA coisa async
+    // chamada aqui, sem nenhum await antes — no Safari/iOS o pedido de
+    // permissão só aparece se for resposta direta e imediata de um toque
+    // do usuário. Chamar essa função automaticamente depois do login (que
+    // já passou por um fetch de rede) chega tarde demais: o "gesto" já
+    // expirou e o Safari simplesmente ignora o pedido, sem erro nenhum e
+    // sem popup — por isso o botão manual "Ativar Notificações" existe
+    // (toque nele = gesto novo, chega aqui sem nenhum await no meio).
     const permissao = await Notification.requestPermission();
+    if (typeof window.atualizarBotaoAtivarNotificacoes === 'function') window.atualizarBotaoAtivarNotificacoes();
     if (permissao !== "granted") {
         console.warn("⚠️ Usuário não concedeu permissão de notificação.");
         return false;
@@ -1012,6 +1024,21 @@ function renderPainelDevTeste() {
 window.ativarPainelDevSeAutorizado = ativarPainelDevSeAutorizado;
 window.renderPainelDevTeste = renderPainelDevTeste;
 
+// 🆕 Mostra/esconde o botão manual "Ativar Notificações" — só aparece
+// quando faz sentido (navegador suporta, ainda não foi concedido, tem
+// alguém logado e não é visitante). Some sozinho depois que a pessoa
+// concede (ou nega) a permissão.
+function atualizarBotaoAtivarNotificacoes() {
+    const btn = document.getElementById("btn-ativar-notificacoes");
+    if (!btn) return;
+    const suportado = ("Notification" in window) && ("serviceWorker" in navigator) && ("PushManager" in window);
+    const jaDecidido = suportado && Notification.permission !== "default";
+    const visitante = !!(OPERADOR_LOGADO && OPERADOR_LOGADO.visitante);
+    const mostrar = suportado && !jaDecidido && !visitante && !!OPERADOR_LOGADO;
+    btn.classList.toggle("hidden", !mostrar);
+}
+window.atualizarBotaoAtivarNotificacoes = atualizarBotaoAtivarNotificacoes;
+
 function atualizarInterfaceUsuario() {
     const nomeEl = document.getElementById("nome-operador-logado");
     const badgeEl = document.getElementById("badge-cargo-operador");
@@ -1026,6 +1053,7 @@ function atualizarInterfaceUsuario() {
         ativarPainelDevSeAutorizado();
         ativarAuditoriaSeAutorizado();
         ativarCentralNotificacoesSeAutorizado();
+        atualizarBotaoAtivarNotificacoes();
         return;
     }
 
@@ -1044,6 +1072,7 @@ function atualizarInterfaceUsuario() {
         ativarPainelDevSeAutorizado();
         ativarAuditoriaSeAutorizado();
         ativarCentralNotificacoesSeAutorizado();
+        atualizarBotaoAtivarNotificacoes();
         return;
     }
 
@@ -1068,6 +1097,7 @@ function atualizarInterfaceUsuario() {
     ativarPainelDevSeAutorizado();
     ativarAuditoriaSeAutorizado();
     ativarCentralNotificacoesSeAutorizado();
+    atualizarBotaoAtivarNotificacoes();
     aplicarRestricaoNavTecnico();
 }
 
