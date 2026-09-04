@@ -3786,16 +3786,24 @@ window.renderRegistroRecenteCompleto = async function() {
         }).join('');
     };
 
-    // Mostra o que já tem local na hora, e substitui pela lista oficial
-    // do servidor assim que a busca voltar.
-    lista.innerHTML = montarItens((HISTORICO_ACOES || []).slice(0, 50));
+    // 🔧 CORREÇÃO ("fica mudando sozinho, mesma aba, sem eu mexer"):
+    // antes mostrava o HISTORICO_ACOES local (formato de data dd/mm/aaaa)
+    // e, pouco depois, TROCAVA pela lista do servidor (formato
+    // aaaa-mm-dd) — dois formatos e duas ordens diferentes brigando na
+    // tela. Pior: essa função é chamada de novo toda vez que QUALQUER
+    // evento acontece no app inteiro (renderizarFeedAtividadeRecente),
+    // não só quando esta aba está em uso — então a lista "piscava"
+    // sozinha em segundo plano. Agora só renderiza uma vez, direto do
+    // servidor (fonte única de verdade); local só entra como fallback
+    // se a busca falhar de verdade (sem internet).
+    lista.innerHTML = `<li class="text-muted" style="text-align:center; padding: 10px 0;">Carregando...</li>`;
 
     try {
         const apiBase = await resolverApiBase();
         const resp = await fetch(`${apiBase}/api/historico_eventos?limite=50`, { cache: 'no-store' });
-        if (!resp.ok) return;
+        if (!resp.ok) throw new Error('Resposta não-ok do servidor');
         const eventos = await resp.json();
-        if (!Array.isArray(eventos)) return;
+        if (!Array.isArray(eventos)) throw new Error('Formato inesperado');
 
         const itensServidor = eventos.map(e => ({
             data: e.data_hora || '',
@@ -3805,7 +3813,8 @@ window.renderRegistroRecenteCompleto = async function() {
         }));
         lista.innerHTML = montarItens(itensServidor);
     } catch (e) {
-        console.error('⚠️ Não consegui buscar o Registro Recente completo do servidor (mantendo o que tinha local):', e);
+        console.error('⚠️ Não consegui buscar o Registro Recente completo do servidor — usando o que tinha local:', e);
+        lista.innerHTML = montarItens((HISTORICO_ACOES || []).slice(0, 50));
     }
 };
 
