@@ -3393,6 +3393,51 @@ h1, h2, h3, h4, h5, h6 {
     opacity: 0.92;
 }
 
+/* 🆕 Item da Central de Notificações (ocorrências/OS) — ícone redondo +
+   accent lateral na cor do item, pra não ficar só texto puro encostado
+   um no outro (era o que deixava a lista "estranha" antes). */
+.notificacoes-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 12px 10px;
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--item-cor, var(--border-color));
+    background: var(--bg-card);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+.notificacoes-item:last-child {
+    margin-bottom: 0;
+}
+.notificacoes-item:hover {
+    transform: translateX(2px);
+    box-shadow: var(--shadow-hover);
+}
+.notificacoes-item-icone {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+}
+.notificacoes-item-corpo {
+    flex: 1;
+    min-width: 0;
+}
+.notificacoes-item-topo {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+}
+
 /* ---- Toggle "Vinculada a Equipamento" / "Tarefa Avulsa" ----
    No desktop fica lado a lado normal (herdado de .mcc-filter-group);
    no celular vira dois botões de largura igual, mais fácil de acertar
