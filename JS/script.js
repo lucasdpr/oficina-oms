@@ -7194,6 +7194,11 @@ window.renderizarListaOcorrencias = function() {
 const AREAS_NOTIFICACAO_EXTRAS = [
     { chave: 'rolos', nome: 'Estoque de Rolos', icone: 'fa-scroll', cor: '#22d3ee' },
     { chave: 'hidraulica-estoque', nome: 'Hidráulica (Estoque)', icone: 'fa-oil-can', cor: '#0ea5e9' },
+    // 🆕 Sinótico 3D (ocorrência em mancal) e Qualidade (achado
+    // pendente) — geram notificação mas não são área de reparo da
+    // Central de Áreas, então entram aqui pra não caírem em "Outros".
+    { chave: 'sinotico-3d', nome: 'Sinótico 3D', icone: 'fa-cube', cor: '#22d3ee' },
+    { chave: 'qualidade', nome: 'Qualidade', icone: 'fa-magnifying-glass', cor: '#a78bfa' },
 ];
 
 // Nome legível de uma área (chave -> nome de AREAS_OFICINA ou das
@@ -7792,6 +7797,8 @@ function renderizarGradeNotificacoes(atividades, feed) {
     // que perdeu dado que nunca chegou a sumir de verdade.
     if (atividades === null) {
         container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0; color:var(--warning);">⚠️ Não foi possível verificar as áreas agora (falha ao consultar o servidor). Toque em "Atualizar" pra tentar de novo.</div>`;
+        const resumoErro = document.getElementById('notificacoes-resumo');
+        if (resumoErro) resumoErro.innerHTML = '';
         return;
     }
 
@@ -7842,6 +7849,28 @@ function renderizarGradeNotificacoes(atividades, feed) {
     }
 
     cards.sort((x, y) => (PESO_STATUS[x.status.label] ?? 9) - (PESO_STATUS[y.status.label] ?? 9));
+
+    // 🆕 Resumo no topo — visão de supervisor/ADM sem contar card por
+    // card: quantas áreas em cada status, e total de notificações não
+    // vistas (por qualquer matrícula ADM, já que a marcação é pessoal).
+    const resumoEl = document.getElementById('notificacoes-resumo');
+    if (resumoEl) {
+        const porStatus = { 'Crítico': 0, 'Restrição': 0, 'Atenção': 0 };
+        let naoLidasTotal = 0;
+        for (const { status: s, contagem } of cards) {
+            if (s.label in porStatus) porStatus[s.label]++;
+            naoLidasTotal += contagem.naoLidas;
+        }
+        const pill = (emoji, label, valor, cor) => valor > 0
+            ? `<span style="display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:20px; background:${cor}22; color:${cor}; font-size:12px; font-weight:600;">${emoji} ${valor} ${label}</span>`
+            : '';
+        resumoEl.innerHTML = [
+            pill('🔴', porStatus['Crítico'] === 1 ? 'área crítica' : 'áreas críticas', porStatus['Crítico'], 'var(--danger)'),
+            pill('🟠', 'em restrição', porStatus['Restrição'], 'var(--limit)'),
+            pill('🟡', 'em atenção', porStatus['Atenção'], 'var(--warning)'),
+            pill('🔵', naoLidasTotal === 1 ? 'notificação não vista' : 'notificações não vistas', naoLidasTotal, 'var(--text-accent)'),
+        ].join('') || `<span class="text-muted" style="font-size:12px;">🟢 Tudo normal — nenhuma área precisa de atenção agora.</span>`;
+    }
 
     container.innerHTML = `
         <div class="oficina-grade">
@@ -7909,13 +7938,24 @@ window.irParaTelaDaAreaNotificacao = function() {
     if (chave === 'hidraulica-estoque') {
         window.abrirAba(null, 'aba-hidraulica');
         document.getElementById('nav-hidraulica')?.classList.add('active');
+        return;
+    }
+    if (chave === 'qualidade') {
+        window.abrirAba(null, 'aba-qualidade');
+        document.getElementById('nav-qualidade')?.classList.add('active');
+        return;
+    }
+    if (chave === 'sinotico-3d') {
+        // Sinótico 3D é uma página própria (não uma aba interna) — abre
+        // em nova guia, igual ao link da sidebar.
+        window.open('Sinotico3d.html', '_blank');
     }
 };
 
 // Ícone por tipo de item do feed unificado — tipo='evento' cobre tanto
 // Ocorrência (categoria Intervenção/Melhoria/...) quanto Auditoria geral
 // (ex: rolo travado no Sinótico 3D), que antes nunca aparecia aqui.
-const ICONE_POR_TIPO_NOTIFICACAO = { os: '📄', achado: '🔍', evento: '📋' };
+const ICONE_POR_TIPO_NOTIFICACAO = { os: '📄', achado: '🔍', evento: '📋', estoque: '📦', sinotico: '🧊' };
 
 // 🔧 CORREÇÃO ("mostra os antigos, não quero isso"): não lido aparece
 // sempre (é exatamente o que a pessoa ainda não viu, não importa a
@@ -7956,6 +7996,17 @@ window.abrirItemNotificacao = async function(tipo, eventoId, referencia) {
         window.irParaOcorrenciaEspecifica(referencia);
     } else if (tipo === 'achado') {
         window.irParaAchadoEspecifico(referencia);
+    } else if (tipo === 'sinotico') {
+        window.open('Sinotico3d.html', '_blank');
+    } else if (tipo === 'estoque') {
+        // referencia é "ESTOQUE-ROLOS" ou "ESTOQUE-HIDRAULICA".
+        if (referencia === 'ESTOQUE-ROLOS') {
+            window.abrirAba(null, 'aba-rolos');
+            document.getElementById('nav-rolos')?.classList.add('active');
+        } else {
+            window.abrirAba(null, 'aba-hidraulica');
+            document.getElementById('nav-hidraulica')?.classList.add('active');
+        }
     } else {
         window.carregarCentralNotificacoes();
     }
