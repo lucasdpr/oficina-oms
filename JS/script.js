@@ -7853,7 +7853,7 @@ function renderizarFeedNotificacoes(feed) {
         return;
     }
 
-    container.innerHTML = visiveis.map(item => {
+    const renderItem = (item) => {
         const naoLida = !item.lida;
         const icone = ICONE_POR_TIPO_NOTIFICACAO[item.tipo] || '📋';
         const cor = naoLida ? 'var(--danger)' : 'var(--border-color)';
@@ -7870,7 +7870,41 @@ function renderizarFeedNotificacoes(feed) {
                     <span style="font-size:10.5px; color:var(--text-muted);">${item.data_hora || ''}</span>
                 </div>
                 <div class="notificacoes-item-linha">${item.descricao || ''}</div>
-                <div style="font-size:10.5px; color:var(--text-accent);">${item.autor || 'Sistema'}${item.area ? ` · ${nomeAreaOficina(item.area)}` : ''}</div>
+                <div style="font-size:10.5px; color:var(--text-accent);">${item.autor || 'Sistema'}</div>
+            </div>
+        </div>
+        `;
+    };
+
+    // 🆕 "não quero um embaixo do outro, separadinho" — agrupa por área
+    // em vez de uma lista corrida só. Cada área com notificação vira um
+    // bloco próprio (com sua contagem de não lidas), na ordem: quem tem
+    // não lida primeiro, depois quem só tem lida recente. Item sem área
+    // (achado, por enquanto) cai num grupo "Outros" ao final.
+    const grupos = new Map(); // chave da área (ou '__sem_area__') -> itens
+    for (const item of visiveis) {
+        const chave = item.area || '__sem_area__';
+        if (!grupos.has(chave)) grupos.set(chave, []);
+        grupos.get(chave).push(item);
+    }
+
+    const gruposOrdenados = [...grupos.entries()].sort((a, b) => {
+        const naoLidoA = a[1].some(i => !i.lida) ? 0 : 1;
+        const naoLidoB = b[1].some(i => !i.lida) ? 0 : 1;
+        return naoLidoA - naoLidoB;
+    });
+
+    container.innerHTML = gruposOrdenados.map(([chave, itens]) => {
+        const nome = chave === '__sem_area__' ? 'Outros' : nomeAreaOficina(chave);
+        const naoLidasGrupo = itens.filter(i => !i.lida).length;
+        return `
+        <div class="notificacoes-grupo-area">
+            <div class="notificacoes-grupo-area-titulo">
+                <span>${nome}</span>
+                ${naoLidasGrupo > 0 ? `<span class="notificacoes-grupo-area-badge">${naoLidasGrupo} não lida${naoLidasGrupo > 1 ? 's' : ''}</span>` : ''}
+            </div>
+            <div class="notificacoes-grupo-area-itens">
+                ${itens.map(renderItem).join('')}
             </div>
         </div>
         `;
