@@ -932,6 +932,8 @@ function operadorEhSupervisorOuAdm() {
 }
 window.operadorEhSupervisorOuAdm = operadorEhSupervisorOuAdm;
 
+let TIMER_BADGE_NOTIFICACOES_GLOBAL = null;
+
 function ativarCentralNotificacoesSeAutorizado() {
     const link = document.getElementById("nav-notificacoes");
     if (!link) return;
@@ -940,6 +942,18 @@ function ativarCentralNotificacoesSeAutorizado() {
 
     if (autorizado) {
         link.classList.remove("hidden");
+        // 🆕 Atualiza o número no sininho mesmo com a Central fechada —
+        // dá pra ver que tem coisa nova sem precisar abrir a aba. Chamado
+        // de novo a cada login/refresh de interface; o polling contínuo
+        // (a cada 2 min) é armado uma vez logo abaixo.
+        if (typeof window.atualizarBadgeNotificacoesNaoLidas === 'function') window.atualizarBadgeNotificacoesNaoLidas();
+        if (!TIMER_BADGE_NOTIFICACOES_GLOBAL) {
+            TIMER_BADGE_NOTIFICACOES_GLOBAL = setInterval(() => {
+                if (operadorEhSupervisorOuAdm() && typeof window.atualizarBadgeNotificacoesNaoLidas === 'function') {
+                    window.atualizarBadgeNotificacoesNaoLidas();
+                }
+            }, 120000);
+        }
     } else {
         link.classList.add("hidden");
         if (typeof window.pararPollingCentralNotificacoes === 'function') window.pararPollingCentralNotificacoes();
@@ -7591,18 +7605,51 @@ window.pararPollingCentralNotificacoes = function() {
     }
 };
 
+// 🆕 Feed unificado (evento de Auditoria + OS em aberto + achado de
+// Qualidade pendente), com lido/não-lido POR MATRÍCULA vindo pronto do
+// backend (/api/notificacoes/feed) — nada de "lido" calculado no
+// cliente, senão cada aba/dispositivo teria sua própria ideia do que
+// já foi visto.
+window.carregarFeedNotificacoes = async function() {
+    if (!OPERADOR_LOGADO || !OPERADOR_LOGADO.matricula) return [];
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/notificacoes/feed?matricula=${encodeURIComponent(OPERADOR_LOGADO.matricula)}&limite=30`, { cache: 'no-store' });
+        const feed = resp.ok ? await resp.json() : [];
+        return Array.isArray(feed) ? feed : [];
+    } catch (e) {
+        console.error('⚠️ Erro ao carregar feed de notificações:', e);
+        return [];
+    }
+};
+
+// Atualiza o número no sininho do menu lateral — chamado depois do
+// login e sempre que o feed é recarregado, mesmo com a Central
+// fechada, pra dar pra ver que tem coisa nova sem precisar abrir.
+window.atualizarBadgeNotificacoesNaoLidas = async function() {
+    const badge = document.getElementById('badge-notificacoes-nao-lidas');
+    if (!badge) return;
+    if (!operadorEhSupervisorOuAdm()) { badge.classList.add('hidden'); return; }
+    const feed = await window.carregarFeedNotificacoes();
+    const naoLidas = feed.filter(item => !item.lida).length;
+    if (naoLidas > 0) {
+        badge.innerText = naoLidas > 99 ? '99+' : String(naoLidas);
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+};
+
 window.carregarCentralNotificacoes = async function() {
     try {
         const apiBase = await resolverApiBase();
-        const [atividades, ocorrencias, ordens] = await Promise.all([
+        const [atividades, feed] = await Promise.all([
             fetch(`${apiBase}/api/oficina/atividades`, { cache: 'no-store' }).then(r => r.ok ? r.json() : []).catch(() => []),
-            fetch(`${apiBase}/api/registros_ocorrencia`, { cache: 'no-store' }).then(r => r.ok ? r.json() : []).catch(() => []),
-            fetch(`${apiBase}/api/ordens_servico`, { cache: 'no-store' }).then(r => r.ok ? r.json() : []).catch(() => []),
+            window.carregarFeedNotificacoes(),
         ]);
 
-        renderizarAreasNotificacoes(Array.isArray(atividades) ? atividades : []);
-        renderizarOcorrenciasNotificacoes(Array.isArray(ocorrencias) ? ocorrencias : []);
-        renderizarOsNotificacoes(Array.isArray(ordens) ? ordens : []);
+        renderizarAreasNotificacoes(Array.isArray(atividades) ? atividades : [], feed);
+        renderizarFeedNotificacoes(feed);
 
         const marcador = document.getElementById('notificacoes-ultima-atualizacao');
         if (marcador) marcador.innerText = `Atualizado às ${new Date().toLocaleTimeString('pt-BR')}`;
@@ -7646,9 +7693,16 @@ window.irParaOsEspecifica = async function(termoBusca) {
     if (typeof window.buscarOrdensServico === 'function') window.buscarOrdensServico(termoBusca || '');
 };
 
-function renderizarAreasNotificacoes(atividades) {
+function renderizarAreasNotificacoes(atividades, feed) {
     const container = document.getElementById('notificacoes-areas-container');
     if (!container) return;
+
+    // 🆕 Áreas que têm pelo menos 1 item não lido no feed (ocorrência,
+    // OS, evento) ganham um selo "Novo" — sinaliza que "aquela área
+    // sofreu ação" mesmo sem estar Crítica/em Restrição.
+    const areasComNaoLido = new Set(
+        (feed || []).filter(item => !item.lida && item.area).map(item => item.area)
+    );
 
     const ORDEM_STATUS = { 'Crítico': 0, 'Restrição': 1, 'Atenção': 2 };
 
@@ -7660,16 +7714,18 @@ function renderizarAreasNotificacoes(atividades) {
             const andamento = doArea.filter(x => x.status === 'Em Andamento').length;
             const atrasadas = doArea.filter(x => atividadeEstaAtrasada(x)).length;
             const emAberto = pendentes + andamento;
+            const temNaoLido = areasComNaoLido.has(a.chave);
 
             let status = null;
             if (atrasadas > 0) status = { emoji: '🔴', label: 'Crítico', cor: 'var(--danger)' };
             else if (emAberto >= 5) status = { emoji: '🟠', label: 'Restrição', cor: 'var(--limit)' };
             else if (emAberto >= 1) status = { emoji: '🟡', label: 'Atenção', cor: 'var(--warning)' };
+            else if (temNaoLido) status = { emoji: '🔵', label: 'Novo', cor: 'var(--text-accent)' };
 
-            return { area: a, status, pendentes, andamento, atrasadas };
+            return { area: a, status, pendentes, andamento, atrasadas, temNaoLido };
         })
         .filter(v => v.status)
-        .sort((x, y) => ORDEM_STATUS[x.status.label] - ORDEM_STATUS[y.status.label]);
+        .sort((x, y) => (x.temNaoLido === y.temNaoLido ? 0 : x.temNaoLido ? -1 : 1) || (ORDEM_STATUS[x.status.label] ?? 9) - (ORDEM_STATUS[y.status.label] ?? 9));
 
     if (areas.length === 0) {
         container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">✅ Nenhuma área precisa de atenção agora.</div>`;
@@ -7682,8 +7738,9 @@ function renderizarAreasNotificacoes(atividades) {
     // uma unidade visualmente separada da vizinha, igual o resto do app.
     container.innerHTML = `
         <div class="oficina-grade">
-            ${areas.map(({ area: a, status: s, pendentes, andamento, atrasadas }) => `
-                <div class="oficina-area-card" style="--area-color:${a.cor};" onclick="window.irParaAreaOficinaViaNotificacao('${a.chave}')">
+            ${areas.map(({ area: a, status: s, pendentes, andamento, atrasadas, temNaoLido }) => `
+                <div class="oficina-area-card" style="--area-color:${a.cor}; position:relative;" onclick="window.irParaAreaOficinaViaNotificacao('${a.chave}')">
+                    ${temNaoLido ? `<span style="position:absolute; top:8px; right:8px; width:9px; height:9px; border-radius:50%; background:var(--danger); box-shadow:0 0 0 2px var(--bg-card);" title="Tem novidade não vista"></span>` : ''}
                     <div class="oficina-area-topo">
                         <div class="oficina-area-icone" style="color:${a.cor};"><i class="fas ${a.icone}"></i></div>
                         <span class="oficina-area-status-badge" style="color:${s.cor};">${s.emoji} ${s.label}</span>
@@ -7701,23 +7758,18 @@ function renderizarAreasNotificacoes(atividades) {
     `;
 }
 
-// Mesmo emoji por categoria já usado nos botões de filtro da aba
-// "Registro de Ocorrência" — reaproveitado aqui pra dar um ícone
-// reconhecível a cada item, em vez de só texto puro.
-const ICONE_CATEGORIA_OCORRENCIA = {
-    'Intervenção': '🔧',
-    'Melhoria': '✨',
-    'Comentário': '💬',
-    'Atividade Pendente': '⏳',
-};
+// Ícone por tipo de item do feed unificado — tipo='evento' cobre tanto
+// Ocorrência (categoria Intervenção/Melhoria/...) quanto Auditoria geral
+// (ex: rolo travado no Sinótico 3D), que antes nunca aparecia aqui.
+const ICONE_POR_TIPO_NOTIFICACAO = { os: '📄', achado: '🔍', evento: '📋' };
 
-// 🔧 CORREÇÃO ("mostra os antigos, não quero isso"): antes só pegava os
-// N mais recentes SEM olhar a data — se não tivesse nada novo, mostrava
-// registro de semanas atrás igual fosse notificação do momento. Agora
-// só entra quem aconteceu dentro da janela abaixo; sem nada dentro
-// dela, mostra "nada recente" em vez de cavar o histórico antigo.
+// 🔧 CORREÇÃO ("mostra os antigos, não quero isso"): não lido aparece
+// sempre (é exatamente o que a pessoa ainda não viu, não importa a
+// idade); já lido só aparece se for recente — assim a lista não fica
+// eternamente entulhada de coisa antiga só porque ninguém marcou como
+// vista, mas também não esconde nada novo.
 const DIAS_RECENCIA_NOTIFICACOES = 3;
-const MAX_ITENS_NOTIFICACOES = 5;
+const MAX_ITENS_NOTIFICACOES = 10;
 
 function dataDentroDaJanelaRecente(dataHoraStr) {
     if (!dataHoraStr) return false;
@@ -7727,58 +7779,69 @@ function dataDentroDaJanelaRecente(dataHoraStr) {
     return diffMs >= 0 && diffMs <= DIAS_RECENCIA_NOTIFICACOES * 24 * 60 * 60 * 1000;
 }
 
-function renderizarOcorrenciasNotificacoes(ocorrencias) {
-    const container = document.getElementById('notificacoes-ocorrencias-container');
-    if (!container) return;
-
-    // já vêm do backend ordenadas da mais nova pra mais antiga
-    const recentes = ocorrencias.filter(r => dataDentroDaJanelaRecente(r.data_hora)).slice(0, MAX_ITENS_NOTIFICACOES);
-    if (recentes.length === 0) {
-        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:14px 0;">Nenhuma ocorrência nos últimos ${DIAS_RECENCIA_NOTIFICACOES} dias.</div>`;
-        return;
+// Clique num item do feed: marca como lido PRA ESSA MATRÍCULA (não
+// afeta o que outras pessoas já viram) e navega pro lugar certo —
+// Ocorrência/OS têm tela própria; achado e evento de auditoria não têm
+// uma tela dedicada de "ver este item", então só marca como visto.
+window.abrirItemNotificacao = async function(tipo, eventoId, referencia) {
+    try {
+        if (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula) {
+            const apiBase = await resolverApiBase();
+            await fetch(`${apiBase}/api/notificacoes/marcar_lido`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tipo, evento_id: String(eventoId), matricula: OPERADOR_LOGADO.matricula })
+            });
+        }
+    } catch (e) {
+        console.error('⚠️ Erro ao marcar notificação como lida:', e);
     }
 
-    container.innerHTML = recentes.map(r => `
-        <div class="notificacoes-item" onclick="window.irParaOcorrenciaEspecifica('${(r.peca_id || '').replace(/'/g, "\\'")}')">
-            <div class="notificacoes-item-icone">${ICONE_CATEGORIA_OCORRENCIA[r.categoria] || '📋'}</div>
-            <div class="notificacoes-item-corpo">
-                <div class="notificacoes-item-topo">
-                    <span class="font-code" style="font-weight:700; color:var(--text-heading);">${r.peca_id || '-'}</span>
-                    <span style="font-size:10.5px; color:var(--text-muted);">${r.data_hora || ''}</span>
-                </div>
-                <div class="notificacoes-item-linha">${r.acao || ''}</div>
-                <div style="font-size:10.5px; color:var(--text-accent);">${r.operador || 'Sistema'} · ${r.categoria || ''}${r.area ? ` · ${nomeAreaOficina(r.area)}` : ''}</div>
-            </div>
-        </div>
-    `).join('');
-}
+    if (tipo === 'os') {
+        window.irParaOsEspecifica(referencia);
+    } else if (tipo === 'evento') {
+        window.irParaOcorrenciaEspecifica(referencia);
+    } else {
+        // achado (sem tela dedicada) — só atualiza o feed pra sumir o "não lido"
+        window.carregarCentralNotificacoes();
+    }
+};
 
-function renderizarOsNotificacoes(ordens) {
-    const container = document.getElementById('notificacoes-os-container');
+function renderizarFeedNotificacoes(feed) {
+    const container = document.getElementById('notificacoes-feed-container');
+    const contagemEl = document.getElementById('notificacoes-contagem-nao-lidas');
     if (!container) return;
 
-    const abertas = ordens
-        .filter(os => os.status !== 'Concluído' && dataDentroDaJanelaRecente(os.criado_em))
+    const naoLidas = feed.filter(item => !item.lida).length;
+    if (contagemEl) contagemEl.innerText = naoLidas > 0 ? `${naoLidas} não lida${naoLidas > 1 ? 's' : ''}` : 'tudo em dia ✅';
+
+    const visiveis = feed
+        .filter(item => !item.lida || dataDentroDaJanelaRecente(item.data_hora))
         .slice(0, MAX_ITENS_NOTIFICACOES);
-    if (abertas.length === 0) {
-        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:14px 0;">✅ Nenhuma OS aberta nos últimos ${DIAS_RECENCIA_NOTIFICACOES} dias.</div>`;
+
+    if (visiveis.length === 0) {
+        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">✅ Nada de novo — sem atividade nos últimos ${DIAS_RECENCIA_NOTIFICACOES} dias.</div>`;
         return;
     }
 
-    container.innerHTML = abertas.map(os => {
-        const naoExecutada = os.status === 'Não Executada';
-        const cor = naoExecutada ? 'var(--danger)' : 'var(--warning)';
-        const buscaAlvo = (os.numero_os || (os.descricao || '').slice(0, 20) || '').replace(/'/g, "\\'");
+    container.innerHTML = visiveis.map(item => {
+        const naoLida = !item.lida;
+        const icone = ICONE_POR_TIPO_NOTIFICACAO[item.tipo] || '📋';
+        const cor = naoLida ? 'var(--danger)' : 'var(--border-color)';
+        const referencia = item.tipo === 'os' ? (item.referencia || '') : item.referencia;
         return `
-        <div class="notificacoes-item" style="--item-cor:${cor};" onclick="window.irParaOsEspecifica('${buscaAlvo}')">
-            <div class="notificacoes-item-icone" style="color:${cor};">${naoExecutada ? '🚫' : '🔧'}</div>
+        <div class="notificacoes-item" style="--item-cor:${cor}; ${naoLida ? 'background:color-mix(in srgb, var(--danger) 6%, var(--bg-card));' : ''}"
+             onclick="window.abrirItemNotificacao('${item.tipo}', '${item.evento_id}', '${String(referencia || '').replace(/'/g, "\\'")}')">
+            <div class="notificacoes-item-icone" style="${naoLida ? 'color:var(--danger);' : ''}">${icone}</div>
             <div class="notificacoes-item-corpo">
                 <div class="notificacoes-item-topo">
-                    <span class="font-code" style="font-weight:700; color:var(--text-heading);">${os.numero_os ? `OS ${os.numero_os}` : `#${os.id}`}</span>
-                    <span style="font-size:10.5px; font-weight:700; color:${cor};">${os.status}</span>
+                    <span class="font-code" style="font-weight:700; color:var(--text-heading);">
+                        ${naoLida ? '<span style="color:var(--danger);">●</span> ' : ''}${item.referencia || '-'}
+                    </span>
+                    <span style="font-size:10.5px; color:var(--text-muted);">${item.data_hora || ''}</span>
                 </div>
-                ${os.descricao ? `<div class="notificacoes-item-linha">${os.descricao}</div>` : ''}
-                <div style="font-size:10.5px; color:var(--text-accent);">${os.criado_por || 'Sistema'} · ${os.criado_em || ''}${os.area ? ` · ${nomeAreaOficina(os.area)}` : ''}</div>
+                <div class="notificacoes-item-linha">${item.descricao || ''}</div>
+                <div style="font-size:10.5px; color:var(--text-accent);">${item.autor || 'Sistema'}${item.area ? ` · ${nomeAreaOficina(item.area)}` : ''}</div>
             </div>
         </div>
         `;
