@@ -7722,6 +7722,19 @@ window.irParaOsEspecifica = async function(termoBusca) {
     if (typeof window.buscarOrdensServico === 'function') window.buscarOrdensServico(termoBusca || '');
 };
 
+// Mesma ideia pra Achado de Qualidade — a lista de Qualidade é por
+// equipamento (não por achado individual), então filtra pela peça do
+// registro que tem o achado; a pessoa acha ele dentro do card.
+window.irParaAchadoEspecifico = async function(pecaId) {
+    window.abrirAba(null, 'aba-qualidade');
+    document.getElementById('nav-qualidade')?.classList.add('active');
+    document.getElementById('nav-notificacoes')?.classList.remove('active');
+    await window.carregarListaQualidade();
+    const input = document.getElementById('qualidade-busca');
+    if (input) input.value = pecaId || '';
+    if (typeof window.buscarQualidade === 'function') window.buscarQualidade(pecaId || '');
+};
+
 function renderizarAreasNotificacoes(atividades, feed) {
     const container = document.getElementById('notificacoes-areas-container');
     if (!container) return;
@@ -7809,9 +7822,8 @@ function dataDentroDaJanelaRecente(dataHoraStr) {
 }
 
 // Clique num item do feed: marca como lido PRA ESSA MATRÍCULA (não
-// afeta o que outras pessoas já viram) e navega pro lugar certo —
-// Ocorrência/OS têm tela própria; achado e evento de auditoria não têm
-// uma tela dedicada de "ver este item", então só marca como visto.
+// afeta o que outras pessoas já viram) e leva pra tela de onde aquilo
+// veio — cada tipo tem sua própria rota.
 window.abrirItemNotificacao = async function(tipo, eventoId, referencia) {
     try {
         if (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula) {
@@ -7830,8 +7842,9 @@ window.abrirItemNotificacao = async function(tipo, eventoId, referencia) {
         window.irParaOsEspecifica(referencia);
     } else if (tipo === 'evento') {
         window.irParaOcorrenciaEspecifica(referencia);
+    } else if (tipo === 'achado') {
+        window.irParaAchadoEspecifico(referencia);
     } else {
-        // achado (sem tela dedicada) — só atualiza o feed pra sumir o "não lido"
         window.carregarCentralNotificacoes();
     }
 };
