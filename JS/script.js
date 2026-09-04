@@ -7583,9 +7583,9 @@ function renderizarAreasNotificacoes(atividades) {
             const emAberto = pendentes + andamento;
 
             let status = null;
-            if (atrasadas > 0) status = { emoji: '🔴', label: 'Crítico' };
-            else if (emAberto >= 5) status = { emoji: '🟠', label: 'Restrição' };
-            else if (emAberto >= 1) status = { emoji: '🟡', label: 'Atenção' };
+            if (atrasadas > 0) status = { emoji: '🔴', label: 'Crítico', cor: 'var(--danger)' };
+            else if (emAberto >= 5) status = { emoji: '🟠', label: 'Restrição', cor: 'var(--limit)' };
+            else if (emAberto >= 1) status = { emoji: '🟡', label: 'Atenção', cor: 'var(--warning)' };
 
             return { area: a, status, pendentes, andamento, atrasadas };
         })
@@ -7597,22 +7597,40 @@ function renderizarAreasNotificacoes(atividades) {
         return;
     }
 
-    container.innerHTML = areas.map(({ area: a, status: s, pendentes, andamento, atrasadas }) => `
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); cursor:pointer;"
-             onclick="window.irParaAreaOficinaViaNotificacao('${a.chave}')">
-            <div style="display:flex; align-items:center; gap:10px; min-width:0;">
-                <i class="fas ${a.icone}" style="color:${a.cor}; width:20px; text-align:center; flex-shrink:0;"></i>
-                <strong>${a.nome}</strong>
-            </div>
-            <div style="display:flex; align-items:center; gap:14px; font-size:12px; flex-shrink:0;">
-                <span>${s.emoji} ${s.label}</span>
-                <span title="Pendentes"><i class="fas fa-hourglass-half"></i> ${pendentes}</span>
-                <span title="Em andamento"><i class="fas fa-person-running"></i> ${andamento}</span>
-                ${atrasadas > 0 ? `<span style="color:var(--danger);" title="Atrasadas"><i class="fas fa-triangle-exclamation"></i> ${atrasadas}</span>` : ''}
-            </div>
+    // 🔧 Mesmo card (e mesma classe CSS) já usado na Central de Áreas —
+    // antes cada área era só uma linha de lista encostada na outra
+    // (parecia um bloco só de texto). Como card de grade, cada área vira
+    // uma unidade visualmente separada da vizinha, igual o resto do app.
+    container.innerHTML = `
+        <div class="oficina-grade">
+            ${areas.map(({ area: a, status: s, pendentes, andamento, atrasadas }) => `
+                <div class="oficina-area-card" style="--area-color:${a.cor};" onclick="window.irParaAreaOficinaViaNotificacao('${a.chave}')">
+                    <div class="oficina-area-topo">
+                        <div class="oficina-area-icone" style="color:${a.cor};"><i class="fas ${a.icone}"></i></div>
+                        <span class="oficina-area-status-badge" style="color:${s.cor};">${s.emoji} ${s.label}</span>
+                    </div>
+                    <h4>${a.nome}</h4>
+                    <div class="oficina-area-resumo">
+                        <span title="Pendentes"><i class="fas fa-hourglass-half"></i> ${pendentes}</span>
+                        <span title="Em andamento"><i class="fas fa-person-running"></i> ${andamento}</span>
+                        ${atrasadas > 0 ? `<span style="color:var(--danger);" title="Atrasadas"><i class="fas fa-triangle-exclamation"></i> ${atrasadas}</span>` : ''}
+                    </div>
+                    <button class="oficina-area-acessar" style="color:${a.cor};">Acessar Área <i class="fas fa-arrow-right"></i></button>
+                </div>
+            `).join('')}
         </div>
-    `).join('');
+    `;
 }
+
+// Mesmo emoji por categoria já usado nos botões de filtro da aba
+// "Registro de Ocorrência" — reaproveitado aqui pra dar um ícone
+// reconhecível a cada item, em vez de só texto puro.
+const ICONE_CATEGORIA_OCORRENCIA = {
+    'Intervenção': '🔧',
+    'Melhoria': '✨',
+    'Comentário': '💬',
+    'Atividade Pendente': '⏳',
+};
 
 function renderizarOcorrenciasNotificacoes(ocorrencias) {
     const container = document.getElementById('notificacoes-ocorrencias-container');
@@ -7625,14 +7643,16 @@ function renderizarOcorrenciasNotificacoes(ocorrencias) {
     }
 
     container.innerHTML = recentes.map(r => `
-        <div style="padding:10px 0; border-bottom:1px solid var(--border); cursor:pointer;"
-             onclick="window.irParaAbaViaNotificacao('aba-ocorrencia', 'nav-ocorrencia')">
-            <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-                <span class="font-code" style="font-weight:700; color:var(--text-heading);">${r.peca_id || '-'}</span>
-                <span style="font-size:11px; color:var(--text-muted);">${r.data_hora || ''}</span>
+        <div class="notificacoes-item" onclick="window.irParaAbaViaNotificacao('aba-ocorrencia', 'nav-ocorrencia')">
+            <div class="notificacoes-item-icone">${ICONE_CATEGORIA_OCORRENCIA[r.categoria] || '📋'}</div>
+            <div class="notificacoes-item-corpo">
+                <div class="notificacoes-item-topo">
+                    <span class="font-code" style="font-weight:700; color:var(--text-heading);">${r.peca_id || '-'}</span>
+                    <span style="font-size:11px; color:var(--text-muted);">${r.data_hora || ''}</span>
+                </div>
+                <div style="font-size:13px; color:var(--text-body);">${r.acao || ''}</div>
+                <div style="font-size:11px; color:var(--text-accent);">${r.operador || 'Sistema'} · ${r.categoria || ''}</div>
             </div>
-            <div style="font-size:13px; color:var(--text-body);">${r.acao || ''}</div>
-            <div style="font-size:11px; color:var(--text-accent);">${r.operador || 'Sistema'} · ${r.categoria || ''}</div>
         </div>
     `).join('');
 }
@@ -7649,15 +7669,18 @@ function renderizarOsNotificacoes(ordens) {
 
     container.innerHTML = abertas.map(os => {
         const naoExecutada = os.status === 'Não Executada';
+        const cor = naoExecutada ? 'var(--danger)' : 'var(--warning)';
         return `
-        <div style="padding:10px 0; border-bottom:1px solid var(--border); cursor:pointer;"
-             onclick="window.irParaAbaViaNotificacao('aba-ordens-servico', 'nav-ordens-servico')">
-            <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-                <span class="font-code" style="font-weight:700; color:var(--text-heading);">${os.numero_os ? `OS ${os.numero_os}` : `#${os.id}`}</span>
-                <span style="font-size:11px; font-weight:700; color:${naoExecutada ? 'var(--danger)' : 'var(--warning)'};">${naoExecutada ? '🚫' : '🔧'} ${os.status}</span>
+        <div class="notificacoes-item" style="--item-cor:${cor};" onclick="window.irParaAbaViaNotificacao('aba-ordens-servico', 'nav-ordens-servico')">
+            <div class="notificacoes-item-icone" style="color:${cor};">${naoExecutada ? '🚫' : '🔧'}</div>
+            <div class="notificacoes-item-corpo">
+                <div class="notificacoes-item-topo">
+                    <span class="font-code" style="font-weight:700; color:var(--text-heading);">${os.numero_os ? `OS ${os.numero_os}` : `#${os.id}`}</span>
+                    <span style="font-size:11px; font-weight:700; color:${cor};">${os.status}</span>
+                </div>
+                ${os.descricao ? `<div style="font-size:13px; color:var(--text-body);">${os.descricao}</div>` : ''}
+                <div style="font-size:11px; color:var(--text-accent);">${os.criado_por || 'Sistema'} · ${os.criado_em || ''}</div>
             </div>
-            ${os.descricao ? `<div style="font-size:13px; color:var(--text-body);">${os.descricao}</div>` : ''}
-            <div style="font-size:11px; color:var(--text-accent);">${os.criado_por || 'Sistema'} · ${os.criado_em || ''}</div>
         </div>
         `;
     }).join('');
