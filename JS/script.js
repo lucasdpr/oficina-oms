@@ -7688,13 +7688,21 @@ window.carregarFeedNotificacoes = async function() {
 };
 
 // Atualiza o número no sininho do menu lateral — chamado depois do
-// login e sempre que o feed é recarregado, mesmo com a Central
-// fechada, pra dar pra ver que tem coisa nova sem precisar abrir.
-window.atualizarBadgeNotificacoesNaoLidas = async function() {
+// login, pelo timer global de 2 min (mesmo com a Central fechada), e
+// agora também toda vez que a própria Central busca o feed (ver
+// carregarCentralNotificacoes) ou marca algo como lido (ver
+// abrirItemNotificacao/marcarTodasLidasDaArea) — 🐛 CORREÇÃO: antes só
+// o timer de 2 min mexia nele, então ler tudo dentro da Central e
+// fechar a aba deixava o número errado (alto) piscando na barra lateral
+// por até 2 minutos.
+// `feedPronto` é opcional: quando quem chama já tem o feed em mãos (a
+// Central acabou de buscar), evita um fetch duplicado — passe undefined
+// pra buscar do zero (uso original, fora da Central).
+window.atualizarBadgeNotificacoesNaoLidas = async function(feedPronto) {
     const badge = document.getElementById('badge-notificacoes-nao-lidas');
     if (!badge) return;
     if (!operadorEhSupervisorOuAdm()) { badge.classList.add('hidden'); return; }
-    const feed = await window.carregarFeedNotificacoes();
+    const feed = feedPronto !== undefined ? feedPronto : await window.carregarFeedNotificacoes();
     // `null` = a busca falhou — mantém o sino como já estava (não dá
     // pra saber se tem novidade ou não) em vez de escondê-lo como se
     // tivesse zero, e sem quebrar num "null.filter".
@@ -7762,6 +7770,12 @@ window.carregarCentralNotificacoes = async function() {
         NOTIF_ATIVIDADES_CACHE = Array.isArray(atividades) ? atividades : [];
         NOTIF_ULTIMO_FETCH_FALHOU = !Array.isArray(atividades) || !Array.isArray(feed);
         renderizarGradeNotificacoes(Array.isArray(atividades) ? atividades : null, Array.isArray(feed) ? feed : null);
+        // 🐛 CORREÇÃO: mantém o sino da barra lateral em dia sempre que a
+        // Central busca o feed (reaproveita o que já veio, sem outro
+        // fetch) — antes só o timer global de 2 min mexia nele, então
+        // marcar tudo como lido aqui dentro deixava o número errado
+        // piscando lá fora por um tempo.
+        if (typeof window.atualizarBadgeNotificacoesNaoLidas === 'function') window.atualizarBadgeNotificacoesNaoLidas(Array.isArray(feed) ? feed : null);
         // Se a pessoa já estiver dentro do detalhe de uma área, atualiza
         // ele também — sem isso, o polling de 30s só atualizaria a grade
         // por trás, e a lista de itens ficaria parada até voltar/entrar
@@ -8070,6 +8084,13 @@ window.abrirItemNotificacao = async function(tipo, eventoId, referencia) {
     } catch (e) {
         console.error('⚠️ Erro ao marcar notificação como lida:', e);
     }
+
+    // 🐛 CORREÇÃO: pros tipos abaixo que navegam pra FORA da Central
+    // (os/evento/achado/sinotico/estoque), carregarCentralNotificacoes()
+    // nunca era chamado de novo — então o sino da barra lateral só
+    // refletia essa leitura no próximo tick do timer de 2 min. Dispara
+    // sem esperar (a navegação não deve travar por isso).
+    if (typeof window.atualizarBadgeNotificacoesNaoLidas === 'function') window.atualizarBadgeNotificacoesNaoLidas();
 
     if (tipo === 'os') {
         window.irParaOsEspecifica(referencia);
