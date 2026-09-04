@@ -1131,7 +1131,25 @@
                      modo "detalhe" que mostra só as notificações
                      daquela área, com botão de voltar pra grade. -->
                 <div id="notificacoes-grade-painel" class="glass-panel" style="padding:24px;">
-                    <h3 style="font-size:1rem; margin-bottom:14px;"><i class="fas fa-industry"></i> Áreas</h3>
+                    <div class="flex-between" style="flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+                        <h3 style="font-size:1rem; margin:0;"><i class="fas fa-industry"></i> Áreas</h3>
+                    </div>
+                    <!-- 🆕 Busca + filtro por status, igual à Central de Áreas —
+                         com quase 20 áreas na grade, o gerente precisa achar
+                         "só o que tá crítico" sem rolar tudo. -->
+                    <div class="central-areas-toolbar" style="margin-bottom:16px;">
+                        <div class="login-input-wrapper" style="position:relative; flex:1; min-width:200px;">
+                            <input type="text" id="notificacoes-grade-busca" placeholder="Buscar área..." oninput="window.buscarGradeNotificacoes(this.value)" style="height:38px; border-radius:6px; padding-left:38px; width:100%;">
+                            <i class="fas fa-search login-input-icon" style="top:10px; font-size:13px; color:#a855f7;"></i>
+                        </div>
+                        <div class="mcc-filter-group" id="notificacoes-grade-filtros">
+                            <button class="btn-filter-mcc active" onclick="window.filtrarGradeNotificacoes('', this)">Todas</button>
+                            <button class="btn-filter-mcc" onclick="window.filtrarGradeNotificacoes('Crítico', this)">🔴 Crítico</button>
+                            <button class="btn-filter-mcc" onclick="window.filtrarGradeNotificacoes('Restrição', this)">🟠 Restrição</button>
+                            <button class="btn-filter-mcc" onclick="window.filtrarGradeNotificacoes('Atenção', this)">🟡 Atenção</button>
+                            <button class="btn-filter-mcc" onclick="window.filtrarGradeNotificacoes('Novo', this)">🔵 Novo</button>
+                        </div>
+                    </div>
                     <div id="notificacoes-grade-container">
                         <div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>
                     </div>
@@ -1146,6 +1164,12 @@
                         <div style="display:flex; align-items:center; gap:10px;">
                             <button id="notificacoes-detalhe-acessar" class="btn-premium hidden" onclick="window.irParaTelaDaAreaNotificacao()">
                                 Acessar Área <i class="fas fa-arrow-right"></i>
+                            </button>
+                            <!-- 🆕 Marca de uma vez tudo que essa matrícula ainda não
+                                 viu nessa área — sem isso, ter que abrir item por item
+                                 só pra "limpar" a área é chato quando tem muita coisa. -->
+                            <button id="notificacoes-detalhe-marcar-todas" class="btn-premium hidden" onclick="window.marcarTodasLidasDaArea()" style="font-size:12px; padding:6px 12px;">
+                                <i class="fas fa-check-double"></i> Marcar todas como lidas
                             </button>
                             <span id="notificacoes-contagem-nao-lidas" class="text-muted" style="font-size:12px;"></span>
                         </div>
