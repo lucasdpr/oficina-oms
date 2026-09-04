@@ -7700,6 +7700,14 @@ window.atualizarBadgeNotificacoesNaoLidas = async function() {
 // daquela área (ver abrirDetalheAreaNotificacao/fecharDetalhe...).
 let NOTIF_AREA_SELECIONADA = null;
 let NOTIF_FEED_CACHE = [];
+// 🔧 CORREÇÃO ("criei atividade, área ficou em Atenção mas o detalhe
+// não mostra nada"): o status do card (Crítico/Restrição/Atenção) vem
+// das ATIVIDADES em aberto da área (igual à Central de Áreas), mas o
+// detalhe só listava o feed de NOTIFICAÇÕES (Ocorrência/OS/Achado/
+// Estoque/Sinótico) — uma atividade nova não é nada disso, então o
+// card acendia "Atenção" e o detalhe abria vazio. Guarda as atividades
+// também pra poder mostrar as em aberto no detalhe.
+let NOTIF_ATIVIDADES_CACHE = [];
 
 window.carregarCentralNotificacoes = async function() {
     try {
@@ -7719,6 +7727,7 @@ window.carregarCentralNotificacoes = async function() {
         ]);
 
         NOTIF_FEED_CACHE = feed;
+        NOTIF_ATIVIDADES_CACHE = Array.isArray(atividades) ? atividades : [];
         renderizarGradeNotificacoes(Array.isArray(atividades) ? atividades : null, feed);
         // Se a pessoa já estiver dentro do detalhe de uma área, atualiza
         // ele também — sem isso, o polling de 30s só atualizaria a grade
@@ -8029,12 +8038,52 @@ function renderizarDetalheAreaNotificacao(chave) {
         .filter(item => !item.lida || dataDentroDaJanelaRecente(item.data_hora))
         .slice(0, MAX_ITENS_NOTIFICACOES);
 
-    if (visiveis.length === 0) {
+    // 🔧 Atividades em aberto da área (Pendente/Em Andamento) — é o que
+    // realmente define o status do card na grade (Crítico/Restrição/
+    // Atenção), então precisam aparecer aqui, senão o detalhe fica vazio
+    // mesmo quando o card avisou que tinha algo pra ver.
+    const atividadesArea = NOTIF_ATIVIDADES_CACHE
+        .filter(x => x.area === chave && x.status !== 'Concluído' && x.status !== 'Recusado' && !atividadeAindaNaoComecou(x))
+        .slice(0, MAX_ITENS_NOTIFICACOES);
+
+    if (visiveis.length === 0 && atividadesArea.length === 0) {
         container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">✅ Nada de novo nessa área nos últimos ${DIAS_RECENCIA_NOTIFICACOES} dias.</div>`;
         return;
     }
 
-    container.innerHTML = visiveis.map(renderItemNotificacao).join('');
+    const blocoAtividades = atividadesArea.length === 0 ? '' : `
+        <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--text-muted); margin:2px 0 8px;">
+            <i class="fas fa-clipboard-list"></i> Atividades em aberto (${atividadesArea.length})
+        </div>
+        ${atividadesArea.map(x => renderItemAtividadeNotificacao(x, chave)).join('')}
+        ${visiveis.length > 0 ? `<div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--text-muted); margin:16px 0 8px;"><i class="fas fa-bell"></i> Notificações</div>` : ''}
+    `;
+
+    container.innerHTML = blocoAtividades + visiveis.map(renderItemNotificacao).join('');
+}
+
+// Mesmo cartão visual do feed, mas pra uma atividade em aberto (não tem
+// tipo/evento_id/lida — vem de /api/oficina/atividades, não do feed
+// unificado). Clicar leva direto pra área de verdade, onde dá pra ver
+// e agir na atividade (a Central de Notificações não edita atividade).
+function renderItemAtividadeNotificacao(x, chave) {
+    const atrasada = atividadeEstaAtrasada(x);
+    const cor = atrasada ? 'var(--danger)' : (x.status === 'Em Andamento' ? 'var(--text-accent)' : 'var(--warning)');
+    return `
+    <div class="notificacoes-item" style="--item-cor:${cor};" onclick="window.irParaAreaOficinaViaNotificacao('${chave}')">
+        <div class="notificacoes-item-icone" style="color:${cor};">${atrasada ? '⏰' : '🔧'}</div>
+        <div class="notificacoes-item-corpo">
+            <div class="notificacoes-item-topo">
+                <span class="font-code" style="font-weight:700; color:var(--text-heading);">
+                    ${x.equipamento_id || '-'}
+                </span>
+                <span style="font-size:10.5px; color:${cor};">${atrasada ? 'Atrasada' : x.status}</span>
+            </div>
+            <div class="notificacoes-item-linha">${x.descricao || ''}</div>
+            <div style="font-size:10.5px; color:var(--text-accent);">${x.responsavel || 'Sem responsável'}</div>
+        </div>
+    </div>
+    `;
 }
 
 function renderItemNotificacao(item) {
