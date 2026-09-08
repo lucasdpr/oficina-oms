@@ -7634,10 +7634,14 @@ window.excluirOrdemServico = async function(id) {
 // (Central de Áreas, Ocorrência, OS) num feed único, lendo as mesmas
 // APIs — não duplica lógica nenhuma de negócio.
 // ==========================================
-const INTERVALO_POLLING_NOTIFICACOES_MS = 30000;
+// 🆕 10s (era 30s) — a lista agora reordena pela notificação mais nova
+// (ver renderizarGradeNotificacoes), então precisa reagir rápido: com
+// 30s de atraso, "subir a área que acabou de notificar" não parecia
+// tempo real de verdade.
+const INTERVALO_POLLING_NOTIFICACOES_MS = 10000;
 let TIMER_POLLING_NOTIFICACOES = null;
 
-// Enquanto a aba estiver aberta, atualiza sozinha a cada 30s. Se a
+// Enquanto a aba estiver aberta, atualiza sozinha a cada 10s. Se a
 // pessoa sair da aba (ou trocar de operador), o próprio timer se
 // desarma sozinho no próximo tick — não fica batendo no servidor à toa
 // com a aba em segundo plano.
@@ -7862,13 +7866,18 @@ function renderizarGradeNotificacoes(atividades, feed) {
         return;
     }
 
-    const contagemPorArea = new Map(); // chave (ou '__sem_area__') -> {total, naoLidas}
+    const contagemPorArea = new Map(); // chave (ou '__sem_area__') -> {total, naoLidas, ultimoTs}
     for (const item of feed) {
         const chave = item.area || '__sem_area__';
-        if (!contagemPorArea.has(chave)) contagemPorArea.set(chave, { total: 0, naoLidas: 0 });
+        if (!contagemPorArea.has(chave)) contagemPorArea.set(chave, { total: 0, naoLidas: 0, ultimoTs: 0 });
         const c = contagemPorArea.get(chave);
         c.total++;
         if (!item.lida) c.naoLidas++;
+        // 🆕 Guarda o horário da notificação mais recente da área — é isso
+        // que decide a ordem agora (chegou novidade, sobe na lista), não
+        // mais uma categoria fixa de severidade.
+        const ts = item.data_hora ? new Date(item.data_hora.replace(' ', 'T')).getTime() : 0;
+        if (ts > c.ultimoTs) c.ultimoTs = ts;
     }
 
     const todasAreas = [
@@ -7890,7 +7899,7 @@ function renderizarGradeNotificacoes(atividades, feed) {
         const andamento = doArea.filter(x => x.status === 'Em Andamento').length;
         const atrasadas = doArea.filter(x => atividadeEstaAtrasada(x)).length;
         const emAberto = pendentes + andamento;
-        const contagem = contagemPorArea.get(a.chave) || { total: 0, naoLidas: 0 };
+        const contagem = contagemPorArea.get(a.chave) || { total: 0, naoLidas: 0, ultimoTs: 0 };
 
         let status;
         if (atrasadas > 0) status = { emoji: '🔴', label: 'Crítico', cor: 'var(--danger)' };
@@ -7914,7 +7923,15 @@ function renderizarGradeNotificacoes(atividades, feed) {
         });
     }
 
-    cards.sort((x, y) => (PESO_STATUS[x.status.label] ?? 9) - (PESO_STATUS[y.status.label] ?? 9));
+    // 🆕 Ordem por atividade recente, não por categoria fixa: quem tem
+    // notificação não lida vem primeiro (mais não lidas primeiro), e
+    // dentro disso quem recebeu algo mais recentemente. Sem novidade
+    // nenhuma, cai pro final na ordem que já tinha (cadastro das áreas).
+    cards.sort((x, y) => {
+        const naoLidasDiff = y.contagem.naoLidas - x.contagem.naoLidas;
+        if (naoLidasDiff !== 0) return naoLidasDiff;
+        return (y.contagem.ultimoTs || 0) - (x.contagem.ultimoTs || 0);
+    });
 
     // 🆕 Resumo sempre reflete TODAS as áreas (mesmo com busca/filtro
     // ativos na grade) — senão o gerente filtra "Crítico" pra focar e o
@@ -7931,39 +7948,27 @@ function renderizarGradeNotificacoes(atividades, feed) {
         return;
     }
 
-    // 🆕 Agrupado por severidade (não é mais uma grade de ícones igual à
-    // Central de Áreas) — o gerente lê de cima pra baixo em ordem de
-    // urgência, com o grupo "Crítico" já expandido e o resto colapsável.
-    let ultimoGrupo = null;
-    const linhasHtml = visiveis.map(({ area: a, status: s, contagem }) => {
-        let headerHtml = '';
-        if (s.label !== ultimoGrupo) {
-            ultimoGrupo = s.label;
-            const qtdGrupo = visiveis.filter(v => v.status.label === s.label).length;
-            headerHtml = `
-                <div class="notif-grupo-header" style="--grupo-color:${s.cor};">
-                    <span>${s.emoji} ${s.label}</span>
-                    <span class="notif-grupo-qtd">${qtdGrupo}</span>
+    // 🆕 Lista única ordenada por novidade (sem seção fixa de Crítico/
+    // Restrição/Atenção) — chegou notificação, a área sobe. O status
+    // continua visível, só que como etiqueta discreta na linha, não como
+    // divisor que reordena tudo de novo.
+    const linhasHtml = visiveis.map(({ area: a, status: s, contagem }) => `
+        <div class="notif-linha" style="--sev-color:${s.cor};" onclick="window.abrirDetalheAreaNotificacao('${a.chave}')">
+            <div class="notif-linha-icone" style="color:${a.cor}; background:color-mix(in srgb, ${a.cor} 16%, transparent);"><i class="fas ${a.icone}"></i></div>
+            <div class="notif-linha-corpo">
+                <div class="notif-linha-titulo">
+                    ${a.nome}
+                    ${contagem.naoLidas > 0 ? `<span class="notif-ponto-novo" title="Tem novidade não vista"></span>` : ''}
+                    <span class="notif-linha-status" style="color:${s.cor};">${s.emoji} ${s.label}</span>
                 </div>
-            `;
-        }
-        return headerHtml + `
-            <div class="notif-linha" style="--sev-color:${s.cor};" onclick="window.abrirDetalheAreaNotificacao('${a.chave}')">
-                <div class="notif-linha-icone" style="color:${a.cor}; background:color-mix(in srgb, ${a.cor} 16%, transparent);"><i class="fas ${a.icone}"></i></div>
-                <div class="notif-linha-corpo">
-                    <div class="notif-linha-titulo">
-                        ${a.nome}
-                        ${contagem.naoLidas > 0 ? `<span class="notif-ponto-novo" title="Tem novidade não vista"></span>` : ''}
-                    </div>
-                    <div class="notif-linha-meta">
-                        <i class="fas fa-bell"></i> ${contagem.total} notificaç${contagem.total === 1 ? 'ão' : 'ões'}
-                        ${contagem.naoLidas > 0 ? `<span class="notif-nao-lidas">${contagem.naoLidas} não lida${contagem.naoLidas > 1 ? 's' : ''}</span>` : ''}
-                    </div>
+                <div class="notif-linha-meta">
+                    <i class="fas fa-bell"></i> ${contagem.total} notificaç${contagem.total === 1 ? 'ão' : 'ões'}
+                    ${contagem.naoLidas > 0 ? `<span class="notif-nao-lidas">${contagem.naoLidas} não lida${contagem.naoLidas > 1 ? 's' : ''}</span>` : ''}
                 </div>
-                <i class="fas fa-chevron-right notif-linha-seta"></i>
             </div>
-        `;
-    }).join('');
+            <i class="fas fa-chevron-right notif-linha-seta"></i>
+        </div>
+    `).join('');
 
     container.innerHTML = `<div class="notif-lista">${linhasHtml}</div>`;
 }

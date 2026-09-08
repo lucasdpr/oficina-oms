@@ -3400,32 +3400,7 @@ h1, h2, h3, h4, h5, h6 {
 .notif-lista {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-}
-
-.notif-grupo-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 14px 4px 6px;
-    font-size: 11.5px;
-    font-weight: 800;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    color: var(--grupo-color, var(--text-muted));
-}
-.notif-grupo-header:first-child {
-    padding-top: 2px;
-}
-
-.notif-grupo-qtd {
-    font-size: 10.5px;
-    font-weight: 700;
-    color: var(--text-muted);
-    background: var(--bg-th);
-    border-radius: 999px;
-    padding: 1px 8px;
+    gap: 6px;
 }
 
 .notif-linha {
@@ -3481,6 +3456,16 @@ h1, h2, h3, h4, h5, h6 {
     border-radius: 50%;
     background: var(--danger);
     flex-shrink: 0;
+}
+
+/* Status como etiqueta discreta ao lado do nome — não é mais um divisor
+   de seção, só um lembrete visual (a ordem já é por novidade). */
+.notif-linha-status {
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+    margin-left: auto;
+    padding-left: 8px;
 }
 
 .notif-linha-meta {
