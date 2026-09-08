@@ -820,7 +820,7 @@ function garantirModalColaboradoresEtapa() {
     div.style.zIndex = '10000';
     div.innerHTML = `
         <div class="modal-content" style="max-width:460px;">
-            <h2 style="color:var(--text-heading); margin-bottom:4px;">
+            <h2 id="colaboradores-etapa-titulo" style="color:var(--text-heading); margin-bottom:4px;">
                 <i class="fas fa-users"></i> Quem executou essa etapa?
             </h2>
             <p class="text-muted" style="margin-bottom:14px; font-size:12px;">
@@ -851,12 +851,20 @@ function garantirModalColaboradoresEtapa() {
 // — usada pra buscar a equipe certa direto do servidor. Funciona pra
 // QUALQUER tipo de equipamento, não só um caso específico, porque usa
 // a mesma área que já resolve as etapas do Checklist.
-window.escolherColaboradoresChecklist = async function(areaChave) {
+// 🆕 `tituloPersonalizado` (opcional): esse modal também é reaproveitado
+// fora do Checklist (Iniciar/Reabrir Atividade da Oficina, em script.js)
+// — sem isso, o técnico veria "Quem executou essa etapa?" ao Reabrir uma
+// atividade inteira, texto de checklist (no passado, falando de "etapa")
+// que não faz sentido nesse contexto. Sem parâmetro, mantém o texto
+// original do Checklist.
+window.escolherColaboradoresChecklist = async function(areaChave, tituloPersonalizado) {
     garantirModalColaboradoresEtapa();
     const modal = document.getElementById('modal-colaboradores-etapa');
+    const titulo = document.getElementById('colaboradores-etapa-titulo');
     const lista = document.getElementById('colaboradores-etapa-lista');
     const inputOutro = document.getElementById('colaboradores-etapa-outro');
     const checkTodos = document.getElementById('colaboradores-etapa-todos');
+    if (titulo) titulo.innerHTML = `<i class="fas fa-users"></i> ${tituloPersonalizado || 'Quem executou essa etapa?'}`;
     inputOutro.value = '';
     checkTodos.checked = false;
     lista.innerHTML = `<p class="text-muted" style="font-size:12px; margin:0;">Carregando equipe...</p>`;
