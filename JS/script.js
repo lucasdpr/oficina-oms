@@ -5085,13 +5085,23 @@ window.mudarStatusAtividadeOficina = async function(id, novoStatus) {
         motivo = prompt('Observação ao concluir (opcional):') || null;
     }
 
+    // 🆕 Ao iniciar a atividade, pergunta quem da equipe vai executar —
+    // mesmo modal já usado no Checklist de Execução, evita duplicar UI.
+    // Cancelar o modal aborta a mudança de status (não chama o backend,
+    // não fecha nem atualiza nada), igual ao cancelar já faz lá.
+    let colaboradores = null;
+    if (novoStatus === 'Em Andamento' && typeof window.escolherColaboradoresChecklist === 'function') {
+        colaboradores = await window.escolherColaboradoresChecklist(OFICINA_AREA_ATUAL);
+        if (colaboradores === null) return; // cancelou
+    }
+
     try {
         const apiBase = await resolverApiBase();
         const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
         const resp = await fetch(`${apiBase}/api/oficina/atividade/status`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id, status: novoStatus, motivo, operador })
+            body: JSON.stringify({ id, status: novoStatus, motivo, operador, colaboradores })
         });
         if (!resp.ok) {
             const erro = await resp.json().catch(() => null);
