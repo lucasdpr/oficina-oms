@@ -4074,7 +4074,14 @@ window.renderCatalogoMateriaisOficina = function() {
 //   🟡 Atenção   -> 1 a 4 pendentes/andamento
 //   🟢 Normal    -> tudo concluído / nada pendente
 function calcularStatusArea(chave) {
-    const doArea = OFICINA_ATIVIDADES_CACHE.filter(x => x.area === chave);
+    // 🐛 CORRIGIDO: só contava x.area === chave, sem incluir atividades
+    // onde essa área é só SOLICITANTE (executada por outra área) — a
+    // mesma atividade aparece no card "Pedido por esta área..." da
+    // lista logo abaixo (ver todasDaArea, linha ~4790), mas o badge de
+    // status no topo da tela e no card da Central de Áreas ficava
+    // "🟢 Normal" mesmo com uma atividade pendente/atrasada pedida por
+    // essa área e sendo feita em outro lugar.
+    const doArea = OFICINA_ATIVIDADES_CACHE.filter(x => x.area === chave || x.solicitante_area === chave);
     const pendentes = doArea.filter(x => x.status === 'Pendente').length;
     const andamento = doArea.filter(x => x.status === 'Em Andamento').length;
     const atrasadas = doArea.filter(x => atividadeEstaAtrasada(x)).length;
@@ -5110,7 +5117,7 @@ window.mudarStatusAtividadeOficina = async function(id, novoStatus) {
     // não fecha nem atualiza nada), igual ao cancelar já faz lá.
     let colaboradores = null;
     if (novoStatus === 'Em Andamento' && typeof window.escolherColaboradoresChecklist === 'function') {
-        colaboradores = await window.escolherColaboradoresChecklist(OFICINA_AREA_ATUAL);
+        colaboradores = await window.escolherColaboradoresChecklist(OFICINA_AREA_ATUAL, 'Quem vai executar essa atividade?');
         if (colaboradores === null) return; // cancelou
     }
 
@@ -5189,9 +5196,20 @@ window.reabrirAtividadeOficina = async function(id) {
     const motivo = prompt('Descreva o motivo da reabertura:');
     if (!motivo || !motivo.trim()) { alert('Descreva o motivo da reabertura.'); return; }
 
+    // 🐛 CORRIGIDO: Reabrir aparece nos dois quadros (solicitante e
+    // executor) — ao contrário de Iniciar, que só existe no quadro de
+    // quem executa (onde OFICINA_AREA_ATUAL == área de execução). Se o
+    // SOLICITANTE reabrir pela própria tela, OFICINA_AREA_ATUAL é a
+    // área DELE, não de quem vai refazer o serviço — passar isso pro
+    // modal listaria a equipe errada (ex: Molde reabrindo um pedido pra
+    // Caldeiraria veria a equipe do Molde no modal). Usa sempre a área
+    // de EXECUÇÃO da própria atividade (x.area), não a do quadro aberto.
+    const atividade = OFICINA_ATIVIDADES_CACHE.find(x => x.id === id);
+    const areaExecucao = atividade ? atividade.area : OFICINA_AREA_ATUAL;
+
     let colaboradores = null;
     if (typeof window.escolherColaboradoresChecklist === 'function') {
-        colaboradores = await window.escolherColaboradoresChecklist(OFICINA_AREA_ATUAL);
+        colaboradores = await window.escolherColaboradoresChecklist(areaExecucao, 'Quem vai refazer essa atividade?');
         if (colaboradores === null) return; // cancelou
     }
 
