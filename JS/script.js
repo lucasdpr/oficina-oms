@@ -4883,6 +4883,14 @@ function renderizarAtividadesArea() {
                 botoesAcao = `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Pendente')"><i class="fas fa-rotate-left"></i> Reabrir</button>`;
             }
         }
+        // 🆕 Reabrir uma atividade CONCLUÍDA é exceção à regra acima
+        // (estaNoQuadroExecutor): tanto quem pediu quanto quem executou
+        // (e ADM, nos dois quadros) pode reabrir — diferente de
+        // Iniciar/Recusar/Concluir, que são só de quem executa. Por
+        // isso fica fora do "if (estaNoQuadroExecutor)".
+        if (x.status === 'Concluído') {
+            botoesAcao += `<button class="btn-premium" style="padding:4px 10px; font-size:11px; background:#8b5cf6; border-color:#8b5cf6;" onclick="window.reabrirAtividadeOficina(${x.id})"><i class="fas fa-rotate-left"></i> Reabrir</button>`;
+        }
 
         return `
         <div class="atividade-card" id="atividade-card-${x.id}" style="--card-accent:${corBorda};">
@@ -5111,6 +5119,48 @@ window.mudarStatusAtividadeOficina = async function(id, novoStatus) {
         await window.carregarOficina();
     } catch (e) {
         console.error('⚠️ Erro ao atualizar status da atividade:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+};
+
+// --------------------------------------------------------------
+// 🆕 REABRIR ATIVIDADE CONCLUÍDA — volta pra "Em Andamento" (não
+// "Pendente": o usuário já validou o serviço, então é retrabalho, vai
+// direto pra produção de novo até concluir de novo). Motivo é
+// OBRIGATÓRIO (por que reabrir?) e quem vai refazer é escolhido no
+// mesmo modal de colaboradores usado ao Iniciar — sem isso o
+// executado_por ficaria "preso" em quem tinha feito da vez anterior.
+// Aparece nos dois quadros (solicitante e executor): qualquer
+// envolvido pode reabrir, diferente de Iniciar/Recusar/Concluir.
+// --------------------------------------------------------------
+window.reabrirAtividadeOficina = async function(id) {
+    if (!verificarAcesso()) return;
+
+    const motivo = prompt('Descreva o motivo da reabertura:');
+    if (!motivo || !motivo.trim()) { alert('Descreva o motivo da reabertura.'); return; }
+
+    let colaboradores = null;
+    if (typeof window.escolherColaboradoresChecklist === 'function') {
+        colaboradores = await window.escolherColaboradoresChecklist(OFICINA_AREA_ATUAL);
+        if (colaboradores === null) return; // cancelou
+    }
+
+    try {
+        const apiBase = await resolverApiBase();
+        const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
+        const resp = await fetch(`${apiBase}/api/oficina/atividade/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, status: 'Em Andamento', motivo, operador, colaboradores, reabertura: true })
+        });
+        if (!resp.ok) {
+            const erro = await resp.json().catch(() => null);
+            alert(erro?.detail || 'Não foi possível reabrir a atividade.');
+            return;
+        }
+        await window.carregarOficina();
+    } catch (e) {
+        console.error('⚠️ Erro ao reabrir atividade da oficina:', e);
         alert('Não foi possível conectar ao servidor.');
     }
 };
