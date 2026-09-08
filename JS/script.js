@@ -917,33 +917,29 @@ function ativarAuditoriaSeAutorizado() {
 window.ativarAuditoriaSeAutorizado = ativarAuditoriaSeAutorizado;
 
 // ==========================================
-// 🆕 CENTRAL DE NOTIFICAÇÕES — visível pra ADM (admin do sistema, as 3
-// matrículas fixas de MATRICULAS_ADM) e pra quem tem "Supervisor" no
-// cargo (mesmo texto livre que já aparece entre colchetes no nome, ex:
-// "Filipe [Supervisor]" — não existe uma coluna de cargo separada pra
-// isso hoje, então reaproveita a mesma extração já usada no badge).
+// 🆕 CENTRAL DE NOTIFICAÇÕES — quem vê TUDO (todas as áreas) é só o ADM
+// de sistema de verdade: as 3 matrículas fixas em MATRICULAS_ADM
+// (OPERADOR_LOGADO.isAdm). Cargo "Supervisor" no nome NÃO dá mais
+// acesso total — pediu explicitamente pra ser só essas 3 matrículas;
+// supervisor cai na mesma regra de técnico (só a própria área).
 // ==========================================
-function operadorEhSupervisorOuAdm() {
-    if (!OPERADOR_LOGADO || OPERADOR_LOGADO.visitante) return false;
-    if (OPERADOR_LOGADO.isAdm) return true;
-    const match = (OPERADOR_LOGADO.nome || "").match(/\[(.+?)\]/);
-    const cargo = match ? match[1] : "";
-    return /supervisor/i.test(cargo);
+function operadorEhAdmDeSistema() {
+    return !!(OPERADOR_LOGADO && !OPERADOR_LOGADO.visitante && OPERADOR_LOGADO.isAdm);
 }
-window.operadorEhSupervisorOuAdm = operadorEhSupervisorOuAdm;
+window.operadorEhAdmDeSistema = operadorEhAdmDeSistema;
 
-// 🆕 Técnico comum (não ADM, não Supervisor) com área cadastrada — antes
+// 🆕 Qualquer não-ADM com área cadastrada (técnico ou supervisor) — antes
 // não enxergava a Central de Notificações de jeito nenhum; agora entra,
 // mas só vê o que é da própria área (ver renderizarGradeNotificacoes).
 function operadorTecnicoComArea() {
-    return !!(OPERADOR_LOGADO && !OPERADOR_LOGADO.visitante && !OPERADOR_LOGADO.isAdm
-        && !operadorEhSupervisorOuAdm() && OPERADOR_LOGADO.area);
+    return !!(OPERADOR_LOGADO && !OPERADOR_LOGADO.visitante && !operadorEhAdmDeSistema() && OPERADOR_LOGADO.area);
 }
 window.operadorTecnicoComArea = operadorTecnicoComArea;
 
-// ADM/Supervisor veem a Central inteira; técnico com área só vê a dele.
+// ADM (as 3 matrículas) vê a Central inteira; qualquer outro com área
+// cadastrada só vê a própria área.
 function operadorPodeVerNotificacoes() {
-    return operadorEhSupervisorOuAdm() || operadorTecnicoComArea();
+    return operadorEhAdmDeSistema() || operadorTecnicoComArea();
 }
 window.operadorPodeVerNotificacoes = operadorPodeVerNotificacoes;
 
