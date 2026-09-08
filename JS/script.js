@@ -4951,7 +4951,8 @@ window.confirmarAtividadeOficina = async function() {
                 prioridade,
                 prazo,
                 data_inicio: dataInicio,
-                foto_base64: OFICINA_FOTO_BASE64 || null
+                foto_base64: OFICINA_FOTO_BASE64 || null,
+                operador
               }
             : {
                 area: OFICINA_AREA_ATUAL,
@@ -5057,10 +5058,11 @@ window.mudarStatusAtividadeOficina = async function(id, novoStatus) {
 
     try {
         const apiBase = await resolverApiBase();
+        const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
         const resp = await fetch(`${apiBase}/api/oficina/atividade/status`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id, status: novoStatus, motivo })
+            body: JSON.stringify({ id, status: novoStatus, motivo, operador })
         });
         if (!resp.ok) {
             const erro = await resp.json().catch(() => null);
@@ -5082,10 +5084,11 @@ window.excluirAtividadeOficina = async function(id) {
     if (!confirm('Excluir esta atividade?')) return;
     try {
         const apiBase = await resolverApiBase();
+        const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
         const resp = await fetch(`${apiBase}/api/oficina/atividade/excluir`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id })
+            body: JSON.stringify({ id, operador })
         });
         if (!resp.ok) {
             alert('Não foi possível excluir.');
@@ -8103,7 +8106,7 @@ window.irParaTelaDaAreaNotificacao = function() {
 // Ícone por tipo de item do feed unificado — tipo='evento' cobre tanto
 // Ocorrência (categoria Intervenção/Melhoria/...) quanto Auditoria geral
 // (ex: rolo travado no Sinótico 3D), que antes nunca aparecia aqui.
-const ICONE_POR_TIPO_NOTIFICACAO = { os: '📄', achado: '🔍', evento: '📋', estoque: '📦', sinotico: '🧊' };
+const ICONE_POR_TIPO_NOTIFICACAO = { os: '📄', achado: '🔍', evento: '📋', estoque: '📦', sinotico: '🧊', atividade: '🧰' };
 
 // 🔧 CORREÇÃO ("mostra os antigos, não quero isso"): não lido aparece
 // sempre (é exatamente o que a pessoa ainda não viu, não importa a
@@ -8124,7 +8127,7 @@ function dataDentroDaJanelaRecente(dataHoraStr) {
 // Clique num item do feed: marca como lido PRA ESSA MATRÍCULA (não
 // afeta o que outras pessoas já viram) e leva pra tela de onde aquilo
 // veio — cada tipo tem sua própria rota.
-window.abrirItemNotificacao = async function(tipo, eventoId, referencia) {
+window.abrirItemNotificacao = async function(tipo, eventoId, referencia, area) {
     try {
         if (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula) {
             const apiBase = await resolverApiBase();
@@ -8149,6 +8152,11 @@ window.abrirItemNotificacao = async function(tipo, eventoId, referencia) {
         window.irParaOsEspecifica(referencia);
     } else if (tipo === 'evento') {
         window.irParaOcorrenciaEspecifica(referencia);
+    } else if (tipo === 'atividade') {
+        // 🆕 Ação numa atividade da Oficina (criar/status/editar/
+        // excluir/mensagem) — vai direto pra ÁREA, não pra Ocorrência
+        // (ver registrar_evento_atividade_oficina no backend).
+        window.irParaAreaOficinaViaNotificacao(area);
     } else if (tipo === 'achado') {
         window.irParaAchadoEspecifico(referencia);
     } else if (tipo === 'sinotico') {
@@ -8289,7 +8297,7 @@ function renderItemNotificacao(item) {
     const referencia = item.referencia;
     return `
     <div class="notificacoes-item" style="--item-cor:${cor}; ${naoLida ? 'background:color-mix(in srgb, var(--danger) 6%, var(--bg-card));' : ''}"
-         onclick="window.abrirItemNotificacao('${escapeAtributoNotif(item.tipo)}', '${escapeAtributoNotif(item.evento_id)}', '${escapeAtributoNotif(referencia)}')">
+         onclick="window.abrirItemNotificacao('${escapeAtributoNotif(item.tipo)}', '${escapeAtributoNotif(item.evento_id)}', '${escapeAtributoNotif(referencia)}', '${escapeAtributoNotif(item.area)}')">
         <div class="notificacoes-item-icone" style="${naoLida ? 'color:var(--danger);' : ''}">${icone}</div>
         <div class="notificacoes-item-corpo">
             <div class="notificacoes-item-topo">
