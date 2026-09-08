@@ -917,20 +917,31 @@ function ativarAuditoriaSeAutorizado() {
 window.ativarAuditoriaSeAutorizado = ativarAuditoriaSeAutorizado;
 
 // ==========================================
-// 🆕 CENTRAL DE NOTIFICAÇÕES — visível pra ADM (admin do sistema, as 3
-// matrículas fixas de MATRICULAS_ADM) e pra quem tem "Supervisor" no
-// cargo (mesmo texto livre que já aparece entre colchetes no nome, ex:
-// "Filipe [Supervisor]" — não existe uma coluna de cargo separada pra
-// isso hoje, então reaproveita a mesma extração já usada no badge).
+// 🆕 CENTRAL DE NOTIFICAÇÕES — quem vê TUDO (todas as áreas) é só o ADM
+// de sistema de verdade: as 3 matrículas fixas em MATRICULAS_ADM
+// (OPERADOR_LOGADO.isAdm). Cargo "Supervisor" no nome NÃO dá mais
+// acesso total — pediu explicitamente pra ser só essas 3 matrículas;
+// supervisor cai na mesma regra de técnico (só a própria área).
 // ==========================================
-function operadorEhSupervisorOuAdm() {
-    if (!OPERADOR_LOGADO || OPERADOR_LOGADO.visitante) return false;
-    if (OPERADOR_LOGADO.isAdm) return true;
-    const match = (OPERADOR_LOGADO.nome || "").match(/\[(.+?)\]/);
-    const cargo = match ? match[1] : "";
-    return /supervisor/i.test(cargo);
+function operadorEhAdmDeSistema() {
+    return !!(OPERADOR_LOGADO && !OPERADOR_LOGADO.visitante && OPERADOR_LOGADO.isAdm);
 }
-window.operadorEhSupervisorOuAdm = operadorEhSupervisorOuAdm;
+window.operadorEhAdmDeSistema = operadorEhAdmDeSistema;
+
+// 🆕 Qualquer não-ADM com área cadastrada (técnico ou supervisor) — antes
+// não enxergava a Central de Notificações de jeito nenhum; agora entra,
+// mas só vê o que é da própria área (ver renderizarGradeNotificacoes).
+function operadorTecnicoComArea() {
+    return !!(OPERADOR_LOGADO && !OPERADOR_LOGADO.visitante && !operadorEhAdmDeSistema() && OPERADOR_LOGADO.area);
+}
+window.operadorTecnicoComArea = operadorTecnicoComArea;
+
+// ADM (as 3 matrículas) vê a Central inteira; qualquer outro com área
+// cadastrada só vê a própria área.
+function operadorPodeVerNotificacoes() {
+    return operadorEhAdmDeSistema() || operadorTecnicoComArea();
+}
+window.operadorPodeVerNotificacoes = operadorPodeVerNotificacoes;
 
 let TIMER_BADGE_NOTIFICACOES_GLOBAL = null;
 
@@ -938,7 +949,7 @@ function ativarCentralNotificacoesSeAutorizado() {
     const link = document.getElementById("nav-notificacoes");
     if (!link) return;
 
-    const autorizado = operadorEhSupervisorOuAdm();
+    const autorizado = operadorPodeVerNotificacoes();
 
     if (autorizado) {
         link.classList.remove("hidden");
@@ -949,7 +960,7 @@ function ativarCentralNotificacoesSeAutorizado() {
         if (typeof window.atualizarBadgeNotificacoesNaoLidas === 'function') window.atualizarBadgeNotificacoesNaoLidas();
         if (!TIMER_BADGE_NOTIFICACOES_GLOBAL) {
             TIMER_BADGE_NOTIFICACOES_GLOBAL = setInterval(() => {
-                if (operadorEhSupervisorOuAdm() && typeof window.atualizarBadgeNotificacoesNaoLidas === 'function') {
+                if (operadorPodeVerNotificacoes() && typeof window.atualizarBadgeNotificacoesNaoLidas === 'function') {
                     window.atualizarBadgeNotificacoesNaoLidas();
                 }
             }, 120000);
@@ -1129,11 +1140,13 @@ function aplicarRestricaoNavTecnico() {
     const restrito = !!(OPERADOR_LOGADO && !OPERADOR_LOGADO.visitante && !OPERADOR_LOGADO.isAdm && OPERADOR_LOGADO.area);
 
     document.querySelectorAll('.sidebar-nav .nav-link').forEach(el => {
-        // 🆕 Supervisor com área cadastrada cai no "restrito" acima (não é
-        // ADM), mas ainda precisa ver a Central de Notificações — sem essa
-        // exceção o link ficaria escondido por aqui mesmo já autorizado
-        // por ativarCentralNotificacoesSeAutorizado().
-        const excecaoNotificacoes = el.id === 'nav-notificacoes' && operadorEhSupervisorOuAdm();
+        // 🆕 Supervisor com área cadastrada, ou técnico com área, caem no
+        // "restrito" acima (nenhum dos dois é ADM), mas os dois precisam
+        // ver a Central de Notificações (o técnico só a própria área, ver
+        // renderizarGradeNotificacoes) — sem essa exceção o link ficaria
+        // escondido por aqui mesmo já autorizado por
+        // ativarCentralNotificacoesSeAutorizado().
+        const excecaoNotificacoes = el.id === 'nav-notificacoes' && operadorPodeVerNotificacoes();
         const liberado = NAV_IDS_LIBERADOS_TECNICO.includes(el.id) || excecaoNotificacoes;
         el.style.display = (restrito && !liberado) ? 'none' : '';
     });
@@ -7634,6 +7647,11 @@ window.excluirOrdemServico = async function(id) {
 // (Central de Áreas, Ocorrência, OS) num feed único, lendo as mesmas
 // APIs — não duplica lógica nenhuma de negócio.
 // ==========================================
+// 🔧 Voltou pra 30s (chegou a ir pra 10s por um instante): o banco é
+// Neon plano free, com auto-suspend e CU-hrs limitados — 3x mais
+// polling é 3x mais chance de manter o compute acordado à toa. 30s já
+// é rápido o bastante pra área subir na lista logo depois de notificar,
+// sem gastar cota de graça.
 const INTERVALO_POLLING_NOTIFICACOES_MS = 30000;
 let TIMER_POLLING_NOTIFICACOES = null;
 
@@ -7701,13 +7719,18 @@ window.carregarFeedNotificacoes = async function() {
 window.atualizarBadgeNotificacoesNaoLidas = async function(feedPronto) {
     const badge = document.getElementById('badge-notificacoes-nao-lidas');
     if (!badge) return;
-    if (!operadorEhSupervisorOuAdm()) { badge.classList.add('hidden'); return; }
+    if (!operadorPodeVerNotificacoes()) { badge.classList.add('hidden'); return; }
     const feed = feedPronto !== undefined ? feedPronto : await window.carregarFeedNotificacoes();
     // `null` = a busca falhou — mantém o sino como já estava (não dá
     // pra saber se tem novidade ou não) em vez de escondê-lo como se
     // tivesse zero, e sem quebrar num "null.filter".
     if (feed === null) return;
-    const naoLidas = feed.filter(item => !item.lida).length;
+    // 🆕 Técnico só conta o que é da própria área — senão o sino dele
+    // mostraria não-lidas de áreas que ele nem enxerga na Central.
+    const feedDoOperador = operadorTecnicoComArea()
+        ? feed.filter(item => item.area === OPERADOR_LOGADO.area)
+        : feed;
+    const naoLidas = feedDoOperador.filter(item => !item.lida).length;
     if (naoLidas > 0) {
         badge.innerText = naoLidas > 99 ? '99+' : String(naoLidas);
         badge.classList.remove('hidden');
@@ -7862,19 +7885,36 @@ function renderizarGradeNotificacoes(atividades, feed) {
         return;
     }
 
-    const contagemPorArea = new Map(); // chave (ou '__sem_area__') -> {total, naoLidas}
+    const contagemPorArea = new Map(); // chave (ou '__sem_area__') -> {total, naoLidas, ultimoTs}
     for (const item of feed) {
         const chave = item.area || '__sem_area__';
-        if (!contagemPorArea.has(chave)) contagemPorArea.set(chave, { total: 0, naoLidas: 0 });
+        if (!contagemPorArea.has(chave)) contagemPorArea.set(chave, { total: 0, naoLidas: 0, ultimoTs: 0 });
         const c = contagemPorArea.get(chave);
         c.total++;
         if (!item.lida) c.naoLidas++;
+        // 🆕 Guarda o horário da notificação mais recente da área — é isso
+        // que decide a ordem agora (chegou novidade, sobe na lista), não
+        // mais uma categoria fixa de severidade.
+        const ts = item.data_hora ? new Date(item.data_hora.replace(' ', 'T')).getTime() : 0;
+        if (ts > c.ultimoTs) c.ultimoTs = ts;
     }
 
-    const todasAreas = [
-        ...AREAS_OFICINA.filter(a => a.tipo === 'oficina' || a.tipo === 'administrativo'),
-        ...AREAS_NOTIFICACAO_EXTRAS,
-    ];
+    // 🆕 Técnico comum só vê a própria área — ADM/Supervisor continuam
+    // vendo a Oficina inteira, sem mudança nenhuma pra eles.
+    const restritoAPropriaArea = operadorTecnicoComArea();
+    const titulo = document.getElementById('notificacoes-grade-titulo');
+    const toolbar = document.getElementById('notificacoes-grade-toolbar');
+    if (titulo) titulo.innerHTML = restritoAPropriaArea
+        ? '<i class="fas fa-bell"></i> Minhas Notificações'
+        : '<i class="fas fa-industry"></i> Áreas';
+    if (toolbar) toolbar.classList.toggle('hidden', restritoAPropriaArea);
+
+    const todasAreas = restritoAPropriaArea
+        ? [...AREAS_OFICINA, ...AREAS_NOTIFICACAO_EXTRAS].filter(a => a.chave === OPERADOR_LOGADO.area)
+        : [
+            ...AREAS_OFICINA.filter(a => a.tipo === 'oficina' || a.tipo === 'administrativo'),
+            ...AREAS_NOTIFICACAO_EXTRAS,
+        ];
 
     const PESO_STATUS = { 'Crítico': 0, 'Restrição': 1, 'Atenção': 2, 'Novo': 3, 'Normal': 4, 'Sem novidade': 5 };
 
@@ -7890,7 +7930,7 @@ function renderizarGradeNotificacoes(atividades, feed) {
         const andamento = doArea.filter(x => x.status === 'Em Andamento').length;
         const atrasadas = doArea.filter(x => atividadeEstaAtrasada(x)).length;
         const emAberto = pendentes + andamento;
-        const contagem = contagemPorArea.get(a.chave) || { total: 0, naoLidas: 0 };
+        const contagem = contagemPorArea.get(a.chave) || { total: 0, naoLidas: 0, ultimoTs: 0 };
 
         let status;
         if (atrasadas > 0) status = { emoji: '🔴', label: 'Crítico', cor: 'var(--danger)' };
@@ -7904,8 +7944,9 @@ function renderizarGradeNotificacoes(atividades, feed) {
 
     // "Outros" — item sem área nenhuma (achado, ou ocorrência/OS sem a
     // área escolhida no formulário). Só entra na grade se tiver alguma
-    // notificação; sempre por último.
-    const semArea = contagemPorArea.get('__sem_area__');
+    // notificação; sempre por último. Técnico restrito à própria área
+    // não vê isso — "Outros" é ruído de fora da área dele.
+    const semArea = !restritoAPropriaArea && contagemPorArea.get('__sem_area__');
     if (semArea && semArea.total > 0) {
         cards.push({
             area: { chave: '__sem_area__', nome: 'Outros', icone: 'fa-ellipsis', cor: '#8a97ab' },
@@ -7914,7 +7955,15 @@ function renderizarGradeNotificacoes(atividades, feed) {
         });
     }
 
-    cards.sort((x, y) => (PESO_STATUS[x.status.label] ?? 9) - (PESO_STATUS[y.status.label] ?? 9));
+    // 🆕 Ordem por atividade recente, não por categoria fixa: quem tem
+    // notificação não lida vem primeiro (mais não lidas primeiro), e
+    // dentro disso quem recebeu algo mais recentemente. Sem novidade
+    // nenhuma, cai pro final na ordem que já tinha (cadastro das áreas).
+    cards.sort((x, y) => {
+        const naoLidasDiff = y.contagem.naoLidas - x.contagem.naoLidas;
+        if (naoLidasDiff !== 0) return naoLidasDiff;
+        return (y.contagem.ultimoTs || 0) - (x.contagem.ultimoTs || 0);
+    });
 
     // 🆕 Resumo sempre reflete TODAS as áreas (mesmo com busca/filtro
     // ativos na grade) — senão o gerente filtra "Crítico" pra focar e o
@@ -7931,39 +7980,27 @@ function renderizarGradeNotificacoes(atividades, feed) {
         return;
     }
 
-    // 🆕 Agrupado por severidade (não é mais uma grade de ícones igual à
-    // Central de Áreas) — o gerente lê de cima pra baixo em ordem de
-    // urgência, com o grupo "Crítico" já expandido e o resto colapsável.
-    let ultimoGrupo = null;
-    const linhasHtml = visiveis.map(({ area: a, status: s, contagem }) => {
-        let headerHtml = '';
-        if (s.label !== ultimoGrupo) {
-            ultimoGrupo = s.label;
-            const qtdGrupo = visiveis.filter(v => v.status.label === s.label).length;
-            headerHtml = `
-                <div class="notif-grupo-header" style="--grupo-color:${s.cor};">
-                    <span>${s.emoji} ${s.label}</span>
-                    <span class="notif-grupo-qtd">${qtdGrupo}</span>
+    // 🆕 Lista única ordenada por novidade (sem seção fixa de Crítico/
+    // Restrição/Atenção) — chegou notificação, a área sobe. O status
+    // continua visível, só que como etiqueta discreta na linha, não como
+    // divisor que reordena tudo de novo.
+    const linhasHtml = visiveis.map(({ area: a, status: s, contagem }) => `
+        <div class="notif-linha" style="--sev-color:${s.cor};" onclick="window.abrirDetalheAreaNotificacao('${a.chave}')">
+            <div class="notif-linha-icone" style="color:${a.cor}; background:color-mix(in srgb, ${a.cor} 16%, transparent);"><i class="fas ${a.icone}"></i></div>
+            <div class="notif-linha-corpo">
+                <div class="notif-linha-titulo">
+                    ${a.nome}
+                    ${contagem.naoLidas > 0 ? `<span class="notif-ponto-novo" title="Tem novidade não vista"></span>` : ''}
+                    <span class="notif-linha-status" style="color:${s.cor};">${s.emoji} ${s.label}</span>
                 </div>
-            `;
-        }
-        return headerHtml + `
-            <div class="notif-linha" style="--sev-color:${s.cor};" onclick="window.abrirDetalheAreaNotificacao('${a.chave}')">
-                <div class="notif-linha-icone" style="color:${a.cor}; background:color-mix(in srgb, ${a.cor} 16%, transparent);"><i class="fas ${a.icone}"></i></div>
-                <div class="notif-linha-corpo">
-                    <div class="notif-linha-titulo">
-                        ${a.nome}
-                        ${contagem.naoLidas > 0 ? `<span class="notif-ponto-novo" title="Tem novidade não vista"></span>` : ''}
-                    </div>
-                    <div class="notif-linha-meta">
-                        <i class="fas fa-bell"></i> ${contagem.total} notificaç${contagem.total === 1 ? 'ão' : 'ões'}
-                        ${contagem.naoLidas > 0 ? `<span class="notif-nao-lidas">${contagem.naoLidas} não lida${contagem.naoLidas > 1 ? 's' : ''}</span>` : ''}
-                    </div>
+                <div class="notif-linha-meta">
+                    <i class="fas fa-bell"></i> ${contagem.total} notificaç${contagem.total === 1 ? 'ão' : 'ões'}
+                    ${contagem.naoLidas > 0 ? `<span class="notif-nao-lidas">${contagem.naoLidas} não lida${contagem.naoLidas > 1 ? 's' : ''}</span>` : ''}
                 </div>
-                <i class="fas fa-chevron-right notif-linha-seta"></i>
             </div>
-        `;
-    }).join('');
+            <i class="fas fa-chevron-right notif-linha-seta"></i>
+        </div>
+    `).join('');
 
     container.innerHTML = `<div class="notif-lista">${linhasHtml}</div>`;
 }

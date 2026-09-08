@@ -1132,12 +1132,14 @@
                      daquela área, com botão de voltar pra grade. -->
                 <div id="notificacoes-grade-painel" class="glass-panel" style="padding:24px;">
                     <div class="flex-between" style="flex-wrap:wrap; gap:10px; margin-bottom:14px;">
-                        <h3 style="font-size:1rem; margin:0;"><i class="fas fa-industry"></i> Áreas</h3>
+                        <h3 id="notificacoes-grade-titulo" style="font-size:1rem; margin:0;"><i class="fas fa-industry"></i> Áreas</h3>
                     </div>
                     <!-- 🆕 Busca + filtro por status, igual à Central de Áreas —
                          com quase 20 áreas na grade, o gerente precisa achar
-                         "só o que tá crítico" sem rolar tudo. -->
-                    <div class="central-areas-toolbar" style="margin-bottom:16px;">
+                         "só o que tá crítico" sem rolar tudo. Some pro técnico
+                         restrito à própria área — não faz sentido filtrar uma
+                         lista de 1 item (ver renderizarGradeNotificacoes). -->
+                    <div id="notificacoes-grade-toolbar" class="central-areas-toolbar" style="margin-bottom:16px;">
                         <div class="login-input-wrapper" style="position:relative; flex:1; min-width:200px;">
                             <input type="text" id="notificacoes-grade-busca" placeholder="Buscar área..." oninput="window.buscarGradeNotificacoes(this.value)" style="height:38px; border-radius:6px; padding-left:38px; width:100%;">
                             <i class="fas fa-search login-input-icon" style="top:10px; font-size:13px; color:#a855f7;"></i>
