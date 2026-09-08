@@ -4908,6 +4908,7 @@ function renderizarAtividadesArea() {
                     <span style="font-size:11px; color:${corStatus[x.status] || 'var(--text-muted)'}; font-weight:700;">${x.status}</span>
                     ${iconePrioridade[x.prioridade] ? `<span title="Prioridade ${x.prioridade}">${iconePrioridade[x.prioridade]}</span>` : ''}
                     ${atrasada ? `<span style="font-size:10px; background:var(--danger); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">ATRASADA</span>` : ''}
+                    ${x.reaberturas_count > 0 ? `<span style="font-size:10px; background:#f97316; color:#fff; padding:2px 6px; border-radius:4px; font-weight:700; cursor:pointer;" onclick="window.verHistoricoReaberturasAtividade(${x.id})" title="Ver histórico de reaberturas"><i class="fas fa-rotate-left"></i> Reaberta ${x.reaberturas_count}x</span>` : ''}
                 </div>
                 <div style="font-size:13px; color:var(--text-body);">${x.descricao}</div>
                 ${x.motivo_status ? `<div style="font-size:11.5px; color:${corStatus[x.status]}; margin-top:4px;"><i class="fas fa-circle-info"></i> ${x.motivo_status}</div>` : ''}
@@ -5133,8 +5134,47 @@ window.mudarStatusAtividadeOficina = async function(id, novoStatus) {
 // Aparece nos dois quadros (solicitante e executor): qualquer
 // envolvido pode reabrir, diferente de Iniciar/Recusar/Concluir.
 // --------------------------------------------------------------
+// 🆕 Mostra o histórico completo de reaberturas de uma atividade — sem
+// modal dedicado por enquanto (ver comentário do endpoint no backend),
+// só o dado acessível de forma simples num alert formatado.
+window.verHistoricoReaberturasAtividade = async function(id) {
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/atividade/${id}/reaberturas`);
+        if (!resp.ok) { alert('Não foi possível carregar o histórico.'); return; }
+        const historico = await resp.json();
+        if (!Array.isArray(historico) || !historico.length) {
+            alert('Sem histórico de reaberturas registrado.');
+            return;
+        }
+        const texto = historico.map((h, i) => {
+            const n = historico.length - i;
+            return `#${n} — reaberta em ${h.data_reabertura || '?'} por ${h.reaberto_por || 'Sistema'}\n`
+                 + `Motivo da reabertura: ${h.motivo_reabertura || '-'}\n`
+                 + `Conclusão anterior: ${h.concluido_em_anterior || '-'} (${h.motivo_conclusao_anterior || 'sem observação'})\n`
+                 + `Executado por (antes): ${h.executado_por_anterior || '-'}`;
+        }).join('\n\n');
+        alert(`Histórico de reaberturas (${historico.length}x):\n\n${texto}`);
+    } catch (e) {
+        console.error('⚠️ Erro ao buscar histórico de reaberturas:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+};
+
 window.reabrirAtividadeOficina = async function(id) {
     if (!verificarAcesso()) return;
+
+    // 🆕 RETRABALHO — se essa atividade já foi reaberta antes, um
+    // "Reabrir" a mais pode ser sintoma de um problema que não foi
+    // resolvido de verdade. Confirmação extra (além do motivo
+    // obrigatório abaixo) só aparece quando já existe pelo menos 1
+    // reabertura anterior — cancelar aqui aborta sem chamar a API.
+    const atividadeAtual = OFICINA_ATIVIDADES_CACHE.find(x => x.id === id);
+    const jaReabertaCount = (atividadeAtual && atividadeAtual.reaberturas_count) || 0;
+    if (jaReabertaCount >= 1) {
+        const confirmou = confirm(`Essa atividade já foi reaberta ${jaReabertaCount} vez(es) antes. Tem certeza que quer reabrir de novo?`);
+        if (!confirmou) return;
+    }
 
     const motivo = prompt('Descreva o motivo da reabertura:');
     if (!motivo || !motivo.trim()) { alert('Descreva o motivo da reabertura.'); return; }
