@@ -11,7 +11,7 @@
 // usando a copia antiga guardada em cache.
 // ==============================================================
 
-const CACHE_VERSION = "oms-v65";
+const CACHE_VERSION = "oms-v66";
 
 // 🔧 CORREÇÃO: essa lista estava com os caminhos de uma estrutura de
 // pastas antiga (tudo direto na raiz) — o projeto hoje guarda os JS
@@ -174,7 +174,16 @@ self.addEventListener("push", (event) => {
             body: dados.corpo,
             icon: "./JS/assets/icon-192.png?v=2",
             badge: "./JS/assets/icon-192.png?v=2",
-            data: { url: dados.url || "/" },
+            // 🆕 Guarda o payload INTEIRO (não só `url`) — agora o
+            // backend manda tipo_evento/atividade_id/area junto pra
+            // eventos de Atividade da Oficina (ver dados_extra em
+            // main.py), e o notificationclick abaixo precisa desses
+            // campos pra saber pra onde navegar (Conversa da Atividade
+            // vs Atividade destacada no quadro — mesmo destino que o
+            // clique dentro da Central já usa). Pushes que não são de
+            // atividade (mancal, estoque...) só têm `url` mesmo, e
+            // continuam funcionando igual.
+            data: dados,
             vibrate: [200, 100, 200],
             tag: "oms-notificacao" // notificações novas substituem a anterior na tela
         })
@@ -184,23 +193,63 @@ self.addEventListener("push", (event) => {
 // --------------------------------------------------------------
 // CLIQUE NA NOTIFICAÇÃO: abre o app (ou foca a aba já aberta) na
 // tela correspondente.
+//
+// 🆕 Quando o payload traz tipo_evento + atividade_id (evento de
+// Atividade da Oficina), não basta abrir uma URL genérica — precisa
+// levar pro MESMO destino que o clique dentro da Central de
+// Notificações já usa (Conversa da Atividade se for mensagem;
+// Atividade destacada no quadro da área nos outros casos). Essa
+// decisão mora em JS de página (abrirDestinoAtividadeNotificacao, em
+// script.js) — o Service Worker não a duplica, só repassa os dados:
+//   - Janela já aberta: postMessage (focar não recarrega a página).
+//   - Janela nova: abre com querystring própria, lida no
+//     DOMContentLoaded de script.js.
 // --------------------------------------------------------------
 self.addEventListener("notificationclick", (event) => {
     event.notification.close();
-    const urlRecebida = event.notification.data && event.notification.data.url ? event.notification.data.url : "/";
+    const dados = event.notification.data || {};
+    const urlRecebida = dados.url || "/";
+    const ehAtividade = dados.atividade_id != null && dados.atividade_id !== "";
+
+    let url;
+    if (ehAtividade) {
+        const params = new URLSearchParams();
+        if (dados.tipo_evento === "mensagem") {
+            params.set("abrir_conversa_atividade", dados.atividade_id);
+        } else {
+            params.set("abrir_atividade", dados.atividade_id);
+            params.set("tipo_evento", dados.tipo_evento || "status");
+        }
+        if (dados.area) params.set("area", dados.area);
+        url = `./app.html?${params.toString()}`;
+    } else {
+        url = urlRecebida;
+    }
     // Resolve a URL contra o escopo do service worker (ex.: "/oficina-oms/"),
     // e não contra a raiz do domínio — senão "/" abre https://usuario.github.io/
     // (404), em vez de https://usuario.github.io/oficina-oms/.
-    const url = new URL(urlRecebida, self.registration.scope).href;
+    const urlFinal = new URL(url, self.registration.scope).href;
 
     event.waitUntil(
         clients.matchAll({ type: "window", includeUncontrolled: true }).then((janelas) => {
             for (const janela of janelas) {
                 if (janela.url.includes(self.location.origin) && "focus" in janela) {
+                    // 🆕 Janela já aberta: focar não recarrega a página
+                    // (a querystring da URL nova não seria lida), então
+                    // manda os dados direto pro app tratar via
+                    // 'message' (ver script.js).
+                    if (ehAtividade && "postMessage" in janela) {
+                        janela.postMessage({
+                            tipo: "abrir-destino-atividade",
+                            atividade_id: dados.atividade_id,
+                            area: dados.area || null,
+                            tipo_evento: dados.tipo_evento || "status"
+                        });
+                    }
                     return janela.focus();
                 }
             }
-            if (clients.openWindow) return clients.openWindow(url);
+            if (clients.openWindow) return clients.openWindow(urlFinal);
         })
     );
 });
