@@ -8127,7 +8127,7 @@ function dataDentroDaJanelaRecente(dataHoraStr) {
 // Clique num item do feed: marca como lido PRA ESSA MATRÍCULA (não
 // afeta o que outras pessoas já viram) e leva pra tela de onde aquilo
 // veio — cada tipo tem sua própria rota.
-window.abrirItemNotificacao = async function(tipo, eventoId, referencia, area) {
+window.abrirItemNotificacao = async function(tipo, eventoId, referencia, area, atividadeId) {
     try {
         if (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula) {
             const apiBase = await resolverApiBase();
@@ -8154,9 +8154,18 @@ window.abrirItemNotificacao = async function(tipo, eventoId, referencia, area) {
         window.irParaOcorrenciaEspecifica(referencia);
     } else if (tipo === 'atividade') {
         // 🆕 Ação numa atividade da Oficina (criar/status/editar/
-        // excluir/mensagem) — vai direto pra ÁREA, não pra Ocorrência
-        // (ver registrar_evento_atividade_oficina no backend).
-        window.irParaAreaOficinaViaNotificacao(area);
+        // excluir/mensagem). Quando dá pra saber QUAL atividade
+        // (atividadeId — falta só pra evento de exclusão, ver backend),
+        // abre a "Conversa da Atividade" direto por cima da tela atual —
+        // o modal é global, não depende de estar dentro da área — em vez
+        // de largar a pessoa no quadro geral tendo que achar o card
+        // certo pra clicar no balão de chat. Sem atividadeId (ou se o
+        // modal não existir nessa página), cai pro comportamento antigo.
+        if (atividadeId && typeof window.abrirConversaAtividade === 'function' && document.getElementById('modal-conversa-atividade')) {
+            window.abrirConversaAtividade(atividadeId);
+        } else {
+            window.irParaAreaOficinaViaNotificacao(area);
+        }
     } else if (tipo === 'achado') {
         window.irParaAchadoEspecifico(referencia);
     } else if (tipo === 'sinotico') {
@@ -8297,7 +8306,7 @@ function renderItemNotificacao(item) {
     const referencia = item.referencia;
     return `
     <div class="notificacoes-item" style="--item-cor:${cor}; ${naoLida ? 'background:color-mix(in srgb, var(--danger) 6%, var(--bg-card));' : ''}"
-         onclick="window.abrirItemNotificacao('${escapeAtributoNotif(item.tipo)}', '${escapeAtributoNotif(item.evento_id)}', '${escapeAtributoNotif(referencia)}', '${escapeAtributoNotif(item.area)}')">
+         onclick="window.abrirItemNotificacao('${escapeAtributoNotif(item.tipo)}', '${escapeAtributoNotif(item.evento_id)}', '${escapeAtributoNotif(referencia)}', '${escapeAtributoNotif(item.area)}', ${item.atividade_id != null ? Number(item.atividade_id) : 'null'})">
         <div class="notificacoes-item-icone" style="${naoLida ? 'color:var(--danger);' : ''}">${icone}</div>
         <div class="notificacoes-item-corpo">
             <div class="notificacoes-item-topo">
