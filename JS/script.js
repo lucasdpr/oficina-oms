@@ -4074,7 +4074,14 @@ window.renderCatalogoMateriaisOficina = function() {
 //   🟡 Atenção   -> 1 a 4 pendentes/andamento
 //   🟢 Normal    -> tudo concluído / nada pendente
 function calcularStatusArea(chave) {
-    const doArea = OFICINA_ATIVIDADES_CACHE.filter(x => x.area === chave);
+    // 🐛 CORRIGIDO: só contava x.area === chave, sem incluir atividades
+    // onde essa área é só SOLICITANTE (executada por outra área) — a
+    // mesma atividade aparece no card "Pedido por esta área..." da
+    // lista logo abaixo (ver todasDaArea, linha ~4790), mas o badge de
+    // status no topo da tela e no card da Central de Áreas ficava
+    // "🟢 Normal" mesmo com uma atividade pendente/atrasada pedida por
+    // essa área e sendo feita em outro lugar.
+    const doArea = OFICINA_ATIVIDADES_CACHE.filter(x => x.area === chave || x.solicitante_area === chave);
     const pendentes = doArea.filter(x => x.status === 'Pendente').length;
     const andamento = doArea.filter(x => x.status === 'Em Andamento').length;
     const atrasadas = doArea.filter(x => atividadeEstaAtrasada(x)).length;
