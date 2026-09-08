@@ -7931,25 +7931,41 @@ function renderizarGradeNotificacoes(atividades, feed) {
         return;
     }
 
-    container.innerHTML = `
-        <div class="oficina-grade">
-            ${visiveis.map(({ area: a, status: s, contagem }) => `
-                <div class="oficina-area-card" style="--area-color:${a.cor}; position:relative;" onclick="window.abrirDetalheAreaNotificacao('${a.chave}')">
-                    ${contagem.naoLidas > 0 ? `<span style="position:absolute; top:8px; right:8px; width:9px; height:9px; border-radius:50%; background:var(--danger); box-shadow:0 0 0 2px var(--bg-card);" title="Tem novidade não vista"></span>` : ''}
-                    <div class="oficina-area-topo">
-                        <div class="oficina-area-icone" style="color:${a.cor};"><i class="fas ${a.icone}"></i></div>
-                        <span class="oficina-area-status-badge" style="color:${s.cor};">${s.emoji} ${s.label}</span>
-                    </div>
-                    <h4>${a.nome}</h4>
-                    <div class="oficina-area-resumo">
-                        <span title="Notificações"><i class="fas fa-bell"></i> ${contagem.total}</span>
-                        ${contagem.naoLidas > 0 ? `<span style="color:var(--danger);" title="Não lidas"><i class="fas fa-circle-exclamation"></i> ${contagem.naoLidas}</span>` : ''}
-                    </div>
-                    <button class="oficina-area-acessar" style="color:${a.cor};">Ver Notificações <i class="fas fa-arrow-right"></i></button>
+    // 🆕 Agrupado por severidade (não é mais uma grade de ícones igual à
+    // Central de Áreas) — o gerente lê de cima pra baixo em ordem de
+    // urgência, com o grupo "Crítico" já expandido e o resto colapsável.
+    let ultimoGrupo = null;
+    const linhasHtml = visiveis.map(({ area: a, status: s, contagem }) => {
+        let headerHtml = '';
+        if (s.label !== ultimoGrupo) {
+            ultimoGrupo = s.label;
+            const qtdGrupo = visiveis.filter(v => v.status.label === s.label).length;
+            headerHtml = `
+                <div class="notif-grupo-header" style="--grupo-color:${s.cor};">
+                    <span>${s.emoji} ${s.label}</span>
+                    <span class="notif-grupo-qtd">${qtdGrupo}</span>
                 </div>
-            `).join('')}
-        </div>
-    `;
+            `;
+        }
+        return headerHtml + `
+            <div class="notif-linha" style="--sev-color:${s.cor};" onclick="window.abrirDetalheAreaNotificacao('${a.chave}')">
+                <div class="notif-linha-icone" style="color:${a.cor}; background:color-mix(in srgb, ${a.cor} 16%, transparent);"><i class="fas ${a.icone}"></i></div>
+                <div class="notif-linha-corpo">
+                    <div class="notif-linha-titulo">
+                        ${a.nome}
+                        ${contagem.naoLidas > 0 ? `<span class="notif-ponto-novo" title="Tem novidade não vista"></span>` : ''}
+                    </div>
+                    <div class="notif-linha-meta">
+                        <i class="fas fa-bell"></i> ${contagem.total} notificaç${contagem.total === 1 ? 'ão' : 'ões'}
+                        ${contagem.naoLidas > 0 ? `<span class="notif-nao-lidas">${contagem.naoLidas} não lida${contagem.naoLidas > 1 ? 's' : ''}</span>` : ''}
+                    </div>
+                </div>
+                <i class="fas fa-chevron-right notif-linha-seta"></i>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = `<div class="notif-lista">${linhasHtml}</div>`;
 }
 
 window.buscarGradeNotificacoes = function(valor) {

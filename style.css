@@ -3393,6 +3393,136 @@ h1, h2, h3, h4, h5, h6 {
     opacity: 0.92;
 }
 
+/* 🆕 Grade de áreas da Central de Notificações — lista agrupada por
+   severidade, propositalmente diferente da grade de ícones da Central
+   de Áreas (oficina-grade/oficina-area-card), pra não parecer a mesma
+   tela duas vezes. */
+.notif-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.notif-grupo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 14px 4px 6px;
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--grupo-color, var(--text-muted));
+}
+.notif-grupo-header:first-child {
+    padding-top: 2px;
+}
+
+.notif-grupo-qtd {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    background: var(--bg-th);
+    border-radius: 999px;
+    padding: 1px 8px;
+}
+
+.notif-linha {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--sev-color, var(--border-color));
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background var(--transition-fast), transform var(--transition-fast);
+    touch-action: manipulation;
+}
+.notif-linha:hover {
+    background: var(--bg-th);
+    transform: translateX(2px);
+}
+.notif-linha:active {
+    transform: scale(0.99);
+}
+
+.notif-linha-icone {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.notif-linha-corpo {
+    flex: 1;
+    min-width: 0;
+}
+
+.notif-linha-titulo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    overflow-wrap: break-word;
+}
+
+.notif-ponto-novo {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--danger);
+    flex-shrink: 0;
+}
+
+.notif-linha-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-top: 2px;
+}
+.notif-linha-meta i {
+    margin-right: 2px;
+    font-size: 10px;
+}
+
+.notif-nao-lidas {
+    color: var(--danger);
+    font-weight: 700;
+}
+
+.notif-linha-seta {
+    font-size: 12px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    transition: transform var(--transition-fast);
+}
+.notif-linha:hover .notif-linha-seta {
+    transform: translateX(3px);
+    color: var(--sev-color, var(--text-muted));
+}
+
+@media (max-width: 640px) {
+    .notif-linha {
+        padding: 10px;
+    }
+    .notif-linha-icone {
+        width: 30px;
+        height: 30px;
+    }
+}
+
 /* 🆕 Item da Central de Notificações (ocorrências/OS) — ícone redondo +
    accent lateral na cor do item, pra não ficar só texto puro encostado
    um no outro (era o que deixava a lista "estranha" antes). */
