@@ -4869,7 +4869,7 @@ function renderizarAtividadesArea() {
         }
 
         return `
-        <div class="atividade-card" style="--card-accent:${corBorda};">
+        <div class="atividade-card" id="atividade-card-${x.id}" style="--card-accent:${corBorda};">
             ${x.foto_base64 ? `
                 <img src="${x.foto_base64}"
                      style="width:56px; height:56px; object-fit:cover; border-radius:8px; border:1px solid var(--border-color); cursor:pointer; flex-shrink:0;"
@@ -7817,11 +7817,33 @@ window.carregarCentralNotificacoes = async function() {
     }
 };
 
-window.irParaAreaOficinaViaNotificacao = function(chave) {
+window.irParaAreaOficinaViaNotificacao = function(chave, atividadeId) {
     window.abrirAba(null, 'aba-oficina');
     document.getElementById('nav-oficina')?.classList.add('active');
     document.getElementById('nav-notificacoes')?.classList.remove('active');
     if (typeof window.abrirAreaOficina === 'function') window.abrirAreaOficina(chave);
+    // 🆕 Notificação de status/criação/edição (ver abrirItemNotificacao)
+    // não abre mais a Conversa — cai aqui, no quadro da área. Sem
+    // atividadeId não tem card pra destacar (ex: notificação de
+    // exclusão, a atividade já não existe mais).
+    if (atividadeId) window.destacarAtividadeNoQuadro(atividadeId);
+};
+
+// 🆕 Rola até o card da atividade e pisca a borda dele por alguns
+// segundos — dá o mesmo efeito de "chegar direto na atividade" que uma
+// tela de detalhe dedicada daria, sem precisar criar uma view nova só
+// pra isso. abrirAreaOficina() busca a lista de forma assíncrona, então
+// espera o card aparecer no DOM (tenta por até ~3s) antes de desistir.
+window.destacarAtividadeNoQuadro = function(atividadeId, tentativas) {
+    tentativas = tentativas || 0;
+    const card = document.getElementById(`atividade-card-${atividadeId}`);
+    if (!card) {
+        if (tentativas < 15) setTimeout(() => window.destacarAtividadeNoQuadro(atividadeId, tentativas + 1), 200);
+        return;
+    }
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.classList.add('atividade-card-destacada');
+    setTimeout(() => card.classList.remove('atividade-card-destacada'), 2600);
 };
 
 // 🆕 Vai direto pra Ocorrência clicada (não só abre a aba genérica) —
@@ -8127,7 +8149,7 @@ function dataDentroDaJanelaRecente(dataHoraStr) {
 // Clique num item do feed: marca como lido PRA ESSA MATRÍCULA (não
 // afeta o que outras pessoas já viram) e leva pra tela de onde aquilo
 // veio — cada tipo tem sua própria rota.
-window.abrirItemNotificacao = async function(tipo, eventoId, referencia, area, atividadeId) {
+window.abrirItemNotificacao = async function(tipo, eventoId, referencia, area, atividadeId, tipoEvento) {
     try {
         if (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula) {
             const apiBase = await resolverApiBase();
@@ -8154,15 +8176,24 @@ window.abrirItemNotificacao = async function(tipo, eventoId, referencia, area, a
         window.irParaOcorrenciaEspecifica(referencia);
     } else if (tipo === 'atividade') {
         // 🆕 Ação numa atividade da Oficina (criar/status/editar/
-        // excluir/mensagem). Quando dá pra saber QUAL atividade
-        // (atividadeId — falta só pra evento de exclusão, ver backend),
-        // abre a "Conversa da Atividade" direto por cima da tela atual —
-        // o modal é global, não depende de estar dentro da área — em vez
-        // de largar a pessoa no quadro geral tendo que achar o card
-        // certo pra clicar no balão de chat. Sem atividadeId (ou se o
-        // modal não existir nessa página), cai pro comportamento antigo.
-        if (atividadeId && typeof window.abrirConversaAtividade === 'function' && document.getElementById('modal-conversa-atividade')) {
+        // excluir/mensagem). Desde a PR #57 TODA notificação de
+        // atividade abria a "Conversa da Atividade" — mas quem clica
+        // num "iniciou"/"concluiu"/"criou"/"editou" quer VER a
+        // atividade (status, prazo, responsável), não abrir um chat
+        // vazio. Só notificação de MENSAGEM de verdade deve abrir a
+        // Conversa; o resto abre a Atividade em si.
+        // 🆕 Não existe uma tela de "detalhe da atividade" separada do
+        // quadro da área (só o card dentro da lista) — criar uma view
+        // nova só pra isso seria over-engineering pra este ajuste.
+        // Decisão: pra 'status'/'criacao'/'edicao' vai pro quadro da
+        // área (irParaAreaOficinaViaNotificacao) e usa
+        // destacarAtividadeNoQuadro pra rolar até o card certo e
+        // piscar ele — o técnico chega direto na atividade em questão,
+        // sem abrir um chat.
+        if (tipoEvento === 'mensagem' && atividadeId && typeof window.abrirConversaAtividade === 'function' && document.getElementById('modal-conversa-atividade')) {
             window.abrirConversaAtividade(atividadeId);
+        } else if (atividadeId) {
+            window.irParaAreaOficinaViaNotificacao(area, atividadeId);
         } else {
             window.irParaAreaOficinaViaNotificacao(area);
         }
@@ -8306,7 +8337,7 @@ function renderItemNotificacao(item) {
     const referencia = item.referencia;
     return `
     <div class="notificacoes-item" style="--item-cor:${cor}; ${naoLida ? 'background:color-mix(in srgb, var(--danger) 6%, var(--bg-card));' : ''}"
-         onclick="window.abrirItemNotificacao('${escapeAtributoNotif(item.tipo)}', '${escapeAtributoNotif(item.evento_id)}', '${escapeAtributoNotif(referencia)}', '${escapeAtributoNotif(item.area)}', ${item.atividade_id != null ? Number(item.atividade_id) : 'null'})">
+         onclick="window.abrirItemNotificacao('${escapeAtributoNotif(item.tipo)}', '${escapeAtributoNotif(item.evento_id)}', '${escapeAtributoNotif(referencia)}', '${escapeAtributoNotif(item.area)}', ${item.atividade_id != null ? Number(item.atividade_id) : 'null'}, '${escapeAtributoNotif(item.tipo_evento || 'status')}')">
         <div class="notificacoes-item-icone" style="${naoLida ? 'color:var(--danger);' : ''}">${icone}</div>
         <div class="notificacoes-item-corpo">
             <div class="notificacoes-item-topo">
