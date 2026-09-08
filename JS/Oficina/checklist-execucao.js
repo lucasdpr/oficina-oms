@@ -487,11 +487,23 @@ window.abrirFormAtividadeExtraChecklist = function() {
         alert('Esse reparo ainda não tem uma execução iniciada — abra o Checklist de Execução normalmente primeiro.');
         return;
     }
+    // 🐛 CORREÇÃO ("cliquei e a janela pra escolher a área não abriu"):
+    // se qualquer um desses elementos não fosse encontrado, a função
+    // saía (ou lançava um erro) ANTES de tirar a classe "hidden" do
+    // modal — a pessoa clicava no botão e literalmente nada acontecia
+    // na tela, sem nenhum aviso do motivo. Agora qualquer elemento
+    // faltando é logado no console em vez de falhar calado, e o modal
+    // só é aberto se o select da área realmente existir.
     const modal = document.getElementById('modal-atividade-extra-checklist');
-    if (!modal) return;
     const select = document.getElementById('atividade-extra-area');
+    const descricaoEl = document.getElementById('atividade-extra-descricao');
+    if (!modal || !select || !descricaoEl) {
+        console.error('⚠️ Modal "Registrar Atividade Extra" não abriu: elemento(s) ausente(s) no DOM.', { modal: !!modal, select: !!select, descricaoEl: !!descricaoEl });
+        alert('Não foi possível abrir a janela de seleção de área. Recarregue a página e tente de novo.');
+        return;
+    }
     select.innerHTML = CHECKLIST_EXECUCAO_SECOES.map(s => `<option value="${s.chave}">${s.nome}</option>`).join('');
-    document.getElementById('atividade-extra-descricao').value = '';
+    descricaoEl.value = '';
     modal.classList.remove('hidden');
 };
 
