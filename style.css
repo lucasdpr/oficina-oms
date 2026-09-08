@@ -2527,8 +2527,16 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 600;
     color: var(--text-heading);
 }
-/* Garantir que o modal seja uma coluna flexível */
-.modal-content {
+/* 🐛 CORRIGIDO: essa regra era ".modal-content" pura (sem escopo),
+   então "overflow:hidden" e "max-height:95vh" caíam em TODO modal do
+   site, não só no do Folhão — se o conteúdo de qualquer outro modal
+   (ex: o de colaboradores/Reabrir Atividade) passasse de 95vh numa
+   tela pequena ou com o teclado do celular aberto, o excesso ficava
+   simplesmente cortado/invisível, sem scroll (só o Folhão tinha seu
+   próprio scroll interno via .folhao-body). Escopado só pro modal que
+   realmente precisa disso (tem .folhao-tabs dentro) — os demais usam
+   a regra genérica ".modal-content" (linha ~297) com overflow-y:auto. */
+.modal-content:has(.folhao-tabs) {
     display: flex;
     flex-direction: column;
     max-height: 95vh; /* Limita a altura total */
