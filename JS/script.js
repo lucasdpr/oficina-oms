@@ -4770,7 +4770,14 @@ function renderizarAtividadesArea() {
     const container = document.getElementById('area-oficina-lista');
     if (!container || !OFICINA_AREA_ATUAL) return;
 
-    const todasDaArea = OFICINA_ATIVIDADES_CACHE.filter(x => x.area === OFICINA_AREA_ATUAL);
+    // 🆕 CORRIGIDO ("pedi uma Atividade Extra pra outra área e ela some
+    // do meu quadro"): antes só entrava aqui quem EXECUTA (x.area). Quem
+    // PEDIU (solicitante_area, vindo do backend — ver /api/oficina/
+    // atividades) continua vendo a atividade no PRÓPRIO quadro mesmo
+    // sendo executada por outra área — só que ela chega marcada como
+    // "pedida por mim" no card (ver renderização abaixo), pra não
+    // confundir com uma tarefa da própria área.
+    const todasDaArea = OFICINA_ATIVIDADES_CACHE.filter(x => x.area === OFICINA_AREA_ATUAL || x.solicitante_area === OFICINA_AREA_ATUAL);
 
     // 🆕 Separa quem já pode aparecer como "pra fazer" de quem ainda
     // está programado pra uma data futura (data_inicio no futuro).
@@ -4892,6 +4899,19 @@ function renderizarAtividadesArea() {
                     ${x.data_inicio ? ` · <span style="color:var(--text-accent, #3b82f6);">Início salvo: ${x.data_inicio.split('-').reverse().join('/')}</span>` : ''}
                     ${prazoFormatado ? ` · Prazo: <span style="color:${atrasada ? 'var(--danger)' : 'var(--text-muted)'}; font-weight:${atrasada ? '700' : '400'};">${prazoFormatado}</span>` : ''}
                 </div>
+                ${(() => {
+                    // 🆕 Item 5: quem PEDIU a atividade extra continua vendo
+                    // ela no PRÓPRIO quadro mesmo sendo executada por outra
+                    // área (ver filtro em renderizarAtividadesArea) — esse
+                    // aviso deixa claro que não é uma tarefa da área atual,
+                    // e quando alguém já pegou o serviço (executado_por),
+                    // mostra o NOME de quem tá executando, não só a área.
+                    if (x.area === OFICINA_AREA_ATUAL) return '';
+                    const areaExecInfo = (typeof AREAS_OFICINA !== 'undefined' ? AREAS_OFICINA : (window.AREAS_OFICINA || [])).find(a => a.chave === x.area);
+                    const nomeAreaExec = (areaExecInfo && areaExecInfo.nome) || x.area;
+                    const quem = x.executado_por ? ` — <strong>${x.executado_por}</strong>` : '';
+                    return `<div style="font-size:11px; color:var(--text-accent, #3b82f6); margin-top:4px;"><i class="fas fa-people-arrows"></i> Pedido por esta área, executando em ${nomeAreaExec}${quem}</div>`;
+                })()}
             </div>
             <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
                 ${botoesAcao}
@@ -7950,7 +7970,11 @@ function renderizarGradeNotificacoes(atividades, feed) {
         // renderizarDetalheAreaNotificacao) já excluía ela de propósito
         // — reproduzindo o mesmo bug já corrigido antes (card avisa,
         // detalhe abre vazio), só que pra esse caso específico.
-        const doArea = atividades.filter(x => x.area === a.chave && !atividadeAindaNaoComecou(x));
+        // 🆕 Item 5: conta também atividades PEDIDAS por essa área mesmo
+        // sendo executadas por outra (solicitante_area) — senão o card
+        // de quem pediu nunca acendia "Atenção"/"Novo" pra algo que só
+        // aparece pra ele no quadro (ver renderizarAtividadesArea).
+        const doArea = atividades.filter(x => (x.area === a.chave || x.solicitante_area === a.chave) && !atividadeAindaNaoComecou(x));
         const pendentes = doArea.filter(x => x.status === 'Pendente').length;
         const andamento = doArea.filter(x => x.status === 'Em Andamento').length;
         const atrasadas = doArea.filter(x => atividadeEstaAtrasada(x)).length;
@@ -8269,7 +8293,7 @@ function renderizarDetalheAreaNotificacao(chave) {
     // Atenção), então precisam aparecer aqui, senão o detalhe fica vazio
     // mesmo quando o card avisou que tinha algo pra ver.
     const atividadesAreaTodas = NOTIF_ATIVIDADES_CACHE
-        .filter(x => x.area === chave && x.status !== 'Concluído' && x.status !== 'Recusado' && !atividadeAindaNaoComecou(x));
+        .filter(x => (x.area === chave || x.solicitante_area === chave) && x.status !== 'Concluído' && x.status !== 'Recusado' && !atividadeAindaNaoComecou(x));
     // 🐛 CORREÇÃO: o cabeçalho mostrava o tamanho da lista já cortada em
     // MAX_ITENS_NOTIFICACOES, então uma área com, digamos, 15 atividades
     // em aberto anunciava "(10)" — a pessoa lia um número errado antes
