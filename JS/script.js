@@ -4858,21 +4858,30 @@ function renderizarAtividadesArea() {
         // Botões de ação variam por status — sempre um jeito de avançar
         // (ou pausar/recusar com motivo), nunca "passar por cima" sem
         // justificar.
+        // 🆕 Bugfix: quando a área ATUAL só PEDIU a atividade (x.area é
+        // outra área, x.solicitante_area === OFICINA_AREA_ATUAL) ela está
+        // vendo o card só por transparência — quem de fato EXECUTA é que
+        // decide Iniciar/Recusar/Concluir/Aguardando. Sem essa checagem o
+        // solicitante conseguia mexer no status de um trabalho que nem é
+        // dele.
+        const estaNoQuadroExecutor = x.area === OFICINA_AREA_ATUAL;
         let botoesAcao = '';
-        if (x.status === 'Pendente') {
-            botoesAcao = `
-                <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Em Andamento')">Iniciar</button>
-                <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Recusado')">Recusar</button>
-            `;
-        } else if (x.status === 'Em Andamento') {
-            botoesAcao = `
-                <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Concluído')">Concluir</button>
-                <button class="btn-premium" style="padding:4px 10px; font-size:11px; background:#f97316; border-color:#f97316;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Aguardando')">Aguardando</button>
-            `;
-        } else if (x.status === 'Aguardando') {
-            botoesAcao = `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Em Andamento')"><i class="fas fa-play"></i> Retomar</button>`;
-        } else if (x.status === 'Recusado') {
-            botoesAcao = `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Pendente')"><i class="fas fa-rotate-left"></i> Reabrir</button>`;
+        if (estaNoQuadroExecutor) {
+            if (x.status === 'Pendente') {
+                botoesAcao = `
+                    <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Em Andamento')">Iniciar</button>
+                    <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Recusado')">Recusar</button>
+                `;
+            } else if (x.status === 'Em Andamento') {
+                botoesAcao = `
+                    <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Concluído')">Concluir</button>
+                    <button class="btn-premium" style="padding:4px 10px; font-size:11px; background:#f97316; border-color:#f97316;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Aguardando')">Aguardando</button>
+                `;
+            } else if (x.status === 'Aguardando') {
+                botoesAcao = `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Em Andamento')"><i class="fas fa-play"></i> Retomar</button>`;
+            } else if (x.status === 'Recusado') {
+                botoesAcao = `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Pendente')"><i class="fas fa-rotate-left"></i> Reabrir</button>`;
+            }
         }
 
         return `
