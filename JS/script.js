@@ -4732,6 +4732,16 @@ window.abrirAreaOficina = async function(chave, abaInicial) {
     renderProcedimentosArea(chave);
 };
 
+// 🐛 CORRIGIDO ("clicar no logo 'OMS Mobile' do cabeçalho mobile
+// sempre voltava pro Painel Geral, mesmo o técnico não tendo acesso
+// a essa visão de ADM"): mesma checagem de "é técnico restrito" já
+// usada em fecharAreaOficina() — técnico volta pro Painel do Técnico,
+// só ADM/visitante continuam indo pro Painel Geral.
+window.voltarAoPainelOuTecnico = function() {
+    const restrito = !!(OPERADOR_LOGADO && !OPERADOR_LOGADO.visitante && !OPERADOR_LOGADO.isAdm && OPERADOR_LOGADO.area);
+    window.abrirAba(null, restrito ? 'aba-tecnico' : 'aba-painel');
+};
+
 window.fecharAreaOficina = function() {
     OFICINA_AREA_ATUAL = null;
     // 🔧 CORREÇÃO ("técnico fechava a área e caía na Central de Áreas,
