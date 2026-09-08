@@ -932,13 +932,28 @@ function operadorEhSupervisorOuAdm() {
 }
 window.operadorEhSupervisorOuAdm = operadorEhSupervisorOuAdm;
 
+// 🆕 Técnico comum (não ADM, não Supervisor) com área cadastrada — antes
+// não enxergava a Central de Notificações de jeito nenhum; agora entra,
+// mas só vê o que é da própria área (ver renderizarGradeNotificacoes).
+function operadorTecnicoComArea() {
+    return !!(OPERADOR_LOGADO && !OPERADOR_LOGADO.visitante && !OPERADOR_LOGADO.isAdm
+        && !operadorEhSupervisorOuAdm() && OPERADOR_LOGADO.area);
+}
+window.operadorTecnicoComArea = operadorTecnicoComArea;
+
+// ADM/Supervisor veem a Central inteira; técnico com área só vê a dele.
+function operadorPodeVerNotificacoes() {
+    return operadorEhSupervisorOuAdm() || operadorTecnicoComArea();
+}
+window.operadorPodeVerNotificacoes = operadorPodeVerNotificacoes;
+
 let TIMER_BADGE_NOTIFICACOES_GLOBAL = null;
 
 function ativarCentralNotificacoesSeAutorizado() {
     const link = document.getElementById("nav-notificacoes");
     if (!link) return;
 
-    const autorizado = operadorEhSupervisorOuAdm();
+    const autorizado = operadorPodeVerNotificacoes();
 
     if (autorizado) {
         link.classList.remove("hidden");
@@ -949,7 +964,7 @@ function ativarCentralNotificacoesSeAutorizado() {
         if (typeof window.atualizarBadgeNotificacoesNaoLidas === 'function') window.atualizarBadgeNotificacoesNaoLidas();
         if (!TIMER_BADGE_NOTIFICACOES_GLOBAL) {
             TIMER_BADGE_NOTIFICACOES_GLOBAL = setInterval(() => {
-                if (operadorEhSupervisorOuAdm() && typeof window.atualizarBadgeNotificacoesNaoLidas === 'function') {
+                if (operadorPodeVerNotificacoes() && typeof window.atualizarBadgeNotificacoesNaoLidas === 'function') {
                     window.atualizarBadgeNotificacoesNaoLidas();
                 }
             }, 120000);
@@ -1129,11 +1144,13 @@ function aplicarRestricaoNavTecnico() {
     const restrito = !!(OPERADOR_LOGADO && !OPERADOR_LOGADO.visitante && !OPERADOR_LOGADO.isAdm && OPERADOR_LOGADO.area);
 
     document.querySelectorAll('.sidebar-nav .nav-link').forEach(el => {
-        // 🆕 Supervisor com área cadastrada cai no "restrito" acima (não é
-        // ADM), mas ainda precisa ver a Central de Notificações — sem essa
-        // exceção o link ficaria escondido por aqui mesmo já autorizado
-        // por ativarCentralNotificacoesSeAutorizado().
-        const excecaoNotificacoes = el.id === 'nav-notificacoes' && operadorEhSupervisorOuAdm();
+        // 🆕 Supervisor com área cadastrada, ou técnico com área, caem no
+        // "restrito" acima (nenhum dos dois é ADM), mas os dois precisam
+        // ver a Central de Notificações (o técnico só a própria área, ver
+        // renderizarGradeNotificacoes) — sem essa exceção o link ficaria
+        // escondido por aqui mesmo já autorizado por
+        // ativarCentralNotificacoesSeAutorizado().
+        const excecaoNotificacoes = el.id === 'nav-notificacoes' && operadorPodeVerNotificacoes();
         const liberado = NAV_IDS_LIBERADOS_TECNICO.includes(el.id) || excecaoNotificacoes;
         el.style.display = (restrito && !liberado) ? 'none' : '';
     });
@@ -7634,14 +7651,15 @@ window.excluirOrdemServico = async function(id) {
 // (Central de Áreas, Ocorrência, OS) num feed único, lendo as mesmas
 // APIs — não duplica lógica nenhuma de negócio.
 // ==========================================
-// 🆕 10s (era 30s) — a lista agora reordena pela notificação mais nova
-// (ver renderizarGradeNotificacoes), então precisa reagir rápido: com
-// 30s de atraso, "subir a área que acabou de notificar" não parecia
-// tempo real de verdade.
-const INTERVALO_POLLING_NOTIFICACOES_MS = 10000;
+// 🔧 Voltou pra 30s (chegou a ir pra 10s por um instante): o banco é
+// Neon plano free, com auto-suspend e CU-hrs limitados — 3x mais
+// polling é 3x mais chance de manter o compute acordado à toa. 30s já
+// é rápido o bastante pra área subir na lista logo depois de notificar,
+// sem gastar cota de graça.
+const INTERVALO_POLLING_NOTIFICACOES_MS = 30000;
 let TIMER_POLLING_NOTIFICACOES = null;
 
-// Enquanto a aba estiver aberta, atualiza sozinha a cada 10s. Se a
+// Enquanto a aba estiver aberta, atualiza sozinha a cada 30s. Se a
 // pessoa sair da aba (ou trocar de operador), o próprio timer se
 // desarma sozinho no próximo tick — não fica batendo no servidor à toa
 // com a aba em segundo plano.
@@ -7705,13 +7723,18 @@ window.carregarFeedNotificacoes = async function() {
 window.atualizarBadgeNotificacoesNaoLidas = async function(feedPronto) {
     const badge = document.getElementById('badge-notificacoes-nao-lidas');
     if (!badge) return;
-    if (!operadorEhSupervisorOuAdm()) { badge.classList.add('hidden'); return; }
+    if (!operadorPodeVerNotificacoes()) { badge.classList.add('hidden'); return; }
     const feed = feedPronto !== undefined ? feedPronto : await window.carregarFeedNotificacoes();
     // `null` = a busca falhou — mantém o sino como já estava (não dá
     // pra saber se tem novidade ou não) em vez de escondê-lo como se
     // tivesse zero, e sem quebrar num "null.filter".
     if (feed === null) return;
-    const naoLidas = feed.filter(item => !item.lida).length;
+    // 🆕 Técnico só conta o que é da própria área — senão o sino dele
+    // mostraria não-lidas de áreas que ele nem enxerga na Central.
+    const feedDoOperador = operadorTecnicoComArea()
+        ? feed.filter(item => item.area === OPERADOR_LOGADO.area)
+        : feed;
+    const naoLidas = feedDoOperador.filter(item => !item.lida).length;
     if (naoLidas > 0) {
         badge.innerText = naoLidas > 99 ? '99+' : String(naoLidas);
         badge.classList.remove('hidden');
@@ -7880,10 +7903,22 @@ function renderizarGradeNotificacoes(atividades, feed) {
         if (ts > c.ultimoTs) c.ultimoTs = ts;
     }
 
-    const todasAreas = [
-        ...AREAS_OFICINA.filter(a => a.tipo === 'oficina' || a.tipo === 'administrativo'),
-        ...AREAS_NOTIFICACAO_EXTRAS,
-    ];
+    // 🆕 Técnico comum só vê a própria área — ADM/Supervisor continuam
+    // vendo a Oficina inteira, sem mudança nenhuma pra eles.
+    const restritoAPropriaArea = operadorTecnicoComArea();
+    const titulo = document.getElementById('notificacoes-grade-titulo');
+    const toolbar = document.getElementById('notificacoes-grade-toolbar');
+    if (titulo) titulo.innerHTML = restritoAPropriaArea
+        ? '<i class="fas fa-bell"></i> Minhas Notificações'
+        : '<i class="fas fa-industry"></i> Áreas';
+    if (toolbar) toolbar.classList.toggle('hidden', restritoAPropriaArea);
+
+    const todasAreas = restritoAPropriaArea
+        ? [...AREAS_OFICINA, ...AREAS_NOTIFICACAO_EXTRAS].filter(a => a.chave === OPERADOR_LOGADO.area)
+        : [
+            ...AREAS_OFICINA.filter(a => a.tipo === 'oficina' || a.tipo === 'administrativo'),
+            ...AREAS_NOTIFICACAO_EXTRAS,
+        ];
 
     const PESO_STATUS = { 'Crítico': 0, 'Restrição': 1, 'Atenção': 2, 'Novo': 3, 'Normal': 4, 'Sem novidade': 5 };
 
@@ -7913,8 +7948,9 @@ function renderizarGradeNotificacoes(atividades, feed) {
 
     // "Outros" — item sem área nenhuma (achado, ou ocorrência/OS sem a
     // área escolhida no formulário). Só entra na grade se tiver alguma
-    // notificação; sempre por último.
-    const semArea = contagemPorArea.get('__sem_area__');
+    // notificação; sempre por último. Técnico restrito à própria área
+    // não vê isso — "Outros" é ruído de fora da área dele.
+    const semArea = !restritoAPropriaArea && contagemPorArea.get('__sem_area__');
     if (semArea && semArea.total > 0) {
         cards.push({
             area: { chave: '__sem_area__', nome: 'Outros', icone: 'fa-ellipsis', cor: '#8a97ab' },
