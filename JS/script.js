@@ -4858,21 +4858,30 @@ function renderizarAtividadesArea() {
         // Botões de ação variam por status — sempre um jeito de avançar
         // (ou pausar/recusar com motivo), nunca "passar por cima" sem
         // justificar.
+        // 🆕 Bugfix: quando a área ATUAL só PEDIU a atividade (x.area é
+        // outra área, x.solicitante_area === OFICINA_AREA_ATUAL) ela está
+        // vendo o card só por transparência — quem de fato EXECUTA é que
+        // decide Iniciar/Recusar/Concluir/Aguardando. Sem essa checagem o
+        // solicitante conseguia mexer no status de um trabalho que nem é
+        // dele.
+        const estaNoQuadroExecutor = x.area === OFICINA_AREA_ATUAL;
         let botoesAcao = '';
-        if (x.status === 'Pendente') {
-            botoesAcao = `
-                <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Em Andamento')">Iniciar</button>
-                <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Recusado')">Recusar</button>
-            `;
-        } else if (x.status === 'Em Andamento') {
-            botoesAcao = `
-                <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Concluído')">Concluir</button>
-                <button class="btn-premium" style="padding:4px 10px; font-size:11px; background:#f97316; border-color:#f97316;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Aguardando')">Aguardando</button>
-            `;
-        } else if (x.status === 'Aguardando') {
-            botoesAcao = `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Em Andamento')"><i class="fas fa-play"></i> Retomar</button>`;
-        } else if (x.status === 'Recusado') {
-            botoesAcao = `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Pendente')"><i class="fas fa-rotate-left"></i> Reabrir</button>`;
+        if (estaNoQuadroExecutor) {
+            if (x.status === 'Pendente') {
+                botoesAcao = `
+                    <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Em Andamento')">Iniciar</button>
+                    <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Recusado')">Recusar</button>
+                `;
+            } else if (x.status === 'Em Andamento') {
+                botoesAcao = `
+                    <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Concluído')">Concluir</button>
+                    <button class="btn-premium" style="padding:4px 10px; font-size:11px; background:#f97316; border-color:#f97316;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Aguardando')">Aguardando</button>
+                `;
+            } else if (x.status === 'Aguardando') {
+                botoesAcao = `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Em Andamento')"><i class="fas fa-play"></i> Retomar</button>`;
+            } else if (x.status === 'Recusado') {
+                botoesAcao = `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Pendente')"><i class="fas fa-rotate-left"></i> Reabrir</button>`;
+            }
         }
 
         return `
@@ -8170,6 +8179,24 @@ function dataDentroDaJanelaRecente(dataHoraStr) {
     return diffMs >= 0 && diffMs <= DIAS_RECENCIA_NOTIFICACOES * 24 * 60 * 60 * 1000;
 }
 
+// 🆕 Destino de UMA notificação de Atividade da Oficina — extraído pra
+// função própria porque agora tem DOIS chamadores: o clique dentro da
+// Central (abrirItemNotificacao, abaixo) e o clique numa notificação
+// PUSH do sistema operacional (ver notificationclick em
+// service-worker.js -> mensagem 'abrir-destino-atividade' tratada em
+// processarParametrosNotificacaoPush). Mesma regra dos dois: só
+// 'mensagem' abre a Conversa; 'status'/'criacao'/'edicao' abre a
+// Atividade destacada no quadro da área.
+window.abrirDestinoAtividadeNotificacao = function(area, atividadeId, tipoEvento) {
+    if (tipoEvento === 'mensagem' && atividadeId && typeof window.abrirConversaAtividade === 'function' && document.getElementById('modal-conversa-atividade')) {
+        window.abrirConversaAtividade(atividadeId);
+    } else if (atividadeId) {
+        window.irParaAreaOficinaViaNotificacao(area, atividadeId);
+    } else {
+        window.irParaAreaOficinaViaNotificacao(area);
+    }
+};
+
 // Clique num item do feed: marca como lido PRA ESSA MATRÍCULA (não
 // afeta o que outras pessoas já viram) e leva pra tela de onde aquilo
 // veio — cada tipo tem sua própria rota.
@@ -8214,13 +8241,7 @@ window.abrirItemNotificacao = async function(tipo, eventoId, referencia, area, a
         // destacarAtividadeNoQuadro pra rolar até o card certo e
         // piscar ele — o técnico chega direto na atividade em questão,
         // sem abrir um chat.
-        if (tipoEvento === 'mensagem' && atividadeId && typeof window.abrirConversaAtividade === 'function' && document.getElementById('modal-conversa-atividade')) {
-            window.abrirConversaAtividade(atividadeId);
-        } else if (atividadeId) {
-            window.irParaAreaOficinaViaNotificacao(area, atividadeId);
-        } else {
-            window.irParaAreaOficinaViaNotificacao(area);
-        }
+        window.abrirDestinoAtividadeNotificacao(area, atividadeId, tipoEvento);
     } else if (tipo === 'achado') {
         window.irParaAchadoEspecifico(referencia);
     } else if (tipo === 'sinotico') {
@@ -8238,6 +8259,71 @@ window.abrirItemNotificacao = async function(tipo, eventoId, referencia, area, a
         window.carregarCentralNotificacoes();
     }
 };
+
+// 🆕 PUSH -> ROTEAMENTO: quando a notificação chega como PUSH de
+// verdade do sistema operacional (fora do app, barra de notificações
+// do celular) e o usuário TOCA nela, quem trata o clique é o Service
+// Worker (notificationclick em service-worker.js) — ele roda num
+// contexto separado e não enxerga essas funções direto. Em vez de
+// duplicar a lógica de "pra onde vai", o SW só repassa os dados
+// (tipo_evento/atividade_id/area, que agora vêm no payload do push —
+// ver dados_extra no backend) e a gente reaproveita o MESMO destino já
+// usado pelo clique dentro da Central (abrirDestinoAtividadeNotificacao,
+// acima). Dois jeitos do SW entregar isso, tratados aqui:
+//   - Janela NOVA (app fechado): o SW abre a URL com querystring
+//     (?abrir_atividade=ID&area=X&tipo_evento=Y) — lida no
+//     DOMContentLoaded abaixo.
+//   - Janela JÁ ABERTA: o SW usa postMessage (focar não recarrega a
+//     página, então não dava pra usar querystring) — ouvido logo abaixo.
+function processarDestinoNotificacaoPush(dados) {
+    if (!dados) return;
+    const atividadeId = dados.atividade_id != null && dados.atividade_id !== '' ? Number(dados.atividade_id) : null;
+    const area = dados.area || null;
+    const tipoEvento = dados.tipo_evento || 'status';
+    if (!atividadeId && !area) return;
+    // Espera o app estar logado e com a tela principal pronta antes de
+    // navegar — se o toque na notificação abriu o app do zero, o login
+    // e o carregamento inicial ainda podem estar em andamento.
+    const tentar = (restantes) => {
+        if (OPERADOR_LOGADO && typeof window.abrirDestinoAtividadeNotificacao === 'function' && typeof window.abrirAba === 'function') {
+            window.abrirDestinoAtividadeNotificacao(area, atividadeId, tipoEvento);
+        } else if (restantes > 0) {
+            setTimeout(() => tentar(restantes - 1), 300);
+        }
+        // Sem OPERADOR_LOGADO depois de ~6s: usuário provavelmente caiu
+        // na tela de login — não dá pra rotear sem ele decidir entrar,
+        // desiste silenciosamente (a notificação continua na Central).
+    };
+    tentar(20);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const idConversa = params.get('abrir_conversa_atividade');
+        const idAtividade = params.get('abrir_atividade');
+        if (idConversa || idAtividade) {
+            processarDestinoNotificacaoPush({
+                atividade_id: idConversa || idAtividade,
+                area: params.get('area'),
+                tipo_evento: idConversa ? 'mensagem' : (params.get('tipo_evento') || 'status')
+            });
+            // Limpa a querystring pra um refresh depois não reabrir a
+            // mesma atividade de novo sozinho.
+            window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+        }
+    } catch (e) {
+        console.warn('⚠️ Erro ao processar parâmetros de notificação push:', e);
+    }
+});
+
+if (window.navigator && navigator.serviceWorker) {
+    navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.tipo === 'abrir-destino-atividade') {
+            processarDestinoNotificacaoPush(event.data);
+        }
+    });
+}
 
 // 🆕 Marca de uma vez todas as notificações não lidas da área aberta —
 // só pra essa matrícula (a marcação sempre foi individual, ver
