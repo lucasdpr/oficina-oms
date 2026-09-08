@@ -4895,7 +4895,7 @@ function renderizarAtividadesArea() {
                 <div style="font-size:13px; color:var(--text-body);">${x.descricao}</div>
                 ${x.motivo_status ? `<div style="font-size:11.5px; color:${corStatus[x.status]}; margin-top:4px;"><i class="fas fa-circle-info"></i> ${x.motivo_status}</div>` : ''}
                 <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
-                    ${x.responsavel ? `${x.responsavel} · ` : ''}${x.criado_em || ''}
+                    ${x.responsavel ? `${x.responsavel} · ` : ''}${x.criado_por ? `Criado por ${x.criado_por} · ` : ''}${x.criado_em || ''}
                     ${x.data_inicio ? ` · <span style="color:var(--text-accent, #3b82f6);">Início salvo: ${x.data_inicio.split('-').reverse().join('/')}</span>` : ''}
                     ${prazoFormatado ? ` · Prazo: <span style="color:${atrasada ? 'var(--danger)' : 'var(--text-muted)'}; font-weight:${atrasada ? '700' : '400'};">${prazoFormatado}</span>` : ''}
                 </div>
