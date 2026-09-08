@@ -3988,6 +3988,16 @@ body.light-mode {
     transform: translateX(2px);
     border-color: var(--card-accent, var(--border-color));
 }
+/* 🆕 Destaque temporário ao chegar direto numa atividade vindo da
+   Central de Notificações (ver destacarAtividadeNoQuadro em script.js)
+   — pisca a borda pra ajudar a achar o card certo no meio da lista. */
+@keyframes atividade-card-piscar {
+    0%, 100% { box-shadow: 0 0 0 0 transparent; }
+    50% { box-shadow: 0 0 0 3px var(--text-accent, #3b82f6); }
+}
+.atividade-card-destacada {
+    animation: atividade-card-piscar 0.65s ease-in-out 3;
+}
 
 /* ---- Chips de material (lista de Materiais Técnicos da Área) ---- */
 .material-chip {
