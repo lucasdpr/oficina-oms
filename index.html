@@ -1098,7 +1098,14 @@ footer a:hover { color: var(--amber); }
 <!-- 🆕 Aviso de nova versão do site — mesma lógica de app.html: aparece
      quando o Service Worker detecta que uma versão mais nova assumiu
      o controle, sem recarregar sozinho. -->
-<div id="aviso-nova-versao" hidden style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:99999; background:#1e1a14; color:#f2ede2; padding:12px 16px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,0.5); border:1px solid rgba(240,163,52,0.4); display:flex; align-items:center; gap:12px;">
+<!-- 🐛 CORRIGIDO ("aviso nunca some"): o atributo `hidden` depende de
+     `display:none` da folha de estilo padrão do navegador, que é
+     facilmente vencida por qualquer style inline — e esse elemento
+     tinha `display:flex` no próprio `style=""`, então `hidden`/
+     `el.hidden=true` nunca fazia efeito nenhum, mesmo sem erro nenhum
+     no console. Agora o JS controla `style.display` diretamente, sem
+     depender do atributo. -->
+<div id="aviso-nova-versao" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:99999; background:#1e1a14; color:#f2ede2; padding:12px 16px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,0.5); border:1px solid rgba(240,163,52,0.4); align-items:center; gap:12px;">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f0a334" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
     <span>Nova versão do site disponível.</span>
     <button type="button" onclick="window.forcarAtualizacaoOMS()" style="background:#f0a334; color:#0d0b08; border:none; padding:6px 14px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12.5px;">Atualizar agora</button>
@@ -1947,7 +1954,7 @@ footer a:hover { color: var(--amber); }
         // visual imediato do clique. Esconde na hora, não depende de
         // mais nada pra desaparecer.
         const aviso = document.getElementById('aviso-nova-versao');
-        if (aviso) aviso.hidden = true;
+        if (aviso) aviso.style.display = 'none';
         const url = new URL(window.location.href);
         url.searchParams.set('_upd', Date.now());
         window.location.replace(url.toString());
@@ -1998,7 +2005,7 @@ footer a:hover { color: var(--amber); }
                 if (jaAvisouNovaVersao) return;
                 jaAvisouNovaVersao = true;
                 const aviso = document.getElementById('aviso-nova-versao');
-                if (aviso) aviso.hidden = false;
+                if (aviso) aviso.style.display = 'flex';
             });
         });
     }
