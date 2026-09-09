@@ -2758,6 +2758,25 @@ h1, h2, h3, h4, h5, h6 {
     z-index: 2;
 }
 
+/* Circuito técnico à deriva — a mesma linguagem "planta técnica" da
+   landing, bem mais fraca aqui pra não competir com o card. */
+.login-bg-circuito {
+    position: absolute; inset: -20%;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0.5;
+    background-image:
+        linear-gradient(rgba(245, 158, 11, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(245, 158, 11, 0.05) 1px, transparent 1px);
+    background-size: 56px 56px;
+    animation: loginCircuitoDrift 40s linear infinite;
+}
+@keyframes loginCircuitoDrift {
+    from { transform: translate(0, 0); }
+    to { transform: translate(56px, 56px); }
+}
+@media (prefers-reduced-motion: reduce) { .login-bg-circuito { animation: none; } }
+
 /* Brilhos ambiente flutuando atrás do card — reforça a mesma linguagem
    "spotlight industrial" usada na landing, sem custar um canvas 3D
    inteiro numa tela que precisa carregar rápido (é o login). */
@@ -3042,6 +3061,29 @@ h1, h2, h3, h4, h5, h6 {
     box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
     transform: translateY(-1px);
 }
+
+/* Cartão de ajuda "1º acesso" — antes vivia dentro do card de login
+   competindo por atenção com o formulário; agora é um apoio discreto
+   embaixo do botão de Visitante, pra quem precisa mas sem atrapalhar
+   quem já sabe a senha. */
+.login-ajuda-primeiro-acesso {
+    position: absolute; top: 110px; right: 24px; z-index: 4;
+    width: 230px;
+    display: flex; align-items: flex-start; gap: 8px;
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(245, 158, 11, 0.22);
+    border-radius: 10px;
+    padding: 10px 12px;
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    font-size: 0.7rem;
+    line-height: 1.45;
+    color: #cbd5e1;
+    animation: loginAjudaEntra 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.6s backwards;
+}
+.login-ajuda-primeiro-acesso i { color: #f59e0b; font-size: 0.85rem; margin-top: 1px; flex-shrink: 0; }
+.login-ajuda-primeiro-acesso strong { color: #f59e0b; }
+@keyframes loginAjudaEntra { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .login-ajuda-primeiro-acesso { animation: none; } }
 /* ==========================================================================
    PAINEL DO TÉCNICO — atalhos rápidos e listas de ação
    ========================================================================== */
@@ -4282,6 +4324,24 @@ textarea,
   }
 }
 
+/* 🔧 CORRIGIDO: o cartão de ajuda "1º acesso" (230px, absoluto no canto)
+   só tinha reset pra telas <=480px — entre 481 e ~780px ele sobrepunha
+   o card de login (420px de largura), já que os dois brigam pelo mesmo
+   espaço no centro. Nessa faixa intermediária ele também vira estático,
+   largura cheia, centralizado — sem precisar mexer no breakpoint dos
+   botões de canto (esses continuam pequenos o bastante pra caber). */
+@media (min-width: 481px) and (max-width: 780px) {
+    .login-home-container { flex-wrap: wrap; }
+    .login-ajuda-primeiro-acesso {
+        position: static;
+        flex-basis: 100%;
+        width: 100%;
+        max-width: 420px;
+        margin: 0 auto 4px;
+        order: -1;
+    }
+}
+
 /* ==========================================================================
    TELA DE LOGIN - AJUSTE MOBILE (iPhone e telas pequenas)
    Antes, Voltar / Conexão Segura / Modo Visitante ficavam com
@@ -4299,6 +4359,19 @@ textarea,
     -webkit-overflow-scrolling: touch;
     padding: calc(14px + env(safe-area-inset-top)) 14px calc(24px + env(safe-area-inset-bottom));
     gap: 8px;
+  }
+
+  /* 🔧 CORRIGIDO: o cartão de ajuda "1º acesso" é novo (antes vivia
+     dentro do card) e tinha ficado de fora desse reset — continuava
+     com position:absolute; top:110px; right:24px do desktop, ou saindo
+     da tela em telas estreitas, ou sobrepondo o card. Aqui ele vira
+     uma faixa normal, largura cheia, na mesma fileira dos botões de
+     canto. */
+  .login-ajuda-primeiro-acesso {
+    position: static;
+    width: 100%;
+    flex-basis: 100%;
+    font-size: 0.72rem;
   }
 
   .btn-voltar-login,
