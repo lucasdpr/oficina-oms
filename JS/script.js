@@ -5027,11 +5027,12 @@ window._abrirChatAreaAdmInterno = async function(area, deAdm, voltaParaLista) {
         await fetch(`${apiBase}/api/mensagens_area/marcar_lida`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ area, de_adm: deAdm })
+            body: JSON.stringify({ area, de_adm: deAdm, matricula: OPERADOR_LOGADO ? OPERADOR_LOGADO.matricula : null })
         });
     } catch (e) { /* não bloqueia a leitura por isso */ }
 
     if (!deAdm && typeof window.atualizarBadgeChatAreaAdm === 'function') window.atualizarBadgeChatAreaAdm();
+    if (typeof window.atualizarBadgeNotificacoesNaoLidas === 'function') window.atualizarBadgeNotificacoesNaoLidas();
 };
 
 window.carregarMensagensChatAreaAdm = async function() {
@@ -8735,7 +8736,7 @@ window.irParaTelaDaAreaNotificacao = function() {
 // Ícone por tipo de item do feed unificado — tipo='evento' cobre tanto
 // Ocorrência (categoria Intervenção/Melhoria/...) quanto Auditoria geral
 // (ex: rolo travado no Sinótico 3D), que antes nunca aparecia aqui.
-const ICONE_POR_TIPO_NOTIFICACAO = { os: '📄', achado: '🔍', evento: '📋', estoque: '📦', sinotico: '🧊', atividade: '🧰' };
+const ICONE_POR_TIPO_NOTIFICACAO = { os: '📄', achado: '🔍', evento: '📋', estoque: '📦', sinotico: '🧊', atividade: '🧰', mensagem_area: '💬' };
 
 // 🔧 CORREÇÃO ("mostra os antigos, não quero isso"): não lido aparece
 // sempre (é exatamente o que a pessoa ainda não viu, não importa a
@@ -8816,6 +8817,21 @@ window.abrirItemNotificacao = async function(tipo, eventoId, referencia, area, a
         // piscar ele — o técnico chega direto na atividade em questão,
         // sem abrir um chat.
         window.abrirDestinoAtividadeNotificacao(area, atividadeId, tipoEvento);
+    } else if (tipo === 'mensagem_area') {
+        // 🆕 Mensagem do chat Área <-> ADM (ver mensagens_area_adm no
+        // backend) — antes só virava push e sumia se a pessoa não visse
+        // na hora; agora clicar aqui abre a conversa de verdade. ADM abre
+        // direto a conversa daquela área (sem precisar estar na aba
+        // Painel ADM); técnico é levado pro próprio quadro da área e a
+        // conversa abre por cima.
+        const éAdm = OPERADOR_LOGADO && OPERADOR_LOGADO.isAdm;
+        if (éAdm && typeof window.abrirChatAdmArea === 'function') {
+            window.abrirChatAdmArea(area);
+        } else if (typeof window.abrirAreaOficina === 'function') {
+            window.abrirAreaOficina(area).then(() => {
+                if (typeof window.abrirChatAreaAdm === 'function') window.abrirChatAreaAdm();
+            });
+        }
     } else if (tipo === 'achado') {
         window.irParaAchadoEspecifico(referencia);
     } else if (tipo === 'sinotico') {
