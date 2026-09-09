@@ -4440,6 +4440,15 @@ window.renderPainelAreaAdministrativa = async function(chave) {
     const container = document.getElementById(`painel-${chave}-container`);
     if (!cfg || !container) return;
 
+    // 🆕 ADM não tem "equipamento próprio" nem só a equipe dela pra
+    // acompanhar — quem está em ADM já vê o sistema inteiro (MATRICULAS_ADM).
+    // O template genérico abaixo (equipe + atividades só da própria área)
+    // desperdiçava isso. ADM ganha um painel executivo cross-área em vez
+    // do template genérico das outras 3 (Almoxarifado/Ponte/Logística).
+    if (chave === 'adm') {
+        return window.renderPainelExecutivoAdm(container);
+    }
+
     // Esqueleto fixo do painel — os números/listas são preenchidos
     // depois, conforme cada chamada de API vai respondendo (não trava
     // a tela esperando tudo de uma vez).
@@ -4593,6 +4602,178 @@ window.renderPainelAreaAdministrativa = async function(chave) {
         } catch (e) {
             console.error('⚠️ Não consegui carregar o resumo do estoque no painel do Almoxarifado:', e);
         }
+    }
+};
+
+// --------------------------------------------------------------
+// 🆕 PAINEL EXECUTIVO — ADM
+// --------------------------------------------------------------
+// Visão de comando pra quem já vê o sistema inteiro (as 3 matrículas
+// MATRICULAS_ADM): não é "a equipe da área X", é "onde está o problema
+// AGORA, em qualquer área". Ranking de atraso por área, retrabalho
+// (atividades mais reabertas — endpoint já existia na API, pronto,
+// mas nunca tinha sido consumido por nenhuma tela) e equipamentos em
+// estado crítico de desgaste, que hoje só apareciam espalhados nos
+// gráficos de cada MCC, sem um "top da fábrica" num lugar só.
+window.renderPainelExecutivoAdm = async function(container) {
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="kpi-container" style="margin-bottom:20px;">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="color:#38bdf8;"><i class="fas fa-list-check"></i></div>
+                <div class="kpi-data"><h4 id="adm-exec-kpi-abertas">–</h4><p>Atividades Abertas (todas as áreas)</p></div>
+            </div>
+            <div class="kpi-card danger">
+                <div class="kpi-icon glow-danger"><i class="fas fa-triangle-exclamation"></i></div>
+                <div class="kpi-data"><h4 id="adm-exec-kpi-atrasadas">–</h4><p>Atrasadas (todas as áreas)</p></div>
+            </div>
+            <div class="kpi-card success">
+                <div class="kpi-icon glow-success"><i class="fas fa-check-circle"></i></div>
+                <div class="kpi-data"><h4 id="adm-exec-kpi-concluidas">–</h4><p>Concluídas (7 dias)</p></div>
+            </div>
+            <div class="kpi-card warning">
+                <div class="kpi-icon glow-warning"><i class="fas fa-rotate-left"></i></div>
+                <div class="kpi-data"><h4 id="adm-exec-kpi-retrabalho">–</h4><p>Atividades com Retrabalho</p></div>
+            </div>
+        </div>
+
+        <div class="dashboard-main-grid">
+            <div class="glass-panel" style="padding:24px;">
+                <h3 style="color:var(--text-title); font-size:1rem; margin-bottom:4px;"><i class="fas fa-ranking-star"></i> Áreas com Mais Atraso</h3>
+                <p class="text-muted" style="font-size:12px; margin-bottom:16px;">Quantas atividades atrasadas cada área tem agora — onde apertar primeiro.</p>
+                <div id="adm-exec-ranking-areas"></div>
+            </div>
+
+            <div class="glass-panel" style="padding:24px;">
+                <h3 style="color:var(--text-title); font-size:1rem; margin-bottom:4px;"><i class="fas fa-rotate-left"></i> Retrabalho (Atividades Mais Reabertas)</h3>
+                <p class="text-muted" style="font-size:12px; margin-bottom:16px;">O mesmo problema voltando — vale investigar a causa raiz, não só reabrir de novo.</p>
+                <div id="adm-exec-retrabalho"></div>
+            </div>
+        </div>
+
+        <div class="glass-panel" style="padding:24px; margin-top:20px;">
+            <h3 style="color:var(--text-title); font-size:1rem; margin-bottom:4px;"><i class="fas fa-gauge-high"></i> Equipamentos em Estado Crítico (≥ 80% da meta)</h3>
+            <p class="text-muted" style="font-size:12px; margin-bottom:16px;">Junta os "vermelhos" de todos os MCCs num lugar só, sem precisar abrir gráfico por gráfico.</p>
+            <div id="adm-exec-equipamentos-criticos"></div>
+        </div>
+    `;
+
+    const definir = (id, valor) => { const el = document.getElementById(id); if (el) el.textContent = valor; };
+
+    // ---- ATIVIDADES: KPIs globais + ranking de atraso por área ----
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/atividades`, { cache: 'no-store' });
+        const atividades = resp.ok ? await resp.json() : [];
+
+        const abertas = atividades.filter(a => a.status !== 'Concluído').length;
+        const atrasadas = atividades.filter(a => atividadeEstaAtrasada(a));
+        const dataLimite7dias = (() => {
+            const d = new Date();
+            d.setDate(d.getDate() - 7);
+            return d.toISOString().slice(0, 10);
+        })();
+        const concluidasRecentes = atividades.filter(a =>
+            a.status === 'Concluído' && a.concluido_em && a.concluido_em.slice(0, 10) >= dataLimite7dias
+        ).length;
+
+        definir('adm-exec-kpi-abertas', abertas);
+        definir('adm-exec-kpi-atrasadas', atrasadas.length);
+        definir('adm-exec-kpi-concluidas', concluidasRecentes);
+
+        const contagemPorArea = {};
+        atrasadas.forEach(a => {
+            const chaveArea = a.area || 'sem-area';
+            contagemPorArea[chaveArea] = (contagemPorArea[chaveArea] || 0) + 1;
+        });
+        const rankingAreas = Object.entries(contagemPorArea)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 8);
+
+        const elRanking = document.getElementById('adm-exec-ranking-areas');
+        if (elRanking) {
+            if (rankingAreas.length === 0) {
+                elRanking.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhuma atividade atrasada em nenhuma área agora ✅</div>`;
+            } else {
+                const maiorContagem = rankingAreas[0][1];
+                elRanking.innerHTML = rankingAreas.map(([chaveArea, qtd]) => {
+                    const info = AREAS_OFICINA.find(a => a.chave === chaveArea);
+                    const nome = info ? info.nome : chaveArea;
+                    const pctBarra = Math.max(8, Math.round((qtd / maiorContagem) * 100));
+                    return `
+                        <div style="margin-bottom:12px; cursor:pointer;" onclick="window.abrirAreaOficina('${chaveArea}')" title="Abrir ${nome}">
+                            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+                                <span style="color:var(--text-body);">${nome}</span>
+                                <span style="color:var(--danger); font-weight:700;">${qtd}</span>
+                            </div>
+                            <div style="background:var(--bg-td); border-radius:6px; height:8px; overflow:hidden;">
+                                <div style="background:var(--danger); height:100%; width:${pctBarra}%; border-radius:6px;"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+    } catch (e) {
+        console.error('⚠️ Não consegui carregar as atividades no painel executivo do ADM:', e);
+    }
+
+    // ---- RETRABALHO (atividades mais reabertas) ----
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/atividades/mais_reabertas?limite=5`, { cache: 'no-store' });
+        const reabertas = resp.ok ? await resp.json() : [];
+
+        definir('adm-exec-kpi-retrabalho', reabertas.length);
+
+        const elRetrabalho = document.getElementById('adm-exec-retrabalho');
+        if (elRetrabalho) {
+            elRetrabalho.innerHTML = reabertas.length
+                ? reabertas.map(a => {
+                    const info = AREAS_OFICINA.find(ar => ar.chave === a.area);
+                    const nomeArea = info ? info.nome : (a.area || 'Sem área');
+                    return `
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid var(--border);">
+                            <div style="min-width:0;">
+                                <div style="color:var(--text-body); font-size:13px;">${a.descricao || 'Sem descrição'}</div>
+                                <div class="text-muted" style="font-size:11px; margin-top:2px;">${nomeArea}${a.equipamento_id ? ' · ' + a.equipamento_id : ''}</div>
+                            </div>
+                            <span style="flex-shrink:0; font-weight:700; color:var(--warning); font-size:13px;"><i class="fas fa-rotate-left"></i> ${a.reaberturas_count}x</span>
+                        </div>
+                    `;
+                }).join('')
+                : `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhuma atividade foi reaberta ainda — sem retrabalho registrado 👍</div>`;
+        }
+    } catch (e) {
+        console.error('⚠️ Não consegui carregar o ranking de retrabalho no painel executivo do ADM:', e);
+    }
+
+    // ---- EQUIPAMENTOS CRÍTICOS (já em memória, sem precisar de fetch) ----
+    try {
+        const criticos = (BANCO_ATIVOS || [])
+            .map(a => ({ ...a, pct: a.meta > 0 ? (a.ton / a.meta) * 100 : 0 }))
+            .filter(a => a.pct >= 80)
+            .sort((a, b) => b.pct - a.pct)
+            .slice(0, 12);
+
+        const elCriticos = document.getElementById('adm-exec-equipamentos-criticos');
+        if (elCriticos) {
+            elCriticos.innerHTML = criticos.length
+                ? `<div class="table-responsive"><table class="premium-table">
+                    <thead><tr><th>Equipamento</th><th>Local</th><th>Desgaste</th></tr></thead>
+                    <tbody>${criticos.map(a => `
+                        <tr>
+                            <td class="font-code">${a.id}</td>
+                            <td><small class="text-muted">${a.local || '—'}</small></td>
+                            <td><span style="color:${a.pct >= 100 ? 'var(--danger)' : 'var(--warning)'}; font-weight:700;">${a.pct.toFixed(1)}%</span></td>
+                        </tr>
+                    `).join('')}</tbody>
+                </table></div>`
+                : `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhum equipamento em estado crítico agora ✅</div>`;
+        }
+    } catch (e) {
+        console.error('⚠️ Não consegui montar a lista de equipamentos críticos no painel executivo do ADM:', e);
     }
 };
 
