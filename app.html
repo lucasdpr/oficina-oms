@@ -2825,10 +2825,30 @@
         // nada muda. Navegar pra uma URL com um parâmetro novo obriga o
         // navegador a tratar como página diferente da já guardada.
         window.forcarAtualizacaoOMS = function () {
+            // 🐛 CORRIGIDO ("clico e o aviso fica lá"): esconde na hora,
+            // não depende da navegação abaixo terminar pra desaparecer.
+            document.getElementById('aviso-nova-versao')?.classList.add('hidden');
             const url = new URL(window.location.href);
             url.searchParams.set('_upd', Date.now());
             window.location.replace(url.toString());
         };
+
+        // ---- Confirmação de atualização — "não tenho como saber se
+        // atualizou ou não". Ver comentário equivalente em index.html.
+        window.OMS_BUILD_ID = '2026.09.09-aviso-atualizacao-2';
+        (function () {
+            try {
+                const anterior = localStorage.getItem('oms_build_id');
+                if (anterior && anterior !== window.OMS_BUILD_ID) {
+                    const confirmacao = document.createElement('div');
+                    confirmacao.textContent = '✅ Sistema atualizado para a versão mais recente.';
+                    confirmacao.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:99999;background:#16a34a;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,0.4);';
+                    document.body.appendChild(confirmacao);
+                    setTimeout(() => confirmacao.remove(), 5000);
+                }
+                localStorage.setItem('oms_build_id', window.OMS_BUILD_ID);
+            } catch (e) { /* localStorage pode falhar em modo privado — não é crítico */ }
+        })();
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

@@ -1942,10 +1942,40 @@ footer a:hover { color: var(--amber); }
     // navegador a tratar como uma página diferente da que já tinha
     // guardada, sem essa ambiguidade. `replace` evita empilhar histórico.
     window.forcarAtualizacaoOMS = function () {
+        // 🐛 CORRIGIDO ("clico e o aviso fica lá"): antes o aviso só
+        // sumia se/quando a navegação abaixo terminasse — sem retorno
+        // visual imediato do clique. Esconde na hora, não depende de
+        // mais nada pra desaparecer.
+        const aviso = document.getElementById('aviso-nova-versao');
+        if (aviso) aviso.hidden = true;
         const url = new URL(window.location.href);
         url.searchParams.set('_upd', Date.now());
         window.location.replace(url.toString());
     };
+
+    // ---- Confirmação de atualização — "não tenho como saber se
+    // atualizou ou não". Compara um identificador de versão guardado no
+    // localStorage: se já existia um valor diferente do atual, é
+    // porque essa aba estava numa versão anterior e agora carregou a
+    // nova — mostra uma confirmação rápida. Na primeira visita (sem
+    // valor guardado ainda) só grava, não mostra nada.
+    // 🔧 Bump manual: mude essa string a cada deploy visível (mesmo
+    // espírito do CACHE_VERSION do service-worker.js, mas comparado
+    // aqui na página, sem precisar consultar o SW pra confirmar).
+    window.OMS_BUILD_ID = '2026.09.09-aviso-atualizacao-2';
+    (function () {
+        try {
+            const anterior = localStorage.getItem('oms_build_id');
+            if (anterior && anterior !== window.OMS_BUILD_ID) {
+                const confirmacao = document.createElement('div');
+                confirmacao.textContent = '✅ Site atualizado para a versão mais recente.';
+                confirmacao.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:99999;background:#16a34a;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,0.4);';
+                document.body.appendChild(confirmacao);
+                setTimeout(() => confirmacao.remove(), 5000);
+            }
+            localStorage.setItem('oms_build_id', window.OMS_BUILD_ID);
+        } catch (e) { /* localStorage pode falhar em modo privado — não é crítico */ }
+    })();
 
     // ---- Service worker (PWA) ----
     if ('serviceWorker' in navigator) {
