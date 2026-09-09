@@ -1,0 +1,13 @@
+# Editor / SO
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Node (só usado pelo tools/gerar_mapeamento.mjs)
+node_modules/
+npm-debug.log*
+
+# Variáveis de ambiente — nunca comitar
+.env
+.env.local
