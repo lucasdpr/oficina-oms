@@ -698,12 +698,45 @@ async function registrarHistorico(tag, acao) {
     }
 }
 
+// 🆕 Classifica um evento da Auditoria numa categoria — usada pelos
+// botões de filtro (Acessos, Atividades da Oficina, Movimentação de
+// Peças, Folhões e Laudos, Estoque e Materiais). Usa a `categoria` que
+// o backend já grava quando existe (só "Atividade Oficina" hoje, a
+// única confiável de verdade, vinda de registrar_evento_atividade_
+// oficina) e padrões de texto pros eventos que nunca tiveram categoria
+// própria no banco (login, swap de peça, folhão/laudo, estoque).
+// `chave === ''` (ou qualquer chave não reconhecida) = "Todos os
+// eventos", sempre true.
+function eventoAuditoriaEhDaCategoria(item, chave) {
+    switch (chave) {
+        case 'acesso':
+            return (item.tag || '').toUpperCase() === 'AUTENTICAÇÃO';
+        case 'atividade-oficina':
+            return item.categoria === 'Atividade Oficina';
+        case 'movimentacao-peca':
+            return /entrou no slot|saiu do slot|sacad[oa] (do|da|de)|substitu[ií]/i.test(item.acao || '');
+        case 'folhao-laudo':
+            return item.tipo === 'laudo' || /procedimento conclu[ií]do|laudo pdf/i.test(item.acao || '');
+        case 'estoque':
+            return /material\s*\[|estoque/i.test(item.acao || '');
+        default:
+            return true;
+    }
+}
+
 // Monta o HTML das linhas da tabela de Auditoria a partir de uma lista
 // já pronta de "ações" (no formato {data, tag, acao, responsavel,
 // dataTimestamp}) + laudos. Extraído de renderHistorico() pra poder ser
 // reaproveitado tanto no render instantâneo (local) quanto depois que a
 // busca no servidor voltar — ver atualizarHistoricoGlobalComServidor().
-function montarLinhasHistorico(acoes, laudos, filtroData) {
+//
+// `filtroCategoria` (Acessos/Atividades da Oficina/Movimentação de
+// Peças/Folhões e Laudos/Estoque, ver botões em app.html) filtra ANTES
+// de agrupar por dia — assim só aparecem os dias que de fato tiveram
+// aquele tipo de evento, em vez de mostrar todo dia com tudo escondido
+// dentro. Clicar no cabeçalho de um dia abre só os eventos daquele dia
+// que já passaram pelo filtro.
+function montarLinhasHistorico(acoes, laudos, filtroData, filtroCategoria) {
     let todos = [
         ...acoes.map(h => ({
             ...h,
@@ -748,157 +781,90 @@ function montarLinhasHistorico(acoes, laudos, filtroData) {
         });
     }
 
-    if (todos.length === 0) {
-        return `<tr><td colspan="4" class="text-center text-muted">Nenhum registro encontrado.</td></tr>`;
+    // Filtra ANTES de agrupar por dia — só sobram os dias que de fato
+    // tiveram algum evento da categoria escolhida (ou tudo, se
+    // filtroCategoria for vazio/"todos os eventos").
+    if (filtroCategoria) {
+        todos = todos.filter(item => eventoAuditoriaEhDaCategoria(item, filtroCategoria));
     }
 
-    // 🆕 Classificação real por tipo de evento, em vez de só "Acessos" x
-    // "Outros" — usa a `categoria` que o backend já grava quando existe
-    // (ex: "Atividade Oficina", a única confiável de verdade, gravada
-    // por registrar_evento_atividade_oficina) e padrões de texto pros
-    // eventos que nunca tiveram categoria própria no banco (login, swap
-    // de peça, folhão/laudo, estoque de material). Cada categoria só
-    // aparece na tela se tiver pelo menos 1 evento — ver renderizarSecao.
-    const CATEGORIAS_AUDITORIA = [
-        {
-            chave: 'acesso',
-            titulo: 'Acessos (Login / Visitante)',
-            icone: 'fa-right-to-bracket',
-            pertence: (item) => (item.tag || '').toUpperCase() === 'AUTENTICAÇÃO'
-        },
-        {
-            chave: 'atividade-oficina',
-            titulo: 'Atividades da Oficina',
-            icone: 'fa-clipboard-list',
-            pertence: (item) => item.categoria === 'Atividade Oficina'
-        },
-        {
-            chave: 'movimentacao-peca',
-            titulo: 'Movimentação de Peças (Swap / Saque)',
-            icone: 'fa-arrows-rotate',
-            pertence: (item) => /entrou no slot|saiu do slot|sacad[oa] (do|da|de)|substitu[ií]/i.test(item.acao || '')
-        },
-        {
-            chave: 'folhao-laudo',
-            titulo: 'Folhões e Laudos',
-            icone: 'fa-file-pdf',
-            pertence: (item) => item.tipo === 'laudo' || /procedimento conclu[ií]do|laudo pdf/i.test(item.acao || '')
-        },
-        {
-            chave: 'estoque',
-            titulo: 'Estoque e Materiais',
-            icone: 'fa-boxes-stacked',
-            pertence: (item) => /material\s*\[|estoque/i.test(item.acao || '')
-        },
-        {
-            // Sempre por último — pega o que nenhuma categoria acima
-            // reconheceu, em vez de sumir ou dar erro.
-            chave: 'outros',
-            titulo: 'Outros Eventos',
-            icone: 'fa-list',
-            pertence: () => true
-        }
-    ];
+    if (todos.length === 0) {
+        return `<tr><td colspan="4" class="text-center text-muted">Nenhum registro encontrado${filtroCategoria ? ' nessa categoria' : ''}.</td></tr>`;
+    }
 
-    // Cada categoria, na ordem da lista acima, "reivindica" os itens que
-    // bate e tira do que resta pra próxima — por isso "outros" (que
-    // aceita qualquer coisa) tem que vir por último. `todos` já está
-    // ordenado do mais recente pro mais antigo; filter preserva ordem.
-    let restantes = todos;
-    const grupos = CATEGORIAS_AUDITORIA.map(cat => {
-        const doGrupo = restantes.filter(cat.pertence);
-        restantes = restantes.filter(item => !cat.pertence(item));
-        return { ...cat, itens: doGrupo };
+    // 🆕 Agrupado por dia/sessão e retrátil — só o dia mais recente abre
+    // sozinho, o resto começa fechado. Clicar no cabeçalho abre/fecha só
+    // aquele dia. Numa lista com meses de histórico, isso evita ter que
+    // rolar por semanas de eventos só pra achar um específico.
+    const formatarCabecalhoDia = (ts) => {
+        if (!ts) return 'Data desconhecida';
+        const d = new Date(ts);
+        const hoje = new Date();
+        const ehHoje = d.toDateString() === hoje.toDateString();
+        const rotulo = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+        return ehHoje ? `Hoje — ${rotulo}` : rotulo.charAt(0).toUpperCase() + rotulo.slice(1);
+    };
+
+    const contagemPorDia = {};
+    todos.forEach(item => {
+        const chave = item.dataTimestamp ? new Date(item.dataTimestamp).toDateString() : 'desconhecido';
+        contagemPorDia[chave] = (contagemPorDia[chave] || 0) + 1;
     });
 
-    let proximoGrupoIndice = 0;
+    const linhas = [];
+    let diaAtual = null;
+    let contadorDia = 0;
+    let grupoIndice = -1;
 
-    function renderizarSecao(itens, titulo, icone) {
-        if (itens.length === 0) return '';
+    todos.forEach(item => {
+        const chaveDia = item.dataTimestamp ? new Date(item.dataTimestamp).toDateString() : 'desconhecido';
+        if (chaveDia !== diaAtual) {
+            diaAtual = chaveDia;
+            contadorDia = contagemPorDia[chaveDia] || 0;
+            grupoIndice++;
+            const abertoPorPadrao = grupoIndice === 0;
+            linhas.push(`
+                <tr class="linha-cabecalho-dia-auditoria" style="cursor:pointer;" onclick="window.toggleGrupoDiaAuditoria(${grupoIndice}, this)">
+                    <td colspan="4" style="background:var(--bg-td); font-weight:700; color:var(--text-accent); padding:8px 12px; border-top:2px solid var(--border);">
+                        <i class="fas fa-chevron-${abertoPorPadrao ? 'down' : 'right'}" data-seta-grupo-dia="${grupoIndice}" style="width:12px; display:inline-block;"></i>
+                        <i class="fas fa-calendar-day"></i> ${formatarCabecalhoDia(item.dataTimestamp)}
+                        <span class="text-muted" style="font-weight:400; font-size:11px;"> — ${contadorDia} evento${contadorDia === 1 ? '' : 's'}</span>
+                    </td>
+                </tr>
+            `);
+        }
 
-        const formatarCabecalhoDia = (ts) => {
-            if (!ts) return 'Data desconhecida';
-            const d = new Date(ts);
-            const hoje = new Date();
-            const ehHoje = d.toDateString() === hoje.toDateString();
-            const rotulo = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
-            return ehHoje ? `Hoje — ${rotulo}` : rotulo.charAt(0).toUpperCase() + rotulo.slice(1);
-        };
+        const escondida = grupoIndice > 0 ? ' hidden' : '';
+        if (item.tipo === 'laudo') {
+            linhas.push(`
+                <tr data-grupo-dia="${grupoIndice}" class="${escondida.trim()}">
+                    <td><small class="text-muted">${item.data}</small></td>
+                    <td><span class="ind-card-tag bg-tag">${item.tag}</span></td>
+                    <td style="color: var(--text-main);">
+                        ${item.acao}
+                        <button class="btn-xs-primary" onclick="window.visualizarLaudo('${item.id}')" style="margin-left:8px; color:var(--text-accent);">
+                            <i class="fas fa-eye"></i> Ver PDF
+                        </button>
+                        <button class="btn-xs-primary" onclick="window.excluirLaudo('${item.id}')" style="color:var(--danger);">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                    <td><small class="text-muted">${item.responsavel}</small></td>
+                </tr>
+            `);
+        } else {
+            linhas.push(`
+                <tr data-grupo-dia="${grupoIndice}" class="${escondida.trim()}">
+                    <td><small class="text-muted">${item.data}</small></td>
+                    <td><span class="ind-card-tag bg-tag">${item.tag}</span></td>
+                    <td style="color: var(--text-main);">${item.acao}</td>
+                    <td><small class="text-muted">${item.responsavel}</small></td>
+                </tr>
+            `);
+        }
+    });
 
-        const contagemPorDia = {};
-        itens.forEach(item => {
-            const chave = item.dataTimestamp ? new Date(item.dataTimestamp).toDateString() : 'desconhecido';
-            contagemPorDia[chave] = (contagemPorDia[chave] || 0) + 1;
-        });
-
-        const linhas = [`
-            <tr>
-                <td colspan="4" style="padding:14px 12px 6px; font-weight:800; font-size:13px; text-transform:uppercase; letter-spacing:0.03em; color:var(--text-heading); border-top:3px solid var(--primary);">
-                    <i class="fas ${icone}"></i> ${titulo}
-                    <span class="text-muted" style="font-weight:400; text-transform:none; letter-spacing:0; font-size:11px;"> — ${itens.length} evento${itens.length === 1 ? '' : 's'}</span>
-                </td>
-            </tr>
-        `];
-
-        let diaAtual = null;
-        let contadorDia = 0;
-        let grupoLocal = -1;
-        let grupoIndice = -1;
-
-        itens.forEach(item => {
-            const chaveDia = item.dataTimestamp ? new Date(item.dataTimestamp).toDateString() : 'desconhecido';
-            if (chaveDia !== diaAtual) {
-                diaAtual = chaveDia;
-                contadorDia = contagemPorDia[chaveDia] || 0;
-                grupoLocal++;
-                grupoIndice = proximoGrupoIndice++;
-                // Retrátil: só o primeiro dia de CADA seção abre sozinho.
-                const abertoPorPadrao = grupoLocal === 0;
-                linhas.push(`
-                    <tr class="linha-cabecalho-dia-auditoria" style="cursor:pointer;" onclick="window.toggleGrupoDiaAuditoria(${grupoIndice}, this)">
-                        <td colspan="4" style="background:var(--bg-td); font-weight:700; color:var(--text-accent); padding:8px 12px; border-top:1px solid var(--border);">
-                            <i class="fas fa-chevron-${abertoPorPadrao ? 'down' : 'right'}" data-seta-grupo-dia="${grupoIndice}" style="width:12px; display:inline-block;"></i>
-                            <i class="fas fa-calendar-day"></i> ${formatarCabecalhoDia(item.dataTimestamp)}
-                            <span class="text-muted" style="font-weight:400; font-size:11px;"> — ${contadorDia} evento${contadorDia === 1 ? '' : 's'}</span>
-                        </td>
-                    </tr>
-                `);
-            }
-
-            const escondida = grupoLocal > 0 ? ' hidden' : '';
-            if (item.tipo === 'laudo') {
-                linhas.push(`
-                    <tr data-grupo-dia="${grupoIndice}" class="${escondida.trim()}">
-                        <td><small class="text-muted">${item.data}</small></td>
-                        <td><span class="ind-card-tag bg-tag">${item.tag}</span></td>
-                        <td style="color: var(--text-main);">
-                            ${item.acao}
-                            <button class="btn-xs-primary" onclick="window.visualizarLaudo('${item.id}')" style="margin-left:8px; color:var(--text-accent);">
-                                <i class="fas fa-eye"></i> Ver PDF
-                            </button>
-                            <button class="btn-xs-primary" onclick="window.excluirLaudo('${item.id}')" style="color:var(--danger);">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                        <td><small class="text-muted">${item.responsavel}</small></td>
-                    </tr>
-                `);
-            } else {
-                linhas.push(`
-                    <tr data-grupo-dia="${grupoIndice}" class="${escondida.trim()}">
-                        <td><small class="text-muted">${item.data}</small></td>
-                        <td><span class="ind-card-tag bg-tag">${item.tag}</span></td>
-                        <td style="color: var(--text-main);">${item.acao}</td>
-                        <td><small class="text-muted">${item.responsavel}</small></td>
-                    </tr>
-                `);
-            }
-        });
-
-        return linhas.join("");
-    }
-
-    return grupos.map(g => renderizarSecao(g.itens, g.titulo, g.icone)).join("");
+    return linhas.join("");
 }
 
 // Abre/fecha um dia dentro de uma seção da Auditoria (ver
@@ -931,7 +897,7 @@ function renderHistorico() {
     // Mostra na hora o que já tem local (resposta instantânea, cobre o
     // caso sem internet) — a lista completa e oficial vem logo em
     // seguida do servidor, ver abaixo.
-    tbody.innerHTML = montarLinhasHistorico(HISTORICO_ACOES, getLaudosSalvos(), filtroData);
+    tbody.innerHTML = montarLinhasHistorico(HISTORICO_ACOES, getLaudosSalvos(), filtroData, FILTRO_CATEGORIA_AUDITORIA);
 
     // 🔧 CORREÇÃO CRÍTICA ("preciso que apareça TUDO pros dois
     // moderadores, incluindo visitante"): esta função só usava
@@ -973,16 +939,16 @@ async function atualizarHistoricoGlobalComServidor(filtroData) {
             dataTimestamp: e.data_hora ? new Date(e.data_hora.replace(' ', 'T')).getTime() : 0,
             // 🆕 O backend já grava uma categoria pra alguns eventos (ex:
             // "Atividade Oficina") — antes esse dado chegava e era jogado
-            // fora aqui. Repassa pra classificarEventoAuditoria() poder
+            // fora aqui. Repassa pra eventoAuditoriaEhDaCategoria() poder
             // usar o dado real em vez de só adivinhar pelo texto.
             categoria: e.categoria || null
         }));
 
-        // 🔍 Filtro "Só Acessos": mostra só logins e entradas de visitante,
-        // usando a mesma tag "AUTENTICAÇÃO" que já é salva em cada login.
-        if (typeof FILTRO_SO_ACESSOS !== 'undefined' && FILTRO_SO_ACESSOS) {
-            acoesDoServidor = acoesDoServidor.filter(a => a.tag === 'AUTENTICAÇÃO');
-        }
+        // 🔍 Filtro por categoria (Acessos, Atividades da Oficina,
+        // Movimentação de Peças, Folhões e Laudos, Estoque) — aplicado
+        // dentro de montarLinhasHistorico, ANTES de agrupar por dia, pra
+        // só sobrar na tela o dia que de fato teve evento daquele tipo.
+        const categoriaAtual = typeof FILTRO_CATEGORIA_AUDITORIA !== 'undefined' ? FILTRO_CATEGORIA_AUDITORIA : '';
 
         // 🔧 CORREÇÃO ("laudos sumiam da Auditoria assim que a busca do
         // servidor terminava"): esta função sempre substituiu a tabela
@@ -1012,7 +978,7 @@ async function atualizarHistoricoGlobalComServidor(filtroData) {
             console.error('⚠️ Não consegui buscar os laudos do servidor:', eLaudos);
         }
 
-        tbody.innerHTML = montarLinhasHistorico(acoesDoServidor, laudosDoServidor, filtroAtual);
+        tbody.innerHTML = montarLinhasHistorico(acoesDoServidor, laudosDoServidor, filtroAtual, categoriaAtual);
     } catch (e) {
         console.error('⚠️ Não consegui buscar a Auditoria completa do servidor (mantendo só o que tinha local):', e);
     }
@@ -1924,12 +1890,15 @@ import './Oficina/checklist-execucao.js';
 
 
 // ==========================================
-// FILTRO "SÓ ACESSOS" NA AUDITORIA
+// FILTRO POR CATEGORIA NA AUDITORIA
 // ==========================================
-let FILTRO_SO_ACESSOS = false;
+// '' = "Todos os eventos". Qualquer outra chave (ver
+// eventoAuditoriaEhDaCategoria) filtra ANTES de agrupar por dia — só o
+// dia que teve evento daquela categoria aparece na tela.
+let FILTRO_CATEGORIA_AUDITORIA = '';
 
-window.filtrarHistoricoAcessos = function(soAcessos, botaoClicado) {
-    FILTRO_SO_ACESSOS = soAcessos;
+window.filtrarHistoricoCategoria = function(chaveCategoria, botaoClicado) {
+    FILTRO_CATEGORIA_AUDITORIA = chaveCategoria || '';
     document.querySelectorAll('#historico-filtro-acessos .btn-filter-mcc').forEach(b => b.classList.remove('active'));
     if (botaoClicado) botaoClicado.classList.add('active');
     const filtroData = document.getElementById("filtro-data-historico")?.value || '';
