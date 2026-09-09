@@ -752,9 +752,49 @@ function montarLinhasHistorico(acoes, laudos, filtroData) {
         return `<tr><td colspan="4" class="text-center text-muted">Nenhum registro encontrado.</td></tr>`;
     }
 
-    return todos.map(item => {
+    // 🆕 Separa por sessão/dia: antes era uma lista corrida só, difícil
+    // de saber onde um dia termina e o outro começa (principalmente
+    // filtrando "Só Acessos", onde é só linha de login atrás de linha
+    // de login). Cada vez que a data muda (calendário local, não UTC —
+    // mesmo cuidado do filtro acima), insere uma linha de cabeçalho com
+    // o dia por extenso + quantos eventos teve nele.
+    const formatarCabecalhoDia = (ts) => {
+        if (!ts) return 'Data desconhecida';
+        const d = new Date(ts);
+        const hoje = new Date();
+        const ehHoje = d.toDateString() === hoje.toDateString();
+        const rotulo = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+        return ehHoje ? `Hoje — ${rotulo}` : rotulo.charAt(0).toUpperCase() + rotulo.slice(1);
+    };
+
+    const linhas = [];
+    let diaAtual = null;
+    let contadorDia = 0;
+    // Pré-conta quantos itens caem em cada dia, pra mostrar no cabeçalho
+    // sem precisar de uma segunda passada visual.
+    const contagemPorDia = {};
+    todos.forEach(item => {
+        const chave = item.dataTimestamp ? new Date(item.dataTimestamp).toDateString() : 'desconhecido';
+        contagemPorDia[chave] = (contagemPorDia[chave] || 0) + 1;
+    });
+
+    todos.forEach(item => {
+        const chaveDia = item.dataTimestamp ? new Date(item.dataTimestamp).toDateString() : 'desconhecido';
+        if (chaveDia !== diaAtual) {
+            diaAtual = chaveDia;
+            contadorDia = contagemPorDia[chaveDia] || 0;
+            linhas.push(`
+                <tr class="linha-cabecalho-dia-auditoria">
+                    <td colspan="4" style="background:var(--bg-td); font-weight:700; color:var(--text-accent); padding:8px 12px; border-top:2px solid var(--border);">
+                        <i class="fas fa-calendar-day"></i> ${formatarCabecalhoDia(item.dataTimestamp)}
+                        <span class="text-muted" style="font-weight:400; font-size:11px;"> — ${contadorDia} evento${contadorDia === 1 ? '' : 's'}</span>
+                    </td>
+                </tr>
+            `);
+        }
+
         if (item.tipo === 'laudo') {
-            return `
+            linhas.push(`
                 <tr>
                     <td><small class="text-muted">${item.data}</small></td>
                     <td><span class="ind-card-tag bg-tag">${item.tag}</span></td>
@@ -769,18 +809,20 @@ function montarLinhasHistorico(acoes, laudos, filtroData) {
                     </td>
                     <td><small class="text-muted">${item.responsavel}</small></td>
                 </tr>
-            `;
+            `);
         } else {
-            return `
+            linhas.push(`
                 <tr>
                     <td><small class="text-muted">${item.data}</small></td>
                     <td><span class="ind-card-tag bg-tag">${item.tag}</span></td>
                     <td style="color: var(--text-main);">${item.acao}</td>
                     <td><small class="text-muted">${item.responsavel}</small></td>
                 </tr>
-            `;
+            `);
         }
-    }).join("");
+    });
+
+    return linhas.join("");
 }
 
 function renderHistorico() {
