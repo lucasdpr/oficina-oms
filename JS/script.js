@@ -732,8 +732,15 @@ function montarLinhasHistorico(acoes, laudos, filtroData) {
     todos.sort((a, b) => (b.dataTimestamp || 0) - (a.dataTimestamp || 0));
 
     if (filtroData) {
-        const dataFiltro = new Date(filtroData);
-        const inicioDia = new Date(dataFiltro.getFullYear(), dataFiltro.getMonth(), dataFiltro.getDate()).getTime();
+        // 🔧 CORREÇÃO ("filtro de 09/09 mostrava registros de 08/09"):
+        // `new Date("YYYY-MM-DD")` (o formato que <input type="date">
+        // devolve) é interpretado como MEIA-NOITE EM UTC, não no fuso
+        // local — em qualquer fuso atrás de UTC (Brasil, UTC-3), isso
+        // "vira o dia" pra trás na hora de ler getFullYear/getMonth/
+        // getDate de volta. Parseia ano/mês/dia manualmente da string e
+        // monta a data direto no fuso local, sem passar pelo UTC.
+        const [ano, mes, dia] = filtroData.split('-').map(Number);
+        const inicioDia = new Date(ano, mes - 1, dia).getTime();
         const fimDia = inicioDia + 24 * 60 * 60 * 1000;
         todos = todos.filter(item => {
             const ts = item.dataTimestamp || 0;
@@ -745,9 +752,49 @@ function montarLinhasHistorico(acoes, laudos, filtroData) {
         return `<tr><td colspan="4" class="text-center text-muted">Nenhum registro encontrado.</td></tr>`;
     }
 
-    return todos.map(item => {
+    // 🆕 Separa por sessão/dia: antes era uma lista corrida só, difícil
+    // de saber onde um dia termina e o outro começa (principalmente
+    // filtrando "Só Acessos", onde é só linha de login atrás de linha
+    // de login). Cada vez que a data muda (calendário local, não UTC —
+    // mesmo cuidado do filtro acima), insere uma linha de cabeçalho com
+    // o dia por extenso + quantos eventos teve nele.
+    const formatarCabecalhoDia = (ts) => {
+        if (!ts) return 'Data desconhecida';
+        const d = new Date(ts);
+        const hoje = new Date();
+        const ehHoje = d.toDateString() === hoje.toDateString();
+        const rotulo = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+        return ehHoje ? `Hoje — ${rotulo}` : rotulo.charAt(0).toUpperCase() + rotulo.slice(1);
+    };
+
+    const linhas = [];
+    let diaAtual = null;
+    let contadorDia = 0;
+    // Pré-conta quantos itens caem em cada dia, pra mostrar no cabeçalho
+    // sem precisar de uma segunda passada visual.
+    const contagemPorDia = {};
+    todos.forEach(item => {
+        const chave = item.dataTimestamp ? new Date(item.dataTimestamp).toDateString() : 'desconhecido';
+        contagemPorDia[chave] = (contagemPorDia[chave] || 0) + 1;
+    });
+
+    todos.forEach(item => {
+        const chaveDia = item.dataTimestamp ? new Date(item.dataTimestamp).toDateString() : 'desconhecido';
+        if (chaveDia !== diaAtual) {
+            diaAtual = chaveDia;
+            contadorDia = contagemPorDia[chaveDia] || 0;
+            linhas.push(`
+                <tr class="linha-cabecalho-dia-auditoria">
+                    <td colspan="4" style="background:var(--bg-td); font-weight:700; color:var(--text-accent); padding:8px 12px; border-top:2px solid var(--border);">
+                        <i class="fas fa-calendar-day"></i> ${formatarCabecalhoDia(item.dataTimestamp)}
+                        <span class="text-muted" style="font-weight:400; font-size:11px;"> — ${contadorDia} evento${contadorDia === 1 ? '' : 's'}</span>
+                    </td>
+                </tr>
+            `);
+        }
+
         if (item.tipo === 'laudo') {
-            return `
+            linhas.push(`
                 <tr>
                     <td><small class="text-muted">${item.data}</small></td>
                     <td><span class="ind-card-tag bg-tag">${item.tag}</span></td>
@@ -762,18 +809,20 @@ function montarLinhasHistorico(acoes, laudos, filtroData) {
                     </td>
                     <td><small class="text-muted">${item.responsavel}</small></td>
                 </tr>
-            `;
+            `);
         } else {
-            return `
+            linhas.push(`
                 <tr>
                     <td><small class="text-muted">${item.data}</small></td>
                     <td><span class="ind-card-tag bg-tag">${item.tag}</span></td>
                     <td style="color: var(--text-main);">${item.acao}</td>
                     <td><small class="text-muted">${item.responsavel}</small></td>
                 </tr>
-            `;
+            `);
         }
-    }).join("");
+    });
+
+    return linhas.join("");
 }
 
 function renderHistorico() {
@@ -984,10 +1033,11 @@ window.ativarCentralNotificacoesSeAutorizado = ativarCentralNotificacoesSeAutori
 function ativarPainelDevSeAutorizado() {
     const link = document.getElementById("nav-dev-teste");
     const divisor = document.getElementById("nav-divider-dev");
-    // 🆕 Os dois links novos da Área Restrita (Registro Recente e
-    // Administração) usam a mesma checagem de matrícula que o Teste de
-    // Folhões — então ficam visíveis/escondidos junto com ele aqui.
-    const linkRegistroRecente = document.getElementById("nav-registro-recente");
+    // 🆕 O outro link da Área Restrita (Administração) usa a mesma
+    // checagem de matrícula que o Teste de Folhões — fica
+    // visível/escondido junto com ele aqui. ("Registro Recente" usava
+    // a mesma checagem também, mas foi removido — era duplicado da
+    // Auditoria Global.)
     const linkAdmin = document.getElementById("nav-admin-colaboradores");
     if (!link) return;
 
@@ -996,13 +1046,11 @@ function ativarPainelDevSeAutorizado() {
 
     if (autorizado) {
         link.classList.remove("hidden");
-        if (linkRegistroRecente) linkRegistroRecente.classList.remove("hidden");
         if (linkAdmin) linkAdmin.classList.remove("hidden");
         if (divisor) divisor.classList.remove("hidden");
         renderPainelDevTeste();
     } else {
         link.classList.add("hidden");
-        if (linkRegistroRecente) linkRegistroRecente.classList.add("hidden");
         if (linkAdmin) linkAdmin.classList.add("hidden");
         if (divisor) divisor.classList.add("hidden");
         const corpo = document.getElementById("dev-teste-table-body");
@@ -1011,7 +1059,7 @@ function ativarPainelDevSeAutorizado() {
         // cima sem ser autorizado, tira ela de lá (mesmo princípio já
         // usado em ativarAuditoriaSeAutorizado para a Auditoria).
         const abaAtual = document.querySelector('.tab-content.active');
-        if (abaAtual && ['aba-registro-recente', 'aba-admin-colaboradores', 'aba-dev-teste'].includes(abaAtual.id)) {
+        if (abaAtual && ['aba-admin-colaboradores', 'aba-dev-teste'].includes(abaAtual.id)) {
             const navPainel = document.getElementById("nav-painel");
             if (navPainel && typeof window.abrirAba === 'function') {
                 window.abrirAba({ preventDefault(){}, currentTarget: navPainel }, "aba-painel");
@@ -1136,9 +1184,9 @@ function atualizarInterfaceUsuario() {
 // Técnico com área cadastrada (não-ADM, não-visitante) só pode acessar
 // o "Painel do Técnico" + as abas de monitoramento/registro que ele
 // usa no dia a dia (Sinótico 3D, Sequenciamento de Veios, Registro de
-// Ocorrência, Registro de OS) — o resto do menu lateral fica escondido.
+// OS) — o resto do menu lateral fica escondido.
 // ADM (MATRICULAS_ADM) e visitante continuam vendo o menu completo.
-const NAV_IDS_LIBERADOS_TECNICO = ['nav-tecnico', 'nav-sinotico', 'nav-fluxo', 'nav-ocorrencia', 'nav-ordens-servico'];
+const NAV_IDS_LIBERADOS_TECNICO = ['nav-tecnico', 'nav-sinotico', 'nav-fluxo', 'nav-ordens-servico'];
 
 function aplicarRestricaoNavTecnico() {
     const restrito = !!(OPERADOR_LOGADO && !OPERADOR_LOGADO.visitante && !OPERADOR_LOGADO.isAdm && OPERADOR_LOGADO.area);
@@ -1170,7 +1218,7 @@ function aplicarRestricaoNavTecnico() {
     if (restrito) {
         const abaAtual = document.querySelector('.tab-content.active');
         const idAtual = abaAtual ? abaAtual.id : null;
-        const abaAindaPermitida = idAtual === 'aba-tecnico' || idAtual === 'aba-fluxo' || idAtual === 'aba-ocorrencia' || idAtual === 'aba-ordens-servico';
+        const abaAindaPermitida = idAtual === 'aba-tecnico' || idAtual === 'aba-fluxo' || idAtual === 'aba-ordens-servico';
         if (!abaAindaPermitida) window.abrirAba(null, 'aba-tecnico');
     }
 }
@@ -3763,104 +3811,15 @@ function atualizarPainelCompleto() {
     executarSeguro(() => renderizarFeedAtividadeRecente(), 'renderizarFeedAtividadeRecente');
 }
 
-// ==========================================
-// 🔧 "Registro Recente" (antes "Atividade Recente" no Painel Geral,
-// visível pra todo mundo) — a pedido do usuário, virou aba própria
-// dentro da Área Restrita (só as 2 matrículas admin), sem o limite de
-// 6 itens do widget antigo, e buscando a lista oficial do servidor —
-// mesmo princípio já usado na Auditoria (atualizarHistoricoGlobalComServidor):
-// o localStorage só reflete o que aconteceu NESTE aparelho, então
-// buscar do servidor garante ver o que outros técnicos fizeram em
-// outros aparelhos também.
-//
-// renderizarFeedAtividadeRecente() é mantida como um "atalho" (chamada
-// em vários pontos do código toda vez que uma ação é registrada) — ela
-// só repassa pra renderRegistroRecenteCompleto() se a aba nova estiver
-// aberta na hora, pra manter a lista atualizada em tempo real sem
-// precisar reabrir a aba.
-// ==========================================
-function renderizarFeedAtividadeRecente() {
-    const abaAtiva = document.getElementById('aba-registro-recente');
-    if (abaAtiva && abaAtiva.classList.contains('active') && typeof window.renderRegistroRecenteCompleto === 'function') {
-        window.renderRegistroRecenteCompleto();
-    }
-}
-
-window.renderRegistroRecenteCompleto = async function() {
-    const lista = document.getElementById('registro-recente-lista');
-    if (!lista) return;
-
-    const matricula = (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula || "").toUpperCase();
-    if (!MATRICULAS_TESTE_FOLHOES.includes(matricula)) {
-        lista.innerHTML = `<li class="text-muted" style="text-align:center; padding: 10px 0;">Acesso restrito.</li>`;
-        return;
-    }
-
-    const montarItens = (itens) => {
-        if (itens.length === 0) {
-            return `<li class="text-muted" style="text-align:center; padding: 10px 0;">Nenhuma atividade registrada ainda.</li>`;
-        }
-        return itens.map(h => {
-            const tagUpper = (h.tag || '').toUpperCase();
-            let classe = '';
-            if (tagUpper.includes('EXCLU') || tagUpper.includes('ALERTA') || tagUpper.includes('CRÍTIC')) {
-                classe = 'alert';
-            } else if (tagUpper.includes('CONCLU') || tagUpper.includes('AUTENTIC') || tagUpper.includes('SUCESSO')) {
-                classe = 'success';
-            }
-            return `
-                <li class="${classe}">
-                    <span class="timeline-time">${h.data || '--'}</span>
-                    <strong>${h.tag || 'Sistema'}:</strong> ${h.acao || ''}
-                    ${h.responsavel ? `<br><small class="text-muted">${h.responsavel}</small>` : ''}
-                </li>
-            `;
-        }).join('');
-    };
-
-    // 🔧 CORREÇÃO ("mudando sozinho" → depois "piscando pra Carregando"):
-    // essa função é re-chamada toda vez que QUALQUER evento acontece no
-    // app inteiro (renderizarFeedAtividadeRecente), não só quando esta
-    // aba está em uso. A tentativa anterior resolveu o "duas fontes
-    // brigando" mas trocou por "pisca pro Carregando" a cada chamada de
-    // fundo. Agora: só mostra "Carregando..." na PRIMEIRA vez (lista
-    // ainda vazia); atualizações seguintes buscam em segundo plano e só
-    // trocam o conteúdo quando o resultado chegar — sem apagar a tela
-    // no meio do caminho. Uma trava (dataset.buscando) evita empilhar
-    // buscas se vários eventos disparam quase juntos.
-    if (lista.dataset.buscando === "1") return;
-    lista.dataset.buscando = "1";
-
-    if (!lista.childElementCount) {
-        lista.innerHTML = `<li class="text-muted" style="text-align:center; padding: 10px 0;">Carregando...</li>`;
-    }
-
-    try {
-        const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/historico_eventos?limite=50`, { cache: 'no-store' });
-        if (!resp.ok) throw new Error('Resposta não-ok do servidor');
-        const eventos = await resp.json();
-        if (!Array.isArray(eventos)) throw new Error('Formato inesperado');
-
-        const itensServidor = eventos.map(e => ({
-            data: e.data_hora || '',
-            tag: e.peca_id || 'AUTENTICAÇÃO',
-            acao: e.acao || '',
-            responsavel: e.operador || 'Sistema'
-        }));
-        lista.innerHTML = montarItens(itensServidor);
-    } catch (e) {
-        console.error('⚠️ Não consegui buscar o Registro Recente completo do servidor — usando o que tinha local:', e);
-        // Só cai pro cache local se a tela ainda estiver vazia — uma
-        // atualização de fundo que falhou não deve apagar uma lista que
-        // já estava certa na tela.
-        if (!lista.childElementCount || lista.querySelector('.text-muted')) {
-            lista.innerHTML = montarItens((HISTORICO_ACOES || []).slice(0, 50));
-        }
-    } finally {
-        lista.dataset.buscando = "0";
-    }
-};
+// 🗑️ Removida a aba "Registro Recente" (e as funções
+// renderizarFeedAtividadeRecente/renderRegistroRecenteCompleto que só
+// serviam a ela) — era exatamente a mesma coisa que a Auditoria Global:
+// mesma fonte (/api/historico_eventos), mesmas 2 matrículas autorizadas
+// (MATRICULAS_TESTE_FOLHOES tinha o mesmo valor de MATRICULAS_AUDITORIA),
+// só que mais simples (sem filtro de data/acessos, limitada a 50 linhas
+// em vez de 500). Os pontos que chamavam renderizarFeedAtividadeRecente()
+// continuam de pé, protegidos por `typeof ... === 'function'` — viram
+// no-op sozinhos, sem precisar caçar cada chamada.
 
 // ==========================================
 // 🆕 ADMINISTRAÇÃO DE COLABORADORES (Área Restrita) — gerenciar acesso
@@ -6438,7 +6397,6 @@ window.abrirAba = function(event, idAba) {
     // mesmo com o código certo escrito. A duplicada foi removida, e os
     // gatilhos que faltavam (Registro Recente e Administração) foram
     // trazidos pra cá, na função que realmente executa.
-    if (idAba === "aba-registro-recente" && typeof window.renderRegistroRecenteCompleto === 'function') window.renderRegistroRecenteCompleto();
     if (idAba === "aba-admin-colaboradores" && typeof window.carregarAdminColaboradores === 'function') window.carregarAdminColaboradores();
     if (idAba === "aba-painel" && typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
     if (idAba === "aba-ativos" && typeof renderAtivos === 'function') renderAtivos();
@@ -6448,7 +6406,6 @@ window.abrirAba = function(event, idAba) {
         carregarOficina();
         if (typeof carregarCatalogoMateriaisOficina === 'function') carregarCatalogoMateriaisOficina();
     }
-    if (idAba === "aba-ocorrencia" && typeof window.renderAbaOcorrencia === 'function') window.renderAbaOcorrencia();
     if (idAba === "aba-ordens-servico" && typeof window.carregarListaOrdensServico === 'function') {
         popularSelectAreaOficina("os-area");
         window.carregarListaOrdensServico();
@@ -7087,7 +7044,6 @@ window.tentarReenviarFilaOffline = async function() {
     salvarFilaOffline(restantes);
 
     if (algumEnviado) {
-        if (typeof window.carregarListaOcorrencias === 'function') window.carregarListaOcorrencias();
         if (typeof window.carregarListaOrdensServico === 'function') window.carregarListaOrdensServico();
         if (typeof window.carregarListaQualidade === 'function') window.carregarListaQualidade();
         if (typeof window.carregarOficina === 'function') window.carregarOficina();
@@ -7139,11 +7095,6 @@ function mostrarToastDesfazer(mensagem, aoConfirmar, aoDesfazer) {
 // ==========================================
 // ABA "REGISTRO DE OCORRÊNCIA"
 // ==========================================
-let FOTO_OCORRENCIA_BASE64 = null;
-let FILTRO_OCORRENCIA_ATUAL = '';
-let OCORRENCIA_CACHE = [];
-let BUSCA_OCORRENCIA_ATUAL = '';
-
 // 🆕 Preenche um <select> de área (TODAS as áreas de AREAS_OFICINA —
 // oficina + administrativo, igual a Central de Áreas mostra as duas) —
 // usado nos formulários de Ocorrência e OS, pra dar contexto de área
@@ -7165,210 +7116,16 @@ function popularSelectAreaOficina(idSelect) {
     select.dataset.preenchido = "1";
 }
 
-window.renderAbaOcorrencia = function() {
-    const select = document.getElementById("ocorrencia-equipamento");
-    if (select) {
-        const ordenados = [...BANCO_ATIVOS].sort((a, b) => (a.id || "").localeCompare(b.id || ""));
-        select.innerHTML = `<option value="">Selecione...</option>` +
-            ordenados.map(a => `<option value="${a.id}">${a.id} — ${a.tipo} (${a.local || 'Sem local'})</option>`).join("");
-    }
-    popularSelectAreaOficina("ocorrencia-area");
-    window.carregarListaOcorrencias();
-};
-
-window.processarFotoOcorrencia = function(event) {
-    const arquivo = event.target.files[0];
-    if (!arquivo) return;
-
-    if (!arquivo.type.startsWith('image/')) {
-        alert('Por favor, escolha um arquivo de imagem.');
-        return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-            const MAX_LADO = 1280;
-            let largura = img.width;
-            let altura = img.height;
-
-            if (largura > altura && largura > MAX_LADO) {
-                altura = Math.round((altura * MAX_LADO) / largura);
-                largura = MAX_LADO;
-            } else if (altura > MAX_LADO) {
-                largura = Math.round((largura * MAX_LADO) / altura);
-                altura = MAX_LADO;
-            }
-
-            const canvas = document.createElement('canvas');
-            canvas.width = largura;
-            canvas.height = altura;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, largura, altura);
-
-            FOTO_OCORRENCIA_BASE64 = canvas.toDataURL('image/jpeg', 0.7);
-
-            const preview = document.getElementById('ocorrencia-foto-preview');
-            const container = document.getElementById('ocorrencia-foto-preview-container');
-            if (preview) preview.src = FOTO_OCORRENCIA_BASE64;
-            if (container) container.classList.remove('hidden');
-        };
-        img.src = e.target.result;
-    };
-    reader.readAsDataURL(arquivo);
-    event.target.value = '';
-};
-
-window.removerFotoOcorrencia = function() {
-    FOTO_OCORRENCIA_BASE64 = null;
-    const preview = document.getElementById('ocorrencia-foto-preview');
-    const container = document.getElementById('ocorrencia-foto-preview-container');
-    if (preview) preview.src = '';
-    if (container) container.classList.add('hidden');
-};
-
-window.confirmarOcorrencia = async function() {
-    if (!verificarAcesso()) return;
-
-    const equipamentoId = document.getElementById("ocorrencia-equipamento")?.value;
-    const texto = document.getElementById("ocorrencia-texto")?.value.trim();
-    const categoria = document.getElementById("ocorrencia-categoria")?.value || "Intervenção";
-    const area = document.getElementById("ocorrencia-area")?.value || null;
-
-    if (!equipamentoId) return alert("Selecione o equipamento.");
-    if (!texto) return alert("Escreva a descrição.");
-
-    const iconePorCategoria = {
-        "Intervenção": "🔧",
-        "Melhoria": "✨",
-        "Comentário": "💬",
-        "Atividade Pendente": "⏳"
-    };
-    const icone = iconePorCategoria[categoria] || "🔧";
-    const acaoFormatada = `${icone} <span style="color:#eab308;">[${categoria.toUpperCase()}]</span> ${texto}`;
-    const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || "Técnico") : "Sistema";
-
-    try {
-        const apiBase = await resolverApiBase();
-        const { resp, enfileirado } = await enviarComFilaOffline(`${apiBase}/api/registro_com_foto`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                peca_id: equipamentoId,
-                acao: acaoFormatada,
-                operador: operador,
-                categoria: categoria,
-                foto_base64: FOTO_OCORRENCIA_BASE64 || null,
-                area: area
-            })
-        }, `Ocorrência em ${equipamentoId}`);
-
-        if (enfileirado) {
-            document.getElementById("ocorrencia-texto").value = "";
-            window.removerFotoOcorrencia();
-            alert(`📴 Sem internet agora — a ${categoria.toLowerCase()} de [${equipamentoId}] foi guardada e será enviada sozinha assim que a conexão voltar.`);
-            return;
-        }
-
-        if (!resp.ok) {
-            const erro = await resp.json().catch(() => ({}));
-            alert(erro.detail || "Não foi possível salvar o registro.");
-            return;
-        }
-
-        if (typeof registrarHistorico === 'function') {
-            const evento = {
-                data: new Date().toLocaleDateString('pt-BR') + " " + new Date().toLocaleTimeString('pt-BR'),
-                tag: equipamentoId,
-                acao: acaoFormatada,
-                responsavel: operador
-            };
-            HISTORICO_ACOES.unshift(evento);
-            localStorage.setItem("oms_historico_v32_local", JSON.stringify(HISTORICO_ACOES));
-            if (typeof renderizarFeedAtividadeRecente === 'function') renderizarFeedAtividadeRecente();
-        }
-
-        document.getElementById("ocorrencia-texto").value = "";
-        window.removerFotoOcorrencia();
-
-        alert(`✅ ${categoria} registrada em [${equipamentoId}]${FOTO_OCORRENCIA_BASE64 ? ' com foto' : ''}.`);
-        window.carregarListaOcorrencias();
-    } catch (e) {
-        console.error('⚠️ Erro ao salvar ocorrência:', e);
-        alert('Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.');
-    }
-};
-
-window.filtrarOcorrencias = function(categoria, botaoClicado) {
-    FILTRO_OCORRENCIA_ATUAL = categoria;
-    document.querySelectorAll('#ocorrencia-filtros .btn-filter-mcc').forEach(b => b.classList.remove('active'));
-    if (botaoClicado) botaoClicado.classList.add('active');
-    window.carregarListaOcorrencias();
-};
-
-window.carregarListaOcorrencias = async function() {
-    const container = document.getElementById("ocorrencia-lista-container");
-    if (!container) return;
-
-    container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>`;
-
-    try {
-        const apiBase = await resolverApiBase();
-        const query = FILTRO_OCORRENCIA_ATUAL ? `?categoria=${encodeURIComponent(FILTRO_OCORRENCIA_ATUAL)}` : '';
-        const resp = await fetch(`${apiBase}/api/registros_ocorrencia${query}`, { cache: 'no-store' });
-        if (!resp.ok) throw new Error('Falha ao buscar');
-        OCORRENCIA_CACHE = await resp.json();
-        window.renderizarListaOcorrencias();
-    } catch (e) {
-        console.error('⚠️ Erro ao carregar ocorrências:', e);
-        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:30px 0;">Não foi possível carregar. Verifique sua internet.</div>`;
-    }
-};
-
-// 🆕 Busca por equipamento — filtra o que já foi carregado (não faz
-// nova chamada à API), então funciona instantâneo enquanto digita.
-window.buscarOcorrencias = function(texto) {
-    BUSCA_OCORRENCIA_ATUAL = (texto || '').trim().toLowerCase();
-    window.renderizarListaOcorrencias();
-};
-
-window.renderizarListaOcorrencias = function() {
-    const container = document.getElementById("ocorrencia-lista-container");
-    if (!container) return;
-
-    const registros = BUSCA_OCORRENCIA_ATUAL
-        ? OCORRENCIA_CACHE.filter(r => (r.peca_id || '').toLowerCase().includes(BUSCA_OCORRENCIA_ATUAL))
-        : OCORRENCIA_CACHE;
-
-    if (!Array.isArray(registros) || registros.length === 0) {
-        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:30px 0;">Nenhum registro encontrado${BUSCA_OCORRENCIA_ATUAL ? ' pra essa busca' : ''}.</div>`;
-        return;
-    }
-
-    container.innerHTML = registros.map(r => `
-        <div style="display:flex; gap:14px; padding:14px 0; border-bottom:1px solid var(--border); align-items:flex-start;">
-            ${r.foto_base64 ? `
-                <img src="${r.foto_base64}"
-                     style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border); cursor:pointer; flex-shrink:0;"
-                     onclick="window.abrirFotoAmpliada('${r.foto_base64}', '${(r.operador || 'Sistema').replace(/'/g, "\\'")} — ${r.data_hora || ''}')"
-                     title="${r.operador || 'Sistema'} — ${r.data_hora || ''}">
-            ` : `
-                <div style="width:70px; height:70px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--text-muted);">
-                    <i class="fas fa-image" style="font-size:20px; opacity:0.4;"></i>
-                </div>
-            `}
-            <div style="flex:1; min-width:0;">
-                <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
-                    <span class="font-code" style="font-weight:700; color:var(--text-heading);">${r.peca_id}</span>
-                    <span style="font-size:11px; color:var(--text-muted);">${r.data_hora}</span>
-                </div>
-                <div style="font-size:13px; color:var(--text-body); margin-bottom:4px;">${r.acao}</div>
-                <div style="font-size:11px; color:var(--text-accent);">${r.operador}${r.area ? ` · ${nomeAreaOficina(r.area)}` : ''}</div>
-            </div>
-        </div>
-    `).join("");
-};
+// (🗑️ Removida a aba "Registro de Ocorrência" inteira — junto com
+// renderAbaOcorrencia/processarFotoOcorrencia/removerFotoOcorrencia/
+// confirmarOcorrencia/filtrarOcorrencias/carregarListaOcorrencias/
+// buscarOcorrencias/renderizarListaOcorrencias que viviam aqui. Era
+// redundante com "Criar Atividade" na Central de Áreas, que já cobre
+// equipamento + descrição + foto + fica salvo no Prontuário do
+// equipamento [via registrar_evento_atividade_oficina, mesma tabela
+// log_eventos que /api/historico_eventos lê por peca_id] — com prazo,
+// prioridade e responsável a mais, que a Ocorrência nunca teve.
+// Confirmado antes de apagar: nada do que só existia aqui se perde.
 
 // 🆕 Áreas "sintéticas" só pra Central de Notificações — Estoque de
 // Rolos e Hidráulica (estoque) não são áreas de reparo (não estão em
@@ -7457,8 +7214,9 @@ window.toggleFormAdicionar = function() {
 // 🆕 REGISTRO DE OS (Ordem de Serviço) — a OS real da CSN vem em várias
 // páginas (cabeçalho, EPIs/ferramentas/operações, confirmação — ver
 // exemplo real com 3 páginas), então o registro aceita VÁRIAS fotos por
-// OS, uma por página. Cada foto passa pela mesma compressão já usada em
-// Intervenção/Ocorrência (window.processarFotoOcorrencia).
+// OS, uma por página. Cada foto passa pela mesma técnica de compressão
+// que a antiga aba de Ocorrência usava (removida — ver comentário perto
+// de onde ela vivia, mais acima neste arquivo).
 // ==========================================
 let FOTOS_OS_BASE64 = []; // array de fotos (páginas) da OS sendo cadastrada
 let FILTRO_OS_ATUAL = '';
@@ -8017,17 +7775,21 @@ window.destacarAtividadeNoQuadro = function(atividadeId, tentativas) {
     setTimeout(() => card.classList.remove('atividade-card-destacada'), 2600);
 };
 
-// 🆕 Vai direto pra Ocorrência clicada (não só abre a aba genérica) —
-// abre "Registro de Ocorrência", espera a lista carregar e já filtra
-// pela peça daquele registro, usando a mesma busca que a aba já tem.
-window.irParaOcorrenciaEspecifica = async function(pecaId) {
-    window.abrirAba(null, 'aba-ocorrencia');
-    document.getElementById('nav-ocorrencia')?.classList.add('active');
+// 🔧 CORREÇÃO (aba "Registro de Ocorrência" removida — redundante com
+// "Criar Atividade" na Central de Áreas): notificações do tipo 'evento'
+// (Intervenção/Melhoria/Comentário/Atividade Pendente antigas, ainda no
+// banco) clicavam aqui pra abrir aquela aba e filtrar pela peça. Como a
+// tela não existe mais, mas o mesmo evento sempre foi gravado com
+// peca_id (e /api/historico_eventos lê por peca_id sem filtrar
+// categoria), o destino equivalente — e mais completo — é abrir direto
+// o Prontuário da peça, que já mostra essa mesma linha do tempo.
+window.irParaOcorrenciaEspecifica = function(pecaId) {
     document.getElementById('nav-notificacoes')?.classList.remove('active');
-    await window.carregarListaOcorrencias();
-    const input = document.getElementById('ocorrencia-busca');
-    if (input) input.value = pecaId || '';
-    if (typeof window.buscarOcorrencias === 'function') window.buscarOcorrencias(pecaId || '');
+    if (pecaId && typeof abrirHistoricoIndividual === 'function' && BANCO_ATIVOS.find(a => a.id === pecaId)) {
+        abrirHistoricoIndividual(pecaId);
+    } else {
+        alert('Esse registro é de um equipamento que não está mais cadastrado. Veja a Auditoria Global pra conferir o histórico completo.');
+    }
 };
 
 // Mesma ideia pra OS — filtra pelo número (ou, se a OS não tiver
