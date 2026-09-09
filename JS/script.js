@@ -752,78 +752,124 @@ function montarLinhasHistorico(acoes, laudos, filtroData) {
         return `<tr><td colspan="4" class="text-center text-muted">Nenhum registro encontrado.</td></tr>`;
     }
 
-    // 🆕 Separa por sessão/dia: antes era uma lista corrida só, difícil
-    // de saber onde um dia termina e o outro começa (principalmente
-    // filtrando "Só Acessos", onde é só linha de login atrás de linha
-    // de login). Cada vez que a data muda (calendário local, não UTC —
-    // mesmo cuidado do filtro acima), insere uma linha de cabeçalho com
-    // o dia por extenso + quantos eventos teve nele.
-    const formatarCabecalhoDia = (ts) => {
-        if (!ts) return 'Data desconhecida';
-        const d = new Date(ts);
-        const hoje = new Date();
-        const ehHoje = d.toDateString() === hoje.toDateString();
-        const rotulo = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
-        return ehHoje ? `Hoje — ${rotulo}` : rotulo.charAt(0).toUpperCase() + rotulo.slice(1);
-    };
+    // 🆕 Separado em DUAS seções sempre visíveis — "Acessos" (login/
+    // visitante) e "Outros Eventos" (tudo mais) — em vez de misturar
+    // tudo numa lista só e depender do botão "Só Acessos" pra enxergar
+    // um dos dois. Dentro de cada seção, agrupado por dia/sessão e
+    // retrátil (só o dia mais recente abre sozinho) — pedido de "achar
+    // algo mais fácil" numa lista que pode ter meses de histórico.
+    // Quando o filtro "Só Acessos" já filtrou no servidor, `todos` só
+    // tem acessos mesmo — a seção "Outros Eventos" simplesmente não
+    // aparece (fica vazia), sem precisar de um caminho de código à parte.
+    const ehAcesso = (item) => (item.tag || '').toUpperCase() === 'AUTENTICAÇÃO';
+    const acessos = todos.filter(ehAcesso);
+    const outros = todos.filter(item => !ehAcesso(item));
 
-    const linhas = [];
-    let diaAtual = null;
-    let contadorDia = 0;
-    // Pré-conta quantos itens caem em cada dia, pra mostrar no cabeçalho
-    // sem precisar de uma segunda passada visual.
-    const contagemPorDia = {};
-    todos.forEach(item => {
-        const chave = item.dataTimestamp ? new Date(item.dataTimestamp).toDateString() : 'desconhecido';
-        contagemPorDia[chave] = (contagemPorDia[chave] || 0) + 1;
-    });
+    let proximoGrupoIndice = 0;
 
-    todos.forEach(item => {
-        const chaveDia = item.dataTimestamp ? new Date(item.dataTimestamp).toDateString() : 'desconhecido';
-        if (chaveDia !== diaAtual) {
-            diaAtual = chaveDia;
-            contadorDia = contagemPorDia[chaveDia] || 0;
-            linhas.push(`
-                <tr class="linha-cabecalho-dia-auditoria">
-                    <td colspan="4" style="background:var(--bg-td); font-weight:700; color:var(--text-accent); padding:8px 12px; border-top:2px solid var(--border);">
-                        <i class="fas fa-calendar-day"></i> ${formatarCabecalhoDia(item.dataTimestamp)}
-                        <span class="text-muted" style="font-weight:400; font-size:11px;"> — ${contadorDia} evento${contadorDia === 1 ? '' : 's'}</span>
-                    </td>
-                </tr>
-            `);
-        }
+    function renderizarSecao(itens, titulo, icone) {
+        if (itens.length === 0) return '';
 
-        if (item.tipo === 'laudo') {
-            linhas.push(`
-                <tr>
-                    <td><small class="text-muted">${item.data}</small></td>
-                    <td><span class="ind-card-tag bg-tag">${item.tag}</span></td>
-                    <td style="color: var(--text-main);">
-                        ${item.acao}
-                        <button class="btn-xs-primary" onclick="window.visualizarLaudo('${item.id}')" style="margin-left:8px; color:var(--text-accent);">
-                            <i class="fas fa-eye"></i> Ver PDF
-                        </button>
-                        <button class="btn-xs-primary" onclick="window.excluirLaudo('${item.id}')" style="color:var(--danger);">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                    <td><small class="text-muted">${item.responsavel}</small></td>
-                </tr>
-            `);
-        } else {
-            linhas.push(`
-                <tr>
-                    <td><small class="text-muted">${item.data}</small></td>
-                    <td><span class="ind-card-tag bg-tag">${item.tag}</span></td>
-                    <td style="color: var(--text-main);">${item.acao}</td>
-                    <td><small class="text-muted">${item.responsavel}</small></td>
-                </tr>
-            `);
-        }
-    });
+        const formatarCabecalhoDia = (ts) => {
+            if (!ts) return 'Data desconhecida';
+            const d = new Date(ts);
+            const hoje = new Date();
+            const ehHoje = d.toDateString() === hoje.toDateString();
+            const rotulo = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+            return ehHoje ? `Hoje — ${rotulo}` : rotulo.charAt(0).toUpperCase() + rotulo.slice(1);
+        };
 
-    return linhas.join("");
+        const contagemPorDia = {};
+        itens.forEach(item => {
+            const chave = item.dataTimestamp ? new Date(item.dataTimestamp).toDateString() : 'desconhecido';
+            contagemPorDia[chave] = (contagemPorDia[chave] || 0) + 1;
+        });
+
+        const linhas = [`
+            <tr>
+                <td colspan="4" style="padding:14px 12px 6px; font-weight:800; font-size:13px; text-transform:uppercase; letter-spacing:0.03em; color:var(--text-heading); border-top:3px solid var(--primary);">
+                    <i class="fas ${icone}"></i> ${titulo}
+                    <span class="text-muted" style="font-weight:400; text-transform:none; letter-spacing:0; font-size:11px;"> — ${itens.length} evento${itens.length === 1 ? '' : 's'}</span>
+                </td>
+            </tr>
+        `];
+
+        let diaAtual = null;
+        let contadorDia = 0;
+        let grupoLocal = -1;
+        let grupoIndice = -1;
+
+        itens.forEach(item => {
+            const chaveDia = item.dataTimestamp ? new Date(item.dataTimestamp).toDateString() : 'desconhecido';
+            if (chaveDia !== diaAtual) {
+                diaAtual = chaveDia;
+                contadorDia = contagemPorDia[chaveDia] || 0;
+                grupoLocal++;
+                grupoIndice = proximoGrupoIndice++;
+                // Retrátil: só o primeiro dia de CADA seção abre sozinho.
+                const abertoPorPadrao = grupoLocal === 0;
+                linhas.push(`
+                    <tr class="linha-cabecalho-dia-auditoria" style="cursor:pointer;" onclick="window.toggleGrupoDiaAuditoria(${grupoIndice}, this)">
+                        <td colspan="4" style="background:var(--bg-td); font-weight:700; color:var(--text-accent); padding:8px 12px; border-top:1px solid var(--border);">
+                            <i class="fas fa-chevron-${abertoPorPadrao ? 'down' : 'right'}" data-seta-grupo-dia="${grupoIndice}" style="width:12px; display:inline-block;"></i>
+                            <i class="fas fa-calendar-day"></i> ${formatarCabecalhoDia(item.dataTimestamp)}
+                            <span class="text-muted" style="font-weight:400; font-size:11px;"> — ${contadorDia} evento${contadorDia === 1 ? '' : 's'}</span>
+                        </td>
+                    </tr>
+                `);
+            }
+
+            const escondida = grupoLocal > 0 ? ' hidden' : '';
+            if (item.tipo === 'laudo') {
+                linhas.push(`
+                    <tr data-grupo-dia="${grupoIndice}" class="${escondida.trim()}">
+                        <td><small class="text-muted">${item.data}</small></td>
+                        <td><span class="ind-card-tag bg-tag">${item.tag}</span></td>
+                        <td style="color: var(--text-main);">
+                            ${item.acao}
+                            <button class="btn-xs-primary" onclick="window.visualizarLaudo('${item.id}')" style="margin-left:8px; color:var(--text-accent);">
+                                <i class="fas fa-eye"></i> Ver PDF
+                            </button>
+                            <button class="btn-xs-primary" onclick="window.excluirLaudo('${item.id}')" style="color:var(--danger);">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                        <td><small class="text-muted">${item.responsavel}</small></td>
+                    </tr>
+                `);
+            } else {
+                linhas.push(`
+                    <tr data-grupo-dia="${grupoIndice}" class="${escondida.trim()}">
+                        <td><small class="text-muted">${item.data}</small></td>
+                        <td><span class="ind-card-tag bg-tag">${item.tag}</span></td>
+                        <td style="color: var(--text-main);">${item.acao}</td>
+                        <td><small class="text-muted">${item.responsavel}</small></td>
+                    </tr>
+                `);
+            }
+        });
+
+        return linhas.join("");
+    }
+
+    return renderizarSecao(acessos, 'Acessos (Login / Visitante)', 'fa-right-to-bracket')
+         + renderizarSecao(outros, 'Outros Eventos', 'fa-list');
 }
+
+// Abre/fecha um dia dentro de uma seção da Auditoria (ver
+// montarLinhasHistorico) — todo <tr data-grupo-dia="N"> daquele grupo
+// mostra/esconde junto, e a seta do cabeçalho vira pra indicar o estado.
+window.toggleGrupoDiaAuditoria = function(grupoIndice, linhaCabecalho) {
+    const linhas = document.querySelectorAll(`#historico-table-body tr[data-grupo-dia="${grupoIndice}"]`);
+    if (!linhas.length) return;
+    const abrindo = linhas[0].classList.contains('hidden');
+    linhas.forEach(tr => tr.classList.toggle('hidden', !abrindo));
+    const seta = linhaCabecalho ? linhaCabecalho.querySelector(`[data-seta-grupo-dia="${grupoIndice}"]`) : null;
+    if (seta) {
+        seta.classList.toggle('fa-chevron-down', abrindo);
+        seta.classList.toggle('fa-chevron-right', !abrindo);
+    }
+};
 
 function renderHistorico() {
     const tbody = document.getElementById("historico-table-body");
