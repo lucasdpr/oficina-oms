@@ -1095,6 +1095,15 @@ footer a:hover { color: var(--amber); }
 <div class="cursor-ring" id="cursor-ring" aria-hidden="true"></div>
 <div class="cursor-dot" id="cursor-dot" aria-hidden="true"></div>
 
+<!-- 🆕 Aviso de nova versão do site — mesma lógica de app.html: aparece
+     quando o Service Worker detecta que uma versão mais nova assumiu
+     o controle, sem recarregar sozinho. -->
+<div id="aviso-nova-versao" hidden style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:99999; background:#1e1a14; color:#f2ede2; padding:12px 16px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,0.5); border:1px solid rgba(240,163,52,0.4); display:flex; align-items:center; gap:12px;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f0a334" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+    <span>Nova versão do site disponível.</span>
+    <button type="button" onclick="window.location.reload()" style="background:#f0a334; color:#0d0b08; border:none; padding:6px 14px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12.5px;">Atualizar agora</button>
+</div>
+
 <nav class="navbar">
     <a href="#top" class="brand">OMS <small>CSN — GMLC/GGMA</small></a>
     <div class="nav-links">
@@ -1928,7 +1937,26 @@ footer a:hover { color: var(--amber); }
     // ---- Service worker (PWA) ----
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('service-worker.js').catch(() => {});
+            navigator.serviceWorker.register('service-worker.js')
+                .then((registro) => {
+                    // 🆕 Checa se tem versão nova de tempos em tempos — sem
+                    // isso, uma aba aberta há muito tempo só saberia de uma
+                    // versão nova ao ser fechada e reaberta.
+                    setInterval(() => registro.update().catch(() => {}), 30 * 60 * 1000);
+                })
+                .catch(() => {});
+
+            // 🆕 Dispara quando o Service Worker que controla esta aba
+            // muda pra um mais novo — sinal confiável de "a versão
+            // instalada agora é diferente da que você tinha ao abrir o
+            // site". Só mostra o aviso, não recarrega sozinho.
+            let jaAvisouNovaVersao = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (jaAvisouNovaVersao) return;
+                jaAvisouNovaVersao = true;
+                const aviso = document.getElementById('aviso-nova-versao');
+                if (aviso) aviso.hidden = false;
+            });
         });
     }
 

@@ -427,6 +427,18 @@
          sem precisar duplicar em cada modal. -->
     <div id="aviso-rascunho-folhao" class="hidden" style="position:fixed; top:16px; left:50%; transform:translateX(-50%); z-index:99999; background:var(--success, #22c55e); color:#fff; padding:10px 18px; border-radius:8px; font-weight:600; box-shadow:0 4px 16px rgba(0,0,0,0.25);"></div>
 
+    <!-- 🆕 Aviso de nova versão do sistema — aparece quando o Service
+         Worker detecta que uma versão mais nova assumiu o controle
+         (CACHE_VERSION mudou desde a última vez que a página carregou).
+         De propósito NÃO recarrega sozinho: se a pessoa estiver no meio
+         de um Folhão sem salvar, um reload forçado derrubaria o
+         progresso. Fica esperando o clique. -->
+    <div id="aviso-nova-versao" class="hidden" style="position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:99999; background:var(--panel-2, #1e293b); color:#fff; padding:12px 16px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,0.4); border:1px solid rgba(245,158,11,0.4); display:flex; align-items:center; gap:12px;">
+        <i class="fas fa-rotate" style="color:#f59e0b;"></i>
+        <span>Nova versão do sistema disponível.</span>
+        <button type="button" onclick="window.location.reload()" style="background:#f59e0b; color:#111827; border:none; padding:6px 14px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12.5px;">Atualizar agora</button>
+    </div>
+
     <!-- TELA DE LOGIN AVANÇADA -->
 <div id="tela-login-home" class="login-home-container no-print">
     
@@ -2810,8 +2822,28 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('service-worker.js')
-                    .then(() => console.log('✅ Service worker registrado - app instalável.'))
+                    .then((registro) => {
+                        console.log('✅ Service worker registrado - app instalável.');
+                        // 🆕 Checa se já tem versão nova esperando/baixando
+                        // assim que registra, e de novo de tempos em tempos —
+                        // sem isso, uma aba/app aberta há dias só saberia de
+                        // uma versão nova na próxima vez que fosse fechada e
+                        // reaberta.
+                        setInterval(() => registro.update().catch(() => {}), 30 * 60 * 1000);
+                    })
                     .catch((err) => console.warn('⚠️ Falha ao registrar service worker:', err));
+
+                // 🆕 Dispara quando o Service Worker que está CONTROLANDO
+                // esta aba muda pra um mais novo — é o sinal mais confiável
+                // de "a versão instalada agora é diferente da que você tinha
+                // quando abriu o app". Só mostra o aviso; não recarrega
+                // sozinho (ver comentário no HTML do aviso-nova-versao).
+                let jaAvisouNovaVersao = false;
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    if (jaAvisouNovaVersao) return;
+                    jaAvisouNovaVersao = true;
+                    document.getElementById('aviso-nova-versao')?.classList.remove('hidden');
+                });
             });
         }
 
