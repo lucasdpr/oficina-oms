@@ -32,6 +32,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
 
 <style>
 /* ============================================================
@@ -116,6 +117,8 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
     color: var(--paper);
 }
 .btn-line:hover { border-color: var(--amber); color: var(--amber); }
+.btn.magnetic { transition: transform 0.15s ease-out, background var(--ease), border-color var(--ease), color var(--ease); }
+@media (prefers-reduced-motion: reduce) { .btn.magnetic { transition: background var(--ease), border-color var(--ease), color var(--ease); } }
 
 /* ===== NAVBAR ===== */
 .navbar {
@@ -239,6 +242,18 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
     background-position: center 30%;
     filter: saturate(1) contrast(1.05) brightness(0.85);
     will-change: transform;
+}
+/* ===== CANVAS 3D — malha de linhas girando no hero, dá profundidade
+   sem esconder a foto real por baixo (blend screen + opacidade baixa) ===== */
+#hero-canvas {
+    position: absolute; inset: 0;
+    z-index: 0;
+    mix-blend-mode: screen;
+    opacity: 0.55;
+    pointer-events: none;
+}
+@media (max-width: 640px), (prefers-reduced-motion: reduce) {
+    #hero-canvas { display: none; }
 }
 .hero-content {
     position: relative; z-index: 1;
@@ -412,7 +427,13 @@ section { padding: 128px clamp(20px, 4vw, 48px); position: relative; }
     padding: 40px clamp(20px, 3vw, 36px);
     border-right: 1px solid var(--line);
     border-bottom: 1px solid var(--line);
+    transform-style: preserve-3d;
+    will-change: transform;
+    transition: transform 0.15s ease-out, background 0.3s ease;
 }
+.pillar:hover { background: var(--panel-2); }
+.pillar .idx, .pillar h3, .pillar ul { transform: translateZ(24px); }
+@media (prefers-reduced-motion: reduce) { .pillar { transition: none; } }
 .pillar .idx {
     font-family: var(--font-mono);
     font-size: 12px;
@@ -553,6 +574,10 @@ section { padding: 128px clamp(20px, 4vw, 48px); position: relative; }
     background-size: cover; background-position: center;
     filter: saturate(1.05) contrast(1.02);
     will-change: transform;
+    transition: transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+    .photo-break-bg { transform: none !important; transition: none; }
 }
 .photo-break-bg::after {
     content: '';
@@ -605,7 +630,12 @@ section { padding: 128px clamp(20px, 4vw, 48px); position: relative; }
     gap: 18px;
     padding: 34px 0;
     border-top: 1px solid var(--line);
+    transform-style: preserve-3d;
+    will-change: transform;
+    transition: transform 0.15s ease-out;
 }
+.feature .fi, .feature h4, .feature p { transform: translateZ(20px); }
+@media (prefers-reduced-motion: reduce) { .feature { transition: none; } }
 .feature .fi {
     font-family: var(--font-mono);
     font-size: 12px;
@@ -852,6 +882,7 @@ footer a:hover { color: var(--amber); }
 <!-- ============ HERO — foto real, sem mockup fake ============ -->
 <section class="hero">
     <div class="hero-bg"></div>
+    <canvas id="hero-canvas" aria-hidden="true"></canvas>
     <div class="hero-content">
         <span class="tag">GMLC / GGMA — Volta Redonda, RJ</span>
         <h1>Controle total<br>da <em>manutenção</em></h1>
@@ -1290,18 +1321,31 @@ footer a:hover { color: var(--amber); }
         alvos.forEach(el => obs.observe(el));
     })();
 
-    // ---- Parallax sutil nas fotos de fundo ao rolar ----
+    // ---- Parallax nas fotos de fundo + zoom cinematográfico de entrada ----
+    // (unificado num só lugar pra não ter duas rotinas brigando pelo
+    // mesmo transform: a escala de entrada some assim que a seção fica
+    // visível, e o parallax continua rolando por cima dela.)
     (function () {
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
         const fundos = document.querySelectorAll('.hero-bg, .photo-break-bg');
         if (!fundos.length) return;
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+        const revelados = new WeakSet();
+        const obsZoom = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) { revelados.add(entry.target); obsZoom.unobserve(entry.target); }
+            });
+        }, { threshold: 0.1 });
+        fundos.forEach(bg => obsZoom.observe(bg.parentElement));
+
         let ticking = false;
         function atualizar() {
             fundos.forEach((bg) => {
                 const rect = bg.parentElement.getBoundingClientRect();
                 const meio = rect.top + rect.height / 2 - window.innerHeight / 2;
                 const desloc = meio * -0.08;
-                bg.style.transform = `translateY(${desloc}px) scale(1.12)`;
+                const escala = revelados.has(bg.parentElement) ? 1.12 : 1.22;
+                bg.style.transform = `translateY(${desloc}px) scale(${escala})`;
             });
             ticking = false;
         }
@@ -1309,7 +1353,164 @@ footer a:hover { color: var(--amber); }
             if (!ticking) { requestAnimationFrame(atualizar); ticking = true; }
         }, { passive: true });
         atualizar();
+        // reagenda algumas vezes logo no início pra pegar a transição
+        // assim que o IntersectionObserver marcar "revelado".
+        [100, 300, 600, 1000, 1600].forEach(t => setTimeout(atualizar, t));
     })();
+
+    // ---- Tilt 3D nos cards (pilares/recursos) seguindo o mouse ----
+    // Efeito clássico de "cartão que se inclina pro cursor" — só entra em
+    // telas com mouse de verdade (hover: hover) e sem reduced-motion.
+    (function () {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+        const cartoes = document.querySelectorAll('.pillar, .feature');
+        cartoes.forEach(el => {
+            let raf = null;
+            el.addEventListener('mousemove', (e) => {
+                const rect = el.getBoundingClientRect();
+                const px = (e.clientX - rect.left) / rect.width - 0.5;
+                const py = (e.clientY - rect.top) / rect.height - 0.5;
+                if (raf) return;
+                raf = requestAnimationFrame(() => {
+                    el.style.transform = `perspective(800px) rotateX(${(-py * 8).toFixed(2)}deg) rotateY(${(px * 8).toFixed(2)}deg)`;
+                    raf = null;
+                });
+            });
+            el.addEventListener('mouseleave', () => {
+                el.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg)';
+            });
+        });
+    })();
+
+    // ---- Botões magnéticos — seguem o cursor um pouco dentro de si ----
+    (function () {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.classList.add('magnetic');
+            btn.addEventListener('mousemove', (e) => {
+                const rect = btn.getBoundingClientRect();
+                const x = (e.clientX - rect.left - rect.width / 2) * 0.28;
+                const y = (e.clientY - rect.top - rect.height / 2) * 0.35;
+                btn.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+            });
+            btn.addEventListener('mouseleave', () => { btn.style.transform = 'translate(0,0)'; });
+        });
+    })();
+
+    // ---- Contador animado (150+ da faixa de Equipe) ----
+    (function () {
+        const alvo = document.querySelector('.team-text .stat');
+        if (!alvo) return;
+        const numero = parseInt(alvo.textContent, 10);
+        const sufixo = alvo.textContent.replace(/[0-9]/g, '');
+        if (!numero || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        let animou = false;
+        const obs = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !animou) {
+                    animou = true;
+                    const inicio = performance.now();
+                    const duracao = 1400;
+                    function passo(agora) {
+                        const t = Math.min((agora - inicio) / duracao, 1);
+                        const facilitado = 1 - Math.pow(1 - t, 3);
+                        alvo.textContent = Math.round(facilitado * numero) + sufixo;
+                        if (t < 1) requestAnimationFrame(passo);
+                    }
+                    requestAnimationFrame(passo);
+                    obs.unobserve(alvo);
+                }
+            });
+        }, { threshold: 0.5 });
+        alvo.textContent = '0' + sufixo;
+        obs.observe(alvo);
+    })();
+
+    // ---- Fundo 3D do hero (Three.js) — malha de linhas conectadas tipo
+    // "rede de sensores", girando devagar e reagindo ao mouse. Decorativo,
+    // por trás do texto (mix-blend:screen), nunca atrapalha a leitura.
+    // 🔧 Precisa esperar o <script defer> do three.js terminar de rodar —
+    // este bloco aqui é um <script> normal no meio do body, que executa
+    // ANTES dos scripts deferred (só saem depois do parse do HTML todo).
+    // Sem o DOMContentLoaded abaixo, THREE ainda não existiria aqui.
+    document.addEventListener('DOMContentLoaded', function () {
+        const canvas = document.getElementById('hero-canvas');
+        if (!canvas || typeof THREE === 'undefined') return;
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+        const hero = canvas.parentElement;
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+        camera.position.z = 9;
+
+        // Nuvem de pontos conectados por linhas curtas — sugere "rede de
+        // dados" (rastreabilidade), tema do produto, sem virar decoração
+        // genérica de partículas soltas.
+        const N = 46;
+        const pontos = [];
+        for (let i = 0; i < N; i++) {
+            pontos.push(new THREE.Vector3(
+                (Math.random() - 0.5) * 14,
+                (Math.random() - 0.5) * 8,
+                (Math.random() - 0.5) * 6
+            ));
+        }
+        const geoPontos = new THREE.BufferGeometry().setFromPoints(pontos);
+        const matPontos = new THREE.PointsMaterial({ color: 0xf0a334, size: 0.06, transparent: true, opacity: 0.85 });
+        const nuvem = new THREE.Points(geoPontos, matPontos);
+        scene.add(nuvem);
+
+        const posLinhas = [];
+        const DIST_MAX = 3.1;
+        for (let i = 0; i < N; i++) {
+            for (let j = i + 1; j < N; j++) {
+                if (pontos[i].distanceTo(pontos[j]) < DIST_MAX) {
+                    posLinhas.push(pontos[i].x, pontos[i].y, pontos[i].z, pontos[j].x, pontos[j].y, pontos[j].z);
+                }
+            }
+        }
+        const geoLinhas = new THREE.BufferGeometry();
+        geoLinhas.setAttribute('position', new THREE.Float32BufferAttribute(posLinhas, 3));
+        const matLinhas = new THREE.LineBasicMaterial({ color: 0xf0a334, transparent: true, opacity: 0.18 });
+        const rede = new THREE.LineSegments(geoLinhas, matLinhas);
+        scene.add(rede);
+
+        let mouseX = 0, mouseY = 0;
+        window.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX / window.innerWidth - 0.5);
+            mouseY = (e.clientY / window.innerHeight - 0.5);
+        }, { passive: true });
+
+        function redimensionar() {
+            const w = hero.clientWidth, h = hero.clientHeight;
+            renderer.setSize(w, h, false);
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+        }
+        redimensionar();
+        window.addEventListener('resize', redimensionar);
+
+        let pararAnimacao = false;
+        const obsVisivel = new IntersectionObserver((entries) => {
+            pararAnimacao = !entries[0].isIntersecting;
+        });
+        obsVisivel.observe(hero);
+
+        function animar(t) {
+            requestAnimationFrame(animar);
+            if (pararAnimacao) return;
+            nuvem.rotation.y = t * 0.00006 + mouseX * 0.3;
+            nuvem.rotation.x = mouseY * 0.2;
+            rede.rotation.y = nuvem.rotation.y;
+            rede.rotation.x = nuvem.rotation.x;
+            renderer.render(scene, camera);
+        }
+        requestAnimationFrame(animar);
+    });
 
     // ---- Service worker (PWA) ----
     if ('serviceWorker' in navigator) {
