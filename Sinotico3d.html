@@ -820,6 +820,42 @@ function dataEntradaExibivel(peca) {
     return '~' + new Date(ts).toLocaleDateString('pt-BR');
 }
 
+// 🔧 CORREÇÃO ("dias parado no Sinótico mesmo com a peça instalada há
+// semanas"): igual ao bug já corrigido em window.calcularDias()
+// (script.js) — "dias" era um número ESTÁTICO, só atualizado quando
+// alguém salvava a peça de novo (ex: no momento da instalação, sempre
+// zerado). Como esta aba roda isolada (não importa script.js/banco.js),
+// ela mostrava direto o `peca.dias` cru vindo da API — congelado no
+// valor do último salvamento, nunca subindo sozinho dia após dia, ao
+// contrário do Sequenciamento de Veio (que já recalcula na hora a partir
+// de data_entrada/data_reparo). Replica aqui a mesma lógica.
+function parseDataBrParaTimestamp(dataBr) {
+    if (!dataBr) return null;
+    const partes = String(dataBr).split('/');
+    if (partes.length !== 3) return null;
+    const [dia, mes, ano] = partes;
+    const ts = new Date(`${ano}-${mes}-${dia}T00:00:00`).getTime();
+    return Number.isNaN(ts) ? null : ts;
+}
+
+function calcularDiasStandalone(peca) {
+    const agora = Date.now();
+    const emReparo = peca.local === 'Oficina / Reparo' || (peca.local && String(peca.local).includes('Oficina'));
+    if (emReparo && peca.data_reparo) {
+        const tsReparo = new Date(peca.data_reparo).getTime();
+        if (!Number.isNaN(tsReparo)) return Math.floor((agora - tsReparo) / (1000 * 60 * 60 * 24));
+    }
+    const instalada = peca.local && String(peca.local).includes('Veio') && !emReparo;
+    if (instalada) {
+        const tsEntrada = parseDataBrParaTimestamp(peca.data_entrada);
+        if (tsEntrada) return Math.floor((agora - tsEntrada) / (1000 * 60 * 60 * 24));
+    }
+    // Sem data real pra calcular em cima (peça antiga/nunca sincronizada
+    // com esse controle) — cai pro valor estático como último recurso,
+    // igual sempre foi, em vez de mostrar algo inventado.
+    return peca.dias ?? '—';
+}
+
 // Monta um mapa { slotKeyCurto: peca } com todas as peças realmente
 // "Instaladas" no veio informado. Reconstruído a cada render (o
 // dataset é pequeno, ~250 peças) pra sempre refletir o estado mais
@@ -1872,6 +1908,36 @@ function escaparHtml(texto) {
         .replace(/>/g, '&gt;');
 }
 
+// 🔧 CORREÇÃO ("registro rolo travado/mancal/barra transversal no
+// Sinótico 3D não entra no Prontuário/histórico"): salvarRolosTravados,
+// salvarMancalOcorrencia e salvarBarraTransversal (mais abaixo) só
+// registravam o evento se `window.registrarHistorico` existisse — mas
+// essa função só existe em script.js/ui.js, arquivos que esta página
+// (Sinótico 3D) NUNCA carrega (roda isolada, aberta em aba própria, só
+// com three.js e dados.js — ver <script type="module"> no topo do
+// arquivo). Esse "if" nunca era verdadeiro: o dado salvava certinho no
+// banco, mas o evento nunca entrava no histórico compartilhado, sem erro
+// nenhum no console. Já tinha sido corrigido uma vez, só em
+// salvarObservacaoPeca (chamando a API de eventos direto) — mas nunca
+// replicado pros outros três. Esta função centraliza o fix pra ser
+// reaproveitada por todos: mesma rota que registrarHistorico usa por
+// baixo dos panos (POST /api/registrar_evento), sem depender de nenhuma
+// função só disponível no app principal.
+async function registrarHistoricoStandalone(id, mensagem) {
+    try {
+        const apiBase = await resolverApiBase();
+        const operadorAtual = JSON.parse(localStorage.getItem("oms_operador_v32_local") || 'null');
+        const nomeOperador = (operadorAtual && operadorAtual.nome) ? operadorAtual.nome : 'Sistema';
+        await fetch(`${apiBase}/api/registrar_evento`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ peca_id: id, acao: mensagem, operador: nomeOperador })
+        });
+    } catch (erroHistorico) {
+        console.error('⚠️ Dado salvo, mas não consegui registrar no histórico/Prontuário:', erroHistorico);
+    }
+}
+
 // 🆕 OBSERVAÇÃO EDITÁVEL — salva direto no Postgres pela mesma API que
 // alimenta o resto do sistema (rota /api/atualizar_peca, que agora sabe
 // criar a linha também, não só atualizar). Atualiza o cache local
@@ -1892,34 +1958,11 @@ async function salvarObservacaoPeca(id, valor, botaoEl, statusEl) {
             if (piecesById[id]) piecesById[id].observacao = valor;
             statusEl.textContent = '✅ Salvo no banco.';
             statusEl.className = 'obs-status ok';
-            // 🔧 CORREÇÃO ("observação do Sinótico 3D não aparece no
-            // Prontuário"): a tentativa anterior aqui checava
-            // `window.registrarHistorico`, mas essa função só existe em
-            // script.js/ui.js — arquivos que esta página (Sinótico 3D)
-            // NUNCA carrega (ela roda isolada, só com three.js e
-            // dados.js, ver <script type="module"> no topo do arquivo).
-            // Ou seja, o "if" nunca era verdadeiro e o evento nunca era
-            // gravado — silenciosamente, sem erro nenhum no console.
-            // A correção certa é chamar a API de eventos DIRETO (mesma
-            // rota que registrarHistorico usa por baixo dos panos:
-            // POST /api/registrar_evento), sem depender de nenhuma
-            // função só disponível no app principal.
-            try {
-                const operadorAtual = JSON.parse(localStorage.getItem("oms_operador_v32_local") || 'null');
-                const nomeOperador = (operadorAtual && operadorAtual.nome) ? operadorAtual.nome : 'Sistema';
-                const resumo = valor.trim() ? `"${valor.trim()}"` : '(observação removida)';
-                await fetch(`${apiBase}/api/registrar_evento`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        peca_id: id,
-                        acao: `📝 Observação atualizada no Sinótico 3D: ${resumo}`,
-                        operador: nomeOperador
-                    })
-                });
-            } catch (erroHistorico) {
-                console.error('⚠️ Observação salva, mas não consegui registrar no histórico/Prontuário:', erroHistorico);
-            }
+            // Ver registrarHistoricoStandalone() logo acima — mesmo bug do
+            // window.registrarHistorico, corrigido uma vez aqui e agora
+            // centralizado pra ser reaproveitado pelos outros salvamentos.
+            const resumo = valor.trim() ? `"${valor.trim()}"` : '(observação removida)';
+            await registrarHistoricoStandalone(id, `📝 Observação atualizada no Sinótico 3D: ${resumo}`);
         } else {
             throw new Error(resultado.detail || 'A API não confirmou o salvamento.');
         }
@@ -2151,17 +2194,13 @@ async function salvarRolosTravados(id, travadosSet, botaoEl, statusEl) {
             if (piecesById[id]) piecesById[id].rolos_travados = valor;
             statusEl.textContent = '✅ Salvo no banco.';
             statusEl.className = 'obs-status ok';
-            // 🔧 CORREÇÃO ("o prontuário que fiz no Sinótico 3D não
-            // apareceu no Sequenciamento de Veio"): mesma causa do
-            // salvarObservacaoPeca — gravava no banco mas nunca
-            // registrava no histórico compartilhado. Agora registra,
-            // listando quais rolos ficaram travados (ou avisando que
-            // todos foram liberados).
-            if (typeof window.registrarHistorico === 'function') {
-                const lista = Array.from(travadosSet);
-                const resumo = lista.length ? lista.join(', ') : '(nenhum — todos liberados)';
-                window.registrarHistorico(id, `🔒 Rolos travados atualizados no Sinótico 3D: ${resumo}`);
-            }
+            // Ver registrarHistoricoStandalone() — mesmo bug do
+            // window.registrarHistorico corrigido nos outros salvamentos.
+            // Lista quais rolos ficaram travados (ou avisa que todos
+            // foram liberados).
+            const lista = Array.from(travadosSet);
+            const resumo = lista.length ? lista.join(', ') : '(nenhum — todos liberados)';
+            await registrarHistoricoStandalone(id, `🔒 Rolos travados atualizados no Sinótico 3D: ${resumo}`);
             // 🆕 Redesenha a cena 3D na hora — os rolos já aparecem
             // vermelhos/normais assim que o travamento é salvo.
             construirCena(veioAtual);
@@ -2230,9 +2269,9 @@ async function salvarMancalOcorrencia(id, chaveMancal, tipo, mancaisMap, botaoEl
         const resultado = await resposta.json();
         if (resposta.ok && resultado.sucesso) {
             if (piecesById[id]) piecesById[id].mancais_ocorrencias = valor;
-            if (typeof window.registrarHistorico === 'function') {
-                window.registrarHistorico(id, mensagem);
-            }
+            // Ver registrarHistoricoStandalone() — mesmo bug do
+            // window.registrarHistorico corrigido nos outros salvamentos.
+            await registrarHistoricoStandalone(id, mensagem);
             // 🆕 Atualiza o painel de Sequenciamento de Veios na hora (se
             // estiver aberto), pra o selo de ocorrência aparecer/sumir
             // sem precisar trocar de aba e voltar.
@@ -2719,9 +2758,9 @@ async function salvarBarraTransversal(id, statusMap, mensagemHistorico) {
         const resultado = await resposta.json();
         if (resposta.ok && resultado.sucesso) {
             if (piecesById[id]) piecesById[id].barra_transversal = valor;
-            if (mensagemHistorico && typeof window.registrarHistorico === 'function') {
-                window.registrarHistorico(id, mensagemHistorico);
-            }
+            // Ver registrarHistoricoStandalone() — mesmo bug do
+            // window.registrarHistorico corrigido nos outros salvamentos.
+            if (mensagemHistorico) await registrarHistoricoStandalone(id, mensagemHistorico);
             // 🆕 Redesenha a cena 3D na hora, sem precisar trocar de veio
             // ou clicar em "Atualizar" — assim o cilindro já aparece
             // vermelho/normal assim que a ocorrência é salva.
@@ -2783,7 +2822,7 @@ function abrirModalPeca(slot, peca) {
             <div class="campo"><span class="k">Tonelagem atual</span><span class="v">${ton.toLocaleString('pt-BR')}</span></div>
             <div class="campo"><span class="k">Meta de vida útil</span><span class="v">${meta.toLocaleString('pt-BR')}</span></div>
             <div class="campo"><span class="k">Data de Entrada</span><span class="v">${dataEntradaExibivel(peca)}</span></div>
-            <div class="campo"><span class="k">Dias em operação</span><span class="v">${peca.dias ?? '—'}</span></div>
+            <div class="campo"><span class="k">Dias em operação</span><span class="v">${calcularDiasStandalone(peca)}</span></div>
 
             <div class="barra-wrap">
                 <div class="barra-topo"><span>Desgaste</span><span class="barra-pct" style="color:${corBarra}">${pct.toFixed(1)}%</span></div>
