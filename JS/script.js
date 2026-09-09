@@ -752,18 +752,64 @@ function montarLinhasHistorico(acoes, laudos, filtroData) {
         return `<tr><td colspan="4" class="text-center text-muted">Nenhum registro encontrado.</td></tr>`;
     }
 
-    // 🆕 Separado em DUAS seções sempre visíveis — "Acessos" (login/
-    // visitante) e "Outros Eventos" (tudo mais) — em vez de misturar
-    // tudo numa lista só e depender do botão "Só Acessos" pra enxergar
-    // um dos dois. Dentro de cada seção, agrupado por dia/sessão e
-    // retrátil (só o dia mais recente abre sozinho) — pedido de "achar
-    // algo mais fácil" numa lista que pode ter meses de histórico.
-    // Quando o filtro "Só Acessos" já filtrou no servidor, `todos` só
-    // tem acessos mesmo — a seção "Outros Eventos" simplesmente não
-    // aparece (fica vazia), sem precisar de um caminho de código à parte.
-    const ehAcesso = (item) => (item.tag || '').toUpperCase() === 'AUTENTICAÇÃO';
-    const acessos = todos.filter(ehAcesso);
-    const outros = todos.filter(item => !ehAcesso(item));
+    // 🆕 Classificação real por tipo de evento, em vez de só "Acessos" x
+    // "Outros" — usa a `categoria` que o backend já grava quando existe
+    // (ex: "Atividade Oficina", a única confiável de verdade, gravada
+    // por registrar_evento_atividade_oficina) e padrões de texto pros
+    // eventos que nunca tiveram categoria própria no banco (login, swap
+    // de peça, folhão/laudo, estoque de material). Cada categoria só
+    // aparece na tela se tiver pelo menos 1 evento — ver renderizarSecao.
+    const CATEGORIAS_AUDITORIA = [
+        {
+            chave: 'acesso',
+            titulo: 'Acessos (Login / Visitante)',
+            icone: 'fa-right-to-bracket',
+            pertence: (item) => (item.tag || '').toUpperCase() === 'AUTENTICAÇÃO'
+        },
+        {
+            chave: 'atividade-oficina',
+            titulo: 'Atividades da Oficina',
+            icone: 'fa-clipboard-list',
+            pertence: (item) => item.categoria === 'Atividade Oficina'
+        },
+        {
+            chave: 'movimentacao-peca',
+            titulo: 'Movimentação de Peças (Swap / Saque)',
+            icone: 'fa-arrows-rotate',
+            pertence: (item) => /entrou no slot|saiu do slot|sacad[oa] (do|da|de)|substitu[ií]/i.test(item.acao || '')
+        },
+        {
+            chave: 'folhao-laudo',
+            titulo: 'Folhões e Laudos',
+            icone: 'fa-file-pdf',
+            pertence: (item) => item.tipo === 'laudo' || /procedimento conclu[ií]do|laudo pdf/i.test(item.acao || '')
+        },
+        {
+            chave: 'estoque',
+            titulo: 'Estoque e Materiais',
+            icone: 'fa-boxes-stacked',
+            pertence: (item) => /material\s*\[|estoque/i.test(item.acao || '')
+        },
+        {
+            // Sempre por último — pega o que nenhuma categoria acima
+            // reconheceu, em vez de sumir ou dar erro.
+            chave: 'outros',
+            titulo: 'Outros Eventos',
+            icone: 'fa-list',
+            pertence: () => true
+        }
+    ];
+
+    // Cada categoria, na ordem da lista acima, "reivindica" os itens que
+    // bate e tira do que resta pra próxima — por isso "outros" (que
+    // aceita qualquer coisa) tem que vir por último. `todos` já está
+    // ordenado do mais recente pro mais antigo; filter preserva ordem.
+    let restantes = todos;
+    const grupos = CATEGORIAS_AUDITORIA.map(cat => {
+        const doGrupo = restantes.filter(cat.pertence);
+        restantes = restantes.filter(item => !cat.pertence(item));
+        return { ...cat, itens: doGrupo };
+    });
 
     let proximoGrupoIndice = 0;
 
@@ -852,8 +898,7 @@ function montarLinhasHistorico(acoes, laudos, filtroData) {
         return linhas.join("");
     }
 
-    return renderizarSecao(acessos, 'Acessos (Login / Visitante)', 'fa-right-to-bracket')
-         + renderizarSecao(outros, 'Outros Eventos', 'fa-list');
+    return grupos.map(g => renderizarSecao(g.itens, g.titulo, g.icone)).join("");
 }
 
 // Abre/fecha um dia dentro de uma seção da Auditoria (ver
@@ -925,7 +970,12 @@ async function atualizarHistoricoGlobalComServidor(filtroData) {
             tag: e.peca_id || 'AUTENTICAÇÃO',
             acao: e.acao || '',
             responsavel: e.operador || 'Sistema',
-            dataTimestamp: e.data_hora ? new Date(e.data_hora.replace(' ', 'T')).getTime() : 0
+            dataTimestamp: e.data_hora ? new Date(e.data_hora.replace(' ', 'T')).getTime() : 0,
+            // 🆕 O backend já grava uma categoria pra alguns eventos (ex:
+            // "Atividade Oficina") — antes esse dado chegava e era jogado
+            // fora aqui. Repassa pra classificarEventoAuditoria() poder
+            // usar o dado real em vez de só adivinhar pelo texto.
+            categoria: e.categoria || null
         }));
 
         // 🔍 Filtro "Só Acessos": mostra só logins e entradas de visitante,
