@@ -207,11 +207,20 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
     padding: 15px 30px;
     font-weight: 600;
     font-size: 15px;
+    font-family: inherit;
     border-radius: 3px;
     border: 1px solid transparent;
     min-height: 48px;
     cursor: pointer;
     transition: background var(--ease), border-color var(--ease), color var(--ease);
+    /* 🐛 CORRIGIDO ("botão Instalar App apareceu cinza/apagado"): até
+       agora todo .btn na página era uma <a> (sem fundo nativo), então
+       ninguém tinha reparado que nem .btn nem .btn-line definiam
+       background — o primeiro <button> de verdade a usar essas classes
+       (Instalar App) herdou o cinza padrão do navegador por cima. */
+    background: none;
+    appearance: none;
+    -webkit-appearance: none;
 }
 .btn-solid { background: var(--amber); color: #17130c; }
 .btn-solid:hover { background: #ffb547; }
