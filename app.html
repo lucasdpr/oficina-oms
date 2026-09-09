@@ -404,6 +404,15 @@
 
     <div class="apple-aurora" aria-hidden="true"><span></span><span></span></div>
 
+    <!-- 🔧 CORREÇÃO: folhaoPersistencia.js (restaurarRascunhoNoModal) sempre
+         procurou por este elemento pra avisar "progresso restaurado", mas
+         ele nunca existiu em nenhum HTML do projeto — o aviso nunca
+         aparecia (o `if (aviso)` é defensivo, então não quebrava nada, só
+         a função ficava muda). Único elemento global de propósito: só um
+         Folhão fica aberto por vez, então um toast fixo serve pra todos,
+         sem precisar duplicar em cada modal. -->
+    <div id="aviso-rascunho-folhao" class="hidden" style="position:fixed; top:16px; left:50%; transform:translateX(-50%); z-index:99999; background:var(--success, #22c55e); color:#fff; padding:10px 18px; border-radius:8px; font-weight:600; box-shadow:0 4px 16px rgba(0,0,0,0.25);"></div>
+
     <!-- TELA DE LOGIN AVANÇADA -->
 <div id="tela-login-home" class="login-home-container no-print">
     
@@ -645,11 +654,6 @@
             <div class="plant-status-badge">
                 <i class="fas fa-circle"></i> Sistema Online & Monitorando
             </div>
-        </div>
-        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items: flex-start;">
-            <button class="btn-premium" onclick="window.toggleTheme()" id="btn-theme-toggle">
-                <i class="fas fa-sun" id="theme-icon"></i> <span id="theme-text">Modo Claro</span>
-            </button>
         </div>
     </div>
 

@@ -198,7 +198,13 @@ if (!BANCO_ATIVOS || BANCO_ATIVOS.length === 0) {
     localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
 }
 
-if (!BANCO_ROLOS) {
+// 🔧 CORREÇÃO (mesmo bug já corrigido pro BANCO_ATIVOS, ver linha 162):
+// como a declaração no topo do arquivo já garante `|| []`, BANCO_ROLOS
+// nunca é `null`/`undefined` aqui — no mínimo é um array vazio, que é
+// truthy. `if (!BANCO_ROLOS)` nunca era `true`, então este seed de
+// catálogo padrão nunca rodava de verdade quando o localStorage estava
+// vazio. Corrigido pra checar o tamanho, igual o BANCO_ATIVOS.
+if (!BANCO_ROLOS || BANCO_ROLOS.length === 0) {
     BANCO_ROLOS = [
         { id: "R-S5", nome: "Rolo de Cadeira 450", conjunto: "Cadeira", mcc_compat: "2/3", qtd: 14 },
         { id: "R-S5P", nome: "Rolo de Cadeira 450 Puxador", conjunto: "Cadeira", mcc_compat: "2/3", qtd: 8 },
@@ -211,7 +217,9 @@ if (!BANCO_ROLOS) {
     localStorage.setItem("oms_rolos_v32_local", JSON.stringify(BANCO_ROLOS));
 }
 
-if (!BANCO_HIDRAULICA) {
+// 🔧 CORREÇÃO: mesmo bug do BANCO_ROLOS acima — `|| []` na declaração
+// torna este `if (!BANCO_HIDRAULICA)` sempre falso quando vazio.
+if (!BANCO_HIDRAULICA || BANCO_HIDRAULICA.length === 0) {
     BANCO_HIDRAULICA = [
         // ---- MCC 2/3 ----
         { id: "H-PGH12", nome: "Porca Hidráulica Grupo 1,2", conjunto: "Grupo 1,2", mcc_compat: "2/3", qtd_aplicado: 0, qtd_reserva: 0 },
@@ -229,7 +237,9 @@ if (!BANCO_HIDRAULICA) {
     localStorage.setItem("oms_hidraulica_v32_local", JSON.stringify(BANCO_HIDRAULICA));
 }
 
-if (!BANCO_MATERIAIS) {
+// 🔧 CORREÇÃO: mesmo bug do BANCO_ROLOS acima — `|| []` na declaração
+// torna este `if (!BANCO_MATERIAIS)` sempre falso quando vazio.
+if (!BANCO_MATERIAIS || BANCO_MATERIAIS.length === 0) {
     BANCO_MATERIAIS = [
         { codigo: "1660669", descricao: "ABRACADEIRA BIPARTIDA PP 12,MM", qtd: 50 },
         { codigo: "1641056", descricao: "ABRACADEIRA BIPARTIDA PP 16,0MM", qtd: 25 },
@@ -678,12 +688,23 @@ export async function salvarPecaNoPython(peca) {
             console.log(resultado.criada
                 ? `✅ [Banco de Dados] Peça ${peca.id} CRIADA no Postgres com sucesso!`
                 : `✅ [Banco de Dados] Peça ${peca.id} atualizada com sucesso!`);
+            return true;
         } else {
             console.error("❌ Erro no Python:", resultado.detail || resultado);
+            // 🔧 CORREÇÃO: esta função nunca sinalizava sucesso/falha pra quem
+            // chamou (diferente de salvarAjusteRoloNoPython/salvarAjusteHidraulicaNoPython,
+            // que retornam o resultado ou null). A UI já aplica a mudança de forma
+            // otimista antes de chamar isto — se a gravação no Postgres falhar
+            // (rede instável, Neon "acordando"), o operador nunca era avisado: a
+            // tela mostrava a peça como instalada/atualizada, mas o servidor nunca
+            // recebia a mudança, e ela "desfazia sozinha" no próximo sync. Agora
+            // retorna false pra quem chamou poder avisar o operador.
+            return false;
         }
 
     } catch (erro) {
         console.error("❌ Erro de comunicação com o servidor:", erro);
+        return false;
     }
 }
 

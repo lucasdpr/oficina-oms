@@ -93,12 +93,29 @@ export async function buscarPonteChecklist(id, item) {
 
     const apiBase = await resolverApiBase();
 
-    const respStatus = await fetch(`${apiBase}/api/checklist-execucao/status/${encodeURIComponent(id)}`, { cache: 'no-store' });
-    const status = respStatus.ok ? await respStatus.json() : null;
+    // 🔧 CORREÇÃO: estes dois fetches não tinham nenhum try/catch — só o
+    // das etapas (mais abaixo) tinha. Se a rede caísse aqui (conexão
+    // instável, DNS, CORS), a exceção subia sem tratamento pra quem
+    // chamou. Qualquer Folhão que use isto pra autopreencher campos a
+    // partir do Checklist de Execução ficaria "pela metade" — o resto da
+    // abertura do Folhão nunca rodaria, sem nenhuma mensagem ao técnico.
+    let status;
+    try {
+        const respStatus = await fetch(`${apiBase}/api/checklist-execucao/status/${encodeURIComponent(id)}`, { cache: 'no-store' });
+        status = respStatus.ok ? await respStatus.json() : null;
+    } catch (e) {
+        console.error('⚠️ Não consegui buscar o status do Checklist de Execução (ponte com o Folhão seguirá 100% manual):', e);
+        return null;
+    }
     if (!status || !status.execucao_id) return null;
 
-    const respValores = await fetch(`${apiBase}/api/checklist-execucao/folhao/${encodeURIComponent(tipoEquipamento)}?execucao_id=${status.execucao_id}`, { cache: 'no-store' });
-    const valores = respValores.ok ? await respValores.json() : {};
+    let valores = {};
+    try {
+        const respValores = await fetch(`${apiBase}/api/checklist-execucao/folhao/${encodeURIComponent(tipoEquipamento)}?execucao_id=${status.execucao_id}`, { cache: 'no-store' });
+        valores = respValores.ok ? await respValores.json() : {};
+    } catch (e) {
+        console.error('⚠️ Não consegui buscar os valores autopreenchidos do Checklist de Execução (ponte com o Folhão seguirá 100% manual):', e);
+    }
 
     let mapaCampoParaEtapa = {};
     try {

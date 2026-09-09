@@ -144,7 +144,7 @@ function renderizarInspecaoDesemp() {
         tr.innerHTML = `
             <td style="text-align:center; font-weight:bold;">${String(index + 1).padStart(2, '0')}</td>
             <td>${item.grupo ? `<strong style="color: #f59e0b; font-size:11px;">${item.grupo}</strong><br>` : ''}${item.desc}</td>
-            <td style="text-align:center;"><input type="radio" name="desemp_inspecao_${index}" value="SIM" checked></td>
+            <td style="text-align:center;"><input type="radio" name="desemp_inspecao_${index}" value="SIM"></td>
             <td style="text-align:center;"><input type="radio" name="desemp_inspecao_${index}" value="NÃO"></td>
         `;
         tbody.appendChild(tr);
@@ -161,7 +161,7 @@ function renderizarMotivoDesemp() {
         tr.innerHTML = `
             <td style="font-weight:bold;">${motivo}</td>
             <td style="text-align:center;"><input type="radio" name="desemp_motivo_${index}" value="SIM"></td>
-            <td style="text-align:center;"><input type="radio" name="desemp_motivo_${index}" value="NÃO" checked></td>
+            <td style="text-align:center;"><input type="radio" name="desemp_motivo_${index}" value="NÃO"></td>
         `;
         tbody.appendChild(tr);
     });
