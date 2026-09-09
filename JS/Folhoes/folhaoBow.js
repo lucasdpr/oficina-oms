@@ -166,7 +166,13 @@ function getV(id) {
 function getRadioValue(name) {
     const radios = document.getElementsByName(name);
     for (let r of radios) if (r.checked) return r.value;
-    return 'NÃO';
+    // 🔧 CORREÇÃO (mesmo bug do Molde4/Molde23 — ver getRadioValue em
+    // folhaoMolde4.js): antes o input já vinha com "checked" fixo em
+    // SIM/OK, então esse "padrão NÃO" quase nunca era exercitado. Com o
+    // pré-marcado removido, retornar 'NÃO' aqui fabricaria uma resposta
+    // negativa pra pergunta que ninguém respondeu. null = fica em branco
+    // no laudo, honesto com o que foi de fato preenchido.
+    return null;
 }
 
 function getCheckboxValue(id) {
@@ -208,7 +214,7 @@ function renderizarInspecaoChegadaBow() {
         html += `<h4 style="margin: 20px 0 10px 0; color: var(--text-accent); border-bottom: 1px dashed var(--border-color); padding-bottom: 5px;"><i class="fas fa-tasks"></i> ${nomeCategoria}</h4><div class="checklist-container">`;
         perguntas.forEach((pergunta, index) => {
             const name = `bw-g${groupIndex}-q${index}`;
-            html += `<div class="check-item"><p>${index + 1}. ${pergunta}</p><div class="check-options"><label><input type="radio" name="${name}" value="SIM" checked> SIM</label><label><input type="radio" name="${name}" value="NÃO"> NÃO</label></div></div>`;
+            html += `<div class="check-item"><p>${index + 1}. ${pergunta}</p><div class="check-options"><label><input type="radio" name="${name}" value="SIM"> SIM</label><label><input type="radio" name="${name}" value="NÃO"> NÃO</label></div></div>`;
         });
         html += `</div>`;
         groupIndex++;
@@ -251,9 +257,9 @@ function renderizarCangalhasBow() {
                 <tr><th></th><th>OK</th><th>NOK</th><th>OK</th><th>NOK</th></tr>`;
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td>${i}ª</td>
-                <td style="text-align:center;"><input type="radio" name="cang-${prefix}-${i}-a" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="cang-${prefix}-${i}-a" value="OK"></td>
                 <td style="text-align:center;"><input type="radio" name="cang-${prefix}-${i}-a" value="NOK"></td>
-                <td style="text-align:center;"><input type="radio" name="cang-${prefix}-${i}-b" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="cang-${prefix}-${i}-b" value="OK"></td>
                 <td style="text-align:center;"><input type="radio" name="cang-${prefix}-${i}-b" value="NOK"></td></tr>`;
         }
         html += `</table>`;
@@ -307,7 +313,7 @@ function renderizarCilindrosChegadaBow() {
             html += `<tr><td style="text-align:center;font-weight:bold;">${p}</td>
                 <td><input id="cil-${t.prefix}-num-${p}"></td>
                 <td><input id="cil-${t.prefix}-prod-${p}"></td>
-                <td style="text-align:center;"><input type="radio" name="cil-${t.prefix}-${p}" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="cil-${t.prefix}-${p}" value="OK"></td>
                 <td style="text-align:center;"><input type="radio" name="cil-${t.prefix}-${p}" value="NOK"></td>
                 <td><input id="cil-${t.prefix}-obs-${p}"></td></tr>`;
         });
@@ -367,7 +373,7 @@ function renderizarInspecaoRolosBow(tipo) {
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>`;
             for (let j = 1; j <= 4; j++) {
-                html += `<td style="text-align:center;"><input type="radio" name="rol-${prefix}-${bPrefix}-${i}-${j}" value="OK" checked></td>
+                html += `<td style="text-align:center;"><input type="radio" name="rol-${prefix}-${bPrefix}-${i}-${j}" value="OK"></td>
                          <td style="text-align:center;"><input type="radio" name="rol-${prefix}-${bPrefix}-${i}-${j}" value="NOK"></td>`;
             }
             html += `</tr>`;
@@ -380,7 +386,7 @@ function renderizarInspecaoRolosBow(tipo) {
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>`;
             for (let j = 1; j <= 4; j++) {
-                html += `<td style="text-align:center;"><input type="radio" name="hid-${prefix}-${bPrefix}-${i}-${j}" value="OK" checked></td>
+                html += `<td style="text-align:center;"><input type="radio" name="hid-${prefix}-${bPrefix}-${i}-${j}" value="OK"></td>
                          <td style="text-align:center;"><input type="radio" name="hid-${prefix}-${bPrefix}-${i}-${j}" value="NOK"></td>`;
             }
             html += `</tr>`;
@@ -422,7 +428,7 @@ function renderizarGraxaBow() {
                 <tr><th></th><th>OK</th><th>VT</th><th>SA</th><th></th><th></th></tr>`;
         for (let i = 7; i >= 1; i--) {
             html += `<tr><td style="text-align:center;font-weight:bold;">${i}</td>
-                <td style="text-align:center;"><input type="radio" name="grx-${prefix}-${i}" value="OK" checked></td>
+                <td style="text-align:center;"><input type="radio" name="grx-${prefix}-${i}" value="OK"></td>
                 <td style="text-align:center;"><input type="radio" name="grx-${prefix}-${i}" value="VT"></td>
                 <td style="text-align:center;"><input type="radio" name="grx-${prefix}-${i}" value="SA"></td>
                 <td></td>

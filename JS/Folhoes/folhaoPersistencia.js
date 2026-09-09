@@ -195,6 +195,10 @@ export async function restaurarRascunhoNoModal(modalId, equipamentoId) {
         if (aviso) {
             aviso.textContent = '📋 Progresso anterior restaurado — continue de onde parou.';
             aviso.classList.remove('hidden');
+            // Some sozinho depois de um tempo — é um toast, não deve ficar
+            // preso na tela até o técnico fechar o Folhão.
+            clearTimeout(aviso._timeoutSumir);
+            aviso._timeoutSumir = setTimeout(() => aviso.classList.add('hidden'), 5000);
         }
     }
     return dados;

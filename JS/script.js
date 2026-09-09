@@ -278,32 +278,34 @@ if (!BANCO_HIDRAULICA) {
     localStorage.setItem("oms_hidraulica_v32_local", JSON.stringify(BANCO_HIDRAULICA));
 }
 
-// ==========================================
-// TEMA E UI GLOBAL
-// ==========================================
-function carregarTema() {
-    const temaSalvo = localStorage.getItem("oms_theme_local");
-    const body = document.body;
-    const icon = document.getElementById("theme-icon");
-    const text = document.getElementById("theme-text");
-
-    if (temaSalvo === "light") {
-        body.classList.add("light-mode");
-        if (icon) icon.className = "fas fa-moon";
-        if (text) text.innerText = "Modo Escuro";
-    } else {
-        body.classList.remove("light-mode");
-        if (icon) icon.className = "fas fa-sun";
-        if (text) text.innerText = "Modo Claro";
+// 🔧 CORREÇÃO (dessincronia silenciosa de Rolos/Hidráulica): sincronizarRolosReais()/
+// sincronizarHidraulicaReal() (em banco.js) buscam do Neon e gravam tanto no array
+// interno daquele módulo quanto no localStorage — mas este arquivo mantém sua PRÓPRIA
+// cópia local (BANCO_ROLOS/BANCO_HIDRAULICA acima), lida do localStorage só uma vez no
+// carregamento. Sem isso, a sincronização "funcionava" (log de sucesso, localStorage
+// atualizado) mas a tela continuava mostrando os dados antigos até um F5 completo.
+// Chamar isto logo depois de cada sincronizarRolosReais()/sincronizarHidraulicaReal()
+// recarrega a cópia local a partir do que acabou de ser gravado no localStorage.
+function recarregarRolosEHidraulicaLocal() {
+    try {
+        const rolos = JSON.parse(localStorage.getItem("oms_rolos_v32_local"));
+        if (Array.isArray(rolos)) { BANCO_ROLOS.length = 0; BANCO_ROLOS.push(...rolos); }
+    } catch (erro) {
+        console.error("❌ Falha ao recarregar BANCO_ROLOS local:", erro);
+    }
+    try {
+        const hidraulica = JSON.parse(localStorage.getItem("oms_hidraulica_v32_local"));
+        if (Array.isArray(hidraulica)) { BANCO_HIDRAULICA.length = 0; BANCO_HIDRAULICA.push(...hidraulica); }
+    } catch (erro) {
+        console.error("❌ Falha ao recarregar BANCO_HIDRAULICA local:", erro);
     }
 }
 
-// (toggleTheme e toggleSidebar reais ficam definidas mais abaixo, como
-// window.toggleTheme / window.toggleSidebar — ver correção do bug do
-// abrirAba() duplicado: havia versões "mortas" destas duas funções
-// aqui, que nunca executavam de verdade porque não estavam presas ao
-// escopo global, e a versão real ficava só mais abaixo no arquivo.
-// Removidas pra não confundir de novo no futuro.)
+// (Tema claro/escuro removido do sistema — o botão de troca de tema
+// foi retirado da interface e toda a lógica associada [carregarTema,
+// toggleTheme, JS/tema.js] foi removida junto. O app roda só no tema
+// escuro padrão. toggleSidebar real fica mais abaixo, como
+// window.toggleSidebar.)
 
 // ==========================================
 // MOSTRAR/OCULTAR SENHA NO LOGIN
@@ -528,6 +530,7 @@ async function finalizarLogin(nome, cargo, matricula, area, isAdm) {
     if (typeof window.carregarAtivosDoPython === 'function') await executarSeguroAsync(() => window.carregarAtivosDoPython(), 'carregarAtivosDoPython');
     if (typeof sincronizarRolosReais === 'function') await executarSeguroAsync(() => sincronizarRolosReais(), 'sincronizarRolosReais');
     if (typeof sincronizarHidraulicaReal === 'function') await executarSeguroAsync(() => sincronizarHidraulicaReal(), 'sincronizarHidraulicaReal');
+    recarregarRolosEHidraulicaLocal();
 
     if (typeof calcularKpisGlobais === 'function') executarSeguro(() => calcularKpisGlobais(), 'calcularKpisGlobais');
     if (typeof renderPainelVeios === 'function') executarSeguro(() => renderPainelVeios(), 'renderPainelVeios');
@@ -599,6 +602,7 @@ async function entrarComoVisitante(nomeDigitado) {
     if (typeof window.carregarAtivosDoPython === 'function') await executarSeguroAsync(() => window.carregarAtivosDoPython(), 'carregarAtivosDoPython');
     if (typeof sincronizarRolosReais === 'function') await executarSeguroAsync(() => sincronizarRolosReais(), 'sincronizarRolosReais');
     if (typeof sincronizarHidraulicaReal === 'function') await executarSeguroAsync(() => sincronizarHidraulicaReal(), 'sincronizarHidraulicaReal');
+    recarregarRolosEHidraulicaLocal();
 
     if (typeof calcularKpisGlobais === 'function') executarSeguro(() => calcularKpisGlobais(), 'calcularKpisGlobais');
     if (typeof renderPainelVeios === 'function') executarSeguro(() => renderPainelVeios(), 'renderPainelVeios');
@@ -3721,20 +3725,30 @@ window.confirmarRelatorioDiario = function() {
 };
 
 function atualizarNovosKPIs() {
-    const total = BANCO_ATIVOS.length;
-    document.getElementById('kpi-total').innerText = total;
-    
+    // 🔧 CORREÇÃO: nenhuma linha abaixo tinha guarda `if (el)` — diferente
+    // do padrão usado em atualizarKPIsAvancados() e no resto do arquivo.
+    // Se qualquer um desses IDs não existir no HTML, `.innerText = ...`
+    // em `null` lança TypeError e aborta a função na hora, deixando os
+    // KPIs seguintes (das linhas de baixo) sem atualizar — silenciosamente,
+    // já que quem chama isto (atualizarPainelCompleto) embrulha tudo em
+    // executarSeguro() e só loga um aviso no console.
+    const totalEl = document.getElementById('kpi-total');
+    if (totalEl) totalEl.innerText = BANCO_ATIVOS.length;
+
     const moldesReparo = BANCO_ATIVOS.filter(a => a.local === 'Oficina / Reparo' && a.tipo === 'Molde').length;
-    document.getElementById('kpi-moldes-reparo').innerText = moldesReparo;
-    
+    const moldesReparoEl = document.getElementById('kpi-moldes-reparo');
+    if (moldesReparoEl) moldesReparoEl.innerText = moldesReparo;
+
     const segmentosReparo = BANCO_ATIVOS.filter(a => a.local === 'Oficina / Reparo' && a.tipo !== 'Molde').length;
-    document.getElementById('kpi-segmentos-reparo').innerText = segmentosReparo;
-    
+    const segmentosReparoEl = document.getElementById('kpi-segmentos-reparo');
+    if (segmentosReparoEl) segmentosReparoEl.innerText = segmentosReparo;
+
     let totalRolos = 0;
     if (BANCO_ROLOS && Array.isArray(BANCO_ROLOS)) {
         totalRolos = BANCO_ROLOS.reduce((acc, r) => acc + (r.qtd || 0), 0);
     }
-    document.getElementById('kpi-total-rolos').innerText = totalRolos;
+    const totalRolosEl = document.getElementById('kpi-total-rolos');
+    if (totalRolosEl) totalRolosEl.innerText = totalRolos;
 }
 
 function atualizarPainelCompleto() {
@@ -6372,18 +6386,6 @@ window.toggleSidebar = function() {
     if (sidebar) sidebar.classList.toggle('open');
 };
 
-window.toggleTheme = function() {
-    document.body.classList.toggle('light-mode');
-    const isLight = document.body.classList.contains('light-mode');
-    const icon = document.getElementById('theme-icon');
-    const text = document.getElementById('theme-text');
-    localStorage.setItem('oms_theme_local', isLight ? 'light' : 'dark');
-    if (icon && text) {
-        icon.className = isLight ? 'fas fa-moon' : 'fas fa-sun';
-        text.innerText = isLight ? 'Modo Escuro' : 'Modo Claro';
-    }
-};
-
 window.fazerLogout = function() {
     // Visitante não tem "turno" — some sem perguntar, é só um "voltar".
     const ehVisitante = OPERADOR_LOGADO && OPERADOR_LOGADO.visitante;
@@ -6816,10 +6818,18 @@ window.iniciarSwapAlocacao = async function(idReserva) {
 
             // Persiste as duas peças no banco Postgres (a que saiu e a que entrou)
             if (typeof salvarPecaNoPython === 'function') {
-                await salvarPecaNoPython(pecaAntiga);
-                await salvarPecaNoPython(pecaReserva);
+                const okAntiga = await salvarPecaNoPython(pecaAntiga);
+                const okReserva = await salvarPecaNoPython(pecaReserva);
+                // 🔧 CORREÇÃO: salvarPecaNoPython() agora retorna true/false — antes,
+                // se a gravação no Postgres falhasse (rede instável, Neon "acordando"),
+                // a tela já mostrava o swap como concluído (alert de sucesso mais
+                // abaixo) e o operador nunca ficava sabendo que o servidor não
+                // recebeu a mudança, até ela "desfazer sozinha" no próximo sync.
+                if (!okAntiga || !okReserva) {
+                    alert(`⚠️ O swap foi aplicado na tela, mas houve falha ao salvar no servidor (${!okAntiga ? pecaAntiga.id : pecaReserva.id}). Verifique a conexão e tente sincronizar de novo antes de sair da tela, ou a mudança pode ser perdida.`);
+                }
             }
-            
+
             if (window.registrarHistorico) {
                 const agora = new Date().toLocaleDateString('pt-BR');
                 // 🔧 CORREÇÃO ("evento de instalação não aparece no
@@ -6841,7 +6851,10 @@ window.iniciarSwapAlocacao = async function(idReserva) {
             localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
 
             if (typeof salvarPecaNoPython === 'function') {
-                await salvarPecaNoPython(pecaReserva);
+                const okReserva = await salvarPecaNoPython(pecaReserva);
+                if (!okReserva) {
+                    alert(`⚠️ A instalação foi aplicada na tela, mas houve falha ao salvar ${pecaReserva.id} no servidor. Verifique a conexão e tente sincronizar de novo antes de sair da tela, ou a mudança pode ser perdida.`);
+                }
             }
 
             // 🔧 Ver correção em registrarHistorico(): espera terminar de
@@ -7384,7 +7397,6 @@ function nomeAreaOficina(chave) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    if (typeof carregarTema === 'function') carregarTema();
     console.log("🚀 Iniciando Sistema...");
 
     const atualizou = await window.carregarAtivosDoPython();
@@ -7395,10 +7407,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // técnico for direto pra uma dessas abas.
     if (typeof sincronizarRolosReais === 'function') {
         await sincronizarRolosReais();
+        recarregarRolosEHidraulicaLocal();
         if (typeof renderRolos === 'function') renderRolos();
     }
     if (typeof sincronizarHidraulicaReal === 'function') {
         await sincronizarHidraulicaReal();
+        recarregarRolosEHidraulicaLocal();
         if (typeof renderHidraulica === 'function') renderHidraulica();
     }
 

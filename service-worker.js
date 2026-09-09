@@ -11,7 +11,7 @@
 // usando a copia antiga guardada em cache.
 // ==============================================================
 
-const CACHE_VERSION = "oms-v66";
+const CACHE_VERSION = "oms-v67";
 
 // 🔧 CORREÇÃO: essa lista estava com os caminhos de uma estrutura de
 // pastas antiga (tudo direto na raiz) — o projeto hoje guarda os JS
@@ -30,7 +30,6 @@ const ARQUIVOS_PARA_CACHE = [
     "./style.css",
     "./JS/script.js",
     "./JS/ui.js",
-    "./JS/tema.js",
     "./JS/painelGeralExtra.js",
     "./JS/Core/banco.js",
     "./JS/Core/dados.js",

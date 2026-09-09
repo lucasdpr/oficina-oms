@@ -204,6 +204,21 @@ window.renderizarBotaoConcluirReparo = function(equipamentoId) {
 let CHECKLIST_EXECUCAO_EQUIPAMENTO_ATUAL = null; // tag específica, ex: "M4-12"
 let CHECKLIST_EXECUCAO_TIPO_ATUAL = null;        // tipo, ex: "molde-mcc4" — dono das etapas
 
+// 🔧 CORREÇÃO (condição de corrida): todo o estado acima (e mais abaixo,
+// CHECKLIST_EXECUCAO_EXECUCAO_ATUAL) é global do módulo, mas
+// abrirChecklistExecucao()/iniciarReparoEAbrirChecklist() são async com
+// vários `await` no meio. Se o técnico clicar em "Iniciar Reparo"/abrir
+// o checklist de DOIS equipamentos diferentes em sequência rápida (antes
+// do primeiro fetch resolver), a segunda chamada sobrescrevia esse
+// estado global enquanto a primeira ainda estava "em voo" — quando a
+// primeira terminava, ela lia/renderizava o equipamento errado (o da
+// segunda chamada). Este contador resolve isso: cada chamada de
+// abrirChecklistExecucao() tira um "número" e, depois de cada await,
+// confere se ainda é a chamada mais recente antes de tocar no estado
+// global ou renderizar — se não for, aborta silenciosamente (uma
+// chamada mais nova já assumiu).
+let CHECKLIST_EXECUCAO_REQUEST_TOKEN = 0;
+
 // 🆕 SEÇÕES POR FASE (Chegada/Manutenção/Saída, hoje só Molde MCC4)
 // COLAPSÁVEIS — pedido de quem usa: antes, pra abrir Manutenção era
 // preciso rolar a tela inteira passando por todos os itens de Chegada.
@@ -338,6 +353,9 @@ window.escolherTipoExecucaoChecklist = function() {
 };
 
 window.abrirChecklistExecucao = async function(equipamentoId) {
+    const meuToken = ++CHECKLIST_EXECUCAO_REQUEST_TOKEN;
+    const aindaSouOMaisRecente = () => meuToken === CHECKLIST_EXECUCAO_REQUEST_TOKEN;
+
     CHECKLIST_EXECUCAO_EQUIPAMENTO_ATUAL = equipamentoId;
     CHECKLIST_EXECUCAO_TIPO_ATUAL = resolverTipoEquipamento(BANCO_ATIVOS.find(a => a.id === equipamentoId));
     const modal = document.getElementById('modal-checklist-execucao');
@@ -358,9 +376,12 @@ window.abrirChecklistExecucao = async function(equipamentoId) {
     // reparo específico (etapas agora são compartilhadas entre todo
     // equipamento do mesmo tipo).
     const apiBase = await resolverApiBase();
+    if (!aindaSouOMaisRecente()) return; // uma chamada mais nova já assumiu
     try {
         const respStatus = await fetch(`${apiBase}/api/checklist-execucao/status/${encodeURIComponent(equipamentoId)}`, { cache: 'no-store' });
+        if (!aindaSouOMaisRecente()) return;
         const status = respStatus.ok ? await respStatus.json() : null;
+        if (!aindaSouOMaisRecente()) return;
 
         if (status && status.execucao_id) {
             // Já existe um reparo em andamento pra essa tag — reaproveita.
@@ -369,6 +390,7 @@ window.abrirChecklistExecucao = async function(equipamentoId) {
             // Nenhum reparo em andamento ainda — pergunta Geral ou Parcial
             // (modal próprio, ver escolherTipoExecucaoChecklist) e abre um novo.
             const tipoExecucao = await window.escolherTipoExecucaoChecklist();
+            if (!aindaSouOMaisRecente()) return;
             if (!tipoExecucao) {
                 // Técnico cancelou a escolha — fecha o checklist sem criar
                 // execução nenhuma, como se nunca tivesse clicado.
@@ -387,15 +409,18 @@ window.abrirChecklistExecucao = async function(equipamentoId) {
                     tecnico_nome: tecnico.nome || 'Técnico'
                 })
             });
+            if (!aindaSouOMaisRecente()) return;
             const resultadoIniciar = respIniciar.ok ? await respIniciar.json() : null;
+            if (!aindaSouOMaisRecente()) return;
             CHECKLIST_EXECUCAO_EXECUCAO_ATUAL = resultadoIniciar ? resultadoIniciar.execucao_id : null;
         }
     } catch (e) {
         console.error('⚠️ Erro ao resolver a execução do Checklist de Execução:', e);
-        if (container) container.innerHTML = `<p class="text-muted" style="text-align:center; padding:20px;">Não consegui conectar ao servidor pra abrir esse reparo.</p>`;
+        if (aindaSouOMaisRecente() && container) container.innerHTML = `<p class="text-muted" style="text-align:center; padding:20px;">Não consegui conectar ao servidor pra abrir esse reparo.</p>`;
         return;
     }
 
+    if (!aindaSouOMaisRecente()) return;
     await window.recarregarChecklistExecucao();
 };
 

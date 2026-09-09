@@ -28,7 +28,13 @@ function getV(id) {
 function getRadioValue(name) {
     const radios = document.getElementsByName(name);
     for (const r of radios) if (r.checked) return r.value;
-    return 'NÃO';
+    // 🔧 CORREÇÃO (mesmo bug do Molde4/Molde23 — ver getRadioValue em
+    // folhaoMolde4.js): antes o input já vinha com "checked" fixo em
+    // SIM, então esse "padrão NÃO" quase nunca era exercitado. Com o
+    // pré-marcado removido, retornar 'NÃO' aqui fabricaria uma resposta
+    // negativa pra pergunta que ninguém respondeu. null = fica em branco
+    // no laudo, honesto com o que foi de fato preenchido.
+    return null;
 }
 function getChecked(id) {
     const el = document.getElementById(id);
@@ -145,7 +151,7 @@ function renderizarChecklistSegGrupo(containerId, itens, prefix) {
     itens.forEach((it, i) => {
         html += `<tr><td style="text-align:center; font-weight:bold;">${String(i + 1).padStart(2, '0')}</td>
             <td>${it.grupo ? `<b style="color:var(--text-accent);">${it.grupo}</b><br>` : ''}${it.desc}</td>
-            <td style="text-align:center;"><input type="radio" name="${prefix}-${i}" value="SIM" checked></td>
+            <td style="text-align:center;"><input type="radio" name="${prefix}-${i}" value="SIM"></td>
             <td style="text-align:center;"><input type="radio" name="${prefix}-${i}" value="NÃO"></td></tr>`;
     });
     html += `</tbody></table>`;

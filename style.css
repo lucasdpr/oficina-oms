@@ -4109,7 +4109,16 @@ textarea,
     min-height: 36px;
   }
 
-  .modal-content,
+  /* 🔧 CORREÇÃO ("modal do Folhão cortado/com scroll duplo no celular"):
+     esta regra tinha `overflow-y: auto !important` e `max-height` fixo
+     pra TODO `.modal-content`, com !important — que sempre vence sobre
+     `.modal-content:has(.folhao-tabs)` (mais específico, sem !important)
+     lá em cima, mesmo sendo mais específico. Resultado: no celular, o
+     modal do Folhão perdia o `overflow:hidden`/`max-height:95vh` que o
+     deixa com cabeçalho+abas fixos e só o `.folhao-body` rolando —
+     voltava a rolar tudo junto (cabeçalho some pra cima) com scroll
+     aninhado. Excluído aqui, mantém a regra normal pros demais modais. */
+  .modal-content:not(:has(.folhao-tabs)),
   .folhao-modal-content {
     width: calc(100% - 24px) !important;
     max-width: calc(100% - 24px) !important;
@@ -4118,6 +4127,12 @@ textarea,
     margin: 12px auto !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .modal-content:has(.folhao-tabs) {
+    width: calc(100% - 24px) !important;
+    max-width: calc(100% - 24px) !important;
+    margin: 12px auto !important;
   }
 
   .table-responsive {
