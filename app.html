@@ -1365,7 +1365,13 @@
                         <span><i class="fas fa-clock"></i> Atualizado <span id="area-oficina-timestamp">agora</span></span>
                     </div>
                 </div>
-                <button class="btn-close-emergency" onclick="window.fecharAreaOficina()" title="Voltar para a Central de Áreas"><i class="fas fa-arrow-left"></i></button>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button class="btn-premium" style="position:relative; padding:8px 12px; font-size:12px;" onclick="window.abrirChatAreaAdm()" title="Falar com o ADM">
+                        <i class="fas fa-comments"></i> Falar com ADM
+                        <span id="area-oficina-chat-badge" class="hidden" style="position:absolute; top:-6px; right:-6px; background:#ef4444; color:#fff; border-radius:50%; width:18px; height:18px; font-size:10px; display:flex; align-items:center; justify-content:center; font-weight:700;">0</span>
+                    </button>
+                    <button class="btn-close-emergency" onclick="window.fecharAreaOficina()" title="Voltar para a Central de Áreas"><i class="fas fa-arrow-left"></i></button>
+                </div>
             </div>
 
             <div class="folhao-tabs" id="area-oficina-tabs">
@@ -1652,10 +1658,41 @@
         </div>
     </div>
 
+    <!-- 💬 Chat Área <-> ADM — visão da própria área (ver window.abrirChatAreaAdm em script.js) -->
+    <div id="modal-chat-area-adm" class="modal-overlay hidden" style="z-index:10002;">
+        <div class="modal-content" style="max-width:480px; text-align:left; display:flex; flex-direction:column; max-height:80vh;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h2 style="color:var(--text-heading); margin:0; font-size:1.05rem;"><i class="fas fa-comments"></i> Falar com o ADM</h2>
+                <button class="btn-close-emergency" style="padding:6px 10px;" onclick="window.fecharChatAreaAdm()"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="chat-area-adm-mensagens" style="flex:1; overflow-y:auto; min-height:200px; max-height:50vh; display:flex; flex-direction:column; gap:8px; padding:4px; margin-bottom:10px;"></div>
+            <div style="display:flex; gap:8px;">
+                <input id="chat-area-adm-input" class="premium-input" placeholder="Escreva sua mensagem..." style="flex:1;" onkeydown="if(event.key==='Enter'){window.enviarMensagemChatAreaAdm();}">
+                <button class="btn-premium" style="padding:8px 14px;" onclick="window.enviarMensagemChatAreaAdm()"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 💬 Chat Área <-> ADM — visão do ADM (lista de áreas + conversa de cada uma) -->
+    <div id="modal-chat-adm-lista" class="modal-overlay hidden" style="z-index:10002;">
+        <div class="modal-content" style="max-width:480px; text-align:left; display:flex; flex-direction:column; max-height:80vh;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h2 style="color:var(--text-heading); margin:0; font-size:1.05rem;"><i class="fas fa-comments"></i> Mensagens das Áreas</h2>
+                <button class="btn-close-emergency" style="padding:6px 10px;" onclick="window.fecharChatAdmLista()"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="chat-adm-lista-areas" style="overflow-y:auto; max-height:60vh;"></div>
+        </div>
+    </div>
+
             <section id="aba-painel-adm" class="tab-content">
                 <div class="glass-panel" style="border-top:4px solid #38bdf8; padding:24px; margin-bottom:20px;">
-                    <h2 style="color:#38bdf8;"><i class="fas fa-file-lines"></i> Painel — ADM</h2>
-                    <p class="text-muted" style="font-size:13px;">Visão geral da equipe e atividades administrativas.</p>
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <h2 style="color:#38bdf8; margin-bottom:4px;"><i class="fas fa-file-lines"></i> Painel — ADM</h2>
+                            <p class="text-muted" style="font-size:13px; margin:0;">Visão geral da equipe e atividades administrativas.</p>
+                        </div>
+                        <button class="btn-premium" style="padding:8px 14px; font-size:12.5px;" onclick="window.abrirChatAdmLista()"><i class="fas fa-comments"></i> Mensagens das Áreas</button>
+                    </div>
                 </div>
                 <div id="painel-adm-container"></div>
             </section>

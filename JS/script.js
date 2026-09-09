@@ -4990,6 +4990,158 @@ window.excluirAvisoAdm = async function(id) {
 // Fila de avisos ainda não lidos por quem acabou de logar — um por vez,
 // não dá pra fechar sem confirmar (sem botão de fechar/X, de propósito:
 // é leitura obrigatória, não um toast que dá pra ignorar).
+// ==========================================================================
+// 💬 CHAT ÁREA <-> ADM — pedido: "as áreas podem enviar mensagem pra área
+// de adm?". Antes disso não existia canal formal nenhum (só eventos
+// automáticos que o ADM via passivamente). Um único par de modais
+// (modal-chat-area-adm) serve tanto pra área falar com o ADM quanto pro
+// ADM responder uma área — o contexto (qual área, de qual lado) fica em
+// CHAT_AREA_ADM_CTX.
+// ==========================================================================
+let CHAT_AREA_ADM_CTX = { area: null, deAdm: false, voltaParaLista: false };
+
+window.abrirChatAreaAdm = async function() {
+    if (!OFICINA_AREA_ATUAL) return;
+    await window._abrirChatAreaAdmInterno(OFICINA_AREA_ATUAL, false, false);
+};
+
+window.abrirChatAdmArea = async function(area) {
+    document.getElementById('modal-chat-adm-lista')?.classList.add('hidden');
+    await window._abrirChatAreaAdmInterno(area, true, true);
+};
+
+window._abrirChatAreaAdmInterno = async function(area, deAdm, voltaParaLista) {
+    CHAT_AREA_ADM_CTX = { area, deAdm, voltaParaLista };
+    const areaInfo = AREAS_OFICINA.find(a => a.chave === area);
+    const tituloEl = document.querySelector('#modal-chat-area-adm h2');
+    if (tituloEl) {
+        tituloEl.innerHTML = deAdm
+            ? `<i class="fas fa-comments"></i> ${areaInfo ? areaInfo.nome : area}`
+            : `<i class="fas fa-comments"></i> Falar com o ADM`;
+    }
+    document.getElementById('modal-chat-area-adm')?.classList.remove('hidden');
+    await window.carregarMensagensChatAreaAdm();
+
+    try {
+        const apiBase = await resolverApiBase();
+        await fetch(`${apiBase}/api/mensagens_area/marcar_lida`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ area, de_adm: deAdm })
+        });
+    } catch (e) { /* não bloqueia a leitura por isso */ }
+
+    if (!deAdm && typeof window.atualizarBadgeChatAreaAdm === 'function') window.atualizarBadgeChatAreaAdm();
+};
+
+window.carregarMensagensChatAreaAdm = async function() {
+    const cont = document.getElementById('chat-area-adm-mensagens');
+    if (!cont) return;
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/mensagens_area?area=${encodeURIComponent(CHAT_AREA_ADM_CTX.area)}`);
+        const lista = resp.ok ? await resp.json() : [];
+        cont.innerHTML = lista.length ? lista.map(m => {
+            // "Minha" mensagem é a que partiu do MESMO lado de quem está
+            // vendo agora (área vendo área, ou ADM vendo ADM).
+            const minha = m.de_adm === CHAT_AREA_ADM_CTX.deAdm;
+            const hora = m.criado_em ? new Date(m.criado_em.replace(' ', 'T')).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+            return `
+                <div style="align-self:${minha ? 'flex-end' : 'flex-start'}; max-width:80%; background:${minha ? 'var(--accent-color, #38bdf8)' : 'var(--bg-secondary, #1e293b)'}; color:${minha ? '#fff' : 'var(--text-body)'}; padding:8px 12px; border-radius:12px; font-size:13px;">
+                    <div style="font-weight:700; font-size:10.5px; opacity:0.8; margin-bottom:2px;">${m.de_adm ? 'ADM' : (m.remetente || 'Técnico')}</div>
+                    <div style="white-space:pre-wrap;">${m.mensagem}</div>
+                    <div style="font-size:9.5px; opacity:0.7; margin-top:3px; text-align:right;">${hora}</div>
+                </div>
+            `;
+        }).join('') : '<p class="text-muted" style="text-align:center; font-size:12px;">Nenhuma mensagem ainda.</p>';
+        cont.scrollTop = cont.scrollHeight;
+    } catch (e) {
+        cont.innerHTML = '<p class="text-muted" style="text-align:center; font-size:12px;">Não consegui carregar a conversa.</p>';
+    }
+};
+
+window.fecharChatAreaAdm = function() {
+    document.getElementById('modal-chat-area-adm')?.classList.add('hidden');
+    if (CHAT_AREA_ADM_CTX.voltaParaLista) {
+        window.abrirChatAdmLista();
+    } else if (typeof window.atualizarBadgeChatAreaAdm === 'function') {
+        window.atualizarBadgeChatAreaAdm();
+    }
+};
+
+window.enviarMensagemChatAreaAdm = async function() {
+    const input = document.getElementById('chat-area-adm-input');
+    const texto = input ? input.value.trim() : '';
+    if (!texto || !CHAT_AREA_ADM_CTX.area) return;
+    const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
+    const matricula = OPERADOR_LOGADO ? OPERADOR_LOGADO.matricula : null;
+    try {
+        const apiBase = await resolverApiBase();
+        await fetch(`${apiBase}/api/mensagens_area`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                area: CHAT_AREA_ADM_CTX.area,
+                de_adm: CHAT_AREA_ADM_CTX.deAdm,
+                remetente: CHAT_AREA_ADM_CTX.deAdm ? 'ADM' : operador,
+                remetente_matricula: matricula,
+                mensagem: texto
+            })
+        });
+        input.value = '';
+        await window.carregarMensagensChatAreaAdm();
+    } catch (e) {
+        alert('Não consegui enviar a mensagem. Verifique sua conexão.');
+    }
+};
+
+window.atualizarBadgeChatAreaAdm = async function() {
+    const badge = document.getElementById('area-oficina-chat-badge');
+    if (!badge || !OFICINA_AREA_ATUAL) return;
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/mensagens_area/nao_lidas?area=${encodeURIComponent(OFICINA_AREA_ATUAL)}`);
+        const dados = resp.ok ? await resp.json() : { nao_lidas: 0 };
+        if (dados.nao_lidas > 0) {
+            badge.textContent = dados.nao_lidas > 9 ? '9+' : dados.nao_lidas;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    } catch (e) { /* badge é cosmético — sem retry aqui */ }
+};
+
+// ---- Visão do ADM: lista de áreas com conversa + não-lidas ----
+window.abrirChatAdmLista = async function() {
+    document.getElementById('modal-chat-adm-lista')?.classList.remove('hidden');
+    const cont = document.getElementById('chat-adm-lista-areas');
+    if (!cont) return;
+    cont.innerHTML = '<p class="text-muted" style="text-align:center; font-size:12px; padding:14px;">Carregando...</p>';
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/mensagens_area/resumo`);
+        const linhas = resp.ok ? await resp.json() : [];
+        cont.innerHTML = linhas.length ? linhas.map(l => {
+            const dataFmt = l.ultima_em ? new Date(l.ultima_em.replace(' ', 'T')).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+            return `
+                <div style="cursor:pointer; padding:10px 6px; border-bottom:1px solid var(--border-color, #334155); display:flex; justify-content:space-between; align-items:center;" onclick="window.abrirChatAdmArea('${l.area}')">
+                    <div>
+                        <strong style="font-size:13px;">${l.nome_area}</strong>
+                        <div class="text-muted" style="font-size:11px;">${dataFmt}</div>
+                    </div>
+                    ${l.nao_lidas > 0 ? `<span style="background:#ef4444; color:#fff; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700;">${l.nao_lidas}</span>` : ''}
+                </div>
+            `;
+        }).join('') : '<p class="text-muted" style="text-align:center; font-size:12px; padding:20px;">Nenhuma mensagem ainda.</p>';
+    } catch (e) {
+        cont.innerHTML = '<p class="text-muted" style="text-align:center; font-size:12px; padding:14px;">Não consegui carregar as conversas.</p>';
+    }
+};
+
+window.fecharChatAdmLista = function() {
+    document.getElementById('modal-chat-adm-lista')?.classList.add('hidden');
+};
+
 let FILA_AVISOS_PENDENTES = [];
 
 window.verificarAvisosPendentes = async function() {
@@ -5155,6 +5307,7 @@ window.abrirAreaOficina = async function(chave, abaInicial) {
     if (textoBtn) textoBtn.textContent = 'Nova Atividade';
 
     OFICINA_AREA_ATUAL = chave;
+    if (typeof window.atualizarBadgeChatAreaAdm === 'function') window.atualizarBadgeChatAreaAdm();
     OFICINA_FILTRO_STATUS_ATUAL = '';
     OFICINA_TIPO_ATIVIDADE_ATUAL = 'equipamento';
     OFICINA_EQUIPE_ATUAL = [];
