@@ -517,6 +517,10 @@ async function finalizarLogin(nome, cargo, matricula, area, isAdm) {
     }
     if (typeof registrarHistorico === 'function') registrarHistorico("AUTENTICAÇÃO", `Login executado com sucesso.`);
     window.ativarPushNotification();
+    // 🆕 Avisos do Sistema (ver seção "AVISOS DO SISTEMA" mais abaixo):
+    // comunicado do ADM que precisa de leitura confirmada. Só pra quem
+    // tem matrícula real (visitante não entra nessa, matricula é null).
+    if (typeof window.verificarAvisosPendentes === 'function') window.verificarAvisosPendentes();
 
     // 🔧 CORREÇÃO ("encerra o turno, loga de novo, continua com os dados
     // vazios/velhos até fechar e abrir o app"): antes, a sincronização com
@@ -1248,10 +1252,29 @@ function atualizarInterfaceUsuario() {
 // usa no dia a dia (Sinótico 3D, Sequenciamento de Veios, Registro de
 // OS) — o resto do menu lateral fica escondido.
 // ADM (MATRICULAS_ADM) e visitante continuam vendo o menu completo.
-const NAV_IDS_LIBERADOS_TECNICO = ['nav-tecnico', 'nav-sinotico', 'nav-fluxo', 'nav-ordens-servico'];
+const NAV_IDS_LIBERADOS_TECNICO = ['nav-tecnico', 'nav-area-oficina', 'nav-sinotico', 'nav-fluxo', 'nav-ordens-servico'];
 
 function aplicarRestricaoNavTecnico() {
     const restrito = !!(OPERADOR_LOGADO && !OPERADOR_LOGADO.visitante && !OPERADOR_LOGADO.isAdm && OPERADOR_LOGADO.area);
+
+    // 🆕 Atalho "Minha Área" — mostra só pra quem tem área cadastrada
+    // (técnico ou supervisor, restrito ou não) e não é visitante. Nome
+    // da área vem de AREAS_OFICINA pela chave salva no login
+    // (OPERADOR_LOGADO.area) — sem isso o link ficaria com "Minha Área"
+    // genérico, ou pior, mandando pra área errada.
+    const linkAreaOficina = document.getElementById('nav-area-oficina');
+    if (linkAreaOficina) {
+        const areaOperador = (OPERADOR_LOGADO && !OPERADOR_LOGADO.visitante) ? OPERADOR_LOGADO.area : null;
+        if (areaOperador) {
+            const info = AREAS_OFICINA.find(a => a.chave === areaOperador);
+            const nomeSpan = linkAreaOficina.querySelector('[data-area-nome]');
+            if (nomeSpan) nomeSpan.textContent = info ? info.nome : areaOperador;
+            linkAreaOficina.dataset.area = areaOperador;
+            linkAreaOficina.classList.remove('hidden');
+        } else {
+            linkAreaOficina.classList.add('hidden');
+        }
+    }
 
     document.querySelectorAll('.sidebar-nav .nav-link').forEach(el => {
         // 🆕 Supervisor com área cadastrada, ou técnico com área, caem no
@@ -4638,6 +4661,37 @@ window.renderPainelExecutivoAdm = async function(container) {
             </div>
         </div>
 
+        <!-- 🆕 Visão Geral do Sistema — colaboradores, OS, Qualidade e
+             Checklist de Execução, tudo cross-área, num lugar só. Antes
+             cada uma dessas coisas só dava pra ver abrindo a aba
+             específica; ADM precisa do resumo sem entrar em cada uma. -->
+        <div class="glass-panel" style="padding:24px; margin-bottom:20px;">
+            <h3 style="color:var(--text-title); font-size:1rem; margin-bottom:4px;"><i class="fas fa-chart-simple"></i> Visão Geral do Sistema</h3>
+            <p class="text-muted" style="font-size:12px; margin-bottom:16px;">Colaboradores, Ordens de Serviço, Qualidade e Checklist de Execução — tudo num lugar só.</p>
+            <div class="kpi-container">
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="color:var(--text-accent);"><i class="fas fa-users"></i></div>
+                    <div class="kpi-data"><h4 id="adm-exec-kpi-colaboradores">–</h4><p>Colaboradores Ativos</p></div>
+                </div>
+                <div class="kpi-card warning">
+                    <div class="kpi-icon glow-warning"><i class="fas fa-key"></i></div>
+                    <div class="kpi-data"><h4 id="adm-exec-kpi-primeiro-acesso">–</h4><p>Aguardando 1º Acesso</p></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="color:#f472b6;"><i class="fas fa-file-invoice"></i></div>
+                    <div class="kpi-data"><h4 id="adm-exec-kpi-os-abertas">–</h4><p>OS em Aberto</p></div>
+                </div>
+                <div class="kpi-card danger">
+                    <div class="kpi-icon glow-danger"><i class="fas fa-magnifying-glass"></i></div>
+                    <div class="kpi-data"><h4 id="adm-exec-kpi-achados-qualidade">–</h4><p>Achados de Qualidade Pendentes</p></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="color:var(--text-accent);"><i class="fas fa-list-check"></i></div>
+                    <div class="kpi-data"><h4 id="adm-exec-kpi-checklist-andamento">–</h4><p>Checklists de Execução em Andamento</p></div>
+                </div>
+            </div>
+        </div>
+
         <div class="dashboard-main-grid">
             <div class="glass-panel" style="padding:24px;">
                 <h3 style="color:var(--text-title); font-size:1rem; margin-bottom:4px;"><i class="fas fa-ranking-star"></i> Áreas com Mais Atraso</h3>
@@ -4652,10 +4706,19 @@ window.renderPainelExecutivoAdm = async function(container) {
             </div>
         </div>
 
+        <!-- 🆕 AVISOS DO SISTEMA — comunicado que todo colaborador precisa
+             confirmar leitura ao entrar (ver window.verificarAvisosPendentes,
+             chamado em finalizarLogin). Gerenciado aqui: criar, ver
+             progresso de leitura e arquivar. -->
         <div class="glass-panel" style="padding:24px; margin-top:20px;">
-            <h3 style="color:var(--text-title); font-size:1rem; margin-bottom:4px;"><i class="fas fa-gauge-high"></i> Equipamentos em Estado Crítico (≥ 80% da meta)</h3>
-            <p class="text-muted" style="font-size:12px; margin-bottom:16px;">Junta os "vermelhos" de todos os MCCs num lugar só, sem precisar abrir gráfico por gráfico.</p>
-            <div id="adm-exec-equipamentos-criticos"></div>
+            <div class="flex-between" style="margin-bottom:4px;">
+                <h3 style="color:var(--text-title); font-size:1rem;"><i class="fas fa-bullhorn"></i> Avisos do Sistema</h3>
+                <button class="btn-premium btn-success" style="padding:6px 14px;" onclick="window.abrirModalCriarAviso()">
+                    <i class="fas fa-plus"></i> Novo Aviso
+                </button>
+            </div>
+            <p class="text-muted" style="font-size:12px; margin-bottom:16px;">Todo colaborador vê e precisa confirmar leitura ao entrar no sistema — igual "treinamento disponível", "novo procedimento", etc.</p>
+            <div id="adm-exec-avisos-lista"></div>
         </div>
     `;
 
@@ -4749,32 +4812,240 @@ window.renderPainelExecutivoAdm = async function(container) {
         console.error('⚠️ Não consegui carregar o ranking de retrabalho no painel executivo do ADM:', e);
     }
 
-    // ---- EQUIPAMENTOS CRÍTICOS (já em memória, sem precisar de fetch) ----
+    // ---- VISÃO GERAL DO SISTEMA (colaboradores, OS, Qualidade, Checklist) ----
     try {
-        const criticos = (BANCO_ATIVOS || [])
-            .map(a => ({ ...a, pct: a.meta > 0 ? (a.ton / a.meta) * 100 : 0 }))
-            .filter(a => a.pct >= 80)
-            .sort((a, b) => b.pct - a.pct)
-            .slice(0, 12);
+        const apiBase = await resolverApiBase();
 
-        const elCriticos = document.getElementById('adm-exec-equipamentos-criticos');
-        if (elCriticos) {
-            elCriticos.innerHTML = criticos.length
-                ? `<div class="table-responsive"><table class="premium-table">
-                    <thead><tr><th>Equipamento</th><th>Local</th><th>Desgaste</th></tr></thead>
-                    <tbody>${criticos.map(a => `
-                        <tr>
-                            <td class="font-code">${a.id}</td>
-                            <td><small class="text-muted">${a.local || '—'}</small></td>
-                            <td><span style="color:${a.pct >= 100 ? 'var(--danger)' : 'var(--warning)'}; font-weight:700;">${a.pct.toFixed(1)}%</span></td>
-                        </tr>
-                    `).join('')}</tbody>
-                </table></div>`
-                : `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhum equipamento em estado crítico agora ✅</div>`;
+        try {
+            const resp = await fetch(`${apiBase}/api/colaboradores/todos`, { cache: 'no-store' });
+            const colaboradores = resp.ok ? await resp.json() : [];
+            const ativos = colaboradores.filter(c => c.ativo);
+            definir('adm-exec-kpi-colaboradores', ativos.length);
+            definir('adm-exec-kpi-primeiro-acesso', ativos.filter(c => c.primeiro_acesso).length);
+        } catch (e) {
+            console.error('⚠️ Não consegui carregar colaboradores no painel executivo do ADM:', e);
+        }
+
+        try {
+            const resp = await fetch(`${apiBase}/api/ordens_servico?limite=500`, { cache: 'no-store' });
+            const os = resp.ok ? await resp.json() : [];
+            definir('adm-exec-kpi-os-abertas', os.filter(o => o.status !== 'Concluído').length);
+        } catch (e) {
+            console.error('⚠️ Não consegui carregar OS no painel executivo do ADM:', e);
+        }
+
+        try {
+            const resp = await fetch(`${apiBase}/api/qualidade?limite=500`, { cache: 'no-store' });
+            const registros = resp.ok ? await resp.json() : [];
+            // `achados_pendentes` já vem calculado por registro (ver
+            // routers/qualidade.py) — soma tudo pra um total geral.
+            const totalPendentes = registros.reduce((soma, r) => soma + (Number(r.achados_pendentes) || 0), 0);
+            definir('adm-exec-kpi-achados-qualidade', totalPendentes);
+        } catch (e) {
+            console.error('⚠️ Não consegui carregar Qualidade no painel executivo do ADM:', e);
+        }
+
+        try {
+            const resp = await fetch(`${apiBase}/api/checklist-execucao/execucoes/todas`, { cache: 'no-store' });
+            const execucoes = resp.ok ? await resp.json() : [];
+            definir('adm-exec-kpi-checklist-andamento', Array.isArray(execucoes) ? execucoes.length : 0);
+        } catch (e) {
+            console.error('⚠️ Não consegui carregar Checklist de Execução no painel executivo do ADM:', e);
         }
     } catch (e) {
-        console.error('⚠️ Não consegui montar a lista de equipamentos críticos no painel executivo do ADM:', e);
+        console.error('⚠️ Falha geral montando a Visão Geral do Sistema no painel executivo do ADM:', e);
     }
+
+    // ---- AVISOS DO SISTEMA ----
+    if (typeof window.renderizarListaAvisosAdm === 'function') window.renderizarListaAvisosAdm();
+};
+
+// --------------------------------------------------------------
+// 🆕 AVISOS DO SISTEMA — gestão (ADM) + leitura obrigatória (todo mundo)
+// --------------------------------------------------------------
+// Lista todos os avisos (ativos e arquivados) com progresso de leitura,
+// no painel executivo do ADM.
+window.renderizarListaAvisosAdm = async function() {
+    const container = document.getElementById('adm-exec-avisos-lista');
+    if (!container) return;
+    container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>`;
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/avisos/todos`, { cache: 'no-store' });
+        const avisos = resp.ok ? await resp.json() : [];
+
+        if (!Array.isArray(avisos) || avisos.length === 0) {
+            container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhum aviso criado ainda.</div>`;
+            return;
+        }
+
+        container.innerHTML = avisos.map(a => {
+            const total = Number(a.total_colaboradores) || 0;
+            const leram = Number(a.total_leram) || 0;
+            const pct = total > 0 ? Math.round((leram / total) * 100) : 0;
+            return `
+                <div style="padding:14px 0; border-bottom:1px solid var(--border); ${a.ativo ? '' : 'opacity:0.55;'}">
+                    <div class="flex-between" style="gap:10px;">
+                        <div style="min-width:0;">
+                            <strong style="color:var(--text-heading);">${a.titulo}</strong>
+                            ${!a.ativo ? '<span class="text-muted" style="font-size:11px; margin-left:6px;">(arquivado)</span>' : ''}
+                            <div class="text-muted" style="font-size:12px; margin-top:4px; white-space:pre-wrap;">${a.mensagem}</div>
+                            <div class="text-muted" style="font-size:11px; margin-top:6px;">${a.criado_por || 'Sistema'} · ${a.criado_em || ''}</div>
+                        </div>
+                        <div style="display:flex; gap:6px; flex-shrink:0;">
+                            ${a.ativo ? `<button class="btn-xs-primary" onclick="window.arquivarAvisoAdm(${a.id})" title="Arquivar"><i class="fas fa-box-archive"></i></button>` : ''}
+                            <button class="btn-xs-primary" style="color:var(--danger);" onclick="window.excluirAvisoAdm(${a.id})" title="Excluir definitivamente"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div style="margin-top:10px; display:flex; align-items:center; gap:10px;">
+                        <div style="flex:1; background:var(--bg-td); border-radius:6px; height:8px; overflow:hidden;">
+                            <div style="background:var(--success); height:100%; width:${Math.max(pct, total ? 2 : 0)}%; border-radius:6px;"></div>
+                        </div>
+                        <span class="text-muted" style="font-size:11px; white-space:nowrap;">${leram} de ${total} leram (${pct}%)</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (e) {
+        console.error('⚠️ Não consegui carregar a lista de avisos no painel do ADM:', e);
+        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">Não foi possível carregar. Verifique sua internet.</div>`;
+    }
+};
+
+window.abrirModalCriarAviso = function() {
+    const modal = document.getElementById('modal-criar-aviso');
+    if (modal) modal.classList.remove('hidden');
+    const titulo = document.getElementById('aviso-novo-titulo');
+    const mensagem = document.getElementById('aviso-novo-mensagem');
+    if (titulo) titulo.value = '';
+    if (mensagem) mensagem.value = '';
+};
+
+window.fecharModalCriarAviso = function() {
+    const modal = document.getElementById('modal-criar-aviso');
+    if (modal) modal.classList.add('hidden');
+};
+
+window.salvarNovoAviso = async function() {
+    const titulo = document.getElementById('aviso-novo-titulo')?.value.trim();
+    const mensagem = document.getElementById('aviso-novo-mensagem')?.value.trim();
+    if (!titulo) return alert('Escreva um título pro aviso.');
+    if (!mensagem) return alert('Escreva a mensagem do aviso.');
+
+    try {
+        const apiBase = await resolverApiBase();
+        const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'ADM') : 'ADM';
+        const resp = await fetch(`${apiBase}/api/avisos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ titulo, mensagem, criado_por: operador })
+        });
+        if (!resp.ok) {
+            const erro = await resp.json().catch(() => ({}));
+            alert(erro.detail || 'Não foi possível salvar o aviso.');
+            return;
+        }
+        window.fecharModalCriarAviso();
+        if (typeof window.renderizarListaAvisosAdm === 'function') window.renderizarListaAvisosAdm();
+    } catch (e) {
+        console.error('⚠️ Erro ao criar aviso:', e);
+        alert('Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.');
+    }
+};
+
+window.arquivarAvisoAdm = async function(id) {
+    if (!confirm('Arquivar este aviso? Quem ainda não leu deixa de ver — quem já leu continua registrado.')) return;
+    try {
+        const apiBase = await resolverApiBase();
+        await fetch(`${apiBase}/api/avisos/arquivar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+        });
+        if (typeof window.renderizarListaAvisosAdm === 'function') window.renderizarListaAvisosAdm();
+    } catch (e) {
+        console.error('⚠️ Erro ao arquivar aviso:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+};
+
+window.excluirAvisoAdm = async function(id) {
+    if (!confirm('Excluir este aviso definitivamente? Não dá pra desfazer.')) return;
+    try {
+        const apiBase = await resolverApiBase();
+        await fetch(`${apiBase}/api/avisos/excluir`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+        });
+        if (typeof window.renderizarListaAvisosAdm === 'function') window.renderizarListaAvisosAdm();
+    } catch (e) {
+        console.error('⚠️ Erro ao excluir aviso:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+};
+
+// ---- LEITURA OBRIGATÓRIA (todo colaborador, ao entrar) ----
+// Fila de avisos ainda não lidos por quem acabou de logar — um por vez,
+// não dá pra fechar sem confirmar (sem botão de fechar/X, de propósito:
+// é leitura obrigatória, não um toast que dá pra ignorar).
+let FILA_AVISOS_PENDENTES = [];
+
+window.verificarAvisosPendentes = async function() {
+    if (!OPERADOR_LOGADO || !OPERADOR_LOGADO.matricula) return;
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/avisos?matricula=${encodeURIComponent(OPERADOR_LOGADO.matricula)}`, { cache: 'no-store' });
+        const avisos = resp.ok ? await resp.json() : [];
+        if (Array.isArray(avisos) && avisos.length > 0) {
+            FILA_AVISOS_PENDENTES = avisos;
+            window.mostrarProximoAvisoPendente();
+        }
+    } catch (e) {
+        // Sem internet ou API fora do ar na hora do login — não trava o
+        // acesso por isso; o aviso continua pendente e aparece na
+        // próxima vez que a checagem der certo.
+        console.error('⚠️ Não consegui checar avisos pendentes:', e);
+    }
+};
+
+window.mostrarProximoAvisoPendente = function() {
+    const modal = document.getElementById('modal-aviso-pendente');
+    if (!modal) return;
+    if (FILA_AVISOS_PENDENTES.length === 0) {
+        modal.classList.add('hidden');
+        return;
+    }
+    const aviso = FILA_AVISOS_PENDENTES[0];
+    const elTitulo = document.getElementById('aviso-pendente-titulo');
+    const elMensagem = document.getElementById('aviso-pendente-mensagem');
+    const elContador = document.getElementById('aviso-pendente-contador');
+    if (elTitulo) elTitulo.textContent = aviso.titulo;
+    if (elMensagem) elMensagem.textContent = aviso.mensagem;
+    if (elContador) elContador.textContent = FILA_AVISOS_PENDENTES.length > 1 ? `1 de ${FILA_AVISOS_PENDENTES.length}` : '';
+    modal.classList.remove('hidden');
+};
+
+window.confirmarLeituraAvisoPendente = async function() {
+    const aviso = FILA_AVISOS_PENDENTES[0];
+    if (!aviso) return;
+    const botao = document.getElementById('btn-confirmar-leitura-aviso');
+    if (botao) botao.disabled = true;
+    try {
+        const apiBase = await resolverApiBase();
+        await fetch(`${apiBase}/api/avisos/marcar_lido`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ aviso_id: aviso.id, matricula: OPERADOR_LOGADO.matricula })
+        });
+    } catch (e) {
+        console.error('⚠️ Não consegui confirmar a leitura do aviso (tenta de novo mais tarde):', e);
+    } finally {
+        if (botao) botao.disabled = false;
+    }
+    FILA_AVISOS_PENDENTES.shift();
+    window.mostrarProximoAvisoPendente();
 };
 
 // --------------------------------------------------------------
@@ -9467,6 +9738,24 @@ window.excluirQualidade = async function(id) {
     // resolve a Promise como cancelado, em vez de travar aquela etapa
     // esperando pra sempre por uma resposta que nunca vai chegar).
     function tentarFecharModal(modalEl) {
+        // 🆕 Avisos do Sistema (leitura obrigatória): sem botão de
+        // cancelar/fechar de propósito, pra não dar pra pular sem
+        // confirmar — mas o botão "voltar" físico/gesto do celular
+        // caía direto no fallback abaixo (`classList.add('hidden')`),
+        // fechando o modal sem confirmar leitura nenhuma. Este
+        // atributo é o jeito de dizer "nem o botão voltar fecha isso".
+        if (modalEl.dataset.leituraObrigatoria) {
+            // O back físico já consumiu o estado empilhado (é assim que
+            // popstate funciona, não tem como "recusar" depois que já
+            // aconteceu) — sem repor um estado novo aqui, o PRÓXIMO
+            // "voltar" escaparia do app de vez (voltando pra página
+            // anterior de verdade) em vez de cair de novo neste mesmo
+            // aviso. Reempilha, pra continuar travando o botão voltar
+            // até o técnico clicar em "Entendi, já li".
+            try { history.pushState({ omsModal: true }, ''); } catch (e) { /* nada a fazer */ }
+            return;
+        }
+
         const btn = modalEl.querySelector(
             '[id$="-cancelar"], .btn-close-emergency, .btn-close-modal'
         );
