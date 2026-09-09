@@ -2735,14 +2735,21 @@ h1, h2, h3, h4, h5, h6 {
     background-color: #0a0e17; /* Fallback */
 }
 
-/* Imagem de Fundo (Aço Quente) */
+/* Imagem de Fundo (Aço Quente) — Ken Burns bem lento, dá vida sem
+   distrair de um card que pede atenção total (é uma tela de login). */
 .login-bg-imagem {
     position: absolute; inset: -20px; /* Margem negativa para o blur não vazar na borda */
     /* Substitua o nome do arquivo abaixo se colocar na sua pasta! */
     background: url('JS/assets/Placa.jpeg') center/cover no-repeat;
     filter: blur(4px); /* Desfoque suave para não ofuscar o texto */
     z-index: 1;
+    animation: loginKenBurns 26s ease-in-out infinite alternate;
 }
+@keyframes loginKenBurns {
+    from { transform: scale(1.06) translate(0, 0); }
+    to { transform: scale(1.16) translate(-1.5%, -1%); }
+}
+@media (prefers-reduced-motion: reduce) { .login-bg-imagem { animation: none; } }
 
 /* Máscara escura sobre a imagem para dar contraste */
 .login-bg-overlay {
@@ -2750,6 +2757,36 @@ h1, h2, h3, h4, h5, h6 {
     background: radial-gradient(circle at center, rgba(10, 14, 23, 0.4) 0%, rgba(10, 14, 23, 0.95) 100%);
     z-index: 2;
 }
+
+/* Brilhos ambiente flutuando atrás do card — reforça a mesma linguagem
+   "spotlight industrial" usada na landing, sem custar um canvas 3D
+   inteiro numa tela que precisa carregar rápido (é o login). */
+.login-home-container::before,
+.login-home-container::after {
+    content: '';
+    position: absolute;
+    width: 46vw; height: 46vw; max-width: 520px; max-height: 520px;
+    border-radius: 50%;
+    filter: blur(90px);
+    z-index: 2;
+    pointer-events: none;
+    animation: loginGlowFloat 14s ease-in-out infinite;
+}
+.login-home-container::before {
+    background: rgba(245, 158, 11, 0.16);
+    top: -10%; left: -8%;
+}
+.login-home-container::after {
+    background: rgba(56, 130, 246, 0.12);
+    bottom: -14%; right: -10%;
+    animation-delay: -7s;
+    animation-direction: alternate-reverse;
+}
+@keyframes loginGlowFloat {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(4%, 3%) scale(1.12); }
+}
+@media (prefers-reduced-motion: reduce) { .login-home-container::before, .login-home-container::after { animation: none; } }
 
 /* Card de Vidro (Glassmorphism) */
 .login-card-central {
@@ -2764,6 +2801,7 @@ h1, h2, h3, h4, h5, h6 {
     padding: 40px 32px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 30px rgba(245, 158, 11, 0.15);
     animation: form-appear 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    overflow: hidden;
 }
 
 @keyframes form-appear {
@@ -2771,8 +2809,42 @@ h1, h2, h3, h4, h5, h6 {
     to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* Ícone da Indústria */
+/* Scanline — uma faixa de luz cruzando o card de vez em quando, tipo
+   "terminal ligando". Sutil de propósito, não pode brigar com o texto. */
+.login-card-central::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -60%;
+    width: 40%; height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(245, 158, 11, 0.08) 45%, rgba(245, 158, 11, 0.14) 50%, rgba(245, 158, 11, 0.08) 55%, transparent);
+    pointer-events: none;
+    animation: loginScanline 5s ease-in-out infinite;
+    animation-delay: 1.2s;
+}
+@keyframes loginScanline {
+    0%, 15% { left: -60%; }
+    45%, 100% { left: 130%; }
+}
+@media (prefers-reduced-motion: reduce) { .login-card-central::after { display: none; } }
+
+/* Cada bloco do card entra em cascata em vez de tudo junto — reforça a
+   sensação de "terminal inicializando" em vez de um pop só. */
+.login-card-central > * {
+    opacity: 0;
+    animation: loginBlocoEntra 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.login-card-central > *:nth-child(1) { animation-delay: 0.15s; }
+.login-card-central > *:nth-child(2) { animation-delay: 0.25s; }
+.login-card-central > *:nth-child(3) { animation-delay: 0.35s; }
+.login-card-central > *:nth-child(4) { animation-delay: 0.45s; }
+@keyframes loginBlocoEntra { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+    .login-card-central > * { opacity: 1; animation: none; }
+}
+
+/* Ícone da Indústria — anel pulsando por trás, tipo sinal ligado */
 .login-logo-factory {
+    position: relative;
     width: 64px; height: 64px;
     margin: 0 auto 20px;
     background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.05));
@@ -2781,7 +2853,19 @@ h1, h2, h3, h4, h5, h6 {
     display: flex; justify-content: center; align-items: center;
     box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
 }
-.login-logo-factory svg { width: 32px; height: 32px; fill: #f59e0b; }
+.login-logo-factory::before {
+    content: '';
+    position: absolute; inset: -8px;
+    border-radius: 20px;
+    border: 1px solid rgba(245, 158, 11, 0.5);
+    animation: loginRingPulse 2.4s ease-out infinite;
+}
+@keyframes loginRingPulse {
+    0% { transform: scale(0.9); opacity: 0.9; }
+    100% { transform: scale(1.35); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .login-logo-factory::before { animation: none; display: none; } }
+.login-logo-factory svg { width: 32px; height: 32px; fill: #f59e0b; position: relative; z-index: 1; }
 
 /* Textos do Cabeçalho */
 .login-card-header { text-align: center; margin-bottom: 24px; }
@@ -2861,6 +2945,8 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Botão de Autenticar (Destaque Quente) */
 .login-btn-submit {
+    position: relative;
+    overflow: hidden;
     width: 100%;
     background: linear-gradient(135deg, #f59e0b, #d97706);
     color: #111827; /* Texto escuro para dar leitura no laranja */
@@ -2877,11 +2963,43 @@ h1, h2, h3, h4, h5, h6 {
     box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
     display: flex; justify-content: center; align-items: center; gap: 10px;
 }
+.login-btn-submit::before {
+    content: '';
+    position: absolute; top: 0; left: -75%;
+    width: 50%; height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,0.45), transparent);
+    transform: skewX(-20deg);
+    transition: left 0.55s ease;
+}
+.login-btn-submit:hover::before { left: 130%; }
 .login-btn-submit:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(245, 158, 11, 0.5);
     background: linear-gradient(135deg, #fbbf24, #f59e0b);
 }
+@media (prefers-reduced-motion: reduce) { .login-btn-submit::before { display: none; } }
+
+/* Linha de status técnico embaixo do botão — mesmo tom "terminal" do
+   resto da tela (matrícula, senha, "Autenticar Terminal"). */
+.login-status-linha {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    text-transform: uppercase;
+}
+.login-status-linha span { display: inline-flex; align-items: center; gap: 6px; }
+.login-status-linha-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 6px #10b981;
+    animation: blink 2s infinite;
+}
+@media (prefers-reduced-motion: reduce) { .login-status-linha-dot { animation: none; } }
 
 /* Badge Superior (Status Servidor) */
 .login-status-badge {
