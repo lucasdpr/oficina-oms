@@ -47,6 +47,20 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f59e0b">
     <link rel="apple-touch-icon" href="JS/assets/icon-192.png?v=3">
+    <!-- 🆕 BOTÃO INSTALAR APP — captura o evento ASSIM QUE POSSÍVEL (ver
+         mesmo bloco em index.html). -->
+    <script>
+        window.__pwaInstallEvent = null;
+        window.addEventListener('beforeinstallprompt', function (e) {
+            e.preventDefault();
+            window.__pwaInstallEvent = e;
+            if (typeof window.__mostrarBotaoInstalarPWA === 'function') window.__mostrarBotaoInstalarPWA();
+        });
+        window.addEventListener('appinstalled', function () {
+            window.__pwaInstallEvent = null;
+            if (typeof window.__esconderBotaoInstalarPWA === 'function') window.__esconderBotaoInstalarPWA();
+        });
+    </script>
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -596,6 +610,12 @@
                      — o toque neste botão é o gesto "fresco" que falta. -->
                 <button id="btn-ativar-notificacoes" class="btn-auth hidden" style="margin-top:8px; background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);" onclick="window.ativarPushNotification()">
                     <i class="fas fa-bell"></i> Ativar Notificações
+                </button>
+                <!-- 🆕 Botão "Instalar App" — mesmo esquema do de notificações
+                     acima: some sozinho se o app já estiver instalado ou se o
+                     navegador não suportar. Ver window.instalarAppOMS. -->
+                <button class="btn-auth btn-instalar-pwa hidden" style="margin-top:8px; background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.3);" onclick="window.instalarAppOMS()">
+                    <i class="fas fa-download"></i> Instalar App
                 </button>
                 <button class="btn-auth" onclick="window.fazerLogout()">Encerrar Turno</button>
             </div>
@@ -2794,6 +2814,38 @@
                     .catch((err) => console.warn('⚠️ Falha ao registrar service worker:', err));
             });
         }
+
+        // ---- Botão "Instalar App" — mesmo esquema do index.html (o
+        // beforeinstallprompt já foi capturado lá no <head>, antes deste
+        // script rodar). Aqui só ficam as funções que mexem no botão e o
+        // clique de instalar de verdade.
+        window.__mostrarBotaoInstalarPWA = function () {
+            document.querySelectorAll('.btn-instalar-pwa').forEach(b => b.classList.remove('hidden'));
+        };
+        window.__esconderBotaoInstalarPWA = function () {
+            document.querySelectorAll('.btn-instalar-pwa').forEach(b => b.classList.add('hidden'));
+        };
+
+        window.instalarAppOMS = async function () {
+            const ehIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+            if (window.__pwaInstallEvent) {
+                window.__pwaInstallEvent.prompt();
+                await window.__pwaInstallEvent.userChoice;
+                window.__pwaInstallEvent = null;
+                window.__esconderBotaoInstalarPWA();
+            } else if (ehIOS) {
+                alert('Pra instalar no iPhone/iPad:\n\n1. Toque no ícone de Compartilhar (o quadrado com a seta pra cima), na barra do Safari.\n2. Escolha "Adicionar à Tela de Início".');
+            } else {
+                alert('Seu navegador ainda não liberou a instalação automática.\n\nProcure "Instalar app" ou "Adicionar à tela inicial" no menu do navegador (geralmente nos três pontinhos ⋮).');
+            }
+        };
+
+        (function () {
+            const jaInstalado = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            if (jaInstalado) return;
+            const ehIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+            if (ehIOS) window.__mostrarBotaoInstalarPWA();
+        })();
     </script>
     <!-- ================================================================================ -->
 </body>

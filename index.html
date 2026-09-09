@@ -24,6 +24,23 @@
     <meta name="theme-color" content="#0d0b08">
     <link rel="icon" href="JS/assets/icon-192.png?v=3">
     <link rel="apple-touch-icon" href="JS/assets/icon-192.png?v=3">
+    <!-- 🆕 BOTÃO INSTALAR APP — captura o evento ASSIM QUE POSSÍVEL (bem
+         no <head>, antes de qualquer outra coisa carregar). O Chrome/Edge
+         disparam "beforeinstallprompt" logo depois do load da página; se
+         a gente só começar a escutar no bloco de script do fim do body, corre o
+         risco de perder o evento e o botão nunca aparecer. -->
+    <script>
+        window.__pwaInstallEvent = null;
+        window.addEventListener('beforeinstallprompt', function (e) {
+            e.preventDefault();
+            window.__pwaInstallEvent = e;
+            if (typeof window.__mostrarBotaoInstalarPWA === 'function') window.__mostrarBotaoInstalarPWA();
+        });
+        window.addEventListener('appinstalled', function () {
+            window.__pwaInstallEvent = null;
+            if (typeof window.__esconderBotaoInstalarPWA === 'function') window.__esconderBotaoInstalarPWA();
+        });
+    </script>
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -1085,6 +1102,9 @@ footer a:hover { color: var(--amber); }
             <span class="dot"></span><span id="conn-status-text">On-line</span>
         </span>
         <a href="app.html" class="nav-login">Entrar</a>
+        <button type="button" class="btn btn-line btn-instalar-pwa" hidden style="padding:11px 18px; min-height:auto; font-size:13px;" onclick="window.instalarAppOMS()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg> Instalar App
+        </button>
         <a href="app.html" class="btn btn-solid" style="padding:11px 22px; min-height:auto; font-size:13px;">Acessar OMS</a>
         <button class="nav-hamburger" id="nav-hamburger" aria-label="Abrir menu" aria-expanded="false">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -1102,6 +1122,9 @@ footer a:hover { color: var(--amber); }
     <a href="#mcc">MCCs</a>
         <a href="#resultados">Resultados</a>
     <a href="#historia">História</a>
+    <button type="button" class="btn btn-line btn-instalar-pwa" hidden onclick="window.instalarAppOMS()">
+        <i class="fas fa-download"></i> Instalar App
+    </button>
     <a href="app.html" class="btn btn-solid">Acessar OMS</a>
 </div>
 
@@ -1899,6 +1922,44 @@ footer a:hover { color: var(--amber); }
             navigator.serviceWorker.register('service-worker.js').catch(() => {});
         });
     }
+
+    // ---- Botão "Instalar App" — o evento beforeinstallprompt já é
+    // capturado lá no <head> (window.__pwaInstallEvent), mesmo antes
+    // deste script rodar. Aqui só ficam as funções que mexem no botão
+    // e o clique de instalar de verdade.
+    window.__mostrarBotaoInstalarPWA = function () {
+        document.querySelectorAll('.btn-instalar-pwa').forEach(b => { b.hidden = false; });
+    };
+    window.__esconderBotaoInstalarPWA = function () {
+        document.querySelectorAll('.btn-instalar-pwa').forEach(b => { b.hidden = true; });
+    };
+
+    window.instalarAppOMS = async function () {
+        const ehIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+        if (window.__pwaInstallEvent) {
+            // Chrome/Edge (PC e Android) — prompt nativo de instalação.
+            window.__pwaInstallEvent.prompt();
+            await window.__pwaInstallEvent.userChoice;
+            window.__pwaInstallEvent = null;
+            window.__esconderBotaoInstalarPWA();
+        } else if (ehIOS) {
+            // Safari/iOS NUNCA dispara beforeinstallprompt — só dá pra
+            // instalar via Compartilhar, e isso é manual por natureza do
+            // sistema, não tem como automatizar.
+            alert('Pra instalar no iPhone/iPad:\n\n1. Toque no ícone de Compartilhar (o quadrado com a seta pra cima), na barra do Safari.\n2. Escolha "Adicionar à Tela de Início".');
+        } else {
+            alert('Seu navegador ainda não liberou a instalação automática.\n\nProcure "Instalar app" ou "Adicionar à tela inicial" no menu do navegador (geralmente nos três pontinhos ⋮).');
+        }
+    };
+
+    // iOS nunca dispara beforeinstallprompt, então mostra o botão direto
+    // (a menos que já esteja rodando instalado, em modo standalone).
+    (function () {
+        const jaInstalado = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        if (jaInstalado) return;
+        const ehIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+        if (ehIOS) window.__mostrarBotaoInstalarPWA();
+    })();
 </script>
 </body>
 </html>
