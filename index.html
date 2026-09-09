@@ -462,6 +462,37 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 
 /* ===== SEÇÕES GERAIS ===== */
 section { padding: 128px clamp(20px, 4vw, 48px); position: relative; }
+
+/* ===== FUNDO "PLANTA TÉCNICA" — grade fina à deriva, usada nas seções
+   mais "de sistema" (Arquitetura, Resultados) pra reforçar o caráter
+   técnico sem virar papel de parede chapado. ===== */
+.blueprint-bg {
+    position: absolute; inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+}
+.blueprint-bg::before {
+    content: '';
+    position: absolute;
+    top: -20%; left: -20%; right: -20%; bottom: -20%;
+    background-image:
+        linear-gradient(rgba(240,163,52,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(240,163,52,0.06) 1px, transparent 1px);
+    background-size: 64px 64px;
+    animation: blueprintDrift 30s linear infinite;
+}
+.blueprint-bg::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, transparent 30%, var(--ink) 82%);
+}
+@keyframes blueprintDrift {
+    from { transform: translate(0, 0); }
+    to { transform: translate(64px, 64px); }
+}
+@media (prefers-reduced-motion: reduce) { .blueprint-bg::before { animation: none; } }
+.blueprint-bg ~ * { position: relative; z-index: 1; }
 .section-head {
     max-width: 1240px; margin: 0 auto 60px;
 }
@@ -488,11 +519,33 @@ section { padding: 128px clamp(20px, 4vw, 48px); position: relative; }
 .compare {
     background: var(--panel);
     border: 1px solid var(--line);
+    position: relative;
 }
 .compare-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
 }
+.compare-arrow {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--ink);
+    border: 1px solid var(--amber);
+    border-radius: 50%;
+    color: var(--amber);
+    z-index: 2;
+    animation: arrowPulse 2.2s ease-in-out infinite;
+}
+@keyframes arrowPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(240,163,52,0.35); }
+    50% { box-shadow: 0 0 0 10px rgba(240,163,52,0); }
+}
+@media (max-width: 992px) {
+    .compare-arrow { transform: translate(-50%, -50%) rotate(90deg); }
+}
+@media (prefers-reduced-motion: reduce) { .compare-arrow { animation: none; } }
 .compare-col {
     padding: 40px clamp(24px, 3vw, 48px);
 }
@@ -781,10 +834,20 @@ section { padding: 128px clamp(20px, 4vw, 48px); position: relative; }
     min-height: 66vh;
 }
 .team-photo { position: relative; overflow: hidden; }
+.team-photo::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 60%, rgba(13,11,8,0.5) 100%);
+    pointer-events: none;
+}
 .team-photo img {
     width: 100%; height: 100%; object-fit: cover;
     filter: saturate(1.08) contrast(1.02) brightness(1.08);
+    transform: scale(1.06);
+    transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
 }
+.team-photo:hover img { transform: scale(1.14); }
+@media (prefers-reduced-motion: reduce) { .team-photo img { transition: none; } }
 .team-text {
     padding: 80px clamp(24px, 4vw, 64px);
     display: flex; flex-direction: column; justify-content: center;
@@ -810,7 +873,14 @@ section { padding: 128px clamp(20px, 4vw, 48px); position: relative; }
     display: flex; gap: 1px; background: var(--line);
     border: 1px solid var(--line); margin-bottom: 1px;
     flex-wrap: wrap;
+    position: relative;
 }
+.mcc-tab-indicator {
+    position: absolute; bottom: 0; left: 0; height: 2px;
+    background: var(--amber);
+    transition: left 0.35s cubic-bezier(0.16, 1, 0.3, 1), width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (prefers-reduced-motion: reduce) { .mcc-tab-indicator { transition: none; } }
 .mcc-tab {
     flex: 1; min-width: 140px;
     background: var(--ink);
@@ -877,6 +947,17 @@ section { padding: 128px clamp(20px, 4vw, 48px); position: relative; }
     line-height: 1.02;
     letter-spacing: -0.5px;
     color: var(--steel);
+    opacity: 0.4;
+    filter: blur(2px);
+    transition: opacity 0.5s ease, filter 0.5s ease, transform 0.5s ease;
+}
+/* ===== "Teleprompter" — cada linha acende ao passar pela faixa central
+   da tela (ver IntersectionObserver com rootMargin negativo no JS);
+   diferente do .reveal comum, isso liga e desliga toda vez que a linha
+   entra/sai do centro, não só uma vez. ===== */
+.manifesto-line.is-active { opacity: 1; filter: blur(0); transform: scale(1.015); }
+@media (prefers-reduced-motion: reduce) {
+    .manifesto-line { opacity: 1; filter: none; transition: none; }
 }
 .manifesto-line.line-1 { font-size: clamp(24px, 3.4vw, 36px); font-weight: 500; }
 .manifesto-line.line-2 { font-size: clamp(24px, 3.4vw, 36px); font-weight: 500; margin-bottom: 28px; }
@@ -900,8 +981,25 @@ section { padding: 128px clamp(20px, 4vw, 48px); position: relative; }
     background: var(--panel);
     border-top: 1px solid var(--line);
     text-align: left;
+    overflow: hidden;
 }
+.cta-final::before {
+    content: '';
+    position: absolute;
+    width: 60vw; height: 60vw; max-width: 700px; max-height: 700px;
+    left: 50%; top: 50%;
+    background: radial-gradient(circle, rgba(240,163,52,0.14), transparent 68%);
+    transform: translate(-50%, -50%);
+    animation: ctaGlow 6s ease-in-out infinite;
+    pointer-events: none;
+}
+@keyframes ctaGlow {
+    0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+}
+@media (prefers-reduced-motion: reduce) { .cta-final::before { animation: none; } }
 .cta-final .section-inner {
+    position: relative; z-index: 1;
     display: flex; justify-content: space-between; align-items: flex-end;
     flex-wrap: wrap; gap: 32px;
 }
@@ -1060,6 +1158,9 @@ footer a:hover { color: var(--amber); }
                     <li>Histórico fragmentado</li>
                 </ul>
             </div>
+            <span class="compare-arrow" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"/><polyline points="13 5 20 12 13 19"/></svg>
+            </span>
             <div class="compare-col is-oms">
                 <h3>Depois — OMS</h3>
                 <ul>
@@ -1075,6 +1176,7 @@ footer a:hover { color: var(--amber); }
 
 <!-- ============ ARQUITETURA ============ -->
 <section id="arquitetura" style="padding-top:0;">
+    <div class="blueprint-bg" aria-hidden="true"></div>
     <div class="section-head reveal">
         <span class="tag">Arquitetura Funcional</span>
         <h2>Um sistema. Toda a operação.</h2>
@@ -1218,6 +1320,7 @@ footer a:hover { color: var(--amber); }
             <button class="mcc-tab active" data-mcc="mcc2" onclick="window.trocarMcc('mcc2', this)"><strong>MCC 2</strong>Veios C e D</button>
             <button class="mcc-tab" data-mcc="mcc3" onclick="window.trocarMcc('mcc3', this)"><strong>MCC 3</strong>Veios E e F</button>
             <button class="mcc-tab" data-mcc="mcc4" onclick="window.trocarMcc('mcc4', this)"><strong>MCC 4</strong>Veios G e H</button>
+            <span class="mcc-tab-indicator" id="mcc-tab-indicator" aria-hidden="true"></span>
         </div>
         <div class="mcc-panel active" id="mcc2">
             <div class="veio-grid">
@@ -1293,6 +1396,7 @@ footer a:hover { color: var(--amber); }
 
 <!-- ============ RESULTADOS — o que muda na operação, por papel ============ -->
 <section id="resultados">
+    <div class="blueprint-bg" aria-hidden="true"></div>
     <div class="section-head reveal">
         <span class="tag">Resultados</span>
         <h2>O que muda na operação</h2>
@@ -1341,10 +1445,10 @@ footer a:hover { color: var(--amber); }
 <section class="manifesto">
     <div class="section-inner">
         <span class="tag manifesto-tag reveal">Visão</span>
-        <p class="manifesto-line line-1 reveal">Cada segundo conta.</p>
-        <p class="manifesto-line line-2 reveal">Cada decisão importa.</p>
-        <p class="manifesto-line line-3 reveal">Com o OMS, dados viram <em>ação</em></p>
-        <p class="manifesto-line line-4 reveal">e a oficina vira <em>performance</em>.</p>
+        <p class="manifesto-line line-1">Cada segundo conta.</p>
+        <p class="manifesto-line line-2">Cada decisão importa.</p>
+        <p class="manifesto-line line-3">Com o OMS, dados viram <em>ação</em></p>
+        <p class="manifesto-line line-4">e a oficina vira <em>performance</em>.</p>
     </div>
 </section>
 
@@ -1404,7 +1508,19 @@ footer a:hover { color: var(--amber); }
         document.querySelectorAll('.mcc-panel').forEach(p => p.classList.remove('active'));
         btn.classList.add('active');
         document.getElementById(id).classList.add('active');
+        moverIndicadorMcc(btn);
     };
+    // Indicador deslizante por baixo da aba ativa — recalcula posição a
+    // cada troca e no load/resize (o layout é flex-wrap, então a
+    // posição real de cada botão pode mudar de tela pra tela).
+    function moverIndicadorMcc(btn) {
+        const indicador = document.getElementById('mcc-tab-indicator');
+        if (!indicador || !btn) return;
+        indicador.style.left = btn.offsetLeft + 'px';
+        indicador.style.width = btn.offsetWidth + 'px';
+    }
+    window.addEventListener('load', () => moverIndicadorMcc(document.querySelector('.mcc-tab.active')));
+    window.addEventListener('resize', () => moverIndicadorMcc(document.querySelector('.mcc-tab.active')));
 
     // ---- Status de conexão ----
     (function () {
@@ -1534,33 +1650,52 @@ footer a:hover { color: var(--amber); }
         });
     })();
 
-    // ---- Contador animado (150+ da faixa de Equipe) ----
+    // ---- Contador animado (150+ da Equipe, 100% das specs) ----
     (function () {
-        const alvo = document.querySelector('.team-text .stat');
-        if (!alvo) return;
-        const numero = parseInt(alvo.textContent, 10);
-        const sufixo = alvo.textContent.replace(/[0-9]/g, '');
-        if (!numero || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-        let animou = false;
-        const obs = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting && !animou) {
-                    animou = true;
-                    const inicio = performance.now();
-                    const duracao = 1400;
-                    function passo(agora) {
-                        const t = Math.min((agora - inicio) / duracao, 1);
-                        const facilitado = 1 - Math.pow(1 - t, 3);
-                        alvo.textContent = Math.round(facilitado * numero) + sufixo;
-                        if (t < 1) requestAnimationFrame(passo);
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        document.querySelectorAll('.team-text .stat, .specs-row strong').forEach((alvo) => {
+            const numero = parseInt(alvo.textContent, 10);
+            // só anima quem começa mesmo com um número (pula "MCC 2 · 3 · 4" e "PWA")
+            if (!numero || !/^\d/.test(alvo.textContent.trim())) return;
+            const sufixo = alvo.textContent.replace(/^[0-9]+/, '');
+            let animou = false;
+            const obs = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !animou) {
+                        animou = true;
+                        const inicio = performance.now();
+                        const duracao = 1400;
+                        function passo(agora) {
+                            const t = Math.min((agora - inicio) / duracao, 1);
+                            const facilitado = 1 - Math.pow(1 - t, 3);
+                            alvo.textContent = Math.round(facilitado * numero) + sufixo;
+                            if (t < 1) requestAnimationFrame(passo);
+                        }
+                        requestAnimationFrame(passo);
+                        obs.unobserve(alvo);
                     }
-                    requestAnimationFrame(passo);
-                    obs.unobserve(alvo);
-                }
-            });
-        }, { threshold: 0.5 });
-        alvo.textContent = '0' + sufixo;
-        obs.observe(alvo);
+                });
+            }, { threshold: 0.5 });
+            alvo.textContent = '0' + sufixo;
+            obs.observe(alvo);
+        });
+    })();
+
+    // ---- "Teleprompter" do Manifesto — cada linha acende ao cruzar a
+    // faixa central da tela (rootMargin negativo simula essa faixa) e
+    // apaga de novo ao sair — diferente do .reveal comum, que só liga
+    // uma vez e nunca mais desliga.
+    (function () {
+        const linhas = document.querySelectorAll('.manifesto-line');
+        if (!linhas.length) return;
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            linhas.forEach(l => l.classList.add('is-active'));
+            return;
+        }
+        const obs = new IntersectionObserver((entries) => {
+            entries.forEach(entry => entry.target.classList.toggle('is-active', entry.isIntersecting));
+        }, { rootMargin: '-42% 0px -42% 0px', threshold: 0 });
+        linhas.forEach(l => obs.observe(l));
     })();
 
     // ---- Fundo 3D do hero (Three.js) — malha de linhas conectadas tipo
