@@ -1068,6 +1068,13 @@ footer a:hover { color: var(--amber); }
     .nav-links { display: none; }
     .nav-hamburger { display: flex; }
     .nav-login { display: none; }
+    /* 🐛 CORRIGIDO ("empurrou tudo pra fora da tela no celular"): o
+       botão "Instalar App" do topo não tinha reset nenhum pra mobile —
+       ele + "Acessar OMS" não cabem lado a lado numa tela estreita, e
+       isso jogava até o hamburguer pra fora da viewport. Mesmo padrão
+       do "Entrar": some no topo, mas continua disponível dentro da
+       gaveta (.drawer já tem sua própria cópia do botão). */
+    .nav-instalar-pwa { display: none !important; }
     .specs-row { grid-template-columns: 1fr; }
     .specs-row > div { border-left: none; border-top: 1px solid var(--line); }
     .specs-row > div:first-child { border-top: none; }
@@ -1111,7 +1118,7 @@ footer a:hover { color: var(--amber); }
             <span class="dot"></span><span id="conn-status-text">On-line</span>
         </span>
         <a href="app.html" class="nav-login">Entrar</a>
-        <button type="button" class="btn btn-line btn-instalar-pwa" hidden style="padding:11px 18px; min-height:auto; font-size:13px;" onclick="window.instalarAppOMS()">
+        <button type="button" class="btn btn-line btn-instalar-pwa nav-instalar-pwa" hidden style="padding:11px 18px; min-height:auto; font-size:13px;" onclick="window.instalarAppOMS()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg> Instalar App
         </button>
         <a href="app.html" class="btn btn-solid" style="padding:11px 22px; min-height:auto; font-size:13px;">Acessar OMS</a>
