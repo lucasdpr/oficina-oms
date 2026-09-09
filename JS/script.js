@@ -7360,11 +7360,11 @@ window.renderizarListaOcorrencias = function() {
             `}
             <div style="flex:1; min-width:0;">
                 <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
-                    <span class="font-code" style="font-weight:700; color:var(--text-heading);">${r.peca_id}</span>
-                    <span style="font-size:11px; color:var(--text-muted);">${r.data_hora}</span>
+                    <span class="font-code" style="font-weight:700; color:var(--text-heading);">${r.peca_id || '—'}</span>
+                    <span style="font-size:11px; color:var(--text-muted);">${r.data_hora || ''}</span>
                 </div>
-                <div style="font-size:13px; color:var(--text-body); margin-bottom:4px;">${r.acao}</div>
-                <div style="font-size:11px; color:var(--text-accent);">${r.operador}${r.area ? ` · ${nomeAreaOficina(r.area)}` : ''}</div>
+                <div style="font-size:13px; color:var(--text-body); margin-bottom:4px;">${r.acao || ''}</div>
+                <div style="font-size:11px; color:var(--text-accent);">${r.operador || 'Sistema'}${r.area ? ` · ${nomeAreaOficina(r.area)}` : ''}</div>
             </div>
         </div>
     `).join("");
