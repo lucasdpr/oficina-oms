@@ -1,0 +1,29 @@
+name: Lint / sintaxe
+
+# CI leve de propósito: este projeto é front-end estático (sem build
+# step, sem framework), então não tem "compilar" de verdade — o que
+# este workflow garante, em toda PR e push na main, é que nenhum .js
+# tem erro de sintaxe. É basicamente o mesmo `node --check` que foi
+# usado à mão pra validar cada correção de bug feita nas revisões
+# anteriores — automatizado, pra não depender de alguém lembrar de
+# rodar isso antes de mergear.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  syntax-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Checar sintaxe de todo arquivo .js
+        run: |
+          status=0
+          for f in $(git ls-files '*.js'); do
+            node --check "$f" || status=1
+          done
+          exit $status
