@@ -436,7 +436,7 @@
     <div id="aviso-nova-versao" class="hidden" style="position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:99999; background:var(--panel-2, #1e293b); color:#fff; padding:12px 16px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,0.4); border:1px solid rgba(245,158,11,0.4); display:flex; align-items:center; gap:12px;">
         <i class="fas fa-rotate" style="color:#f59e0b;"></i>
         <span>Nova versão do sistema disponível.</span>
-        <button type="button" onclick="window.location.reload()" style="background:#f59e0b; color:#111827; border:none; padding:6px 14px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12.5px;">Atualizar agora</button>
+        <button type="button" onclick="window.forcarAtualizacaoOMS()" style="background:#f59e0b; color:#111827; border:none; padding:6px 14px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12.5px;">Atualizar agora</button>
     </div>
 
     <!-- TELA DE LOGIN AVANÇADA -->
@@ -2819,6 +2819,17 @@
     </div>
     <!-- ============ PWA: registra o service worker (instalação + offline) ============ -->
     <script>
+        // 🐛 CORRIGIDO ("clico em Atualizar e parece que não muda nada"):
+        // location.reload() no Safari/iOS às vezes não força uma busca
+        // nova de verdade na rede — o reload "acontece" mas visualmente
+        // nada muda. Navegar pra uma URL com um parâmetro novo obriga o
+        // navegador a tratar como página diferente da já guardada.
+        window.forcarAtualizacaoOMS = function () {
+            const url = new URL(window.location.href);
+            url.searchParams.set('_upd', Date.now());
+            window.location.replace(url.toString());
+        };
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('service-worker.js')

@@ -1101,7 +1101,7 @@ footer a:hover { color: var(--amber); }
 <div id="aviso-nova-versao" hidden style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:99999; background:#1e1a14; color:#f2ede2; padding:12px 16px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,0.5); border:1px solid rgba(240,163,52,0.4); display:flex; align-items:center; gap:12px;">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f0a334" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
     <span>Nova versão do site disponível.</span>
-    <button type="button" onclick="window.location.reload()" style="background:#f0a334; color:#0d0b08; border:none; padding:6px 14px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12.5px;">Atualizar agora</button>
+    <button type="button" onclick="window.forcarAtualizacaoOMS()" style="background:#f0a334; color:#0d0b08; border:none; padding:6px 14px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12.5px;">Atualizar agora</button>
 </div>
 
 <nav class="navbar">
@@ -1933,6 +1933,19 @@ footer a:hover { color: var(--amber); }
         }, { passive: true });
         atualizar();
     })();
+
+    // 🐛 CORRIGIDO ("clico em Atualizar e parece que não muda nada"):
+    // location.reload() no Safari/iOS às vezes não força uma busca nova
+    // de verdade na rede (comportamento conhecido do WebKit, ainda mais
+    // com Service Worker no meio) — o reload "acontece" mas visualmente
+    // nada muda. Navegar pra uma URL com um parâmetro novo obriga o
+    // navegador a tratar como uma página diferente da que já tinha
+    // guardada, sem essa ambiguidade. `replace` evita empilhar histórico.
+    window.forcarAtualizacaoOMS = function () {
+        const url = new URL(window.location.href);
+        url.searchParams.set('_upd', Date.now());
+        window.location.replace(url.toString());
+    };
 
     // ---- Service worker (PWA) ----
     if ('serviceWorker' in navigator) {
