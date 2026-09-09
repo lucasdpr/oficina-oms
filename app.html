@@ -1708,9 +1708,17 @@
                 <div class="glass-panel" style="padding:24px;">
                     <h2><i class="fas fa-history"></i> Auditoria Global</h2>
                     <p class="text-muted" style="font-size:13px;margin-bottom:16px;">Rastreabilidade completa de todas as operações e laudos.</p>
-                    <div class="mcc-filter-group" id="historico-filtro-acessos" style="margin-bottom:16px; display:inline-flex;">
+                    <div class="mcc-filter-group" id="historico-filtro-acessos" style="margin-bottom:16px; display:inline-flex; flex-wrap:wrap; gap:10px; align-items:center;">
                         <button class="btn-filter-mcc active" onclick="window.filtrarHistoricoAcessos(false, this)">Todos os eventos</button>
                         <button class="btn-filter-mcc" onclick="window.filtrarHistoricoAcessos(true, this)"><i class="fas fa-right-to-bracket"></i> Só Acessos (Login/Visitante)</button>
+                        <!-- 🔧 CORREÇÃO: renderHistorico()/atualizarHistoricoGlobalComServidor()
+                             (script.js) já liam #filtro-data-historico e filtravam por dia —
+                             mas o campo nunca existia em nenhum HTML, então o filtro por data
+                             da Auditoria era uma funcionalidade morta desde sempre. -->
+                        <input type="date" id="filtro-data-historico" class="premium-input" style="max-width:170px;" onchange="if (typeof window.renderHistorico === 'function') window.renderHistorico();" title="Filtrar por data">
+                        <button class="btn-filter-mcc" style="padding:6px 12px;" onclick="document.getElementById('filtro-data-historico').value=''; if (typeof window.renderHistorico === 'function') window.renderHistorico();" title="Limpar filtro de data">
+                            <i class="fas fa-xmark"></i>
+                        </button>
                     </div>
                     <div class="table-responsive"><table class="premium-table"><thead><tr><th>Horário</th><th>TAG / Módulo</th><th>Descrição da Ação</th><th>Responsável</th></tr></thead><tbody id="historico-table-body"></tbody></table></div>
                 </div>
