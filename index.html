@@ -338,7 +338,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
     opacity: 0.55;
     pointer-events: none;
 }
-@media (max-width: 640px), (prefers-reduced-motion: reduce) {
+@media (prefers-reduced-motion: reduce) {
     #hero-canvas { display: none; }
 }
 .hero-content {
@@ -846,7 +846,7 @@ section { padding: 128px clamp(20px, 4vw, 48px); position: relative; }
     transform: scale(1.06);
     transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.team-photo:hover img { transform: scale(1.14); }
+.team-photo:hover img, .team-photo.in-view img { transform: scale(1.14); }
 @media (prefers-reduced-motion: reduce) { .team-photo img { transition: none; } }
 .team-text {
     padding: 80px clamp(24px, 4vw, 64px);
@@ -947,8 +947,13 @@ section { padding: 128px clamp(20px, 4vw, 48px); position: relative; }
     line-height: 1.02;
     letter-spacing: -0.5px;
     color: var(--steel);
-    opacity: 0.4;
-    filter: blur(2px);
+    /* 🔧 CORRIGIDO ("no celular não aparece"): 0.4 + blur(2px) como
+       estado BASE é arriscado — se o JS não conseguir calcular a faixa
+       central a tempo (tela baixa, scroll rápido no touch), a linha
+       fica presa nesse estado quase ilegível pra sempre. Base agora é
+       só "meio apagado", nunca perto de invisível. */
+    opacity: 0.65;
+    filter: blur(0.5px);
     transition: opacity 0.5s ease, filter 0.5s ease, transform 0.5s ease;
 }
 /* ===== "Teleprompter" — cada linha acende ao passar pela faixa central
@@ -1650,6 +1655,21 @@ footer a:hover { color: var(--amber); }
         });
     })();
 
+    // ---- Zoom das fotos de Equipe/Diversidade — não dá só pra depender
+    // de :hover (no touch isso quase nunca dispara direito, ficava "sem
+    // efeito nenhum" no celular). Dispara também por scroll, uma vez.
+    (function () {
+        const fotos = document.querySelectorAll('.team-photo');
+        if (!fotos.length) return;
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        const obs = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) { entry.target.classList.add('in-view'); obs.unobserve(entry.target); }
+            });
+        }, { threshold: 0.35 });
+        fotos.forEach(f => obs.observe(f));
+    })();
+
     // ---- Contador animado (150+ da Equipe, 100% das specs) ----
     (function () {
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -1694,7 +1714,7 @@ footer a:hover { color: var(--amber); }
         }
         const obs = new IntersectionObserver((entries) => {
             entries.forEach(entry => entry.target.classList.toggle('is-active', entry.isIntersecting));
-        }, { rootMargin: '-42% 0px -42% 0px', threshold: 0 });
+        }, { rootMargin: '-32% 0px -32% 0px', threshold: 0 });
         linhas.forEach(l => obs.observe(l));
     })();
 
@@ -1710,17 +1730,23 @@ footer a:hover { color: var(--amber); }
         if (!canvas || typeof THREE === 'undefined') return;
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
+        // 🔧 CORRIGIDO ("no celular não aparece"): antes o canvas inteiro
+        // ficava com display:none abaixo de 640px, por medo de pesar —
+        // só que isso apagava o efeito pra maioria de quem acessa (celular).
+        // Agora ele SEMPRE aparece; só reduz densidade/pixel-ratio em tela
+        // pequena, que é o ajuste de performance de verdade.
+        const ehMobile = window.innerWidth < 640;
         const hero = canvas.parentElement;
-        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !ehMobile });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, ehMobile ? 1.5 : 2));
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
         camera.position.z = 9;
 
         // Nuvem de pontos conectados por linhas curtas — sugere "rede de
         // dados" (rastreabilidade), tema do produto, sem virar decoração
-        // genérica de partículas soltas.
-        const N = 46;
+        // genérica de partículas soltas. Metade dos pontos em tela pequena.
+        const N = ehMobile ? 24 : 46;
         const pontos = [];
         for (let i = 0; i < N; i++) {
             pontos.push(new THREE.Vector3(
@@ -1753,13 +1779,16 @@ footer a:hover { color: var(--amber); }
         // cópia maior e mais transparente por trás simulando um brilho
         // (bloom "de pobre", sem precisar de post-processing) — dá o peso
         // visual que só a nuvem de pontos não tinha.
-        const nucleoGeo = new THREE.IcosahedronGeometry(2.1, 1);
+        const nucleoGeo = new THREE.IcosahedronGeometry(ehMobile ? 1.6 : 2.1, 1);
         const nucleoMat = new THREE.MeshBasicMaterial({ color: 0xf0a334, wireframe: true, transparent: true, opacity: 0.5 });
         const nucleo = new THREE.Mesh(nucleoGeo, nucleoMat);
-        nucleo.position.set(3.6, -0.6, -2.2);
+        // Em tela estreita (retrato) o campo de visão da câmera é bem mais
+        // apertado na horizontal — um núcleo deslocado pra direita (como no
+        // desktop) sairia do enquadramento. Fica mais centralizado no mobile.
+        nucleo.position.set(ehMobile ? 1.2 : 3.6, -0.6, -2.2);
         scene.add(nucleo);
 
-        const brilhoGeo = new THREE.IcosahedronGeometry(2.5, 1);
+        const brilhoGeo = new THREE.IcosahedronGeometry(ehMobile ? 1.9 : 2.5, 1);
         const brilhoMat = new THREE.MeshBasicMaterial({ color: 0xf0a334, wireframe: true, transparent: true, opacity: 0.14 });
         const brilho = new THREE.Mesh(brilhoGeo, brilhoMat);
         brilho.position.copy(nucleo.position);
