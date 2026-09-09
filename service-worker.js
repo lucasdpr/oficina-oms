@@ -11,7 +11,7 @@
 // usando a copia antiga guardada em cache.
 // ==============================================================
 
-const CACHE_VERSION = "oms-v67";
+const CACHE_VERSION = "oms-v68";
 
 // 🔧 CORREÇÃO: essa lista estava com os caminhos de uma estrutura de
 // pastas antiga (tudo direto na raiz) — o projeto hoje guarda os JS
@@ -51,8 +51,8 @@ const ARQUIVOS_PARA_CACHE = [
     "./JS/Folhoes/checklistQualidadeSaida.js",
     "./Sinotico3d.html",
     "./manifest.json",
-    "./JS/assets/icon-192.png?v=2",
-    "./JS/assets/icon-512.png?v=2"
+    "./JS/assets/icon-192.png?v=3",
+    "./JS/assets/icon-512.png?v=3"
 ];
 
 // --------------------------------------------------------------
@@ -171,8 +171,8 @@ self.addEventListener("push", (event) => {
     event.waitUntil(
         self.registration.showNotification(dados.titulo, {
             body: dados.corpo,
-            icon: "./JS/assets/icon-192.png?v=2",
-            badge: "./JS/assets/icon-192.png?v=2",
+            icon: "./JS/assets/icon-192.png?v=3",
+            badge: "./JS/assets/icon-192.png?v=3",
             // 🆕 Guarda o payload INTEIRO (não só `url`) — agora o
             // backend manda tipo_evento/atividade_id/area junto pra
             // eventos de Atividade da Oficina (ver dados_extra em
