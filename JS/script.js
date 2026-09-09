@@ -732,8 +732,15 @@ function montarLinhasHistorico(acoes, laudos, filtroData) {
     todos.sort((a, b) => (b.dataTimestamp || 0) - (a.dataTimestamp || 0));
 
     if (filtroData) {
-        const dataFiltro = new Date(filtroData);
-        const inicioDia = new Date(dataFiltro.getFullYear(), dataFiltro.getMonth(), dataFiltro.getDate()).getTime();
+        // 🔧 CORREÇÃO ("filtro de 09/09 mostrava registros de 08/09"):
+        // `new Date("YYYY-MM-DD")` (o formato que <input type="date">
+        // devolve) é interpretado como MEIA-NOITE EM UTC, não no fuso
+        // local — em qualquer fuso atrás de UTC (Brasil, UTC-3), isso
+        // "vira o dia" pra trás na hora de ler getFullYear/getMonth/
+        // getDate de volta. Parseia ano/mês/dia manualmente da string e
+        // monta a data direto no fuso local, sem passar pelo UTC.
+        const [ano, mes, dia] = filtroData.split('-').map(Number);
+        const inicioDia = new Date(ano, mes - 1, dia).getTime();
         const fimDia = inicioDia + 24 * 60 * 60 * 1000;
         todos = todos.filter(item => {
             const ts = item.dataTimestamp || 0;
@@ -984,10 +991,11 @@ window.ativarCentralNotificacoesSeAutorizado = ativarCentralNotificacoesSeAutori
 function ativarPainelDevSeAutorizado() {
     const link = document.getElementById("nav-dev-teste");
     const divisor = document.getElementById("nav-divider-dev");
-    // 🆕 Os dois links novos da Área Restrita (Registro Recente e
-    // Administração) usam a mesma checagem de matrícula que o Teste de
-    // Folhões — então ficam visíveis/escondidos junto com ele aqui.
-    const linkRegistroRecente = document.getElementById("nav-registro-recente");
+    // 🆕 O outro link da Área Restrita (Administração) usa a mesma
+    // checagem de matrícula que o Teste de Folhões — fica
+    // visível/escondido junto com ele aqui. ("Registro Recente" usava
+    // a mesma checagem também, mas foi removido — era duplicado da
+    // Auditoria Global.)
     const linkAdmin = document.getElementById("nav-admin-colaboradores");
     if (!link) return;
 
@@ -996,13 +1004,11 @@ function ativarPainelDevSeAutorizado() {
 
     if (autorizado) {
         link.classList.remove("hidden");
-        if (linkRegistroRecente) linkRegistroRecente.classList.remove("hidden");
         if (linkAdmin) linkAdmin.classList.remove("hidden");
         if (divisor) divisor.classList.remove("hidden");
         renderPainelDevTeste();
     } else {
         link.classList.add("hidden");
-        if (linkRegistroRecente) linkRegistroRecente.classList.add("hidden");
         if (linkAdmin) linkAdmin.classList.add("hidden");
         if (divisor) divisor.classList.add("hidden");
         const corpo = document.getElementById("dev-teste-table-body");
@@ -1011,7 +1017,7 @@ function ativarPainelDevSeAutorizado() {
         // cima sem ser autorizado, tira ela de lá (mesmo princípio já
         // usado em ativarAuditoriaSeAutorizado para a Auditoria).
         const abaAtual = document.querySelector('.tab-content.active');
-        if (abaAtual && ['aba-registro-recente', 'aba-admin-colaboradores', 'aba-dev-teste'].includes(abaAtual.id)) {
+        if (abaAtual && ['aba-admin-colaboradores', 'aba-dev-teste'].includes(abaAtual.id)) {
             const navPainel = document.getElementById("nav-painel");
             if (navPainel && typeof window.abrirAba === 'function') {
                 window.abrirAba({ preventDefault(){}, currentTarget: navPainel }, "aba-painel");
@@ -3763,104 +3769,15 @@ function atualizarPainelCompleto() {
     executarSeguro(() => renderizarFeedAtividadeRecente(), 'renderizarFeedAtividadeRecente');
 }
 
-// ==========================================
-// 🔧 "Registro Recente" (antes "Atividade Recente" no Painel Geral,
-// visível pra todo mundo) — a pedido do usuário, virou aba própria
-// dentro da Área Restrita (só as 2 matrículas admin), sem o limite de
-// 6 itens do widget antigo, e buscando a lista oficial do servidor —
-// mesmo princípio já usado na Auditoria (atualizarHistoricoGlobalComServidor):
-// o localStorage só reflete o que aconteceu NESTE aparelho, então
-// buscar do servidor garante ver o que outros técnicos fizeram em
-// outros aparelhos também.
-//
-// renderizarFeedAtividadeRecente() é mantida como um "atalho" (chamada
-// em vários pontos do código toda vez que uma ação é registrada) — ela
-// só repassa pra renderRegistroRecenteCompleto() se a aba nova estiver
-// aberta na hora, pra manter a lista atualizada em tempo real sem
-// precisar reabrir a aba.
-// ==========================================
-function renderizarFeedAtividadeRecente() {
-    const abaAtiva = document.getElementById('aba-registro-recente');
-    if (abaAtiva && abaAtiva.classList.contains('active') && typeof window.renderRegistroRecenteCompleto === 'function') {
-        window.renderRegistroRecenteCompleto();
-    }
-}
-
-window.renderRegistroRecenteCompleto = async function() {
-    const lista = document.getElementById('registro-recente-lista');
-    if (!lista) return;
-
-    const matricula = (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula || "").toUpperCase();
-    if (!MATRICULAS_TESTE_FOLHOES.includes(matricula)) {
-        lista.innerHTML = `<li class="text-muted" style="text-align:center; padding: 10px 0;">Acesso restrito.</li>`;
-        return;
-    }
-
-    const montarItens = (itens) => {
-        if (itens.length === 0) {
-            return `<li class="text-muted" style="text-align:center; padding: 10px 0;">Nenhuma atividade registrada ainda.</li>`;
-        }
-        return itens.map(h => {
-            const tagUpper = (h.tag || '').toUpperCase();
-            let classe = '';
-            if (tagUpper.includes('EXCLU') || tagUpper.includes('ALERTA') || tagUpper.includes('CRÍTIC')) {
-                classe = 'alert';
-            } else if (tagUpper.includes('CONCLU') || tagUpper.includes('AUTENTIC') || tagUpper.includes('SUCESSO')) {
-                classe = 'success';
-            }
-            return `
-                <li class="${classe}">
-                    <span class="timeline-time">${h.data || '--'}</span>
-                    <strong>${h.tag || 'Sistema'}:</strong> ${h.acao || ''}
-                    ${h.responsavel ? `<br><small class="text-muted">${h.responsavel}</small>` : ''}
-                </li>
-            `;
-        }).join('');
-    };
-
-    // 🔧 CORREÇÃO ("mudando sozinho" → depois "piscando pra Carregando"):
-    // essa função é re-chamada toda vez que QUALQUER evento acontece no
-    // app inteiro (renderizarFeedAtividadeRecente), não só quando esta
-    // aba está em uso. A tentativa anterior resolveu o "duas fontes
-    // brigando" mas trocou por "pisca pro Carregando" a cada chamada de
-    // fundo. Agora: só mostra "Carregando..." na PRIMEIRA vez (lista
-    // ainda vazia); atualizações seguintes buscam em segundo plano e só
-    // trocam o conteúdo quando o resultado chegar — sem apagar a tela
-    // no meio do caminho. Uma trava (dataset.buscando) evita empilhar
-    // buscas se vários eventos disparam quase juntos.
-    if (lista.dataset.buscando === "1") return;
-    lista.dataset.buscando = "1";
-
-    if (!lista.childElementCount) {
-        lista.innerHTML = `<li class="text-muted" style="text-align:center; padding: 10px 0;">Carregando...</li>`;
-    }
-
-    try {
-        const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/historico_eventos?limite=50`, { cache: 'no-store' });
-        if (!resp.ok) throw new Error('Resposta não-ok do servidor');
-        const eventos = await resp.json();
-        if (!Array.isArray(eventos)) throw new Error('Formato inesperado');
-
-        const itensServidor = eventos.map(e => ({
-            data: e.data_hora || '',
-            tag: e.peca_id || 'AUTENTICAÇÃO',
-            acao: e.acao || '',
-            responsavel: e.operador || 'Sistema'
-        }));
-        lista.innerHTML = montarItens(itensServidor);
-    } catch (e) {
-        console.error('⚠️ Não consegui buscar o Registro Recente completo do servidor — usando o que tinha local:', e);
-        // Só cai pro cache local se a tela ainda estiver vazia — uma
-        // atualização de fundo que falhou não deve apagar uma lista que
-        // já estava certa na tela.
-        if (!lista.childElementCount || lista.querySelector('.text-muted')) {
-            lista.innerHTML = montarItens((HISTORICO_ACOES || []).slice(0, 50));
-        }
-    } finally {
-        lista.dataset.buscando = "0";
-    }
-};
+// 🗑️ Removida a aba "Registro Recente" (e as funções
+// renderizarFeedAtividadeRecente/renderRegistroRecenteCompleto que só
+// serviam a ela) — era exatamente a mesma coisa que a Auditoria Global:
+// mesma fonte (/api/historico_eventos), mesmas 2 matrículas autorizadas
+// (MATRICULAS_TESTE_FOLHOES tinha o mesmo valor de MATRICULAS_AUDITORIA),
+// só que mais simples (sem filtro de data/acessos, limitada a 50 linhas
+// em vez de 500). Os pontos que chamavam renderizarFeedAtividadeRecente()
+// continuam de pé, protegidos por `typeof ... === 'function'` — viram
+// no-op sozinhos, sem precisar caçar cada chamada.
 
 // ==========================================
 // 🆕 ADMINISTRAÇÃO DE COLABORADORES (Área Restrita) — gerenciar acesso
@@ -6438,7 +6355,6 @@ window.abrirAba = function(event, idAba) {
     // mesmo com o código certo escrito. A duplicada foi removida, e os
     // gatilhos que faltavam (Registro Recente e Administração) foram
     // trazidos pra cá, na função que realmente executa.
-    if (idAba === "aba-registro-recente" && typeof window.renderRegistroRecenteCompleto === 'function') window.renderRegistroRecenteCompleto();
     if (idAba === "aba-admin-colaboradores" && typeof window.carregarAdminColaboradores === 'function') window.carregarAdminColaboradores();
     if (idAba === "aba-painel" && typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
     if (idAba === "aba-ativos" && typeof renderAtivos === 'function') renderAtivos();

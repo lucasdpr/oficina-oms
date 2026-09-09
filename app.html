@@ -624,7 +624,6 @@
 
                 <div class="nav-divider nav-divider-dev hidden" id="nav-divider-dev"><i class="fas fa-lock"></i> Área Restrita</div>
                 <a href="#" id="nav-historico" class="nav-link hidden" onclick="window.abrirAba(event,'aba-historico')"><i class="fas fa-history"></i> Auditoria</a>
-                <a href="#" id="nav-registro-recente" class="nav-link nav-link-dev hidden" onclick="window.abrirAba(event,'aba-registro-recente')"><i class="fas fa-clock-rotate-left"></i> Registro Recente</a>
                 <a href="#" id="nav-admin-colaboradores" class="nav-link nav-link-dev hidden" onclick="window.abrirAba(event,'aba-admin-colaboradores')"><i class="fas fa-user-gear"></i> Administração</a>
                 <a href="#" id="nav-dev-teste" class="nav-link nav-link-dev hidden" onclick="window.abrirAba(event,'aba-dev-teste')"><i class="fas fa-flask"></i> Teste de Folhões</a>
             </nav>
@@ -1656,23 +1655,12 @@
                 </div>
             </section>
 
-            <!-- 🆕 "Registro Recente" — antes era o widget "Atividade Recente"
-                 dentro do Painel Geral OMS (visível pra todo mundo). Movido
-                 pra cá, como aba própria só da Área Restrita, a pedido do
-                 usuário. Mesmos dados (HISTORICO_ACOES), só que sem o limite
-                 de 6 itens do widget antigo — ver renderRegistroRecenteCompleto()
-                 em script.js. -->
-            <section id="aba-registro-recente" class="tab-content">
-                <div class="glass-panel" style="padding:24px;">
-                    <h2><i class="fas fa-clock-rotate-left"></i> Registro Recente</h2>
-                    <p class="text-muted" style="font-size:13px;margin-bottom:16px;">Últimas ações registradas no sistema, em ordem cronológica.</p>
-                    <ul class="timeline-feed" id="registro-recente-lista" style="max-height:none;">
-                        <li style="padding: 8px 0;"><div class="skeleton skeleton-line" style="width:85%;"></div></li>
-                        <li style="padding: 8px 0;"><div class="skeleton skeleton-line" style="width:65%;"></div></li>
-                        <li style="padding: 8px 0;"><div class="skeleton skeleton-line" style="width:75%;"></div></li>
-                    </ul>
-                </div>
-            </section>
+            <!-- 🗑️ Removida a aba "Registro Recente" — era exatamente a mesma
+                 coisa que a Auditoria Global (mesma fonte de dados,
+                 /api/historico_eventos, e as mesmas 2 matrículas
+                 autorizadas), só que mais simples (sem filtro de data, sem
+                 filtro de acessos, limitada a 50 linhas em vez de 500). A
+                 Auditoria cobre tudo que esta aba cobria e mais. -->
 
             <!-- 🆕 PAINEL DE ADMINISTRAÇÃO DE COLABORADORES — gerenciar
                  acesso (ativar/desativar), resetar senha (volta a ser
