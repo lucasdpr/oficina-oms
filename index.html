@@ -83,6 +83,92 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 ::-webkit-scrollbar-track { background: var(--ink); }
 ::-webkit-scrollbar-thumb { background: var(--amber-deep); }
 
+/* ===== GRÃO DE FILME — textura sutil por cima de tudo, dá o
+   acabamento "produção cara" em vez de plano/vetorial demais ===== */
+.grain {
+    position: fixed; inset: -60px;
+    z-index: 9997;
+    pointer-events: none;
+    opacity: 0.05;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    animation: grainMove 0.4s steps(3) infinite;
+}
+@keyframes grainMove {
+    0%, 100% { transform: translate(0, 0); }
+    33% { transform: translate(-2%, -1.5%); }
+    66% { transform: translate(1.5%, 2%); }
+}
+@media (prefers-reduced-motion: reduce) { .grain { animation: none; } }
+
+/* ===== SPOTLIGHT — segue o cursor, reforça a metáfora "luz na oficina" ===== */
+.spotlight {
+    position: fixed; inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: radial-gradient(560px circle at var(--sx, 50%) var(--sy, 30%), rgba(240, 163, 52, 0.07), transparent 70%);
+}
+@media (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) { .spotlight { display: none; } }
+
+/* ===== CURSOR CUSTOMIZADO — ponto + anel com atraso, cresce sobre
+   elementos clicáveis. Só em telas com mouse de verdade. ===== */
+.cursor-dot, .cursor-ring {
+    position: fixed; top: 0; left: 0;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+}
+.cursor-dot { width: 5px; height: 5px; background: var(--amber); }
+.cursor-ring {
+    width: 32px; height: 32px;
+    border: 1px solid rgba(240, 163, 52, 0.55);
+    transition: width 0.25s ease, height 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+}
+.cursor-ring.is-big {
+    width: 60px; height: 60px;
+    background: rgba(240, 163, 52, 0.1);
+    border-color: var(--amber);
+}
+@media (hover: hover) and (pointer: fine) {
+    body.cursor-ready, body.cursor-ready a, body.cursor-ready button, body.cursor-ready .mcc-tab { cursor: none; }
+}
+@media (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) {
+    .cursor-dot, .cursor-ring { display: none; }
+}
+
+/* ===== TICKER — faixa industrial correndo, tipo painel de status ===== */
+.ticker {
+    overflow: hidden;
+    background: var(--ink);
+    border-bottom: 1px solid var(--line);
+}
+.ticker-track {
+    display: flex;
+    width: max-content;
+    gap: 0;
+    padding: 15px 0;
+    animation: tickerScroll 32s linear infinite;
+}
+.ticker-track span {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    letter-spacing: 1.5px;
+    color: var(--steel);
+    white-space: nowrap;
+    padding: 0 28px;
+    display: inline-flex;
+    align-items: center;
+    gap: 28px;
+}
+.ticker-track span::after { content: '◆'; color: var(--amber-deep); font-size: 8px; }
+@keyframes tickerScroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+}
+.ticker:hover .ticker-track { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .ticker-track { animation: none; } }
+
 /* ===== rótulo técnico reutilizável ===== */
 .tag {
     display: inline-flex;
@@ -272,10 +358,32 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
     line-height: 0.92;
     letter-spacing: -1px;
     max-width: 16ch;
+    perspective: 800px;
 }
 .hero h1 em {
     font-style: normal;
     color: var(--amber);
+}
+/* ===== Entrada cinematográfica — cada linha do título "cai" de um
+   giro em profundidade, tipo placa se assentando; o resto do hero
+   entra em cascata logo atrás. Uma vez só, ao carregar. ===== */
+.hero h1 .line {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(48px) rotateX(50deg);
+    transform-origin: 50% 100%;
+    animation: linePlaca 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.hero h1 .line-a { animation-delay: 0.1s; }
+.hero h1 .line-b { animation-delay: 0.26s; }
+@keyframes linePlaca { to { opacity: 1; transform: none; } }
+.hero-fade { opacity: 0; transform: translateY(22px); animation: heroFadeUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.hero-fade.d1 { animation-delay: 0.5s; }
+.hero-fade.d2 { animation-delay: 0.64s; }
+.hero-fade.d3 { animation-delay: 0.78s; }
+@keyframes heroFadeUp { to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+    .hero h1 .line, .hero-fade { opacity: 1; transform: none; animation: none; }
 }
 .hero-sub {
     margin-top: 24px;
@@ -512,6 +620,18 @@ section { padding: 128px clamp(20px, 4vw, 48px); position: relative; }
 }
 
 /* ===== CICLO — sequência real, numeração justificada ===== */
+.cycle-track {
+    height: 2px;
+    background: var(--line);
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+}
+.cycle-fill {
+    position: absolute; left: 0; top: 0; height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--amber-deep), var(--amber));
+}
 .cycle {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
@@ -841,6 +961,11 @@ footer a:hover { color: var(--amber); }
 </head>
 <body>
 
+<div class="grain" aria-hidden="true"></div>
+<div class="spotlight" id="spotlight" aria-hidden="true"></div>
+<div class="cursor-ring" id="cursor-ring" aria-hidden="true"></div>
+<div class="cursor-dot" id="cursor-dot" aria-hidden="true"></div>
+
 <nav class="navbar">
     <a href="#top" class="brand">OMS <small>CSN — GMLC/GGMA</small></a>
     <div class="nav-links">
@@ -884,17 +1009,17 @@ footer a:hover { color: var(--amber); }
     <div class="hero-bg"></div>
     <canvas id="hero-canvas" aria-hidden="true"></canvas>
     <div class="hero-content">
-        <span class="tag">GMLC / GGMA — Volta Redonda, RJ</span>
-        <h1>Controle total<br>da <em>manutenção</em></h1>
-        <p class="hero-sub">
+        <span class="tag hero-fade d1">GMLC / GGMA — Volta Redonda, RJ</span>
+        <h1><span class="line line-a">Controle total</span><br><span class="line line-b">da <em>manutenção</em></span></h1>
+        <p class="hero-sub hero-fade d2">
             Digitalização, rastreabilidade e controle operacional de moldes e segmentos
             das MCC 2, 3 e 4 — do registro em campo à decisão baseada em dados.
         </p>
-        <div class="hero-actions">
+        <div class="hero-actions hero-fade d3">
             <a href="app.html" class="btn btn-solid">Acessar OMS</a>
             <a href="#arquitetura" class="btn btn-line">Explorar o sistema</a>
         </div>
-        <div class="hero-trust">
+        <div class="hero-trust hero-fade d3">
             <span><span class="dot"></span>Sistema operacional</span>
             <span>Dados rastreáveis</span>
             <span>MCC 2 · 3 · 4</span>
@@ -908,6 +1033,13 @@ footer a:hover { color: var(--amber); }
         <div><strong>MCC 2 · 3 · 4</strong><span>Cobertura completa da Aciaria</span></div>
         <div><strong>100%</strong><span>Folhões digitais, sem papel</span></div>
         <div><strong>PWA</strong><span>Instalável, com uso offline em campo</span></div>
+    </div>
+</div>
+
+<div class="ticker" aria-hidden="true">
+    <div class="ticker-track" id="ticker-track">
+        <span>MOLDES</span><span>SEGMENTOS</span><span>SINÓTICO 3D</span><span>SWAP INTELIGENTE</span><span>FOLHÕES DIGITAIS</span><span>RASTREABILIDADE</span><span>MCC 2</span><span>MCC 3</span><span>MCC 4</span><span>AUDITORIA GLOBAL</span>
+        <span>MOLDES</span><span>SEGMENTOS</span><span>SINÓTICO 3D</span><span>SWAP INTELIGENTE</span><span>FOLHÕES DIGITAIS</span><span>RASTREABILIDADE</span><span>MCC 2</span><span>MCC 3</span><span>MCC 4</span><span>AUDITORIA GLOBAL</span>
     </div>
 </div>
 
@@ -1001,13 +1133,16 @@ footer a:hover { color: var(--amber); }
         <span class="tag">O Ciclo</span>
         <h2>Como funciona</h2>
     </div>
-    <div class="section-inner cycle">
+    <div class="section-inner">
+    <div class="cycle-track"><div class="cycle-fill" id="cycle-fill"></div></div>
+    <div class="cycle" id="cycle-secao">
         <div class="cycle-step reveal"><span class="num">01</span><h4>Cadastro</h4><p>Peça entra no sistema</p></div>
         <div class="cycle-step reveal"><span class="num">02</span><h4>Alocação</h4><p>Instalação em um veio</p></div>
         <div class="cycle-step reveal"><span class="num">03</span><h4>Monitoramento</h4><p>Desgaste × meta em tempo real</p></div>
         <div class="cycle-step reveal"><span class="num">04</span><h4>Swap</h4><p>Troca guiada com a reserva</p></div>
         <div class="cycle-step reveal"><span class="num">05</span><h4>Manutenção</h4><p>Folhão e laudo em PDF</p></div>
         <div class="cycle-step reveal"><span class="num">06</span><h4>Retorno</h4><p>Peça volta pronta pra linha</p></div>
+    </div>
     </div>
 </section>
 
@@ -1479,6 +1614,22 @@ footer a:hover { color: var(--amber); }
         const rede = new THREE.LineSegments(geoLinhas, matLinhas);
         scene.add(rede);
 
+        // ===== NÚCLEO — um icosaedro wireframe girando devagar, com uma
+        // cópia maior e mais transparente por trás simulando um brilho
+        // (bloom "de pobre", sem precisar de post-processing) — dá o peso
+        // visual que só a nuvem de pontos não tinha.
+        const nucleoGeo = new THREE.IcosahedronGeometry(2.1, 1);
+        const nucleoMat = new THREE.MeshBasicMaterial({ color: 0xf0a334, wireframe: true, transparent: true, opacity: 0.5 });
+        const nucleo = new THREE.Mesh(nucleoGeo, nucleoMat);
+        nucleo.position.set(3.6, -0.6, -2.2);
+        scene.add(nucleo);
+
+        const brilhoGeo = new THREE.IcosahedronGeometry(2.5, 1);
+        const brilhoMat = new THREE.MeshBasicMaterial({ color: 0xf0a334, wireframe: true, transparent: true, opacity: 0.14 });
+        const brilho = new THREE.Mesh(brilhoGeo, brilhoMat);
+        brilho.position.copy(nucleo.position);
+        scene.add(brilho);
+
         let mouseX = 0, mouseY = 0;
         window.addEventListener('mousemove', (e) => {
             mouseX = (e.clientX / window.innerWidth - 0.5);
@@ -1507,10 +1658,73 @@ footer a:hover { color: var(--amber); }
             nuvem.rotation.x = mouseY * 0.2;
             rede.rotation.y = nuvem.rotation.y;
             rede.rotation.x = nuvem.rotation.x;
+            nucleo.rotation.x = t * 0.00012;
+            nucleo.rotation.y = t * 0.00018 + mouseX * 0.4;
+            brilho.rotation.copy(nucleo.rotation);
             renderer.render(scene, camera);
         }
         requestAnimationFrame(animar);
     });
+
+    // ---- Cursor customizado + spotlight — anel com atraso (lerp) seguindo
+    // o mouse, crescendo sobre links/botões; spotlight é um brilho amber
+    // fraco que acompanha o cursor por cima da página inteira.
+    (function () {
+        if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        const dot = document.getElementById('cursor-dot');
+        const ring = document.getElementById('cursor-ring');
+        const spot = document.getElementById('spotlight');
+        if (!dot || !ring) return;
+        document.body.classList.add('cursor-ready');
+
+        let mx = window.innerWidth / 2, my = window.innerHeight / 2;
+        let rx = mx, ry = my;
+        window.addEventListener('mousemove', (e) => {
+            mx = e.clientX; my = e.clientY;
+            dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%,-50%)`;
+            if (spot) {
+                spot.style.setProperty('--sx', mx + 'px');
+                spot.style.setProperty('--sy', my + 'px');
+            }
+        }, { passive: true });
+
+        function anelSegue() {
+            rx += (mx - rx) * 0.18;
+            ry += (my - ry) * 0.18;
+            ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%,-50%)`;
+            requestAnimationFrame(anelSegue);
+        }
+        requestAnimationFrame(anelSegue);
+
+        document.querySelectorAll('a, button, .mcc-tab').forEach(el => {
+            el.addEventListener('mouseenter', () => ring.classList.add('is-big'));
+            el.addEventListener('mouseleave', () => ring.classList.remove('is-big'));
+        });
+    })();
+
+    // ---- Barra de progresso do "Como funciona" — enche conforme a
+    // seção do ciclo passa pela tela (não é só um scroll bar genérico,
+    // acompanha exatamente o range da própria seção).
+    (function () {
+        const secao = document.getElementById('cycle-secao');
+        const barra = document.getElementById('cycle-fill');
+        if (!secao || !barra) return;
+        let ticking = false;
+        function atualizar() {
+            const rect = secao.getBoundingClientRect();
+            const vh = window.innerHeight;
+            const total = rect.height + vh * 0.6;
+            const percorrido = vh * 0.8 - rect.top;
+            const progresso = Math.min(Math.max(percorrido / total, 0), 1);
+            barra.style.width = (progresso * 100).toFixed(1) + '%';
+            ticking = false;
+        }
+        window.addEventListener('scroll', () => {
+            if (!ticking) { requestAnimationFrame(atualizar); ticking = true; }
+        }, { passive: true });
+        atualizar();
+    })();
 
     // ---- Service worker (PWA) ----
     if ('serviceWorker' in navigator) {
