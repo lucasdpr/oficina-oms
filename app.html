@@ -431,56 +431,51 @@
         <i class="fas fa-eye"></i> Modo Visitante
     </button>
 
+    <!-- 🆕 Explicação de 1º acesso — antes vivia dentro do card
+         (login-explicativo), competindo por atenção com o formulário.
+         Mudou pra cá, um cartão discreto de apoio embaixo do botão de
+         Visitante, fora do fluxo principal de quem já sabe a senha. -->
+    <div class="login-ajuda-primeiro-acesso">
+        <i class="fas fa-circle-info"></i>
+        <span><strong>1º acesso?</strong> Digite sua matrícula nos dois campos — o sistema pede pra você criar uma senha nova na hora.</span>
+    </div>
+
     <!-- Fundo de Lingotamento Contínuo -->
     <div class="login-bg-imagem"></div>
     <div class="login-bg-overlay"></div>
-    
+    <div class="login-bg-circuito" aria-hidden="true"></div>
+
     <!-- Painel Central -->
     <div class="login-card-central">
         <div class="login-logo-factory">
             <svg viewBox="0 0 24 24"><path d="M4,18V11.42L8.27,4H14V11H18V14H20V18H4M2,22V20H22V22H2M12,13H10V15H12V13M16,13H14V15H16V13M12,16H10V18H12V16M16,16H14V18H16V16Z"/></svg>
         </div>
-        
+
         <div class="login-card-header">
             <h1>SISTEMA OMS</h1>
             <p>Aciaria - Lingotamento Contínuo</p>
         </div>
 
-        <div class="login-explicativo">
-            <div class="login-explicativo-passo">
-                <span class="login-explicativo-numero">1</span>
-                <span><strong>1º acesso:</strong> digite sua matrícula nos dois campos (matrícula = senha temporária).</span>
-            </div>
-            <div class="login-explicativo-passo">
-                <span class="login-explicativo-numero">2</span>
-                <span>O sistema vai pedir pra você criar uma <strong>senha definitiva</strong> na hora.</span>
-            </div>
-            <div class="login-explicativo-passo">
-                <span class="login-explicativo-numero">3</span>
-                <span>Nos próximos acessos, use matrícula + a <strong>senha nova</strong> que você criou.</span>
-            </div>
-        </div>
-        
         <div class="login-industrial-form">
             <!-- Campo 1: Matrícula (Login) -->
             <div class="login-form-group">
-                <label>Matrícula (ex: CBK3574)</label>
+                <label>Matrícula</label>
                 <div class="login-input-wrapper">
                     <input type="text" id="login-nome" placeholder="Digite sua matrícula" autocapitalize="characters" autocomplete="off" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()" onblur="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter'){event.preventDefault(); document.getElementById('login-matricula').focus();}">
                     <i class="fas fa-id-badge login-input-icon"></i>
                 </div>
             </div>
-            
+
             <!-- Campo 2: Senha -->
             <div class="login-form-group">
-                <label>Senha (1º acesso = sua própria matrícula)</label>
+                <label>Senha</label>
                 <div class="login-input-wrapper">
-                    <input type="password" id="login-matricula" placeholder="Senha (ou matrícula no 1º acesso)" autocapitalize="characters" autocomplete="off" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()" onblur="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.processarAutenticacaoHome();}">
+                    <input type="password" id="login-matricula" placeholder="Sua senha" autocapitalize="characters" autocomplete="off" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()" onblur="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.processarAutenticacaoHome();}">
                     <i class="fas fa-lock login-input-icon"></i>
                     <i class="fas fa-eye login-input-icon-toggle" id="toggle-senha-icon" onclick="window.alternarVisibilidadeSenha()" style="cursor:pointer; pointer-events:auto;"></i>
                 </div>
             </div>
-            
+
             <!-- Botão Entrar -->
             <button type="button" class="login-btn-submit" onclick="window.processarAutenticacaoHome()">
                 <i class="fas fa-power-off"></i> Autenticar Terminal
