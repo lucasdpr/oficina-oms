@@ -602,6 +602,13 @@
             <nav class="sidebar-nav">
                 <a href="#" id="nav-painel" class="nav-link active" onclick="window.abrirAba(event,'aba-painel')"><i class="fas fa-chart-pie"></i> Painel Geral OMS</a>
                 <a href="#" id="nav-tecnico" class="nav-link" style="color:#22c55e;" onclick="window.abrirAba(event,'aba-tecnico')"><i class="fas fa-hard-hat"></i> Painel do Técnico</a>
+                <!-- 🆕 Atalho direto pra área do PRÓPRIO técnico (ver
+                     aplicarRestricaoNavTecnico em script.js, que descobre a
+                     área pelo OPERADOR_LOGADO e preenche o nome aqui) — sem
+                     isso, um técnico restrito só via "Painel do Técnico" e
+                     tinha que ADM/supervisor abrir a área dele pra ele
+                     mesmo acessar o quadro de atividades/materiais/equipe. -->
+                <a href="#" id="nav-area-oficina" class="nav-link hidden" style="color:#fb923c;" data-area="" onclick="window.abrirAreaOficinaDireto(event, this.dataset.area)"><i class="fas fa-people-carry-box"></i> <span data-area-nome>Minha Área</span></a>
                 <a href="#" id="nav-oficina" class="nav-link" onclick="window.abrirAba(event,'aba-oficina')"><i class="fas fa-industry"></i> 🏭 Central de Áreas</a>
                 <!-- 🆕 Central de Notificações — só supervisor/ADM/admin do
                      sistema (ver ativarCentralNotificacoesSeAutorizado em
@@ -1599,6 +1606,48 @@
             <div style="display:flex; gap:8px;">
                 <input id="conversa-atividade-texto" class="premium-input" style="flex:1;" placeholder="Escreva uma mensagem..." onkeydown="if(event.key==='Enter'){window.enviarMensagemConversaAtividade();}">
                 <button class="btn-premium btn-success" onclick="window.enviarMensagemConversaAtividade()"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🆕 Modal "Criar Aviso" — ADM cria um comunicado (ver
+         window.abrirModalCriarAviso/salvarNovoAviso em script.js). -->
+    <div id="modal-criar-aviso" class="modal-overlay hidden" style="z-index:10002;">
+        <div class="modal-content" style="max-width:520px; text-align:left;">
+            <h2 style="color:var(--text-heading); margin-bottom:14px;"><i class="fas fa-bullhorn"></i> Novo Aviso</h2>
+            <p class="text-muted" style="font-size:11.5px; margin-bottom:14px;">
+                Todo colaborador vai ver isso ao entrar no sistema e vai precisar confirmar que leu antes de continuar.
+            </p>
+            <div class="input-group" style="margin-bottom:12px;">
+                <label>Título</label>
+                <input id="aviso-novo-titulo" class="premium-input" placeholder="Ex: Treinamento disponível">
+            </div>
+            <div class="input-group" style="margin-bottom:16px;">
+                <label>Mensagem</label>
+                <textarea id="aviso-novo-mensagem" class="premium-textarea" rows="5" placeholder="Ex: Já está disponível o treinamento de segurança do novo procedimento de Bow. Procure seu supervisor pra saber o horário."></textarea>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+                <button class="btn-outline-danger" style="padding:8px 14px;" onclick="window.fecharModalCriarAviso()">Cancelar</button>
+                <button class="btn-premium btn-success" style="padding:8px 16px;" onclick="window.salvarNovoAviso()"><i class="fas fa-paper-plane"></i> Publicar Aviso</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🆕 Modal "Aviso Pendente" — leitura OBRIGATÓRIA ao entrar (ver
+         window.verificarAvisosPendentes/confirmarLeituraAvisoPendente em
+         script.js). De propósito SEM botão de fechar/X e SEM
+         onclick="fecharModal()" no overlay — não dá pra pular sem
+         confirmar que leu. -->
+    <div id="modal-aviso-pendente" class="modal-overlay hidden" data-leitura-obrigatoria="1" style="z-index:10003;">
+        <div class="modal-content" style="max-width:480px; text-align:left;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <i class="fas fa-bullhorn" style="color:var(--warning); font-size:20px;"></i>
+                <span class="text-muted" style="font-size:11px; text-transform:uppercase; letter-spacing:0.04em;">Aviso do Sistema <span id="aviso-pendente-contador"></span></span>
+            </div>
+            <h2 id="aviso-pendente-titulo" style="color:var(--text-heading); margin-bottom:12px;"></h2>
+            <p id="aviso-pendente-mensagem" style="color:var(--text-body); font-size:14px; white-space:pre-wrap; margin-bottom:20px;"></p>
+            <div style="display:flex; justify-content:flex-end;">
+                <button id="btn-confirmar-leitura-aviso" class="btn-premium btn-success" onclick="window.confirmarLeituraAvisoPendente()"><i class="fas fa-check"></i> Entendi, já li</button>
             </div>
         </div>
     </div>
