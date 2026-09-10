@@ -931,7 +931,11 @@ const ESPACO_HORIZONTAL = 1.55;
 // altura, um do lado do outro). O empilhamento vertical genérico
 // continua existindo como fallback, só pra não sumir da tela se um dia
 // aparecer algum slot novo de 'cabeceira' que não seja nenhum desses 4.
-const LATERAL_OSCILADOR = 1.3;
+// LATERAL_OSCILADOR está definido mais abaixo, junto dos blocos 3D
+// menores criados especificamente pra essa fileira (blocoGeoBenderLateral/
+// blocoGeoOsciladorLateral) — o mesmo valor usado aqui pra POSICIONAR os
+// blocos é derivado de lá, pra nunca ficar desalinhado do TAMANHO real
+// deles.
 
 function calcularTransformacoesMCC4(slots) {
     const centro = new THREE.Vector3(RAIO_CURVA, TOPO_Y, 0);
@@ -1209,6 +1213,19 @@ scene.add(grupoLinha);
 
 const blocoGeoCabeceira = new RoundedBoxGeometry(1.1, 1.55, 1.55, 3, 0.09);
 const blocoGeoPadrao = new RoundedBoxGeometry(1.28, 0.62, 1.35, 3, 0.07);
+
+// 🆕 Bender/Oscilador da fileira lateral (MCC4): blocos mais estreitos do
+// que o bloco de cabeceira padrão (1.55 de largura, depois de girar -90°)
+// pra que os 3 lado a lado (Oscilador + Bender + Oscilador) caibam dentro
+// da MESMA largura do Molde/Horizontal, em vez de "estourar" pros lados —
+// exatamente o que a área pediu. O 2º parâmetro é a largura real (mundo)
+// depois da rotação -90° (ver blocoGeoCabeceira acima, mesma lógica).
+const blocoGeoBenderLateral = new RoundedBoxGeometry(1.1, 0.7, 1.55, 3, 0.06);
+const blocoGeoOsciladorLateral = new RoundedBoxGeometry(0.9, 0.42, 1.2, 3, 0.04);
+// Soma das 3 larguras (0.42 + 0.7 + 0.42 = 1.54) ≈ largura do bloco de
+// cabeceira padrão (1.55) — por isso o Molde por cima "cobre" a fileira
+// toda, do jeito que a área mostrou no print de referência.
+const LATERAL_OSCILADOR = 0.7 / 2 + 0.42 / 2;
 
 // 🆕 "Gaiola de rolos" aberta — como o equipamento real da MCC4 (curva
 // e mesa horizontal): duas metades separadas por um vão no meio, por
@@ -1564,7 +1581,16 @@ function construirCena(veio) {
 
         let geo;
         if (mcc4) {
-            geo = slot.grupo === 'cabeceira' ? blocoGeoCabeceira : blocoGeoPadraoAberto;
+            if (slot.grupo === 'cabeceira') {
+                // 🆕 Bender e Oscilador (N/S), na fileira lateral, usam
+                // blocos mais estreitos — só o Molde (em cima, sozinho)
+                // mantém o bloco de cabeceira padrão, do tamanho normal.
+                if (slot.id.startsWith('BND')) geo = blocoGeoBenderLateral;
+                else if (slot.id.includes('OSC-')) geo = blocoGeoOsciladorLateral;
+                else geo = blocoGeoCabeceira;
+            } else {
+                geo = blocoGeoPadraoAberto;
+            }
         } else {
             geo = ehGrupoMCC23 ? blocoGeoPadraoAberto : (slot.grupo === 'cabeceira' ? blocoGeoPadrao : cilindroCadeiraGeo);
         }
