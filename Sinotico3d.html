@@ -954,10 +954,20 @@ function calcularTransformacoesMCC4(slots) {
     // Só o Molde continua alimentando a linha pra baixo — Bender e os 2
     // Osciladores agora ficam lado a lado, então ficam RETOS (sem
     // rotação em Z), senão aparecem virados de lado.
-    if (molde) { molde.pos = new THREE.Vector3(0, TOPO_Y + ESPACO_CABECEIRA, 0); molde.rotZ = -Math.PI / 2; }
-    if (bender) { bender.pos = new THREE.Vector3(0, TOPO_Y, 0); bender.rotZ = 0; }
-    if (oscN) { oscN.pos = new THREE.Vector3(-LATERAL_OSCILADOR, TOPO_Y, 0); oscN.rotZ = 0; }
-    if (oscS) { oscS.pos = new THREE.Vector3(LATERAL_OSCILADOR, TOPO_Y, 0); oscS.rotZ = 0; }
+    //
+    // 🐛 CORRIGIDO ("Bender entrando dentro do Bow #1"): tirar Oscilador
+    // Norte/Sul do empilhamento vertical antigo (eram 2 dos 4 itens
+    // empilhados) deixou o Bender BEM mais perto do início da curva do
+    // que ele estava antes (ele "desceu" o equivalente a 2 espaços
+    // vazios). GAP_FILEIRA_CABECEIRA repõe essa distância, afastando só
+    // a fileira (Molde/Bender/Osciladores) do topo — a curva/Bow/etc
+    // continuam exatamente nas mesmas posições de sempre.
+    const GAP_FILEIRA_CABECEIRA = ESPACO_CABECEIRA;
+    const yFileira = TOPO_Y + GAP_FILEIRA_CABECEIRA;
+    if (molde) { molde.pos = new THREE.Vector3(0, yFileira + ESPACO_CABECEIRA, 0); molde.rotZ = -Math.PI / 2; }
+    if (bender) { bender.pos = new THREE.Vector3(0, yFileira, 0); bender.rotZ = 0; }
+    if (oscN) { oscN.pos = new THREE.Vector3(-LATERAL_OSCILADOR, yFileira, 0); oscN.rotZ = 0; }
+    if (oscS) { oscS.pos = new THREE.Vector3(LATERAL_OSCILADOR, yFileira, 0); oscS.rotZ = 0; }
 
     // Fallback: qualquer outro slot 'cabeceira' não coberto acima (não
     // deveria acontecer no layout atual) cai de volta pro empilhamento
