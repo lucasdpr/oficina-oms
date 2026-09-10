@@ -924,21 +924,47 @@ const TOPO_Y = 7.5;
 const ESPACO_CABECEIRA = 1.08; // encostados: a altura real do bloco após girar -90° vem do parâmetro de largura (1.1) da geometria
 const ESPACO_HORIZONTAL = 1.55;
 
+// 🔧 AJUSTADO ("Oscilador não fica empilhado, fica do lado"): a área
+// confirmou que a cabeceira real da MCC4 NÃO é um empilhamento vertical
+// puro — é Molde em cima, e por baixo dele uma fileira lateral: Oscilador
+// Norte à esquerda, Bender no centro, Oscilador Sul à direita (mesma
+// altura, um do lado do outro). O empilhamento vertical genérico
+// continua existindo como fallback, só pra não sumir da tela se um dia
+// aparecer algum slot novo de 'cabeceira' que não seja nenhum desses 4.
+const LATERAL_OSCILADOR = 1.3;
+
 function calcularTransformacoesMCC4(slots) {
     const centro = new THREE.Vector3(RAIO_CURVA, TOPO_Y, 0);
     const nCurva = slots.filter(s => s.grupo === 'curva').length;
 
-    let cabIdx = 0, curvaIdx = 0, horIdx = 0;
+    let curvaIdx = 0, horIdx = 0;
     let fimCurvaPos = null, fimCurvaAngulo = 0;
+
+    const molde = slots.find(s => s.grupo === 'cabeceira' && s.id.startsWith('MLD'));
+    const bender = slots.find(s => s.grupo === 'cabeceira' && s.id.startsWith('BND'));
+    const oscN = slots.find(s => s.grupo === 'cabeceira' && s.id.includes('OSC-N'));
+    const oscS = slots.find(s => s.grupo === 'cabeceira' && s.id.includes('OSC-S'));
+
+    if (molde) { molde.pos = new THREE.Vector3(0, TOPO_Y + ESPACO_CABECEIRA, 0); molde.rotZ = -Math.PI / 2; }
+    if (bender) { bender.pos = new THREE.Vector3(0, TOPO_Y, 0); bender.rotZ = -Math.PI / 2; }
+    if (oscN) { oscN.pos = new THREE.Vector3(-LATERAL_OSCILADOR, TOPO_Y, 0); oscN.rotZ = -Math.PI / 2; }
+    if (oscS) { oscS.pos = new THREE.Vector3(LATERAL_OSCILADOR, TOPO_Y, 0); oscS.rotZ = -Math.PI / 2; }
+
+    // Fallback: qualquer outro slot 'cabeceira' não coberto acima (não
+    // deveria acontecer no layout atual) cai de volta pro empilhamento
+    // vertical simples, só pra continuar visível.
+    let cabIdxFallback = 0;
+    slots.forEach(slot => {
+        if (slot.grupo === 'cabeceira' && !slot.pos) {
+            cabIdxFallback++;
+            slot.pos = new THREE.Vector3(0, TOPO_Y - cabIdxFallback * ESPACO_CABECEIRA, 0);
+            slot.rotZ = -Math.PI / 2;
+        }
+    });
 
     slots.forEach(slot => {
         if (slot.grupo === 'cabeceira') {
-            // Empilhados verticalmente acima do início da curva (Molde em cima, Bender embaixo)
-            const nCab = slots.filter(s => s.grupo === 'cabeceira').length;
-            const y = TOPO_Y + (nCab - cabIdx) * ESPACO_CABECEIRA;
-            slot.pos = new THREE.Vector3(0, y, 0);
-            slot.rotZ = -Math.PI / 2; // vertical, alimentando pra baixo
-            cabIdx++;
+            // já posicionado acima
         } else if (slot.grupo === 'curva') {
             const t = (curvaIdx + 0.5) / nCurva;
             const phi = Math.PI + t * (Math.PI / 2); // 180° -> 270°
