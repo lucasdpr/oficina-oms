@@ -4506,3 +4506,58 @@ textarea,
         padding-left: 14px !important;
     }
 }
+
+/* ==========================================================================
+   MOBILE — botões de fechar/voltar mais visíveis + folga na Central de
+   Notificações.
+
+   🐛 CORRIGIDO ("botão de sair parece um quadrado apagado"): .btn-close-
+   -emergency é usado em TODO o app (voltar de área, fechar Folhão,
+   fechar chat, fechar checklist, etc.) com fundo quase preto translúcido
+   sobre um card já escuro — no mobile isso vira um retângulo sem
+   contraste nenhum, só o ícone (às vezes nem ele) aparece. Aqui ele
+   ganha formato circular, tamanho de toque decente (44px, mínimo
+   recomendado) e contraste real, sem mudar nada no desktop (regra só
+   entra em telas <=768px).
+   ========================================================================== */
+@media (max-width: 768px) {
+  .btn-close-emergency {
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.14);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .btn-close-emergency:hover,
+  .btn-close-emergency:active {
+    background: rgba(239, 68, 68, 0.24);
+  }
+
+  /* Card de notificação: no celular a densidade da versão desktop
+     (feita pra tela larga, com várias colunas de contexto por perto)
+     vira texto embolado — referência, hora, descrição e autor grudados.
+     Aqui ganha mais respiro vertical e fontes um pouco maiores, sem
+     mexer no layout/densidade do desktop. */
+  .notificacoes-item {
+    gap: 12px;
+    padding: 12px;
+    align-items: flex-start;
+  }
+  .notificacoes-item-topo {
+    margin-bottom: 6px;
+  }
+  .notificacoes-item-linha {
+    font-size: 13.5px;
+    line-height: 1.4;
+    white-space: normal; /* no desktop trunca em 1 linha; no mobile deixa quebrar — cortar com "..." some com contexto que o polegar não vai conseguir ver sem clicar */
+    margin-bottom: 4px;
+  }
+}
