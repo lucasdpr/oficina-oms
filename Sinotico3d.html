@@ -977,10 +977,19 @@ function calcularTransformacoesMCC4(slots) {
         const topoBow1 = posYBow1 + meiaAlturaBow1;
         yFileira = topoBow1 + BENDER_HALF_Y;
     }
+    // 🐛 CORRIGIDO ("eixo errado — X é a direção que a curva percorre"):
+    // a curva inteira (Bow/Straightener/Horizontal) vive no plano X-Y —
+    // todo ponto dela tem Z=0 (ver `centro`/`phi` acima, só mexem em X e
+    // Y). Deslocar o Oscilador no eixo X colocava ele NA MESMA direção
+    // que a linha percorre — por isso ele brigava de espaço com o Bow
+    // #1, e a "fileira" nunca conseguia ficar de lado de verdade. Z é o
+    // único eixo que a curva não usa, então é o eixo certo pra lateral
+    // (esquerda/direita de verdade) — Molde/Bender ficam centrados em
+    // Z=0, Oscilador Norte/Sul deslocam pra +Z/-Z.
     if (molde) { molde.pos = new THREE.Vector3(0, yFileira + ESPACO_CABECEIRA, 0); molde.rotZ = -Math.PI / 2; }
     if (bender) { bender.pos = new THREE.Vector3(0, yFileira, 0); bender.rotZ = 0; }
-    if (oscN) { oscN.pos = new THREE.Vector3(-LATERAL_OSCILADOR, yFileira, 0); oscN.rotZ = 0; }
-    if (oscS) { oscS.pos = new THREE.Vector3(LATERAL_OSCILADOR, yFileira, 0); oscS.rotZ = 0; }
+    if (oscN) { oscN.pos = new THREE.Vector3(0, yFileira, -LATERAL_OSCILADOR); oscN.rotZ = 0; }
+    if (oscS) { oscS.pos = new THREE.Vector3(0, yFileira, LATERAL_OSCILADOR); oscS.rotZ = 0; }
 
     // Fallback: qualquer outro slot 'cabeceira' não coberto acima (não
     // deveria acontecer no layout atual) cai de volta pro empilhamento
@@ -1242,19 +1251,20 @@ scene.add(grupoLinha);
 const blocoGeoCabeceira = new RoundedBoxGeometry(1.1, 1.55, 1.55, 3, 0.09);
 const blocoGeoPadrao = new RoundedBoxGeometry(1.28, 0.62, 1.35, 3, 0.07);
 
-// 🆕 Bender/Oscilador da fileira lateral (MCC4): blocos mais estreitos do
-// que o bloco de cabeceira padrão (1.55 de largura) pra que os 3 lado a
+// 🆕 Bender/Oscilador da fileira lateral (MCC4): blocos mais estreitos no
+// eixo Z (o eixo lateral de verdade — ver comentário em
+// calcularTransformacoesMCC4 sobre por que Z, não X) pra que os 3 lado a
 // lado (Oscilador + Bender + Oscilador) caibam dentro da MESMA largura
-// do Molde/Horizontal, em vez de "estourar" pros lados — exatamente o
-// que a área pediu. Diferente de blocoGeoCabeceira, estes NÃO giram em Z
-// (ficam retos, não "de lado" — ver calcularTransformacoesMCC4), então o
-// 1º parâmetro já É a largura real (mundo), sem precisar levar rotação
-// em conta.
-const blocoGeoBenderLateral = new RoundedBoxGeometry(0.7, 1.1, 1.55, 3, 0.06);
-const blocoGeoOsciladorLateral = new RoundedBoxGeometry(0.42, 0.9, 1.2, 3, 0.04);
-// Soma das 3 larguras (0.42 + 0.7 + 0.42 = 1.54) ≈ largura do bloco de
-// cabeceira padrão (1.55) — por isso o Molde por cima "cobre" a fileira
-// toda, do jeito que a área mostrou no print de referência.
+// do Molde/Horizontal, em vez de "estourar" pros lados. RoundedBoxGeometry
+// é (X, Y, Z) = (largura ao longo da linha, altura, largura lateral) —
+// esses blocos NÃO giram (ficam retos), então cada parâmetro já é a
+// dimensão real no mundo, sem precisar levar rotação em conta.
+const blocoGeoBenderLateral = new RoundedBoxGeometry(1.1, 1.1, 0.7, 3, 0.06);
+const blocoGeoOsciladorLateral = new RoundedBoxGeometry(0.9, 0.9, 0.42, 3, 0.04);
+// Soma das 3 larguras LATERAIS, em Z (0.42 + 0.7 + 0.42 = 1.54) ≈ largura
+// (Z) do bloco de cabeceira padrão (1.55) — por isso o Molde por cima
+// "cobre" a fileira toda, do jeito que a área mostrou no print de
+// referência.
 const LATERAL_OSCILADOR = 0.7 / 2 + 0.42 / 2;
 
 // 🆕 "Gaiola de rolos" aberta — como o equipamento real da MCC4 (curva
