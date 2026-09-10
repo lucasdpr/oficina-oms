@@ -95,10 +95,17 @@ export async function resolverApiBase() {
 // ==========================================================================
 export function getOrdemPadrao(tipo) {
     if (tipo === "Molde") return 10;
+    // 🆕 Oscilador (MCC4) e Mesa Osciladora (MCC2/3): ainda não existem
+    // fisicamente em nenhum veio (equipamento futuro) — números de
+    // "ordem" só provisórios, pra ficarem entre Molde e o próximo item
+    // (Bender/Segmento Zero), do jeito que a área descreveu (ensanduichado
+    // embaixo do Molde). Ajustar quando o cadastro real chegar.
+    if (tipo === "Mesa Osciladora") return 15;
     if (tipo === "Segmento Zero") return 30;
     if (tipo === "Grupo 1") return 31;
     if (tipo === "Grupo 2") return 32;
     if (tipo === "Grupo 3") return 33;
+    if (tipo === "Oscilador") return 35;
     if (tipo === "Bender") return 40;
     if (tipo === "Cadeira Superior") return 100;
     if (tipo === "Cadeira Inferior") return 200;
@@ -126,7 +133,14 @@ const TRADUCAO_TIPO = {
     "CADEIRA INF": "Cadeira Inferior",
     "GRUPO 1": "Grupo 1",
     "GRUPO 2": "Grupo 2",
-    "GRUPO 3": "Grupo 3"
+    "GRUPO 3": "Grupo 3",
+    // 🆕 Oscilador/Mesa Osciladora: entram aqui já pensando num futuro
+    // import de planilha (hoje o cadastro é manual, direto com o nome
+    // canônico — ver app.html #add-tipo — então esta tradução ainda não
+    // é exercitada, mas fica pronta pro dia que a planilha ganhar essas
+    // colunas).
+    "OSCILADOR": "Oscilador",
+    "MESA OSCILADORA": "Mesa Osciladora"
 };
 
 export function traduzirTipo(tipoBruto) {
@@ -152,6 +166,13 @@ function gerarLabelPosicao(tipoCanonico, idSistema) {
     if (tipoCanonico === "Molde") return "Molde";
     if (tipoCanonico === "Bender") return "Dobrador (Bender)";
     if (tipoCanonico === "Segmento Zero") return "Segmento Zero";
+    // 🆕 Oscilador: 2 unidades por veio (Norte/Sul) — id de sistema
+    // termina em "-N" ou "-S" (ver ID provisório OSC-N/OSC-S).
+    if (tipoCanonico === "Oscilador") {
+        const lado = partes[1] === 'N' ? 'Norte' : partes[1] === 'S' ? 'Sul' : (partes[1] || '');
+        return `Oscilador ${lado}`.trim();
+    }
+    if (tipoCanonico === "Mesa Osciladora") return "Mesa Osciladora";
     if (tipoCanonico.startsWith("Grupo")) return tipoCanonico;
     return idSistema;
 }
@@ -316,6 +337,11 @@ function gerarPosicaoFixa(idSistema, tipoCanonico, contadorGrupoPorVeio, veio) {
 
     if (prefixo === "MLD") return "MOLDE";
     if (prefixo === "BND") return "BENDER";
+    // 🆕 Oscilador (MCC4, provisório): pool de 6 unidades (OS1..OS6) que
+    // ocupam 2 vagas fixas por veio — Norte/Sul — via Swap, igual Bow.
+    // Mesa Osciladora (MCC2/3, provisório): vaga fixa única por veio.
+    if (prefixo === "OSC") return `OSC-${partes[1]}`; // OSC-N / OSC-S
+    if (prefixo === "MES") return "MESA-OSC";
     if (prefixo === "BOW") return `BOW-${partes[1]}`;
     if (prefixo === "STR") return `STR-${partes[1]}`;
     if (prefixo === "HOR") return `HOR-${partes[1]}`;
@@ -391,7 +417,7 @@ function inferirMccCompat(peca, tipoCanonico) {
 
     // Não instalada (Reserva/Reparo): a maioria dos tipos só existe numa
     // família só, então dá pra confiar 100% no tipo, sem ambiguidade.
-    const SOMENTE_MCC4 = ["Bender", "Bow", "Horizontal", "Straightener"];
+    const SOMENTE_MCC4 = ["Bender", "Bow", "Horizontal", "Straightener", "Oscilador"];
     const SOMENTE_MCC23 = [
         "Segmento Zero", "Cadeira Superior", "Cadeira Inferior",
         "Grupo 1", "Grupo 2", "Grupo 3",

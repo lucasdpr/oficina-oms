@@ -769,6 +769,11 @@ function slotKeyDoIdFixo(idFixo) {
     const prefixo = partes[0];
     if (prefixo === 'MLD') return 'MOLDE';
     if (prefixo === 'BND') return 'BENDER';
+    // 🆕 Oscilador (MCC4, provisório): pool de 6 unidades (OS1..OS6) que
+    // ocupam 2 vagas fixas por veio — Norte/Sul — igual as 5 do Bow.
+    // Mesa Osciladora (MCC2/3, provisório): vaga fixa única por veio.
+    if (prefixo === 'OSC') return `OSC-${partes[1]}`;
+    if (prefixo === 'MES') return 'MESA-OSC';
     if (prefixo === 'BOW') return `BOW-${partes[1]}`;
     if (prefixo === 'STR') return `STR-${partes[1]}`;
     if (prefixo === 'HOR') return `HOR-${partes[1]}`;
@@ -895,6 +900,11 @@ function calcularTransformacoes(slots) {
 function construirLayoutSlotsMCC4(veio) {
     const slots = [];
     slots.push({ id: `MLD-4${veio}`, label: 'MOLDE', grupo: 'cabeceira' });
+    // 🆕 Oscilador — provisório, equipamento ainda não existe
+    // fisicamente em nenhum veio: pool de 6 unidades (OS1..OS6, 4
+    // ativas + 2 reserva) que ocupam estas 2 vagas fixas via Swap.
+    slots.push({ id: `OSC-N-4${veio}`, label: 'OSC-N', grupo: 'cabeceira' });
+    slots.push({ id: `OSC-S-4${veio}`, label: 'OSC-S', grupo: 'cabeceira' });
     slots.push({ id: `BND-4${veio}`, label: 'BENDER', grupo: 'cabeceira' });
     for (let n = 1; n <= 5; n++) slots.push({ id: `BOW-${n}-4${veio}`, label: `B${n}`, grupo: 'curva' });
     slots.push({ id: `STR-1-4${veio}`, label: 'R1', grupo: 'curva' });
@@ -972,6 +982,9 @@ function calcularTransformacoesMCC4(slots) {
 function construirLayoutSlotsMCC23(veio) {
     const slots = [];
     slots.push({ id: `MLD-2${veio}`, label: 'MOLDE', grupo: 'cabeceira' });
+    // 🆕 Mesa Osciladora — provisório, equipamento ainda não existe
+    // fisicamente em nenhum veio: 1 vaga fixa por veio, monobloco.
+    slots.push({ id: `MES-2${veio}`, label: 'MESA', grupo: 'cabeceira' });
     slots.push({ id: `SEG-0-2${veio}`, label: 'ZERO', grupo: 'cabeceira' });
     slots.push({ id: `GRP1-2${veio}`, label: 'G1', grupo: 'cabeceira' });
     slots.push({ id: `GRP2-1-2${veio}`, label: 'G2-1', grupo: 'cabeceira' });
