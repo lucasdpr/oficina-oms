@@ -1198,7 +1198,8 @@ const metadeBaixo = new RoundedBoxGeometry(1.28, ALTURA_METADE, 1.35, 2, 0.05);
 metadeBaixo.translate(0, -(VAO_PLACA / 2 + ALTURA_METADE / 2), 0);
 const blocoGeoPadraoAberto = mergeGeometries([metadeCima, metadeBaixo]);
 
-// MCC2/3: peças bem menores e mais numerosas (82 por veio, contra 19 da MCC4)
+// MCC2/3: peças bem menores e mais numerosas (82 por veio, contra 21 da MCC4
+// — 19 originais + Oscilador Norte/Sul, provisório)
 // MCC2/3: curva (Molde..Grupo3-3) usa o mesmo bloco "padrão" da MCC4 —
 // o raio novo (6.2) deixa o espaçamento bem parecido, então não precisa
 // de uma geometria própria pra isso.
