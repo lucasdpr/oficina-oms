@@ -204,12 +204,26 @@ window.atualizarRascunhosAtivos = atualizarRascunhosAtivos;
 // ==========================================
 // FUNÇÃO AUXILIAR - ORDEM PADRÃO
 // ==========================================
+// 🆕 Oscilador/Mesa Osciladora medem vida útil em DIAS, não toneladas —
+// mas reaproveitam o mesmo campo "ton"/"meta" que todo o resto do
+// sistema já usa pro cálculo de % de desgaste (ton/meta), pra não
+// precisar duplicar essa conta em todo lugar que ela aparece hoje. Só o
+// RÓTULO precisa mudar pra não fingir que é tonelagem — usado nos
+// cartões de Ativos Críticos e do Painel de Sequenciamento de Veio.
+function rotuloDesgaste(tipo) {
+    return (tipo === "Oscilador" || tipo === "Mesa Osciladora") ? "Vida (dias)" : "Ton";
+}
+
 function getOrdemPadrao(tipo) {
     if (tipo === "Molde") return 10;
+    // 🆕 Oscilador/Mesa Osciladora: mesmos números provisórios usados em
+    // banco.js (getOrdemPadrao) — ver comentário lá.
+    if (tipo === "Mesa Osciladora") return 15;
     if (tipo === "Segmento Zero") return 30;
     if (tipo === "Grupo 1") return 31;
     if (tipo === "Grupo 2") return 32;
     if (tipo === "Grupo 3") return 33;
+    if (tipo === "Oscilador") return 35;
     if (tipo === "Bender") return 40;
     if (tipo === "Cadeira Superior") return 100;
     if (tipo === "Cadeira Inferior") return 200;
@@ -1378,6 +1392,10 @@ window.animarNumero = animarNumero;
 function gerarSlotsMCC23() {
     const slots = [
         { id: "MOLDE", nome: "Molde Convencional", tipo: "Molde" },
+        // 🆕 Mesa Osciladora — provisório, equipamento ainda não existe
+        // fisicamente em nenhum veio (ver conversa de cadastro): 1 vaga
+        // fixa por veio, ensanduichada entre Molde e Segmento Zero.
+        { id: "MESA-OSC", nome: "Mesa Osciladora", tipo: "Mesa Osciladora" },
         { id: "SEG-ZERO", nome: "Segmento Zero", tipo: "Segmento Zero" }
     ];
     for (let i = 1; i <= 6; i++) {
@@ -1398,8 +1416,9 @@ function mapearSlotLegadoMCC23(peca) {
     const id = (peca.id || "").toUpperCase();
     
     if (tipo.includes("MOLDE")) return "MOLDE";
+    if (tipo.includes("MESA OSCILADORA")) return "MESA-OSC";
     if (tipo.includes("ZERO") || tipo.includes("SEG-0")) return "SEG-ZERO";
-    
+
     if (tipo.includes("SEGMENTO") || tipo.includes("SEGMENTO")) {
         const match = id.match(/SEG-?(\d+)/);
         if (match) {
@@ -1428,6 +1447,12 @@ function mapearSlotLegadoMCC23(peca) {
 function gerarSlotsMCC4() {
     return [
         { id: "MOLDE", nome: "Molde Alta Perf.", tipo: "Molde" },
+        // 🆕 Oscilador — provisório, equipamento ainda não existe
+        // fisicamente em nenhum veio: pool de 6 unidades (OS1..OS6, 4
+        // ativas + 2 reserva) que ocupam estas 2 vagas fixas (Norte/Sul)
+        // via Swap, igual as 5 vagas do Bow logo abaixo.
+        { id: "OSC-N", nome: "Oscilador Norte", tipo: "Oscilador" },
+        { id: "OSC-S", nome: "Oscilador Sul", tipo: "Oscilador" },
         { id: "BENDER", nome: "Dobrador (Bender)", tipo: "Bender" },
         { id: "BOW-1", nome: "Curvo Bow #01", tipo: "Bow" },
         { id: "BOW-2", nome: "Curvo Bow #02", tipo: "Bow" },
@@ -1458,7 +1483,12 @@ function mapearSlotLegadoMCC4(peca) {
     
     if (tipoUpper.includes("MOLDE")) return "MOLDE";
     if (tipoUpper.includes("BENDER")) return "BENDER";
-    
+
+    if (tipoUpper.includes("OSCILADOR")) {
+        if (idUpper.includes("-S") || idUpper.includes("SUL")) return "OSC-S";
+        return "OSC-N"; // padrão Norte se não der pra identificar o lado pelo ID
+    }
+
     if (tipoUpper.includes("BOW")) {
         const match = idUpper.match(/BOW-(\d)/);
         if (match) return `BOW-${match[1]}`;
@@ -1654,9 +1684,9 @@ function renderPainelVeios() {
                         <div class="progress-bar bg-${corClass}" style="width: ${Math.min(pct, 100)}%; height: 6px; border-radius: 10px;"></div>
                     </div>
                     <div class="flex-between" style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 12px;">
-                        <span>Ton: <strong class="font-code" style="color: var(--text-heading);">${Number(pecaEncontrada.ton || 0).toLocaleString('pt-BR')}</strong></span>
+                        <span>${rotuloDesgaste(pecaEncontrada.tipo)}: <strong class="font-code" style="color: var(--text-heading);">${Number(pecaEncontrada.ton || 0).toLocaleString('pt-BR')}</strong></span>
                         <span>Lim: <strong class="font-code" style="color: var(--text-heading);">${Number(pecaEncontrada.meta || 0).toLocaleString('pt-BR')}</strong></span>
-                        <span>Dias: <strong class="font-code" style="color: var(--text-heading);">${dias}</strong></span>
+                        ${pecaEncontrada.tipo === "Oscilador" || pecaEncontrada.tipo === "Mesa Osciladora" ? '' : `<span>Dias: <strong class="font-code" style="color: var(--text-heading);">${dias}</strong></span>`}
                     </div>
                     <div class="flex-between gap-10" style="gap: 8px;">
                         <button class="btn-xs-primary" style="flex: 1; padding: 6px; font-size: 0.65rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm);" onclick="window.abrirHistoricoIndividual('${pecaEncontrada.id}')">
@@ -1705,9 +1735,9 @@ function gerarCardGraficoHTML(a) {
                 <div class="ind-gauge-fill" style="width:${Math.min(pct, 100)}%; background:${cor};"></div>
             </div>
             <div class="grafico-legenda" style="margin-bottom: 10px;">
-                <span>Ton: <strong>${Math.round(a.ton || 0).toLocaleString()}</strong></span>
+                <span>${rotuloDesgaste(a.tipo)}: <strong>${Math.round(a.ton || 0).toLocaleString()}</strong></span>
                 <span>Lim: ${(a.meta || 0).toLocaleString()}</span>
-                <span>Dias: <strong>${dias}</strong></span>
+                ${a.tipo === "Oscilador" || a.tipo === "Mesa Osciladora" ? '' : `<span>Dias: <strong>${dias}</strong></span>`}
             </div>
             <button class="btn-xs-primary w-100" style="border: 1px dashed var(--text-accent); color: var(--text-accent); background: rgba(56,189,248,0.05); padding: 8px; border-radius: 4px; cursor: pointer;" onclick="abrirHistoricoIndividual('${a.id}')">
                 <i class="fas fa-book-open"></i> Ver Prontuário
@@ -2372,7 +2402,12 @@ window.atualizarPosicoesCadastro = function() {
         "Segmento Grupo 2": 1650000,
         "Segmento Grupo 3": 1900000,
         "Cadeira Superior": 2000000,
-        "Cadeira Inferior": 2500000
+        "Cadeira Inferior": 2500000,
+        // 🆕 Oscilador/Mesa Osciladora — vida útil medida em DIAS (não
+        // toneladas/corridas, ver campo "meta" reaproveitado pra isso):
+        // 730 = 2 anos, 1095 = 3 anos, conforme a área informou.
+        "Oscilador": 730,
+        "Mesa Osciladora": 1095
     };
 
     if (familia.includes("Molde")) {
@@ -2392,6 +2427,9 @@ window.atualizarPosicoesCadastro = function() {
             for (let i = 1; i <= 5; i++) selectPos.innerHTML += `<option value="${i}">Bow Posição #${i}</option>`;
         } else if (familia === "Straightener R1") selectPos.innerHTML = `<option value="STR-1">Straightener R1 (Única)</option>`;
         else if (familia === "Straightener R2") selectPos.innerHTML = `<option value="STR-2">Straightener R2 (Única)</option>`;
+        else if (familia === "Oscilador") {
+            selectPos.innerHTML = `<option value="N">Oscilador Norte</option><option value="S">Oscilador Sul</option>`;
+        }
         else if (familia === "Horizontal") {
             for (let i = 8; i <= 17; i++) selectPos.innerHTML += `<option value="${i}">Horizontal Posição #${i}</option>`;
         } else selectPos.innerHTML = `<option value="GERAL">Geral / Sem posição fixa</option>`;
@@ -2399,7 +2437,8 @@ window.atualizarPosicoesCadastro = function() {
     else if (mcc === "2/3") {
         if (familia === "Molde") selectPos.innerHTML = `<option value="MOLDE">Molde (Única posição)</option>`;
         else if (familia === "Segmento Zero") selectPos.innerHTML = `<option value="SEG-ZERO">Segmento Zero (Única)</option>`;
-        
+        else if (familia === "Mesa Osciladora") selectPos.innerHTML = `<option value="MESA-OSC">Mesa Osciladora (Única posição)</option>`;
+
         // 🔥 AQUI ESTÃO OS GRUPOS 1, 2 E 3 TRAVADOS NAS POSIÇÕES CORRETAS 🔥
         else if (familia === "Segmento Grupo 1") selectPos.innerHTML = `<option value="1">Segmento #1</option>`;
         else if (familia === "Segmento Grupo 2") {
@@ -2912,6 +2951,9 @@ window.processarCadastroPeca = async function() {
     if (mcc_compat === "4") {
         if (tipoUpper.includes("BOW") && posicao) posicaoFixa = `BOW-${posicao}`;
         else if (tipoUpper.includes("HORIZONTAL") && posicao) posicaoFixa = `HOR-${posicao}`;
+        // 🆕 Oscilador: select já manda "N"/"S" — vira "OSC-N"/"OSC-S",
+        // batendo com os slots fixos de gerarSlotsMCC4().
+        else if (tipoUpper === "OSCILADOR" && posicao) posicaoFixa = `OSC-${posicao}`;
     } else if (mcc_compat === "2/3") {
         if (tipoUpper.includes("CADEIRA SUPERIOR") && posicao) posicaoFixa = `CAD-SUP-${posicao}`;
         else if (tipoUpper.includes("CADEIRA INFERIOR") && posicao) posicaoFixa = `CAD-INF-${posicao}`;
