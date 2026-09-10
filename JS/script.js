@@ -5383,14 +5383,11 @@ window.abrirAreaOficina = async function(chave, abaInicial) {
     renderProcedimentosArea(chave);
 };
 
-// 🐛 CORRIGIDO ("clicar no logo 'OMS Mobile' do cabeçalho mobile
-// sempre voltava pro Painel Geral, mesmo o técnico não tendo acesso
-// a essa visão de ADM"): mesma checagem de "é técnico restrito" já
-// usada em fecharAreaOficina() — técnico volta pro Painel do Técnico,
-// só ADM/visitante continuam indo pro Painel Geral.
+// 🔧 AJUSTADO: clicar no logo "OMS Mobile" do cabeçalho mobile agora
+// sempre volta pra aba Técnico, independente do perfil logado (antes
+// ADM/visitante caíam no Painel Geral).
 window.voltarAoPainelOuTecnico = function() {
-    const restrito = !!(OPERADOR_LOGADO && !OPERADOR_LOGADO.visitante && !OPERADOR_LOGADO.isAdm && OPERADOR_LOGADO.area);
-    window.abrirAba(null, restrito ? 'aba-tecnico' : 'aba-painel');
+    window.abrirAba(null, 'aba-tecnico');
 };
 
 window.fecharAreaOficina = function() {
@@ -7111,6 +7108,25 @@ window.abrirAba = function(event, idAba) {
     if (window.innerWidth <= 992) {
         const sidebar = document.getElementById('sidebar-menu');
         if(sidebar) sidebar.classList.remove('open');
+    }
+
+    // 🆕 CORRIGIDO ("botão/gesto 'voltar' do celular saía do app direto
+    // pra Home em vez de voltar uma ação"): trocar de aba não deixava
+    // rastro nenhum no histórico do navegador, então o primeiro "voltar"
+    // sempre caía na página anterior de verdade (index.html), mesmo que
+    // o técnico só tivesse navegado entre abas dentro do próprio app.
+    // Agora cada troca de aba empilha 1 estado no histórico — o listener
+    // de popstate lá embaixo (mesmo bloco que já tratava modal) usa isso
+    // pra trocar de volta pra aba anterior em vez de sair do app. Quando
+    // É o próprio popstate que está chamando abrirAba (indo pra trás),
+    // `window.__omsRestaurandoAbaViaHistorico` evita empilhar de novo.
+    if (idAba && !window.__omsRestaurandoAbaViaHistorico) {
+        try {
+            const estadoAtual = history.state;
+            if (!estadoAtual || estadoAtual.omsAba !== idAba) {
+                history.pushState({ omsAba: idAba }, '');
+            }
+        } catch (e) { /* ambiente sem History API — segue sem quebrar */ }
     }
 };
 
@@ -9981,11 +9997,22 @@ window.excluirQualidade = async function(id) {
         iniciarObservadorModais();
     }
 
-    window.addEventListener('popstate', () => {
+    window.addEventListener('popstate', (event) => {
         if (consumindoEstadoInterno) return; // popstate gerado por nós mesmos — ignora
 
         const abertos = modaisAbertos();
-        if (abertos.length === 0) return; // nenhum modal aberto — deixa o navegador seguir normal
+        if (abertos.length === 0) {
+            // Nenhum modal aberto — se o estado pro qual voltamos é uma
+            // aba do próprio app, troca pra ela em vez de deixar o
+            // navegador sair da página (ver comentário em abrirAba()).
+            const idAba = event.state && event.state.omsAba;
+            if (idAba && typeof window.abrirAba === 'function' && document.getElementById(idAba)) {
+                window.__omsRestaurandoAbaViaHistorico = true;
+                window.abrirAba(null, idAba);
+                window.__omsRestaurandoAbaViaHistorico = false;
+            }
+            return;
+        }
 
         // Fecha o modal "de cima" (maior z-index calculado) — geralmente
         // o último a ter sido aberto.
