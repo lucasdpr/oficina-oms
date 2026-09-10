@@ -955,15 +955,28 @@ function calcularTransformacoesMCC4(slots) {
     // Osciladores agora ficam lado a lado, então ficam RETOS (sem
     // rotação em Z), senão aparecem virados de lado.
     //
-    // 🐛 CORRIGIDO ("Bender entrando dentro do Bow #1"): tirar Oscilador
-    // Norte/Sul do empilhamento vertical antigo (eram 2 dos 4 itens
-    // empilhados) deixou o Bender BEM mais perto do início da curva do
-    // que ele estava antes (ele "desceu" o equivalente a 2 espaços
-    // vazios). GAP_FILEIRA_CABECEIRA repõe essa distância, afastando só
-    // a fileira (Molde/Bender/Osciladores) do topo — a curva/Bow/etc
-    // continuam exatamente nas mesmas posições de sempre.
-    const GAP_FILEIRA_CABECEIRA = ESPACO_CABECEIRA;
-    const yFileira = TOPO_Y + GAP_FILEIRA_CABECEIRA;
+    // 🐛 CORRIGIDO ("Bender entrando dentro do Bow #1" / "encaixa em cima
+    // do Bow, encostado, sem vão"): em vez de um espaçamento fixo
+    // "chutado", calcula de verdade onde fica o TOPO do bloco do Bow #1
+    // (primeiro segmento da curva) e encosta a fileira exatamente ali —
+    // nem flutuando longe, nem entrando dentro dele. Reaproveita a MESMA
+    // fórmula de posição/rotação usada pra "curva" mais abaixo, só pro
+    // primeiro segmento (curvaIdx=0), antes da fileira ser posicionada.
+    const BOW_HALF_X = 1.28 / 2, BOW_HALF_Y = 0.62 / 2; // metade das dimensões de blocoGeoPadraoAberto (X,Y), antes de girar
+    const BENDER_HALF_Y = 1.1 / 2; // metade da altura (mundo) do Bender/Oscilador nessa fileira — eles não giram mais, ver comentário acima
+    let yFileira = TOPO_Y + ESPACO_CABECEIRA; // fallback, só se por algum motivo não houver curva
+    if (nCurva > 0) {
+        const tBow1 = 0.5 / nCurva;
+        const phiBow1 = Math.PI + tBow1 * (Math.PI / 2);
+        const posYBow1 = centro.y + RAIO_CURVA * Math.sin(phiBow1);
+        const rotZBow1 = Math.atan2(Math.cos(phiBow1), -Math.sin(phiBow1));
+        // Meia-altura do bloco do Bow #1 no mundo, depois de girar (bounding
+        // box do retângulo rotacionado) — é o quanto ele "sobe" a partir do
+        // centro dele até o topo real, já considerando o ângulo da curva.
+        const meiaAlturaBow1 = Math.abs(BOW_HALF_X * Math.sin(rotZBow1)) + Math.abs(BOW_HALF_Y * Math.cos(rotZBow1));
+        const topoBow1 = posYBow1 + meiaAlturaBow1;
+        yFileira = topoBow1 + BENDER_HALF_Y;
+    }
     if (molde) { molde.pos = new THREE.Vector3(0, yFileira + ESPACO_CABECEIRA, 0); molde.rotZ = -Math.PI / 2; }
     if (bender) { bender.pos = new THREE.Vector3(0, yFileira, 0); bender.rotZ = 0; }
     if (oscN) { oscN.pos = new THREE.Vector3(-LATERAL_OSCILADOR, yFileira, 0); oscN.rotZ = 0; }
