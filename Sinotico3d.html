@@ -903,8 +903,13 @@ function construirLayoutSlotsMCC4(veio) {
     // 🆕 Oscilador — provisório, equipamento ainda não existe
     // fisicamente em nenhum veio: pool de 6 unidades (OS1..OS6, 4
     // ativas + 2 reserva) que ocupam estas 2 vagas fixas via Swap.
-    slots.push({ id: `OSC-N-4${veio}`, label: 'OSC-N', grupo: 'cabeceira' });
-    slots.push({ id: `OSC-S-4${veio}`, label: 'OSC-S', grupo: 'cabeceira' });
+    // 🔧 Rótulo curto ("N"/"S" em vez de "OSC-N"/"OSC-S"): com os 3 rótulos
+    // da fileira (Oscilador+Bender+Oscilador) juntos, o nome completo
+    // embolava tudo — clicar no bloco já mostra o nome completo
+    // (Oscilador Norte/Sul) no card/tooltip, o rótulo fixo só precisa
+    // identificar rápido qual é qual.
+    slots.push({ id: `OSC-N-4${veio}`, label: 'N', grupo: 'cabeceira' });
+    slots.push({ id: `OSC-S-4${veio}`, label: 'S', grupo: 'cabeceira' });
     slots.push({ id: `BND-4${veio}`, label: 'BENDER', grupo: 'cabeceira' });
     for (let n = 1; n <= 5; n++) slots.push({ id: `BOW-${n}-4${veio}`, label: `B${n}`, grupo: 'curva' });
     slots.push({ id: `STR-1-4${veio}`, label: 'R1', grupo: 'curva' });
@@ -1260,12 +1265,13 @@ const blocoGeoPadrao = new RoundedBoxGeometry(1.28, 0.62, 1.35, 3, 0.07);
 // esses blocos NÃO giram (ficam retos), então cada parâmetro já é a
 // dimensão real no mundo, sem precisar levar rotação em conta.
 const blocoGeoBenderLateral = new RoundedBoxGeometry(1.1, 1.1, 0.7, 3, 0.06);
-const blocoGeoOsciladorLateral = new RoundedBoxGeometry(0.9, 0.9, 0.42, 3, 0.04);
-// Soma das 3 larguras LATERAIS, em Z (0.42 + 0.7 + 0.42 = 1.54) ≈ largura
-// (Z) do bloco de cabeceira padrão (1.55) — por isso o Molde por cima
-// "cobre" a fileira toda, do jeito que a área mostrou no print de
-// referência.
-const LATERAL_OSCILADOR = 0.7 / 2 + 0.42 / 2;
+// 🔧 Oscilador do MESMO tamanho do Bender (bloco pequeno demais ficava
+// difícil de identificar/clicar do lado do Bender) — mesma geometria,
+// só reaproveitada. Consequência: a fileira toda (0.7+0.7+0.7=2.1) fica
+// mais larga que o Molde (1.55) por cima dela — trade-off aceito, pediu
+// pra aumentar o Oscilador mesmo sabendo que ia estourar a largura.
+const blocoGeoOsciladorLateral = blocoGeoBenderLateral;
+const LATERAL_OSCILADOR = 0.7 / 2 + 0.7 / 2;
 
 // 🆕 "Gaiola de rolos" aberta — como o equipamento real da MCC4 (curva
 // e mesa horizontal): duas metades separadas por um vão no meio, por
