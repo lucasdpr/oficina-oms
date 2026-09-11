@@ -1524,12 +1524,17 @@ function adicionarRolosDecorativos(mesh, peca, ehGrupo23) {
 // METÁLICO PRÓPRIO (nunca a cor de status) — é isso que faz o bloco
 // Horizontal/Curva ler como "peça de verdade" em vez de "um quadrado":
 // contraste real contra o corpo, não só um recorte na mesma cor.
-const moldeJanelaGeo = new THREE.CylinderGeometry(0.19, 0.19, 0.05, 24);
+// 🔧 v3: a v2 exagerou a mão — caixa de comando, janelas e placa
+// saíram grandes demais pro tamanho real do bloco ("ainda muito
+// grande" — feedback do usuário). Tudo abaixo encolhido pra ficar
+// discreto/proporcional, tipo acabamento de detalhe, não uma segunda
+// peça do tamanho do corpo brigando por atenção.
+const moldeJanelaGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.035, 24);
 moldeJanelaGeo.rotateX(Math.PI / 2); // eixo do disco ao longo de Z — Z não muda com a rotação do Molde, então isso já fica certo
 const moldeJanelaMat = new THREE.MeshStandardMaterial({ color: 0x090b10, roughness: 0.35, metalness: 0.3 });
-// Aro claro em volta da janela (bem mais largo e raso) — dá o efeito de
-// "vigia com moldura", em vez de só um círculo escuro murcho na parede.
-const moldeJanelaAroGeo = new THREE.CylinderGeometry(0.25, 0.25, 0.025, 24);
+// Aro claro em volta da janela — dá o efeito de "vigia com moldura",
+// em vez de só um círculo escuro murcho na parede.
+const moldeJanelaAroGeo = new THREE.CylinderGeometry(0.135, 0.135, 0.02, 24);
 moldeJanelaAroGeo.rotateX(Math.PI / 2);
 const moldeJanelaAroMat = new THREE.MeshStandardMaterial({ color: 0x6b7890, roughness: 0.3, metalness: 0.65 });
 
@@ -1539,27 +1544,28 @@ const moldeJanelaAroMat = new THREE.MeshStandardMaterial({ color: 0x6b7890, roug
 // cilindro pra local_X, que é o eixo que de fato vira mundo_Y depois da
 // rotação do Molde (ver comentário grande lá em cima, perto de
 // MOLDE_ALTURA_MUNDO).
-const moldePeGeo = new THREE.CylinderGeometry(0.07, 0.09, 0.2, 12);
+const moldePeGeo = new THREE.CylinderGeometry(0.05, 0.065, 0.15, 12);
 moldePeGeo.rotateZ(Math.PI / 2);
 const moldePeMat = new THREE.MeshStandardMaterial({ color: 0x2b313e, roughness: 0.4, metalness: 0.6 });
 
-const moldeMangueiraGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.44, 10);
+const moldeMangueiraGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.36, 10);
 moldeMangueiraGeo.rotateZ(Math.PI / 2);
 const moldeMangueiraMat = new THREE.MeshStandardMaterial({ color: 0x1c1f26, roughness: 0.55, metalness: 0.15 });
 
 // Caixa de comando elevada (o "quadro" visível na foto real do
-// equipamento) — bem maior que a v1 e com material próprio (azul-aço
-// metálico), pra ler como uma peça claramente separada do corpo, não
-// como mais um pedaço do mesmo bloco amarelo/verde/vermelho de status.
-const CAIXA_COMANDO_MUNDO = { altura: 0.5, comprimento: 0.72, largura: 0.85 };
-const moldeCaixaComandoGeo = new RoundedBoxGeometry(CAIXA_COMANDO_MUNDO.altura, CAIXA_COMANDO_MUNDO.comprimento, CAIXA_COMANDO_MUNDO.largura, 2, 0.05);
+// equipamento) — com material próprio (azul-aço metálico), pra ler
+// como uma peça claramente separada do corpo, não como mais um pedaço
+// do mesmo bloco amarelo/verde/vermelho de status. Discreta, não uma
+// segunda caixa do tamanho do corpo.
+const CAIXA_COMANDO_MUNDO = { altura: 0.28, comprimento: 0.42, largura: 0.46 };
+const moldeCaixaComandoGeo = new RoundedBoxGeometry(CAIXA_COMANDO_MUNDO.altura, CAIXA_COMANDO_MUNDO.comprimento, CAIXA_COMANDO_MUNDO.largura, 2, 0.04);
 const moldeCaixaComandoMat = new THREE.MeshStandardMaterial({ color: 0x45516f, roughness: 0.32, metalness: 0.55 });
 
 // Placa frontal (tipo a plaquinha "M4-2" da foto de referência) — outro
 // elemento que quebra a leitura de "bloco único", do lado oposto à
 // caixa de comando.
-const PLACA_FRENTE_MUNDO = { altura: 0.46, comprimento: 0.4, espessuraZ: 0.045 };
-const moldePlacaFrenteGeo = new RoundedBoxGeometry(PLACA_FRENTE_MUNDO.altura, PLACA_FRENTE_MUNDO.comprimento, PLACA_FRENTE_MUNDO.espessuraZ, 2, 0.03);
+const PLACA_FRENTE_MUNDO = { altura: 0.26, comprimento: 0.22, espessuraZ: 0.03 };
+const moldePlacaFrenteGeo = new RoundedBoxGeometry(PLACA_FRENTE_MUNDO.altura, PLACA_FRENTE_MUNDO.comprimento, PLACA_FRENTE_MUNDO.espessuraZ, 2, 0.025);
 const moldePlacaFrenteMat = new THREE.MeshStandardMaterial({ color: 0x161a22, roughness: 0.4, metalness: 0.35 });
 
 // Conversão mundo → local pra esta peça (Molde gira -90° em Z):
@@ -2076,7 +2082,7 @@ function textoTooltip(slot, peca) {
     return `
         <div class="tt-tag">${peca.tag_patrimonio || peca.id}</div>
         <div class="tt-row"><span>Posição</span><b>${slot.label}</b></div>
-        <div class="tt-row"><span>Tonelagem</span><b>${ton.toLocaleString('pt-BR')}</b></div>
+        <div class="tt-row"><span>Tonelagem</span><b>${Math.round(ton).toLocaleString('pt-BR')}</b></div>
     `;
 }
 
@@ -3124,13 +3130,13 @@ function abrirModalPeca(slot, peca) {
 
             <div class="campo"><span class="k">ID de sistema</span><span class="v">${peca.id}</span></div>
             <div class="campo"><span class="k">Status</span><span class="v">${peca.status || '—'}</span></div>
-            ${ehOsciladorPorDias(peca) ? '' : `<div class="campo"><span class="k">Tonelagem atual</span><span class="v">${ton.toLocaleString('pt-BR')}</span></div>`}
-            <div class="campo"><span class="k">Meta de vida útil${ehOsciladorPorDias(peca) ? ' (dias)' : ''}</span><span class="v">${meta.toLocaleString('pt-BR')}</span></div>
+            ${ehOsciladorPorDias(peca) ? '' : `<div class="campo"><span class="k">Tonelagem atual</span><span class="v">${Math.round(ton).toLocaleString('pt-BR')}</span></div>`}
+            <div class="campo"><span class="k">Meta de vida útil${ehOsciladorPorDias(peca) ? ' (dias)' : ''}</span><span class="v">${Math.round(meta).toLocaleString('pt-BR')}</span></div>
             <div class="campo"><span class="k">Data de Entrada</span><span class="v">${dataEntradaExibivel(peca)}</span></div>
             <div class="campo"><span class="k">Dias em operação</span><span class="v">${calcularDiasStandalone(peca)}</span></div>
 
             <div class="barra-wrap">
-                <div class="barra-topo"><span>Desgaste</span><span class="barra-pct" style="color:${corBarra}">${pct.toFixed(1)}%</span></div>
+                <div class="barra-topo"><span>Desgaste</span><span class="barra-pct" style="color:${corBarra}">${Math.round(pct)}%</span></div>
                 <div class="barra-bg"><div class="barra-fill" style="width:${Math.min(pct,100)}%; background:${corBarra};"></div></div>
             </div>
 
@@ -3639,9 +3645,9 @@ function exportarPrint3D() {
                 <td data-th="Posição">${l.posicao}</td>
                 <td data-th="Tag">${l.tag}</td>
                 <td data-th="Data de Entrada">${l.dataEntrada || '—'}</td>
-                <td data-th="Tonelagem">${l.ton.toLocaleString('pt-BR')}</td>
-                <td data-th="Meta">${l.meta.toLocaleString('pt-BR')}</td>
-                <td data-th="Desgaste" class="${l.pct >= 100 ? 'pct-limite' : 'pct-alerta'}">${l.pct.toFixed(1)}%</td>
+                <td data-th="Tonelagem">${Math.round(l.ton).toLocaleString('pt-BR')}</td>
+                <td data-th="Meta">${Math.round(l.meta).toLocaleString('pt-BR')}</td>
+                <td data-th="Desgaste" class="${l.pct >= 100 ? 'pct-limite' : 'pct-alerta'}">${Math.round(l.pct)}%</td>
                 <td data-th="Situação">${l.nivel}</td>
             </tr>`).join('')
         : `<tr><td colspan="7" style="text-align:center; color:#889;">Nenhuma peça em alerta neste veio no momento.</td></tr>`;
