@@ -34,7 +34,11 @@
     }
 
     #app { position: relative; width: 100vw; height: 100vh; }
-    #canvas-container { position: absolute; inset: 0; cursor: grab; }
+    /* 🔧 Sem isso, no celular o dedo arrastando a câmera também tenta
+       rolar/dar pinch-zoom na PÁGINA ao mesmo tempo que o OrbitControls
+       gira a cena — os dois gestos brigam e fica muito mais difícil de
+       mexer no toque do que no mouse. */
+    #canvas-container { position: absolute; inset: 0; cursor: grab; touch-action: none; }
     #canvas-container.hover-piece { cursor: pointer; }
     #canvas-container:active { cursor: grabbing; }
 
@@ -1139,7 +1143,16 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(9, 4, 0);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
-controls.minDistance = 6;
+// 🔧 "Trava no meio da máquina, não consigo dar zoom no Molde": o zoom
+// do OrbitControls sempre mira o `target` fixo lá em cima, nunca o
+// ponto embaixo do cursor/dedo — então dar scroll aproximava do CENTRO
+// da linha, nunca da peça que a pessoa queria ver de perto.
+// zoomToCursor resolve isso (mira o ponto sob o mouse/toque); e o
+// minDistance antigo (6) era maior que o próprio Molde (~1.5 de lado),
+// impossível chegar perto dele — baixado pra deixar aproximar de
+// verdade sem atravessar a geometria.
+controls.zoomToCursor = true;
+controls.minDistance = 2;
 controls.maxDistance = 45;
 controls.maxPolarAngle = Math.PI * 0.49;
 controls.update();
