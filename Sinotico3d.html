@@ -1534,7 +1534,10 @@ const moldeJanelaMat = new THREE.MeshStandardMaterial({ color: 0x090b10, roughne
 // lados) — dá o efeito de "painel com moldura", não um retângulo
 // escuro murcho na parede.
 const moldeJanelaAroGeo = new THREE.BoxGeometry(0.22, 0.28, 0.02);
-const moldeJanelaAroMat = new THREE.MeshStandardMaterial({ color: 0x6b7890, roughness: 0.3, metalness: 0.65 });
+// 🔧 Cor clara demais (0x6b7890) sumia contra o corpo amarelo/verde no
+// print — subida pra um cinza-claro quase metálico polido, que
+// contrasta contra qualquer cor de status.
+const moldeJanelaAroMat = new THREE.MeshStandardMaterial({ color: 0x9aa6ba, roughness: 0.25, metalness: 0.7 });
 
 // 🔧 Pés e mangueiras precisam ficar "de pé" no MUNDO (eixo mundo_Y),
 // mas o cilindro nasce com o eixo em Y LOCAL — como o Molde gira -90°
@@ -1583,7 +1586,11 @@ function criarTexturaFaixaRisco() {
     textura.repeat.set(2.6, 1);
     return textura;
 }
-const FAIXA_RISCO_MUNDO = { altura: 0.22, comprimento: 1.3, espessuraZ: 0.03 };
+// 🔧 0.22 de altura (~20% da altura total do corpo) rendeu como um
+// risco fino quase invisível no print — subida pra quase metade da
+// altura, pra ler como uma faixa de segurança de verdade, não um
+// detalhe perdido.
+const FAIXA_RISCO_MUNDO = { altura: 0.42, comprimento: 1.3, espessuraZ: 0.03 };
 const moldeFaixaRiscoGeo = new THREE.BoxGeometry(FAIXA_RISCO_MUNDO.altura, FAIXA_RISCO_MUNDO.comprimento, FAIXA_RISCO_MUNDO.espessuraZ);
 const moldeFaixaRiscoMat = new THREE.MeshStandardMaterial({ map: criarTexturaFaixaRisco(), roughness: 0.55, metalness: 0.1 });
 
@@ -1611,7 +1618,7 @@ function adicionarDetalhesMolde(mesh) {
 
     // Faixa de risco, na face frontal, perto da base
     const faixa = new THREE.Mesh(moldeFaixaRiscoGeo, moldeFaixaRiscoMat);
-    faixa.position.set(...moldeMundoParaLocal(0, -0.35, MOLDE_LARGURA_Z / 2 + FAIXA_RISCO_MUNDO.espessuraZ / 2 - 0.01));
+    faixa.position.set(...moldeMundoParaLocal(0, -0.3, MOLDE_LARGURA_Z / 2 + FAIXA_RISCO_MUNDO.espessuraZ / 2 - 0.01));
     mesh.add(faixa);
 
     // Placa frontal, acima da faixa de risco, do lado da caixa de comando
@@ -1619,8 +1626,11 @@ function adicionarDetalhesMolde(mesh) {
     placa.position.set(...moldeMundoParaLocal(-0.5, 0.3, MOLDE_LARGURA_Z / 2 + PLACA_FRENTE_MUNDO.espessuraZ / 2 - 0.01));
     mesh.add(placa);
 
-    // 2 janelas (com aro) na face frontal, do lado oposto à caixa de comando
-    [0.25, 0.5].forEach(mundoX => {
+    // 2 janelas (com aro) na face frontal, do lado oposto à caixa de
+    // comando. 🔧 Antes ficavam a só 0.25 de distância — quase coladas
+    // (aro tem 0.28 de largura, então metade se sobrepunha), viravam
+    // uma barra escura só no print, não duas janelas.
+    [0.1, 0.55].forEach(mundoX => {
         const aro = new THREE.Mesh(moldeJanelaAroGeo, moldeJanelaAroMat);
         aro.position.set(...moldeMundoParaLocal(mundoX, 0.15, MOLDE_LARGURA_Z / 2 - 0.005));
         mesh.add(aro);
