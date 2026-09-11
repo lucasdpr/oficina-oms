@@ -1824,9 +1824,16 @@ function construirCena(veio) {
             let offsetY;
             if (usarPecaAberta) offsetY = 1.0;
             else if (ehMolde) offsetY = 1.05;
-            else if (ehBender) offsetY = 0.66;
-            else if (slot.id.includes('OSC-N')) offsetY = 0.46;
-            else if (slot.id.includes('OSC-S')) offsetY = 0.26;
+            // 🔧 A separação anterior (0.66/0.46/0.26 = 0.20 de gap) era
+            // MENOR que a própria altura do sprite de texto no mundo
+            // (~0.37 pro Bender, ~0.28 pros Osciladores menores — ver
+            // escalaMundo em criarSpriteTexto) — matematicamente garantido
+            // continuar sobrepondo por mais que eu "separasse". Gap real
+            // agora é 0.40, maior que a soma das meia-alturas dos rótulos
+            // vizinhos (0.325 e 0.278).
+            else if (ehBender) offsetY = 0.95;
+            else if (slot.id.includes('OSC-N')) offsetY = 0.55;
+            else if (slot.id.includes('OSC-S')) offsetY = 0.15;
             else offsetY = mcc4 ? (slot.grupo === 'cabeceira' ? 0.85 : 0.55) : 0.75;
             sprite.position.set(slot.pos.x, slot.pos.y + offsetY, slot.pos.z);
             grupoLinha.add(sprite);
