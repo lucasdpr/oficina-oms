@@ -594,7 +594,7 @@
     </div>
 
     <div id="legenda">
-        <div class="titulo">Desgaste (tonelagem / meta)</div>
+        <div class="titulo">Desgaste (tonelagem / meta — Oscilador e Mesa Osciladora: dias / meta)</div>
         <div class="legenda-item"><span class="legenda-dot" style="background:#22c55e"></span> Normal (&lt; 80%)</div>
         <div class="legenda-item"><span class="legenda-dot" style="background:#eab308"></span> Alerta (80% – 99%)</div>
         <div class="legenda-item"><span class="legenda-dot" style="background:#f97316"></span> Limite atingido (≥ 100%)</div>
@@ -1283,22 +1283,40 @@ const LATERAL_OSCILADOR = 0.7 / 2 + 0.42 / 2;
 // 🆕 MOLDE (MCC4) — até agora era só a caixa lisa padrão
 // (blocoGeoCabeceira), a única peça da fileira sem nenhum detalhe
 // decorativo. Formato novo inspirado na foto real do equipamento: corpo
-// principal um pouco mais baixo, com uma "caixa de comando" elevada de
-// um lado (o quadro que aparece na peça de verdade). Continua sendo UMA
-// SÓ geometria (mergeGeometries, mesmo padrão do blocoGeoPadraoAberto
-// acima) — raycaster, cor de status e emissive continuam tratando o
-// Molde exatamente como qualquer outro bloco, sem nenhum caso especial
-// no resto do código.
-const MOLDE_ALTURA_CORPO = 1.3;
-const MOLDE_LARGURA_Z = 1.55;
-const MOLDE_CAIXA_TOPO = { x: 0.55, y: 0.34, z: 0.6 };
-const moldeCorpo = new RoundedBoxGeometry(1.1, MOLDE_ALTURA_CORPO, MOLDE_LARGURA_Z, 3, 0.08);
-const moldeCaixaTopo = new RoundedBoxGeometry(MOLDE_CAIXA_TOPO.x, MOLDE_CAIXA_TOPO.y, MOLDE_CAIXA_TOPO.z, 2, 0.04);
-moldeCaixaTopo.translate(
-    0.15,
-    MOLDE_ALTURA_CORPO / 2 + MOLDE_CAIXA_TOPO.y / 2 - 0.02,
-    -MOLDE_LARGURA_Z / 2 + MOLDE_CAIXA_TOPO.z / 2 + 0.05
-);
+// principal + uma "caixa de comando" elevada de um lado (o quadro que
+// aparece na peça de verdade). Continua sendo UMA SÓ geometria
+// (mergeGeometries, mesmo padrão do blocoGeoPadraoAberto acima) —
+// raycaster, cor de status e emissive continuam tratando o Molde
+// exatamente como qualquer outro bloco, sem nenhum caso especial no
+// resto do código.
+//
+// 🔧 PEGADINHA (causou o bug "peças jogadas longe/atrás do corpo"): o
+// Molde é o ÚNICO bloco desta fileira que GIRA -90° em Z (molde.rotZ,
+// ver acima) — Bender/Oscilador ficam retos. Uma rotação de -90° em Z
+// troca os eixos: mundo_Y (vertical) = -local_X, e mundo_X (ao longo da
+// linha) = local_Y (mundo_Z/lateral não muda). Ou seja, um translate()
+// usando local Y pra "subir" na verdade empurra a peça ao longo da
+// linha de produção — pra longe do corpo, não pra cima dele. Todo
+// offset abaixo é calculado em coordenadas de MUNDO (o que a gente
+// realmente quer visualmente) e só depois convertido pra local com
+// local_x = -mundo_y, local_y = mundo_x, local_z = mundo_z.
+const MOLDE_ALTURA_MUNDO = 1.1;       // extensão vertical no mundo = dimensão local X
+const MOLDE_COMPRIMENTO_MUNDO = 1.55; // extensão ao longo da linha no mundo = dimensão local Y
+const MOLDE_LARGURA_Z = 1.55;         // lateral (Z) — não afetada pela rotação em Z
+
+const moldeCorpo = new RoundedBoxGeometry(MOLDE_ALTURA_MUNDO, MOLDE_COMPRIMENTO_MUNDO, MOLDE_LARGURA_Z, 3, 0.08);
+
+// Caixa de comando: no MUNDO deve ficar ENCOSTADA EM CIMA do corpo
+// (mundo_y positivo), um pouco deslocada ao longo da linha e embutida
+// perto de uma quina lateral — não flutuando longe.
+const CAIXA_TOPO_MUNDO = { altura: 0.34, comprimento: 0.55, largura: 0.6 };
+const caixaTopoMundoY = MOLDE_ALTURA_MUNDO / 2 + CAIXA_TOPO_MUNDO.altura / 2 - 0.03; // -0.03: afunda um pouco, sem "flutuar"
+const caixaTopoMundoX = 0.15;
+const caixaTopoMundoZ = -MOLDE_LARGURA_Z / 2 + CAIXA_TOPO_MUNDO.largura / 2 + 0.05;
+// dimensões da geometria já em eixo local (X local = altura no mundo, Y local = comprimento no mundo, Z = lateral)
+const moldeCaixaTopo = new RoundedBoxGeometry(CAIXA_TOPO_MUNDO.altura, CAIXA_TOPO_MUNDO.comprimento, CAIXA_TOPO_MUNDO.largura, 2, 0.04);
+moldeCaixaTopo.translate(-caixaTopoMundoY, caixaTopoMundoX, caixaTopoMundoZ);
+
 const blocoGeoMolde = mergeGeometries([moldeCorpo, moldeCaixaTopo]);
 
 // 🆕 "Gaiola de rolos" aberta — como o equipamento real da MCC4 (curva
@@ -1511,37 +1529,53 @@ function adicionarRolosDecorativos(mesh, peca, ehGrupo23) {
 // "caixa genérica": 2 janelas escuras encaixadas na lateral, pés de
 // apoio nos 4 cantos e mangueiras penduradas embaixo, como na foto real.
 const moldeJanelaGeo = new THREE.CylinderGeometry(0.14, 0.14, 0.04, 20);
-moldeJanelaGeo.rotateX(Math.PI / 2);
+moldeJanelaGeo.rotateX(Math.PI / 2); // eixo do disco ao longo de Z — Z não muda com a rotação do Molde, então isso já fica certo
 const moldeJanelaMat = new THREE.MeshStandardMaterial({ color: 0x11141c, roughness: 0.4, metalness: 0.2 });
 
+// 🔧 Pés e mangueiras precisam ficar "de pé" no MUNDO (eixo mundo_Y),
+// mas o cilindro nasce com o eixo em Y LOCAL — como o Molde gira -90°
+// em Z, local_Y vira mundo_X (deitado!). rotateZ realinha o eixo do
+// cilindro pra local_X, que é o eixo que de fato vira mundo_Y depois da
+// rotação do Molde (ver comentário grande lá em cima, perto de
+// MOLDE_ALTURA_MUNDO).
 const moldePeGeo = new THREE.CylinderGeometry(0.055, 0.07, 0.16, 12);
+moldePeGeo.rotateZ(Math.PI / 2);
 const moldePeMat = new THREE.MeshStandardMaterial({ color: 0x2b313e, roughness: 0.4, metalness: 0.6 });
 
 const moldeMangueiraGeo = new THREE.CylinderGeometry(0.035, 0.035, 0.42, 10);
+moldeMangueiraGeo.rotateZ(Math.PI / 2);
 const moldeMangueiraMat = new THREE.MeshStandardMaterial({ color: 0x1c1f26, roughness: 0.55, metalness: 0.15 });
 
+// Conversão mundo → local pra esta peça (Molde gira -90° em Z):
+// local_x = -mundo_y, local_y = mundo_x, local_z = mundo_z.
+function moldeMundoParaLocal(mundoX, mundoY, mundoZ) {
+    return [-mundoY, mundoX, mundoZ];
+}
+
 function adicionarDetalhesMolde(mesh) {
-    // 2 janelas escuras na face lateral (Z), do lado oposto à caixa de comando
-    [-0.28, 0.18].forEach(offX => {
+    // 2 janelas escuras na face frontal (mundo Z), espalhadas ao longo
+    // da linha (mundo X), um pouco acima do centro (mundo Y)
+    [-0.28, 0.18].forEach(mundoX => {
         const janela = new THREE.Mesh(moldeJanelaGeo, moldeJanelaMat);
-        janela.position.set(offX, 0.1, MOLDE_LARGURA_Z / 2 - 0.01);
+        janela.position.set(...moldeMundoParaLocal(mundoX, 0.1, MOLDE_LARGURA_Z / 2 - 0.01));
         mesh.add(janela);
     });
 
-    // 4 pés de apoio nos cantos de baixo
-    const yPe = -(MOLDE_ALTURA_CORPO / 2) - 0.08;
-    [[-0.42, -0.6], [0.42, -0.6], [-0.42, 0.6], [0.42, 0.6]].forEach(([px, pz]) => {
+    // 4 pés de apoio nos cantos de baixo (mundo Y bem negativo = embaixo)
+    const mundoYPe = -(MOLDE_ALTURA_MUNDO / 2) - 0.08;
+    [[-0.42, -0.6], [0.42, -0.6], [-0.42, 0.6], [0.42, 0.6]].forEach(([mundoX, mundoZ]) => {
         const pe = new THREE.Mesh(moldePeGeo, moldePeMat);
-        pe.position.set(px, yPe, pz);
+        pe.position.set(...moldeMundoParaLocal(mundoX, mundoYPe, mundoZ));
         pe.castShadow = true;
         mesh.add(pe);
     });
 
-    // 2 mangueiras penduradas na frente-baixo, levemente inclinadas
-    [[-0.15, -0.5], [0.2, -0.35]].forEach(([px, pz], idx) => {
+    // 2 mangueiras penduradas embaixo, levemente inclinadas
+    const mundoYMangueira = -(MOLDE_ALTURA_MUNDO / 2) - 0.15;
+    [[-0.15, -0.5], [0.2, -0.35]].forEach(([mundoX, mundoZ], idx) => {
         const mangueira = new THREE.Mesh(moldeMangueiraGeo, moldeMangueiraMat);
-        mangueira.position.set(px, -(MOLDE_ALTURA_CORPO / 2) - 0.15, pz);
-        mangueira.rotation.z = idx === 0 ? 0.35 : -0.25;
+        mangueira.position.set(...moldeMundoParaLocal(mundoX, mundoYMangueira, mundoZ));
+        mangueira.rotation.z = idx === 0 ? 0.35 : -0.25; // inclinação — tilt dentro do mesmo plano local X/Y, continua parecendo "pendurado torto" depois de girar
         mangueira.castShadow = true;
         mesh.add(mangueira);
     });
@@ -1552,14 +1586,37 @@ let meshesBySlot = [];    // { slot, mesh, material }
 let hoveredMesh = null;
 let veioAtual = 'H';
 
+// 🔧 BUG: Oscilador/Mesa Osciladora medem vida útil em DIAS, não em
+// tonelagem (a tonelagem deles fica sempre em 0 — mesma regra usada em
+// JS/script.js, ver rotuloDesgaste). corPorPeca/emissivoPorPeca e a
+// barra do modal faziam ton/meta pra QUALQUER peça, então um Oscilador
+// nunca saía do verde por vida útil, não importa quantos dias rodasse.
+// Este helper único decide a base certa (dias vs. tonelagem) conforme
+// o tipo, usado nos 3 lugares que precisam do "% de desgaste".
+function ehOsciladorPorDias(peca) {
+    const tipo = (peca.tipo || '').toString();
+    return tipo === 'Oscilador' || tipo === 'Mesa Osciladora';
+}
+
+function pctDesgastePeca(peca) {
+    if (!peca) return 0;
+    const meta = parseFloat(peca.meta) || 0;
+    if (meta <= 0) return 0;
+    if (ehOsciladorPorDias(peca)) {
+        const dias = calcularDiasStandalone(peca);
+        const diasNum = typeof dias === 'number' ? dias : (parseFloat(peca.dias) || 0);
+        return (diasNum / meta) * 100;
+    }
+    const ton = parseFloat(peca.tonelagem) || 0;
+    return (ton / meta) * 100;
+}
+
 function corPorPeca(peca) {
     if (!peca) return CORES.vaga;
     const status = (peca.status || '').toLowerCase();
     if (status.includes('reparo') || status.includes('falha')) return CORES.falha;
-    const meta = parseFloat(peca.meta) || 0;
-    const ton = parseFloat(peca.tonelagem) || 0;
-    if (meta <= 0) return CORES.vaga;
-    const pct = (ton / meta) * 100;
+    if ((parseFloat(peca.meta) || 0) <= 0) return CORES.vaga;
+    const pct = pctDesgastePeca(peca);
     if (pct >= 100) return CORES.limite;
     if (pct >= 80) return CORES.alerta;
     return CORES.normal;
@@ -1572,9 +1629,7 @@ function emissivoPorPeca(peca) {
     if (!peca) return { cor: 0x000000, intensidade: 0 };
     const status = (peca.status || '').toLowerCase();
     if (status.includes('reparo') || status.includes('falha')) return { cor: 0xff1a1a, intensidade: 0.55 };
-    const meta = parseFloat(peca.meta) || 0;
-    const ton = parseFloat(peca.tonelagem) || 0;
-    const pct = meta > 0 ? (ton / meta) * 100 : 0;
+    const pct = pctDesgastePeca(peca);
     if (pct >= 100) return { cor: 0xff5500, intensidade: 0.45 };
     if (pct >= 80) return { cor: 0xd6a300, intensidade: 0.22 };
     return { cor: 0x000000, intensidade: 0 };
@@ -1749,13 +1804,30 @@ function construirCena(veio) {
         // no hover (tooltip) e no clique (modal), sempre.
         const ehCadeira = slot.grupo === 'sup' || slot.grupo === 'inf';
         if (!ehCadeira) {
-            const sprite = criarSpriteTexto(slot.label, corHexParaCss(cor));
+            // 🔧 "Nome embolado": Bender + Oscilador Norte + Oscilador Sul
+            // ficam lado a lado (só separados em Z) e todos usavam a MESMA
+            // altura de etiqueta — de um ângulo mais frontal as 3 caixinhas
+            // de texto se sobrepõem e viram uma sopa de letra ilegível.
+            // Escalona a altura de cada uma (funciona de qualquer ângulo de
+            // câmera, diferente de só afastar em Z) e encolhe um pouco a
+            // etiqueta dos Osciladores, já que os blocos deles também são
+            // bem menores que o do Bender.
+            const ehBender = mcc4 && slot.id.startsWith('BND');
+            const ehOscilador = mcc4 && slot.id.includes('OSC-');
+            const escalaEtiqueta = ehOscilador ? 0.0012 : undefined;
+            const sprite = criarSpriteTexto(slot.label, corHexParaCss(cor), escalaEtiqueta);
             // 🆕 Peças "abertas" (curva/horizontal da MCC4 e Segmentos de
             // Grupo da MCC2/3) ficaram bem mais altas com os pilares,
             // cilindros e a ponte hidráulica — a etiqueta precisa subir
             // bastante pra não tampar mais esses detalhes.
             const ehMolde = mcc4 && slot.id.startsWith('MLD');
-            const offsetY = usarPecaAberta ? 1.0 : (mcc4 ? (ehMolde ? 1.05 : (slot.grupo === 'cabeceira' ? 0.85 : 0.55)) : 0.75);
+            let offsetY;
+            if (usarPecaAberta) offsetY = 1.0;
+            else if (ehMolde) offsetY = 1.05;
+            else if (ehBender) offsetY = 0.66;
+            else if (slot.id.includes('OSC-N')) offsetY = 0.46;
+            else if (slot.id.includes('OSC-S')) offsetY = 0.26;
+            else offsetY = mcc4 ? (slot.grupo === 'cabeceira' ? 0.85 : 0.55) : 0.75;
             sprite.position.set(slot.pos.x, slot.pos.y + offsetY, slot.pos.z);
             grupoLinha.add(sprite);
             labelObjects.push(sprite);
@@ -2979,7 +3051,7 @@ function abrirModalPeca(slot, peca) {
     } else {
         const meta = parseFloat(peca.meta) || 0;
         const ton = parseFloat(peca.tonelagem) || 0;
-        const pct = meta > 0 ? (ton / meta) * 100 : 0;
+        const pct = pctDesgastePeca(peca);
         const corBarra = corHexParaCss(corPorPeca(peca));
 
         // 🆕 Se este tipo de equipamento tem rolos (Horizontal, Bender,
@@ -3467,7 +3539,7 @@ function pecasEmAlerta() {
         const meta = parseFloat(peca.meta) || 0;
         const ton = parseFloat(peca.tonelagem) || 0;
         const status = (peca.status || '').toLowerCase();
-        const pct = meta > 0 ? (ton / meta) * 100 : 0;
+        const pct = pctDesgastePeca(peca);
         const emFalha = status.includes('reparo') || status.includes('falha');
 
         if (emFalha || pct >= 80) {
