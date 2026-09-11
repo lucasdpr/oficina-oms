@@ -594,7 +594,7 @@
     </div>
 
     <div id="legenda">
-        <div class="titulo">Desgaste (tonelagem / meta)</div>
+        <div class="titulo">Desgaste (tonelagem / meta — Oscilador e Mesa Osciladora: dias / meta)</div>
         <div class="legenda-item"><span class="legenda-dot" style="background:#22c55e"></span> Normal (&lt; 80%)</div>
         <div class="legenda-item"><span class="legenda-dot" style="background:#eab308"></span> Alerta (80% – 99%)</div>
         <div class="legenda-item"><span class="legenda-dot" style="background:#f97316"></span> Limite atingido (≥ 100%)</div>
@@ -1552,14 +1552,37 @@ let meshesBySlot = [];    // { slot, mesh, material }
 let hoveredMesh = null;
 let veioAtual = 'H';
 
+// 🔧 BUG: Oscilador/Mesa Osciladora medem vida útil em DIAS, não em
+// tonelagem (a tonelagem deles fica sempre em 0 — mesma regra usada em
+// JS/script.js, ver rotuloDesgaste). corPorPeca/emissivoPorPeca e a
+// barra do modal faziam ton/meta pra QUALQUER peça, então um Oscilador
+// nunca saía do verde por vida útil, não importa quantos dias rodasse.
+// Este helper único decide a base certa (dias vs. tonelagem) conforme
+// o tipo, usado nos 3 lugares que precisam do "% de desgaste".
+function ehOsciladorPorDias(peca) {
+    const tipo = (peca.tipo || '').toString();
+    return tipo === 'Oscilador' || tipo === 'Mesa Osciladora';
+}
+
+function pctDesgastePeca(peca) {
+    if (!peca) return 0;
+    const meta = parseFloat(peca.meta) || 0;
+    if (meta <= 0) return 0;
+    if (ehOsciladorPorDias(peca)) {
+        const dias = calcularDiasStandalone(peca);
+        const diasNum = typeof dias === 'number' ? dias : (parseFloat(peca.dias) || 0);
+        return (diasNum / meta) * 100;
+    }
+    const ton = parseFloat(peca.tonelagem) || 0;
+    return (ton / meta) * 100;
+}
+
 function corPorPeca(peca) {
     if (!peca) return CORES.vaga;
     const status = (peca.status || '').toLowerCase();
     if (status.includes('reparo') || status.includes('falha')) return CORES.falha;
-    const meta = parseFloat(peca.meta) || 0;
-    const ton = parseFloat(peca.tonelagem) || 0;
-    if (meta <= 0) return CORES.vaga;
-    const pct = (ton / meta) * 100;
+    if ((parseFloat(peca.meta) || 0) <= 0) return CORES.vaga;
+    const pct = pctDesgastePeca(peca);
     if (pct >= 100) return CORES.limite;
     if (pct >= 80) return CORES.alerta;
     return CORES.normal;
@@ -1572,9 +1595,7 @@ function emissivoPorPeca(peca) {
     if (!peca) return { cor: 0x000000, intensidade: 0 };
     const status = (peca.status || '').toLowerCase();
     if (status.includes('reparo') || status.includes('falha')) return { cor: 0xff1a1a, intensidade: 0.55 };
-    const meta = parseFloat(peca.meta) || 0;
-    const ton = parseFloat(peca.tonelagem) || 0;
-    const pct = meta > 0 ? (ton / meta) * 100 : 0;
+    const pct = pctDesgastePeca(peca);
     if (pct >= 100) return { cor: 0xff5500, intensidade: 0.45 };
     if (pct >= 80) return { cor: 0xd6a300, intensidade: 0.22 };
     return { cor: 0x000000, intensidade: 0 };
@@ -2979,7 +3000,7 @@ function abrirModalPeca(slot, peca) {
     } else {
         const meta = parseFloat(peca.meta) || 0;
         const ton = parseFloat(peca.tonelagem) || 0;
-        const pct = meta > 0 ? (ton / meta) * 100 : 0;
+        const pct = pctDesgastePeca(peca);
         const corBarra = corHexParaCss(corPorPeca(peca));
 
         // 🆕 Se este tipo de equipamento tem rolos (Horizontal, Bender,
@@ -3467,7 +3488,7 @@ function pecasEmAlerta() {
         const meta = parseFloat(peca.meta) || 0;
         const ton = parseFloat(peca.tonelagem) || 0;
         const status = (peca.status || '').toLowerCase();
-        const pct = meta > 0 ? (ton / meta) * 100 : 0;
+        const pct = pctDesgastePeca(peca);
         const emFalha = status.includes('reparo') || status.includes('falha');
 
         if (emFalha || pct >= 80) {
