@@ -1770,13 +1770,30 @@ function construirCena(veio) {
         // no hover (tooltip) e no clique (modal), sempre.
         const ehCadeira = slot.grupo === 'sup' || slot.grupo === 'inf';
         if (!ehCadeira) {
-            const sprite = criarSpriteTexto(slot.label, corHexParaCss(cor));
+            // 🔧 "Nome embolado": Bender + Oscilador Norte + Oscilador Sul
+            // ficam lado a lado (só separados em Z) e todos usavam a MESMA
+            // altura de etiqueta — de um ângulo mais frontal as 3 caixinhas
+            // de texto se sobrepõem e viram uma sopa de letra ilegível.
+            // Escalona a altura de cada uma (funciona de qualquer ângulo de
+            // câmera, diferente de só afastar em Z) e encolhe um pouco a
+            // etiqueta dos Osciladores, já que os blocos deles também são
+            // bem menores que o do Bender.
+            const ehBender = mcc4 && slot.id.startsWith('BND');
+            const ehOscilador = mcc4 && slot.id.includes('OSC-');
+            const escalaEtiqueta = ehOscilador ? 0.0012 : undefined;
+            const sprite = criarSpriteTexto(slot.label, corHexParaCss(cor), escalaEtiqueta);
             // 🆕 Peças "abertas" (curva/horizontal da MCC4 e Segmentos de
             // Grupo da MCC2/3) ficaram bem mais altas com os pilares,
             // cilindros e a ponte hidráulica — a etiqueta precisa subir
             // bastante pra não tampar mais esses detalhes.
             const ehMolde = mcc4 && slot.id.startsWith('MLD');
-            const offsetY = usarPecaAberta ? 1.0 : (mcc4 ? (ehMolde ? 1.05 : (slot.grupo === 'cabeceira' ? 0.85 : 0.55)) : 0.75);
+            let offsetY;
+            if (usarPecaAberta) offsetY = 1.0;
+            else if (ehMolde) offsetY = 1.05;
+            else if (ehBender) offsetY = 0.66;
+            else if (slot.id.includes('OSC-N')) offsetY = 0.46;
+            else if (slot.id.includes('OSC-S')) offsetY = 0.26;
+            else offsetY = mcc4 ? (slot.grupo === 'cabeceira' ? 0.85 : 0.55) : 0.75;
             sprite.position.set(slot.pos.x, slot.pos.y + offsetY, slot.pos.z);
             grupoLinha.add(sprite);
             labelObjects.push(sprite);
