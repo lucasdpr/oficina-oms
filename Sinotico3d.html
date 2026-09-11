@@ -910,7 +910,7 @@ function construirLayoutSlotsMCC4(veio) {
     slots.push({ id: `OSC-N-4${veio}`, label: 'OSC-N', grupo: 'cabeceira' });
     slots.push({ id: `OSC-S-4${veio}`, label: 'OSC-S', grupo: 'cabeceira' });
     slots.push({ id: `BND-4${veio}`, label: 'BENDER', grupo: 'cabeceira' });
-    for (let n = 1; n <= 5; n++) slots.push({ id: `BOW-${n}-4${veio}`, label: `B${n}`, grupo: 'curva' });
+    for (let n = 1; n <= 5; n++) slots.push({ id: `BOW-${n}-4${veio}`, label: `BOW ${n}`, grupo: 'curva' });
     slots.push({ id: `STR-1-4${veio}`, label: 'R1', grupo: 'curva' });
     slots.push({ id: `STR-2-4${veio}`, label: 'R2', grupo: 'curva' });
     for (let n = 8; n <= 17; n++) slots.push({ id: `HOR-${n}-4${veio}`, label: `H${n}`, grupo: 'horizontal' });
@@ -1316,17 +1316,23 @@ const MOLDE_BASE_COMPRIMENTO_MUNDO = 1.55;
 // da linha e lateral) — é essa mudança de largura no meio da altura
 // que quebra a silhueta de cubo, vista de qualquer ângulo de câmera.
 const MOLDE_TOPO_ALTURA_MUNDO = 0.5;
-const MOLDE_TOPO_COMPRIMENTO_MUNDO = 0.95;
-const MOLDE_TOPO_LARGURA_MUNDO = 1.0;
+const MOLDE_TOPO_COMPRIMENTO_MUNDO = 1.15;
+const MOLDE_TOPO_LARGURA_MUNDO = 1.2;
 // Deslocada pra um lado (não centralizada) — perfil assimétrico de
 // "base + torre", igual à foto de referência, em vez de um totem
 // simétrico tipo boneco de neve.
-const MOLDE_TOPO_OFFSET_X_MUNDO = 0.2;
-const MOLDE_TOPO_OFFSET_Z_MUNDO = -0.15;
+const MOLDE_TOPO_OFFSET_X_MUNDO = 0.15;
+const MOLDE_TOPO_OFFSET_Z_MUNDO = -0.1;
 
-const moldeBase = new RoundedBoxGeometry(MOLDE_BASE_ALTURA_MUNDO, MOLDE_BASE_COMPRIMENTO_MUNDO, MOLDE_LARGURA_Z, 3, 0.07);
-const moldeTopoMundoY = MOLDE_BASE_ALTURA_MUNDO / 2 + MOLDE_TOPO_ALTURA_MUNDO / 2 - 0.03; // -0.03: afunda um pouco, sem "flutuar"
-const moldeTopo = new RoundedBoxGeometry(MOLDE_TOPO_ALTURA_MUNDO, MOLDE_TOPO_COMPRIMENTO_MUNDO, MOLDE_TOPO_LARGURA_MUNDO, 2, 0.06);
+// 🔧 "Tem um bloco em cima e outro embaixo" — dois volumes com aresta
+// dura entre eles leem como "2 caixas empilhadas", não como uma peça
+// esculpida. Afundando bem mais (0.09 em vez de 0.03) e com um raio de
+// arredondamento maior nos dois, a transição vira uma curva suave em
+// vez de uma quina reta — e a diferença de largura entre base/cabeça
+// ficou menor (só o suficiente pra ainda quebrar a silhueta de cubo).
+const moldeBase = new RoundedBoxGeometry(MOLDE_BASE_ALTURA_MUNDO, MOLDE_BASE_COMPRIMENTO_MUNDO, MOLDE_LARGURA_Z, 4, 0.13);
+const moldeTopoMundoY = MOLDE_BASE_ALTURA_MUNDO / 2 + MOLDE_TOPO_ALTURA_MUNDO / 2 - 0.09;
+const moldeTopo = new RoundedBoxGeometry(MOLDE_TOPO_ALTURA_MUNDO, MOLDE_TOPO_COMPRIMENTO_MUNDO, MOLDE_TOPO_LARGURA_MUNDO, 3, 0.12);
 // translate() em eixo LOCAL — local_x = -mundo_y, local_y = mundo_x, local_z = mundo_z (mesma conversão de sempre)
 moldeTopo.translate(-moldeTopoMundoY, MOLDE_TOPO_OFFSET_X_MUNDO, MOLDE_TOPO_OFFSET_Z_MUNDO);
 
@@ -1853,7 +1859,14 @@ function construirCena(veio) {
             // bem menores que o do Bender.
             const ehBender = mcc4 && slot.id.startsWith('BND');
             const ehOscilador = mcc4 && slot.id.includes('OSC-');
-            const escalaEtiqueta = ehOscilador ? 0.0012 : undefined;
+            // 🔧 "Nome do Bender tá no Molde": a v anterior subia a etiqueta
+            // do Bender bem alto (0.95) só pra não colidir com OSC-N/OSC-S
+            // — mas o Molde senta ENCOSTADO logo acima dessa fileira
+            // (ESPACO_CABECEIRA), então 0.95 acabava invadindo o volume do
+            // Molde, ficando visualmente "grudado" nele. Encolhe as 3
+            // etiquetas (Bender também, não só Oscilador) pra caberem no
+            // espaço realmente disponível abaixo do Molde.
+            const escalaEtiqueta = (ehOscilador || ehBender) ? 0.0009 : undefined;
             const sprite = criarSpriteTexto(slot.label, corHexParaCss(cor), escalaEtiqueta);
             // 🆕 Peças "abertas" (curva/horizontal da MCC4 e Segmentos de
             // Grupo da MCC2/3) ficaram bem mais altas com os pilares,
@@ -1863,16 +1876,13 @@ function construirCena(veio) {
             let offsetY;
             if (usarPecaAberta) offsetY = 1.0;
             else if (ehMolde) offsetY = 1.05;
-            // 🔧 A separação anterior (0.66/0.46/0.26 = 0.20 de gap) era
-            // MENOR que a própria altura do sprite de texto no mundo
-            // (~0.37 pro Bender, ~0.28 pros Osciladores menores — ver
-            // escalaMundo em criarSpriteTexto) — matematicamente garantido
-            // continuar sobrepondo por mais que eu "separasse". Gap real
-            // agora é 0.40, maior que a soma das meia-alturas dos rótulos
-            // vizinhos (0.325 e 0.278).
-            else if (ehBender) offsetY = 0.95;
-            else if (slot.id.includes('OSC-N')) offsetY = 0.55;
-            else if (slot.id.includes('OSC-S')) offsetY = 0.15;
+            // Gap de 0.24 entre as 3 (maior que a soma das meia-alturas dos
+            // rótulos vizinhos nesse tamanho menor, ~0.10 cada) e o teto
+            // (Bender=0.6) fica abaixo de onde a base do Molde começa
+            // (~0.77 acima desta fileira), então não invade mais o Molde.
+            else if (ehBender) offsetY = 0.6;
+            else if (slot.id.includes('OSC-N')) offsetY = 0.36;
+            else if (slot.id.includes('OSC-S')) offsetY = 0.12;
             else offsetY = mcc4 ? (slot.grupo === 'cabeceira' ? 0.85 : 0.55) : 0.75;
             sprite.position.set(slot.pos.x, slot.pos.y + offsetY, slot.pos.z);
             grupoLinha.add(sprite);
