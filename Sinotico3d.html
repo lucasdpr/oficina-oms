@@ -936,7 +936,7 @@ const ESPACO_HORIZONTAL = 1.55;
 // continua existindo como fallback, só pra não sumir da tela se um dia
 // aparecer algum slot novo de 'cabeceira' que não seja nenhum desses 4.
 // LATERAL_OSCILADOR está definido mais abaixo, junto dos blocos 3D
-// menores criados especificamente pra essa fileira (blocoGeoBenderLateral/
+// menores criados especificamente pra essa fileira (blocoGeoBenderAberto/
 // blocoGeoOsciladorLateral) — o mesmo valor usado aqui pra POSICIONAR os
 // blocos é derivado de lá, pra nunca ficar desalinhado do TAMANHO real
 // deles.
@@ -1272,8 +1272,22 @@ const blocoGeoPadrao = new RoundedBoxGeometry(1.28, 0.62, 1.35, 3, 0.07);
 // é (X, Y, Z) = (largura ao longo da linha, altura, largura lateral) —
 // esses blocos NÃO giram (ficam retos), então cada parâmetro já é a
 // dimensão real no mundo, sem precisar levar rotação em conta.
-const blocoGeoBenderLateral = new RoundedBoxGeometry(1.1, 1.1, 0.7, 3, 0.06);
 const blocoGeoOsciladorLateral = new RoundedBoxGeometry(0.9, 0.9, 0.42, 3, 0.04);
+
+// 🆕 "Quero que apareça rolos dentro do Bender": mesmo princípio do
+// bloco "aberto" da linha principal (metade de cima + metade de baixo
+// com um vão no meio pra encaixar rolos), só que dimensionado pro
+// bloco lateral do Bender (1.1 x 1.1 x 0.7) — bem menor que o bloco
+// padrão (1.28 x 0.62 x 1.35), então não dá pra reaproveitar
+// blocoGeoPadraoAberto/rolinhoGeo direto: os rolos ficariam compridos
+// demais e vazando pros lados do bloco (Z de 0.7 contra 1.35).
+const VAO_BENDER = 0.32;
+const ALTURA_METADE_BENDER = (1.1 - VAO_BENDER) / 2;
+const benderMetadeCima = new RoundedBoxGeometry(1.1, ALTURA_METADE_BENDER, 0.7, 3, 0.05);
+benderMetadeCima.translate(0, VAO_BENDER / 2 + ALTURA_METADE_BENDER / 2, 0);
+const benderMetadeBaixo = new RoundedBoxGeometry(1.1, ALTURA_METADE_BENDER, 0.7, 3, 0.05);
+benderMetadeBaixo.translate(0, -(VAO_BENDER / 2 + ALTURA_METADE_BENDER / 2), 0);
+const blocoGeoBenderAberto = mergeGeometries([benderMetadeCima, benderMetadeBaixo]);
 // Soma das 3 larguras LATERAIS, em Z (0.42 + 0.7 + 0.42 = 1.54) ≈ largura
 // (Z) do bloco de cabeceira padrão (1.55) — por isso o Molde por cima
 // "cobre" a fileira toda, do jeito que a área mostrou no print de
@@ -1308,7 +1322,12 @@ const MOLDE_ALTURA_MUNDO = 1.1;       // extensão vertical no mundo = dimensão
 const MOLDE_COMPRIMENTO_MUNDO = 1.55; // extensão ao longo da linha no mundo = dimensão local Y
 const MOLDE_LARGURA_Z = 1.55;         // lateral (Z) — não afetada pela rotação em Z, cobre a fileira Oscilador+Bender+Oscilador por baixo
 
-const blocoGeoMolde = new RoundedBoxGeometry(MOLDE_ALTURA_MUNDO, MOLDE_COMPRIMENTO_MUNDO, MOLDE_LARGURA_Z, 2, 0.045);
+// 🔧 "Tá muito quadrado": 2 segmentos / 0.045 de raio deixava as quinas
+// quase retas (chanfro mal perceptível). Subido pro mesmo padrão do
+// blocoGeoCabeceira (3 segmentos, 0.09 de raio) — dobra o arredondamento
+// e deixa a superfície mais suave, sem mudar a caixa delimitadora (as
+// posições de janela/faixa/placa abaixo não dependem do raio).
+const blocoGeoMolde = new RoundedBoxGeometry(MOLDE_ALTURA_MUNDO, MOLDE_COMPRIMENTO_MUNDO, MOLDE_LARGURA_Z, 3, 0.09);
 
 // 🆕 "Gaiola de rolos" aberta — como o equipamento real da MCC4 (curva
 // e mesa horizontal): duas metades separadas por um vão no meio, por
@@ -1512,6 +1531,36 @@ function adicionarRolosDecorativos(mesh, peca, ehGrupo23) {
         mesh.add(perna);
     });
     }
+}
+
+// 🆕 Rolos visíveis dentro do Bender — bem mais simples que
+// adicionarRolosDecorativos acima (sem pilares/cilindros de elevação/
+// barra transversal, que não existem no Bender): só os rolos, mais
+// curtos que os da linha principal (rolinhoGeo tem 1.1 de comprimento —
+// vazaria pros lados do Z de 0.7 do bloco do Bender).
+const rolinhoBenderGeo = new THREE.CylinderGeometry(0.085, 0.085, 0.55, 16);
+rolinhoBenderGeo.rotateX(Math.PI / 2);
+// 🔧 rolinhoMat (0x1a1e28, quase preto) some dentro do vão — sem luz
+// direta alcançando esse recesso fechado, um metal quase-preto rende
+// tão escuro quanto a sombra ao redor, indistinguível (mesmo problema
+// da faixa de risco do Molde). Metal claro (igual ao aro das janelas
+// do Molde) pra continuar visível mesmo na sombra.
+const rolinhoBenderMat = new THREE.MeshStandardMaterial({ color: 0x9aa6ba, roughness: 0.25, metalness: 0.7 });
+
+function adicionarRolosBender(mesh) {
+    const offsets = [-0.22, 0, 0.22]; // 3 rolos, dentro do X de 1.1 do bloco
+    const yRolo = VAO_BENDER / 2 - 0.02;
+    offsets.forEach(offX => {
+        const roloCima = new THREE.Mesh(rolinhoBenderGeo, rolinhoBenderMat);
+        roloCima.position.set(offX, yRolo, 0);
+        roloCima.castShadow = true;
+        mesh.add(roloCima);
+
+        const roloBaixo = new THREE.Mesh(rolinhoBenderGeo, rolinhoBenderMat);
+        roloBaixo.position.set(offX, -yRolo, 0);
+        roloBaixo.castShadow = true;
+        mesh.add(roloBaixo);
+    });
 }
 
 // 🆕 Detalhes decorativos do Molde — mesmo padrão dos rolos acima:
@@ -1844,7 +1893,9 @@ function construirCena(veio) {
                 // 🆕 Bender e Oscilador (N/S), na fileira lateral, usam
                 // blocos mais estreitos — só o Molde (em cima, sozinho)
                 // mantém o bloco de cabeceira padrão, do tamanho normal.
-                if (slot.id.startsWith('BND')) geo = blocoGeoBenderLateral;
+                // 🆕 Bender usa o bloco "aberto" (com vão pros rolos) —
+                // usuário pediu pra aparecer rolos dentro dele.
+                if (slot.id.startsWith('BND')) geo = blocoGeoBenderAberto;
                 else if (slot.id.includes('OSC-')) geo = blocoGeoOsciladorLateral;
                 else if (slot.id.startsWith('MLD')) geo = blocoGeoMolde;
                 else geo = blocoGeoCabeceira;
@@ -1878,11 +1929,15 @@ function construirCena(veio) {
 
         // 🆕 Rolos + pilares/cilindros visíveis — na MCC4 (curva e mesa
         // horizontal) e agora também nos Segmentos de Grupo (G1/G2/G3)
-        // da MCC2/3. Molde/Bender/Zero continuam com o bloco liso.
+        // da MCC2/3. Molde/Zero continuam com o bloco liso; Bender agora
+        // também mostra rolos (versão simplificada, sem barra
+        // transversal — ver adicionarRolosBender).
         if (usarPecaAberta) {
             adicionarRolosDecorativos(mesh, peca, ehGrupoMCC23);
         } else if (mcc4 && slot.id.startsWith('MLD')) {
             adicionarDetalhesMolde(mesh);
+        } else if (mcc4 && slot.id.startsWith('BND')) {
+            adicionarRolosBender(mesh);
         }
 
         // Etiqueta fixa (sempre visível), agora como sprite 3D. As 74
