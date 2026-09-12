@@ -3,6 +3,7 @@
 Thumbs.db
 .vscode/
 .idea/
+.claude/
 
 # Node (só usado pelo tools/gerar_mapeamento.mjs)
 node_modules/
