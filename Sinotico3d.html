@@ -1587,10 +1587,13 @@ function criarTexturaFaixaRisco() {
     return textura;
 }
 // 🔧 0.22 de altura (~20% da altura total do corpo) rendeu como um
-// risco fino quase invisível no print — subida pra quase metade da
-// altura, pra ler como uma faixa de segurança de verdade, não um
-// detalhe perdido.
-const FAIXA_RISCO_MUNDO = { altura: 0.42, comprimento: 1.3, espessuraZ: 0.03 };
+// risco fino quase invisível no print — subida pra 0.42 (~38%), só que
+// aí passou do outro lado: comparado com a foto de referência real
+// (mural "M4-2"), a faixa de risco lá é uma tira fina bem colada na
+// base, acima dos pés — não sobe até quase o meio do corpo. Ajustada
+// pra 0.18 (~16% da altura) e reposicionada mais pra baixo (ver
+// adicionarDetalhesMolde) pra bater com a referência.
+const FAIXA_RISCO_MUNDO = { altura: 0.18, comprimento: 1.3, espessuraZ: 0.03 };
 const moldeFaixaRiscoGeo = new THREE.BoxGeometry(FAIXA_RISCO_MUNDO.altura, FAIXA_RISCO_MUNDO.comprimento, FAIXA_RISCO_MUNDO.espessuraZ);
 const moldeFaixaRiscoMat = new THREE.MeshStandardMaterial({ map: criarTexturaFaixaRisco(), roughness: 0.55, metalness: 0.1 });
 
@@ -1616,9 +1619,12 @@ function adicionarDetalhesMolde(mesh) {
     caixaComando.castShadow = true;
     mesh.add(caixaComando);
 
-    // Faixa de risco, na face frontal, perto da base
+    // Faixa de risco, na face frontal, colada na base (acima dos pés) —
+    // mundoY = -0.44 com metade da altura (0.09) deixa a faixa entre
+    // -0.53 e -0.35, bem perto da borda de baixo do corpo (-0.55),
+    // igual à referência real.
     const faixa = new THREE.Mesh(moldeFaixaRiscoGeo, moldeFaixaRiscoMat);
-    faixa.position.set(...moldeMundoParaLocal(0, -0.3, MOLDE_LARGURA_Z / 2 + FAIXA_RISCO_MUNDO.espessuraZ / 2 - 0.01));
+    faixa.position.set(...moldeMundoParaLocal(0, -0.44, MOLDE_LARGURA_Z / 2 + FAIXA_RISCO_MUNDO.espessuraZ / 2 - 0.01));
     mesh.add(faixa);
 
     // Placa frontal, acima da faixa de risco, do lado da caixa de comando
@@ -1626,11 +1632,14 @@ function adicionarDetalhesMolde(mesh) {
     placa.position.set(...moldeMundoParaLocal(-0.5, 0.3, MOLDE_LARGURA_Z / 2 + PLACA_FRENTE_MUNDO.espessuraZ / 2 - 0.01));
     mesh.add(placa);
 
-    // 2 janelas (com aro) na face frontal, do lado oposto à caixa de
-    // comando. 🔧 Antes ficavam a só 0.25 de distância — quase coladas
-    // (aro tem 0.28 de largura, então metade se sobrepunha), viravam
-    // uma barra escura só no print, não duas janelas.
-    [0.1, 0.55].forEach(mundoX => {
+    // 3 janelas (com aro) na face frontal, do lado oposto à caixa de
+    // comando — a referência real (mural "M4-2") mostra 3 janelas em
+    // fileira, não 2. 🔧 Antes ficavam a só 0.25 de distância — quase
+    // coladas (aro tem 0.28 de largura, então metade se sobrepunha),
+    // viravam uma barra escura só no print. Espaçamento de 0.41 entre
+    // centros (> 0.28 da largura do aro) mantém as 3 separadas dentro
+    // do espaço disponível nesse lado do corpo.
+    [-0.30, 0.11, 0.52].forEach(mundoX => {
         const aro = new THREE.Mesh(moldeJanelaAroGeo, moldeJanelaAroMat);
         aro.position.set(...moldeMundoParaLocal(mundoX, 0.15, MOLDE_LARGURA_Z / 2 - 0.005));
         mesh.add(aro);
