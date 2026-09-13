@@ -1549,35 +1549,73 @@ function adicionarRolosDecorativos(mesh, peca, ehGrupo23) {
 
 // 🆕 Rolos visíveis dentro do Bender — bem mais simples que
 // adicionarRolosDecorativos acima (sem pilares/cilindros de elevação/
-// barra transversal, que não existem no Bender): só os rolos, mais
-// curtos que os da linha principal (rolinhoGeo tem 1.1 de comprimento —
-// vazaria pros lados do Z de 0.7 do bloco do Bender).
-// 🔧 "Tá deitado, deixa em pé": THREE.CylinderGeometry nasce com o eixo
-// já em Y (vertical) — o rotateX(90°) de antes era o que deitava o rolo
-// (jogava o eixo pra Z, igual ao rolinhoGeo da linha principal, que
-// precisa ficar deitado atravessando a largura da linha). O Bender não
-// tem esse "atravessar a largura": aqui os rolos ficam de pé, então
-// basta NÃO rotacionar. Sem a rotação, "comprimento" (2º parâmetro)
-// vira a altura de pé — precisa caber dentro do vão (VAO_BENDER=0.32),
-// bem menor que os 0.55 de antes (que eram um comprimento deitado).
-// Raio maior (0.12, era 0.085) pra ler como um rolete de verdade visto
-// de cima/de frente, não um palito.
-const rolinhoBenderGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.26, 16);
-// 🔧 rolinhoMat (0x1a1e28, quase preto) some dentro do vão — sem luz
-// direta alcançando esse recesso fechado, um metal quase-preto rende
-// tão escuro quanto a sombra ao redor, indistinguível (mesmo problema
-// da faixa de risco do Molde). Metal claro (igual ao aro das janelas
-// do Molde) pra continuar visível mesmo na sombra.
-const rolinhoBenderMat = new THREE.MeshStandardMaterial({ color: 0x9aa6ba, roughness: 0.25, metalness: 0.7 });
+// barra transversal, que não existem no Bender). ISSO SÓ SE APLICA AO
+// BENDER — não mexe no rolinhoGeo/adicionarRolosDecorativos da linha
+// principal.
+//
+// 🔧 Terceira versão, com foto de referência real do par de rolos do
+// Bender: NÃO é um rolete de pé (v2) nem vários roletes curtos deitados
+// atravessando a largura (v1) — é um PAR de rolos compridos, DEITADOS
+// ao longo do comprimento da peça (eixo mundo_X, não mundo_Z), um em
+// cima do outro quase se tocando, preenchendo quase toda a altura do
+// vão. Cada um tem uma faixa serrilhada (textura) no meio e as pontas
+// lisas, igual à foto.
+//
+// CylinderGeometry nasce com o eixo em Y. rotateZ(90°) joga esse eixo
+// pra X — mesmo truque do moldePeGeo/moldeMangueiraGeo (só que lá é
+// pra "ficar de pé"; aqui, como o Bender não gira feito o Molde,
+// local_X já É mundo_X, então isso é o que deixa o rolo deitado ao
+// longo do comprimento).
+const rolinhoBenderGeo = new THREE.CylinderGeometry(0.075, 0.075, 0.95, 20);
+rolinhoBenderGeo.rotateZ(Math.PI / 2);
+
+// Textura: metal liso nas pontas, faixa serrilhada (padrão xadrez em
+// diagonal, imitando o knurl da foto) no terço do meio. V da
+// CylinderGeometry acompanha o comprimento (eixo X depois do
+// rotateZ), então essa textura fica alinhada ao longo do rolo, não ao
+// redor dele.
+function criarTexturaRoloBender() {
+    const w = 64, h = 256;
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#aab2c0';
+    ctx.fillRect(0, 0, w, h);
+    const knurlTopo = h * 0.3, knurlBase = h * 0.7;
+    ctx.fillStyle = '#4d5460';
+    ctx.fillRect(0, knurlTopo, w, knurlBase - knurlTopo);
+    ctx.strokeStyle = '#9aa3b0';
+    ctx.lineWidth = 2;
+    const passo = 10;
+    for (let y = knurlTopo - passo; y < knurlBase + passo; y += passo) {
+        for (let x = -passo; x < w + h; x += passo) {
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + passo, y + passo);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x + passo, y);
+            ctx.lineTo(x, y + passo);
+            ctx.stroke();
+        }
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.repeat.set(4, 1); // repete ao redor da circunferência do rolo
+    return tex;
+}
+const rolinhoBenderMat = new THREE.MeshStandardMaterial({ map: criarTexturaRoloBender(), roughness: 0.35, metalness: 0.7 });
 
 function adicionarRolosBender(mesh) {
-    // De pé, uma fileira só (não cima+baixo como antes) — centralizados
-    // na altura do vão (y=0), já que agora cada rolo sozinho ocupa
-    // quase toda a altura do vão.
-    const offsets = [-0.22, 0, 0.22]; // 3 rolos, dentro do X de 1.1 do bloco
-    offsets.forEach(offX => {
+    // Par de rolos deitados, um em cima do outro quase se tocando —
+    // raio 0.075 cada, então centros a ±0.075 (soma dos raios) deixa as
+    // superfícies encostadas, preenchendo 0.15 dos 0.32 de vão (sobra
+    // uma margem simétrica de ~0.085 pra cada lado, contra o corpo).
+    [0.075, -0.075].forEach(offY => {
         const rolo = new THREE.Mesh(rolinhoBenderGeo, rolinhoBenderMat);
-        rolo.position.set(offX, 0, 0);
+        rolo.position.set(0, offY, 0);
         rolo.castShadow = true;
         mesh.add(rolo);
     });
