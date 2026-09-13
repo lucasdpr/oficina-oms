@@ -1555,24 +1555,34 @@ function adicionarRolosDecorativos(mesh, peca, ehGrupo23) {
 //
 // 🔧 Terceira versão, com foto de referência real do par de rolos do
 // Bender: NÃO é um rolete de pé (v2) nem vários roletes curtos deitados
-// atravessando a largura (v1) — é um PAR de rolos compridos, DEITADOS
-// ao longo do comprimento da peça (eixo mundo_X, não mundo_Z), um em
-// cima do outro quase se tocando, preenchendo quase toda a altura do
-// vão. Cada um tem uma faixa serrilhada (textura) no meio e as pontas
-// lisas, igual à foto.
+// atravessando a largura (v1) — é um PAR de rolos compridos, DEITADOS,
+// um em cima do outro quase se tocando, preenchendo quase toda a
+// altura do vão. Cada um tem uma faixa serrilhada (textura) no meio e
+// as pontas lisas, igual à foto.
 //
-// CylinderGeometry nasce com o eixo em Y. rotateZ(90°) joga esse eixo
-// pra X — mesmo truque do moldePeGeo/moldeMangueiraGeo (só que lá é
-// pra "ficar de pé"; aqui, como o Bender não gira feito o Molde,
-// local_X já É mundo_X, então isso é o que deixa o rolo deitado ao
-// longo do comprimento).
-const rolinhoBenderGeo = new THREE.CylinderGeometry(0.075, 0.075, 0.95, 20);
-rolinhoBenderGeo.rotateZ(Math.PI / 2);
+// 🔧 "Rode os rolos 90°": a primeira versão deste commit deitava o
+// rolo no eixo mundo_X (comprimento da peça) — de frente pro Bender no
+// ângulo padrão de visualização (câmera olhando ao longo de X, é assim
+// que o resto do app sempre mostra essa fileira — Oscilador N/S
+// aparecem um de cada lado na tela), um rolo deitado em X aponta
+// direto pra câmera e vira só uma bolinha, não um cilindro comprido.
+// Girado 90°: agora deitado no eixo mundo_Z (largura), que FICA de
+// lado pra essa câmera — exatamente o que aparece comprido na tela.
+// Só que o Z do bloco é 0.7 (bem menor que o X de 1.1), então o
+// comprimento do rolo teve que encolher de 0.95 pra 0.55 pra caber
+// sem vazar pros lados (mesmo cuidado que o comentário original do v1
+// já tinha apontado pra essa mesma direção).
+//
+// CylinderGeometry nasce com o eixo em Y. rotateX(90°) joga esse eixo
+// pra Z (mesma conta do rolinhoGeo da linha principal, que também
+// precisa deitar atravessando a largura).
+const rolinhoBenderGeo = new THREE.CylinderGeometry(0.075, 0.075, 0.55, 20);
+rolinhoBenderGeo.rotateX(Math.PI / 2);
 
 // Textura: metal liso nas pontas, faixa serrilhada (padrão xadrez em
 // diagonal, imitando o knurl da foto) no terço do meio. V da
-// CylinderGeometry acompanha o comprimento (eixo X depois do
-// rotateZ), então essa textura fica alinhada ao longo do rolo, não ao
+// CylinderGeometry acompanha o comprimento (eixo Z depois do
+// rotateX), então essa textura fica alinhada ao longo do rolo, não ao
 // redor dele.
 function criarTexturaRoloBender() {
     const w = 64, h = 256;
