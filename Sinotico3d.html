@@ -1617,17 +1617,51 @@ function criarTexturaRoloBender() {
     return tex;
 }
 const rolinhoBenderMat = new THREE.MeshStandardMaterial({ map: criarTexturaRoloBender(), roughness: 0.35, metalness: 0.7 });
+// 🆕 "Deve ficar vermelho o rolo se travar igual o horizontal": o
+// Bender já tem dado real de travamento (getLayoutRolos('bender') —
+// 15 rolos por base Superior/Inferior, mesma estrutura de
+// rolos_travados/mancais que a linha principal usa), só nunca tinha
+// sido ligado no visual 3D. Mesma cor de alerta do rolinhoMatAlerta da
+// linha principal — sem textura, o vermelho emissivo já é o
+// suficiente pra ler como alerta (a textura de knurl ficaria
+// escondida atrás do brilho mesmo).
+const rolinhoBenderMatAlerta = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3, metalness: 0.5, emissive: 0x7a0000, emissiveIntensity: 0.45 });
 
-function adicionarRolosBender(mesh) {
-    // Par de rolos deitados, um em cima do outro quase se tocando —
-    // raio 0.075 cada, então centros a ±0.075 (soma dos raios) deixa as
-    // superfícies encostadas, preenchendo 0.15 dos 0.32 de vão (sobra
-    // uma margem simétrica de ~0.085 pra cada lado, contra o corpo).
-    [0.075, -0.075].forEach(offY => {
-        const rolo = new THREE.Mesh(rolinhoBenderGeo, rolinhoBenderMat);
-        rolo.position.set(0, offY, 0);
-        rolo.castShadow = true;
-        mesh.add(rolo);
+function adicionarRolosBender(mesh, peca) {
+    // 🆕 "Coloque um em cada extremo, frente e trás": antes só tinha 1
+    // par (centralizado em X=0); agora 2 pares, um perto de cada ponta
+    // do comprimento do Bender (X=1.1 total, half=0.55) — 0.35 deixa
+    // uma margem de ~0.125 até a borda, sem vazar.
+    //
+    // Cada par continua sendo um rolo "de cima" (Y=+0.075, representa a
+    // base Superior) e um "de baixo" (Y=-0.075, base Inferior) — raio
+    // 0.075 cada, centros a ±0.075 (soma dos raios) deixa as
+    // superfícies realmente encostadas.
+    //
+    // Cor por base: igual à linha principal (adicionarRolosDecorativos)
+    // — SE qualquer rolo da base Superior estiver travado/com mancal
+    // com ocorrência (chave "S-..."), TODOS os rolos decorativos dessa
+    // base ficam vermelhos (é uma representação simplificada — o
+    // Bender tem 15 rolos reais por base, não dá pra mostrar cada um
+    // individualmente aqui, só sinalizar "essa base tem problema").
+    const travados = peca ? parseRolosTravados(peca) : new Set();
+    const mancais = peca ? parseMancais(peca) : {};
+    const chaves = [...travados, ...Object.keys(mancais)];
+    const temAlertaSuperior = chaves.some(k => k.startsWith('S-'));
+    const temAlertaInferior = chaves.some(k => k.startsWith('I-'));
+    const matCima = temAlertaSuperior ? rolinhoBenderMatAlerta : rolinhoBenderMat;
+    const matBaixo = temAlertaInferior ? rolinhoBenderMatAlerta : rolinhoBenderMat;
+
+    [-0.35, 0.35].forEach(offX => {
+        const roloCima = new THREE.Mesh(rolinhoBenderGeo, matCima);
+        roloCima.position.set(offX, 0.075, 0);
+        roloCima.castShadow = true;
+        mesh.add(roloCima);
+
+        const roloBaixo = new THREE.Mesh(rolinhoBenderGeo, matBaixo);
+        roloBaixo.position.set(offX, -0.075, 0);
+        roloBaixo.castShadow = true;
+        mesh.add(roloBaixo);
     });
 }
 
@@ -2014,7 +2048,7 @@ function construirCena(veio) {
         } else if (mcc4 && slot.id.startsWith('MLD')) {
             adicionarDetalhesMolde(mesh);
         } else if (mcc4 && slot.id.startsWith('BND')) {
-            adicionarRolosBender(mesh);
+            adicionarRolosBender(mesh, peca);
         }
 
         // Etiqueta fixa (sempre visível), agora como sprite 3D. As 74
