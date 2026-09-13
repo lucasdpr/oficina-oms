@@ -1272,6 +1272,17 @@ scene.add(grupoLinha);
 const blocoGeoCabeceira = new RoundedBoxGeometry(1.1, 1.55, 1.55, 3, 0.09);
 const blocoGeoPadrao = new RoundedBoxGeometry(1.28, 0.62, 1.35, 3, 0.07);
 
+// 🆕 Molde e Mesa Osciladora da MCC2/3 — usuário pediu "melhora" pros
+// dois. Antes usavam o mesmo blocoGeoPadrao liso de qualquer cabeceira
+// genérica (igual ao que sobrava pra "qualquer coisa não identificada"
+// — sem nenhum detalhe próprio). Mesma pegada do blocoGeoMolde da MCC4
+// (mais arredondado que o padrão), mas aqui SEM a rotação -90°/
+// moldeMundoParaLocal daquele — na MCC2/3 essas peças ficam retas na
+// curva (slot.rotZ = tangente), então local_x/y/z já É mundo ao longo
+// da linha/altura/largura, sem twist nenhum pra desfazer.
+const blocoGeoMoldeMCC23 = new RoundedBoxGeometry(1.28, 0.62, 1.35, 3, 0.1);
+const blocoGeoMesaOsciladora = new RoundedBoxGeometry(1.28, 0.62, 1.35, 3, 0.1);
+
 // 🆕 Bender/Oscilador da fileira lateral (MCC4): blocos mais estreitos no
 // eixo Z (o eixo lateral de verdade — ver comentário em
 // calcularTransformacoesMCC4 sobre por que Z, não X) pra que os 3 lado a
@@ -1829,6 +1840,61 @@ function adicionarDetalhesMolde(mesh) {
     });
 }
 
+// 🆕 Molde da MCC2/3 — "melhora pro molde" do usuário. Bem mais simples
+// que adicionarDetalhesMolde() da MCC4 (sem caixa de comando/pés/
+// mangueiras — essa peça não tem uma foto de referência própria ainda,
+// só o pedido de melhorar em relação ao bloco liso genérico): faixa de
+// risco + 2 janelas, na mesma linguagem visual já estabelecida.
+//
+// SEM moldeMundoParaLocal aqui — essa peça não gira -90° feito a da
+// MCC4 (fica reta na curva, slot.rotZ = tangente), então local_x/y/z
+// JÁ é comprimento/altura/largura, sem twist nenhum pra desfazer.
+//
+// Geometrias próprias (não as da MCC4): a faixa/janela de lá foram
+// dimensionadas pro corpo maior da MCC4 (e com os eixos trocados pelo
+// twist) — reaproveitar do jeito errado aqui deitaria a janela de
+// lado. Só os MATERIAIS (cor/textura) são os mesmos.
+const FAIXA_RISCO_MCC23 = { comprimento: 1.1, altura: 0.12, espessuraZ: 0.03 };
+const faixaRiscoMCC23Geo = new THREE.BoxGeometry(FAIXA_RISCO_MCC23.comprimento, FAIXA_RISCO_MCC23.altura, FAIXA_RISCO_MCC23.espessuraZ);
+const janelaMCC23Geo = new THREE.BoxGeometry(0.22, 0.08, 0.03);
+const janelaAroMCC23Geo = new THREE.BoxGeometry(0.28, 0.11, 0.02);
+
+function adicionarDetalhesMoldeMCC23(mesh) {
+    // Faixa de risco, colada perto da base da face frontal (largura/Z
+    // é 1.35, metade 0.675; altura/Y é 0.62, metade 0.31).
+    const faixa = new THREE.Mesh(faixaRiscoMCC23Geo, moldeFaixaRiscoMat);
+    faixa.position.set(0, -0.19, 0.675 + FAIXA_RISCO_MCC23.espessuraZ / 2 - 0.01);
+    mesh.add(faixa);
+
+    // 2 janelas (com aro), acima da faixa, espalhadas ao longo do
+    // comprimento (X, metade 0.64).
+    [-0.28, 0.28].forEach(x => {
+        const aro = new THREE.Mesh(janelaAroMCC23Geo, moldeJanelaAroMat);
+        aro.position.set(x, 0.08, 0.675 - 0.005);
+        mesh.add(aro);
+
+        const janela = new THREE.Mesh(janelaMCC23Geo, moldeJanelaMat);
+        janela.position.set(x, 0.08, 0.675 - 0.03);
+        mesh.add(janela);
+    });
+}
+
+// 🆕 Mesa Osciladora (MCC2/3) — "a mesa osciladora melhore também".
+// Equipamento ainda "provisório, não existe fisicamente em nenhum
+// veio" (ver comentário em construirLayoutSlotsMCC23), então sem foto
+// de referência pra seguir — só uma "tampa" clara por cima, sugerindo
+// a superfície da mesa sem inventar detalhe demais numa peça que nem
+// existe de verdade ainda.
+const mesaTopoGeo = new RoundedBoxGeometry(1.15, 0.08, 1.2, 2, 0.02);
+const mesaTopoMat = new THREE.MeshStandardMaterial({ color: 0x8a94a8, roughness: 0.3, metalness: 0.55 });
+
+function adicionarDetalhesMesaOsciladora(mesh) {
+    const topo = new THREE.Mesh(mesaTopoGeo, mesaTopoMat);
+    topo.position.set(0, 0.31 + 0.04 - 0.01, 0); // encostada no topo do corpo (metade da altura, 0.31), subindo metade da própria espessura
+    topo.castShadow = true;
+    mesh.add(topo);
+}
+
 let piecesById = {};      // dados vindos da API, por id
 let meshesBySlot = [];    // { slot, mesh, material }
 let hoveredMesh = null;
@@ -1993,9 +2059,15 @@ function construirCena(veio) {
         const cor = corPorPeca(peca);
         const glow = emissivoPorPeca(peca);
         // Segmentos de Grupo (G1, G2-1/2, G3-1/2/3) da MCC2/3 usam a
-        // mesma "gaiola aberta" com rolos + pilares da MCC4 — só o
-        // Molde e o Zero continuam com o bloco liso de cabeceira.
-        const ehGrupoMCC23 = !mcc4 && slot.id.startsWith('GRP');
+        // mesma "gaiola aberta" com rolos + pilares da MCC4. 🆕 O Zero
+        // (Segmento Zero) também — usuário pediu pra aparecer o sistema
+        // de rolos nele, e ele já tem dado real de travamento
+        // (getLayoutRolos('zero') em dados.js: 20 rolos, 10 por base),
+        // só nunca tinha sido ligado no visual. Molde e Mesa Osciladora
+        // ganham cada um o próprio bloco/detalhe decorativo, mais abaixo
+        // — não é mais o bloco liso genérico (blocoGeoPadrao) que
+        // qualquer cabeceira não identificada usava antes.
+        const ehGrupoMCC23 = !mcc4 && (slot.id.startsWith('GRP') || slot.id.startsWith('SEG-0'));
         const usarPecaAberta = (mcc4 && slot.grupo !== 'cabeceira') || ehGrupoMCC23;
 
         let geo;
@@ -2013,8 +2085,14 @@ function construirCena(veio) {
             } else {
                 geo = blocoGeoPadraoAberto;
             }
+        } else if (ehGrupoMCC23) {
+            geo = blocoGeoPadraoAberto;
+        } else if (slot.id.startsWith('MLD')) {
+            geo = blocoGeoMoldeMCC23;
+        } else if (slot.id.startsWith('MES')) {
+            geo = blocoGeoMesaOsciladora;
         } else {
-            geo = ehGrupoMCC23 ? blocoGeoPadraoAberto : (slot.grupo === 'cabeceira' ? blocoGeoPadrao : cilindroCadeiraGeo);
+            geo = slot.grupo === 'cabeceira' ? blocoGeoPadrao : cilindroCadeiraGeo;
         }
 
         const material = new THREE.MeshPhysicalMaterial({
@@ -2039,16 +2117,22 @@ function construirCena(veio) {
         meshesBySlot.push({ slot, mesh, material });
 
         // 🆕 Rolos + pilares/cilindros visíveis — na MCC4 (curva e mesa
-        // horizontal) e agora também nos Segmentos de Grupo (G1/G2/G3)
-        // da MCC2/3. Molde/Zero continuam com o bloco liso; Bender agora
-        // também mostra rolos (versão simplificada, sem barra
-        // transversal — ver adicionarRolosBender).
+        // horizontal), nos Segmentos de Grupo (G1/G2/G3) e agora também
+        // no Zero, todos da MCC2/3. Bender (MCC4) mostra rolos numa
+        // versão simplificada própria (sem barra transversal — ver
+        // adicionarRolosBender). Molde e Mesa Osciladora (MCC2/3) têm
+        // cada um seu próprio detalhe decorativo, não relacionado a
+        // rolos.
         if (usarPecaAberta) {
             adicionarRolosDecorativos(mesh, peca, ehGrupoMCC23);
         } else if (mcc4 && slot.id.startsWith('MLD')) {
             adicionarDetalhesMolde(mesh);
         } else if (mcc4 && slot.id.startsWith('BND')) {
             adicionarRolosBender(mesh, peca);
+        } else if (!mcc4 && slot.id.startsWith('MLD')) {
+            adicionarDetalhesMoldeMCC23(mesh);
+        } else if (!mcc4 && slot.id.startsWith('MES')) {
+            adicionarDetalhesMesaOsciladora(mesh);
         }
 
         // Etiqueta fixa (sempre visível), agora como sprite 3D. As 74
