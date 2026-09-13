@@ -926,6 +926,14 @@ function construirLayoutSlotsMCC4(veio) {
 const RAIO_CURVA = 5.6;
 const TOPO_Y = 7.5;
 const ESPACO_CABECEIRA = 1.08; // encostados: a altura real do bloco após girar -90° vem do parâmetro de largura (1.1) da geometria
+// 🔧 "Molde muito grande, corte pela metade": ESPACO_CABECEIRA acima foi
+// calibrado pro Molde no tamanho ANTIGO (altura mundo 1.1). Com o Molde
+// cortado pela metade (MOLDE_ALTURA_MUNDO = 0.55, ver mais abaixo), essa
+// distância precisa encolher também — senão ele flutua longe demais da
+// fileira Oscilador/Bender, com um vão feio no meio. Mesma conta de
+// "encostados" (metade do Molde novo + metade do Bender), com a mesma
+// folga de -0.02 que o ESPACO_CABECEIRA original já usava.
+const ESPACO_MOLDE = 0.805;
 const ESPACO_HORIZONTAL = 1.55;
 
 // 🔧 AJUSTADO ("Oscilador não fica empilhado, fica do lado"): a área
@@ -990,7 +998,7 @@ function calcularTransformacoesMCC4(slots) {
     // único eixo que a curva não usa, então é o eixo certo pra lateral
     // (esquerda/direita de verdade) — Molde/Bender ficam centrados em
     // Z=0, Oscilador Norte/Sul deslocam pra +Z/-Z.
-    if (molde) { molde.pos = new THREE.Vector3(0, yFileira + ESPACO_CABECEIRA, 0); molde.rotZ = -Math.PI / 2; }
+    if (molde) { molde.pos = new THREE.Vector3(0, yFileira + ESPACO_MOLDE, 0); molde.rotZ = -Math.PI / 2; }
     if (bender) { bender.pos = new THREE.Vector3(0, yFileira, 0); bender.rotZ = 0; }
     if (oscN) { oscN.pos = new THREE.Vector3(0, yFileira, -LATERAL_OSCILADOR); oscN.rotZ = 0; }
     if (oscS) { oscS.pos = new THREE.Vector3(0, yFileira, LATERAL_OSCILADOR); oscS.rotZ = 0; }
@@ -1318,7 +1326,13 @@ const LATERAL_OSCILADOR = 0.7 / 2 + 0.42 / 2;
 // coordenadas de MUNDO (o que a gente quer ver de verdade) e só depois
 // convertido pra local com local_x = -mundo_y, local_y = mundo_x,
 // local_z = mundo_z (helper moldeMundoParaLocal).
-const MOLDE_ALTURA_MUNDO = 1.1;       // extensão vertical no mundo = dimensão local X
+// 🔧 "Corte esse molde pela metade, tá muito grande": era 1.1, cortada
+// pra 0.55. ESPACO_MOLDE (acima) e os offsets em mundoY de
+// adicionarDetalhesMolde() (janela/faixa/placa/comando) foram
+// recalculados pra continuarem dentro da caixa nova — não dependem de
+// MOLDE_ALTURA_MUNDO por fórmula (são valores fixos), então tiveram que
+// ser escalados manualmente por 0.5 junto com este número.
+const MOLDE_ALTURA_MUNDO = 0.55;      // extensão vertical no mundo = dimensão local X
 const MOLDE_COMPRIMENTO_MUNDO = 1.55; // extensão ao longo da linha no mundo = dimensão local Y
 const MOLDE_LARGURA_Z = 1.55;         // lateral (Z) — não afetada pela rotação em Z, cobre a fileira Oscilador+Bender+Oscilador por baixo
 
@@ -1538,8 +1552,17 @@ function adicionarRolosDecorativos(mesh, peca, ehGrupo23) {
 // barra transversal, que não existem no Bender): só os rolos, mais
 // curtos que os da linha principal (rolinhoGeo tem 1.1 de comprimento —
 // vazaria pros lados do Z de 0.7 do bloco do Bender).
-const rolinhoBenderGeo = new THREE.CylinderGeometry(0.085, 0.085, 0.55, 16);
-rolinhoBenderGeo.rotateX(Math.PI / 2);
+// 🔧 "Tá deitado, deixa em pé": THREE.CylinderGeometry nasce com o eixo
+// já em Y (vertical) — o rotateX(90°) de antes era o que deitava o rolo
+// (jogava o eixo pra Z, igual ao rolinhoGeo da linha principal, que
+// precisa ficar deitado atravessando a largura da linha). O Bender não
+// tem esse "atravessar a largura": aqui os rolos ficam de pé, então
+// basta NÃO rotacionar. Sem a rotação, "comprimento" (2º parâmetro)
+// vira a altura de pé — precisa caber dentro do vão (VAO_BENDER=0.32),
+// bem menor que os 0.55 de antes (que eram um comprimento deitado).
+// Raio maior (0.12, era 0.085) pra ler como um rolete de verdade visto
+// de cima/de frente, não um palito.
+const rolinhoBenderGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.26, 16);
 // 🔧 rolinhoMat (0x1a1e28, quase preto) some dentro do vão — sem luz
 // direta alcançando esse recesso fechado, um metal quase-preto rende
 // tão escuro quanto a sombra ao redor, indistinguível (mesmo problema
@@ -1548,18 +1571,15 @@ rolinhoBenderGeo.rotateX(Math.PI / 2);
 const rolinhoBenderMat = new THREE.MeshStandardMaterial({ color: 0x9aa6ba, roughness: 0.25, metalness: 0.7 });
 
 function adicionarRolosBender(mesh) {
+    // De pé, uma fileira só (não cima+baixo como antes) — centralizados
+    // na altura do vão (y=0), já que agora cada rolo sozinho ocupa
+    // quase toda a altura do vão.
     const offsets = [-0.22, 0, 0.22]; // 3 rolos, dentro do X de 1.1 do bloco
-    const yRolo = VAO_BENDER / 2 - 0.02;
     offsets.forEach(offX => {
-        const roloCima = new THREE.Mesh(rolinhoBenderGeo, rolinhoBenderMat);
-        roloCima.position.set(offX, yRolo, 0);
-        roloCima.castShadow = true;
-        mesh.add(roloCima);
-
-        const roloBaixo = new THREE.Mesh(rolinhoBenderGeo, rolinhoBenderMat);
-        roloBaixo.position.set(offX, -yRolo, 0);
-        roloBaixo.castShadow = true;
-        mesh.add(roloBaixo);
+        const rolo = new THREE.Mesh(rolinhoBenderGeo, rolinhoBenderMat);
+        rolo.position.set(offX, 0, 0);
+        rolo.castShadow = true;
+        mesh.add(rolo);
     });
 }
 
@@ -1577,12 +1597,15 @@ function adicionarRolosBender(mesh) {
 // pernas grossas. Investe em tudo isso; a caixa de comando volta a
 // existir, mas agora como uma peça que sai pela LATERAL (eixo mundo_X,
 // ponta da peça) em vez de flutuar em cima.
-const moldeJanelaGeo = new THREE.BoxGeometry(0.16, 0.22, 0.03);
+// 🔧 Altura (primeiro parâmetro = extensão em mundoY) reduzida junto
+// com o corte pela metade do Molde (MOLDE_ALTURA_MUNDO), senão as
+// janelas ficam desproporcionalmente grandes pro corpo novo.
+const moldeJanelaGeo = new THREE.BoxGeometry(0.08, 0.22, 0.03);
 const moldeJanelaMat = new THREE.MeshStandardMaterial({ color: 0x090b10, roughness: 0.35, metalness: 0.3 });
 // Aro/moldura clara atrás da janela (um pouco maior, sai um pouco pros
 // lados) — dá o efeito de "painel com moldura", não um retângulo
 // escuro murcho na parede.
-const moldeJanelaAroGeo = new THREE.BoxGeometry(0.22, 0.28, 0.02);
+const moldeJanelaAroGeo = new THREE.BoxGeometry(0.11, 0.28, 0.02);
 // 🔧 Cor clara demais (0x6b7890) sumia contra o corpo amarelo/verde no
 // print — subida pra um cinza-claro quase metálico polido, que
 // contrasta contra qualquer cor de status.
@@ -1605,7 +1628,8 @@ moldeMangueiraGeo.rotateZ(Math.PI / 2);
 const moldeMangueiraMat = new THREE.MeshStandardMaterial({ color: 0x1c1f26, roughness: 0.55, metalness: 0.15 });
 
 // Placa frontal (tipo a plaquinha "M4-2" da foto de referência).
-const PLACA_FRENTE_MUNDO = { altura: 0.26, comprimento: 0.22, espessuraZ: 0.03 };
+// altura reduzida junto com o corte pela metade do Molde.
+const PLACA_FRENTE_MUNDO = { altura: 0.13, comprimento: 0.22, espessuraZ: 0.03 };
 const moldePlacaFrenteGeo = new RoundedBoxGeometry(PLACA_FRENTE_MUNDO.altura, PLACA_FRENTE_MUNDO.comprimento, PLACA_FRENTE_MUNDO.espessuraZ, 2, 0.025);
 const moldePlacaFrenteMat = new THREE.MeshStandardMaterial({ color: 0x161a22, roughness: 0.4, metalness: 0.35 });
 
@@ -1642,14 +1666,18 @@ function criarTexturaFaixaRisco() {
 // base, acima dos pés — não sobe até quase o meio do corpo. Ajustada
 // pra 0.18 (~16% da altura) e reposicionada mais pra baixo (ver
 // adicionarDetalhesMolde) pra bater com a referência.
-const FAIXA_RISCO_MUNDO = { altura: 0.18, comprimento: 1.3, espessuraZ: 0.03 };
+// altura reduzida junto com o corte pela metade do Molde, senão a
+// faixa passa a ocupar quase 1/3 do corpo novo.
+const FAIXA_RISCO_MUNDO = { altura: 0.09, comprimento: 1.3, espessuraZ: 0.03 };
 const moldeFaixaRiscoGeo = new THREE.BoxGeometry(FAIXA_RISCO_MUNDO.altura, FAIXA_RISCO_MUNDO.comprimento, FAIXA_RISCO_MUNDO.espessuraZ);
 const moldeFaixaRiscoMat = new THREE.MeshStandardMaterial({ map: criarTexturaFaixaRisco(), roughness: 0.55, metalness: 0.1 });
 
 // Caixa de comando — sai pela PONTA da peça (eixo mundo_X, ao longo da
 // linha), não flutuando em cima: metade embutida no corpo, metade pra
 // fora, igual ao "bloco anexado" bem visível da foto real.
-const CAIXA_COMANDO_MUNDO = { altura: 0.55, protrusaoX: 0.42, largura: 0.5 };
+// altura reduzida junto com o corte pela metade do Molde — 0.55 seria
+// tão alto quanto o corpo inteiro novo (também 0.55).
+const CAIXA_COMANDO_MUNDO = { altura: 0.275, protrusaoX: 0.42, largura: 0.5 };
 const moldeCaixaComandoGeo = new RoundedBoxGeometry(CAIXA_COMANDO_MUNDO.altura, CAIXA_COMANDO_MUNDO.protrusaoX, CAIXA_COMANDO_MUNDO.largura, 2, 0.03);
 const moldeCaixaComandoMat = new THREE.MeshStandardMaterial({ color: 0x45516f, roughness: 0.32, metalness: 0.55 });
 
@@ -1664,21 +1692,22 @@ function adicionarDetalhesMolde(mesh) {
     // pra fora — lê como peça anexada, não como bump na superfície.
     const comandoMundoX = -(MOLDE_COMPRIMENTO_MUNDO / 2 - 0.12 + CAIXA_COMANDO_MUNDO.protrusaoX / 2);
     const caixaComando = new THREE.Mesh(moldeCaixaComandoGeo, moldeCaixaComandoMat);
-    caixaComando.position.set(...moldeMundoParaLocal(comandoMundoX, 0.1, -0.05));
+    caixaComando.position.set(...moldeMundoParaLocal(comandoMundoX, 0.05, -0.05));
     caixaComando.castShadow = true;
     mesh.add(caixaComando);
 
     // Faixa de risco, na face frontal, colada na base (acima dos pés) —
-    // mundoY = -0.44 com metade da altura (0.09) deixa a faixa entre
-    // -0.53 e -0.35, bem perto da borda de baixo do corpo (-0.55),
-    // igual à referência real.
+    // mundoY = -0.22 com metade da altura nova (0.045) deixa a faixa
+    // entre -0.265 e -0.175, bem perto da borda de baixo do corpo novo
+    // (-0.275), igual à referência real (posição escalada junto com o
+    // corte pela metade do Molde).
     const faixa = new THREE.Mesh(moldeFaixaRiscoGeo, moldeFaixaRiscoMat);
-    faixa.position.set(...moldeMundoParaLocal(0, -0.44, MOLDE_LARGURA_Z / 2 + FAIXA_RISCO_MUNDO.espessuraZ / 2 - 0.01));
+    faixa.position.set(...moldeMundoParaLocal(0, -0.22, MOLDE_LARGURA_Z / 2 + FAIXA_RISCO_MUNDO.espessuraZ / 2 - 0.01));
     mesh.add(faixa);
 
     // Placa frontal, acima da faixa de risco, do lado da caixa de comando
     const placa = new THREE.Mesh(moldePlacaFrenteGeo, moldePlacaFrenteMat);
-    placa.position.set(...moldeMundoParaLocal(-0.5, 0.3, MOLDE_LARGURA_Z / 2 + PLACA_FRENTE_MUNDO.espessuraZ / 2 - 0.01));
+    placa.position.set(...moldeMundoParaLocal(-0.5, 0.15, MOLDE_LARGURA_Z / 2 + PLACA_FRENTE_MUNDO.espessuraZ / 2 - 0.01));
     mesh.add(placa);
 
     // 3 janelas (com aro) na face frontal, do lado oposto à caixa de
@@ -1690,11 +1719,11 @@ function adicionarDetalhesMolde(mesh) {
     // do espaço disponível nesse lado do corpo.
     [-0.30, 0.11, 0.52].forEach(mundoX => {
         const aro = new THREE.Mesh(moldeJanelaAroGeo, moldeJanelaAroMat);
-        aro.position.set(...moldeMundoParaLocal(mundoX, 0.15, MOLDE_LARGURA_Z / 2 - 0.005));
+        aro.position.set(...moldeMundoParaLocal(mundoX, 0.075, MOLDE_LARGURA_Z / 2 - 0.005));
         mesh.add(aro);
 
         const janela = new THREE.Mesh(moldeJanelaGeo, moldeJanelaMat);
-        janela.position.set(...moldeMundoParaLocal(mundoX, 0.15, MOLDE_LARGURA_Z / 2 - 0.03));
+        janela.position.set(...moldeMundoParaLocal(mundoX, 0.075, MOLDE_LARGURA_Z / 2 - 0.03));
         mesh.add(janela);
     });
 
