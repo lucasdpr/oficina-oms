@@ -1108,17 +1108,18 @@ function calcularTransformacoesMCC23(slots) {
         cabIdx++;
     });
 
-    // 🆕 Molde deitado + Mesa (moldura vazada) encostada nele continuam
-    // com posição própria (não seguem a tangente da curva, que era
-    // pensada pra blocos grandes/tortos).
-    // 🔧 "O zero tem que ficar em pé como estava, e encostar no segmento
-    // de grupo com ele em pé": Zero fica vertical (rotZ = -90°, como o
-    // Molde ficava antes de deitar) E alinhado/encostado bem em cima do
-    // G1 — as duas coisas ao mesmo tempo (a versão anterior só tinha uma
-    // ou outra: ou em pé perto da Mesa, ou deitado-tangente perto do
-    // G1). meiaAlturaG1 usa a MESMA conta que calcularTransformacoesMCC4
-    // já faz pro Bow #1 (bounding box do retângulo GIRADO pela tangente
-    // própria do G1 — G1 não muda, continua na curva normal).
+    // 🔧 "Alinhe tudo isso um em cima do outro, todos devem se conectar":
+    // o print mostrou Molde+Mesa flutuando longe (e até deslocados em
+    // X/Z) do bloco Zero+G1 lá embaixo — porque Molde/Mesa usavam a
+    // posição própria do MOLDE (arc), enquanto Zero usava a do G1 (arc),
+    // e essas duas posições são bem diferentes (pontos distintos na
+    // curva). Agora empilha os 4 numa coluna SÓ, de baixo pra cima,
+    // todos no MESMO X/Z (o do G1, que fica parado — precisa continuar
+    // batendo com G2 do jeito que já estava): G1 (curva, sem mexer) ->
+    // Zero (em pé, encostado nele) -> Mesa (deitada, encostada no Zero)
+    // -> Molde (deitado, encostado na Mesa). meiaAlturaG1 usa a MESMA
+    // conta que calcularTransformacoesMCC4 já faz pro Bow #1 (bounding
+    // box do retângulo girado pela tangente própria do G1).
     const moldeSlot = cabeceira.find(s => s.id.startsWith('MLD'));
     const mesaSlot = cabeceira.find(s => s.id.startsWith('MES'));
     const zeroSlot = cabeceira.find(s => s.id.startsWith('SEG-0'));
@@ -1126,15 +1127,8 @@ function calcularTransformacoesMCC23(slots) {
     const MOLDE23_MEIA_ALTURA = 0.31 * MOLDE23_ESCALA; // blocoGeoMoldeMCC23 Y (0.62) / 2 — deitado (rotZ=0), já é a extensão real no mundo
     const MESA23_MEIA_ALTURA = 0.11;  // criarGeoQuadroVazado alturaViga (0.22) / 2
     const ZERO23_MEIA_ALTURA = 1.28 / 2; // blocoGeoPadraoAberto, em pé (rotZ=-90°) — a extensão vertical vira a metade do comprimento (X), não da altura (Y)
-    const FOLGA_ENCAIXE = 0.1; // vão pequeno entre as peças
+    const FOLGA_ENCAIXE = 0.1; // vão pequeno entre cada peça da coluna
 
-    if (moldeSlot) moldeSlot.rotZ = 0;
-    if (mesaSlot && moldeSlot) {
-        mesaSlot.rotZ = 0;
-        mesaSlot.pos.x = moldeSlot.pos.x;
-        mesaSlot.pos.z = moldeSlot.pos.z;
-        mesaSlot.pos.y = moldeSlot.pos.y - (MOLDE23_MEIA_ALTURA + MESA23_MEIA_ALTURA + FOLGA_ENCAIXE);
-    }
     if (zeroSlot && g1Slot) {
         // Meia-altura real do G1 no mundo, considerando o ângulo dele na
         // curva (bounding box do retângulo rotacionado — blocoGeoPadraoAberto
@@ -1144,6 +1138,18 @@ function calcularTransformacoesMCC23(slots) {
         zeroSlot.pos.x = g1Slot.pos.x;
         zeroSlot.pos.z = g1Slot.pos.z;
         zeroSlot.pos.y = g1Slot.pos.y + meiaAlturaG1 + ZERO23_MEIA_ALTURA + FOLGA_ENCAIXE;
+    }
+    if (mesaSlot && zeroSlot) {
+        mesaSlot.rotZ = 0;
+        mesaSlot.pos.x = zeroSlot.pos.x;
+        mesaSlot.pos.z = zeroSlot.pos.z;
+        mesaSlot.pos.y = zeroSlot.pos.y + ZERO23_MEIA_ALTURA + MESA23_MEIA_ALTURA + FOLGA_ENCAIXE;
+    }
+    if (moldeSlot && mesaSlot) {
+        moldeSlot.rotZ = 0;
+        moldeSlot.pos.x = mesaSlot.pos.x;
+        moldeSlot.pos.z = mesaSlot.pos.z;
+        moldeSlot.pos.y = mesaSlot.pos.y + MESA23_MEIA_ALTURA + MOLDE23_MEIA_ALTURA + FOLGA_ENCAIXE;
     }
 
     if (!fimCurvaPos) fimCurvaPos = new THREE.Vector3(centro.x + RAIO_CABECEIRA_23, centro.y, 0);
