@@ -7,6 +7,13 @@ name: Lint / sintaxe
 # usado à mão pra validar cada correção de bug feita nas revisões
 # anteriores — automatizado, pra não depender de alguém lembrar de
 # rodar isso antes de mergear.
+#
+# 🔧 CORRIGIDO ("nenhum dos erros de sintaxe cometidos numa sessão
+# inteira mexendo no Sinotico3d.html teria sido pego por esse CI"): só
+# checava *.js — todo o JS que vive dentro de <script> em .html
+# (Sinotico3d.html, app.html, index.html) ficava de fora. Adicionado um
+# segundo passo (tools/checar_sintaxe_html.mjs) que extrai e checa esses
+# blocos também.
 on:
   pull_request:
   push:
@@ -27,3 +34,5 @@ jobs:
             node --check "$f" || status=1
           done
           exit $status
+      - name: Checar sintaxe do JS dentro de <script> nos .html
+        run: node tools/checar_sintaxe_html.mjs

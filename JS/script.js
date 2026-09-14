@@ -146,10 +146,6 @@ function headersAdmin() {
 let VEIO_SELECIONADO_PAINEL = "C";
 let FILTRO_CRITICOS = false;
 
-const CADASTRO_MATRICULAS = {
-    "061012": "Lucas (Desenvolvedor)"
-};
-
 // Matrículas com acesso total a todas as áreas da Oficina (mesma lista
 // do backend, em main.py). Usado no front pra decidir se o Painel do
 // Técnico mostra tudo (ADM) ou só a área da pessoa.
@@ -410,12 +406,13 @@ async function processarAutenticacaoHome() {
     if (btnEntrar) { btnEntrar.disabled = true; btnEntrar.innerText = "Verificando..."; }
 
     try {
-        // Acesso local de desenvolvedor (não depende do Neon estar no ar).
-        if (CADASTRO_MATRICULAS[matriculaInput] && senhaInput.toUpperCase() === matriculaInput.toUpperCase()) {
-            finalizarLogin("Lucas", CADASTRO_MATRICULAS[matriculaInput], matriculaInput, null, true);
-            return;
-        }
-
+        // 🔒 "Backdoor de dev hardcoded em produção" — removido numa revisão
+        // de segurança. Existia aqui um atalho (matrícula "061012", senha
+        // igual à matrícula) que logava como admin total ("Lucas
+        // Desenvolvedor", isAdm forçado) sem nunca chamar o backend — bastava
+        // ler o código-fonte (JS de cliente, público) pra descobrir. Login de
+        // desenvolvedor local, se precisar, deve continuar existindo só numa
+        // cópia local/.env, nunca commitado no código que todo mundo baixa.
         const apiBase = await resolverApiBase();
 
         // Se demorar, é provável que o servidor (Render) e/ou o banco
