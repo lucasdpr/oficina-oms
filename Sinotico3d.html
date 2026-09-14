@@ -1109,22 +1109,41 @@ function calcularTransformacoesMCC23(slots) {
     });
 
     // 🆕 "Molde tá em pé, deita ele também; mesa na horizontal, quadrado
-    // vazado em cima entra o molde": Molde e Mesa Osciladora, sozinhos
-    // entre as cabeceiras, param de seguir a tangente da curva (que os
-    // deixava tortos/em pé) e ficam DEITADOS de verdade (rotZ = 0) — e a
-    // Mesa alinha no mesmo X/Z do Molde, senão a haste do Molde não cai
-    // dentro do vão da moldura. Fica cada um na sua altura (Y) de
-    // sempre, só que agora empilhados retinho um embaixo do outro. Zero
-    // e o resto da fileira (G1/G2/G3) continuam como estavam.
+    // vazado em cima entra o molde" + "tudo tá longe, bota um pezinho
+    // igual fez na 4 apoiado na mesa" + "zero pode ficar mais em pé pra
+    // facilitar o encaixe": Molde, Mesa Osciladora e Zero (SEG-0) param
+    // de usar a posição/rotação da curva (que os deixava tortos E bem
+    // espaçados — a curva assume blocos grandes, mas esses 3 agora são
+    // peças finas/deitadas) e viram uma pilha reta e ENCOSTADA: Molde
+    // deitado, Mesa (moldura vazada) logo abaixo dele com um pezinho
+    // curto entre os dois (ver adicionarDetalhesMoldeMCC23), e Zero em
+    // pé (vertical, como o Molde ficava antes) encostado embaixo da
+    // Mesa, alinhados todos no mesmo X/Z. G1/G2/G3 continuam como
+    // estavam (já ficavam bem encostados uns nos outros na curva).
     const moldeSlot = cabeceira.find(s => s.id.startsWith('MLD'));
     const mesaSlot = cabeceira.find(s => s.id.startsWith('MES'));
+    const zeroSlot = cabeceira.find(s => s.id.startsWith('SEG-0'));
+    const MOLDE23_MEIA_ALTURA = 0.31; // blocoGeoMoldeMCC23 Y (0.62) / 2 — deitado (rotZ=0), já é a extensão real no mundo
+    const MESA23_MEIA_ALTURA = 0.11;  // criarGeoQuadroVazado alturaViga (0.22) / 2
+    // Zero usa blocoGeoPadraoAberto (1.28 x 0.62 x 1.35); em pé
+    // (rotZ = -90°) a extensão vertical real no mundo passa a ser a
+    // metade do comprimento (1.28), não da altura — mesma conta que
+    // calcularTransformacoesMCC4 já faz pro Bow #1 (bounding box girada).
+    const ZERO23_MEIA_ALTURA = 1.28 / 2;
+    const FOLGA_ENCAIXE = 0.1; // vão pequeno entre as peças — onde mora o "pezinho"
+
     if (moldeSlot) moldeSlot.rotZ = 0;
-    if (mesaSlot) {
+    if (mesaSlot && moldeSlot) {
         mesaSlot.rotZ = 0;
-        if (moldeSlot) {
-            mesaSlot.pos.x = moldeSlot.pos.x;
-            mesaSlot.pos.z = moldeSlot.pos.z;
-        }
+        mesaSlot.pos.x = moldeSlot.pos.x;
+        mesaSlot.pos.z = moldeSlot.pos.z;
+        mesaSlot.pos.y = moldeSlot.pos.y - (MOLDE23_MEIA_ALTURA + MESA23_MEIA_ALTURA + FOLGA_ENCAIXE);
+    }
+    if (zeroSlot && mesaSlot) {
+        zeroSlot.rotZ = -Math.PI / 2; // em pé, como o Molde ficava antes de deitar
+        zeroSlot.pos.x = mesaSlot.pos.x;
+        zeroSlot.pos.z = mesaSlot.pos.z;
+        zeroSlot.pos.y = mesaSlot.pos.y - (MESA23_MEIA_ALTURA + ZERO23_MEIA_ALTURA + FOLGA_ENCAIXE);
     }
 
     if (!fimCurvaPos) fimCurvaPos = new THREE.Vector3(centro.x + RAIO_CABECEIRA_23, centro.y, 0);
@@ -1917,6 +1936,13 @@ const faixaRiscoMCC23Geo = new THREE.BoxGeometry(FAIXA_RISCO_MCC23.comprimento, 
 const janelaMCC23Geo = new THREE.BoxGeometry(0.22, 0.08, 0.03);
 const janelaAroMCC23Geo = new THREE.BoxGeometry(0.28, 0.11, 0.02);
 
+// 🆕 "Bota um pezinho igual fez na 4, apoiado na mesa" — mesmo material
+// escuro dos pés do Molde da MCC4 (moldePeMat), só que aqui é um único
+// pilarzinho vertical (não 4 pés de canto) ligando a base do Molde até
+// a Mesa Osciladora logo abaixo dele.
+const pezinhoMoldeMesaGeo = new THREE.CylinderGeometry(0.06, 0.075, 0.14, 12);
+const pezinhoMoldeMesaMat = new THREE.MeshStandardMaterial({ color: 0x2b313e, roughness: 0.4, metalness: 0.6 });
+
 function adicionarDetalhesMoldeMCC23(mesh) {
     // Faixa de risco, colada perto da base da face frontal (largura/Z
     // é 1.35, metade 0.675; altura/Y é 0.62, metade 0.31).
@@ -1935,6 +1961,15 @@ function adicionarDetalhesMoldeMCC23(mesh) {
         janela.position.set(x, 0.08, 0.675 - 0.03);
         mesh.add(janela);
     });
+
+    // Pezinho — ver calcularTransformacoesMCC23: Molde e Mesa ficam
+    // encostados com um vão de 0.1 entre eles (Molde meia-altura 0.31),
+    // esse pilarzinho preenche exatamente esse vão, com uma pontinha de
+    // sobra pra dentro de cada peça (0.14 de comprimento > 0.1 de vão).
+    const pezinho = new THREE.Mesh(pezinhoMoldeMesaGeo, pezinhoMoldeMesaMat);
+    pezinho.position.set(0, -0.31 - 0.05, 0);
+    pezinho.castShadow = true;
+    mesh.add(pezinho);
 }
 
 // 🆕 Mesa Osciladora (MCC2/3) — agora é a moldura vazada em si (ver
