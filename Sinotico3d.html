@@ -1108,21 +1108,25 @@ function calcularTransformacoesMCC23(slots) {
         cabIdx++;
     });
 
-    // 🆕 "Isso tá ficando bom": Molde deitado + Mesa (moldura vazada)
-    // encostada nele continuam com posição própria (não seguem a
-    // tangente da curva, que era pensada pra blocos grandes/tortos).
-    // 🔧 "O zero encaixa ele no segmento de grupo 1": Zero VOLTOU a usar
-    // a posição/rotação natural da curva (a mesma conta que já faz G1
-    // encostar bonito no G2, G2 no G3 etc.) — a versão anterior colava o
-    // Zero na Mesa e ai ele ficava longe DEMAIS do G1 (o vão que
-    // "encanica" ele no resto da máquina). Só Molde+Mesa ficam com
-    // posição especial; Zero e o resto da fileira (G1/G2/G3) usam a
-    // curva normal, como sempre usaram.
+    // 🆕 Molde deitado + Mesa (moldura vazada) encostada nele continuam
+    // com posição própria (não seguem a tangente da curva, que era
+    // pensada pra blocos grandes/tortos).
+    // 🔧 "O zero tem que ficar em pé como estava, e encostar no segmento
+    // de grupo com ele em pé": Zero fica vertical (rotZ = -90°, como o
+    // Molde ficava antes de deitar) E alinhado/encostado bem em cima do
+    // G1 — as duas coisas ao mesmo tempo (a versão anterior só tinha uma
+    // ou outra: ou em pé perto da Mesa, ou deitado-tangente perto do
+    // G1). meiaAlturaG1 usa a MESMA conta que calcularTransformacoesMCC4
+    // já faz pro Bow #1 (bounding box do retângulo GIRADO pela tangente
+    // própria do G1 — G1 não muda, continua na curva normal).
     const moldeSlot = cabeceira.find(s => s.id.startsWith('MLD'));
     const mesaSlot = cabeceira.find(s => s.id.startsWith('MES'));
-    const MOLDE23_MEIA_ALTURA = 0.31; // blocoGeoMoldeMCC23 Y (0.62) / 2 — deitado (rotZ=0), já é a extensão real no mundo
+    const zeroSlot = cabeceira.find(s => s.id.startsWith('SEG-0'));
+    const g1Slot = cabeceira.find(s => s.id.startsWith('GRP1'));
+    const MOLDE23_MEIA_ALTURA = 0.31 * MOLDE23_ESCALA; // blocoGeoMoldeMCC23 Y (0.62) / 2 — deitado (rotZ=0), já é a extensão real no mundo
     const MESA23_MEIA_ALTURA = 0.11;  // criarGeoQuadroVazado alturaViga (0.22) / 2
-    const FOLGA_ENCAIXE = 0.1; // vão pequeno entre Molde e Mesa
+    const ZERO23_MEIA_ALTURA = 1.28 / 2; // blocoGeoPadraoAberto, em pé (rotZ=-90°) — a extensão vertical vira a metade do comprimento (X), não da altura (Y)
+    const FOLGA_ENCAIXE = 0.1; // vão pequeno entre as peças
 
     if (moldeSlot) moldeSlot.rotZ = 0;
     if (mesaSlot && moldeSlot) {
@@ -1130,6 +1134,16 @@ function calcularTransformacoesMCC23(slots) {
         mesaSlot.pos.x = moldeSlot.pos.x;
         mesaSlot.pos.z = moldeSlot.pos.z;
         mesaSlot.pos.y = moldeSlot.pos.y - (MOLDE23_MEIA_ALTURA + MESA23_MEIA_ALTURA + FOLGA_ENCAIXE);
+    }
+    if (zeroSlot && g1Slot) {
+        // Meia-altura real do G1 no mundo, considerando o ângulo dele na
+        // curva (bounding box do retângulo rotacionado — blocoGeoPadraoAberto
+        // é 1.28 x 0.62 local, metades 0.64/0.31).
+        const meiaAlturaG1 = Math.abs(0.64 * Math.sin(g1Slot.rotZ)) + Math.abs(0.31 * Math.cos(g1Slot.rotZ));
+        zeroSlot.rotZ = -Math.PI / 2; // em pé
+        zeroSlot.pos.x = g1Slot.pos.x;
+        zeroSlot.pos.z = g1Slot.pos.z;
+        zeroSlot.pos.y = g1Slot.pos.y + meiaAlturaG1 + ZERO23_MEIA_ALTURA + FOLGA_ENCAIXE;
     }
 
     if (!fimCurvaPos) fimCurvaPos = new THREE.Vector3(centro.x + RAIO_CABECEIRA_23, centro.y, 0);
@@ -1304,7 +1318,13 @@ const blocoGeoPadrao = new RoundedBoxGeometry(1.28, 0.62, 1.35, 3, 0.07);
 // moldeMundoParaLocal daquele — na MCC2/3 essas peças ficam retas na
 // curva (slot.rotZ = tangente), então local_x/y/z já É mundo ao longo
 // da linha/altura/largura, sem twist nenhum pra desfazer.
-const blocoGeoMoldeMCC23 = new RoundedBoxGeometry(1.28, 0.62, 1.35, 3, 0.1);
+// 🔧 "Diminua um pouco ele": Molde da MCC2/3 estava grande demais
+// perto da Mesa/Zero por baixo (print de referência). MOLDE23_ESCALA é
+// usada aqui na geometria E nas posições dos detalhes/pés em
+// adicionarDetalhesMoldeMCC23 — pra tudo encolher junto, sem ficar
+// faixa/janela/pé flutuando fora do corpo novo, menor.
+const MOLDE23_ESCALA = 0.82;
+const blocoGeoMoldeMCC23 = new RoundedBoxGeometry(1.28 * MOLDE23_ESCALA, 0.62 * MOLDE23_ESCALA, 1.35 * MOLDE23_ESCALA, 3, 0.1 * MOLDE23_ESCALA);
 
 // 🆕 Mesa Osciladora (MCC2/3) — "pensa na mesa osciladora um quadrado
 // vazado em cima entra o molde e de baixo vem o zero encanicando no
@@ -1917,40 +1937,49 @@ function adicionarDetalhesMolde(mesh) {
 // dimensionadas pro corpo maior da MCC4 (e com os eixos trocados pelo
 // twist) — reaproveitar do jeito errado aqui deitaria a janela de
 // lado. Só os MATERIAIS (cor/textura) são os mesmos.
-const FAIXA_RISCO_MCC23 = { comprimento: 1.1, altura: 0.12, espessuraZ: 0.03 };
+const FAIXA_RISCO_MCC23 = { comprimento: 1.1 * MOLDE23_ESCALA, altura: 0.12 * MOLDE23_ESCALA, espessuraZ: 0.03 };
 const faixaRiscoMCC23Geo = new THREE.BoxGeometry(FAIXA_RISCO_MCC23.comprimento, FAIXA_RISCO_MCC23.altura, FAIXA_RISCO_MCC23.espessuraZ);
-const janelaMCC23Geo = new THREE.BoxGeometry(0.22, 0.08, 0.03);
-const janelaAroMCC23Geo = new THREE.BoxGeometry(0.28, 0.11, 0.02);
+const janelaMCC23Geo = new THREE.BoxGeometry(0.22 * MOLDE23_ESCALA, 0.08 * MOLDE23_ESCALA, 0.03);
+const janelaAroMCC23Geo = new THREE.BoxGeometry(0.28 * MOLDE23_ESCALA, 0.11 * MOLDE23_ESCALA, 0.02);
+
+// 🔧 "Deixa os pé em pé, tá na horizontal": os pés reaproveitavam
+// moldePeGeo (cilindro deitado — rotateZ(90°), pensado pra ficar de
+// lado nos pés da MCC4), o que aqui parecia um toquinho caído, não uma
+// perna. Geometria própria, SEM rotação — eixo (altura do cilindro)
+// fica em Y de verdade, uma perninha em pé.
+const peVerticalMCC23Geo = new THREE.CylinderGeometry(0.06 * MOLDE23_ESCALA, 0.08 * MOLDE23_ESCALA, 0.22 * MOLDE23_ESCALA, 12);
 
 function adicionarDetalhesMoldeMCC23(mesh) {
     // Faixa de risco, colada perto da base da face frontal (largura/Z
-    // é 1.35, metade 0.675; altura/Y é 0.62, metade 0.31).
+    // é 1.35, metade 0.675; altura/Y é 0.62, metade 0.31 — escalados).
     const faixa = new THREE.Mesh(faixaRiscoMCC23Geo, moldeFaixaRiscoMat);
-    faixa.position.set(0, -0.19, 0.675 + FAIXA_RISCO_MCC23.espessuraZ / 2 - 0.01);
+    faixa.position.set(0, -0.19 * MOLDE23_ESCALA, (0.675 + FAIXA_RISCO_MCC23.espessuraZ / 2 - 0.01) * MOLDE23_ESCALA);
     mesh.add(faixa);
 
     // 2 janelas (com aro), acima da faixa, espalhadas ao longo do
-    // comprimento (X, metade 0.64).
+    // comprimento (X, metade 0.64 escalada).
     [-0.28, 0.28].forEach(x => {
         const aro = new THREE.Mesh(janelaAroMCC23Geo, moldeJanelaAroMat);
-        aro.position.set(x, 0.08, 0.675 - 0.005);
+        aro.position.set(x * MOLDE23_ESCALA, 0.08 * MOLDE23_ESCALA, (0.675 - 0.005) * MOLDE23_ESCALA);
         mesh.add(aro);
 
         const janela = new THREE.Mesh(janelaMCC23Geo, moldeJanelaMat);
-        janela.position.set(x, 0.08, 0.675 - 0.03);
+        janela.position.set(x * MOLDE23_ESCALA, 0.08 * MOLDE23_ESCALA, (0.675 - 0.03) * MOLDE23_ESCALA);
         mesh.add(janela);
     });
 
-    // 🔧 "Coloque os pé nas 4 ponta do molde e tire esse central": em vez
-    // do pilarzinho único no meio (que ficava esquisito, "flutuando"
-    // entre Molde e Mesa), 4 pés nos cantos de baixo — mesma peça
-    // (moldePeGeo/moldePeMat) que o Molde da MCC4 já usa. Molde não gira
-    // feito o da MCC4 (rotZ=0, sem twist), então local já é mundo:
-    // metade do comprimento (X) é 0.64, metade da largura (Z) é 0.675.
-    const mundoYPe23 = -0.31 - 0.11; // embaixo do corpo (meia-altura 0.31) + a metade do próprio pé
+    // 🔧 "Coloque os pé nas 4 ponta do molde e tire esse central, deixa
+    // os pé em pé": 4 perninhas verticais nos cantos de baixo (não mais
+    // o pilarzinho único no meio, nem os pés deitados de lado). Molde
+    // não gira feito o da MCC4 (rotZ=0, sem twist), então local já é
+    // mundo: metade do comprimento (X) e da largura (Z) são escaladas
+    // junto com o corpo.
+    const meiaAlturaCorpo = 0.31 * MOLDE23_ESCALA;
+    const alturaPe = 0.22 * MOLDE23_ESCALA;
+    const mundoYPe23 = -meiaAlturaCorpo - alturaPe / 2; // embaixo do corpo, encostado (perna sobe até tocar a base)
     [[-0.5, -0.58], [0.5, -0.58], [-0.5, 0.58], [0.5, 0.58]].forEach(([x, z]) => {
-        const pe = new THREE.Mesh(moldePeGeo, moldePeMat);
-        pe.position.set(x, mundoYPe23, z);
+        const pe = new THREE.Mesh(peVerticalMCC23Geo, moldePeMat);
+        pe.position.set(x * MOLDE23_ESCALA, mundoYPe23, z * MOLDE23_ESCALA);
         pe.castShadow = true;
         mesh.add(pe);
     });
