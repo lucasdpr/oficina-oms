@@ -2350,7 +2350,19 @@ function construirCena(veio) {
             // bastante pra não tampar mais esses detalhes.
             const ehMolde = mcc4 && slot.id.startsWith('MLD');
             let offsetY;
-            if (usarPecaAberta) offsetY = 1.0;
+            // 🔧 "Não tem o nome em nenhuma Mesa Osciladora": o Zero (MCC2/3)
+            // também é uma peça "aberta" (usarPecaAberta), então caía na
+            // regra genérica de baixo (offsetY=1.0) — só que agora ele fica
+            // bem colado embaixo da Mesa (vão de 0.1, ver
+            // calcularTransformacoesMCC23), então 1.0 subia a etiqueta do
+            // ZERO pra quase o MESMO ponto da etiqueta da MESA (que usa só
+            // 0.15) — uma cobria a outra. Precisa de um valor próprio, maior
+            // que a meia-altura do Zero em pé (0.64) mas menor que a
+            // distância até a base da Mesa (0.74) — 0.68 fica bem no meio
+            // dessa folga.
+            const ehZeroMCC23 = !mcc4 && slot.id.startsWith('SEG-0');
+            if (ehZeroMCC23) offsetY = 0.68;
+            else if (usarPecaAberta) offsetY = 1.0;
             else if (ehMolde) offsetY = 1.05;
             // Gap de 0.24 entre as 3 (maior que a soma das meia-alturas dos
             // rótulos vizinhos nesse tamanho menor, ~0.10 cada) e o teto
