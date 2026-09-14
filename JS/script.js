@@ -4277,12 +4277,12 @@ function renderizarGridCentralAreas() {
                 <div class="central-areas-secao-titulo">Painéis Administrativos</div>
                 <div id="oficina-grade-areas-admin" class="oficina-grade">
                     ${admVisiveis.map(a => `
-                        <div class="oficina-area-card oficina-area-card-admin" style="--area-color:${a.cor};" onclick="window.abrirAba(null,'${a.abaDestino}')">
+                        <div class="oficina-area-card oficina-area-card-admin" style="--area-color:${a.cor};" onclick="window.abrirAreaOficina('${a.chave}')">
                             <div class="oficina-area-topo">
                                 <div class="oficina-area-icone" style="color:${a.cor};"><i class="fas ${a.icone}"></i></div>
                             </div>
                             <h4>${a.nome}</h4>
-                            <button class="oficina-area-acessar" style="color:${a.cor};">Acessar Painel <i class="fas fa-arrow-right"></i></button>
+                            <button class="oficina-area-acessar" style="color:${a.cor};">Acessar Área <i class="fas fa-arrow-right"></i></button>
                         </div>
                     `).join('')}
                 </div>
