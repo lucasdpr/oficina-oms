@@ -687,11 +687,19 @@
     </div>
 </div>
 
+<!-- 🔧 "Sinótico não funciona offline de verdade": o Three.js vinha de
+     um CDN externo (cdn.jsdelivr.net) — nunca cacheado pelo Service
+     Worker, então mesmo instalado como PWA a tela 3D não abria sem
+     internet (e travava numa rede que bloqueasse CDN genérico, ex.:
+     firewall industrial). Agora vem vendorizado em vendor/three/
+     (Three.js r0.160.0, mesma versão), servido junto com o resto do
+     app — o Service Worker cacheia normalmente como qualquer outro
+     arquivo estático do próprio domínio. -->
 <script type="importmap">
 {
     "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        "three": "./vendor/three/three.module.min.js",
+        "three/addons/": "./vendor/three/addons/"
     }
 }
 </script>
@@ -1139,6 +1147,24 @@ const TOPO_Y_23 = 9;
 const ESPACO_CADEIRA_23 = 0.48;
 const OFFSET_PAR_23 = 0.32; // distância vertical entre Superior e Inferior empilhados
 
+// 🆕 Meia-altura real (mundo, eixo Y) de uma geometria já rotacionada
+// em Z — substitui os números mágicos que cada peça carregava por aí
+// (MOLDE23_MEIA_ALTURA = 0.31, ZERO23_MEIA_ALTURA = 1.28/2 etc.),
+// copiados à mão da geometria e que ficavam desatualizados toda vez
+// que a geometria mudava de tamanho (foi a causa de pelo menos 2 bugs
+// de encaixe corrigidos nesta sessão — Molde encolheu, Mesa/Zero não
+// souberam). Cria um mesh descartável (nunca adicionado à cena), gira
+// ele exatamente como a peça real vai girar, e lê a bounding box de
+// verdade — sempre bate com a geometria atual, não importa o que ela
+// vire a ser depois.
+function meiaAlturaMundo(geo, rotZ = 0) {
+    const mesh = new THREE.Mesh(geo);
+    mesh.rotation.z = rotZ;
+    mesh.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(mesh);
+    return (box.max.y - box.min.y) / 2;
+}
+
 function calcularTransformacoesMCC23(slots) {
     const centro = new THREE.Vector3(RAIO_CABECEIRA_23, TOPO_Y_23, 0);
     const cabeceira = slots.filter(s => s.grupo === 'cabeceira');
@@ -1178,9 +1204,14 @@ function calcularTransformacoesMCC23(slots) {
     const mesaSlot = cabeceira.find(s => s.id.startsWith('MES'));
     const zeroSlot = cabeceira.find(s => s.id.startsWith('SEG-0'));
     const g1Slot = cabeceira.find(s => s.id.startsWith('GRP1'));
-    const MOLDE23_MEIA_ALTURA = 0.31 * MOLDE23_ESCALA; // blocoGeoMoldeMCC23 Y (0.62) / 2 — deitado (rotZ=0), já é a extensão real no mundo
-    const MESA23_MEIA_ALTURA = 0.11;  // criarGeoQuadroVazado alturaViga (0.22) / 2
-    const ZERO23_MEIA_ALTURA = 1.28 / 2; // blocoGeoPadraoAberto, em pé (rotZ=-90°) — a extensão vertical vira a metade do comprimento (X), não da altura (Y)
+    // 🔧 Antes eram números copiados à mão da geometria (0.31, 0.11,
+    // 1.28/2...) — trocados por meiaAlturaMundo() (ver acima), que lê a
+    // bounding box de verdade. Cada peça já entra com a rotação que vai
+    // usar de verdade (deitada = 0, em pé = -90°), então a meia-altura
+    // já sai certa pro mundo, sem precisar decidir "é X ou é Y" à mão.
+    const MOLDE23_MEIA_ALTURA = meiaAlturaMundo(blocoGeoMoldeMCC23, 0);
+    const MESA23_MEIA_ALTURA = meiaAlturaMundo(blocoGeoMesaOsciladora, 0);
+    const ZERO23_MEIA_ALTURA = meiaAlturaMundo(blocoGeoPadraoAberto, -Math.PI / 2);
     const FOLGA_ENCAIXE = 0.1; // vão pequeno entre cada peça da coluna
 
     if (zeroSlot && g1Slot) {
@@ -1189,10 +1220,14 @@ function calcularTransformacoesMCC23(slots) {
         // em Y) — mas G1 é um bloco INCLINADO (segue a tangente da
         // curva), então o topo real dele não fica alinhado com o centro,
         // fica deslocado pro lado que ele se inclina. Em vez de "subir",
-        // acha o ponto exato do topo do G1 (o canto local (0, +0.31) —
-        // metade da altura local, 0.62/2 — transformado pra mundo pela
-        // MESMA rotação do G1) e senta o Zero exatamente ali.
-        const topoLocalG1 = 0.31; // metade da altura local do blocoGeoPadraoAberto (0.62/2)
+        // acha o ponto exato do topo do G1 (o canto local (0, +meia
+        // altura LOCAL) transformado pra mundo pela MESMA rotação do
+        // G1) e senta o Zero exatamente ali. Meia altura local (não a
+        // do mundo) porque essa conta é sobre o retângulo ANTES de
+        // girar — pega direto do BufferGeometry, sem criar mesh/rotação.
+        blocoGeoPadraoAberto.computeBoundingBox();
+        const bboxG1 = blocoGeoPadraoAberto.boundingBox;
+        const topoLocalG1 = (bboxG1.max.y - bboxG1.min.y) / 2;
         const topoG1 = new THREE.Vector3(
             g1Slot.pos.x + topoLocalG1 * Math.sin(g1Slot.rotZ),
             g1Slot.pos.y + topoLocalG1 * Math.cos(g1Slot.rotZ),
@@ -2044,7 +2079,7 @@ function adicionarDetalhesMoldeMCC23(mesh) {
     // não gira feito o da MCC4 (rotZ=0, sem twist), então local já é
     // mundo: metade do comprimento (X) e da largura (Z) são escaladas
     // junto com o corpo.
-    const meiaAlturaCorpo = 0.31 * MOLDE23_ESCALA;
+    const meiaAlturaCorpo = meiaAlturaMundo(blocoGeoMoldeMCC23, 0); // igual à conta que calcularTransformacoesMCC23 já faz — mesma fonte, sem duplicar o número
     const alturaPe = 0.22 * MOLDE23_ESCALA;
     const mundoYPe23 = -meiaAlturaCorpo - alturaPe / 2; // embaixo do corpo, encostado (perna sobe até tocar a base)
     [[-0.5, -0.58], [0.5, -0.58], [-0.5, 0.58], [0.5, 0.58]].forEach(([x, z]) => {
@@ -2213,6 +2248,44 @@ function construirChassiMCC23(slots) {
 }
 
 
+// 🆕 Rede de segurança genérica contra etiqueta sobrepondo etiqueta —
+// até aqui cada colisão (Bender/OSC, Mesa/Molde, Zero/Mesa) foi
+// corrigida na mão, escalonando o offsetY caso a caso. Isso continua
+// valendo pros casos já conhecidos (são o ajuste fino "de verdade"),
+// mas qualquer peça nova ou reposicionada no futuro pode gerar uma
+// colisão inédita — esta função varre TODOS os balões já posicionados
+// e afasta (no eixo Y — o que causa colisão quase sempre aqui, já que
+// as peças empilham verticalmente) qualquer par que ainda tenha
+// ficado perto demais, sem precisar de mais um caso especial manual.
+function resolverColisaoEtiquetas(labelsInfo) {
+    const DIST_MINIMA = 0.18; // menor que os espaçamentos já afinados à mão (ex.: 0.24 do Bender/OSC) — só pega o que passou batido
+    const MAX_ITER = 6; // poucos balões por veio (<15); converge rápido
+    for (let iter = 0; iter < MAX_ITER; iter++) {
+        let mexeu = false;
+        for (let i = 0; i < labelsInfo.length; i++) {
+            for (let j = i + 1; j < labelsInfo.length; j++) {
+                const a = labelsInfo[i].sprite, b = labelsInfo[j].sprite;
+                const d = a.position.distanceTo(b.position);
+                if (d < DIST_MINIMA && d > 0.0001) {
+                    const falta = (DIST_MINIMA - d) / 2;
+                    const sinal = (b.position.y >= a.position.y) ? 1 : -1;
+                    a.position.y -= falta * sinal;
+                    b.position.y += falta * sinal;
+                    mexeu = true;
+                }
+            }
+        }
+        if (!mexeu) break;
+    }
+    // Depois de empurrar, redesenha a linha-guia de cada balão pra
+    // continuar apontando pro ponto de âncora certo (senão ela fica
+    // "torta", saindo do lugar antigo do balão).
+    labelsInfo.forEach(({ sprite, linha, ancora }) => {
+        linha.geometry.dispose();
+        linha.geometry = new THREE.BufferGeometry().setFromPoints([ancora, sprite.position]);
+    });
+}
+
 function construirCena(veio) {
     // limpa blocos e etiquetas anteriores
     meshesBySlot.forEach(m => grupoLinha.remove(m.mesh));
@@ -2230,6 +2303,8 @@ function construirCena(veio) {
     const slots = calcularTransformacoes(construirLayoutSlots(veio));
 
     if (!mcc4) construirChassiMCC23(slots);
+
+    const labelsInfo = []; // pra resolverColisaoEtiquetas(), no fim do laço abaixo
 
     // 🔧 Ver correção "CASAMENTO PEÇA <-> SLOT" acima: o mapa é
     // reconstruído a cada render pra sempre casar com o estado mais
@@ -2350,7 +2425,19 @@ function construirCena(veio) {
             // bastante pra não tampar mais esses detalhes.
             const ehMolde = mcc4 && slot.id.startsWith('MLD');
             let offsetY;
-            if (usarPecaAberta) offsetY = 1.0;
+            // 🔧 "Não tem o nome em nenhuma Mesa Osciladora": o Zero (MCC2/3)
+            // também é uma peça "aberta" (usarPecaAberta), então caía na
+            // regra genérica de baixo (offsetY=1.0) — só que agora ele fica
+            // bem colado embaixo da Mesa (vão de 0.1, ver
+            // calcularTransformacoesMCC23), então 1.0 subia a etiqueta do
+            // ZERO pra quase o MESMO ponto da etiqueta da MESA — uma cobria
+            // a outra. Calculado (não mais um número fixo tipo "0.68"): meia
+            // altura real do Zero em pé + metade da folga de encaixe (0.1)
+            // — fica sempre no meio do vão até a Mesa, mesmo que a
+            // geometria de alguma das duas mude de tamanho depois.
+            const ehZeroMCC23 = !mcc4 && slot.id.startsWith('SEG-0');
+            if (ehZeroMCC23) offsetY = meiaAlturaMundo(blocoGeoPadraoAberto, -Math.PI / 2) + 0.05;
+            else if (usarPecaAberta) offsetY = 1.0;
             else if (ehMolde) offsetY = 1.05;
             // Gap de 0.24 entre as 3 (maior que a soma das meia-alturas dos
             // rótulos vizinhos nesse tamanho menor, ~0.10 cada) e o teto
@@ -2359,14 +2446,12 @@ function construirCena(veio) {
             else if (ehBender) offsetY = 0.6;
             else if (slot.id.includes('OSC-N')) offsetY = 0.36;
             else if (slot.id.includes('OSC-S')) offsetY = 0.12;
-            // 🔧 "Arrume o nome da mesa": Mesa Osciladora (MCC2/3) agora é
-            // uma moldura fina e deitada (0.22 de espessura) ENCOSTADA bem
-            // perto do Molde por baixo (vão de 0.1, ver
-            // calcularTransformacoesMCC23) — 0.35 subia a etiqueta pra
-            // DENTRO do corpo do Molde (que começa a só 0.21 acima do
-            // centro da Mesa). 0.15 fica logo acima do topo da moldura
-            // (0.11) sem invadir o Molde.
-            else if (!mcc4 && slot.id.startsWith('MES')) offsetY = 0.15;
+            // 🔧 "Arrume o nome da mesa": Mesa Osciladora (MCC2/3) fica
+            // ENCOSTADA bem perto do Molde por cima (vão de 0.1, ver
+            // calcularTransformacoesMCC23) — calculado igual ao do Zero
+            // acima: meia altura real da moldura + metade da folga, fica
+            // sempre entre o topo da Mesa e a base do Molde.
+            else if (!mcc4 && slot.id.startsWith('MES')) offsetY = meiaAlturaMundo(blocoGeoMesaOsciladora, 0) + 0.05;
             else offsetY = mcc4 ? (slot.grupo === 'cabeceira' ? 0.85 : 0.55) : 0.75;
             // 🔧 "Nome tampando o equipamento": até aqui a etiqueta só subia
             // em Y, ficando bem em cima do bloco — de frente ela cobria o
@@ -2375,10 +2460,21 @@ function construirCena(veio) {
             // calcularTransformacoesMCC4), virando um "balão" ao lado da
             // peça em vez de em cima dela, e desenha uma linha fina ligando
             // o balão de volta ao equipamento pra não perder a referência.
-            const ladoZ = mcc4 ? 0.85 : 0.7;
+            // 🔧 "OSC-S/BOW 1 sobrepostos" (achado testando com
+            // tools/screenshot_sinotico.mjs, zoom no Bender): distância 3D
+            // real entre os dois é de sobra (~0.66) — resolverColisaoEtiquetas()
+            // não pega porque não é uma colisão de verdade, é só os dois
+            // ficarem visualmente próximos NA TELA vistos de um ângulo bem
+            // fechado. OSC-N/OSC-S ganham um empurrão extra em Z (afastando
+            // ainda mais do centro, onde os balões do Bow também moram)
+            // pra abrir mais margem visual nesse ângulo, sem mexer em mais
+            // nada.
+            const ehOsciladorLabel = mcc4 && slot.id.includes('OSC-');
+            const ladoZ = ehOsciladorLabel ? 1.35 : (mcc4 ? 0.85 : 0.7);
             const sinalLado = slot.pos.z >= 0 ? 1 : -1; // afasta pro mesmo lado que o item já pende (OSC-S etc.)
             const posLabel = new THREE.Vector3(slot.pos.x, slot.pos.y + offsetY, slot.pos.z + sinalLado * ladoZ);
             sprite.position.copy(posLabel);
+            sprite.userData.label = slot.label; // só pra debug (tools/screenshot_sinotico.mjs, devtools) — não usado pelo resto do código
             grupoLinha.add(sprite);
             labelObjects.push(sprite);
 
@@ -2389,8 +2485,12 @@ function construirCena(veio) {
             linhaGuia.renderOrder = 998;
             grupoLinha.add(linhaGuia);
             labelObjects.push(linhaGuia);
+
+            labelsInfo.push({ sprite, linha: linhaGuia, ancora: pontoAncora });
         }
     });
+
+    resolverColisaoEtiquetas(labelsInfo);
 }
 
 // ==========================================================================
@@ -4406,6 +4506,15 @@ function animar() {
     renderer.render(scene, camera);
 }
 animar();
+
+// 🆕 Hook de debug — expõe no window o que o script normalmente mantém
+// só no escopo do módulo (camera/controls/scene não são globais de
+// verdade, um <script type="module"> não vaza nada pra fora sozinho).
+// Usado por tools/screenshot_sinotico.mjs pra mover a câmera livremente
+// via page.evaluate() na hora de conferir uma peça de perto. Read-only
+// na prática (o script só LÊ e reposiciona câmera) — não expõe nada que
+// já não estivesse acessível clicando na tela.
+window.__sinoticoDebug = { camera, controls, scene, renderer, THREE, get slots() { return slotsGeometricos; }, get labelObjects() { return labelObjects; } };
 
 carregarDados();
 
