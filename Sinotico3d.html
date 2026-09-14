@@ -1108,6 +1108,25 @@ function calcularTransformacoesMCC23(slots) {
         cabIdx++;
     });
 
+    // 🆕 "Molde tá em pé, deita ele também; mesa na horizontal, quadrado
+    // vazado em cima entra o molde": Molde e Mesa Osciladora, sozinhos
+    // entre as cabeceiras, param de seguir a tangente da curva (que os
+    // deixava tortos/em pé) e ficam DEITADOS de verdade (rotZ = 0) — e a
+    // Mesa alinha no mesmo X/Z do Molde, senão a haste do Molde não cai
+    // dentro do vão da moldura. Fica cada um na sua altura (Y) de
+    // sempre, só que agora empilhados retinho um embaixo do outro. Zero
+    // e o resto da fileira (G1/G2/G3) continuam como estavam.
+    const moldeSlot = cabeceira.find(s => s.id.startsWith('MLD'));
+    const mesaSlot = cabeceira.find(s => s.id.startsWith('MES'));
+    if (moldeSlot) moldeSlot.rotZ = 0;
+    if (mesaSlot) {
+        mesaSlot.rotZ = 0;
+        if (moldeSlot) {
+            mesaSlot.pos.x = moldeSlot.pos.x;
+            mesaSlot.pos.z = moldeSlot.pos.z;
+        }
+    }
+
     if (!fimCurvaPos) fimCurvaPos = new THREE.Vector3(centro.x + RAIO_CABECEIRA_23, centro.y, 0);
 
     const nSup = slots.filter(s => s.grupo === 'sup').length;
@@ -1281,7 +1300,46 @@ const blocoGeoPadrao = new RoundedBoxGeometry(1.28, 0.62, 1.35, 3, 0.07);
 // curva (slot.rotZ = tangente), então local_x/y/z já É mundo ao longo
 // da linha/altura/largura, sem twist nenhum pra desfazer.
 const blocoGeoMoldeMCC23 = new RoundedBoxGeometry(1.28, 0.62, 1.35, 3, 0.1);
-const blocoGeoMesaOsciladora = new RoundedBoxGeometry(1.28, 0.62, 1.35, 3, 0.1);
+
+// 🆕 Mesa Osciladora (MCC2/3) — "pensa na mesa osciladora um quadrado
+// vazado em cima entra o molde e de baixo vem o zero encanicando no
+// resto da máquina": deixou de ser o bloco sólido genérico e virou uma
+// MOLDURA (quadrado vazado de verdade, com buraco no meio, não um bloco
+// com desenho por cima) — o corpo do Molde desce reto através do vão.
+// Construída com Shape+hole (ExtrudeGeometry), não RoundedBoxGeometry,
+// porque precisa mesmo de um buraco atravessando a peça, não só um
+// detalhe visual colado em cima.
+function criarGeoQuadroVazado(largExt, profExt, espessuraViga, alturaViga) {
+    const hx = largExt / 2, hz = profExt / 2;
+    const shape = new THREE.Shape();
+    shape.moveTo(-hx, -hz);
+    shape.lineTo(hx, -hz);
+    shape.lineTo(hx, hz);
+    shape.lineTo(-hx, hz);
+    shape.lineTo(-hx, -hz);
+
+    // Buraco central — moldura centralizada (viga só na borda), o vão
+    // ocupa quase toda a mesa pro Molde passar reto por dentro.
+    const ix = hx - espessuraViga, iz = hz - espessuraViga;
+    const buraco = new THREE.Path();
+    buraco.moveTo(-ix, -iz);
+    buraco.lineTo(-ix, iz);
+    buraco.lineTo(ix, iz);
+    buraco.lineTo(ix, -iz);
+    buraco.lineTo(-ix, -iz);
+    shape.holes.push(buraco);
+
+    // Shape vive no plano XY (extrusão nativa em Z) — rotateX(-90°) deita
+    // ela no plano XZ (horizontal de verdade) com a espessura subindo em
+    // Y, depois centraliza a espessura em torno de y=0 (igual a qualquer
+    // outra geometria de bloco daqui, que é sempre centrada no meio).
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: alturaViga, bevelEnabled: false, curveSegments: 1 });
+    geo.rotateX(-Math.PI / 2);
+    geo.translate(0, -alturaViga / 2, 0);
+    return geo;
+}
+
+const blocoGeoMesaOsciladora = criarGeoQuadroVazado(1.15, 1.2, 0.16, 0.22);
 
 // 🆕 Bender/Oscilador da fileira lateral (MCC4): blocos mais estreitos no
 // eixo Z (o eixo lateral de verdade — ver comentário em
@@ -1879,20 +1937,22 @@ function adicionarDetalhesMoldeMCC23(mesh) {
     });
 }
 
-// 🆕 Mesa Osciladora (MCC2/3) — "a mesa osciladora melhore também".
-// Equipamento ainda "provisório, não existe fisicamente em nenhum
-// veio" (ver comentário em construirLayoutSlotsMCC23), então sem foto
-// de referência pra seguir — só uma "tampa" clara por cima, sugerindo
-// a superfície da mesa sem inventar detalhe demais numa peça que nem
-// existe de verdade ainda.
-const mesaTopoGeo = new RoundedBoxGeometry(1.15, 0.08, 1.2, 2, 0.02);
-const mesaTopoMat = new THREE.MeshStandardMaterial({ color: 0x8a94a8, roughness: 0.3, metalness: 0.55 });
+// 🆕 Mesa Osciladora (MCC2/3) — agora é a moldura vazada em si (ver
+// blocoGeoMesaOsciladora/criarGeoQuadroVazado acima), não mais um bloco
+// sólido com uma "tampa" colada em cima — aquela tampa cobriria o vão
+// que o Molde precisa atravessar. Só 4 reforços (blocos pequenos) nos
+// cantos da moldura, sugerindo estrutura sem tapar o buraco.
+const mesaReforcoGeo = new THREE.BoxGeometry(0.16, 0.24, 0.16);
+const mesaReforcoMat = new THREE.MeshStandardMaterial({ color: 0x8a94a8, roughness: 0.3, metalness: 0.55 });
 
 function adicionarDetalhesMesaOsciladora(mesh) {
-    const topo = new THREE.Mesh(mesaTopoGeo, mesaTopoMat);
-    topo.position.set(0, 0.31 + 0.04 - 0.01, 0); // encostada no topo do corpo (metade da altura, 0.31), subindo metade da própria espessura
-    topo.castShadow = true;
-    mesh.add(topo);
+    const cx = 1.15 / 2 - 0.08, cz = 1.2 / 2 - 0.08; // cantos da moldura (metade da largura/profundidade - metade do reforço)
+    [[-cx, -cz], [cx, -cz], [cx, cz], [-cx, cz]].forEach(([x, z]) => {
+        const reforco = new THREE.Mesh(mesaReforcoGeo, mesaReforcoMat);
+        reforco.position.set(x, 0, z);
+        reforco.castShadow = true;
+        mesh.add(reforco);
+    });
 }
 
 let piecesById = {};      // dados vindos da API, por id
@@ -2176,6 +2236,11 @@ function construirCena(veio) {
             else if (ehBender) offsetY = 0.6;
             else if (slot.id.includes('OSC-N')) offsetY = 0.36;
             else if (slot.id.includes('OSC-S')) offsetY = 0.12;
+            // 🆕 Mesa Osciladora (MCC2/3) agora é uma moldura fina e deitada
+            // (0.22 de espessura, ver criarGeoQuadroVazado) — o offset
+            // genérico de 0.75 (pensado pro bloco antigo, bem mais alto)
+            // deixava a etiqueta flutuando longe demais dela.
+            else if (!mcc4 && slot.id.startsWith('MES')) offsetY = 0.35;
             else offsetY = mcc4 ? (slot.grupo === 'cabeceira' ? 0.85 : 0.55) : 0.75;
             // 🔧 "Nome tampando o equipamento": até aqui a etiqueta só subia
             // em Y, ficando bem em cima do bloco — de frente ela cobria o
