@@ -1379,6 +1379,14 @@
                      lista abaixo, sem chamada extra ao servidor. -->
                 <div id="qualidade-kpis" class="form-grid-4" style="margin-bottom:24px; gap:12px;"></div>
 
+                <!-- 🆕 Padrões detectados: mesma categoria de achado aparecendo em
+                     vários equipamentos diferentes num curto espaço de tempo — sinal
+                     de problema sistêmico (lote de material ruim, procedimento
+                     errado), não um defeito pontual. Ver GET /api/qualidade/achados/padroes
+                     e verificar_padrao_achados (backend, app_core.py). Só aparece
+                     quando existe padrão ativo (fica escondido o resto do tempo). -->
+                <div id="qualidade-padroes" class="hidden" style="margin-bottom:24px;"></div>
+
                 <div class="glass-panel" style="padding:24px;">
                     <div class="flex-between" style="margin-bottom:16px; flex-wrap:wrap; gap:10px;">
                         <h3 style="color:var(--text-title); font-size:1rem;"><i class="fas fa-list"></i> Registros de Qualidade</h3>

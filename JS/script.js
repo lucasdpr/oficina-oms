@@ -9382,9 +9382,60 @@ window.carregarListaQualidade = async function() {
             const respTudo = await fetch(`${apiBase}/api/qualidade`, { cache: 'no-store' });
             if (respTudo.ok) window.renderizarKpisQualidade(await respTudo.json());
         }
+
+        window.carregarPadroesQualidade();
     } catch (e) {
         console.error('⚠️ Erro ao carregar registros de qualidade:', e);
         container.innerHTML = `<div class="text-muted" style="text-align:center; padding:30px 0;">Não foi possível carregar. Verifique sua internet.</div>`;
+    }
+};
+
+// 🆕 Padrões detectados — mesma categoria de achado em vários
+// equipamentos diferentes num curto espaço de tempo (ver
+// GET /api/qualidade/achados/padroes, verificar_padrao_achados no
+// backend). Painel some sozinho quando não tem padrão ativo — não é
+// pra virar "mais uma caixa vazia" na tela o tempo todo.
+window.carregarPadroesQualidade = async function() {
+    const container = document.getElementById('qualidade-padroes');
+    if (!container) return;
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/qualidade/achados/padroes`, { cache: 'no-store' });
+        if (!resp.ok) throw new Error('Falha ao buscar padrões');
+        const padroes = await resp.json();
+
+        if (!Array.isArray(padroes) || padroes.length === 0) {
+            container.classList.add('hidden');
+            container.innerHTML = '';
+            return;
+        }
+
+        container.classList.remove('hidden');
+        container.innerHTML = `
+            <div class="glass-panel" style="padding:18px; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.35);">
+                <h3 style="color:var(--danger); font-size:0.95rem; margin:0 0 12px 0;">
+                    <i class="fas fa-triangle-exclamation"></i> Padrão detectado — mesmo defeito em vários equipamentos
+                </h3>
+                ${padroes.map(p => `
+                    <div style="padding:10px 0; border-top:1px solid rgba(239,68,68,0.2);">
+                        <div style="font-weight:700; color:var(--text-title);">${p.categoria} — ${p.total_equipamentos} equipamentos</div>
+                        <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+                            ${(p.equipamentos || []).join(', ')}
+                        </div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+                            De ${p.primeira_ocorrencia} até ${p.ultima_ocorrencia}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } catch (e) {
+        console.error('⚠️ Erro ao carregar padrões de achados de qualidade:', e);
+        // Falha silenciosa — não é crítico o bastante pra travar a tela
+        // de Qualidade inteira por causa disso; o painel só some.
+        container.classList.add('hidden');
+        container.innerHTML = '';
     }
 };
 
