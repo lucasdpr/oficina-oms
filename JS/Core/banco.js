@@ -26,6 +26,28 @@ const API_PLANILHA_URL = "https://script.google.com/macros/s/AKfycby_XSR5hrrvOgD
 const URL_LOCAL = "http://localhost:8000";
 const URL_RENDER = "https://api-oms-csn.onrender.com";
 
+// 🆕 "~100 rotas sem autenticação nenhuma" — o backend passou a exigir
+// um token de sessão em toda chamada de ESCRITA (POST/PUT/PATCH/
+// DELETE), mas o front tinha 144 chamadas fetch() espalhadas em 16
+// arquivos, sem um wrapper único — editar uma por uma era arriscado
+// demais (fácil esquecer uma e quebrar uma tela sem eu conseguir
+// testar contra um banco real). Em vez disso, intercepta o fetch
+// GLOBAL aqui, uma vez só: toda chamada de escrita pra nossa própria
+// API já sai com o header Authorization, não importa de qual arquivo
+// ela partiu. banco.js é importado por toda página do sistema, então
+// isso roda assim que qualquer tela carrega.
+const fetchOriginalBanco = window.fetch.bind(window);
+window.fetch = (recurso, opcoes = {}) => {
+    const url = typeof recurso === 'string' ? recurso : (recurso && recurso.url) || '';
+    const metodo = (opcoes.method || 'GET').toUpperCase();
+    const ehEscritaNaNossaApi = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(metodo)
+        && (url.startsWith(URL_LOCAL) || url.startsWith(URL_RENDER));
+    if (ehEscritaNaNossaApi && OPERADOR_LOGADO && OPERADOR_LOGADO.token) {
+        opcoes = { ...opcoes, headers: { ...(opcoes.headers || {}), Authorization: `Bearer ${OPERADOR_LOGADO.token}` } };
+    }
+    return fetchOriginalBanco(recurso, opcoes);
+};
+
 export function fetchComTimeout(url, opts = {}, ms = 1500) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), ms);

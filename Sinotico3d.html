@@ -718,6 +718,28 @@ import { getLayoutRolos, getPartesDoRolo, getLayoutBarraTransversal, CAMPOS_OCOR
 const URL_LOCAL = "http://localhost:8000";
 const URL_RENDER = "https://api-oms-csn.onrender.com";
 
+// 🆕 "~100 rotas sem autenticação nenhuma" — mesmo patch de
+// JS/Core/banco.js (ver comentário lá): o backend agora exige token
+// de sessão em toda escrita. Sinótico é página separada (não importa
+// banco.js), então precisa do próprio patch — lê o operador direto do
+// localStorage (mesma chave que app.html usa, mesma origem).
+const fetchOriginalSinotico = window.fetch.bind(window);
+window.fetch = (recurso, opcoes = {}) => {
+    const url = typeof recurso === 'string' ? recurso : (recurso && recurso.url) || '';
+    const metodo = (opcoes.method || 'GET').toUpperCase();
+    const ehEscritaNaNossaApi = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(metodo)
+        && (url.startsWith(URL_LOCAL) || url.startsWith(URL_RENDER));
+    if (ehEscritaNaNossaApi) {
+        try {
+            const operador = JSON.parse(localStorage.getItem('oms_operador_v32_local') || 'null');
+            if (operador && operador.token) {
+                opcoes = { ...opcoes, headers: { ...(opcoes.headers || {}), Authorization: `Bearer ${operador.token}` } };
+            }
+        } catch { /* localStorage indisponível ou corrompido — segue sem o header, o backend recusa com 401 */ }
+    }
+    return fetchOriginalSinotico(recurso, opcoes);
+};
+
 // ==========================================================================
 // MODO VISITANTE (somente leitura) — mesma checagem que o app.html
 // principal usa. O Sinótico 3D é uma página separada (abre em nova aba,
