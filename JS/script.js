@@ -8888,11 +8888,16 @@ window.irParaTelaDaAreaNotificacao = function() {
     const chave = NOTIF_AREA_SELECIONADA;
     if (!chave || chave === '__sem_area__') return;
     const a = AREAS_OFICINA.find(x => x.chave === chave);
-    if (a && a.tipo === 'administrativo' && a.abaDestino) {
-        window.abrirAba(null, a.abaDestino);
-        return;
-    }
-    if (a && a.tipo === 'oficina') {
+    // 🔧 CORREÇÃO ("já aceitei, já atualizou e não mudou nada" — o
+    // "Acessar Área" continuava mandando pro painel resumo mesmo
+    // depois da PR #136, porque aquela correção só tinha mexido no
+    // clique direto numa notificação, não nesse botão aqui, que é um
+    // caminho SEPARADO até a mesma área). Mesmo motivo da #136: o
+    // painel resumo (abaDestino) não tem Iniciar/Recusar/Concluir —
+    // só o quadro (irParaAreaOficinaViaNotificacao) tem. "Acessar
+    // Área" agora manda pro quadro pra área administrativa também,
+    // igual já fazia pra área de oficina normal logo abaixo.
+    if ((a && a.tipo === 'administrativo') || (a && a.tipo === 'oficina')) {
         window.irParaAreaOficinaViaNotificacao(chave);
         return;
     }
