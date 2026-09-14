@@ -15,7 +15,7 @@
         --accent: #38bdf8;
         --ok: #22c55e;
         --warn: #eab308;
-        --limit: #f97316;
+        --limit: #b91c1c;
         --danger: #ef4444;
         --vaga: #6b7280;
         --mono: 'JetBrains Mono', 'Courier New', monospace;
@@ -59,6 +59,7 @@
     #topbar .brand h1 { margin: 0; font-size: 18px; font-weight: 650; letter-spacing: -0.01em; }
 
     #veio-tabs { display: flex; gap: 6px; pointer-events: auto; }
+    #veio-tabs-lista { display: contents; } /* filhos (botões de veio) viram itens flex diretos do #veio-tabs, herdando o gap */
     .veio-tab {
         font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
         padding: 8px 16px; border-radius: 8px;
@@ -100,6 +101,42 @@
         font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase;
         color: var(--text-muted); display: flex; align-items: center; padding: 0 2px;
     }
+
+    /* ===== 🆕 TELA DE ESCOLHA DA MÁQUINA (MCC 2 / 3 / 4) =====
+       Antes o Sinótico abria direto no Veio H (MCC4) e a barra de cima
+       mostrava os 6 veios juntos, todos de uma vez. Agora abre nessa
+       tela primeiro — escolhe a MÁQUINA (não o veio ainda) — e só
+       depois de escolher é que aparecem os veios daquela MCC pra
+       selecionar. */
+    #tela-mcc {
+        position: fixed; inset: 0; z-index: 100;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 28px; background: var(--bg, #0b0f19);
+        padding: 24px;
+    }
+    #tela-mcc[hidden] { display: none; }
+    #tela-mcc .tela-mcc-eyebrow {
+        font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+        color: var(--accent);
+    }
+    #tela-mcc h1 { margin: 0; font-size: 26px; font-weight: 650; color: var(--text-heading); text-align: center; }
+    #tela-mcc .tela-mcc-cards { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; }
+    .card-mcc {
+        font-family: var(--mono); width: 168px; padding: 28px 20px;
+        background: var(--bg-panel); border: 1px solid var(--border); border-radius: 14px;
+        color: var(--text-heading); cursor: pointer; text-align: center;
+        transition: all 0.15s ease;
+    }
+    .card-mcc:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,0.45); }
+    .card-mcc .card-mcc-num { display: block; font-size: 34px; font-weight: 700; color: var(--accent); }
+    .card-mcc .card-mcc-label { display: block; margin-top: 6px; font-size: 12px; letter-spacing: 0.06em; color: var(--text-muted); }
+    #btn-trocar-mcc {
+        font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
+        padding: 8px 14px; border-radius: 8px;
+        background: var(--bg-panel); border: 1px solid var(--border);
+        color: var(--text-muted); cursor: pointer; margin-right: 4px;
+    }
+    #btn-trocar-mcc:hover { border-color: var(--accent); color: var(--text-heading); }
 
     /* ===== LEGENDA ===== */
     #legenda {
@@ -571,6 +608,29 @@
 <div id="app">
     <div id="canvas-container"></div>
 
+    <!-- 🆕 Tela de escolha da máquina — antes o Sinótico abria direto no
+         Veio H (MCC4) e a barra de cima mostrava os 6 veios das 3
+         máquinas juntos. Agora escolhe a MÁQUINA primeiro; os veios só
+         aparecem depois, filtrados pra essa máquina. -->
+    <div id="tela-mcc">
+        <span class="tela-mcc-eyebrow">Painel OMS · CSN</span>
+        <h1>Sinótico Visual 3D — escolha a máquina</h1>
+        <div class="tela-mcc-cards">
+            <button class="card-mcc" data-mcc="2">
+                <span class="card-mcc-num">MCC 2</span>
+                <span class="card-mcc-label">Veios C · D</span>
+            </button>
+            <button class="card-mcc" data-mcc="3">
+                <span class="card-mcc-num">MCC 3</span>
+                <span class="card-mcc-label">Veios E · F</span>
+            </button>
+            <button class="card-mcc" data-mcc="4">
+                <span class="card-mcc-num">MCC 4</span>
+                <span class="card-mcc-label">Veios G · H</span>
+            </button>
+        </div>
+    </div>
+
     <div id="topbar">
         <div class="brand">
             <a href="app.html" id="btn-voltar-sinotico" title="Voltar para o Painel OMS" style="display:inline-flex; align-items:center; gap:6px; color:var(--text-muted, #94a3b8); text-decoration:none; font-size:12px; font-weight:600; margin-bottom:4px;">
@@ -580,14 +640,8 @@
             <h1 id="titulo-maquina">Sinótico Visual 3D — MCC4</h1>
         </div>
         <div id="veio-tabs">
-            <span class="grupo-maquina">MCC 2/3</span>
-            <button class="veio-tab" data-veio="C">VEIO C</button>
-            <button class="veio-tab" data-veio="D">VEIO D</button>
-            <button class="veio-tab" data-veio="E">VEIO E</button>
-            <button class="veio-tab" data-veio="F">VEIO F</button>
-            <span class="grupo-maquina" style="margin-left:10px;">MCC 4</span>
-            <button class="veio-tab active" data-veio="H">VEIO H</button>
-            <button class="veio-tab" data-veio="G">VEIO G</button>
+            <button id="btn-trocar-mcc" title="Voltar pra tela de escolha da máquina">← Trocar máquina</button>
+            <span id="veio-tabs-lista"></span>
             <button id="btn-resetar-vista" class="veio-tab btn-exportar" title="Volta a câmera pro enquadramento padrão">🔄 Resetar Vista</button>
             <button id="btn-exportar" class="veio-tab btn-exportar">🖨️ Exportar Print 3D</button>
         </div>
@@ -597,7 +651,7 @@
         <div class="titulo">Desgaste (tonelagem / meta — Oscilador e Mesa Osciladora: dias / meta)</div>
         <div class="legenda-item"><span class="legenda-dot" style="background:#22c55e"></span> Normal (&lt; 80%)</div>
         <div class="legenda-item"><span class="legenda-dot" style="background:#eab308"></span> Alerta (80% – 99%)</div>
-        <div class="legenda-item"><span class="legenda-dot" style="background:#f97316"></span> Limite atingido (≥ 100%)</div>
+        <div class="legenda-item"><span class="legenda-dot" style="background:#b91c1c"></span> Limite atingido (≥ 100%)</div>
         <div class="legenda-item"><span class="legenda-dot" style="background:#ef4444"></span> Manutenção / falha</div>
         <div class="legenda-item"><span class="legenda-dot" style="background:#6b7280"></span> Posição vaga</div>
         <div class="legenda-item" style="margin-top:2px; padding-top:8px; border-top:1px solid var(--border);">
@@ -709,7 +763,7 @@ async function resolverApiBase() {
 const CORES = {
     normal: 0x22c55e,
     alerta: 0xeab308,
-    limite: 0xf97316,
+    limite: 0xb91c1c,
     falha: 0xef4444,
     vaga: 0x6b7280
 };
@@ -2023,6 +2077,11 @@ let piecesById = {};      // dados vindos da API, por id
 let meshesBySlot = [];    // { slot, mesh, material }
 let hoveredMesh = null;
 let veioAtual = 'H';
+// 🆕 Qual MCC foi escolhida na tela inicial (null = ainda não escolheu,
+// tela-mcc continua visível). Enquanto for null, a cena não é montada —
+// carregarDados() só chama construirCena() depois que isso é setado.
+let mccEscolhida = null;
+const MCC_VEIOS = { '2': ['C', 'D'], '3': ['E', 'F'], '4': ['G', 'H'] };
 
 // 🔧 BUG: Oscilador/Mesa Osciladora medem vida útil em DIAS, não em
 // tonelagem (a tonelagem deles fica sempre em 0 — mesma regra usada em
@@ -2068,7 +2127,7 @@ function emissivoPorPeca(peca) {
     const status = (peca.status || '').toLowerCase();
     if (status.includes('reparo') || status.includes('falha')) return { cor: 0xff1a1a, intensidade: 0.55 };
     const pct = pctDesgastePeca(peca);
-    if (pct >= 100) return { cor: 0xff5500, intensidade: 0.45 };
+    if (pct >= 100) return { cor: 0xb91c1c, intensidade: 0.45 };
     if (pct >= 80) return { cor: 0xd6a300, intensidade: 0.22 };
     return { cor: 0x000000, intensidade: 0 };
 }
@@ -4009,7 +4068,10 @@ async function carregarDados() {
         const origemLabel = apiBase === URL_LOCAL ? 'local' : 'Render';
         elStatusTexto.textContent = `${dados.length} peças · ${origemLabel}`;
 
-        construirCena(veioAtual);
+        // 🆕 Só monta a cena se a pessoa já escolheu a máquina (tela-mcc)
+        // — antes disso os dados ficam só guardados em piecesById,
+        // prontos pra quando ela escolher.
+        if (mccEscolhida) construirCena(veioAtual);
         elLoading.classList.add('hidden');
     } catch (erro) {
         console.error('Erro ao carregar dados da API:', erro);
@@ -4193,7 +4255,7 @@ function exportarPrint3D() {
     th { background: #eef1f6; font-weight: 700; }
     tr { page-break-inside: avoid; break-inside: avoid; }
     .pct-alerta { color: #a16207; font-weight: 700; }
-    .pct-limite { color: #c2410c; font-weight: 700; }
+    .pct-limite { color: #b91c1c; font-weight: 700; }
     .acoes { margin-top: 26px; text-align: center; }
     .acoes button { font-size: 13px; padding: 9px 20px; border-radius: 6px; border: 1px solid #16202e; background: #16202e; color: #fff; cursor: pointer; }
     @media print {
@@ -4258,27 +4320,71 @@ document.getElementById('btn-resetar-vista').addEventListener('click', () => {
 });
 
 // ==========================================================================
-// SELETOR DE VEIO
+// 🆕 TELA DE ESCOLHA DA MÁQUINA + SELETOR DE VEIO (filtrado pela MCC)
 // ==========================================================================
-document.querySelectorAll('.veio-tab[data-veio]').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('.veio-tab[data-veio]').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+// Troca o veio atual (mesma lógica de antes: reconstrói a cena e, se
+// mudou de MCC4 <-> MCC2/3 — layout bem diferente — voa a câmera pro
+// enquadramento padrão da máquina nova).
+function trocarVeio(novoVeio) {
+    const veioAnterior = veioAtual;
+    veioAtual = novoVeio;
+    const trocouDeMaquina = ehMCC4(veioAnterior) !== ehMCC4(veioAtual);
 
-        const veioAnterior = veioAtual;
-        veioAtual = btn.dataset.veio;
-        const trocouDeMaquina = ehMCC4(veioAnterior) !== ehMCC4(veioAtual);
+    construirCena(veioAtual);
 
-        construirCena(veioAtual);
+    // Usa a MCC escolhida na tela inicial pro título (MCC2/MCC3 têm o
+    // mesmo layout de código — ehMCC4() não distingue os dois — mas o
+    // título deve mostrar qual das duas a pessoa escolheu).
+    const nomeMaquina = mccEscolhida ? `MCC${mccEscolhida}` : (ehMCC4(veioAtual) ? 'MCC4' : 'MCC2/3');
+    document.getElementById('titulo-maquina').textContent = 'Sinótico Visual 3D — ' + nomeMaquina;
 
-        const nomeMaquina = ehMCC4(veioAtual) ? 'MCC4' : 'MCC2/3';
-        document.getElementById('titulo-maquina').textContent = 'Sinótico Visual 3D — ' + nomeMaquina;
+    if (trocouDeMaquina && !animandoCamera) {
+        const { posicaoCamera, centro } = calcularEnquadramentoGeral();
+        voarCameraPara(centro, 900, posicaoCamera);
+    }
+}
 
-        if (trocouDeMaquina && !animandoCamera) {
-            const { posicaoCamera, centro } = calcularEnquadramentoGeral();
-            voarCameraPara(centro, 900, posicaoCamera);
-        }
+// Desenha os botões de veio da MCC escolhida (só os 2 dela, não os 6
+// juntos como era antes) dentro de #veio-tabs-lista.
+function renderizarVeioTabs(mcc) {
+    const lista = document.getElementById('veio-tabs-lista');
+    lista.innerHTML = MCC_VEIOS[mcc].map(v =>
+        `<button class="veio-tab${v === veioAtual ? ' active' : ''}" data-veio="${v}">VEIO ${v}</button>`
+    ).join('');
+
+    lista.querySelectorAll('.veio-tab[data-veio]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            lista.querySelectorAll('.veio-tab[data-veio]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            trocarVeio(btn.dataset.veio);
+        });
     });
+}
+
+// Escolheu a MCC na tela inicial: fecha a tela, mostra só os veios
+// daquela máquina e monta a cena com o primeiro veio dela.
+function entrarNaMcc(mcc) {
+    mccEscolhida = mcc;
+    veioAtual = MCC_VEIOS[mcc][0]; // antes de renderizarVeioTabs, pra já marcar o botão certo como 'active'
+    document.getElementById('tela-mcc').hidden = true;
+    renderizarVeioTabs(mcc);
+    trocarVeio(veioAtual);
+    // Enquadramento inicial direto (sem animação de voo — é a primeira
+    // vez que a cena aparece, não uma troca de MCC4 <-> MCC2/3 em cena
+    // já visível).
+    const { posicaoCamera, centro } = calcularEnquadramentoGeral();
+    camera.position.copy(posicaoCamera);
+    controls.target.copy(centro);
+    controls.update();
+}
+
+document.querySelectorAll('.card-mcc[data-mcc]').forEach(btn => {
+    btn.addEventListener('click', () => entrarNaMcc(btn.dataset.mcc));
+});
+
+document.getElementById('btn-trocar-mcc').addEventListener('click', () => {
+    mccEscolhida = null;
+    document.getElementById('tela-mcc').hidden = false;
 });
 
 // ==========================================================================
