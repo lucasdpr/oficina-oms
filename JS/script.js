@@ -7495,6 +7495,47 @@ window.visualizarLaudo = async function(id) {
 };
 
 
+// 🆕 TRANSPORTE FÍSICO (Logística) — o swap de peça (abaixo) muda o
+// STATUS no sistema na hora ("Instalado"/"Oficina / Reparo"), mas isso
+// é só o registro — a peça continua fisicamente onde estava até
+// alguém de verdade carregar ela na carreta. Sem isso, "Oficina" no
+// sistema não significa "chegou na oficina" de verdade, e ninguém
+// ficava sabendo que precisava buscar/levar um equipamento.
+// Decisão explícita: NÃO mexe no status nem na lógica do swap (que já
+// funciona e é usada em vários lugares) — só cria uma atividade
+// normal pra área "logistica", reaproveitando 100% a infraestrutura
+// que já existe (POST /api/oficina/atividade — mesma rota do botão
+// "+ Lançar Atividade" que a Logística já usa). A Logística vê na
+// própria fila de Atividades Pendentes, anexa foto do documento de
+// retirada ao editar (já suportado) e marca Concluído quando entregar
+// de verdade — sem criar nenhum sistema novo.
+async function notificarLogisticaTransporte(descricao, equipamentoId) {
+    try {
+        const apiBase = await resolverApiBase();
+        await fetch(`${apiBase}/api/oficina/atividade`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                area: 'logistica',
+                equipamento_id: equipamentoId || null,
+                descricao,
+                responsavel: null,
+                prioridade: 'Alta',
+                operador: OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Sistema') : 'Sistema',
+                foto_base64: null,
+                prazo: null,
+                data_inicio: null,
+                solicitante_matricula: OPERADOR_LOGADO ? OPERADOR_LOGADO.matricula : null
+            })
+        });
+    } catch (e) {
+        // Nunca pode travar o swap por causa disso — a troca de peça já
+        // foi aplicada e salva; se a notificação falhar, só avisa no
+        // console (mesmo padrão de robustez usado em todo o sistema).
+        console.error('⚠️ Não consegui avisar a Logística sobre o transporte:', e);
+    }
+}
+
 window.iniciarSwapAlocacao = async function(idReserva) {
     if (!window.verificarAcesso()) return;
     const veioSelect = document.getElementById(`alocar-veio-${idReserva}`);
@@ -7585,6 +7626,10 @@ window.iniciarSwapAlocacao = async function(idReserva) {
             }
             if (typeof renderReparos === 'function') renderReparos(); if (typeof renderReservas === 'function') renderReservas();
             if (typeof renderAtivos === 'function') renderAtivos(); if (typeof renderPainelVeios === 'function') renderPainelVeios();
+            notificarLogisticaTransporte(
+                `Transportar: retirar ${pecaAntiga.id} do Veio ${veio} (slot ${slotChassi}) e levar pra Oficina · Levar ${pecaReserva.id} da Oficina pro Veio ${veio} (slot ${slotChassi})`,
+                pecaReserva.id
+            );
             alert(`✅ Swap realizado! ${pecaReserva.id} instalado.`);
         }
     } else {
@@ -7605,6 +7650,10 @@ window.iniciarSwapAlocacao = async function(idReserva) {
             
             if (typeof renderReparos === 'function') renderReparos(); if (typeof renderReservas === 'function') renderReservas();
             if (typeof renderAtivos === 'function') renderAtivos(); if (typeof renderPainelVeios === 'function') renderPainelVeios();
+            notificarLogisticaTransporte(
+                `Levar ${pecaReserva.id} da Oficina pro Veio ${veio} (slot ${slotChassi})`,
+                pecaReserva.id
+            );
             alert(`✅ ${pecaReserva.id} instalado com sucesso!`);
         }
     }
