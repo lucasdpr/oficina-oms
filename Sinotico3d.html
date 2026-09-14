@@ -1147,6 +1147,24 @@ const TOPO_Y_23 = 9;
 const ESPACO_CADEIRA_23 = 0.48;
 const OFFSET_PAR_23 = 0.32; // distância vertical entre Superior e Inferior empilhados
 
+// 🆕 Meia-altura real (mundo, eixo Y) de uma geometria já rotacionada
+// em Z — substitui os números mágicos que cada peça carregava por aí
+// (MOLDE23_MEIA_ALTURA = 0.31, ZERO23_MEIA_ALTURA = 1.28/2 etc.),
+// copiados à mão da geometria e que ficavam desatualizados toda vez
+// que a geometria mudava de tamanho (foi a causa de pelo menos 2 bugs
+// de encaixe corrigidos nesta sessão — Molde encolheu, Mesa/Zero não
+// souberam). Cria um mesh descartável (nunca adicionado à cena), gira
+// ele exatamente como a peça real vai girar, e lê a bounding box de
+// verdade — sempre bate com a geometria atual, não importa o que ela
+// vire a ser depois.
+function meiaAlturaMundo(geo, rotZ = 0) {
+    const mesh = new THREE.Mesh(geo);
+    mesh.rotation.z = rotZ;
+    mesh.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(mesh);
+    return (box.max.y - box.min.y) / 2;
+}
+
 function calcularTransformacoesMCC23(slots) {
     const centro = new THREE.Vector3(RAIO_CABECEIRA_23, TOPO_Y_23, 0);
     const cabeceira = slots.filter(s => s.grupo === 'cabeceira');
@@ -1186,9 +1204,14 @@ function calcularTransformacoesMCC23(slots) {
     const mesaSlot = cabeceira.find(s => s.id.startsWith('MES'));
     const zeroSlot = cabeceira.find(s => s.id.startsWith('SEG-0'));
     const g1Slot = cabeceira.find(s => s.id.startsWith('GRP1'));
-    const MOLDE23_MEIA_ALTURA = 0.31 * MOLDE23_ESCALA; // blocoGeoMoldeMCC23 Y (0.62) / 2 — deitado (rotZ=0), já é a extensão real no mundo
-    const MESA23_MEIA_ALTURA = 0.11;  // criarGeoQuadroVazado alturaViga (0.22) / 2
-    const ZERO23_MEIA_ALTURA = 1.28 / 2; // blocoGeoPadraoAberto, em pé (rotZ=-90°) — a extensão vertical vira a metade do comprimento (X), não da altura (Y)
+    // 🔧 Antes eram números copiados à mão da geometria (0.31, 0.11,
+    // 1.28/2...) — trocados por meiaAlturaMundo() (ver acima), que lê a
+    // bounding box de verdade. Cada peça já entra com a rotação que vai
+    // usar de verdade (deitada = 0, em pé = -90°), então a meia-altura
+    // já sai certa pro mundo, sem precisar decidir "é X ou é Y" à mão.
+    const MOLDE23_MEIA_ALTURA = meiaAlturaMundo(blocoGeoMoldeMCC23, 0);
+    const MESA23_MEIA_ALTURA = meiaAlturaMundo(blocoGeoMesaOsciladora, 0);
+    const ZERO23_MEIA_ALTURA = meiaAlturaMundo(blocoGeoPadraoAberto, -Math.PI / 2);
     const FOLGA_ENCAIXE = 0.1; // vão pequeno entre cada peça da coluna
 
     if (zeroSlot && g1Slot) {
@@ -1197,10 +1220,14 @@ function calcularTransformacoesMCC23(slots) {
         // em Y) — mas G1 é um bloco INCLINADO (segue a tangente da
         // curva), então o topo real dele não fica alinhado com o centro,
         // fica deslocado pro lado que ele se inclina. Em vez de "subir",
-        // acha o ponto exato do topo do G1 (o canto local (0, +0.31) —
-        // metade da altura local, 0.62/2 — transformado pra mundo pela
-        // MESMA rotação do G1) e senta o Zero exatamente ali.
-        const topoLocalG1 = 0.31; // metade da altura local do blocoGeoPadraoAberto (0.62/2)
+        // acha o ponto exato do topo do G1 (o canto local (0, +meia
+        // altura LOCAL) transformado pra mundo pela MESMA rotação do
+        // G1) e senta o Zero exatamente ali. Meia altura local (não a
+        // do mundo) porque essa conta é sobre o retângulo ANTES de
+        // girar — pega direto do BufferGeometry, sem criar mesh/rotação.
+        blocoGeoPadraoAberto.computeBoundingBox();
+        const bboxG1 = blocoGeoPadraoAberto.boundingBox;
+        const topoLocalG1 = (bboxG1.max.y - bboxG1.min.y) / 2;
         const topoG1 = new THREE.Vector3(
             g1Slot.pos.x + topoLocalG1 * Math.sin(g1Slot.rotZ),
             g1Slot.pos.y + topoLocalG1 * Math.cos(g1Slot.rotZ),
@@ -2052,7 +2079,7 @@ function adicionarDetalhesMoldeMCC23(mesh) {
     // não gira feito o da MCC4 (rotZ=0, sem twist), então local já é
     // mundo: metade do comprimento (X) e da largura (Z) são escaladas
     // junto com o corpo.
-    const meiaAlturaCorpo = 0.31 * MOLDE23_ESCALA;
+    const meiaAlturaCorpo = meiaAlturaMundo(blocoGeoMoldeMCC23, 0); // igual à conta que calcularTransformacoesMCC23 já faz — mesma fonte, sem duplicar o número
     const alturaPe = 0.22 * MOLDE23_ESCALA;
     const mundoYPe23 = -meiaAlturaCorpo - alturaPe / 2; // embaixo do corpo, encostado (perna sobe até tocar a base)
     [[-0.5, -0.58], [0.5, -0.58], [-0.5, 0.58], [0.5, 0.58]].forEach(([x, z]) => {
@@ -2363,13 +2390,13 @@ function construirCena(veio) {
             // regra genérica de baixo (offsetY=1.0) — só que agora ele fica
             // bem colado embaixo da Mesa (vão de 0.1, ver
             // calcularTransformacoesMCC23), então 1.0 subia a etiqueta do
-            // ZERO pra quase o MESMO ponto da etiqueta da MESA (que usa só
-            // 0.15) — uma cobria a outra. Precisa de um valor próprio, maior
-            // que a meia-altura do Zero em pé (0.64) mas menor que a
-            // distância até a base da Mesa (0.74) — 0.68 fica bem no meio
-            // dessa folga.
+            // ZERO pra quase o MESMO ponto da etiqueta da MESA — uma cobria
+            // a outra. Calculado (não mais um número fixo tipo "0.68"): meia
+            // altura real do Zero em pé + metade da folga de encaixe (0.1)
+            // — fica sempre no meio do vão até a Mesa, mesmo que a
+            // geometria de alguma das duas mude de tamanho depois.
             const ehZeroMCC23 = !mcc4 && slot.id.startsWith('SEG-0');
-            if (ehZeroMCC23) offsetY = 0.68;
+            if (ehZeroMCC23) offsetY = meiaAlturaMundo(blocoGeoPadraoAberto, -Math.PI / 2) + 0.05;
             else if (usarPecaAberta) offsetY = 1.0;
             else if (ehMolde) offsetY = 1.05;
             // Gap de 0.24 entre as 3 (maior que a soma das meia-alturas dos
@@ -2379,14 +2406,12 @@ function construirCena(veio) {
             else if (ehBender) offsetY = 0.6;
             else if (slot.id.includes('OSC-N')) offsetY = 0.36;
             else if (slot.id.includes('OSC-S')) offsetY = 0.12;
-            // 🔧 "Arrume o nome da mesa": Mesa Osciladora (MCC2/3) agora é
-            // uma moldura fina e deitada (0.22 de espessura) ENCOSTADA bem
-            // perto do Molde por baixo (vão de 0.1, ver
-            // calcularTransformacoesMCC23) — 0.35 subia a etiqueta pra
-            // DENTRO do corpo do Molde (que começa a só 0.21 acima do
-            // centro da Mesa). 0.15 fica logo acima do topo da moldura
-            // (0.11) sem invadir o Molde.
-            else if (!mcc4 && slot.id.startsWith('MES')) offsetY = 0.15;
+            // 🔧 "Arrume o nome da mesa": Mesa Osciladora (MCC2/3) fica
+            // ENCOSTADA bem perto do Molde por cima (vão de 0.1, ver
+            // calcularTransformacoesMCC23) — calculado igual ao do Zero
+            // acima: meia altura real da moldura + metade da folga, fica
+            // sempre entre o topo da Mesa e a base do Molde.
+            else if (!mcc4 && slot.id.startsWith('MES')) offsetY = meiaAlturaMundo(blocoGeoMesaOsciladora, 0) + 0.05;
             else offsetY = mcc4 ? (slot.grupo === 'cabeceira' ? 0.85 : 0.55) : 0.75;
             // 🔧 "Nome tampando o equipamento": até aqui a etiqueta só subia
             // em Y, ficando bem em cima do bloco — de frente ela cobria o
