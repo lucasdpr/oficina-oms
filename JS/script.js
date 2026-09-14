@@ -4652,7 +4652,20 @@ window.renderPainelAreaAdministrativa = async function(chave) {
                                 <span style="color:var(--text-body); font-size:13px;">${a.descricao || 'Sem descrição'}</span>
                                 <span style="font-size:11px; font-weight:700; color:${corStatus};">${atrasada ? 'ATRASADA' : (a.status || '').toUpperCase()}</span>
                             </div>
-                            <div class="text-muted" style="font-size:11px; margin-top:2px;">${a.responsavel || 'Sem responsável'}${a.prazo ? ' · prazo ' + a.prazo.split('-').reverse().join('/') : ''}</div>
+                            <div class="text-muted" style="font-size:11px; margin-top:2px;">
+                                ${
+                                    // 🔧 CORREÇÃO (mesmo bug já achado no card de área — "quem
+                                    // iniciou o transporte? quem que concluiu?"): esse resumo só
+                                    // mostrava `responsavel` (só existe se preenchido na CRIAÇÃO,
+                                    // quase nunca é) — nunca `criado_por` (quem lançou) nem
+                                    // `executado_por` (quem pegou pra executar, preenchido ao
+                                    // clicar "Iniciar"). Mostra os dois que existem de verdade.
+                                    [
+                                        a.criado_por ? `Criado por ${a.criado_por}` : null,
+                                        a.executado_por ? `${a.status === 'Concluído' ? 'Executado por' : 'Executando'}: ${a.executado_por}` : (a.responsavel || null)
+                                    ].filter(Boolean).join(' · ') || 'Sem responsável'
+                                }${a.prazo ? ' · prazo ' + a.prazo.split('-').reverse().join('/') : ''}
+                            </div>
                         </div>
                     `;
                 }).join('')
