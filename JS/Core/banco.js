@@ -37,14 +37,58 @@ const URL_RENDER = "https://api-oms-csn.onrender.com";
 // ela partiu. banco.js é importado por toda página do sistema, então
 // isso roda assim que qualquer tela carrega.
 const fetchOriginalBanco = window.fetch.bind(window);
+
+// 🆕 CACHE CURTO DE LEITURA ("consumo de transferência do Neon subindo
+// rápido demais"): o app inteiro busca a lista inteira de novo toda
+// vez que uma tela é aberta/trocada — sem paginação real, sem cache,
+// mesmo que a mesma lista já tivesse sido buscada segundos antes. Com
+// banco pequeno (~40MB) e uso normal de trocar de aba, isso soma
+// rápido: só de 1 pessoa testando, ~90MB/dia de transferência. Isso
+// não é 1 rota culpada — é o padrão do app inteiro — então a correção
+// entra aqui, no MESMO chokepoint único onde a autenticação já foi
+// resolvida (ver comentário acima), em vez de mexer em cada tela.
+//
+// Cada GET pra nossa própria API fica em cache por CACHE_TTL_MS: uma
+// segunda chamada pra EXATAMENTE a mesma URL dentro da janela reaproveita
+// a resposta em vez de ir ao servidor de novo. Curto o bastante pra não
+// mostrar dado velho de propósito (ninguém vai notar 20s de atraso
+// trocando de aba), longo o bastante pra matar a maior parte do
+// refetch redundante. Qualquer escrita (POST/PUT/PATCH/DELETE) zera o
+// cache inteiro na hora — simples e seguro, garante que a tela nunca
+// mostra dado desatualizado depois de uma ação da própria pessoa.
+const CACHE_TTL_MS = 20000;
+const _cacheLeituraGET = new Map(); // url completa -> { expira, promise }
+
 window.fetch = (recurso, opcoes = {}) => {
     const url = typeof recurso === 'string' ? recurso : (recurso && recurso.url) || '';
     const metodo = (opcoes.method || 'GET').toUpperCase();
-    const ehEscritaNaNossaApi = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(metodo)
-        && (url.startsWith(URL_LOCAL) || url.startsWith(URL_RENDER));
-    if (ehEscritaNaNossaApi && OPERADOR_LOGADO && OPERADOR_LOGADO.token) {
-        opcoes = { ...opcoes, headers: { ...(opcoes.headers || {}), Authorization: `Bearer ${OPERADOR_LOGADO.token}` } };
+    const ehNossaApi = url.startsWith(URL_LOCAL) || url.startsWith(URL_RENDER);
+    const ehEscritaNaNossaApi = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(metodo) && ehNossaApi;
+
+    if (ehEscritaNaNossaApi) {
+        _cacheLeituraGET.clear();
+        if (OPERADOR_LOGADO && OPERADOR_LOGADO.token) {
+            opcoes = { ...opcoes, headers: { ...(opcoes.headers || {}), Authorization: `Bearer ${OPERADOR_LOGADO.token}` } };
+        }
+        return fetchOriginalBanco(recurso, opcoes);
     }
+
+    if (metodo === 'GET' && ehNossaApi) {
+        const agora = Date.now();
+        const emCache = _cacheLeituraGET.get(url);
+        if (emCache && emCache.expira > agora) {
+            return emCache.promise.then(resp => resp.clone());
+        }
+        const promise = fetchOriginalBanco(recurso, opcoes);
+        _cacheLeituraGET.set(url, { expira: agora + CACHE_TTL_MS, promise });
+        // Resposta com erro (rede caiu, 5xx) não fica presa em cache até
+        // o TTL passar — evita mostrar "falhou" repetido por 20s quando
+        // a segunda tentativa já teria funcionado.
+        promise.then(resp => { if (!resp.ok) _cacheLeituraGET.delete(url); })
+               .catch(() => _cacheLeituraGET.delete(url));
+        return promise.then(resp => resp.clone());
+    }
+
     return fetchOriginalBanco(recurso, opcoes);
 };
 
