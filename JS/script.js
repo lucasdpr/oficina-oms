@@ -6005,6 +6005,28 @@ window.abrirConversaAtividade = async function(atividadeId) {
     const modal = document.getElementById('modal-conversa-atividade');
     if (!modal) return;
     document.getElementById('conversa-atividade-texto').value = '';
+
+    // 🔧 CORREÇÃO ("não dá pra saber com quem é a conversa"): o modal só
+    // mostrava um título genérico, sem dizer o equipamento nem quem
+    // criou/está executando a atividade. Busca no cache já carregado
+    // (evita outra chamada de rede só pra isso).
+    const contexto = document.getElementById('conversa-atividade-contexto');
+    if (contexto) {
+        const atividade = (typeof OFICINA_ATIVIDADES_CACHE !== 'undefined')
+            ? OFICINA_ATIVIDADES_CACHE.find(a => a.id === atividadeId)
+            : null;
+        if (atividade) {
+            const partes = [];
+            if (atividade.equipamento_id) partes.push(`<strong>${atividade.equipamento_id}</strong>`);
+            partes.push(atividade.descricao || 'Sem descrição');
+            if (atividade.criado_por) partes.push(`Criado por ${atividade.criado_por}`);
+            if (atividade.executado_por) partes.push(`Executando: ${atividade.executado_por}`);
+            contexto.innerHTML = partes.join(' · ');
+        } else {
+            contexto.innerHTML = '';
+        }
+    }
+
     modal.classList.remove('hidden');
     await window.carregarMensagensConversaAtividade();
 };
