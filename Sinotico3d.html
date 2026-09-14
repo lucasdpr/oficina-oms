@@ -2248,6 +2248,44 @@ function construirChassiMCC23(slots) {
 }
 
 
+// 🆕 Rede de segurança genérica contra etiqueta sobrepondo etiqueta —
+// até aqui cada colisão (Bender/OSC, Mesa/Molde, Zero/Mesa) foi
+// corrigida na mão, escalonando o offsetY caso a caso. Isso continua
+// valendo pros casos já conhecidos (são o ajuste fino "de verdade"),
+// mas qualquer peça nova ou reposicionada no futuro pode gerar uma
+// colisão inédita — esta função varre TODOS os balões já posicionados
+// e afasta (no eixo Y — o que causa colisão quase sempre aqui, já que
+// as peças empilham verticalmente) qualquer par que ainda tenha
+// ficado perto demais, sem precisar de mais um caso especial manual.
+function resolverColisaoEtiquetas(labelsInfo) {
+    const DIST_MINIMA = 0.18; // menor que os espaçamentos já afinados à mão (ex.: 0.24 do Bender/OSC) — só pega o que passou batido
+    const MAX_ITER = 6; // poucos balões por veio (<15); converge rápido
+    for (let iter = 0; iter < MAX_ITER; iter++) {
+        let mexeu = false;
+        for (let i = 0; i < labelsInfo.length; i++) {
+            for (let j = i + 1; j < labelsInfo.length; j++) {
+                const a = labelsInfo[i].sprite, b = labelsInfo[j].sprite;
+                const d = a.position.distanceTo(b.position);
+                if (d < DIST_MINIMA && d > 0.0001) {
+                    const falta = (DIST_MINIMA - d) / 2;
+                    const sinal = (b.position.y >= a.position.y) ? 1 : -1;
+                    a.position.y -= falta * sinal;
+                    b.position.y += falta * sinal;
+                    mexeu = true;
+                }
+            }
+        }
+        if (!mexeu) break;
+    }
+    // Depois de empurrar, redesenha a linha-guia de cada balão pra
+    // continuar apontando pro ponto de âncora certo (senão ela fica
+    // "torta", saindo do lugar antigo do balão).
+    labelsInfo.forEach(({ sprite, linha, ancora }) => {
+        linha.geometry.dispose();
+        linha.geometry = new THREE.BufferGeometry().setFromPoints([ancora, sprite.position]);
+    });
+}
+
 function construirCena(veio) {
     // limpa blocos e etiquetas anteriores
     meshesBySlot.forEach(m => grupoLinha.remove(m.mesh));
@@ -2265,6 +2303,8 @@ function construirCena(veio) {
     const slots = calcularTransformacoes(construirLayoutSlots(veio));
 
     if (!mcc4) construirChassiMCC23(slots);
+
+    const labelsInfo = []; // pra resolverColisaoEtiquetas(), no fim do laço abaixo
 
     // 🔧 Ver correção "CASAMENTO PEÇA <-> SLOT" acima: o mapa é
     // reconstruído a cada render pra sempre casar com o estado mais
@@ -2434,8 +2474,12 @@ function construirCena(veio) {
             linhaGuia.renderOrder = 998;
             grupoLinha.add(linhaGuia);
             labelObjects.push(linhaGuia);
+
+            labelsInfo.push({ sprite, linha: linhaGuia, ancora: pontoAncora });
         }
     });
+
+    resolverColisaoEtiquetas(labelsInfo);
 }
 
 // ==========================================================================
