@@ -1130,14 +1130,24 @@ function calcularTransformacoesMCC23(slots) {
     const FOLGA_ENCAIXE = 0.1; // vão pequeno entre cada peça da coluna
 
     if (zeroSlot && g1Slot) {
-        // Meia-altura real do G1 no mundo, considerando o ângulo dele na
-        // curva (bounding box do retângulo rotacionado — blocoGeoPadraoAberto
-        // é 1.28 x 0.62 local, metades 0.64/0.31).
-        const meiaAlturaG1 = Math.abs(0.64 * Math.sin(g1Slot.rotZ)) + Math.abs(0.31 * Math.cos(g1Slot.rotZ));
+        // 🔧 "Só falta alinhar o zero, tá muito pra frente": a conta
+        // antiga flutuava o Zero bem em cima do CENTRO do G1 (só subindo
+        // em Y) — mas G1 é um bloco INCLINADO (segue a tangente da
+        // curva), então o topo real dele não fica alinhado com o centro,
+        // fica deslocado pro lado que ele se inclina. Em vez de "subir",
+        // acha o ponto exato do topo do G1 (o canto local (0, +0.31) —
+        // metade da altura local, 0.62/2 — transformado pra mundo pela
+        // MESMA rotação do G1) e senta o Zero exatamente ali.
+        const topoLocalG1 = 0.31; // metade da altura local do blocoGeoPadraoAberto (0.62/2)
+        const topoG1 = new THREE.Vector3(
+            g1Slot.pos.x - topoLocalG1 * Math.sin(g1Slot.rotZ),
+            g1Slot.pos.y + topoLocalG1 * Math.cos(g1Slot.rotZ),
+            g1Slot.pos.z // rotZ só gira X/Y — Z do topo local é igual ao do centro
+        );
         zeroSlot.rotZ = -Math.PI / 2; // em pé
-        zeroSlot.pos.x = g1Slot.pos.x;
-        zeroSlot.pos.z = g1Slot.pos.z;
-        zeroSlot.pos.y = g1Slot.pos.y + meiaAlturaG1 + ZERO23_MEIA_ALTURA + FOLGA_ENCAIXE;
+        zeroSlot.pos.x = topoG1.x;
+        zeroSlot.pos.z = topoG1.z;
+        zeroSlot.pos.y = topoG1.y + ZERO23_MEIA_ALTURA + FOLGA_ENCAIXE;
     }
     if (mesaSlot && zeroSlot) {
         mesaSlot.rotZ = 0;
