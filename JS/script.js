@@ -5635,7 +5635,22 @@ function renderizarAtividadesArea() {
                 <div style="font-size:13px; color:var(--text-body);">${x.descricao}</div>
                 ${x.motivo_status ? `<div style="font-size:11.5px; color:${corStatus[x.status]}; margin-top:4px;"><i class="fas fa-circle-info"></i> ${x.motivo_status}</div>` : ''}
                 <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
-                    ${x.responsavel ? `${x.responsavel} · ` : ''}${x.criado_por ? `Criado por ${x.criado_por} · ` : ''}${x.criado_em || ''}
+                    ${
+                        // 🔧 CORREÇÃO ("iniciei, selecionei quem está fazendo, mas
+                        // não mostra quem tá fazendo"): "Iniciar" salva quem vai
+                        // executar num campo separado (executado_por, ver
+                        // mudarStatusAtividadeOficina/routers/oficina.py) — não
+                        // sobrescreve `responsavel`, que só existe se foi
+                        // preenchido na CRIAÇÃO da atividade. O card só mostrava
+                        // `responsavel`, então uma atividade sem responsável
+                        // definido na criação ficava sem exibir ninguém, mesmo
+                        // depois de alguém ter sido escolhido ao iniciar.
+                        // Prioriza executado_por (mais recente/real) e cai pra
+                        // responsavel só se não tiver execução ainda.
+                        x.executado_por
+                            ? `<i class="fas fa-user-gear"></i> ${x.executado_por} · `
+                            : (x.responsavel ? `${x.responsavel} · ` : '')
+                    }${x.criado_por ? `Criado por ${x.criado_por} · ` : ''}${x.criado_em || ''}
                     ${x.data_inicio ? ` · <span style="color:var(--text-accent, #3b82f6);">Início salvo: ${x.data_inicio.split('-').reverse().join('/')}</span>` : ''}
                     ${prazoFormatado ? ` · Prazo: <span style="color:${atrasada ? 'var(--danger)' : 'var(--text-muted)'}; font-weight:${atrasada ? '700' : '400'};">${prazoFormatado}</span>` : ''}
                 </div>
