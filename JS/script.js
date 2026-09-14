@@ -8821,7 +8821,7 @@ window.irParaTelaDaAreaNotificacao = function() {
 // Ícone por tipo de item do feed unificado — tipo='evento' cobre tanto
 // Ocorrência (categoria Intervenção/Melhoria/...) quanto Auditoria geral
 // (ex: rolo travado no Sinótico 3D), que antes nunca aparecia aqui.
-const ICONE_POR_TIPO_NOTIFICACAO = { os: '📄', achado: '🔍', evento: '📋', estoque: '📦', sinotico: '🧊', atividade: '🧰', mensagem_area: '💬' };
+const ICONE_POR_TIPO_NOTIFICACAO = { os: '📄', achado: '🔍', evento: '📋', estoque: '📦', sinotico: '🧊', atividade: '🧰', mensagem_area: '💬', padrao_qualidade: '🚨' };
 
 // 🔧 CORREÇÃO ("mostra os antigos, não quero isso"): não lido aparece
 // sempre (é exatamente o que a pessoa ainda não viu, não importa a
@@ -8919,6 +8919,15 @@ window.abrirItemNotificacao = async function(tipo, eventoId, referencia, area, a
         }
     } else if (tipo === 'achado') {
         window.irParaAchadoEspecifico(referencia);
+    } else if (tipo === 'padrao_qualidade') {
+        // 🆕 Padrão detectado entre achados (mesma categoria em vários
+        // equipamentos diferentes) — não é um achado específico, é o
+        // painel de padrões no topo da aba Qualidade que mostra isso.
+        window.abrirAba(null, 'aba-qualidade');
+        document.getElementById('nav-qualidade')?.classList.add('active');
+        setTimeout(() => {
+            document.getElementById('qualidade-padroes')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
     } else if (tipo === 'sinotico') {
         window.open('Sinotico3d.html', '_blank');
     } else if (tipo === 'estoque') {
