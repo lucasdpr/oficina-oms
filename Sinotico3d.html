@@ -2177,9 +2177,27 @@ function construirCena(veio) {
             else if (slot.id.includes('OSC-N')) offsetY = 0.36;
             else if (slot.id.includes('OSC-S')) offsetY = 0.12;
             else offsetY = mcc4 ? (slot.grupo === 'cabeceira' ? 0.85 : 0.55) : 0.75;
-            sprite.position.set(slot.pos.x, slot.pos.y + offsetY, slot.pos.z);
+            // 🔧 "Nome tampando o equipamento": até aqui a etiqueta só subia
+            // em Y, ficando bem em cima do bloco — de frente ela cobria o
+            // próprio equipamento. Empurra pra o lado também (eixo Z, o
+            // único que a curva/cabeceira não usa — ver comentário acima em
+            // calcularTransformacoesMCC4), virando um "balão" ao lado da
+            // peça em vez de em cima dela, e desenha uma linha fina ligando
+            // o balão de volta ao equipamento pra não perder a referência.
+            const ladoZ = mcc4 ? 0.85 : 0.7;
+            const sinalLado = slot.pos.z >= 0 ? 1 : -1; // afasta pro mesmo lado que o item já pende (OSC-S etc.)
+            const posLabel = new THREE.Vector3(slot.pos.x, slot.pos.y + offsetY, slot.pos.z + sinalLado * ladoZ);
+            sprite.position.copy(posLabel);
             grupoLinha.add(sprite);
             labelObjects.push(sprite);
+
+            const pontoAncora = new THREE.Vector3(slot.pos.x, slot.pos.y + offsetY * 0.35, slot.pos.z);
+            const linhaGeo = new THREE.BufferGeometry().setFromPoints([pontoAncora, posLabel]);
+            const linhaMat = new THREE.LineBasicMaterial({ color: 0x8a94a8, transparent: true, opacity: 0.45 });
+            const linhaGuia = new THREE.Line(linhaGeo, linhaMat);
+            linhaGuia.renderOrder = 998;
+            grupoLinha.add(linhaGuia);
+            labelObjects.push(linhaGuia);
         }
     });
 }
