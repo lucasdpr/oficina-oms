@@ -2460,10 +2460,21 @@ function construirCena(veio) {
             // calcularTransformacoesMCC4), virando um "balão" ao lado da
             // peça em vez de em cima dela, e desenha uma linha fina ligando
             // o balão de volta ao equipamento pra não perder a referência.
-            const ladoZ = mcc4 ? 0.85 : 0.7;
+            // 🔧 "OSC-S/BOW 1 sobrepostos" (achado testando com
+            // tools/screenshot_sinotico.mjs, zoom no Bender): distância 3D
+            // real entre os dois é de sobra (~0.66) — resolverColisaoEtiquetas()
+            // não pega porque não é uma colisão de verdade, é só os dois
+            // ficarem visualmente próximos NA TELA vistos de um ângulo bem
+            // fechado. OSC-N/OSC-S ganham um empurrão extra em Z (afastando
+            // ainda mais do centro, onde os balões do Bow também moram)
+            // pra abrir mais margem visual nesse ângulo, sem mexer em mais
+            // nada.
+            const ehOsciladorLabel = mcc4 && slot.id.includes('OSC-');
+            const ladoZ = ehOsciladorLabel ? 1.35 : (mcc4 ? 0.85 : 0.7);
             const sinalLado = slot.pos.z >= 0 ? 1 : -1; // afasta pro mesmo lado que o item já pende (OSC-S etc.)
             const posLabel = new THREE.Vector3(slot.pos.x, slot.pos.y + offsetY, slot.pos.z + sinalLado * ladoZ);
             sprite.position.copy(posLabel);
+            sprite.userData.label = slot.label; // só pra debug (tools/screenshot_sinotico.mjs, devtools) — não usado pelo resto do código
             grupoLinha.add(sprite);
             labelObjects.push(sprite);
 
@@ -4503,7 +4514,7 @@ animar();
 // via page.evaluate() na hora de conferir uma peça de perto. Read-only
 // na prática (o script só LÊ e reposiciona câmera) — não expõe nada que
 // já não estivesse acessível clicando na tela.
-window.__sinoticoDebug = { camera, controls, scene, renderer, THREE, get slots() { return slotsGeometricos; } };
+window.__sinoticoDebug = { camera, controls, scene, renderer, THREE, get slots() { return slotsGeometricos; }, get labelObjects() { return labelObjects; } };
 
 carregarDados();
 
