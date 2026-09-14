@@ -11,6 +11,24 @@ export const MOTIVOS_RETIRO = {
     "Outros": ["Fim de vida", "Quebra", "Manutenção Preventiva", "Outros"]
 };
 
+// 🆕 Categoria do achado de Qualidade — mesmo vocabulário de
+// MOTIVOS_RETIRO acima (união de todos os tipos, sem repetir), pra não
+// inventar uma lista nova: achado ("trinca no rolo #3") e motivo de
+// retirada ("Trinca") já descrevem o mesmo tipo de problema na prática.
+// Usada pelo dropdown de categoria no formulário de achado — ver
+// window.adicionarAchadoNaLista/salvarNovoAchadoModal em script.js.
+// "Outros" fica de fora do agrupamento de padrão de propósito (ver
+// verificar_padrao_achados no backend) — é o catch-all genérico, não
+// descreve um tipo de defeito real.
+export const CATEGORIAS_ACHADO_QUALIDADE = [
+    "Alarme de B.O", "B.O", "Blackout", "Desgaste", "Desgaste de placa",
+    "Empeno", "Falha no cilindro", "Fim de vida", "Manutenção Preventiva",
+    "Placa na linha", "Quebra", "Ranhura de placa", "Refrigeração",
+    "Rolete travado", "Rolo quebrado", "Rolo travado", "Transpordo",
+    "Trava da bender", "Trinca", "Vazamento de cilindro",
+    "Vazamento de graxa", "Vazão", "Outros"
+];
+
 export const CHECKLIST_RECEBIMENTO = [
     "Os engates rápidos do sistema hidráulico e nitrogênio estão completos e em perfeitas condições?",
     "Os flexíveis das faces estreitas e spray estão amassados e/ou danificados?",

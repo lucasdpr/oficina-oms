@@ -2,15 +2,16 @@
 // SCRIPT.JS - COMPLETO E CORRIGIDO 
 // ==========================================
 
-import { 
-    MOTIVOS_RETIRO, 
-    CHECKLIST_RECEBIMENTO, 
-    CHECKLIST_REVISAO, 
-    CHECKLIST_HIDRAULICA, 
-    CHECKLIST_FINAL, 
+import {
+    MOTIVOS_RETIRO,
+    CHECKLIST_RECEBIMENTO,
+    CHECKLIST_REVISAO,
+    CHECKLIST_HIDRAULICA,
+    CHECKLIST_FINAL,
     BIBLIOTECA_CHECKLISTS,
     AREAS_OFICINA,
-    ABAS_PADRAO_OFICINA
+    ABAS_PADRAO_OFICINA,
+    CATEGORIAS_ACHADO_QUALIDADE
 } from './Core/dados.js';
 
 import {
@@ -8820,7 +8821,7 @@ window.irParaTelaDaAreaNotificacao = function() {
 // Ícone por tipo de item do feed unificado — tipo='evento' cobre tanto
 // Ocorrência (categoria Intervenção/Melhoria/...) quanto Auditoria geral
 // (ex: rolo travado no Sinótico 3D), que antes nunca aparecia aqui.
-const ICONE_POR_TIPO_NOTIFICACAO = { os: '📄', achado: '🔍', evento: '📋', estoque: '📦', sinotico: '🧊', atividade: '🧰', mensagem_area: '💬' };
+const ICONE_POR_TIPO_NOTIFICACAO = { os: '📄', achado: '🔍', evento: '📋', estoque: '📦', sinotico: '🧊', atividade: '🧰', mensagem_area: '💬', padrao_qualidade: '🚨' };
 
 // 🔧 CORREÇÃO ("mostra os antigos, não quero isso"): não lido aparece
 // sempre (é exatamente o que a pessoa ainda não viu, não importa a
@@ -8918,6 +8919,15 @@ window.abrirItemNotificacao = async function(tipo, eventoId, referencia, area, a
         }
     } else if (tipo === 'achado') {
         window.irParaAchadoEspecifico(referencia);
+    } else if (tipo === 'padrao_qualidade') {
+        // 🆕 Padrão detectado entre achados (mesma categoria em vários
+        // equipamentos diferentes) — não é um achado específico, é o
+        // painel de padrões no topo da aba Qualidade que mostra isso.
+        window.abrirAba(null, 'aba-qualidade');
+        document.getElementById('nav-qualidade')?.classList.add('active');
+        setTimeout(() => {
+            document.getElementById('qualidade-padroes')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
     } else if (tipo === 'sinotico') {
         window.open('Sinotico3d.html', '_blank');
     } else if (tipo === 'estoque') {
@@ -9190,13 +9200,31 @@ window.removerFotoAchadoNovo = function(indice) {
     renderPreviewFotosAchadoNovo();
 };
 
+// 🆕 Opções do <select> de categoria do achado — mesma lista em todo
+// lugar que precisa dela (formulário de entrada + modal), pra nunca
+// desincronizar. "" (Categoria opcional) sempre primeiro.
+function opcoesCategoriaAchadoHTML(selecionado = '') {
+    return `<option value="">Categoria (opcional)</option>` +
+        CATEGORIAS_ACHADO_QUALIDADE.map(c => `<option value="${c}" ${c === selecionado ? 'selected' : ''}>${c}</option>`).join('');
+}
+
+// Preenche o <select> estático do formulário de ENTRADA (app.html) —
+// os outros achados (modal) geram o próprio <select> na hora, direto
+// no template (ver window.abrirModalAchadosQualidade).
+(function preencherSelectCategoriaAchadoEntrada() {
+    const select = document.getElementById('qualidade-achado-categoria');
+    if (select) select.innerHTML = opcoesCategoriaAchadoHTML();
+})();
+
 window.adicionarAchadoNaLista = function() {
     const campo = document.getElementById('qualidade-achado-descricao');
     const descricao = campo?.value.trim();
     if (!descricao) return alert('Descreva o achado antes de adicionar.');
+    const categoria = document.getElementById('qualidade-achado-categoria')?.value || null;
 
-    QUALIDADE_ACHADOS_LISTA.push({ descricao, fotos_base64: [...QUALIDADE_ACHADO_FOTOS_NOVAS] });
+    QUALIDADE_ACHADOS_LISTA.push({ descricao, categoria, fotos_base64: [...QUALIDADE_ACHADO_FOTOS_NOVAS] });
     campo.value = '';
+    document.getElementById('qualidade-achado-categoria').value = '';
     window.removerFotoAchadoNovo();
     renderAchadosPendentesLista();
 };
@@ -9214,7 +9242,7 @@ function renderAchadosPendentesLista() {
     container.innerHTML = QUALIDADE_ACHADOS_LISTA.map((a, i) => `
         <div style="display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid var(--border);">
             ${a.fotos_base64 && a.fotos_base64[0] ? `<img src="${a.fotos_base64[0]}" style="width:36px; height:36px; object-fit:cover; border-radius:6px; flex-shrink:0;">` : `<div style="width:36px; height:36px; flex-shrink:0;"></div>`}
-            <span style="flex:1; font-size:12px; color:var(--text-body);">${a.descricao}${a.fotos_base64 && a.fotos_base64.length > 1 ? ` <span style="color:var(--text-muted);">(${a.fotos_base64.length} fotos)</span>` : ''}</span>
+            <span style="flex:1; font-size:12px; color:var(--text-body);">${a.categoria ? `<span style="color:#a78bfa; font-weight:700;">[${a.categoria}]</span> ` : ''}${a.descricao}${a.fotos_base64 && a.fotos_base64.length > 1 ? ` <span style="color:var(--text-muted);">(${a.fotos_base64.length} fotos)</span>` : ''}</span>
             <button type="button" onclick="window.removerAchadoDaLista(${i})" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:12px;"><i class="fas fa-trash"></i></button>
         </div>
     `).join('');
@@ -9363,9 +9391,60 @@ window.carregarListaQualidade = async function() {
             const respTudo = await fetch(`${apiBase}/api/qualidade`, { cache: 'no-store' });
             if (respTudo.ok) window.renderizarKpisQualidade(await respTudo.json());
         }
+
+        window.carregarPadroesQualidade();
     } catch (e) {
         console.error('⚠️ Erro ao carregar registros de qualidade:', e);
         container.innerHTML = `<div class="text-muted" style="text-align:center; padding:30px 0;">Não foi possível carregar. Verifique sua internet.</div>`;
+    }
+};
+
+// 🆕 Padrões detectados — mesma categoria de achado em vários
+// equipamentos diferentes num curto espaço de tempo (ver
+// GET /api/qualidade/achados/padroes, verificar_padrao_achados no
+// backend). Painel some sozinho quando não tem padrão ativo — não é
+// pra virar "mais uma caixa vazia" na tela o tempo todo.
+window.carregarPadroesQualidade = async function() {
+    const container = document.getElementById('qualidade-padroes');
+    if (!container) return;
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/qualidade/achados/padroes`, { cache: 'no-store' });
+        if (!resp.ok) throw new Error('Falha ao buscar padrões');
+        const padroes = await resp.json();
+
+        if (!Array.isArray(padroes) || padroes.length === 0) {
+            container.classList.add('hidden');
+            container.innerHTML = '';
+            return;
+        }
+
+        container.classList.remove('hidden');
+        container.innerHTML = `
+            <div class="glass-panel" style="padding:18px; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.35);">
+                <h3 style="color:var(--danger); font-size:0.95rem; margin:0 0 12px 0;">
+                    <i class="fas fa-triangle-exclamation"></i> Padrão detectado — mesmo defeito em vários equipamentos
+                </h3>
+                ${padroes.map(p => `
+                    <div style="padding:10px 0; border-top:1px solid rgba(239,68,68,0.2);">
+                        <div style="font-weight:700; color:var(--text-title);">${p.categoria} — ${p.total_equipamentos} equipamentos</div>
+                        <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+                            ${(p.equipamentos || []).join(', ')}
+                        </div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+                            De ${p.primeira_ocorrencia} até ${p.ultima_ocorrencia}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } catch (e) {
+        console.error('⚠️ Erro ao carregar padrões de achados de qualidade:', e);
+        // Falha silenciosa — não é crítico o bastante pra travar a tela
+        // de Qualidade inteira por causa disso; o painel só some.
+        container.classList.add('hidden');
+        container.innerHTML = '';
     }
 };
 
@@ -9665,6 +9744,7 @@ window.abrirModalAchadosQualidade = async function(registroId, pecaId, podeEdita
                     <button type="button" class="btn-premium w-100 btn-icon-only" onclick="document.getElementById('modal-achado-nova-foto-input').click()"><i class="fas fa-camera"></i></button>
                 </div>
             </div>
+            <select id="modal-achado-categoria" class="premium-input" style="margin-bottom:8px; width:100%;">${opcoesCategoriaAchadoHTML()}</select>
             <div id="modal-achado-nova-foto-preview" class="hidden" style="margin-bottom:8px; display:flex; gap:6px; flex-wrap:wrap;"></div>
             <button type="button" class="btn-premium" style="font-size:12px; padding:6px 14px;" onclick="window.salvarNovoAchadoModal(${registroId}, '${pecaId}')">
                 <i class="fas fa-plus"></i> Adicionar
@@ -9712,6 +9792,7 @@ window.salvarNovoAchadoModal = async function(registroId, pecaId) {
     if (!verificarAcesso()) return;
     const descricao = document.getElementById('modal-achado-nova-descricao')?.value.trim();
     if (!descricao) return alert('Descreva o achado.');
+    const categoria = document.getElementById('modal-achado-categoria')?.value || null;
 
     const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
 
@@ -9720,7 +9801,7 @@ window.salvarNovoAchadoModal = async function(registroId, pecaId) {
         const resp = await fetch(`${apiBase}/api/qualidade/achados`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ registro_id: registroId, descricao, fotos_base64: QUALIDADE_ACHADO_MODAL_FOTOS_NOVAS, operador })
+            body: JSON.stringify({ registro_id: registroId, descricao, categoria, fotos_base64: QUALIDADE_ACHADO_MODAL_FOTOS_NOVAS, operador })
         });
         if (!resp.ok) {
             const erro = await resp.json().catch(() => ({}));
@@ -9728,6 +9809,7 @@ window.salvarNovoAchadoModal = async function(registroId, pecaId) {
             return;
         }
         document.getElementById('modal-achado-nova-descricao').value = '';
+        document.getElementById('modal-achado-categoria').value = '';
         QUALIDADE_ACHADO_MODAL_FOTOS_NOVAS = [];
         const preview = document.getElementById('modal-achado-nova-foto-preview');
         if (preview) { preview.classList.add('hidden'); preview.innerHTML = ''; }

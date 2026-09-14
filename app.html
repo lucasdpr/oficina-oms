@@ -1346,6 +1346,11 @@
 
                     <div class="glass-panel" style="padding:16px; margin-bottom:16px; background:rgba(167,139,250,0.05); border:1px solid rgba(167,139,250,0.2);">
                         <label style="display:block; margin-bottom:10px; color:#a78bfa; font-weight:700;"><i class="fas fa-triangle-exclamation"></i> Achados (problemas encontrados na inspeção)</label>
+        <!-- 🆕 Categoria — ver CATEGORIAS_ACHADO_QUALIDADE (JS/Core/dados.js) e
+             verificar_padrao_achados (backend, app_core.py): quando preenchida,
+             deixa o sistema avisar sozinho se o mesmo tipo de defeito aparecer em
+             vários equipamentos diferentes num curto espaço de tempo. Opcional —
+             achado continua funcionando sem ela, só não entra na detecção de padrão. -->
                         <div class="form-grid-4" style="margin-bottom:10px;">
                             <div class="input-group" style="grid-column: span 3;">
                                 <textarea id="qualidade-achado-descricao" class="premium-textarea" rows="1" placeholder="Ex: Distribuidor vazando, parafuso frouxo no rolo #2..."></textarea>
@@ -1357,6 +1362,7 @@
                                 </button>
                             </div>
                         </div>
+                        <select id="qualidade-achado-categoria" class="premium-input" style="margin-bottom:10px; width:100%;"></select>
                         <div id="qualidade-achado-novo-foto-preview" class="hidden" style="margin-bottom:10px;"></div>
                         <button type="button" class="btn-premium" style="font-size:12px; padding:6px 14px;" onclick="window.adicionarAchadoNaLista()">
                             <i class="fas fa-plus"></i> Adicionar Achado
@@ -1372,6 +1378,14 @@
                 <!-- 🆕 Resumo rápido — calculado em cima do que já foi carregado na
                      lista abaixo, sem chamada extra ao servidor. -->
                 <div id="qualidade-kpis" class="form-grid-4" style="margin-bottom:24px; gap:12px;"></div>
+
+                <!-- 🆕 Padrões detectados: mesma categoria de achado aparecendo em
+                     vários equipamentos diferentes num curto espaço de tempo — sinal
+                     de problema sistêmico (lote de material ruim, procedimento
+                     errado), não um defeito pontual. Ver GET /api/qualidade/achados/padroes
+                     e verificar_padrao_achados (backend, app_core.py). Só aparece
+                     quando existe padrão ativo (fica escondido o resto do tempo). -->
+                <div id="qualidade-padroes" class="hidden" style="margin-bottom:24px;"></div>
 
                 <div class="glass-panel" style="padding:24px;">
                     <div class="flex-between" style="margin-bottom:16px; flex-wrap:wrap; gap:10px;">
