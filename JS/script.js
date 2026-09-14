@@ -6619,16 +6619,31 @@ window.editarAtividadeOficina = function(id) {
         }
     }
 
-    // Foto: se já tinha uma, mostra no preview (mantém se não mexer)
-    OFICINA_FOTO_BASE64 = atividade.foto_base64 || null;
+    // 🔧 Foto não vem mais na listagem (ver comentário em
+    // listar_atividades_oficina no backend — evitar baixar a foto de
+    // TODA atividade só pra montar a grade). Se essa atividade tem foto
+    // (`tem_foto`), busca sob demanda agora, só porque alguém abriu
+    // pra editar. Sem tem_foto, nem tenta.
+    OFICINA_FOTO_BASE64 = null;
     const preview = document.getElementById('area-oficina-foto-preview');
     const previewContainer = document.getElementById('area-oficina-foto-preview-container');
-    if (OFICINA_FOTO_BASE64) {
-        if (preview) preview.src = OFICINA_FOTO_BASE64;
-        if (previewContainer) previewContainer.classList.remove('hidden');
-    } else {
-        if (preview) preview.src = '';
-        if (previewContainer) previewContainer.classList.add('hidden');
+    if (preview) preview.src = '';
+    if (previewContainer) previewContainer.classList.add('hidden');
+    if (atividade.tem_foto) {
+        (async () => {
+            try {
+                const apiBase = await resolverApiBase();
+                const resp = await fetch(`${apiBase}/api/oficina/atividades/${id}/foto`);
+                const dados = resp.ok ? await resp.json() : null;
+                if (dados && dados.foto_base64 && OFICINA_EDITANDO_ID === id) {
+                    OFICINA_FOTO_BASE64 = dados.foto_base64;
+                    if (preview) preview.src = OFICINA_FOTO_BASE64;
+                    if (previewContainer) previewContainer.classList.remove('hidden');
+                }
+            } catch (e) {
+                console.error('⚠️ Erro ao buscar foto da atividade:', e);
+            }
+        })();
     }
 
     // Muda a cara do formulário pra deixar claro que é uma edição
