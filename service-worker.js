@@ -11,7 +11,7 @@
 // usando a copia antiga guardada em cache.
 // ==============================================================
 
-const CACHE_VERSION = "oms-v79";
+const CACHE_VERSION = "oms-v80";
 
 // 🔧 CORREÇÃO: essa lista estava com os caminhos de uma estrutura de
 // pastas antiga (tudo direto na raiz) — o projeto hoje guarda os JS
@@ -57,8 +57,8 @@ const ARQUIVOS_PARA_CACHE = [
     "./vendor/three/addons/geometries/RoundedBoxGeometry.js",
     "./vendor/three/addons/utils/BufferGeometryUtils.js",
     "./manifest.json",
-    "./JS/assets/icon-192.png?v=3",
-    "./JS/assets/icon-512.png?v=3"
+    "./JS/assets/icon-192.png?v=4",
+    "./JS/assets/icon-512.png?v=4"
 ];
 
 // --------------------------------------------------------------
@@ -177,8 +177,8 @@ self.addEventListener("push", (event) => {
     event.waitUntil(
         self.registration.showNotification(dados.titulo, {
             body: dados.corpo,
-            icon: "./JS/assets/icon-192.png?v=3",
-            badge: "./JS/assets/icon-192.png?v=3",
+            icon: "./JS/assets/icon-192.png?v=4",
+            badge: "./JS/assets/icon-192.png?v=4",
             // 🆕 Guarda o payload INTEIRO (não só `url`) — agora o
             // backend manda tipo_evento/atividade_id/area junto pra
             // eventos de Atividade da Oficina (ver dados_extra em
