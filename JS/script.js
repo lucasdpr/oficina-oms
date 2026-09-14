@@ -3961,7 +3961,6 @@ function atualizarPainelCompleto() {
     executarSeguro(() => atualizarNovosKPIs(), 'atualizarNovosKPIs');
     executarSeguro(() => atualizarKPIsAvancados(), 'atualizarKPIsAvancados');
     executarSeguro(() => renderizarTopCriticos(), 'renderizarTopCriticos');
-    executarSeguro(() => renderizarFeedAtividadeRecente(), 'renderizarFeedAtividadeRecente');
 }
 
 // 🗑️ Removida a aba "Registro Recente" (e as funções
