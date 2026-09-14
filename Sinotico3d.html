@@ -687,11 +687,19 @@
     </div>
 </div>
 
+<!-- 🔧 "Sinótico não funciona offline de verdade": o Three.js vinha de
+     um CDN externo (cdn.jsdelivr.net) — nunca cacheado pelo Service
+     Worker, então mesmo instalado como PWA a tela 3D não abria sem
+     internet (e travava numa rede que bloqueasse CDN genérico, ex.:
+     firewall industrial). Agora vem vendorizado em vendor/three/
+     (Three.js r0.160.0, mesma versão), servido junto com o resto do
+     app — o Service Worker cacheia normalmente como qualquer outro
+     arquivo estático do próprio domínio. -->
 <script type="importmap">
 {
     "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        "three": "./vendor/three/three.module.min.js",
+        "three/addons/": "./vendor/three/addons/"
     }
 }
 </script>
@@ -4418,6 +4426,15 @@ function animar() {
     renderer.render(scene, camera);
 }
 animar();
+
+// 🆕 Hook de debug — expõe no window o que o script normalmente mantém
+// só no escopo do módulo (camera/controls/scene não são globais de
+// verdade, um <script type="module"> não vaza nada pra fora sozinho).
+// Usado por tools/screenshot_sinotico.mjs pra mover a câmera livremente
+// via page.evaluate() na hora de conferir uma peça de perto. Read-only
+// na prática (o script só LÊ e reposiciona câmera) — não expõe nada que
+// já não estivesse acessível clicando na tela.
+window.__sinoticoDebug = { camera, controls, scene, renderer, THREE, get slots() { return slotsGeometricos; } };
 
 carregarDados();
 

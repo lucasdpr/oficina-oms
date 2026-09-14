@@ -80,7 +80,10 @@ try {
     await page.waitForTimeout(1200);
 
     if (zoom) {
+        // camera/controls/scene são escopo de módulo, não globais — usa
+        // o hook window.__sinoticoDebug exposto no fim do Sinotico3d.html.
         await page.evaluate(({ zoom, target }) => {
+            const { camera, controls, scene, renderer } = window.__sinoticoDebug;
             camera.position.set(zoom.x, zoom.y, zoom.z);
             if (target) controls.target.set(target.x, target.y, target.z);
             controls.update();
