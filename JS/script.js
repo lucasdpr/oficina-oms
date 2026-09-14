@@ -8594,6 +8594,22 @@ window.carregarCentralNotificacoes = async function() {
 };
 
 window.irParaAreaOficinaViaNotificacao = function(chave, atividadeId) {
+    // 🔧 CORREÇÃO ("entro em Central de Área clico em Logística abre um
+    // painel, se clico na notificação abre outra área — tem duas"):
+    // áreas administrativas (Logística, Almoxarifado, ADM, Ponte
+    // Rolante — ver AREAS_OFICINA) têm PAINEL PRÓPRIO (abaDestino,
+    // com resumo/KPIs), diferente do quadro genérico de atividades das
+    // áreas de oficina de verdade (Caldeiraria, Usinagem etc.). Clicar
+    // direto num ITEM de notificação sempre mandava pro quadro
+    // genérico, ignorando isso — mesmo bug que já tinha sido corrigido
+    // em irParaTelaDaAreaNotificacao (botão "Acessar Área" da grade da
+    // Central de Notificações), só que faltava aqui também.
+    const areaInfo = (typeof AREAS_OFICINA !== 'undefined') ? AREAS_OFICINA.find(a => a.chave === chave) : null;
+    if (areaInfo && areaInfo.tipo === 'administrativo' && areaInfo.abaDestino) {
+        window.abrirAba(null, areaInfo.abaDestino);
+        document.getElementById('nav-notificacoes')?.classList.remove('active');
+        return;
+    }
     window.abrirAba(null, 'aba-oficina');
     document.getElementById('nav-oficina')?.classList.add('active');
     document.getElementById('nav-notificacoes')?.classList.remove('active');
