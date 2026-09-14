@@ -1140,7 +1140,7 @@ function calcularTransformacoesMCC23(slots) {
         // MESMA rotação do G1) e senta o Zero exatamente ali.
         const topoLocalG1 = 0.31; // metade da altura local do blocoGeoPadraoAberto (0.62/2)
         const topoG1 = new THREE.Vector3(
-            g1Slot.pos.x - topoLocalG1 * Math.sin(g1Slot.rotZ),
+            g1Slot.pos.x + topoLocalG1 * Math.sin(g1Slot.rotZ),
             g1Slot.pos.y + topoLocalG1 * Math.cos(g1Slot.rotZ),
             g1Slot.pos.z // rotZ só gira X/Y — Z do topo local é igual ao do centro
         );
