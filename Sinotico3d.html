@@ -3919,6 +3919,52 @@ function pecasEmAlerta() {
     return linhas;
 }
 
+// 🆕 "No print 3D pode colocar quais coisas estão travadas: mancal, rolo
+// ou hidráulica": junta os 3 tipos de ocorrência mecânica/hidráulica já
+// registrados no Sinótico (mesmos dados que os painéis de clique usam —
+// rolos_travados / mancais_ocorrencias / barra_transversal) numa lista
+// só, pra sair no relatório impresso junto com a foto do 3D.
+const TODAS_OPCOES_BT = [...OPCOES_PORCA_BT, ...OPCOES_BOLA_BT, ...OPCOES_BARRA_BT, ...OPCOES_ANOMALIA_CADEIRA_BT];
+
+function ocorrenciasMecanicasHidraulicas() {
+    const slots = construirLayoutSlots(veioAtual);
+    const mapaSlotsInstalados = montarMapaSlotsInstalados(veioAtual);
+    const linhas = [];
+
+    slots.forEach(slot => {
+        const peca = encontrarPecaDoSlot(slot, mapaSlotsInstalados);
+        if (!peca) return;
+
+        // Rolo travado (grid de rolos — clique marca/desmarca)
+        const travados = parseRolosTravados(peca);
+        if (travados.size > 0) {
+            linhas.push({ posicao: slot.label, tipo: '🔩 Rolo', detalhe: `${travados.size} rolo(s) travado(s): ${[...travados].join(', ')}`, gravidade: 'Travado' });
+        }
+
+        // Mancal com ocorrência registrada (rolamento/graxa/água...)
+        const mancais = parseMancais(peca);
+        Object.keys(mancais).forEach(chave => {
+            linhas.push({ posicao: slot.label, tipo: '⚙️ Mancal', detalhe: `${chave}: ${mancais[chave]}`, gravidade: 'Ocorrência' });
+        });
+
+        // Sistema hidráulico (barra transversal — cilindro/porca/bola/barra)
+        const barra = parseBarraTransversal(peca);
+        Object.keys(barra).forEach(chave => {
+            const registro = barra[chave];
+            const estado = estadoComponenteBT(registro);
+            if (!estado) return; // livre/OK, não entra no relatório
+            const ehTravado = registro.ocorrencia === 'travamento';
+            const opcao = registro.ocorrencia ? TODAS_OPCOES_BT.find(o => o.id === registro.ocorrencia) : null;
+            const detalhe = opcao ? opcao.label : (estado === 'critico' ? '🔴 Crítico' : '🟡 Avariado');
+            linhas.push({ posicao: slot.label, tipo: `🛢️ Hidráulica (${chave})`, detalhe, gravidade: ehTravado ? 'Travado' : (estado === 'critico' ? 'Crítico' : 'Avariado') });
+        });
+    });
+
+    const ordemGravidade = { 'Travado': 0, 'Crítico': 1, 'Avariado': 2, 'Ocorrência': 3 };
+    linhas.sort((a, b) => (ordemGravidade[a.gravidade] ?? 9) - (ordemGravidade[b.gravidade] ?? 9));
+    return linhas;
+}
+
 function calcularEnquadramentoGeral() {
     const box = new THREE.Box3();
     slotsGeometricos.forEach(s => box.expandByPoint(s.pos));
@@ -3958,6 +4004,7 @@ function exportarPrint3D() {
 
     const dataHora = new Date().toLocaleString('pt-BR');
     const linhasAlerta = pecasEmAlerta();
+    const linhasOcorrencias = ocorrenciasMecanicasHidraulicas();
 
     const linhasHtml = linhasAlerta.length > 0
         ? linhasAlerta.map(l => `
@@ -3971,6 +4018,19 @@ function exportarPrint3D() {
                 <td data-th="Situação">${l.nivel}</td>
             </tr>`).join('')
         : `<tr><td colspan="7" style="text-align:center; color:#889;">Nenhuma peça em alerta neste veio no momento.</td></tr>`;
+
+    // 🆕 Travamentos e ocorrências (Mancal / Rolo / Hidráulica) — mesmos
+    // dados dos painéis de clique (rolos_travados / mancais_ocorrencias /
+    // barra_transversal), listados junto no relatório impresso.
+    const linhasOcorrenciasHtml = linhasOcorrencias.length > 0
+        ? linhasOcorrencias.map(l => `
+            <tr>
+                <td data-th="Posição">${l.posicao}</td>
+                <td data-th="Tipo">${l.tipo}</td>
+                <td data-th="Detalhe">${l.detalhe}</td>
+                <td data-th="Gravidade" class="${l.gravidade === 'Travado' || l.gravidade === 'Crítico' ? 'pct-limite' : 'pct-alerta'}">${l.gravidade}</td>
+            </tr>`).join('')
+        : `<tr><td colspan="4" style="text-align:center; color:#889;">Nenhum mancal, rolo ou item hidráulico com ocorrência neste veio no momento.</td></tr>`;
 
     const janela = window.open('', '_blank', 'width=900,height=1000');
     if (!janela) {
@@ -4036,6 +4096,14 @@ function exportarPrint3D() {
             <tr><th>Posição</th><th>Tag</th><th>Data de Entrada</th><th>Tonelagem</th><th>Meta</th><th>Desgaste</th><th>Situação</th></tr>
         </thead>
         <tbody>${linhasHtml}</tbody>
+    </table>
+
+    <h2 style="margin-top: 24px;">Travamentos e ocorrências — Mancal / Rolo / Hidráulica (Veio ${veioAtual})</h2>
+    <table>
+        <thead>
+            <tr><th>Posição</th><th>Tipo</th><th>Detalhe</th><th>Gravidade</th></tr>
+        </thead>
+        <tbody>${linhasOcorrenciasHtml}</tbody>
     </table>
 
     <div class="acoes">
