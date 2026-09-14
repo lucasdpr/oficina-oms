@@ -131,6 +131,18 @@ let BANCO_ROLOS = JSON.parse(localStorage.getItem("oms_rolos_v32_local"));
 let BANCO_MATERIAIS = []; // carregado do Neon via carregarMateriaisDoBackend() — não é mais localStorage
 
 let OPERADOR_LOGADO = JSON.parse(localStorage.getItem("oms_operador_v32_local")) || null;
+
+// 🆕 Headers pras rotas ADMIN (mudar cargo, resetar senha, ativar/
+// desativar colaborador, desfazer apontamento) — agora exigem um token
+// de sessão de verdade no servidor (ver app_core.py/exigir_admin no
+// backend). Sem OPERADOR_LOGADO.token (ex.: acesso local de dev, ou
+// sessão antiga salva antes desta mudança), a chamada vai sem
+// Authorization e o servidor recusa com 401 — como deve ser.
+function headersAdmin() {
+    const headers = { "Content-Type": "application/json" };
+    if (OPERADOR_LOGADO && OPERADOR_LOGADO.token) headers["Authorization"] = `Bearer ${OPERADOR_LOGADO.token}`;
+    return headers;
+}
 let VEIO_SELECIONADO_PAINEL = "C";
 let FILTRO_CRITICOS = false;
 
@@ -446,7 +458,7 @@ async function processarAutenticacaoHome() {
             return;
         }
 
-        finalizarLogin(resultado.nome, resultado.cargo, matriculaUpper, resultado.area, resultado.is_adm);
+        finalizarLogin(resultado.nome, resultado.cargo, matriculaUpper, resultado.area, resultado.is_adm, resultado.token);
     } catch (e) {
         console.error("Erro no login:", e);
         alert("Não foi possível conectar ao servidor mesmo após tentar novamente. Verifique sua internet e tente mais uma vez em alguns segundos.");
@@ -490,7 +502,7 @@ async function fluxoDefinirNovaSenha(matricula, senhaAtual, nome, cargo, area, i
                 continue;
             }
             alert("✅ Senha cadastrada! A partir de agora, use ela pra entrar.");
-            finalizarLogin(nome, cargo, matricula, area, isAdm);
+            finalizarLogin(nome, cargo, matricula, area, isAdm, resultado.token);
             return;
         } catch (e) {
             console.error("Erro ao definir senha:", e);
@@ -503,17 +515,30 @@ async function fluxoDefinirNovaSenha(matricula, senhaAtual, nome, cargo, area, i
 // ==========================================
 // FINALIZA O LOGIN (comum a dev, colaborador e primeiro acesso)
 // ==========================================
-async function finalizarLogin(nome, cargo, matricula, area, isAdm) {
+async function finalizarLogin(nome, cargo, matricula, area, isAdm, token) {
     // 🆕 Área do técnico + flag de ADM (vêm do login no back-end; no
     // acesso local de dev, is_adm é forçado true). Usado no Painel do
     // Técnico pra filtrar "Em Reparo" / "Em Andamento" só pelos
     // equipamentos da área da pessoa — ADM (as 3 matrículas fixas) vê
     // tudo, sem filtro nenhum, em qualquer aba (mobile ou PC).
+    //
+    // 🆕 token: veio do /api/colaboradores/login (ou /definir_senha) —
+    // achado numa revisão de segurança: as rotas admin (mudar cargo,
+    // resetar senha, desfazer apontamento) não tinham NENHUMA checagem
+    // no servidor, só um prompt de "senha master" hardcoded no JS. Esse
+    // token agora vai no header Authorization das chamadas admin (ver
+    // resetarSenhaColaborador/mudarCargoColaborador/alternarAtivoColaborador
+    // e desfazerApontamentoGeral/Molde). No acesso local de dev (sem
+    // passar pelo servidor) não existe token real — is_adm fica forçado
+    // true só pra mostrar os botões na tela, mas o servidor vai
+    // recusar (401) qualquer ação admin de verdade sem um token válido,
+    // como deve ser.
     OPERADOR_LOGADO = {
         matricula: matricula,
         nome: `${nome} [${cargo}]`,
         area: area || null,
-        isAdm: !!isAdm || MATRICULAS_ADM.includes(matricula)
+        isAdm: !!isAdm || MATRICULAS_ADM.includes(matricula),
+        token: token || null
     };
     localStorage.setItem("oms_operador_v32_local", JSON.stringify(OPERADOR_LOGADO));
     setOperadorBanco(OPERADOR_LOGADO); // 🔧 mantém a cópia do banco.js sincronizada (ver comentário em window.setOperadorLogado)
@@ -4046,7 +4071,7 @@ window.mudarCargoColaborador = async function(matricula, cargoAtual) {
         const apiBase = await resolverApiBase();
         const resp = await fetch(`${apiBase}/api/colaboradores/mudar_cargo`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headersAdmin(),
             body: JSON.stringify({ matricula, cargo: novoCargo.trim() })
         });
         if (!resp.ok) {
@@ -4069,7 +4094,7 @@ window.resetarSenhaColaborador = async function(matricula, nome) {
         const apiBase = await resolverApiBase();
         const resp = await fetch(`${apiBase}/api/colaboradores/resetar_senha`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headersAdmin(),
             body: JSON.stringify({ matricula })
         });
         if (!resp.ok) {
@@ -4094,7 +4119,7 @@ window.alternarAtivoColaborador = async function(matricula, novoAtivo, nome) {
         const apiBase = await resolverApiBase();
         const resp = await fetch(`${apiBase}/api/colaboradores/alternar_ativo`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headersAdmin(),
             body: JSON.stringify({ matricula, ativo: novoAtivo })
         });
         if (!resp.ok) {
@@ -7331,17 +7356,22 @@ window.carregarHistoricoApontamentoMoldes = async function() {
     } catch (e) { console.log(e); }
 };
 
+// 🔧 "AÇÃO RESTRITA: senha master dev123" removido — era decoração
+// (senha em texto puro no JS, sem checagem nenhuma no servidor; ver
+// revisão de segurança). A proteção de verdade agora é o servidor
+// exigir um token de admin (ver headersAdmin() acima e exigir_admin()
+// no backend) — o confirm() abaixo continua só pra evitar clique
+// acidental, não é mais a "segurança" da ação.
 window.desfazerApontamentoGeral = async function(id_log) {
-    if (prompt("AÇÃO RESTRITA: Digite a senha master:") !== "dev123") return alert("❌ Senha incorreta!");
     if (!confirm("Tem certeza? A tonelagem será RETIRADA de todas as peças instaladas.")) return;
     try {
         const apiBase = await resolverApiBase();
         const res = await fetchComRetry(`${apiBase}/api/desfazer_apontamento_geral`, {
-            method: "POST", headers: { "Content-Type": "application/json" },
+            method: "POST", headers: headersAdmin(),
             body: JSON.stringify({ log_id: id_log, operador: OPERADOR_LOGADO ? OPERADOR_LOGADO.nome : "Desconhecido" })
         });
         const json = await res.json();
-        
+
         if (json.sucesso) {
             alert("✅ Lançamento desfeito com sucesso!");
             await window.carregarAtivosDoPython();
@@ -7354,12 +7384,11 @@ window.desfazerApontamentoGeral = async function(id_log) {
 };
 
 window.desfazerApontamentoMolde = async function(id_log) {
-    if (prompt("AÇÃO RESTRITA: Digite a senha master:") !== "dev123") return alert("❌ Senha incorreta!");
     if (!confirm("Tem certeza? As corridas serão RETIRADAS dos moldes na linha.")) return;
     try {
         const apiBase = await resolverApiBase();
         const res = await fetchComRetry(`${apiBase}/api/desfazer_apontamento_moldes`, {
-            method: "POST", headers: { "Content-Type": "application/json" },
+            method: "POST", headers: headersAdmin(),
             body: JSON.stringify({ log_id: id_log, operador: OPERADOR_LOGADO ? OPERADOR_LOGADO.nome : "Desconhecido" })
         });
         const json = await res.json();
