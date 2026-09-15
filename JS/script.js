@@ -6773,10 +6773,10 @@ window.renderFilaPonteRolante = async function() {
             .sort((a, b) => b.id - a.id)
             .slice(0, 10);
 
-        // 🆕 Reordenar (subir/descer) só faz sentido pra quem atende a
-        // fila (técnico da área ponte-rolante) ou ADM — outras áreas só
-        // pedem, não decidem a ordem de atendimento das outras.
-        const podeReordenar = !!(OPERADOR_LOGADO && (OPERADOR_LOGADO.isAdm || OPERADOR_LOGADO.area === 'ponte-rolante'));
+        // 🆕 Reordenar e Iniciar/Concluir só fazem sentido pra quem
+        // atende a fila (técnico da área ponte-rolante) ou ADM — outras
+        // áreas só pedem, não decidem a ordem nem executam o serviço.
+        const podeAtender = !!(OPERADOR_LOGADO && (OPERADOR_LOGADO.isAdm || OPERADOR_LOGADO.area === 'ponte-rolante'));
 
         if (!emAberto.length) {
             lista.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhuma solicitação na fila agora.</div>`;
@@ -6786,7 +6786,7 @@ window.renderFilaPonteRolante = async function() {
                 return `
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--border);">
                     <div style="display:flex; align-items:center; gap:10px; min-width:0;">
-                        ${podeReordenar ? `
+                        ${podeAtender ? `
                         <div style="display:flex; flex-direction:column; gap:2px;">
                             <button class="btn-xs-primary" style="padding:2px 6px;" title="Subir na fila" ${i === 0 ? 'disabled' : ''} onclick="window.moverFilaPonteRolante(${x.id}, -1)"><i class="fas fa-caret-up"></i></button>
                             <button class="btn-xs-primary" style="padding:2px 6px;" title="Descer na fila" ${i === emAberto.length - 1 ? 'disabled' : ''} onclick="window.moverFilaPonteRolante(${x.id}, 1)"><i class="fas fa-caret-down"></i></button>
@@ -6799,8 +6799,8 @@ window.renderFilaPonteRolante = async function() {
                     </div>
                     <div style="display:flex; gap:6px; flex-shrink:0;">
                         <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.abrirConversaAtividade(${x.id})" title="Conversa"><i class="fas fa-comments"></i></button>
-                        ${x.status === 'Pendente' ? `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusFilaPonteRolante(${x.id}, 'Em Andamento')">Iniciar</button>` : ''}
-                        ${x.status === 'Em Andamento' ? `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusFilaPonteRolante(${x.id}, 'Concluído')">Concluir</button>` : ''}
+                        ${podeAtender && x.status === 'Pendente' ? `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusFilaPonteRolante(${x.id}, 'Em Andamento')">Iniciar</button>` : ''}
+                        ${podeAtender && x.status === 'Em Andamento' ? `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusFilaPonteRolante(${x.id}, 'Concluído')">Concluir</button>` : ''}
                     </div>
                 </div>`;
             }).join('');
