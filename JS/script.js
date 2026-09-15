@@ -5051,7 +5051,18 @@ window.renderPainelSupervisor = async function() {
 
     // Ranking de peças em reparo há mais tempo (dias) — o que está
     // "empacado" na bancada, não só o total.
-    const reparoMaisAntigos = [...emReparo].sort((a, b) => (b.dias || 0) - (a.dias || 0)).slice(0, 5);
+    // 🔧 CORREÇÃO ("tabela mostrava 0 dias mesmo com peça há tempo em
+    // reparo"): `a.dias` é o campo CRU salvo no banco — fica travado em
+    // 0 desde o Saque (ver executarSaqueFinal), porque o dia-a-dia real
+    // nunca é escrito de volta no objeto; quem calcula "quantos dias
+    // faz" de verdade é window.calcularDias(item), na hora, a partir de
+    // `dataReparo` (mesma função usada em toda a tela de Peças em
+    // Reparo — ver JS/script.js linha ~255). Usar `a.dias` direto aqui
+    // dava sempre 0.
+    const reparoMaisAntigos = [...emReparo]
+        .map(a => ({ ...a, diasReais: window.calcularDias(a) }))
+        .sort((a, b) => b.diasReais - a.diasReais)
+        .slice(0, 5);
 
     // Ranking de áreas por nº de atividades atrasadas — onde apertar.
     const atrasadasPorArea = {};
@@ -5103,7 +5114,9 @@ window.renderPainelSupervisor = async function() {
     // (não temos histórico de "quanto tempo levou" pra peças já
     // devolvidas, então isso é honestamente "tempo médio ATÉ AGORA das
     // peças que estão na bancada", não um tempo médio de ciclo fechado).
-    const diasValidos = emReparo.map(a => Number(a.dias) || 0).filter(d => d > 0);
+    // Mesma correção de reparoMaisAntigos acima: usa window.calcularDias()
+    // em vez do campo cru `dias` (que fica travado em 0).
+    const diasValidos = emReparo.map(a => window.calcularDias(a)).filter(d => d > 0);
     const tempoMedioReparo = diasValidos.length ? Math.round(diasValidos.reduce((s, d) => s + d, 0) / diasValidos.length) : 0;
 
     // ---------------------------------------------------------
@@ -5176,7 +5189,7 @@ window.renderPainelSupervisor = async function() {
                     ? reparoMaisAntigos.map(a => `
                         <div class="sup-lista-linha">
                             <span style="color:var(--text-body);">${a.id} <span class="text-muted">(${a.tipo || '—'})</span></span>
-                            <span style="font-weight:700; color:${(a.dias || 0) > 15 ? '#ef4444' : '#f59e0b'};">${a.dias || 0}d</span>
+                            <span style="font-weight:700; color:${a.diasReais > 15 ? '#ef4444' : '#f59e0b'};">${a.diasReais}d</span>
                         </div>
                     `).join('')
                     : `<div class="sup-vazio">Nenhuma peça em reparo no momento.</div>`}
