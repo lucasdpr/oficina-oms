@@ -4782,6 +4782,69 @@ textarea,
 .painel-sup-secao-produtividade .sup-secao-icone { color: #3b82f6; }
 .painel-sup-secao-estoque .sup-secao-icone { color: #22c55e; }
 .painel-sup-secao-tendencia .sup-secao-icone { color: #f59e0b; }
+.painel-sup-secao-efetivo .painel-sup-secao-titulo { background: linear-gradient(90deg, rgba(20,184,166,0.30), rgba(6,182,212,0.08)); border-bottom: 1px solid rgba(20,184,166,0.25); }
+.painel-sup-secao-efetivo .sup-secao-icone { color: #14b8a6; }
+.painel-sup-secao-sinotico .painel-sup-secao-titulo { background: linear-gradient(90deg, rgba(34,211,238,0.30), rgba(236,72,153,0.08)); border-bottom: 1px solid rgba(34,211,238,0.25); }
+.painel-sup-secao-sinotico .sup-secao-icone { color: #22d3ee; }
+.sup-secao-link {
+    font-size: 11.5px;
+    padding: 6px 12px;
+    white-space: nowrap;
+}
+@media (max-width: 700px) {
+    .painel-sup-secao-titulo { flex-wrap: wrap; }
+    .sup-secao-link { margin-left: 0 !important; }
+}
+
+/* Chip de área no Efetivo — círculo de contagem + nome, cor vinda da
+   própria AREAS_OFICINA (--sup-cor por chip). Clicável: abre a área. */
+.sup-efetivo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+    grid-column: 1 / -1;
+}
+.sup-efetivo-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--sup-cor, var(--border));
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.15s ease;
+}
+.sup-efetivo-chip:hover {
+    background: color-mix(in srgb, var(--sup-cor, var(--border)) 8%, rgba(255,255,255,0.02));
+    transform: translateY(-2px);
+}
+.sup-efetivo-chip-num {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 14px;
+    color: #fff;
+    background: var(--sup-cor, var(--text-accent));
+}
+.sup-efetivo-chip-nome {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-body);
+    line-height: 1.25;
+}
+.sup-efetivo-chip-nome small {
+    display: block;
+    font-weight: 500;
+    color: var(--text-muted);
+    font-size: 10.5px;
+}
 
 .sup-card {
     background: rgba(255,255,255,0.02);
