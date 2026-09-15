@@ -5369,15 +5369,19 @@ window.renderPainelSupervisor = async function() {
                 if (componentesComOcorrencia > 0) comHidraulicaRuim.push({ id: p.id, qtd: componentesComOcorrencia });
             });
 
+            // 🆕 Cada linha agora abre o Sinótico 3D já direto na peça
+            // (Sinotico3d.html?tag=<id> — ver abrirPecaPorTagNaURL lá),
+            // nova aba, em vez de ser só texto — clicar leva pra
+            // ocorrência de verdade, não só informa que ela existe.
             const cardAnomalia = (titulo, icone, cor, lista, unidade) => `
                 <div class="sup-card" style="--sup-cor:${cor};">
                     <div class="sup-card-titulo"><span><i class="fas ${icone}"></i> ${titulo}</span><span style="font-weight:800; color:${cor};">${lista.length}</span></div>
                     ${lista.length
                         ? lista.slice(0, 6).map(x => `
-                            <div class="sup-lista-linha">
-                                <span style="color:var(--text-body);">${x.id}</span>
+                            <a class="sup-lista-linha sup-lista-linha-clicavel" href="Sinotico3d.html?tag=${encodeURIComponent(x.id)}" target="_blank" title="Abrir ${x.id} no Sinótico 3D">
+                                <span style="color:var(--text-body);">${x.id} <i class="fas fa-arrow-up-right-from-square" style="font-size:9px; color:var(--text-muted);"></i></span>
                                 <span class="text-muted" style="font-size:11px;">${x.qtd} ${unidade}${x.qtd === 1 ? '' : 's'}</span>
-                            </div>
+                            </a>
                         `).join('')
                         : `<div class="sup-vazio">Nenhuma ocorrência registrada 👍</div>`}
                 </div>
@@ -5510,19 +5514,45 @@ window.renderPainelSupervisor = async function() {
                 const mediaGeral = Math.round(comProgresso.reduce((s, e) => s + e.percentual, 0) / comProgresso.length);
                 const corPct = (p) => p >= 70 ? '#22c55e' : (p >= 35 ? '#eab308' : '#ef4444');
 
+                // 🔧 A pedido do usuário: em vez de uma lista corrida só
+                // com os 8 "piores" (escondendo o resto atrás de "+N
+                // outros"), separa TODOS os reparos em andamento por MCC
+                // — mesmo agrupamento usado no resto do painel (Sinótico,
+                // Estoque) — pra dar uma visão completa de uma vez.
+                const porMcc = {};
+                comProgresso.forEach(ex => {
+                    const peca = ativos.find(a => a.id === ex.equipamento_id);
+                    const mcc = (peca && peca.mcc_compat) || '—';
+                    if (!porMcc[mcc]) porMcc[mcc] = [];
+                    porMcc[mcc].push(ex);
+                });
+                const ordemMcc = ['4', '2', '3', '2/3', '—'];
+                const mccsOrdenados = Object.keys(porMcc).sort((a, b) => {
+                    const ia = ordemMcc.indexOf(a), ib = ordemMcc.indexOf(b);
+                    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+                });
+
                 progressoChecklistEl.innerHTML = `
-                    <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
+                    <div style="display:flex; align-items:center; gap:14px; margin-bottom:16px;">
                         <div style="font-size:1.8rem; font-weight:800; color:${corPct(mediaGeral)};">${mediaGeral}%</div>
                         <div style="font-size:11.5px; color:var(--text-muted);">média de conclusão entre os ${comProgresso.length} reparo(s) com checklist em andamento agora</div>
                     </div>
-                    ${comProgresso.slice(0, 8).map(ex => `
-                        <div class="sup-barra-linha">
-                            <span class="sup-barra-nome" title="${ex.equipamento_id} — ${ex.tecnico_nome || 'sem técnico'}">${ex.equipamento_id}</span>
-                            <span class="sup-barra-trilho"><span class="sup-barra-preenchimento" style="width:${Math.max(4, ex.percentual)}%; background:${corPct(ex.percentual)};"></span></span>
-                            <span class="sup-barra-valor">${ex.percentual}%</span>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px;">
+                    ${mccsOrdenados.map(mcc => `
+                        <div>
+                            <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--text-muted); margin-bottom:6px;">
+                                <i class="fas fa-server"></i> ${mcc === '—' ? 'Sem MCC identificado' : `MCC ${mcc}`} (${porMcc[mcc].length})
+                            </div>
+                            ${porMcc[mcc].map(ex => `
+                                <div class="sup-barra-linha">
+                                    <span class="sup-barra-nome" title="${ex.equipamento_id} — ${ex.tecnico_nome || 'sem técnico'}">${ex.equipamento_id}</span>
+                                    <span class="sup-barra-trilho"><span class="sup-barra-preenchimento" style="width:${Math.max(4, ex.percentual)}%; background:${corPct(ex.percentual)};"></span></span>
+                                    <span class="sup-barra-valor">${ex.percentual}%</span>
+                                </div>
+                            `).join('')}
                         </div>
                     `).join('')}
-                    ${comProgresso.length > 8 ? `<div class="sup-vazio" style="padding-top:8px;">+ ${comProgresso.length - 8} outro(s) em andamento</div>` : ''}
+                    </div>
                 `;
             }
         } catch (e) {
@@ -5806,10 +5836,10 @@ window.renderPainelSupervisor = async function() {
                     <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:10px;">
                         <div style="font-size:1.4rem; font-weight:800; color:${corBacklog};">${pioraOuMelhora === 'piorando' ? '📈' : (pioraOuMelhora === 'melhorando' ? '📉' : '➖')} ${pioraOuMelhora}</div>
                     </div>
-                    ${painelSupBarraHtml('Criadas (7d anteriores)', criadasAntes, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#94a3b8')}
-                    ${painelSupBarraHtml('Concluídas (7d anteriores)', concluidasAntes, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#64748b')}
-                    ${painelSupBarraHtml('Criadas (últimos 7d)', criadasDepois, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#eab308')}
-                    ${painelSupBarraHtml('Concluídas (últimos 7d)', concluidasDepois, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#22c55e')}
+                    ${painelSupBarraHtml('Criadas (antes)', criadasAntes, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#94a3b8')}
+                    ${painelSupBarraHtml('Concl. (antes)', concluidasAntes, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#64748b')}
+                    ${painelSupBarraHtml('Criadas (agora)', criadasDepois, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#eab308')}
+                    ${painelSupBarraHtml('Concl. (agora)', concluidasDepois, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#22c55e')}
                     <div style="font-size:10.5px; color:var(--text-muted); margin-top:6px;">Compara os 7 dias mais recentes com os 7 anteriores — mostra direção, não um prazo exato.</div>
                 ` : `<div class="sup-vazio">Sem dado suficiente nos últimos 14 dias pra calcular tendência.</div>`}
             </div>
