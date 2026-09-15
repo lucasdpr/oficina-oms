@@ -5026,6 +5026,9 @@ window.renderPainelSupervisor = async function() {
     const efetivoEl = document.getElementById('painel-supervisor-efetivo');
     const estoqueEl = document.getElementById('painel-supervisor-estoque');
     const sinoticoEl = document.getElementById('painel-supervisor-sinotico');
+    const anomaliasEl = document.getElementById('painel-supervisor-anomalias');
+    const historicoTrocasEl = document.getElementById('painel-supervisor-historico-trocas');
+    const previsoesEl = document.getElementById('painel-supervisor-previsoes');
     const qualidadeEl = document.getElementById('painel-supervisor-qualidade');
     const tendenciaEl = document.getElementById('painel-supervisor-tendencia');
     if (!heroEl) return; // aba nem existe nesta sessão (ex: HTML antigo em cache)
@@ -5051,7 +5054,18 @@ window.renderPainelSupervisor = async function() {
 
     // Ranking de peças em reparo há mais tempo (dias) — o que está
     // "empacado" na bancada, não só o total.
-    const reparoMaisAntigos = [...emReparo].sort((a, b) => (b.dias || 0) - (a.dias || 0)).slice(0, 5);
+    // 🔧 CORREÇÃO ("tabela mostrava 0 dias mesmo com peça há tempo em
+    // reparo"): `a.dias` é o campo CRU salvo no banco — fica travado em
+    // 0 desde o Saque (ver executarSaqueFinal), porque o dia-a-dia real
+    // nunca é escrito de volta no objeto; quem calcula "quantos dias
+    // faz" de verdade é window.calcularDias(item), na hora, a partir de
+    // `dataReparo` (mesma função usada em toda a tela de Peças em
+    // Reparo — ver JS/script.js linha ~255). Usar `a.dias` direto aqui
+    // dava sempre 0.
+    const reparoMaisAntigos = [...emReparo]
+        .map(a => ({ ...a, diasReais: window.calcularDias(a) }))
+        .sort((a, b) => b.diasReais - a.diasReais)
+        .slice(0, 5);
 
     // Ranking de áreas por nº de atividades atrasadas — onde apertar.
     const atrasadasPorArea = {};
@@ -5103,7 +5117,9 @@ window.renderPainelSupervisor = async function() {
     // (não temos histórico de "quanto tempo levou" pra peças já
     // devolvidas, então isso é honestamente "tempo médio ATÉ AGORA das
     // peças que estão na bancada", não um tempo médio de ciclo fechado).
-    const diasValidos = emReparo.map(a => Number(a.dias) || 0).filter(d => d > 0);
+    // Mesma correção de reparoMaisAntigos acima: usa window.calcularDias()
+    // em vez do campo cru `dias` (que fica travado em 0).
+    const diasValidos = emReparo.map(a => window.calcularDias(a)).filter(d => d > 0);
     const tempoMedioReparo = diasValidos.length ? Math.round(diasValidos.reduce((s, d) => s + d, 0) / diasValidos.length) : 0;
 
     // ---------------------------------------------------------
@@ -5176,7 +5192,7 @@ window.renderPainelSupervisor = async function() {
                     ? reparoMaisAntigos.map(a => `
                         <div class="sup-lista-linha">
                             <span style="color:var(--text-body);">${a.id} <span class="text-muted">(${a.tipo || '—'})</span></span>
-                            <span style="font-weight:700; color:${(a.dias || 0) > 15 ? '#ef4444' : '#f59e0b'};">${a.dias || 0}d</span>
+                            <span style="font-weight:700; color:${a.diasReais > 15 ? '#ef4444' : '#f59e0b'};">${a.diasReais}d</span>
                         </div>
                     `).join('')
                     : `<div class="sup-vazio">Nenhuma peça em reparo no momento.</div>`}
@@ -5307,6 +5323,111 @@ window.renderPainelSupervisor = async function() {
     }
 
     // ---------------------------------------------------------
+    // ANOMALIAS DE ROLO / MANCAL / HIDRÁULICA (dentro da seção Sinótico):
+    // esses 3 campos (rolos_travados, mancais_ocorrencias,
+    // barra_transversal) só existem no Sinótico 3D — BANCO_ATIVOS (o
+    // banco compartilhado do resto do app) só carrega rolos_travados,
+    // os outros dois nunca são mapeados nele. Por isso busca direto em
+    // /api/pecas (SELECT * — todas as colunas cruas da peça), replicando
+    // o MESMO parsing que o Sinótico 3D usa (parseRolosTravados/
+    // parseMancais/parseBarraTransversal, ver Sinotico3d.html) em vez de
+    // inventar uma lógica nova.
+    // ---------------------------------------------------------
+    if (anomaliasEl) {
+        anomaliasEl.innerHTML = `<div class="sup-vazio">Carregando…</div>`;
+        try {
+            const apiBase = await resolverApiBase();
+            const respPecas = await fetch(`${apiBase}/api/pecas`, { cache: 'no-store' });
+            const pecasCruas = respPecas.ok ? await respPecas.json() : [];
+
+            const comRoloTravado = [];
+            const comMancalOcorrencia = [];
+            const comHidraulicaRuim = [];
+
+            (Array.isArray(pecasCruas) ? pecasCruas : []).forEach(p => {
+                // Rolos travados: JSON array de ids de rolo travado.
+                let rolos = [];
+                try { rolos = JSON.parse(p.rolos_travados || '[]'); } catch (e) { rolos = []; }
+                if (Array.isArray(rolos) && rolos.length > 0) comRoloTravado.push({ id: p.id, qtd: rolos.length });
+
+                // Mancais: JSON objeto { posição: tipo_ocorrência }.
+                let mancais = {};
+                try { mancais = JSON.parse(p.mancais_ocorrencias || '{}'); } catch (e) { mancais = {}; }
+                const chavesMancal = mancais && typeof mancais === 'object' ? Object.keys(mancais) : [];
+                if (chavesMancal.length > 0) comMancalOcorrencia.push({ id: p.id, qtd: chavesMancal.length });
+
+                // Sistema hidráulico (barra transversal/cilindros/porcas):
+                // JSON objeto { componente: { ocorrencia, obs? } } — conta
+                // qualquer componente com ocorrência registrada e diferente
+                // de "ok" (mesmo padrão do Sinótico, só sem resolver a cor
+                // exata de severidade — aqui é só "tem ou não tem").
+                let barra = {};
+                try { barra = JSON.parse(p.barra_transversal || '{}'); } catch (e) { barra = {}; }
+                const componentesComOcorrencia = barra && typeof barra === 'object'
+                    ? Object.values(barra).filter(r => r && r.ocorrencia && r.ocorrencia !== 'ok').length
+                    : 0;
+                if (componentesComOcorrencia > 0) comHidraulicaRuim.push({ id: p.id, qtd: componentesComOcorrencia });
+            });
+
+            const cardAnomalia = (titulo, icone, cor, lista, unidade) => `
+                <div class="sup-card" style="--sup-cor:${cor};">
+                    <div class="sup-card-titulo"><span><i class="fas ${icone}"></i> ${titulo}</span><span style="font-weight:800; color:${cor};">${lista.length}</span></div>
+                    ${lista.length
+                        ? lista.slice(0, 6).map(x => `
+                            <div class="sup-lista-linha">
+                                <span style="color:var(--text-body);">${x.id}</span>
+                                <span class="text-muted" style="font-size:11px;">${x.qtd} ${unidade}${x.qtd === 1 ? '' : 's'}</span>
+                            </div>
+                        `).join('')
+                        : `<div class="sup-vazio">Nenhuma ocorrência registrada 👍</div>`}
+                </div>
+            `;
+
+            anomaliasEl.innerHTML =
+                cardAnomalia('Rolo Travado', 'fa-lock', '#ef4444', comRoloTravado, 'rolo')
+                + cardAnomalia('Mancal com Ocorrência', 'fa-gear', '#f59e0b', comMancalOcorrencia, 'mancal')
+                + cardAnomalia('Hidráulica com Anomalia', 'fa-droplet', '#eab308', comHidraulicaRuim, 'componente');
+        } catch (e) {
+            console.error('⚠️ Não consegui carregar anomalias (rolo/mancal/hidráulica) no Painel do Supervisor:', e);
+            anomaliasEl.innerHTML = `<div class="sup-vazio">Não foi possível carregar agora.</div>`;
+        }
+    }
+
+    // ---------------------------------------------------------
+    // HISTÓRICO DE TROCA NA MÁQUINA: cada Swap/instalação já grava 2
+    // linhas no histórico de auditoria (registrarHistorico → log_eventos,
+    // ver iniciarSwapAlocacao em JS/script.js — "📥 Entrou no slot..." /
+    // "📤 Saiu do slot..."). /api/registros_ocorrencia NÃO devolve esses
+    // eventos (filtra "categoria IS NOT NULL", e esses vão sem
+    // categoria) — por isso usa /api/historico_eventos (histórico
+    // completo, sem esse filtro) e separa só os de troca/instalação.
+    // ---------------------------------------------------------
+    if (historicoTrocasEl) {
+        historicoTrocasEl.innerHTML = `<div class="sup-vazio">Carregando…</div>`;
+        try {
+            const apiBase = await resolverApiBase();
+            const respHistorico = await fetch(`${apiBase}/api/historico_eventos?limite=400`, { cache: 'no-store' });
+            const eventos = respHistorico.ok ? await respHistorico.json() : [];
+
+            const trocas = (Array.isArray(eventos) ? eventos : [])
+                .filter(e => (e.acao || '').includes('Entrou no slot'))
+                .slice(0, 12);
+
+            historicoTrocasEl.innerHTML = trocas.length
+                ? `<div class="sup-card" style="--sup-cor:#6366f1; grid-column: 1 / -1;">` + trocas.map(e => `
+                    <div class="sup-lista-linha">
+                        <span style="color:var(--text-body);"><span class="font-code" style="font-weight:700; color:var(--text-heading);">${e.peca_id}</span> — ${e.acao}</span>
+                        <span class="text-muted" style="font-size:11px; white-space:nowrap; margin-left:10px;">${e.operador || 'Sistema'} · ${(e.data_hora || '').slice(0, 16).replace('T', ' ')}</span>
+                    </div>
+                `).join('') + `</div>`
+                : `<div class="sup-vazio">Nenhuma troca/instalação registrada ainda.</div>`;
+        } catch (e) {
+            console.error('⚠️ Não consegui carregar o histórico de trocas no Painel do Supervisor:', e);
+            historicoTrocasEl.innerHTML = `<div class="sup-vazio">Não foi possível carregar agora.</div>`;
+        }
+    }
+
+    // ---------------------------------------------------------
     // SEÇÃO — EFETIVO POR ÁREA: todo o pessoal cadastrado na planilha do
     // efetivo (ver /api/oficina/equipe/{area}, já usada no modal "Equipe
     // da Área"), agora somado e separado por área numa visão só. Busca
@@ -5337,7 +5458,7 @@ window.renderPainelSupervisor = async function() {
 
             efetivoEl.innerHTML = areasComGente.length
                 ? `<div class="sup-efetivo-grid">` + areasComGente.map(({ cfg, lista }) => `
-                    <div class="sup-efetivo-chip" style="--sup-cor:${cfg.cor || '#14b8a6'};" onclick="window.abrirAreaOficina('${cfg.chave}')" title="${lista.map(p => `${p.nome} — ${p.cargo || 'sem cargo'}`).join('\n')}">
+                    <div class="sup-efetivo-chip" style="--sup-cor:${cfg.cor || '#14b8a6'};" onclick="window.abrirAreaOficina('${cfg.chave}', 'equipe')" title="${lista.map(p => `${p.nome} — ${p.cargo || 'sem cargo'}`).join('\n')}">
                         <span class="sup-efetivo-chip-num">${lista.length}</span>
                         <span class="sup-efetivo-chip-nome">${cfg.nome}<small>${lista.length === 1 ? '1 pessoa' : lista.length + ' pessoas'}</small></span>
                     </div>
@@ -5353,10 +5474,18 @@ window.renderPainelSupervisor = async function() {
     // PROGRESSO DOS CHECKLISTS DE EXECUÇÃO EM ANDAMENTO (dentro da seção
     // Saúde): usa a mesma rota que a sub-aba "Reparo em Andamento" já
     // consome (/api/checklist-execucao/execucoes/todas) pra saber QUAIS
-    // reparos estão rolando agora, e pra cada um busca o % de etapas já
-    // marcadas (/api/checklist-execucao/status/{id} — mesma rota que
-    // libera o botão "Concluir" no Folhão). Em paralelo, mesmo padrão
-    // do Efetivo acima.
+    // reparos estão rolando agora.
+    //
+    // 🔧 CORREÇÃO ("tudo aparecia 0%, mas tinha reparo mais avançado"): a
+    // primeira versão fazia fetch avulso em /status/{id} pra cada um, por
+    // conta própria. Em vez disso, reaproveita
+    // window.carregarStatusChecklistExecucaoReparo() + o cache
+    // window.CHECKLIST_EXECUCAO_STATUS_CACHE (JS/Oficina/checklist-
+    // execucao.js) — é o MESMO carregador que já alimenta os botões de
+    // "Reparo em Andamento" (testado em produção); reimplementar o fetch
+    // na mão aqui só criava chance de divergir. `forcar=true` pra sempre
+    // pegar o número mais recente ao abrir o painel, não um cache velho
+    // de outra tela.
     // ---------------------------------------------------------
     const progressoChecklistEl = document.getElementById('painel-sup-checklist-progresso');
     if (progressoChecklistEl) {
@@ -5368,15 +5497,14 @@ window.renderPainelSupervisor = async function() {
             if (!Array.isArray(execucoes) || execucoes.length === 0) {
                 progressoChecklistEl.innerHTML = `<div class="sup-vazio">Nenhum checklist de execução em andamento agora.</div>`;
             } else {
-                const comProgresso = await Promise.all(execucoes.map(async ex => {
-                    try {
-                        const resp = await fetch(`${apiBase}/api/checklist-execucao/status/${encodeURIComponent(ex.equipamento_id)}`, { cache: 'no-store' });
-                        const status = resp.ok ? await resp.json() : null;
-                        return { ...ex, percentual: status ? Number(status.percentual) || 0 : 0, total: status ? status.total : 0 };
-                    } catch (e) {
-                        return { ...ex, percentual: 0, total: 0 };
-                    }
-                }));
+                if (typeof window.carregarStatusChecklistExecucaoReparo === 'function') {
+                    await window.carregarStatusChecklistExecucaoReparo(execucoes.map(ex => ex.equipamento_id), true);
+                }
+                const cacheStatus = window.CHECKLIST_EXECUCAO_STATUS_CACHE || {};
+                const comProgresso = execucoes.map(ex => {
+                    const status = cacheStatus[ex.equipamento_id];
+                    return { ...ex, percentual: status ? Number(status.percentual) || 0 : 0, total: status ? status.total : 0 };
+                });
                 comProgresso.sort((a, b) => a.percentual - b.percentual); // menor % primeiro — o que mais precisa de atenção
 
                 const mediaGeral = Math.round(comProgresso.reduce((s, e) => s + e.percentual, 0) / comProgresso.length);
@@ -5404,31 +5532,57 @@ window.renderPainelSupervisor = async function() {
     }
 
     // ---------------------------------------------------------
-    // SEÇÃO — QUALIDADE E COMUNICAÇÃO: 4 fontes já existentes no
+    // SEÇÃO — QUALIDADE E COMUNICAÇÃO: 6 fontes já existentes no
     // sistema, cada uma com rota EM LOTE própria (sem precisar de N
     // chamadas por área) — padrões de defeito recorrentes, mensagens
     // Área↔ADM não lidas, avisos ainda sem confirmação de leitura de
-    // todo mundo, e as ocorrências mais recentes registradas.
+    // todo mundo, ocorrências mais recentes, laudos gerados recentemente
+    // e o ranking de retrabalho (atividades reabertas) por tipo de
+    // equipamento — o "o que mais trava" que dá pra medir hoje, já que
+    // o Checklist de Execução não guarda histórico por etapa individual
+    // (só o total/marcadas da execução em andamento).
     // ---------------------------------------------------------
     if (qualidadeEl) {
         qualidadeEl.innerHTML = `<div class="sup-vazio">Carregando…</div>`;
         try {
             const apiBase = await resolverApiBase();
-            const [respPadroes, respMensagens, respAvisos, respOcorrencias] = await Promise.all([
+            const [respPadroes, respMensagens, respAvisos, respOcorrencias, respLaudos, respReabertas] = await Promise.all([
                 fetch(`${apiBase}/api/qualidade/achados/padroes`, { cache: 'no-store' }).catch(() => null),
                 fetch(`${apiBase}/api/mensagens_area/resumo`, { cache: 'no-store' }).catch(() => null),
                 fetch(`${apiBase}/api/avisos/todos`, { cache: 'no-store' }).catch(() => null),
                 fetch(`${apiBase}/api/registros_ocorrencia?limite=6`, { cache: 'no-store' }).catch(() => null),
+                fetch(`${apiBase}/api/laudos?limite=100`, { cache: 'no-store' }).catch(() => null),
+                fetch(`${apiBase}/api/oficina/atividades/mais_reabertas?limite=20`, { cache: 'no-store' }).catch(() => null),
             ]);
             const padroes = respPadroes && respPadroes.ok ? await respPadroes.json() : [];
             const mensagensResumo = respMensagens && respMensagens.ok ? await respMensagens.json() : [];
             const avisosTodos = respAvisos && respAvisos.ok ? await respAvisos.json() : [];
             const ocorrencias = respOcorrencias && respOcorrencias.ok ? await respOcorrencias.json() : [];
+            const laudos = respLaudos && respLaudos.ok ? await respLaudos.json() : [];
+            const reabertas = respReabertas && respReabertas.ok ? await respReabertas.json() : [];
 
             const mensagensNaoLidas = (Array.isArray(mensagensResumo) ? mensagensResumo : []).filter(m => Number(m.nao_lidas) > 0);
             const avisosAtivosPendentes = (Array.isArray(avisosTodos) ? avisosTodos : [])
                 .filter(a => a.ativo && Number(a.total_leram) < Number(a.total_colaboradores))
                 .sort((a, b) => (a.total_leram / (a.total_colaboradores || 1)) - (b.total_leram / (b.total_colaboradores || 1)));
+
+            // Laudos dos últimos 7 dias (criado_em vem como texto tipo
+            // "2026-09-15..." — mesmo corte de data usado em todo o resto
+            // do painel).
+            const laudos7dias = (Array.isArray(laudos) ? laudos : []).filter(l => l.criado_em && l.criado_em.slice(0, 10) >= dataLimite7dias);
+
+            // Retrabalho por TIPO de equipamento (não só por tag) — cruza
+            // equipamento_id de cada atividade reaberta com BANCO_ATIVOS
+            // pra somar por tipo (ex: "3x Molde reabriram", não só "M4-12
+            // reabriu 3x").
+            const reaberturasPorTipo = {};
+            (Array.isArray(reabertas) ? reabertas : []).forEach(r => {
+                const peca = ativos.find(a => a.id === r.equipamento_id);
+                const chave = peca ? peca.tipo : (r.equipamento_id || 'Tarefa avulsa');
+                reaberturasPorTipo[chave] = (reaberturasPorTipo[chave] || 0) + (Number(r.reaberturas_count) || 1);
+            });
+            const rankingReaberturas = Object.entries(reaberturasPorTipo).sort((a, b) => b[1] - a[1]).slice(0, 6);
+            const maxReaberturas = Math.max(1, ...rankingReaberturas.map(([, v]) => v));
 
             qualidadeEl.innerHTML = `
                 <div class="sup-card" style="--sup-cor:#a855f7;">
@@ -5477,6 +5631,27 @@ window.renderPainelSupervisor = async function() {
                             </div>
                         `).join('')
                         : `<div class="sup-vazio">Nenhuma ocorrência registrada recentemente.</div>`}
+                </div>
+                <div class="sup-card" style="--sup-cor:#22c55e;">
+                    <div class="sup-card-titulo"><span><i class="fas fa-file-circle-check"></i> Laudos Gerados (7 dias)</span></div>
+                    <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:${laudos7dias.length ? '10px' : '0'};">
+                        <div style="font-size:1.6rem; font-weight:700; color:#22c55e;">${laudos7dias.length}</div>
+                        <div style="font-size:11px; color:var(--text-muted);">reparo(s) formalmente encerrado(s) nos últimos 7 dias</div>
+                    </div>
+                    ${laudos7dias.length
+                        ? laudos7dias.slice(0, 5).map(l => `
+                            <div class="sup-lista-linha">
+                                <span style="color:var(--text-body);">${l.peca_id}<span class="text-muted"> — ${l.tipo || ''}</span></span>
+                                <span class="text-muted" style="font-size:11px;">${(l.criado_em || '').slice(0, 10).split('-').reverse().join('/')}</span>
+                            </div>
+                        `).join('')
+                        : `<div class="sup-vazio">Nenhum laudo gerado nos últimos 7 dias.</div>`}
+                </div>
+                <div class="sup-card" style="--sup-cor:#f97316; grid-column: 1 / -1;">
+                    <div class="sup-card-titulo"><span><i class="fas fa-arrows-rotate"></i> Retrabalho — Tipos Que Mais Reabrem (travam o fluxo)</span></div>
+                    ${rankingReaberturas.length
+                        ? rankingReaberturas.map(([nome, v]) => painelSupBarraHtml(nome, v, maxReaberturas, '#f97316')).join('')
+                        : `<div class="sup-vazio">Nenhuma atividade reaberta registrada 👍 — sem retrabalho até agora.</div>`}
                 </div>
             `;
         } catch (e) {
@@ -5563,6 +5738,82 @@ window.renderPainelSupervisor = async function() {
             if (trendEl) trendEl.innerHTML = `<div class="sup-vazio">Não foi possível carregar agora.</div>`;
             if (sparkEl) sparkEl.innerHTML = `<div class="sup-vazio">Não foi possível carregar agora.</div>`;
         }
+    }
+
+    // ---------------------------------------------------------
+    // SEÇÃO — PREVISÕES: só entram aqui projeções calculadas em cima de
+    // dado real que o sistema já tem, nunca um chute. Duas contas
+    // simples e honestas (ambas deixam claro na UI que são "no ritmo
+    // atual", não garantia):
+    //
+    // 1) Previsão de desgaste: cada peça instalada tem `ton` (acumulado)
+    //    e `dataEntradaVeio` (desde quando está lá) — dá pra calcular a
+    //    taxa diária (ton/dias) e projetar quantos dias faltam pra
+    //    bater a `meta`. Não fazemos previsão de QUEBRA (não existe
+    //    histórico de falha no sistema pra basear isso).
+    // 2) Tendência do backlog: atividades criadas x concluídas por dia
+    //    nos últimos 14 dias — mostra se a fila está crescendo ou
+    //    encolhendo, sem forçar um número de "vai zerar em X dias".
+    // ---------------------------------------------------------
+    if (previsoesEl) {
+        // --- 1) Previsão de desgaste ---
+        const instaladosComRitmo = ativos
+            .filter(a => a.status === 'Instalado' && a.meta > 0 && a.ton > 0 && a.dataEntradaVeio)
+            .map(a => {
+                const diasInstalada = Math.max(1, Math.floor((Date.now() - a.dataEntradaVeio) / (1000 * 60 * 60 * 24)));
+                const taxaDiaria = a.ton / diasInstalada;
+                const restante = a.meta - a.ton;
+                const diasParaMeta = taxaDiaria > 0 ? Math.round(restante / taxaDiaria) : null;
+                return { ...a, diasParaMeta };
+            })
+            .filter(a => a.diasParaMeta !== null && a.diasParaMeta >= 0)
+            .sort((a, b) => a.diasParaMeta - b.diasParaMeta)
+            .slice(0, 6);
+
+        const corPrevisao = (d) => d <= 7 ? '#ef4444' : (d <= 20 ? '#eab308' : '#22c55e');
+
+        // --- 2) Tendência do backlog (criadas x concluídas, 14 dias) ---
+        const dias14Backlog = [];
+        for (let i = 13; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); dias14Backlog.push(d.toISOString().slice(0, 10)); }
+        const meiaJanela = dias14Backlog.slice(0, 7);
+        const janelaRecente = dias14Backlog.slice(7);
+        const contarNoIntervalo = (campoData, dias) => atividades.filter(x => x[campoData] && dias.includes(x[campoData].slice(0, 10))).length;
+        const criadasAntes = contarNoIntervalo('criado_em', meiaJanela);
+        const criadasDepois = contarNoIntervalo('criado_em', janelaRecente);
+        const concluidasAntes = contarNoIntervalo('concluido_em', meiaJanela);
+        const concluidasDepois = contarNoIntervalo('concluido_em', janelaRecente);
+        const saldoAntes = criadasAntes - concluidasAntes;
+        const saldoDepois = criadasDepois - concluidasDepois;
+        const temDadoBacklog = (criadasAntes + criadasDepois + concluidasAntes + concluidasDepois) > 0;
+        const pioraOuMelhora = saldoDepois > saldoAntes ? 'piorando' : (saldoDepois < saldoAntes ? 'melhorando' : 'estável');
+        const corBacklog = pioraOuMelhora === 'piorando' ? '#ef4444' : (pioraOuMelhora === 'melhorando' ? '#22c55e' : '#eab308');
+
+        previsoesEl.innerHTML = `
+            <div class="sup-card" style="--sup-cor:#0ea5e9;">
+                <div class="sup-card-titulo"><span><i class="fas fa-gauge-high"></i> Próximas a Bater a Meta de Desgaste</span></div>
+                ${instaladosComRitmo.length
+                    ? instaladosComRitmo.map(a => `
+                        <div class="sup-lista-linha">
+                            <span style="color:var(--text-body);">${a.id} <span class="text-muted">(${a.tipo || '—'})</span></span>
+                            <span style="font-weight:700; color:${corPrevisao(a.diasParaMeta)};">~${a.diasParaMeta}d</span>
+                        </div>
+                    `).join('') + `<div style="font-size:10.5px; color:var(--text-muted); margin-top:10px;">Projeção no ritmo médio de uso desde a instalação — não é garantia, só um alerta antecipado.</div>`
+                    : `<div class="sup-vazio">Sem dado suficiente pra projetar (precisa de meta, toneladas e data de entrada preenchidas).</div>`}
+            </div>
+            <div class="sup-card" style="--sup-cor:${corBacklog};">
+                <div class="sup-card-titulo"><span><i class="fas fa-scale-balanced"></i> Tendência do Backlog de Atividades</span></div>
+                ${temDadoBacklog ? `
+                    <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:10px;">
+                        <div style="font-size:1.4rem; font-weight:800; color:${corBacklog};">${pioraOuMelhora === 'piorando' ? '📈' : (pioraOuMelhora === 'melhorando' ? '📉' : '➖')} ${pioraOuMelhora}</div>
+                    </div>
+                    ${painelSupBarraHtml('Criadas (7d anteriores)', criadasAntes, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#94a3b8')}
+                    ${painelSupBarraHtml('Concluídas (7d anteriores)', concluidasAntes, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#64748b')}
+                    ${painelSupBarraHtml('Criadas (últimos 7d)', criadasDepois, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#eab308')}
+                    ${painelSupBarraHtml('Concluídas (últimos 7d)', concluidasDepois, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#22c55e')}
+                    <div style="font-size:10.5px; color:var(--text-muted); margin-top:6px;">Compara os 7 dias mais recentes com os 7 anteriores — mostra direção, não um prazo exato.</div>
+                ` : `<div class="sup-vazio">Sem dado suficiente nos últimos 14 dias pra calcular tendência.</div>`}
+            </div>
+        `;
     }
 
     const tsEl = document.getElementById('painel-supervisor-ultima-atualizacao');
