@@ -1315,7 +1315,7 @@ function atualizarInterfaceUsuario() {
 // usa no dia a dia (Sinótico 3D, Sequenciamento de Veios, Registro de
 // OS) — o resto do menu lateral fica escondido.
 // ADM (MATRICULAS_ADM) e visitante continuam vendo o menu completo.
-const NAV_IDS_LIBERADOS_TECNICO = ['nav-tecnico', 'nav-area-oficina', 'nav-sinotico', 'nav-fluxo', 'nav-ordens-servico'];
+const NAV_IDS_LIBERADOS_TECNICO = ['nav-tecnico', 'nav-area-oficina', 'nav-sinotico', 'nav-fluxo', 'nav-ordens-servico', 'nav-fila-ponte'];
 
 function aplicarRestricaoNavTecnico() {
     const restrito = !!(OPERADOR_LOGADO && !OPERADOR_LOGADO.visitante && !OPERADOR_LOGADO.isAdm && OPERADOR_LOGADO.area);
@@ -1366,7 +1366,7 @@ function aplicarRestricaoNavTecnico() {
     if (restrito) {
         const abaAtual = document.querySelector('.tab-content.active');
         const idAtual = abaAtual ? abaAtual.id : null;
-        const abaAindaPermitida = idAtual === 'aba-tecnico' || idAtual === 'aba-fluxo' || idAtual === 'aba-ordens-servico';
+        const abaAindaPermitida = idAtual === 'aba-tecnico' || idAtual === 'aba-fluxo' || idAtual === 'aba-ordens-servico' || idAtual === 'aba-fila-ponte';
         if (!abaAindaPermitida) window.abrirAba(null, 'aba-tecnico');
     }
 }
