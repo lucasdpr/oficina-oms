@@ -6830,6 +6830,7 @@ window.criarSolicitacaoFilaPonteRolante = async function() {
     const prioridade = document.getElementById('fila-ponte-prioridade')?.value || 'Normal';
     const duracaoStr = document.getElementById('fila-ponte-duracao')?.value;
     const duracaoEstimadaMin = duracaoStr ? parseInt(duracaoStr, 10) : null;
+    const acessorios = [...document.querySelectorAll('#fila-ponte-form-card .fila-ponte-acessorio-check:checked')].map(c => c.value);
     const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
 
     try {
@@ -6842,6 +6843,7 @@ window.criarSolicitacaoFilaPonteRolante = async function() {
                 descricao,
                 prioridade,
                 duracao_estimada_min: duracaoEstimadaMin,
+                acessorios_ponte: acessorios.join(', ') || null,
                 operador,
                 solicitante_matricula: OPERADOR_LOGADO ? OPERADOR_LOGADO.matricula : null,
             })
@@ -6854,6 +6856,7 @@ window.criarSolicitacaoFilaPonteRolante = async function() {
         document.getElementById('fila-ponte-descricao').value = '';
         document.getElementById('fila-ponte-duracao').value = '';
         document.getElementById('fila-ponte-prioridade').value = 'Normal';
+        document.querySelectorAll('#fila-ponte-form-card .fila-ponte-acessorio-check').forEach(c => c.checked = false);
         document.getElementById('fila-ponte-form-card').classList.add('hidden');
         await window.renderFilaPonteRolante();
     } catch (e) {
@@ -6874,7 +6877,8 @@ window.mudarStatusFilaPonteRolante = async function(id, novoStatus) {
     // atendimento não é. Isso abre um modal em vez de seguir direto;
     // o resto do fluxo (Concluir, etc.) continua sem modal.
     if (novoStatus === 'Em Andamento') {
-        window.abrirModalIniciarPonte(id);
+        const atividade = (await window.buscarAtividadesFilaPonteRolante()).find(a => a.id === id);
+        window.abrirModalIniciarPonte(id, atividade?.acessorios_ponte);
         return;
     }
     await window.enviarStatusFilaPonteRolante(id, novoStatus, {});
@@ -6902,9 +6906,14 @@ window.enviarStatusFilaPonteRolante = async function(id, novoStatus, extras) {
     }
 };
 
-window.abrirModalIniciarPonte = function(id) {
+window.abrirModalIniciarPonte = function(id, acessoriosSugeridos) {
     FILA_PONTE_ID_INICIANDO = id;
-    document.querySelectorAll('#modal-iniciar-ponte-acessorios .modal-iniciar-ponte-check').forEach(c => c.checked = false);
+    // 🆕 Pré-marca o que já foi sugerido na criação — o técnico só
+    // confirma ou ajusta, não precisa marcar tudo de novo do zero.
+    const sugeridos = (acessoriosSugeridos || '').split(',').map(s => s.trim()).filter(Boolean);
+    document.querySelectorAll('#modal-iniciar-ponte-acessorios .modal-iniciar-ponte-check').forEach(c => {
+        c.checked = sugeridos.includes(c.value);
+    });
     document.querySelector('input[name="modal-iniciar-ponte-radio"][value="221"]').checked = true;
     document.getElementById('modal-iniciar-ponte')?.classList.remove('hidden');
 };
@@ -6926,13 +6935,20 @@ window.confirmarIniciarPonte = async function() {
     });
 };
 
+// 🆕 Compartilhado entre moverFilaPonteRolante e mudarStatusFilaPonteRolante
+// (pré-preencher acessórios sugeridos ao abrir o modal de Iniciar).
+window.buscarAtividadesFilaPonteRolante = async function() {
+    const apiBase = await resolverApiBase();
+    const resp = await fetch(`${apiBase}/api/oficina/atividades?area=ponte-rolante`, { cache: 'no-store' });
+    return resp.ok ? await resp.json() : [];
+};
+
 window.moverFilaPonteRolante = async function(id, direcao) {
     const lista = document.getElementById('fila-ponte-lista');
     if (!lista) return;
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/oficina/atividades?area=ponte-rolante`, { cache: 'no-store' });
-        const atividades = resp.ok ? await resp.json() : [];
+        const atividades = await window.buscarAtividadesFilaPonteRolante();
         const emAberto = atividades
             .filter(a => a.status === 'Pendente' || a.status === 'Em Andamento')
             .sort((a, b) => (a.ordem_fila ?? a.id) - (b.ordem_fila ?? b.id));
