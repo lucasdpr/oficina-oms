@@ -5353,10 +5353,18 @@ window.renderPainelSupervisor = async function() {
     // PROGRESSO DOS CHECKLISTS DE EXECUÇÃO EM ANDAMENTO (dentro da seção
     // Saúde): usa a mesma rota que a sub-aba "Reparo em Andamento" já
     // consome (/api/checklist-execucao/execucoes/todas) pra saber QUAIS
-    // reparos estão rolando agora, e pra cada um busca o % de etapas já
-    // marcadas (/api/checklist-execucao/status/{id} — mesma rota que
-    // libera o botão "Concluir" no Folhão). Em paralelo, mesmo padrão
-    // do Efetivo acima.
+    // reparos estão rolando agora.
+    //
+    // 🔧 CORREÇÃO ("tudo aparecia 0%, mas tinha reparo mais avançado"): a
+    // primeira versão fazia fetch avulso em /status/{id} pra cada um, por
+    // conta própria. Em vez disso, reaproveita
+    // window.carregarStatusChecklistExecucaoReparo() + o cache
+    // window.CHECKLIST_EXECUCAO_STATUS_CACHE (JS/Oficina/checklist-
+    // execucao.js) — é o MESMO carregador que já alimenta os botões de
+    // "Reparo em Andamento" (testado em produção); reimplementar o fetch
+    // na mão aqui só criava chance de divergir. `forcar=true` pra sempre
+    // pegar o número mais recente ao abrir o painel, não um cache velho
+    // de outra tela.
     // ---------------------------------------------------------
     const progressoChecklistEl = document.getElementById('painel-sup-checklist-progresso');
     if (progressoChecklistEl) {
@@ -5368,15 +5376,14 @@ window.renderPainelSupervisor = async function() {
             if (!Array.isArray(execucoes) || execucoes.length === 0) {
                 progressoChecklistEl.innerHTML = `<div class="sup-vazio">Nenhum checklist de execução em andamento agora.</div>`;
             } else {
-                const comProgresso = await Promise.all(execucoes.map(async ex => {
-                    try {
-                        const resp = await fetch(`${apiBase}/api/checklist-execucao/status/${encodeURIComponent(ex.equipamento_id)}`, { cache: 'no-store' });
-                        const status = resp.ok ? await resp.json() : null;
-                        return { ...ex, percentual: status ? Number(status.percentual) || 0 : 0, total: status ? status.total : 0 };
-                    } catch (e) {
-                        return { ...ex, percentual: 0, total: 0 };
-                    }
-                }));
+                if (typeof window.carregarStatusChecklistExecucaoReparo === 'function') {
+                    await window.carregarStatusChecklistExecucaoReparo(execucoes.map(ex => ex.equipamento_id), true);
+                }
+                const cacheStatus = window.CHECKLIST_EXECUCAO_STATUS_CACHE || {};
+                const comProgresso = execucoes.map(ex => {
+                    const status = cacheStatus[ex.equipamento_id];
+                    return { ...ex, percentual: status ? Number(status.percentual) || 0 : 0, total: status ? status.total : 0 };
+                });
                 comProgresso.sort((a, b) => a.percentual - b.percentual); // menor % primeiro — o que mais precisa de atenção
 
                 const mediaGeral = Math.round(comProgresso.reduce((s, e) => s + e.percentual, 0) / comProgresso.length);
@@ -5404,31 +5411,57 @@ window.renderPainelSupervisor = async function() {
     }
 
     // ---------------------------------------------------------
-    // SEÇÃO — QUALIDADE E COMUNICAÇÃO: 4 fontes já existentes no
+    // SEÇÃO — QUALIDADE E COMUNICAÇÃO: 6 fontes já existentes no
     // sistema, cada uma com rota EM LOTE própria (sem precisar de N
     // chamadas por área) — padrões de defeito recorrentes, mensagens
     // Área↔ADM não lidas, avisos ainda sem confirmação de leitura de
-    // todo mundo, e as ocorrências mais recentes registradas.
+    // todo mundo, ocorrências mais recentes, laudos gerados recentemente
+    // e o ranking de retrabalho (atividades reabertas) por tipo de
+    // equipamento — o "o que mais trava" que dá pra medir hoje, já que
+    // o Checklist de Execução não guarda histórico por etapa individual
+    // (só o total/marcadas da execução em andamento).
     // ---------------------------------------------------------
     if (qualidadeEl) {
         qualidadeEl.innerHTML = `<div class="sup-vazio">Carregando…</div>`;
         try {
             const apiBase = await resolverApiBase();
-            const [respPadroes, respMensagens, respAvisos, respOcorrencias] = await Promise.all([
+            const [respPadroes, respMensagens, respAvisos, respOcorrencias, respLaudos, respReabertas] = await Promise.all([
                 fetch(`${apiBase}/api/qualidade/achados/padroes`, { cache: 'no-store' }).catch(() => null),
                 fetch(`${apiBase}/api/mensagens_area/resumo`, { cache: 'no-store' }).catch(() => null),
                 fetch(`${apiBase}/api/avisos/todos`, { cache: 'no-store' }).catch(() => null),
                 fetch(`${apiBase}/api/registros_ocorrencia?limite=6`, { cache: 'no-store' }).catch(() => null),
+                fetch(`${apiBase}/api/laudos?limite=100`, { cache: 'no-store' }).catch(() => null),
+                fetch(`${apiBase}/api/oficina/atividades/mais_reabertas?limite=20`, { cache: 'no-store' }).catch(() => null),
             ]);
             const padroes = respPadroes && respPadroes.ok ? await respPadroes.json() : [];
             const mensagensResumo = respMensagens && respMensagens.ok ? await respMensagens.json() : [];
             const avisosTodos = respAvisos && respAvisos.ok ? await respAvisos.json() : [];
             const ocorrencias = respOcorrencias && respOcorrencias.ok ? await respOcorrencias.json() : [];
+            const laudos = respLaudos && respLaudos.ok ? await respLaudos.json() : [];
+            const reabertas = respReabertas && respReabertas.ok ? await respReabertas.json() : [];
 
             const mensagensNaoLidas = (Array.isArray(mensagensResumo) ? mensagensResumo : []).filter(m => Number(m.nao_lidas) > 0);
             const avisosAtivosPendentes = (Array.isArray(avisosTodos) ? avisosTodos : [])
                 .filter(a => a.ativo && Number(a.total_leram) < Number(a.total_colaboradores))
                 .sort((a, b) => (a.total_leram / (a.total_colaboradores || 1)) - (b.total_leram / (b.total_colaboradores || 1)));
+
+            // Laudos dos últimos 7 dias (criado_em vem como texto tipo
+            // "2026-09-15..." — mesmo corte de data usado em todo o resto
+            // do painel).
+            const laudos7dias = (Array.isArray(laudos) ? laudos : []).filter(l => l.criado_em && l.criado_em.slice(0, 10) >= dataLimite7dias);
+
+            // Retrabalho por TIPO de equipamento (não só por tag) — cruza
+            // equipamento_id de cada atividade reaberta com BANCO_ATIVOS
+            // pra somar por tipo (ex: "3x Molde reabriram", não só "M4-12
+            // reabriu 3x").
+            const reaberturasPorTipo = {};
+            (Array.isArray(reabertas) ? reabertas : []).forEach(r => {
+                const peca = ativos.find(a => a.id === r.equipamento_id);
+                const chave = peca ? peca.tipo : (r.equipamento_id || 'Tarefa avulsa');
+                reaberturasPorTipo[chave] = (reaberturasPorTipo[chave] || 0) + (Number(r.reaberturas_count) || 1);
+            });
+            const rankingReaberturas = Object.entries(reaberturasPorTipo).sort((a, b) => b[1] - a[1]).slice(0, 6);
+            const maxReaberturas = Math.max(1, ...rankingReaberturas.map(([, v]) => v));
 
             qualidadeEl.innerHTML = `
                 <div class="sup-card" style="--sup-cor:#a855f7;">
@@ -5477,6 +5510,27 @@ window.renderPainelSupervisor = async function() {
                             </div>
                         `).join('')
                         : `<div class="sup-vazio">Nenhuma ocorrência registrada recentemente.</div>`}
+                </div>
+                <div class="sup-card" style="--sup-cor:#22c55e;">
+                    <div class="sup-card-titulo"><span><i class="fas fa-file-circle-check"></i> Laudos Gerados (7 dias)</span></div>
+                    <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:${laudos7dias.length ? '10px' : '0'};">
+                        <div style="font-size:1.6rem; font-weight:700; color:#22c55e;">${laudos7dias.length}</div>
+                        <div style="font-size:11px; color:var(--text-muted);">reparo(s) formalmente encerrado(s) nos últimos 7 dias</div>
+                    </div>
+                    ${laudos7dias.length
+                        ? laudos7dias.slice(0, 5).map(l => `
+                            <div class="sup-lista-linha">
+                                <span style="color:var(--text-body);">${l.peca_id}<span class="text-muted"> — ${l.tipo || ''}</span></span>
+                                <span class="text-muted" style="font-size:11px;">${(l.criado_em || '').slice(0, 10).split('-').reverse().join('/')}</span>
+                            </div>
+                        `).join('')
+                        : `<div class="sup-vazio">Nenhum laudo gerado nos últimos 7 dias.</div>`}
+                </div>
+                <div class="sup-card" style="--sup-cor:#f97316; grid-column: 1 / -1;">
+                    <div class="sup-card-titulo"><span><i class="fas fa-arrows-rotate"></i> Retrabalho — Tipos Que Mais Reabrem (travam o fluxo)</span></div>
+                    ${rankingReaberturas.length
+                        ? rankingReaberturas.map(([nome, v]) => painelSupBarraHtml(nome, v, maxReaberturas, '#f97316')).join('')
+                        : `<div class="sup-vazio">Nenhuma atividade reaberta registrada 👍 — sem retrabalho até agora.</div>`}
                 </div>
             `;
         } catch (e) {
