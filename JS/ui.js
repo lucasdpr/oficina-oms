@@ -22,7 +22,13 @@ function renderReservas() {
     const tbody = document.getElementById("estoque-table-body");
     if (!tbody) return;
 
-    const reservas = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reserva");
+    // 🆕 Duas localizações físicas de reserva: "Oficina / Reserva" (peça
+    // parada na oficina central, depende de transporte da Logística) e
+    // "Máquina / Reserva" (peça já entregue perto da máquina, pronta
+    // pra swap instantâneo). Renderizadas em duas seções separadas —
+    // ver montagemSecaoLocal abaixo — mas reaproveitando 100% do
+    // agrupamento por MCC/tipo que já existia.
+    const reservas = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reserva" || a.local === "Máquina / Reserva");
     if (reservas.length === 0) {
         tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Nenhuma peça em estoque.</td></tr>`;
         return;
@@ -111,10 +117,12 @@ function renderReservas() {
 
 
     // ==========================================
-    // AGRUPAMENTO POR MCC
+    // AGRUPAMENTO POR MCC (reaproveitado pelas duas seções de local —
+    // ver montarSecaoPorLocal abaixo)
     // ==========================================
+    function montarSecaoPorLocal(listaLocal) {
     const grupos = {};
-    reservas.forEach(a => {
+    listaLocal.forEach(a => {
         const mcc = a.mcc_compat || "2/3";
         if (!grupos[mcc]) grupos[mcc] = [];
         grupos[mcc].push(a);
@@ -219,6 +227,40 @@ function renderReservas() {
             });
         });
     });
+
+    return htmlFinal;
+    }
+
+    // ==========================================
+    // DUAS SEÇÕES: "Reserva na Oficina" (depende de transporte da
+    // Logística) e "Reserva na Máquina" (pronta pra swap instantâneo).
+    // Cada uma reaproveita o mesmo agrupamento MCC/tipo/card de sempre
+    // — só muda o cabeçalho de seção acima, no mesmo estilo de faixa
+    // colorida já usado pros cabeçalhos de MCC.
+    // ==========================================
+    const reservasMaquina = reservas.filter(a => a.local === "Máquina / Reserva");
+    const reservasOficina = reservas.filter(a => a.local === "Oficina / Reserva");
+
+    function cabecalhoSecao(titulo, icone, cor) {
+        return `
+            <tr style="background: ${cor}30; border-top: 4px solid ${cor};">
+                <td colspan="6" style="padding: 12px 16px; font-weight: 800; color: var(--text-heading); font-size: 16px;">
+                    <i class="${icone}"></i> ${titulo}
+                </td>
+            </tr>
+        `;
+    }
+
+    let htmlFinal = "";
+    htmlFinal += cabecalhoSecao(`Reserva na Máquina (${reservasMaquina.length}) — pronta pra swap`, 'fas fa-industry', '#22c55e');
+    htmlFinal += reservasMaquina.length
+        ? montarSecaoPorLocal(reservasMaquina)
+        : `<tr><td colspan="6" class="text-center text-muted" style="padding:10px 16px;">Nenhuma peça pronta na máquina.</td></tr>`;
+
+    htmlFinal += cabecalhoSecao(`Reserva na Oficina (${reservasOficina.length}) — aguarda transporte`, 'fas fa-warehouse', '#f59e0b');
+    htmlFinal += reservasOficina.length
+        ? montarSecaoPorLocal(reservasOficina)
+        : `<tr><td colspan="6" class="text-center text-muted" style="padding:10px 16px;">Nenhuma peça na oficina.</td></tr>`;
 
     tbody.innerHTML = htmlFinal;
 }

@@ -1025,6 +1025,9 @@ window.concluirEImprimirFolhaoMolde4 = async function(tag) {
     const tonEntradaParcial = getV('molde4-ton-entrada');
     if (item) {
         item.local = "Oficina / Reserva";
+        // 🆕 Pede pra Logística reabastecer a Reserva na Máquina com essa
+        // peça recém-reparada (fire-and-forget, ver notificarLogisticaReabastecimento).
+        if (typeof window.notificarLogisticaReabastecimento === 'function') window.notificarLogisticaReabastecimento(item);
         if (tipoExecucaoM4 === 'PARCIAL') {
             if (tonEntradaParcial !== '' && !isNaN(parseFloat(tonEntradaParcial))) {
                 item.ton = parseFloat(tonEntradaParcial);
@@ -1124,6 +1127,9 @@ window.concluirEImprimirFolhaoGenerico = async function(tag) {
         item.local = "Oficina / Reserva";
         item.ton = 0;
         item.dias = 0;
+        // 🆕 Pede pra Logística reabastecer a Reserva na Máquina com essa
+        // peça recém-reparada (fire-and-forget, ver notificarLogisticaReabastecimento).
+        if (typeof window.notificarLogisticaReabastecimento === 'function') window.notificarLogisticaReabastecimento(item);
         localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
     }
     try {
@@ -1671,6 +1677,9 @@ window.concluirEImprimirFolhaoBender = async function(tag) {
     const tipoExecucaoBender = (getV('mcc4-tipo-exec') || 'GERAL').toUpperCase();
     if (item) {
         item.local = "Oficina / Reserva";
+        // 🆕 Pede pra Logística reabastecer a Reserva na Máquina com essa
+        // peça recém-reparada (fire-and-forget, ver notificarLogisticaReabastecimento).
+        if (typeof window.notificarLogisticaReabastecimento === 'function') window.notificarLogisticaReabastecimento(item);
         if (tipoExecucaoBender !== 'PARCIAL') {
             item.ton = 0;
             item.dias = 0;
