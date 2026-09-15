@@ -1126,6 +1126,9 @@ window.concluirEImprimirFolhaoMolde23 = async function(tag) {
         item.local = "Oficina / Reserva";
         item.ton = 0;
         item.dias = 0;
+        // 🆕 Pede pra Logística reabastecer a Reserva na Máquina com essa
+        // peça recém-reparada (fire-and-forget, ver notificarLogisticaReabastecimento).
+        if (typeof window.notificarLogisticaReabastecimento === 'function') window.notificarLogisticaReabastecimento(item);
         localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
     }
     try {
