@@ -6771,12 +6771,16 @@ window.renderFilaPonteRolante = async function() {
         const finalizadas = atividades
             .filter(a => a.status !== 'Pendente' && a.status !== 'Em Andamento')
             .sort((a, b) => b.id - a.id)
-            .slice(0, 10);
+            .slice(0, 100);
 
         // 🆕 Reordenar e Iniciar/Concluir só fazem sentido pra quem
         // atende a fila (técnico da área ponte-rolante) ou ADM — outras
         // áreas só pedem, não decidem a ordem nem executam o serviço.
         const podeAtender = !!(OPERADOR_LOGADO && (OPERADOR_LOGADO.isAdm || OPERADOR_LOGADO.area === 'ponte-rolante'));
+        // 🆕 Excluir: quem atende a fila, OU quem criou o próprio pedido
+        // (pode desistir do que pediu) — outras áreas não excluem pedido
+        // alheio.
+        const podeExcluir = (x) => podeAtender || (OPERADOR_LOGADO && x.solicitante_matricula && x.solicitante_matricula === OPERADOR_LOGADO.matricula);
 
         if (!emAberto.length) {
             lista.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhuma solicitação na fila agora.</div>`;
@@ -6801,18 +6805,35 @@ window.renderFilaPonteRolante = async function() {
                         <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.abrirConversaAtividade(${x.id})" title="Conversa"><i class="fas fa-comments"></i></button>
                         ${podeAtender && x.status === 'Pendente' ? `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusFilaPonteRolante(${x.id}, 'Em Andamento')">Iniciar</button>` : ''}
                         ${podeAtender && x.status === 'Em Andamento' ? `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusFilaPonteRolante(${x.id}, 'Concluído')">Concluir</button>` : ''}
+                        ${podeExcluir(x) ? `<button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.excluirSolicitacaoFilaPonteRolante(${x.id})" title="Excluir"><i class="fas fa-trash"></i></button>` : ''}
                     </div>
                 </div>`;
             }).join('');
         }
 
+        // 🆕 Arquivo separado por dia (concluído/recusado/etc) — em vez
+        // de uma lista plana das últimas 10, agrupa por data (concluido_em
+        // quando tem, senão criado_em) pra achar "o que rolou no dia X"
+        // sem precisar caçar item por item numa lista única.
         if (finalizadas.length) {
+            const porDia = new Map();
+            finalizadas.forEach(x => {
+                const dia = (x.concluido_em || x.criado_em || '').slice(0, 10);
+                if (!porDia.has(dia)) porDia.set(dia, []);
+                porDia.get(dia).push(x);
+            });
+            const diasOrdenados = [...porDia.keys()].sort((a, b) => b.localeCompare(a));
             lista.innerHTML += `
                 <details style="margin-top:16px;">
-                    <summary class="text-muted" style="cursor:pointer; font-size:12px;">Últimas finalizadas</summary>
-                    ${finalizadas.map(x => `
-                        <div style="padding:8px 0; border-bottom:1px solid var(--border); font-size:12px;" class="text-muted">
-                            ${x.descricao} — ${x.status}
+                    <summary class="text-muted" style="cursor:pointer; font-size:12px;">Arquivo — atendimentos por dia</summary>
+                    ${diasOrdenados.map(dia => `
+                        <div style="margin-top:10px;">
+                            <div style="font-weight:700; font-size:12px; color:var(--text-title); margin-bottom:4px;">${dia ? new Date(dia + 'T00:00:00').toLocaleDateString('pt-BR') : 'Sem data'}</div>
+                            ${porDia.get(dia).map(x => `
+                                <div style="padding:8px 0; border-bottom:1px solid var(--border); font-size:12px;" class="text-muted">
+                                    ${x.descricao} — ${x.status}${x.equipamento_id ? ` — Ponte ${x.equipamento_id}` : ''}
+                                </div>
+                            `).join('')}
                         </div>
                     `).join('')}
                 </details>`;
@@ -6830,6 +6851,7 @@ window.criarSolicitacaoFilaPonteRolante = async function() {
     const prioridade = document.getElementById('fila-ponte-prioridade')?.value || 'Normal';
     const duracaoStr = document.getElementById('fila-ponte-duracao')?.value;
     const duracaoEstimadaMin = duracaoStr ? parseInt(duracaoStr, 10) : null;
+    const acessorios = [...document.querySelectorAll('#fila-ponte-form-card .fila-ponte-acessorio-check:checked')].map(c => c.value);
     const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
 
     try {
@@ -6842,6 +6864,7 @@ window.criarSolicitacaoFilaPonteRolante = async function() {
                 descricao,
                 prioridade,
                 duracao_estimada_min: duracaoEstimadaMin,
+                acessorios_ponte: acessorios.join(', ') || null,
                 operador,
                 solicitante_matricula: OPERADOR_LOGADO ? OPERADOR_LOGADO.matricula : null,
             })
@@ -6854,6 +6877,7 @@ window.criarSolicitacaoFilaPonteRolante = async function() {
         document.getElementById('fila-ponte-descricao').value = '';
         document.getElementById('fila-ponte-duracao').value = '';
         document.getElementById('fila-ponte-prioridade').value = 'Normal';
+        document.querySelectorAll('#fila-ponte-form-card .fila-ponte-acessorio-check').forEach(c => c.checked = false);
         document.getElementById('fila-ponte-form-card').classList.add('hidden');
         await window.renderFilaPonteRolante();
     } catch (e) {
@@ -6874,7 +6898,8 @@ window.mudarStatusFilaPonteRolante = async function(id, novoStatus) {
     // atendimento não é. Isso abre um modal em vez de seguir direto;
     // o resto do fluxo (Concluir, etc.) continua sem modal.
     if (novoStatus === 'Em Andamento') {
-        window.abrirModalIniciarPonte(id);
+        const atividade = (await window.buscarAtividadesFilaPonteRolante()).find(a => a.id === id);
+        window.abrirModalIniciarPonte(id, atividade?.acessorios_ponte);
         return;
     }
     await window.enviarStatusFilaPonteRolante(id, novoStatus, {});
@@ -6902,9 +6927,14 @@ window.enviarStatusFilaPonteRolante = async function(id, novoStatus, extras) {
     }
 };
 
-window.abrirModalIniciarPonte = function(id) {
+window.abrirModalIniciarPonte = function(id, acessoriosSugeridos) {
     FILA_PONTE_ID_INICIANDO = id;
-    document.querySelectorAll('#modal-iniciar-ponte-acessorios .modal-iniciar-ponte-check').forEach(c => c.checked = false);
+    // 🆕 Pré-marca o que já foi sugerido na criação — o técnico só
+    // confirma ou ajusta, não precisa marcar tudo de novo do zero.
+    const sugeridos = (acessoriosSugeridos || '').split(',').map(s => s.trim()).filter(Boolean);
+    document.querySelectorAll('#modal-iniciar-ponte-acessorios .modal-iniciar-ponte-check').forEach(c => {
+        c.checked = sugeridos.includes(c.value);
+    });
     document.querySelector('input[name="modal-iniciar-ponte-radio"][value="221"]').checked = true;
     document.getElementById('modal-iniciar-ponte')?.classList.remove('hidden');
 };
@@ -6926,13 +6956,44 @@ window.confirmarIniciarPonte = async function() {
     });
 };
 
+// 🆕 Compartilhado entre moverFilaPonteRolante e mudarStatusFilaPonteRolante
+// (pré-preencher acessórios sugeridos ao abrir o modal de Iniciar).
+window.buscarAtividadesFilaPonteRolante = async function() {
+    const apiBase = await resolverApiBase();
+    const resp = await fetch(`${apiBase}/api/oficina/atividades?area=ponte-rolante`, { cache: 'no-store' });
+    return resp.ok ? await resp.json() : [];
+};
+
+window.excluirSolicitacaoFilaPonteRolante = async function(id) {
+    if (!verificarAcesso()) return;
+    const motivo = (prompt('Por que está excluindo essa solicitação da fila?') || '').trim();
+    if (!motivo) { alert('É preciso informar o motivo da exclusão.'); return; }
+    const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/atividade/excluir`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, operador, motivo })
+        });
+        if (!resp.ok) {
+            const erro = await resp.json().catch(() => ({}));
+            alert(erro.detail || 'Não foi possível excluir a solicitação.');
+            return;
+        }
+        await window.renderFilaPonteRolante();
+    } catch (e) {
+        console.error('⚠️ Erro ao excluir solicitação da fila da Ponte Rolante:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+};
+
 window.moverFilaPonteRolante = async function(id, direcao) {
     const lista = document.getElementById('fila-ponte-lista');
     if (!lista) return;
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/oficina/atividades?area=ponte-rolante`, { cache: 'no-store' });
-        const atividades = resp.ok ? await resp.json() : [];
+        const atividades = await window.buscarAtividadesFilaPonteRolante();
         const emAberto = atividades
             .filter(a => a.status === 'Pendente' || a.status === 'Em Andamento')
             .sort((a, b) => (a.ordem_fila ?? a.id) - (b.ordem_fila ?? b.id));
