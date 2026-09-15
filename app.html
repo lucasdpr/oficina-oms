@@ -1967,6 +1967,40 @@
                 </div>
             </section>
 
+            <!-- 🆕 Modal "Iniciar" da Fila da Ponte: qual ponte física (221/146)
+                 e quais acessórios de içamento vão ser usados. -->
+            <div id="modal-iniciar-ponte" class="modal-overlay hidden" style="z-index:10001;">
+                <div class="modal-content" style="max-width:420px; text-align:left;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
+                        <h2 style="color:var(--text-heading); margin:0;">🏗️ Iniciar Atendimento</h2>
+                        <button class="btn-close-emergency" onclick="window.fecharModalIniciarPonte()"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="input-group" style="margin-bottom:14px;">
+                        <label>Qual ponte vai atender?</label>
+                        <div style="display:flex; gap:16px; margin-top:6px;">
+                            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="radio" name="modal-iniciar-ponte-radio" value="221" checked> Ponte 221</label>
+                            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="radio" name="modal-iniciar-ponte-radio" value="146"> Ponte 146</label>
+                        </div>
+                    </div>
+                    <div class="input-group" style="margin-bottom:16px;">
+                        <label>Acessórios de içamento <span class="text-muted" style="font-weight:400;">(marque um ou mais)</span></label>
+                        <div id="modal-iniciar-ponte-acessorios" style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
+                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="modal-iniciar-ponte-check" value="Cabo 4 Pontas"> Cabo 4 Pontas</label>
+                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="modal-iniciar-ponte-check" value="Gig do Segmento"> Gig do Segmento</label>
+                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="modal-iniciar-ponte-check" value="Gig de Cabo de Aço"> Gig de Cabo de Aço</label>
+                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="modal-iniciar-ponte-check" value="Gig do Zero"> Gig do Zero</label>
+                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="modal-iniciar-ponte-check" value="Gig do Bender"> Gig do Bender</label>
+                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="modal-iniciar-ponte-check" value="Cabo de Aço da Área"> Cabo de Aço da Área</label>
+                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="modal-iniciar-ponte-check" value="Cinta"> Cinta</label>
+                        </div>
+                    </div>
+                    <div style="display:flex; justify-content:flex-end; gap:8px;">
+                        <button class="btn-outline-danger" onclick="window.fecharModalIniciarPonte()">Cancelar</button>
+                        <button class="btn-premium" onclick="window.confirmarIniciarPonte()"><i class="fas fa-play"></i> Iniciar</button>
+                    </div>
+                </div>
+            </div>
+
             <section id="aba-painel-logistica" class="tab-content">
                 <div class="glass-panel" style="border-top:4px solid #a855f7; padding:24px; margin-bottom:20px;">
                     <h2 style="color:#a855f7;"><i class="fas fa-truck"></i> Painel — Logística</h2>
