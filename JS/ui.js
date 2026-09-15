@@ -92,6 +92,13 @@ function renderReservas() {
                 for (let i = 1; i <= 5; i++) opcoes += `<option value="${i}">#${i}</option>`;
             } else if (t.includes('HORIZONTAL')) {
                 for (let i = 8; i <= 17; i++) opcoes += `<option value="${i}">#${i}</option>`;
+            } else if (t.includes('OSCILADOR')) {
+                // 🔧 CORREÇÃO ("posição do Oscilador fica vazia no Swap"):
+                // faltava esse caso aqui — Oscilador só tem 2 vagas fixas,
+                // Norte e Sul (ver cadastro de peça nova, mesma trava "N"/"S"
+                // em script.js). Sem isso, getOpcoesPosicao() não retornava
+                // nada e o select de posição do Swap ficava sem opções.
+                opcoes += `<option value="N">Norte</option><option value="S">Sul</option>`;
             }
         } else if (mcc === '2/3') {
             if (t.includes('CADEIRA SUPERIOR')) {

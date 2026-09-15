@@ -7707,6 +7707,12 @@ window.iniciarSwapAlocacao = async function(idReserva) {
         else if (tipoUpper.includes('STR-2') || tipoUpper.includes('STRAIGHTENER R2')) slotChassi = 'STR-2';
         else if (tipoUpper.includes('BOW')) slotChassi = `BOW-${posicao}`;
         else if (tipoUpper.includes('HORIZONTAL')) slotChassi = `HOR-${posicao}`;
+        // 🔧 CORREÇÃO ("Oscilador entra na posição Sul ou Norte, mas o
+        // select de posição do Swap fica vazio"): faltava esse caso —
+        // mesma trava "OSC-N"/"OSC-S" que o Cadastro já usa (ver
+        // "posicaoFixa = 'OSC-' + posicao" mais abaixo), só que o Swap
+        // nunca replicava.
+        else if (tipoUpper.includes('OSCILADOR')) slotChassi = `OSC-${posicao}`;
     } else if (mcc === '2/3') {
         if (tipoUpper.includes('MOLDE')) slotChassi = 'MOLDE';
         else if (tipoUpper.includes('ZERO') || tipoUpper.includes('SEGMENTO ZERO')) slotChassi = 'SEG-ZERO';
