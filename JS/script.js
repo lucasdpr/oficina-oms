@@ -6788,7 +6788,7 @@ window.renderFilaPonteRolante = async function() {
             lista.innerHTML = emAberto.map((x, i) => {
                 const cor = FILA_PONTE_CORES_PRIORIDADE[x.prioridade] || '#94a3b8';
                 return `
-                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--border);">
+                <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px 12px; padding:12px 0; border-bottom:1px solid var(--border);">
                     <div style="display:flex; align-items:center; gap:10px; min-width:0;">
                         ${podeAtender ? `
                         <div style="display:flex; flex-direction:column; gap:2px;">
@@ -6797,7 +6797,7 @@ window.renderFilaPonteRolante = async function() {
                         </div>` : ''}
                         <span style="font-weight:700; color:${cor}; font-size:12px; min-width:60px;">${x.prioridade || 'Normal'}</span>
                         <div style="min-width:0;">
-                            <div style="color:var(--text-body); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${x.descricao}</div>
+                            <div style="color:var(--text-body); word-break:break-word;">${x.descricao}</div>
                             <div class="text-muted" style="font-size:11px;">${x.solicitante_area ? `Solicitado por: ${AREAS_OFICINA.find(a => a.chave === x.solicitante_area)?.nome || x.solicitante_area} — ` : ''}${x.duracao_estimada_min ? `~${x.duracao_estimada_min}min — ` : ''}${x.equipamento_id ? `Ponte ${x.equipamento_id} — ` : ''}${x.acessorios_ponte ? `${x.acessorios_ponte} — ` : ''}${x.status}</div>
                         </div>
                     </div>
