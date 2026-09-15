@@ -1259,20 +1259,24 @@
                  dados que o app já carrega (sem endpoint novo). Ver
                  window.renderPainelSupervisor em script.js. -->
             <section id="aba-painel-supervisor" class="tab-content">
-                <div class="glass-panel" style="padding:24px; margin-bottom:20px;">
-                    <div class="flex-between" style="flex-wrap:wrap; gap:10px;">
-                        <div>
-                            <h2 style="color:#fbbf24; margin:0;"><i class="fas fa-binoculars"></i> Painel do Supervisor</h2>
-                            <p class="text-muted" style="font-size:13px; margin:6px 0 0;">
-                                O olhar de cima da oficina inteira: o que precisa de atenção agora, quem está fazendo o quê, como
-                                está o estoque de reserva e materiais, e se a tendência é melhorar ou piorar.
-                            </p>
+                <!-- 🆕 Cabeçalho executivo: fundo com textura sutil, selo
+                     "AO VIVO" pulsante e assinatura de quem tá olhando —
+                     essa aba é pro chefe, tinha que parecer isso, não mais
+                     um glass-panel igual às outras 40 telas do sistema. -->
+                <div class="sup-header">
+                    <div class="sup-header-glow"></div>
+                    <div class="sup-header-linha">
+                        <div class="sup-header-titulo-bloco">
+                            <div class="sup-header-selo"><span class="sup-pulso"></span> AO VIVO</div>
+                            <h2><i class="fas fa-binoculars"></i> Painel do Supervisor</h2>
+                            <p>O olhar de cima da oficina inteira — o que precisa de atenção agora, quem está fazendo o quê,
+                                como está o estoque e se a tendência é melhorar ou piorar.</p>
                         </div>
-                        <div style="text-align:right;">
+                        <div class="sup-header-acao">
                             <button class="btn-premium" onclick="window.renderPainelSupervisor()">
                                 <i class="fas fa-rotate"></i> Atualizar
                             </button>
-                            <div id="painel-supervisor-ultima-atualizacao" class="text-muted" style="font-size:11px; margin-top:6px;"></div>
+                            <div id="painel-supervisor-ultima-atualizacao" class="sup-header-timestamp"></div>
                         </div>
                     </div>
                 </div>
@@ -1283,7 +1287,8 @@
                 <!-- SEÇÃO 1 — Saúde da oficina agora (vermelho/laranja) -->
                 <div class="painel-sup-secao painel-sup-secao-saude">
                     <div class="painel-sup-secao-titulo">
-                        <i class="fas fa-heart-pulse"></i> Saúde da Oficina Agora
+                        <span class="sup-secao-icone"><i class="fas fa-heart-pulse"></i></span>
+                        <span class="sup-secao-texto">Saúde da Oficina Agora<small>o que precisa de ação agora mesmo</small></span>
                     </div>
                     <div class="painel-sup-secao-corpo" id="painel-supervisor-saude"></div>
                 </div>
@@ -1291,7 +1296,8 @@
                 <!-- SEÇÃO 2 — Produtividade da equipe (azul) -->
                 <div class="painel-sup-secao painel-sup-secao-produtividade">
                     <div class="painel-sup-secao-titulo">
-                        <i class="fas fa-user-hard-hat"></i> Produtividade da Equipe
+                        <span class="sup-secao-icone"><i class="fas fa-user-hard-hat"></i></span>
+                        <span class="sup-secao-texto">Produtividade da Equipe<small>quem está entregando, por área e por pessoa</small></span>
                     </div>
                     <div class="painel-sup-secao-corpo" id="painel-supervisor-produtividade"></div>
                 </div>
@@ -1299,7 +1305,8 @@
                 <!-- SEÇÃO 3 — Estoque e logística (verde/roxo) -->
                 <div class="painel-sup-secao painel-sup-secao-estoque">
                     <div class="painel-sup-secao-titulo">
-                        <i class="fas fa-boxes-stacked"></i> Estoque e Logística
+                        <span class="sup-secao-icone"><i class="fas fa-boxes-stacked"></i></span>
+                        <span class="sup-secao-texto">Estoque e Logística<small>reserva pronta, materiais e transporte</small></span>
                     </div>
                     <div class="painel-sup-secao-corpo" id="painel-supervisor-estoque"></div>
                 </div>
@@ -1307,7 +1314,8 @@
                 <!-- SEÇÃO 4 — Histórico e tendência (accent) -->
                 <div class="painel-sup-secao painel-sup-secao-tendencia">
                     <div class="painel-sup-secao-titulo">
-                        <i class="fas fa-chart-line"></i> Histórico e Tendência
+                        <span class="sup-secao-icone"><i class="fas fa-chart-line"></i></span>
+                        <span class="sup-secao-texto">Histórico e Tendência<small>tá melhorando ou piorando?</small></span>
                     </div>
                     <div class="painel-sup-secao-corpo" id="painel-supervisor-tendencia"></div>
                 </div>
