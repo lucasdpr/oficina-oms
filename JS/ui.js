@@ -30,6 +30,10 @@ function renderReservas() {
     // agrupamento por MCC/tipo que já existia.
     const reservas = BANCO_ATIVOS.filter(a => a.local === "Oficina / Reserva" || a.local === "Máquina / Reserva");
     if (reservas.length === 0) {
+        const contMaquinaVazio = document.getElementById("subaba-reserva-maquina-count");
+        const contOficinaVazio = document.getElementById("subaba-reserva-oficina-count");
+        if (contMaquinaVazio) contMaquinaVazio.textContent = "(0)";
+        if (contOficinaVazio) contOficinaVazio.textContent = "(0)";
         tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Nenhuma peça em estoque.</td></tr>`;
         return;
     }
@@ -264,39 +268,52 @@ function renderReservas() {
     return htmlFinal;
     }
 
-    // ==========================================
-    // DUAS SEÇÕES: "Reserva na Oficina" (depende de transporte da
-    // Logística) e "Reserva na Máquina" (pronta pra swap instantâneo).
-    // Cada uma reaproveita o mesmo agrupamento MCC/tipo/card de sempre
-    // — só muda o cabeçalho de seção acima, no mesmo estilo de faixa
-    // colorida já usado pros cabeçalhos de MCC.
-    // ==========================================
+    // 🆕 Sub-abas "Reserva na Máquina" / "Reserva na Oficina" (ver
+    // window.mudarSubAbaReserva mais abaixo e os botões em app.html) —
+    // antes as duas apareciam empilhadas na mesma tabela, confuso de
+    // ler. Agora só o grupo da sub-aba ativa (window.SUBABA_RESERVA)
+    // entra na tabela; os botões mostram a contagem de cada um.
     const reservasMaquina = reservas.filter(a => a.local === "Máquina / Reserva");
     const reservasOficina = reservas.filter(a => a.local === "Oficina / Reserva");
 
-    function cabecalhoSecao(titulo, icone, cor) {
-        return `
-            <tr style="background: ${cor}30; border-top: 4px solid ${cor};">
-                <td colspan="6" style="padding: 12px 16px; font-weight: 800; color: var(--text-heading); font-size: 16px;">
-                    <i class="${icone}"></i> ${titulo}
-                </td>
-            </tr>
-        `;
-    }
+    const contMaquina = document.getElementById("subaba-reserva-maquina-count");
+    const contOficina = document.getElementById("subaba-reserva-oficina-count");
+    if (contMaquina) contMaquina.textContent = `(${reservasMaquina.length})`;
+    if (contOficina) contOficina.textContent = `(${reservasOficina.length})`;
 
+    const subAba = window.SUBABA_RESERVA || 'maquina';
     let htmlFinal = "";
-    htmlFinal += cabecalhoSecao(`Reserva na Máquina (${reservasMaquina.length}) — pronta pra swap`, 'fas fa-industry', '#22c55e');
-    htmlFinal += reservasMaquina.length
-        ? montarSecaoPorLocal(reservasMaquina, true)
-        : `<tr><td colspan="6" class="text-center text-muted" style="padding:10px 16px;">Nenhuma peça pronta na máquina.</td></tr>`;
-
-    htmlFinal += cabecalhoSecao(`Reserva na Oficina (${reservasOficina.length}) — aguarda transporte`, 'fas fa-warehouse', '#f59e0b');
-    htmlFinal += reservasOficina.length
-        ? montarSecaoPorLocal(reservasOficina, false)
-        : `<tr><td colspan="6" class="text-center text-muted" style="padding:10px 16px;">Nenhuma peça na oficina.</td></tr>`;
+    if (subAba === 'maquina') {
+        htmlFinal = reservasMaquina.length
+            ? montarSecaoPorLocal(reservasMaquina, true)
+            : `<tr><td colspan="6" class="text-center text-muted" style="padding:20px 16px;">Nenhuma peça pronta na máquina.</td></tr>`;
+    } else {
+        htmlFinal = reservasOficina.length
+            ? montarSecaoPorLocal(reservasOficina, false)
+            : `<tr><td colspan="6" class="text-center text-muted" style="padding:20px 16px;">Nenhuma peça na oficina.</td></tr>`;
+    }
 
     tbody.innerHTML = htmlFinal;
 }
+
+// 🆕 Troca a sub-aba ativa da aba Reserva (Máquina/Oficina) e
+// re-renderiza. Guarda em window.SUBABA_RESERVA pra renderReservas()
+// saber qual grupo mostrar mesmo quando é chamada de outro lugar do
+// sistema (cadastro, swap, exclusão...) sem passar por aqui.
+window.mudarSubAbaReserva = function(aba) {
+    window.SUBABA_RESERVA = aba;
+    const btnMaquina = document.getElementById("subaba-reserva-maquina");
+    const btnOficina = document.getElementById("subaba-reserva-oficina");
+    if (btnMaquina) {
+        btnMaquina.style.borderBottomColor = aba === 'maquina' ? '#22c55e' : 'transparent';
+        btnMaquina.style.color = aba === 'maquina' ? '#22c55e' : 'var(--text-muted)';
+    }
+    if (btnOficina) {
+        btnOficina.style.borderBottomColor = aba === 'oficina' ? '#f59e0b' : 'transparent';
+        btnOficina.style.color = aba === 'oficina' ? '#f59e0b' : 'var(--text-muted)';
+    }
+    renderReservas();
+};
 
 // ==============================================================
 // 🔧 CORREÇÃO CRÍTICA: window.renderReservas nunca existia de verdade.

@@ -1041,7 +1041,19 @@
     </div>
 </div>
                     </div>
-                    <div class="table-responsive" style="margin-top:16px;">
+                    <!-- 🆕 Sub-abas Máquina/Oficina (antes eram duas seções empilhadas
+                         na mesma tabela — confuso de ler). Cada botão troca qual grupo
+                         de peças aparece na tabela abaixo; ver window.mudarSubAbaReserva
+                         em ui.js. -->
+                    <div style="display:flex; gap:8px; margin-top:16px; border-bottom:2px solid var(--border);">
+                        <button id="subaba-reserva-maquina" class="btn-subaba-reserva ativo" onclick="window.mudarSubAbaReserva('maquina')" style="padding:10px 20px; background:none; border:none; border-bottom:3px solid #22c55e; color:#22c55e; font-weight:700; cursor:pointer; font-size:14px;">
+                            <i class="fas fa-industry"></i> Reserva na Máquina <span id="subaba-reserva-maquina-count"></span>
+                        </button>
+                        <button id="subaba-reserva-oficina" class="btn-subaba-reserva" onclick="window.mudarSubAbaReserva('oficina')" style="padding:10px 20px; background:none; border:none; border-bottom:3px solid transparent; color:var(--text-muted); font-weight:700; cursor:pointer; font-size:14px;">
+                            <i class="fas fa-warehouse"></i> Reserva na Oficina <span id="subaba-reserva-oficina-count"></span>
+                        </button>
+                    </div>
+                    <div class="table-responsive" style="margin-top:0;">
                         <table class="premium-table">
                             <thead><tr><th>TAG</th><th>Família e Tipo</th><th>Status</th><th>Veio</th><th>Posição</th><th>Ações</th></tr></thead>
                             <tbody id="estoque-table-body"></tbody>
