@@ -5028,6 +5028,7 @@ window.renderPainelSupervisor = async function() {
     const sinoticoEl = document.getElementById('painel-supervisor-sinotico');
     const anomaliasEl = document.getElementById('painel-supervisor-anomalias');
     const historicoTrocasEl = document.getElementById('painel-supervisor-historico-trocas');
+    const previsoesEl = document.getElementById('painel-supervisor-previsoes');
     const qualidadeEl = document.getElementById('painel-supervisor-qualidade');
     const tendenciaEl = document.getElementById('painel-supervisor-tendencia');
     if (!heroEl) return; // aba nem existe nesta sessão (ex: HTML antigo em cache)
@@ -5737,6 +5738,82 @@ window.renderPainelSupervisor = async function() {
             if (trendEl) trendEl.innerHTML = `<div class="sup-vazio">Não foi possível carregar agora.</div>`;
             if (sparkEl) sparkEl.innerHTML = `<div class="sup-vazio">Não foi possível carregar agora.</div>`;
         }
+    }
+
+    // ---------------------------------------------------------
+    // SEÇÃO — PREVISÕES: só entram aqui projeções calculadas em cima de
+    // dado real que o sistema já tem, nunca um chute. Duas contas
+    // simples e honestas (ambas deixam claro na UI que são "no ritmo
+    // atual", não garantia):
+    //
+    // 1) Previsão de desgaste: cada peça instalada tem `ton` (acumulado)
+    //    e `dataEntradaVeio` (desde quando está lá) — dá pra calcular a
+    //    taxa diária (ton/dias) e projetar quantos dias faltam pra
+    //    bater a `meta`. Não fazemos previsão de QUEBRA (não existe
+    //    histórico de falha no sistema pra basear isso).
+    // 2) Tendência do backlog: atividades criadas x concluídas por dia
+    //    nos últimos 14 dias — mostra se a fila está crescendo ou
+    //    encolhendo, sem forçar um número de "vai zerar em X dias".
+    // ---------------------------------------------------------
+    if (previsoesEl) {
+        // --- 1) Previsão de desgaste ---
+        const instaladosComRitmo = ativos
+            .filter(a => a.status === 'Instalado' && a.meta > 0 && a.ton > 0 && a.dataEntradaVeio)
+            .map(a => {
+                const diasInstalada = Math.max(1, Math.floor((Date.now() - a.dataEntradaVeio) / (1000 * 60 * 60 * 24)));
+                const taxaDiaria = a.ton / diasInstalada;
+                const restante = a.meta - a.ton;
+                const diasParaMeta = taxaDiaria > 0 ? Math.round(restante / taxaDiaria) : null;
+                return { ...a, diasParaMeta };
+            })
+            .filter(a => a.diasParaMeta !== null && a.diasParaMeta >= 0)
+            .sort((a, b) => a.diasParaMeta - b.diasParaMeta)
+            .slice(0, 6);
+
+        const corPrevisao = (d) => d <= 7 ? '#ef4444' : (d <= 20 ? '#eab308' : '#22c55e');
+
+        // --- 2) Tendência do backlog (criadas x concluídas, 14 dias) ---
+        const dias14Backlog = [];
+        for (let i = 13; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); dias14Backlog.push(d.toISOString().slice(0, 10)); }
+        const meiaJanela = dias14Backlog.slice(0, 7);
+        const janelaRecente = dias14Backlog.slice(7);
+        const contarNoIntervalo = (campoData, dias) => atividades.filter(x => x[campoData] && dias.includes(x[campoData].slice(0, 10))).length;
+        const criadasAntes = contarNoIntervalo('criado_em', meiaJanela);
+        const criadasDepois = contarNoIntervalo('criado_em', janelaRecente);
+        const concluidasAntes = contarNoIntervalo('concluido_em', meiaJanela);
+        const concluidasDepois = contarNoIntervalo('concluido_em', janelaRecente);
+        const saldoAntes = criadasAntes - concluidasAntes;
+        const saldoDepois = criadasDepois - concluidasDepois;
+        const temDadoBacklog = (criadasAntes + criadasDepois + concluidasAntes + concluidasDepois) > 0;
+        const pioraOuMelhora = saldoDepois > saldoAntes ? 'piorando' : (saldoDepois < saldoAntes ? 'melhorando' : 'estável');
+        const corBacklog = pioraOuMelhora === 'piorando' ? '#ef4444' : (pioraOuMelhora === 'melhorando' ? '#22c55e' : '#eab308');
+
+        previsoesEl.innerHTML = `
+            <div class="sup-card" style="--sup-cor:#0ea5e9;">
+                <div class="sup-card-titulo"><span><i class="fas fa-gauge-high"></i> Próximas a Bater a Meta de Desgaste</span></div>
+                ${instaladosComRitmo.length
+                    ? instaladosComRitmo.map(a => `
+                        <div class="sup-lista-linha">
+                            <span style="color:var(--text-body);">${a.id} <span class="text-muted">(${a.tipo || '—'})</span></span>
+                            <span style="font-weight:700; color:${corPrevisao(a.diasParaMeta)};">~${a.diasParaMeta}d</span>
+                        </div>
+                    `).join('') + `<div style="font-size:10.5px; color:var(--text-muted); margin-top:10px;">Projeção no ritmo médio de uso desde a instalação — não é garantia, só um alerta antecipado.</div>`
+                    : `<div class="sup-vazio">Sem dado suficiente pra projetar (precisa de meta, toneladas e data de entrada preenchidas).</div>`}
+            </div>
+            <div class="sup-card" style="--sup-cor:${corBacklog};">
+                <div class="sup-card-titulo"><span><i class="fas fa-scale-balanced"></i> Tendência do Backlog de Atividades</span></div>
+                ${temDadoBacklog ? `
+                    <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:10px;">
+                        <div style="font-size:1.4rem; font-weight:800; color:${corBacklog};">${pioraOuMelhora === 'piorando' ? '📈' : (pioraOuMelhora === 'melhorando' ? '📉' : '➖')} ${pioraOuMelhora}</div>
+                    </div>
+                    ${painelSupBarraHtml('Criadas (7d anteriores)', criadasAntes, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#94a3b8')}
+                    ${painelSupBarraHtml('Concluídas (7d anteriores)', concluidasAntes, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#64748b')}
+                    ${painelSupBarraHtml('Criadas (últimos 7d)', criadasDepois, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#eab308')}
+                    ${painelSupBarraHtml('Concluídas (últimos 7d)', concluidasDepois, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#22c55e')}
+                    <div style="font-size:10.5px; color:var(--text-muted); margin-top:6px;">Compara os 7 dias mais recentes com os 7 anteriores — mostra direção, não um prazo exato.</div>
+                ` : `<div class="sup-vazio">Sem dado suficiente nos últimos 14 dias pra calcular tendência.</div>`}
+            </div>
+        `;
     }
 
     const tsEl = document.getElementById('painel-supervisor-ultima-atualizacao');
