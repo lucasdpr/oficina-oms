@@ -1133,6 +1133,29 @@ function ativarCentralNotificacoesSeAutorizado() {
 }
 window.ativarCentralNotificacoesSeAutorizado = ativarCentralNotificacoesSeAutorizado;
 
+// 🆕 Painel do Supervisor — visão executiva de cima da oficina inteira.
+// Mesma regra de acesso da Central de Notificações (ADM de sistema, ou
+// técnico/supervisor com área cadastrada — ver operadorPodeVerNotificacoes):
+// começa escondido no HTML (classe "hidden"), esse JS decide quem vê.
+function ativarPainelSupervisorSeAutorizado() {
+    const link = document.getElementById("nav-painel-supervisor");
+    if (!link) return;
+
+    const autorizado = operadorPodeVerNotificacoes();
+
+    if (autorizado) {
+        link.classList.remove("hidden");
+    } else {
+        link.classList.add("hidden");
+        const aba = document.getElementById("aba-painel-supervisor");
+        if (aba && aba.classList.contains("active") && typeof window.abrirAba === 'function') {
+            const navPainel = document.getElementById("nav-painel");
+            if (navPainel) window.abrirAba({ preventDefault(){}, currentTarget: navPainel }, "aba-painel");
+        }
+    }
+}
+window.ativarPainelSupervisorSeAutorizado = ativarPainelSupervisorSeAutorizado;
+
 function ativarPainelDevSeAutorizado() {
     const link = document.getElementById("nav-dev-teste");
     const divisor = document.getElementById("nav-divider-dev");
@@ -1233,6 +1256,7 @@ function atualizarInterfaceUsuario() {
         ativarPainelDevSeAutorizado();
         ativarAuditoriaSeAutorizado();
         ativarCentralNotificacoesSeAutorizado();
+        ativarPainelSupervisorSeAutorizado();
         atualizarBotaoAtivarNotificacoes();
         return;
     }
@@ -1252,6 +1276,7 @@ function atualizarInterfaceUsuario() {
         ativarPainelDevSeAutorizado();
         ativarAuditoriaSeAutorizado();
         ativarCentralNotificacoesSeAutorizado();
+        ativarPainelSupervisorSeAutorizado();
         atualizarBotaoAtivarNotificacoes();
         return;
     }
@@ -1277,6 +1302,7 @@ function atualizarInterfaceUsuario() {
     ativarPainelDevSeAutorizado();
     ativarAuditoriaSeAutorizado();
     ativarCentralNotificacoesSeAutorizado();
+    ativarPainelSupervisorSeAutorizado();
     atualizarBotaoAtivarNotificacoes();
     aplicarRestricaoNavTecnico();
 }
@@ -3424,7 +3450,7 @@ window.carregarAtividadesPainelTecnico = async function() {
                 <div class="tecnico-item-linha" onclick="window.irParaAreaTecnico()" style="${futura ? 'opacity:0.8;' : ''}">
                     <div>
                         ${x.equipamento_id ? `<span class="font-code" style="font-weight:700; color:var(--text-heading);">${x.equipamento_id}</span> · ` : ''}
-                        <span style="font-size:13px; color:var(--text-body);">${x.descricao}</span>
+                        <span style="font-size:13px; color:var(--text-body);">${limparMarcadorTecnicoDescricao(x.descricao)}</span>
                         ${futura ? `<span style="font-size:10px; background:var(--text-accent, #3b82f6); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700; margin-left:6px;">PROGRAMADA</span>` : ''}
                         <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
                             ${futura
@@ -4956,6 +4982,355 @@ window.renderPainelExecutivoAdm = async function(container) {
     if (typeof window.renderizarListaAvisosAdm === 'function') window.renderizarListaAvisosAdm();
 };
 
+// ==========================================================
+// 🆕 PAINEL DO SUPERVISOR — visão executiva de cima da oficina inteira
+// ==========================================================
+// Diferente do Painel Executivo do ADM (acima, dentro da Central de
+// Áreas > ADM), esta é uma aba própria, direto no menu, que junta as 4
+// coisas que o supervisor precisa ver de uma vez: saúde da oficina
+// agora, produtividade da equipe, estoque/logística e tendência.
+// Tudo montado a partir de dados que o app já carrega no cliente
+// (BANCO_ATIVOS, OFICINA_ATIVIDADES_CACHE, BANCO_MATERIAIS) — só o
+// contador de OS abertas/fechadas e o sparkline de OS por dia batem a
+// API de Ordens de Serviço, que já é consumida em outro lugar do app.
+const PAINEL_SUP_LIMITE_ESTOQUE_BAIXO = 10; // mesmo corte usado em renderMateriais()
+
+function painelSupBarraHtml(nome, valor, max, cor) {
+    const pct = max > 0 ? Math.max(4, Math.round((valor / max) * 100)) : 0;
+    return `
+        <div class="sup-barra-linha">
+            <span class="sup-barra-nome" title="${nome}">${nome}</span>
+            <span class="sup-barra-trilho"><span class="sup-barra-preenchimento" style="width:${valor > 0 ? pct : 0}%; background:${cor};"></span></span>
+            <span class="sup-barra-valor">${valor}</span>
+        </div>
+    `;
+}
+
+function painelSupSparklineHtml(valores, cor) {
+    const max = Math.max(1, ...valores.map(v => v.valor));
+    return `
+        <div class="sup-sparkline">
+            ${valores.map(v => `<div class="sup-sparkline-bar" style="height:${Math.max(6, Math.round((v.valor / max) * 100))}%; --sup-cor:${cor};" title="${v.label}: ${v.valor}"></div>`).join('')}
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-top:4px; font-size:10px; color:var(--text-muted);">
+            <span>${valores[0] ? valores[0].label : ''}</span>
+            <span>${valores[valores.length - 1] ? valores[valores.length - 1].label : ''}</span>
+        </div>
+    `;
+}
+
+window.renderPainelSupervisor = async function() {
+    const heroEl = document.getElementById('painel-supervisor-hero');
+    const saudeEl = document.getElementById('painel-supervisor-saude');
+    const produtividadeEl = document.getElementById('painel-supervisor-produtividade');
+    const estoqueEl = document.getElementById('painel-supervisor-estoque');
+    const tendenciaEl = document.getElementById('painel-supervisor-tendencia');
+    if (!heroEl) return; // aba nem existe nesta sessão (ex: HTML antigo em cache)
+
+    const ativos = Array.isArray(window.BANCO_ATIVOS) ? window.BANCO_ATIVOS : (typeof BANCO_ATIVOS !== 'undefined' ? BANCO_ATIVOS : []);
+    const atividades = Array.isArray(window.OFICINA_ATIVIDADES_CACHE) ? window.OFICINA_ATIVIDADES_CACHE : (typeof OFICINA_ATIVIDADES_CACHE !== 'undefined' ? OFICINA_ATIVIDADES_CACHE : []);
+    const materiais = Array.isArray(window.BANCO_MATERIAIS) ? window.BANCO_MATERIAIS : (typeof BANCO_MATERIAIS !== 'undefined' ? BANCO_MATERIAIS : []);
+
+    // ---------------------------------------------------------
+    // SAÚDE DA OFICINA AGORA
+    // ---------------------------------------------------------
+    const emReparo = ativos.filter(a => a.local === 'Oficina / Reparo');
+    const reservaOficina = ativos.filter(a => a.local === 'Oficina / Reserva');
+    const reservaMaquina = ativos.filter(a => a.local === 'Máquina / Reserva');
+    const criticos = ativos.filter(a => {
+        const pct = a.meta > 0 ? (a.ton / a.meta) * 100 : 0;
+        return pct >= 80 && !(a.local || '').includes('Oficina');
+    });
+
+    const atividadesAtivas = atividades.filter(x => !atividadeAindaNaoComecou(x) && x.status !== 'Concluído' && x.status !== 'Recusado');
+    const atividadesAtrasadas = atividadesAtivas.filter(x => atividadeEstaAtrasada(x));
+    const atividadesPendentes = atividadesAtivas.filter(x => x.status === 'Pendente');
+
+    // Ranking de peças em reparo há mais tempo (dias) — o que está
+    // "empacado" na bancada, não só o total.
+    const reparoMaisAntigos = [...emReparo].sort((a, b) => (b.dias || 0) - (a.dias || 0)).slice(0, 5);
+
+    // Ranking de áreas por nº de atividades atrasadas — onde apertar.
+    const atrasadasPorArea = {};
+    atividadesAtrasadas.forEach(x => {
+        const chave = x.area || x.solicitante_area || '—';
+        atrasadasPorArea[chave] = (atrasadasPorArea[chave] || 0) + 1;
+    });
+    const rankingAtrasoAreas = Object.entries(atrasadasPorArea).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    const maxAtrasoArea = Math.max(1, ...rankingAtrasoAreas.map(([, v]) => v));
+
+    // ---------------------------------------------------------
+    // PRODUTIVIDADE DA EQUIPE
+    // ---------------------------------------------------------
+    const dataLimite7dias = (() => { const d = new Date(); d.setDate(d.getDate() - 7); return d.toISOString().slice(0, 10); })();
+    const concluidas7dias = atividades.filter(x => x.status === 'Concluído' && x.concluido_em && x.concluido_em.slice(0, 10) >= dataLimite7dias);
+
+    // Produtividade por área (só as áreas de tipo "oficina", que têm
+    // atividades no mesmo modelo de dados) — pendentes/em andamento x
+    // concluídas(7d) x atrasadas.
+    const areasOficinaCfg = (typeof AREAS_OFICINA !== 'undefined' ? AREAS_OFICINA : []).filter(a => a.tipo === 'oficina' || a.tipo === 'administrativo');
+    const produtividadePorArea = areasOficinaCfg.map(cfg => {
+        const doArea = atividades.filter(x => (x.area === cfg.chave || x.solicitante_area === cfg.chave));
+        const ativasArea = doArea.filter(x => !atividadeAindaNaoComecou(x) && x.status !== 'Concluído' && x.status !== 'Recusado');
+        return {
+            chave: cfg.chave,
+            nome: cfg.nome,
+            cor: cfg.cor || 'var(--text-accent)',
+            emAberto: ativasArea.length,
+            atrasadas: ativasArea.filter(x => atividadeEstaAtrasada(x)).length,
+            concluidas7d: doArea.filter(x => x.status === 'Concluído' && x.concluido_em && x.concluido_em.slice(0, 10) >= dataLimite7dias).length,
+        };
+    }).filter(a => a.emAberto > 0 || a.concluidas7d > 0)
+      .sort((a, b) => (b.emAberto + b.concluidas7d) - (a.emAberto + a.concluidas7d))
+      .slice(0, 8);
+    const maxProdutividadeArea = Math.max(1, ...produtividadePorArea.map(a => a.emAberto));
+
+    // Ranking de técnicos por atividades concluídas (7 dias) — usa
+    // executado_por, preenchido quando alguém clica "Iniciar"/"Concluir".
+    const porTecnico = {};
+    concluidas7dias.forEach(x => {
+        const nome = x.executado_por || x.responsavel;
+        if (!nome) return;
+        porTecnico[nome] = (porTecnico[nome] || 0) + 1;
+    });
+    const rankingTecnicos = Object.entries(porTecnico).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    const maxTecnico = Math.max(1, ...rankingTecnicos.map(([, v]) => v));
+
+    // Tempo médio de reparo (dias) — só entre as peças em reparo agora
+    // (não temos histórico de "quanto tempo levou" pra peças já
+    // devolvidas, então isso é honestamente "tempo médio ATÉ AGORA das
+    // peças que estão na bancada", não um tempo médio de ciclo fechado).
+    const diasValidos = emReparo.map(a => Number(a.dias) || 0).filter(d => d > 0);
+    const tempoMedioReparo = diasValidos.length ? Math.round(diasValidos.reduce((s, d) => s + d, 0) / diasValidos.length) : 0;
+
+    // ---------------------------------------------------------
+    // ESTOQUE E LOGÍSTICA
+    // ---------------------------------------------------------
+    const materiaisZerados = materiais.filter(m => Number(m.qtd) === 0);
+    const materiaisBaixo = materiais.filter(m => Number(m.qtd) > 0 && Number(m.qtd) <= PAINEL_SUP_LIMITE_ESTOQUE_BAIXO);
+    const transportePendente = atividades.filter(x =>
+        (x.area === 'logistica' || x.solicitante_area === 'logistica') &&
+        x.status !== 'Concluído' && x.status !== 'Recusado' && !atividadeAindaNaoComecou(x)
+    );
+
+    // Reserva Oficina x Máquina agrupada por tipo — o conceito separado
+    // nos PRs #140-142 (reserva pronta na oficina vs reserva já alocada
+    // fisicamente na máquina/pátio).
+    const agruparPorTipo = (lista) => {
+        const mapa = {};
+        lista.forEach(a => { const t = a.tipo || 'Outro'; mapa[t] = (mapa[t] || 0) + 1; });
+        return Object.entries(mapa).sort((a, b) => b[1] - a[1]);
+    };
+    const reservaOficinaPorTipo = agruparPorTipo(reservaOficina).slice(0, 6);
+    const reservaMaquinaPorTipo = agruparPorTipo(reservaMaquina).slice(0, 6);
+    const maxReserva = Math.max(1, ...reservaOficinaPorTipo.map(([, v]) => v), ...reservaMaquinaPorTipo.map(([, v]) => v));
+
+    // ---------------------------------------------------------
+    // HERO — os 4 números mais críticos, bem grandes
+    // ---------------------------------------------------------
+    heroEl.innerHTML = `
+        <div class="painel-sup-hero-card" style="--sup-cor:#ef4444;" onclick="window.abrirAba(null,'aba-oficina')">
+            <div class="sup-hero-label"><i class="fas fa-triangle-exclamation"></i> Atividades Atrasadas</div>
+            <div class="sup-hero-num">${atividadesAtrasadas.length}</div>
+            <div class="sup-hero-sub">em ${new Set(atividadesAtrasadas.map(x => x.area || x.solicitante_area)).size} área(s) — clique para ir à Central de Áreas</div>
+        </div>
+        <div class="painel-sup-hero-card" style="--sup-cor:#f59e0b;" onclick="window.abrirAba(null,'aba-reparos')">
+            <div class="sup-hero-label"><i class="fas fa-wrench"></i> Peças em Reparo</div>
+            <div class="sup-hero-num">${emReparo.length}</div>
+            <div class="sup-hero-sub">tempo médio na bancada: ${tempoMedioReparo} dia(s)</div>
+        </div>
+        <div class="painel-sup-hero-card" style="--sup-cor:#eab308;" onclick="window.abrirAba(null,'aba-fluxo')">
+            <div class="sup-hero-label"><i class="fas fa-fire"></i> Equipamentos Críticos</div>
+            <div class="sup-hero-num">${criticos.length}</div>
+            <div class="sup-hero-sub">desgaste ≥ 80% já instalados no veio</div>
+        </div>
+        <div class="painel-sup-hero-card" style="--sup-cor:#22c55e;" onclick="window.abrirAba(null,'aba-reservas')">
+            <div class="sup-hero-label"><i class="fas fa-boxes"></i> Peças Reserva</div>
+            <div class="sup-hero-num">${reservaOficina.length + reservaMaquina.length}</div>
+            <div class="sup-hero-sub">${reservaOficina.length} na oficina · ${reservaMaquina.length} na máquina</div>
+        </div>
+    `;
+    document.querySelectorAll('#painel-supervisor-hero .painel-sup-hero-card').forEach(card => {
+        // onclick já resolve a navegação (abrirAba aceita event=null); só
+        // deixa claro visualmente que é clicável.
+        card.style.cursor = 'pointer';
+    });
+
+    // ---------------------------------------------------------
+    // SEÇÃO 1 — SAÚDE
+    // ---------------------------------------------------------
+    if (saudeEl) {
+        saudeEl.innerHTML = `
+            <div class="sup-card" style="--sup-cor:#ef4444;">
+                <div class="sup-card-titulo"><span><i class="fas fa-fire"></i> Atraso por Área</span></div>
+                ${rankingAtrasoAreas.length
+                    ? rankingAtrasoAreas.map(([nome, v]) => painelSupBarraHtml(nome, v, maxAtrasoArea, '#ef4444')).join('')
+                    : `<div class="sup-vazio">Nenhuma atividade atrasada agora 👍</div>`}
+            </div>
+            <div class="sup-card" style="--sup-cor:#f59e0b;">
+                <div class="sup-card-titulo"><span><i class="fas fa-hourglass-half"></i> Peças Há Mais Tempo em Reparo</span></div>
+                ${reparoMaisAntigos.length
+                    ? reparoMaisAntigos.map(a => `
+                        <div class="sup-lista-linha">
+                            <span style="color:var(--text-body);">${a.id} <span class="text-muted">(${a.tipo || '—'})</span></span>
+                            <span style="font-weight:700; color:${(a.dias || 0) > 15 ? '#ef4444' : '#f59e0b'};">${a.dias || 0}d</span>
+                        </div>
+                    `).join('')
+                    : `<div class="sup-vazio">Nenhuma peça em reparo no momento.</div>`}
+            </div>
+            <div class="sup-card" style="--sup-cor:#eab308;">
+                <div class="sup-card-titulo"><span><i class="fas fa-clipboard-list"></i> Pendentes vs Críticos Agora</span></div>
+                ${painelSupBarraHtml('Pendentes (não iniciadas)', atividadesPendentes.length, Math.max(atividadesPendentes.length, atividadesAtrasadas.length, 1), '#eab308')}
+                ${painelSupBarraHtml('Atrasadas', atividadesAtrasadas.length, Math.max(atividadesPendentes.length, atividadesAtrasadas.length, 1), '#ef4444')}
+                ${painelSupBarraHtml('Equip. críticos (desgaste ≥80%)', criticos.length, Math.max(criticos.length, 1), '#f97316')}
+            </div>
+        `;
+    }
+
+    // ---------------------------------------------------------
+    // SEÇÃO 2 — PRODUTIVIDADE
+    // ---------------------------------------------------------
+    if (produtividadeEl) {
+        produtividadeEl.innerHTML = `
+            <div class="sup-card" style="--sup-cor:#3b82f6;">
+                <div class="sup-card-titulo"><span><i class="fas fa-industry"></i> Em Aberto por Área</span></div>
+                ${produtividadePorArea.length
+                    ? produtividadePorArea.map(a => painelSupBarraHtml(a.nome, a.emAberto, maxProdutividadeArea, a.cor)).join('')
+                    : `<div class="sup-vazio">Sem atividades em aberto registradas.</div>`}
+            </div>
+            <div class="sup-card" style="--sup-cor:#22c55e;">
+                <div class="sup-card-titulo"><span><i class="fas fa-medal"></i> Top Técnicos (concluídas, 7 dias)</span></div>
+                ${rankingTecnicos.length
+                    ? rankingTecnicos.map(([nome, v]) => painelSupBarraHtml(nome, v, maxTecnico, '#22c55e')).join('')
+                    : `<div class="sup-vazio">Ainda sem dado suficiente — atividades concluídas nos últimos 7 dias não têm responsável/executor registrado.</div>`}
+            </div>
+            <div class="sup-card" style="--sup-cor:#38bdf8;">
+                <div class="sup-card-titulo"><span><i class="fas fa-gauge-high"></i> Resumo Geral (7 dias)</span></div>
+                ${painelSupBarraHtml('Concluídas', concluidas7dias.length, Math.max(concluidas7dias.length, atividadesPendentes.length, 1), '#22c55e')}
+                ${painelSupBarraHtml('Pendentes agora', atividadesPendentes.length, Math.max(concluidas7dias.length, atividadesPendentes.length, 1), '#eab308')}
+                ${painelSupBarraHtml('Atrasadas agora', atividadesAtrasadas.length, Math.max(concluidas7dias.length, atividadesPendentes.length, 1), '#ef4444')}
+            </div>
+        `;
+    }
+
+    // ---------------------------------------------------------
+    // SEÇÃO 3 — ESTOQUE E LOGÍSTICA
+    // ---------------------------------------------------------
+    if (estoqueEl) {
+        estoqueEl.innerHTML = `
+            <div class="sup-card" style="--sup-cor:#22c55e;">
+                <div class="sup-card-titulo"><span><i class="fas fa-warehouse"></i> Reserva na Oficina</span></div>
+                ${reservaOficinaPorTipo.length
+                    ? reservaOficinaPorTipo.map(([nome, v]) => painelSupBarraHtml(nome, v, maxReserva, '#22c55e')).join('')
+                    : `<div class="sup-vazio">Nenhuma peça reserva na oficina agora.</div>`}
+            </div>
+            <div class="sup-card" style="--sup-cor:#a855f7;">
+                <div class="sup-card-titulo"><span><i class="fas fa-truck-ramp-box"></i> Reserva na Máquina</span></div>
+                ${reservaMaquinaPorTipo.length
+                    ? reservaMaquinaPorTipo.map(([nome, v]) => painelSupBarraHtml(nome, v, maxReserva, '#a855f7')).join('')
+                    : `<div class="sup-vazio">Nenhuma peça reserva alocada em máquina agora.</div>`}
+            </div>
+            <div class="sup-card" style="--sup-cor:#ef4444;">
+                <div class="sup-card-titulo">
+                    <span><i class="fas fa-boxes-packing"></i> Materiais em Falta</span>
+                    <button class="btn-xs-primary" onclick="window.abrirAba(null,'aba-almoxarifado')" style="color:var(--text-accent); background:rgba(59,130,246,0.1);">Ver Almoxarifado <i class="fas fa-arrow-right"></i></button>
+                </div>
+                ${painelSupBarraHtml('Zerados', materiaisZerados.length, Math.max(materiaisZerados.length, materiaisBaixo.length, 1), '#ef4444')}
+                ${painelSupBarraHtml(`Saldo baixo (≤${PAINEL_SUP_LIMITE_ESTOQUE_BAIXO})`, materiaisBaixo.length, Math.max(materiaisZerados.length, materiaisBaixo.length, 1), '#f59e0b')}
+                ${materiaisZerados.length
+                    ? materiaisZerados.slice(0, 4).map(m => `<div class="sup-lista-linha"><span class="text-muted" style="font-size:11.5px;">${m.descricao}</span><span style="color:#ef4444; font-weight:700;">0</span></div>`).join('')
+                    : ''}
+            </div>
+            <div class="sup-card" style="--sup-cor:#eab308;">
+                <div class="sup-card-titulo"><span><i class="fas fa-truck"></i> Transporte Pendente (Logística)</span></div>
+                ${transportePendente.length
+                    ? transportePendente.slice(0, 6).map(x => `
+                        <div class="sup-lista-linha">
+                            <span style="color:var(--text-body);">${x.descricao || 'Sem descrição'}</span>
+                            <span style="font-weight:700; color:${atividadeEstaAtrasada(x) ? '#ef4444' : '#eab308'};">${(x.status || '').toUpperCase()}</span>
+                        </div>
+                    `).join('')
+                    : `<div class="sup-vazio">Nenhum transporte pendente na Logística agora.</div>`}
+            </div>
+        `;
+    }
+
+    // ---------------------------------------------------------
+    // SEÇÃO 4 — HISTÓRICO E TENDÊNCIA
+    // ---------------------------------------------------------
+    if (tendenciaEl) {
+        // Concluídas por dia (últimos 14 dias) — derivado de
+        // OFICINA_ATIVIDADES_CACHE (concluido_em), sem endpoint novo.
+        const dias14 = [];
+        for (let i = 13; i >= 0; i--) {
+            const d = new Date(); d.setDate(d.getDate() - i);
+            dias14.push(d.toISOString().slice(0, 10));
+        }
+        const concluidasPorDia = dias14.map(dia => ({
+            label: dia.slice(8, 10) + '/' + dia.slice(5, 7),
+            valor: atividades.filter(x => x.status === 'Concluído' && x.concluido_em && x.concluido_em.slice(0, 10) === dia).length
+        }));
+        const totalConcluidas14 = concluidasPorDia.reduce((s, v) => s + v.valor, 0);
+
+        tendenciaEl.innerHTML = `
+            <div class="sup-card" style="--sup-cor:#f59e0b;">
+                <div class="sup-card-titulo"><span><i class="fas fa-chart-column"></i> Atividades Concluídas por Dia (14 dias)</span></div>
+                ${totalConcluidas14 > 0
+                    ? painelSupSparklineHtml(concluidasPorDia, '#f59e0b')
+                    : `<div class="sup-vazio">Ainda sem dado suficiente de conclusões nos últimos 14 dias.</div>`}
+            </div>
+            <div class="sup-card" style="--sup-cor:#3b82f6;">
+                <div class="sup-card-titulo"><span><i class="fas fa-file-invoice"></i> Ordens de Serviço — Abertas x Fechadas</span></div>
+                <div id="painel-sup-os-trend"><div class="sup-vazio">Carregando…</div></div>
+            </div>
+            <div class="sup-card" style="--sup-cor:#a855f7;">
+                <div class="sup-card-titulo"><span><i class="fas fa-file-invoice"></i> OS Registradas por Dia (14 dias)</span></div>
+                <div id="painel-sup-os-sparkline"><div class="sup-vazio">Carregando…</div></div>
+            </div>
+        `;
+
+        // Busca as OS já é a mesma rota usada em outras telas — sem
+        // endpoint novo, só reaproveitando o que o app já consome.
+        try {
+            const apiBase = await resolverApiBase();
+            const resp = await fetch(`${apiBase}/api/ordens_servico?limite=500`, { cache: 'no-store' });
+            const listaOs = resp.ok ? await resp.json() : [];
+            if (Array.isArray(listaOs)) {
+                const abertas = listaOs.filter(o => o.status !== 'Concluído').length;
+                const fechadas = listaOs.filter(o => o.status === 'Concluído').length;
+                const maxOs = Math.max(abertas, fechadas, 1);
+                const trendEl = document.getElementById('painel-sup-os-trend');
+                if (trendEl) {
+                    trendEl.innerHTML = (abertas + fechadas) > 0
+                        ? painelSupBarraHtml('Abertas', abertas, maxOs, '#ef4444') + painelSupBarraHtml('Fechadas', fechadas, maxOs, '#22c55e')
+                        : `<div class="sup-vazio">Nenhuma OS registrada ainda.</div>`;
+                }
+
+                const osPorDia = dias14.map(dia => ({
+                    label: dia.slice(8, 10) + '/' + dia.slice(5, 7),
+                    valor: listaOs.filter(o => (o.criado_em || '').slice(0, 10) === dia).length
+                }));
+                const totalOs14 = osPorDia.reduce((s, v) => s + v.valor, 0);
+                const sparkEl = document.getElementById('painel-sup-os-sparkline');
+                if (sparkEl) {
+                    sparkEl.innerHTML = totalOs14 > 0
+                        ? painelSupSparklineHtml(osPorDia, '#a855f7')
+                        : `<div class="sup-vazio">Ainda sem dado suficiente de OS registradas nos últimos 14 dias.</div>`;
+                }
+            }
+        } catch (e) {
+            console.error('⚠️ Não consegui carregar a tendência de OS no Painel do Supervisor:', e);
+            const trendEl = document.getElementById('painel-sup-os-trend');
+            const sparkEl = document.getElementById('painel-sup-os-sparkline');
+            if (trendEl) trendEl.innerHTML = `<div class="sup-vazio">Não foi possível carregar agora.</div>`;
+            if (sparkEl) sparkEl.innerHTML = `<div class="sup-vazio">Não foi possível carregar agora.</div>`;
+        }
+    }
+
+    const tsEl = document.getElementById('painel-supervisor-ultima-atualizacao');
+    if (tsEl) tsEl.textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+};
+
 // --------------------------------------------------------------
 // 🆕 AVISOS DO SISTEMA — gestão (ADM) + leitura obrigatória (todo mundo)
 // --------------------------------------------------------------
@@ -5575,7 +5950,7 @@ function renderizarAtividadesArea() {
                                 : `<span class="ind-card-tag bg-tag">Tarefa avulsa</span>`}
                             <span style="font-size:10px; background:var(--text-accent, #3b82f6); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">COMEÇA ${inicioFormatado}</span>
                         </div>
-                        <div style="font-size:13px; color:var(--text-body);">${x.descricao}</div>
+                        <div style="font-size:13px; color:var(--text-body);">${limparMarcadorTecnicoDescricao(x.descricao)}</div>
                         <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">${x.responsavel ? `${x.responsavel} · ` : ''}${x.criado_em || ''}</div>
                     </div>
                     <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
@@ -5664,7 +6039,7 @@ function renderizarAtividadesArea() {
                     ${atrasada ? `<span style="font-size:10px; background:var(--danger); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">ATRASADA</span>` : ''}
                     ${x.reaberturas_count > 0 ? `<span style="font-size:10px; background:#f97316; color:#fff; padding:2px 6px; border-radius:4px; font-weight:700; cursor:pointer;" onclick="window.verHistoricoReaberturasAtividade(${x.id})" title="Ver histórico de reaberturas"><i class="fas fa-rotate-left"></i> Reaberta ${x.reaberturas_count}x</span>` : ''}
                 </div>
-                <div style="font-size:13px; color:var(--text-body);">${x.descricao}</div>
+                <div style="font-size:13px; color:var(--text-body);">${limparMarcadorTecnicoDescricao(x.descricao)}</div>
                 ${x.motivo_status ? `<div style="font-size:11.5px; color:${corStatus[x.status]}; margin-top:4px;"><i class="fas fa-circle-info"></i> ${x.motivo_status}</div>` : ''}
                 <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
                     ${
@@ -7262,6 +7637,7 @@ window.abrirAba = function(event, idAba) {
         popularSelectAreaOficina("os-area");
         window.carregarListaOrdensServico();
     }
+    if (idAba === "aba-painel-supervisor" && typeof window.renderPainelSupervisor === 'function') window.renderPainelSupervisor();
     if (idAba === "aba-notificacoes" && typeof window.carregarCentralNotificacoes === 'function') {
         // Sempre entra pela grade — não deixa "preso" no detalhe de uma
         // área de uma visita anterior.
@@ -9365,6 +9741,22 @@ function escapeAtributoNotif(s) {
     return String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
 
+// 🔧 CORREÇÃO ("descrição da notificação enorme e cortada"): os
+// marcadores [REABASTECER_RESERVA:<id>] e [FINALIZAR_INSTALACAO:<id>]
+// (ver notificarLogisticaReabastecimento/iniciarSwapAlocacao) são só
+// pra linkar a atividade de volta a uma peça quando a Logística
+// conclui (ver processarMarcadorAtividadeConcluida) — não deveriam
+// aparecer pro usuário, e deixavam a descrição bem mais comprida do
+// que precisava. Limpa só na hora de EXIBIR; o texto salvo/usado pro
+// parsing continua intacto.
+function limparMarcadorTecnicoDescricao(descricao) {
+    // 🔧 No feed de notificações o texto vem como "concluiu: [MARCADOR:id]
+    // resto..." (backend monta "<ação>: <descrição original>") — o
+    // marcador não fica sempre no início da string, por isso sem "^" no
+    // regex.
+    return (descricao || '').replace(/\[(REABASTECER_RESERVA|FINALIZAR_INSTALACAO):[^\]]*\]\s*/, '');
+}
+
 // Mesmo cartão visual do feed, mas pra uma atividade em aberto (não tem
 // tipo/evento_id/lida — vem de /api/oficina/atividades, não do feed
 // unificado). Clicar leva direto pra área de verdade, onde dá pra ver
@@ -9382,7 +9774,7 @@ function renderItemAtividadeNotificacao(x, chave) {
                 </span>
                 <span style="font-size:10.5px; color:${cor};">${atrasada ? 'Atrasada' : x.status}</span>
             </div>
-            <div class="notificacoes-item-linha">${escapeHtmlNotif(x.descricao)}</div>
+            <div class="notificacoes-item-linha">${escapeHtmlNotif(limparMarcadorTecnicoDescricao(x.descricao))}</div>
             <div style="font-size:10.5px; color:var(--text-accent);">${escapeHtmlNotif(x.responsavel) || 'Sem responsável'}</div>
         </div>
     </div>
@@ -9405,7 +9797,7 @@ function renderItemNotificacao(item) {
                 </span>
                 <span style="font-size:10.5px; color:var(--text-muted);">${escapeHtmlNotif(item.data_hora)}</span>
             </div>
-            <div class="notificacoes-item-linha">${escapeHtmlNotif(item.descricao)}</div>
+            <div class="notificacoes-item-linha">${escapeHtmlNotif(limparMarcadorTecnicoDescricao(item.descricao))}</div>
             <div style="font-size:10.5px; color:var(--text-accent);">${escapeHtmlNotif(item.autor) || 'Sistema'}</div>
         </div>
     </div>
