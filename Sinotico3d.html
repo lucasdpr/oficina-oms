@@ -4195,6 +4195,12 @@ async function carregarDados() {
         // prontos pra quando ela escolher.
         if (mccEscolhida) construirCena(veioAtual);
         elLoading.classList.add('hidden');
+
+        // 🆕 Deep-link (?tag=<id>): usado pelo Painel do Supervisor pra
+        // abrir o Sinótico já direto na peça com anomalia (rolo/mancal/
+        // hidráulica), sem o supervisor precisar escolher MCC/veio e
+        // procurar na mão. Só roda uma vez, na primeira carga.
+        abrirPecaPorTagNaURL();
     } catch (erro) {
         console.error('Erro ao carregar dados da API:', erro);
         elStatusDot.className = 'dot off';
@@ -4206,6 +4212,42 @@ async function carregarDados() {
 }
 
 document.getElementById('btn-retry').addEventListener('click', carregarDados);
+
+// 🆕 Deep-link ?tag=<id>: entra direto na MCC/veio certo e abre o modal
+// da peça — usado pelo Painel do Supervisor (seção Anomalias) pra levar
+// o supervisor direto no equipamento com rolo travado/mancal/hidráulica
+// ruim, sem precisar navegar manualmente. Roda só uma vez (na primeira
+// carga bem-sucedida de carregarDados) — um clique em "Atualizar"
+// depois não deve reabrir o modal sozinho.
+let DEEP_LINK_TAG_JA_ABERTO = false;
+function abrirPecaPorTagNaURL() {
+    if (DEEP_LINK_TAG_JA_ABERTO) return;
+    const params = new URLSearchParams(window.location.search);
+    const tag = params.get('tag');
+    if (!tag) return;
+    const peca = piecesById[tag];
+    if (!peca) return;
+    const veio = extrairVeioDoLocal(peca.local);
+    if (!veio) return; // peça não instalada em nenhum veio agora — nada pra abrir no 3D
+    const mccPorVeio = { C: '2', D: '2', E: '3', F: '3', G: '4', H: '4' };
+    const mcc = mccPorVeio[veio];
+    if (!mcc) return;
+    DEEP_LINK_TAG_JA_ABERTO = true;
+
+    document.getElementById('tela-mcc').hidden = true;
+    mccEscolhida = mcc;
+    veioAtual = veio;
+    renderizarVeioTabs(mcc);
+    trocarVeio(veio);
+
+    const slots = construirLayoutSlots(veio);
+    const mapaSlots = montarMapaSlotsInstalados(veio);
+    const slotAlvo = slots.find(s => {
+        const p = encontrarPecaDoSlot(s, mapaSlots);
+        return p && p.id === tag;
+    });
+    if (slotAlvo) abrirModalPeca(slotAlvo, peca);
+}
 
 // ==========================================================================
 // EXPORTAR PRINT 3D — captura o canvas + monta relatório imprimível
