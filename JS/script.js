@@ -5887,13 +5887,12 @@ window.mudarStatusAtividadeOficina = async function(id, novoStatus) {
             return;
         }
 
-        // 🆕 Fecha o loop Oficina→Logística→Reserva/Instalação: a
-        // atividade concluída pode carregar um marcador na própria
-        // descrição ([REABASTECER_RESERVA:<ID>] ou
-        // [FINALIZAR_INSTALACAO:<ID>]) linkando ela a uma peça em
-        // BANCO_ATIVOS. É um parsing simples em texto — não muda o
-        // schema do backend — só pra saber, quando a Logística marca
-        // "Concluído", que peça foi afetada e o que fazer com ela.
+        // 🆕 Fecha o loop Oficina→Logística→Reserva: a atividade
+        // concluída pode carregar o marcador [REABASTECER_RESERVA:<ID>]
+        // na própria descrição, linkando ela a uma peça em BANCO_ATIVOS.
+        // É um parsing simples em texto — não muda o schema do backend —
+        // só pra saber, quando a Logística marca "Concluído", que peça
+        // acabou de chegar na Reserva na Máquina.
         if (novoStatus === 'Concluído') {
             const atividadeConcluida = OFICINA_ATIVIDADES_CACHE.find(x => x.id === id);
             await window.processarMarcadorAtividadeConcluida(atividadeConcluida ? atividadeConcluida.descricao : '');
@@ -5922,30 +5921,6 @@ window.processarMarcadorAtividadeConcluida = async function(descricao) {
                 if (window.registrarHistorico) await window.registrarHistorico(peca.id, `🚚 Transporte confirmado pela Logística — peça agora em Reserva na Máquina.`);
                 if (typeof renderReservas === 'function') renderReservas();
                 if (typeof renderAtivos === 'function') renderAtivos();
-            }
-            return;
-        }
-
-        const matchFinalizar = descricao.match(/\[FINALIZAR_INSTALACAO:([^\]]+)\]/);
-        if (matchFinalizar) {
-            const idPeca = matchFinalizar[1];
-            const peca = BANCO_ATIVOS.find(a => a.id === idPeca);
-            if (peca && peca.veioPendente) {
-                peca.veio = peca.veioPendente;
-                peca.posicaoFixa = peca.posicaoFixaPendente;
-                peca.pos = peca.posicaoFixaPendente;
-                peca.local = `MCC ${peca.mccPendente} - Veio ${peca.veioPendente}`;
-                peca.status = "Instalado";
-                peca.dataEntradaVeio = Date.now();
-                peca.dias = 0;
-                peca.veioPendente = null; peca.posicaoFixaPendente = null; peca.mccPendente = null;
-                localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-                if (typeof salvarPecaNoPython === 'function') await salvarPecaNoPython(peca);
-                if (window.registrarHistorico) await window.registrarHistorico(peca.id, `✅ Transporte confirmado pela Logística — instalação concluída.`);
-                if (typeof renderReparos === 'function') renderReparos();
-                if (typeof renderReservas === 'function') renderReservas();
-                if (typeof renderAtivos === 'function') renderAtivos();
-                if (typeof renderPainelVeios === 'function') renderPainelVeios();
             }
         }
     } catch (e) {
@@ -7689,6 +7664,25 @@ window.notificarLogisticaReabastecimento = async function(peca) {
     }
 };
 
+// 🆕 Botão "Mandar pra Máquina" da seção Reserva na Oficina (ver
+// JS/ui.js, montarSecaoPorLocal): peça ainda na oficina não tem veio
+// nem posição pra escolher — só faz sentido pedir o transporte.
+// Reaproveita a mesma notificarLogisticaReabastecimento() que já roda
+// sozinha quando um reparo termina; esse botão serve pra reenviar o
+// pedido manualmente (ex: peça antiga que nunca teve o pedido
+// disparado, ou pedido perdido) sem precisar esperar outro reparo.
+window.enviarReservaParaMaquina = async function(idPeca) {
+    if (!window.verificarAcesso()) return;
+    const peca = BANCO_ATIVOS.find(a => a.id === idPeca);
+    if (!peca) return alert('Peça não encontrada.');
+    if (peca.local !== "Oficina / Reserva") return alert('Essa peça não está na Reserva da Oficina.');
+
+    if (!confirm(`Pedir pra Logística levar ${peca.id} da Oficina pra Reserva na Máquina?`)) return;
+
+    await window.notificarLogisticaReabastecimento(peca);
+    alert(`🚚 Pedido enviado! ${peca.id} vai aparecer em "Reserva na Máquina" assim que a Logística confirmar a entrega.`);
+};
+
 window.iniciarSwapAlocacao = async function(idReserva) {
     if (!window.verificarAcesso()) return;
     const veioSelect = document.getElementById(`alocar-veio-${idReserva}`);
@@ -7744,13 +7738,24 @@ window.iniciarSwapAlocacao = async function(idReserva) {
     }
 
     // 🆕 "Máquina / Reserva" = peça já entregue fisicamente perto da
-    // máquina, pronta pra swap instantâneo. "Oficina / Reserva" (ou o
-    // valor legado dela) = peça ainda parada na oficina central — a
-    // instalação não pode ser dada como concluída na hora, ela fica
-    // PENDENTE de transporte até a Logística confirmar a entrega (ver
-    // marcador [FINALIZAR_INSTALACAO:<ID>] e o parsing em
-    // mudarStatusAtividadeOficina).
-    const pecaJaNaMaquina = pecaReserva.local === "Máquina / Reserva";
+    // máquina, pronta pra swap instantâneo. "Oficina / Reserva" = peça
+    // ainda parada na oficina central, que primeiro precisa passar pelo
+    // botão "Mandar pra Máquina" (aba Reserva) e só aparece aqui depois
+    // que a Logística confirmar a entrega.
+    //
+    // O Swap só é oferecido na UI pra peças que já
+    // estão em "Máquina / Reserva" (ver JS/ui.js, montarSecaoPorLocal —
+    // a seção "Reserva na Oficina" não tem mais select de veio/posição
+    // nem botão Swap, só o botão "Mandar pra Máquina", que aciona
+    // window.enviarReservaParaMaquina). Então, na prática, uma peça
+    // chegando aqui SEMPRE está fisicamente na máquina — instala na
+    // hora, sem estado "pendente de transporte" (aquele fluxo chegou a
+    // existir numa versão anterior, mas guardava o destino em campos
+    // que o backend nem persiste de verdade — Pydantic descarta campo
+    // desconhecido silenciosamente — então foi removido).
+    if (pecaReserva.local !== "Máquina / Reserva") {
+        return alert('Essa peça ainda está na Reserva da Oficina — use "Mandar pra Máquina" primeiro (aba Reserva) e espere a Logística confirmar a entrega antes de instalar.');
+    }
 
     if (pecaAntiga) {
         if (confirm(`A peça ${pecaAntiga.id} será SACADA do slot ${slotChassi} (Veio ${veio}) para dar lugar à ${pecaReserva.id}.`)) {
@@ -7758,13 +7763,7 @@ window.iniciarSwapAlocacao = async function(idReserva) {
             pecaAntiga.veio = ""; pecaAntiga.posicaoFixa = ""; pecaAntiga.pos = ""; pecaAntiga.dataReparo = Date.now(); pecaAntiga.dias = 0; pecaAntiga.dataEntradaVeio = null;
             pecaAntiga.substituidoPor = pecaReserva.id;
 
-            if (pecaJaNaMaquina) {
-                pecaReserva.local = `MCC ${mcc} - Veio ${veio}`; pecaReserva.veio = veio; pecaReserva.posicaoFixa = slotChassi; pecaReserva.pos = slotChassi; pecaReserva.status = "Instalado"; pecaReserva.dataEntradaVeio = Date.now(); pecaReserva.dias = 0; pecaReserva.substituidoPor = null;
-            } else {
-                pecaReserva.status = "Aguardando Transporte";
-                pecaReserva.veioPendente = veio; pecaReserva.posicaoFixaPendente = slotChassi; pecaReserva.mccPendente = mcc;
-                pecaReserva.substituidoPor = null;
-            }
+            pecaReserva.local = `MCC ${mcc} - Veio ${veio}`; pecaReserva.veio = veio; pecaReserva.posicaoFixa = slotChassi; pecaReserva.pos = slotChassi; pecaReserva.status = "Instalado"; pecaReserva.dataEntradaVeio = Date.now(); pecaReserva.dias = 0; pecaReserva.substituidoPor = null;
             localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
 
             // Persiste as duas peças no banco Postgres (a que saiu e a que entrou)
@@ -7789,38 +7788,20 @@ window.iniciarSwapAlocacao = async function(idReserva) {
                 // ANTES de liberar o alert() de sucesso, pra evitar que o
                 // técnico troque de tela rápido demais e a chamada seja
                 // abandonada antes de terminar.
-                if (pecaJaNaMaquina) {
-                    await window.registrarHistorico(pecaReserva.id, `📥 Entrou no slot ${slotChassi} do Veio ${veio} em ${agora} (substituiu ${pecaAntiga.id}). Contagem de dias na máquina reiniciada.`);
-                } else {
-                    await window.registrarHistorico(pecaReserva.id, `🚚 Instalação no slot ${slotChassi} do Veio ${veio} INICIADA em ${agora} (substituindo ${pecaAntiga.id}) — pendente de transporte da Logística (peça ainda na Oficina).`);
-                }
+                await window.registrarHistorico(pecaReserva.id, `📥 Entrou no slot ${slotChassi} do Veio ${veio} em ${agora} (substituiu ${pecaAntiga.id}). Contagem de dias na máquina reiniciada.`);
                 await window.registrarHistorico(pecaAntiga.id, `📤 Saiu do slot ${slotChassi} do Veio ${veio} em ${agora}, substituída por ${pecaReserva.id}. Foi para reparo — contagem de dias em reparo reiniciada.`);
             }
             if (typeof renderReparos === 'function') renderReparos(); if (typeof renderReservas === 'function') renderReservas();
             if (typeof renderAtivos === 'function') renderAtivos(); if (typeof renderPainelVeios === 'function') renderPainelVeios();
-            if (pecaJaNaMaquina) {
-                notificarLogisticaTransporte(
-                    `Transportar: retirar ${pecaAntiga.id} do Veio ${veio} (slot ${slotChassi}) e levar pra Oficina`,
-                    pecaAntiga.id
-                );
-                alert(`✅ Swap realizado! ${pecaReserva.id} instalado.`);
-            } else {
-                notificarLogisticaTransporte(
-                    `[FINALIZAR_INSTALACAO:${pecaReserva.id}] Transportar: retirar ${pecaAntiga.id} do Veio ${veio} (slot ${slotChassi}) e levar pra Oficina · Levar ${pecaReserva.id} da Oficina pro Veio ${veio} (slot ${slotChassi})`,
-                    pecaReserva.id
-                );
-                alert(`🚚 Peça marcada para transporte. A instalação de ${pecaReserva.id} será confirmada quando a Logística entregar.`);
-            }
+            notificarLogisticaTransporte(
+                `Transportar: retirar ${pecaAntiga.id} do Veio ${veio} (slot ${slotChassi}) e levar pra Oficina`,
+                pecaAntiga.id
+            );
+            alert(`✅ Swap realizado! ${pecaReserva.id} instalado.`);
         }
     } else {
         if (confirm(`Instalar a reserva ${pecaReserva.id} no slot ${slotChassi} do Veio ${veio}?`)) {
-            if (pecaJaNaMaquina) {
-                pecaReserva.local = `MCC ${mcc} - Veio ${veio}`; pecaReserva.veio = veio; pecaReserva.posicaoFixa = slotChassi; pecaReserva.pos = slotChassi; pecaReserva.status = "Instalado"; pecaReserva.dataEntradaVeio = Date.now(); pecaReserva.dias = 0; pecaReserva.substituidoPor = null;
-            } else {
-                pecaReserva.status = "Aguardando Transporte";
-                pecaReserva.veioPendente = veio; pecaReserva.posicaoFixaPendente = slotChassi; pecaReserva.mccPendente = mcc;
-                pecaReserva.substituidoPor = null;
-            }
+            pecaReserva.local = `MCC ${mcc} - Veio ${veio}`; pecaReserva.veio = veio; pecaReserva.posicaoFixa = slotChassi; pecaReserva.pos = slotChassi; pecaReserva.status = "Instalado"; pecaReserva.dataEntradaVeio = Date.now(); pecaReserva.dias = 0; pecaReserva.substituidoPor = null;
             localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
 
             if (typeof salvarPecaNoPython === 'function') {
@@ -7833,26 +7814,14 @@ window.iniciarSwapAlocacao = async function(idReserva) {
             // 🔧 Ver correção em registrarHistorico(): espera terminar de
             // salvar antes do alert() de sucesso liberar o técnico.
             if (window.registrarHistorico) {
-                if (pecaJaNaMaquina) {
-                    await window.registrarHistorico(pecaReserva.id, `📥 Entrou no slot ${slotChassi} do Veio ${veio} (gaveta vazia). Contagem de dias na máquina reiniciada.`);
-                } else {
-                    await window.registrarHistorico(pecaReserva.id, `🚚 Instalação no slot ${slotChassi} do Veio ${veio} (gaveta vazia) INICIADA — pendente de transporte da Logística (peça ainda na Oficina).`);
-                }
+                await window.registrarHistorico(pecaReserva.id, `📥 Entrou no slot ${slotChassi} do Veio ${veio} (gaveta vazia). Contagem de dias na máquina reiniciada.`);
             }
 
             if (typeof renderReparos === 'function') renderReparos(); if (typeof renderReservas === 'function') renderReservas();
             if (typeof renderAtivos === 'function') renderAtivos(); if (typeof renderPainelVeios === 'function') renderPainelVeios();
-            if (pecaJaNaMaquina) {
-                // Já estava fisicamente na máquina — não precisa acionar
-                // transporte de novo, é só uma instalação local.
-                alert(`✅ ${pecaReserva.id} instalado com sucesso!`);
-            } else {
-                notificarLogisticaTransporte(
-                    `[FINALIZAR_INSTALACAO:${pecaReserva.id}] Levar ${pecaReserva.id} da Oficina pro Veio ${veio} (slot ${slotChassi})`,
-                    pecaReserva.id
-                );
-                alert(`🚚 Peça marcada para transporte. A instalação será confirmada quando a Logística entregar.`);
-            }
+            // Já estava fisicamente na máquina — não precisa acionar
+            // transporte de novo, é só uma instalação local.
+            alert(`✅ ${pecaReserva.id} instalado com sucesso!`);
         }
     }
 };

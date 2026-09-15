@@ -120,7 +120,7 @@ function renderReservas() {
     // AGRUPAMENTO POR MCC (reaproveitado pelas duas seções de local —
     // ver montarSecaoPorLocal abaixo)
     // ==========================================
-    function montarSecaoPorLocal(listaLocal) {
+    function montarSecaoPorLocal(listaLocal, permiteSwap) {
     const grupos = {};
     listaLocal.forEach(a => {
         const mcc = a.mcc_compat || "2/3";
@@ -176,6 +176,32 @@ function renderReservas() {
                 let statusClass = 'reserva';
                 if (pct >= 80) statusClass = 'reparo';
                 else if (pct >= 50) statusClass = 'warning';
+
+                // 🆕 Peça ainda na Oficina: não faz sentido escolher veio/posição
+                // aqui, porque ela nem chegou fisicamente perto de nenhuma
+                // máquina ainda — só existe UMA ação possível, pedir o
+                // transporte. A escolha de veio/posição/Swap só aparece
+                // depois, na seção "Reserva na Máquina", quando a peça já
+                // está fisicamente lá (ver window.enviarReservaParaMaquina).
+                if (!permiteSwap) {
+                    htmlFinal += `
+                        <tr>
+                            <td class="font-code">${a.id}</td>
+                            <td><span class="ind-card-tag bg-tag">${a.tipo}</span></td>
+                            <td><span class="status-pill ${statusClass}">${pctFixed}%</span></td>
+                            <td colspan="2" class="text-center text-muted" style="font-size:12px;">Aguardando transporte</td>
+                            <td>
+                                <button class="btn-premium btn-success" style="padding:4px 12px; font-size:12px;" onclick="window.enviarReservaParaMaquina('${a.id}')">
+                                    <i class="fas fa-truck"></i> Mandar pra Máquina
+                                </button>
+                                <button class="btn-outline-danger" style="padding:4px 12px; font-size:12px; margin-left:5px;" onclick="window.excluirEquipamento('${a.id}')">
+                                    <i class="fas fa-trash"></i> Excluir
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
 
                 const tipoUpper = (a.tipo || '').toUpperCase();
                 // Lista de tipos fixos (agora incluindo R1/R2)
@@ -254,12 +280,12 @@ function renderReservas() {
     let htmlFinal = "";
     htmlFinal += cabecalhoSecao(`Reserva na Máquina (${reservasMaquina.length}) — pronta pra swap`, 'fas fa-industry', '#22c55e');
     htmlFinal += reservasMaquina.length
-        ? montarSecaoPorLocal(reservasMaquina)
+        ? montarSecaoPorLocal(reservasMaquina, true)
         : `<tr><td colspan="6" class="text-center text-muted" style="padding:10px 16px;">Nenhuma peça pronta na máquina.</td></tr>`;
 
     htmlFinal += cabecalhoSecao(`Reserva na Oficina (${reservasOficina.length}) — aguarda transporte`, 'fas fa-warehouse', '#f59e0b');
     htmlFinal += reservasOficina.length
-        ? montarSecaoPorLocal(reservasOficina)
+        ? montarSecaoPorLocal(reservasOficina, false)
         : `<tr><td colspan="6" class="text-center text-muted" style="padding:10px 16px;">Nenhuma peça na oficina.</td></tr>`;
 
     tbody.innerHTML = htmlFinal;
