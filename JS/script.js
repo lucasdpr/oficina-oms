@@ -6794,7 +6794,7 @@ window.renderFilaPonteRolante = async function() {
                         <span style="font-weight:700; color:${cor}; font-size:12px; min-width:60px;">${x.prioridade || 'Normal'}</span>
                         <div style="min-width:0;">
                             <div style="color:var(--text-body); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${x.descricao}</div>
-                            <div class="text-muted" style="font-size:11px;">${x.solicitante_area ? `Solicitado por: ${AREAS_OFICINA.find(a => a.chave === x.solicitante_area)?.nome || x.solicitante_area} — ` : ''}${x.duracao_estimada_min ? `~${x.duracao_estimada_min}min — ` : ''}${x.equipamento_id ? `Ponte ${x.equipamento_id} — ` : ''}${x.status}</div>
+                            <div class="text-muted" style="font-size:11px;">${x.solicitante_area ? `Solicitado por: ${AREAS_OFICINA.find(a => a.chave === x.solicitante_area)?.nome || x.solicitante_area} — ` : ''}${x.duracao_estimada_min ? `~${x.duracao_estimada_min}min — ` : ''}${x.equipamento_id ? `Ponte ${x.equipamento_id} — ` : ''}${x.acessorios_ponte ? `${x.acessorios_ponte} — ` : ''}${x.status}</div>
                         </div>
                     </div>
                     <div style="display:flex; gap:6px; flex-shrink:0;">
@@ -6862,15 +6862,25 @@ window.criarSolicitacaoFilaPonteRolante = async function() {
     }
 };
 
+// 🆕 Guarda o id da atividade sendo iniciada enquanto o modal (ponte +
+// acessórios de içamento) está aberto — ver abrirModalIniciarPonte.
+let FILA_PONTE_ID_INICIANDO = null;
+
 window.mudarStatusFilaPonteRolante = async function(id, novoStatus) {
     if (!verificarAcesso()) return;
     // 🆕 Ao Iniciar, precisa dizer qual ponte física (221 ou 146) vai
-    // atender essa demanda — fila é única, mas o atendimento não é.
-    let ponteUtilizada = null;
+    // atender essa demanda e quais acessórios de içamento vão ser
+    // usados (cabo 4 pontas, gig, cinta...) — fila é única, mas o
+    // atendimento não é. Isso abre um modal em vez de seguir direto;
+    // o resto do fluxo (Concluir, etc.) continua sem modal.
     if (novoStatus === 'Em Andamento') {
-        ponteUtilizada = (prompt('Qual ponte vai atender essa demanda? Digite 221 ou 146.') || '').trim();
-        if (ponteUtilizada !== '221' && ponteUtilizada !== '146') { alert('Escolha uma ponte válida: 221 ou 146.'); return; }
+        window.abrirModalIniciarPonte(id);
+        return;
     }
+    await window.enviarStatusFilaPonteRolante(id, novoStatus, {});
+};
+
+window.enviarStatusFilaPonteRolante = async function(id, novoStatus, extras) {
     const motivo = novoStatus === 'Concluído' ? (prompt('Observação ao concluir (opcional):') || null) : null;
     const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
     try {
@@ -6878,7 +6888,7 @@ window.mudarStatusFilaPonteRolante = async function(id, novoStatus) {
         const resp = await fetch(`${apiBase}/api/oficina/atividade/status`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id, status: novoStatus, motivo, operador, ponte_utilizada: ponteUtilizada })
+            body: JSON.stringify({ id, status: novoStatus, motivo, operador, ...extras })
         });
         if (!resp.ok) {
             const erro = await resp.json().catch(() => ({}));
@@ -6890,6 +6900,30 @@ window.mudarStatusFilaPonteRolante = async function(id, novoStatus) {
         console.error('⚠️ Erro ao atualizar status da fila da Ponte Rolante:', e);
         alert('Não foi possível conectar ao servidor.');
     }
+};
+
+window.abrirModalIniciarPonte = function(id) {
+    FILA_PONTE_ID_INICIANDO = id;
+    document.querySelectorAll('#modal-iniciar-ponte-acessorios .modal-iniciar-ponte-check').forEach(c => c.checked = false);
+    document.querySelector('input[name="modal-iniciar-ponte-radio"][value="221"]').checked = true;
+    document.getElementById('modal-iniciar-ponte')?.classList.remove('hidden');
+};
+
+window.fecharModalIniciarPonte = function() {
+    FILA_PONTE_ID_INICIANDO = null;
+    document.getElementById('modal-iniciar-ponte')?.classList.add('hidden');
+};
+
+window.confirmarIniciarPonte = async function() {
+    if (!FILA_PONTE_ID_INICIANDO) return;
+    const ponteUtilizada = document.querySelector('input[name="modal-iniciar-ponte-radio"]:checked')?.value || '221';
+    const acessorios = [...document.querySelectorAll('#modal-iniciar-ponte-acessorios .modal-iniciar-ponte-check:checked')].map(c => c.value);
+    const id = FILA_PONTE_ID_INICIANDO;
+    window.fecharModalIniciarPonte();
+    await window.enviarStatusFilaPonteRolante(id, 'Em Andamento', {
+        ponte_utilizada: ponteUtilizada,
+        acessorios_ponte: acessorios.join(', ') || null,
+    });
 };
 
 window.moverFilaPonteRolante = async function(id, direcao) {
