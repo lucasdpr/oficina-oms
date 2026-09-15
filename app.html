@@ -646,6 +646,12 @@
                      sistema (ver ativarCentralNotificacoesSeAutorizado em
                      script.js). Começa escondida; JS decide quem vê. -->
                 <a href="#" id="nav-notificacoes" class="nav-link hidden" style="color:#f43f5e;" onclick="window.abrirAba(event,'aba-notificacoes')"><i class="fas fa-bell"></i> Central de Notificações <span id="badge-notificacoes-nao-lidas" class="hidden" style="background:var(--danger); color:#fff; font-size:10px; font-weight:700; padding:1px 6px; border-radius:10px; margin-left:4px;">0</span></a>
+                <!-- 🆕 Painel do Supervisor — visão executiva de cima da
+                     oficina inteira (saúde agora, produtividade, estoque e
+                     tendência), num lugar só. Mesma regra de acesso da
+                     Central de Notificações (ver ativarPainelSupervisorSeAutorizado
+                     em script.js): começa escondido, JS decide quem vê. -->
+                <a href="#" id="nav-painel-supervisor" class="nav-link hidden" style="color:#fbbf24;" onclick="window.abrirAba(event,'aba-painel-supervisor')"><i class="fas fa-binoculars"></i> Painel do Supervisor</a>
 
                 <div class="nav-divider">Monitoramento de Máquinas</div>
                 <a href="#" id="nav-fluxo" class="nav-link" onclick="window.abrirAba(event,'aba-fluxo')"><i class="fas fa-stream"></i> Sequenciamento Veios</a>
@@ -1246,6 +1252,66 @@
                  equipamento + descrição + foto + fica salvo no Prontuário —
                  com prazo/prioridade/responsável a mais). Ver comentário em
                  script.js, perto de onde as funções dela viviam. -->
+
+            <!-- 🆕 PAINEL DO SUPERVISOR — visão executiva de cima da oficina
+                 inteira: saúde agora, produtividade da equipe, estoque/
+                 logística e tendência, tudo montado no cliente a partir de
+                 dados que o app já carrega (sem endpoint novo). Ver
+                 window.renderPainelSupervisor em script.js. -->
+            <section id="aba-painel-supervisor" class="tab-content">
+                <div class="glass-panel" style="padding:24px; margin-bottom:20px;">
+                    <div class="flex-between" style="flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <h2 style="color:#fbbf24; margin:0;"><i class="fas fa-binoculars"></i> Painel do Supervisor</h2>
+                            <p class="text-muted" style="font-size:13px; margin:6px 0 0;">
+                                O olhar de cima da oficina inteira: o que precisa de atenção agora, quem está fazendo o quê, como
+                                está o estoque de reserva e materiais, e se a tendência é melhorar ou piorar.
+                            </p>
+                        </div>
+                        <div style="text-align:right;">
+                            <button class="btn-premium" onclick="window.renderPainelSupervisor()">
+                                <i class="fas fa-rotate"></i> Atualizar
+                            </button>
+                            <div id="painel-supervisor-ultima-atualizacao" class="text-muted" style="font-size:11px; margin-top:6px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HERO — os números mais críticos, grandes, com cor por severidade -->
+                <div id="painel-supervisor-hero" class="painel-sup-hero"></div>
+
+                <!-- SEÇÃO 1 — Saúde da oficina agora (vermelho/laranja) -->
+                <div class="painel-sup-secao painel-sup-secao-saude">
+                    <div class="painel-sup-secao-titulo">
+                        <i class="fas fa-heart-pulse"></i> Saúde da Oficina Agora
+                    </div>
+                    <div class="painel-sup-secao-corpo" id="painel-supervisor-saude"></div>
+                </div>
+
+                <!-- SEÇÃO 2 — Produtividade da equipe (azul) -->
+                <div class="painel-sup-secao painel-sup-secao-produtividade">
+                    <div class="painel-sup-secao-titulo">
+                        <i class="fas fa-user-hard-hat"></i> Produtividade da Equipe
+                    </div>
+                    <div class="painel-sup-secao-corpo" id="painel-supervisor-produtividade"></div>
+                </div>
+
+                <!-- SEÇÃO 3 — Estoque e logística (verde/roxo) -->
+                <div class="painel-sup-secao painel-sup-secao-estoque">
+                    <div class="painel-sup-secao-titulo">
+                        <i class="fas fa-boxes-stacked"></i> Estoque e Logística
+                    </div>
+                    <div class="painel-sup-secao-corpo" id="painel-supervisor-estoque"></div>
+                </div>
+
+                <!-- SEÇÃO 4 — Histórico e tendência (accent) -->
+                <div class="painel-sup-secao painel-sup-secao-tendencia">
+                    <div class="painel-sup-secao-titulo">
+                        <i class="fas fa-chart-line"></i> Histórico e Tendência
+                    </div>
+                    <div class="painel-sup-secao-corpo" id="painel-supervisor-tendencia"></div>
+                </div>
+            </section>
 
             <!-- 🆕 REGISTRO DE OS (Ordem de Serviço) — foto da OS em papel +
                  acompanhamento de status (Em Andamento / Concluído). -->

@@ -4561,3 +4561,174 @@ textarea,
     margin-bottom: 4px;
   }
 }
+/* ==========================================
+   PAINEL DO SUPERVISOR — visão executiva
+   ========================================== */
+.painel-sup-hero {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.painel-sup-hero-card {
+    position: relative;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--sup-cor, var(--text-accent));
+    border-radius: var(--radius);
+    padding: 20px 20px 18px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    overflow: hidden;
+}
+.painel-sup-hero-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(0,0,0,0.35), 0 0 0 1px var(--sup-cor, var(--text-accent));
+}
+.painel-sup-hero-card .sup-hero-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-muted);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+.painel-sup-hero-card .sup-hero-num {
+    font-size: 2.6rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--sup-cor, var(--text-title));
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+}
+.painel-sup-hero-card .sup-hero-sub {
+    margin-top: 6px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.painel-sup-secao {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg, var(--radius));
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+.painel-sup-secao-titulo {
+    padding: 14px 22px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+    letter-spacing: 0.2px;
+}
+.painel-sup-secao-corpo {
+    padding: 20px 22px 22px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 18px;
+}
+.painel-sup-secao-saude .painel-sup-secao-titulo { background: linear-gradient(90deg, rgba(239,68,68,0.28), rgba(249,115,22,0.10)); border-bottom: 1px solid rgba(239,68,68,0.25); }
+.painel-sup-secao-produtividade .painel-sup-secao-titulo { background: linear-gradient(90deg, rgba(59,130,246,0.28), rgba(56,189,248,0.10)); border-bottom: 1px solid rgba(59,130,246,0.25); }
+.painel-sup-secao-estoque .painel-sup-secao-titulo { background: linear-gradient(90deg, rgba(34,197,94,0.28), rgba(168,85,247,0.10)); border-bottom: 1px solid rgba(34,197,94,0.25); }
+.painel-sup-secao-tendencia .painel-sup-secao-titulo { background: linear-gradient(90deg, rgba(245,158,11,0.28), rgba(234,179,8,0.10)); border-bottom: 1px solid rgba(245,158,11,0.25); }
+
+.sup-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--sup-cor, var(--border));
+    border-radius: 10px;
+    padding: 16px 18px;
+}
+.sup-card-titulo {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: space-between;
+}
+.sup-barra-linha {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 12.5px;
+}
+.sup-barra-linha .sup-barra-nome {
+    flex: 0 0 120px;
+    color: var(--text-body);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.sup-barra-trilho {
+    flex: 1;
+    height: 8px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative;
+}
+.sup-barra-preenchimento {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.5s ease;
+}
+.sup-barra-valor {
+    flex: 0 0 auto;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-heading, var(--text-title));
+    font-size: 12px;
+    min-width: 20px;
+    text-align: right;
+}
+.sup-lista-linha {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12.5px;
+}
+.sup-lista-linha:last-child { border-bottom: none; }
+.sup-sparkline {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 60px;
+    margin-top: 4px;
+}
+.sup-sparkline-bar {
+    flex: 1;
+    min-width: 4px;
+    border-radius: 3px 3px 0 0;
+    background: var(--sup-cor, var(--text-accent));
+    opacity: 0.85;
+    transition: height 0.4s ease;
+}
+.sup-vazio {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12.5px;
+    padding: 18px 0;
+}
+
+@media (max-width: 992px) {
+    .painel-sup-hero { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+    .painel-sup-hero { grid-template-columns: 1fr; }
+    .painel-sup-secao-corpo { grid-template-columns: 1fr; }
+    .painel-sup-hero-card .sup-hero-num { font-size: 2.1rem; }
+}
