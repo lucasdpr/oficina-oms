@@ -5337,7 +5337,7 @@ window.renderPainelSupervisor = async function() {
 
             efetivoEl.innerHTML = areasComGente.length
                 ? `<div class="sup-efetivo-grid">` + areasComGente.map(({ cfg, lista }) => `
-                    <div class="sup-efetivo-chip" style="--sup-cor:${cfg.cor || '#14b8a6'};" onclick="window.abrirAreaOficina('${cfg.chave}')" title="${lista.map(p => `${p.nome} — ${p.cargo || 'sem cargo'}`).join('\n')}">
+                    <div class="sup-efetivo-chip" style="--sup-cor:${cfg.cor || '#14b8a6'};" onclick="window.abrirAreaOficina('${cfg.chave}', 'equipe')" title="${lista.map(p => `${p.nome} — ${p.cargo || 'sem cargo'}`).join('\n')}">
                         <span class="sup-efetivo-chip-num">${lista.length}</span>
                         <span class="sup-efetivo-chip-nome">${cfg.nome}<small>${lista.length === 1 ? '1 pessoa' : lista.length + ' pessoas'}</small></span>
                     </div>
