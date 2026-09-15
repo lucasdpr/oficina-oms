@@ -3424,7 +3424,7 @@ window.carregarAtividadesPainelTecnico = async function() {
                 <div class="tecnico-item-linha" onclick="window.irParaAreaTecnico()" style="${futura ? 'opacity:0.8;' : ''}">
                     <div>
                         ${x.equipamento_id ? `<span class="font-code" style="font-weight:700; color:var(--text-heading);">${x.equipamento_id}</span> · ` : ''}
-                        <span style="font-size:13px; color:var(--text-body);">${x.descricao}</span>
+                        <span style="font-size:13px; color:var(--text-body);">${limparMarcadorTecnicoDescricao(x.descricao)}</span>
                         ${futura ? `<span style="font-size:10px; background:var(--text-accent, #3b82f6); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700; margin-left:6px;">PROGRAMADA</span>` : ''}
                         <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
                             ${futura
@@ -5575,7 +5575,7 @@ function renderizarAtividadesArea() {
                                 : `<span class="ind-card-tag bg-tag">Tarefa avulsa</span>`}
                             <span style="font-size:10px; background:var(--text-accent, #3b82f6); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">COMEÇA ${inicioFormatado}</span>
                         </div>
-                        <div style="font-size:13px; color:var(--text-body);">${x.descricao}</div>
+                        <div style="font-size:13px; color:var(--text-body);">${limparMarcadorTecnicoDescricao(x.descricao)}</div>
                         <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">${x.responsavel ? `${x.responsavel} · ` : ''}${x.criado_em || ''}</div>
                     </div>
                     <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
@@ -5664,7 +5664,7 @@ function renderizarAtividadesArea() {
                     ${atrasada ? `<span style="font-size:10px; background:var(--danger); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">ATRASADA</span>` : ''}
                     ${x.reaberturas_count > 0 ? `<span style="font-size:10px; background:#f97316; color:#fff; padding:2px 6px; border-radius:4px; font-weight:700; cursor:pointer;" onclick="window.verHistoricoReaberturasAtividade(${x.id})" title="Ver histórico de reaberturas"><i class="fas fa-rotate-left"></i> Reaberta ${x.reaberturas_count}x</span>` : ''}
                 </div>
-                <div style="font-size:13px; color:var(--text-body);">${x.descricao}</div>
+                <div style="font-size:13px; color:var(--text-body);">${limparMarcadorTecnicoDescricao(x.descricao)}</div>
                 ${x.motivo_status ? `<div style="font-size:11.5px; color:${corStatus[x.status]}; margin-top:4px;"><i class="fas fa-circle-info"></i> ${x.motivo_status}</div>` : ''}
                 <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
                     ${
@@ -9365,6 +9365,22 @@ function escapeAtributoNotif(s) {
     return String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
 
+// 🔧 CORREÇÃO ("descrição da notificação enorme e cortada"): os
+// marcadores [REABASTECER_RESERVA:<id>] e [FINALIZAR_INSTALACAO:<id>]
+// (ver notificarLogisticaReabastecimento/iniciarSwapAlocacao) são só
+// pra linkar a atividade de volta a uma peça quando a Logística
+// conclui (ver processarMarcadorAtividadeConcluida) — não deveriam
+// aparecer pro usuário, e deixavam a descrição bem mais comprida do
+// que precisava. Limpa só na hora de EXIBIR; o texto salvo/usado pro
+// parsing continua intacto.
+function limparMarcadorTecnicoDescricao(descricao) {
+    // 🔧 No feed de notificações o texto vem como "concluiu: [MARCADOR:id]
+    // resto..." (backend monta "<ação>: <descrição original>") — o
+    // marcador não fica sempre no início da string, por isso sem "^" no
+    // regex.
+    return (descricao || '').replace(/\[(REABASTECER_RESERVA|FINALIZAR_INSTALACAO):[^\]]*\]\s*/, '');
+}
+
 // Mesmo cartão visual do feed, mas pra uma atividade em aberto (não tem
 // tipo/evento_id/lida — vem de /api/oficina/atividades, não do feed
 // unificado). Clicar leva direto pra área de verdade, onde dá pra ver
@@ -9382,7 +9398,7 @@ function renderItemAtividadeNotificacao(x, chave) {
                 </span>
                 <span style="font-size:10.5px; color:${cor};">${atrasada ? 'Atrasada' : x.status}</span>
             </div>
-            <div class="notificacoes-item-linha">${escapeHtmlNotif(x.descricao)}</div>
+            <div class="notificacoes-item-linha">${escapeHtmlNotif(limparMarcadorTecnicoDescricao(x.descricao))}</div>
             <div style="font-size:10.5px; color:var(--text-accent);">${escapeHtmlNotif(x.responsavel) || 'Sem responsável'}</div>
         </div>
     </div>
@@ -9405,7 +9421,7 @@ function renderItemNotificacao(item) {
                 </span>
                 <span style="font-size:10.5px; color:var(--text-muted);">${escapeHtmlNotif(item.data_hora)}</span>
             </div>
-            <div class="notificacoes-item-linha">${escapeHtmlNotif(item.descricao)}</div>
+            <div class="notificacoes-item-linha">${escapeHtmlNotif(limparMarcadorTecnicoDescricao(item.descricao))}</div>
             <div style="font-size:10.5px; color:var(--text-accent);">${escapeHtmlNotif(item.autor) || 'Sistema'}</div>
         </div>
     </div>
