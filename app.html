@@ -122,6 +122,20 @@
         .btn-outline-danger:active { transform: scale(0.98); }
         .btn-xs-primary { background: transparent; border: none; color: var(--text-muted); font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: var(--radius); cursor: pointer; transition: color var(--transition); }
         .btn-xs-primary:hover { color: var(--text-accent); }
+        /* 🆕 Chips de seleção (acessórios de içamento da Ponte Rolante,
+           criação e modal de Iniciar) — grid que se reajusta sozinho
+           em telas estreitas, em vez de checkbox + label soltos que
+           quebram linha de qualquer jeito no mobile. */
+        .chip-select-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+        .chip-select { position: relative; display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-td); cursor: pointer; font-size: 0.8rem; color: var(--text-body); transition: all var(--transition); user-select: none; }
+        .chip-select:hover { border-color: var(--text-accent); }
+        .chip-select input { accent-color: var(--text-accent); width: 15px; height: 15px; flex-shrink: 0; }
+        .chip-select:has(input:checked) { background: rgba(59,130,246,0.15); border-color: var(--text-accent); color: var(--text-title); }
+        .chip-select-radio { display: flex; gap: 10px; flex-wrap: wrap; }
+        .chip-select-radio label { flex: 1; min-width: 110px; }
+        @media (max-width: 640px) {
+            .chip-select-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+        }
         .ui-ripple { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.5); transform: scale(0); animation: ui-ripple-anim 0.55s ease-out; pointer-events: none; }
         @keyframes ui-ripple-anim { to { transform: scale(2.6); opacity: 0; } }
         /* ===== GLASS PANEL ===== */
@@ -1956,14 +1970,14 @@
                         </div>
                         <div class="input-group" style="margin-bottom:16px;">
                             <label>Acessórios que provavelmente vai precisar <span class="text-muted" style="font-weight:400;">(opcional — o técnico da ponte confirma ao iniciar)</span></label>
-                            <div style="display:flex; flex-wrap:wrap; gap:10px 18px; margin-top:6px;">
-                                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px;"><input type="checkbox" class="fila-ponte-acessorio-check" value="Cabo 4 Pontas"> Cabo 4 Pontas</label>
-                                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px;"><input type="checkbox" class="fila-ponte-acessorio-check" value="Gig do Segmento"> Gig do Segmento</label>
-                                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px;"><input type="checkbox" class="fila-ponte-acessorio-check" value="Gig de Cabo de Aço"> Gig de Cabo de Aço</label>
-                                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px;"><input type="checkbox" class="fila-ponte-acessorio-check" value="Gig do Zero"> Gig do Zero</label>
-                                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px;"><input type="checkbox" class="fila-ponte-acessorio-check" value="Gig do Bender"> Gig do Bender</label>
-                                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px;"><input type="checkbox" class="fila-ponte-acessorio-check" value="Cabo de Aço da Área"> Cabo de Aço da Área</label>
-                                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px;"><input type="checkbox" class="fila-ponte-acessorio-check" value="Cinta"> Cinta</label>
+                            <div class="chip-select-grid" style="margin-top:8px;">
+                                <label class="chip-select"><input type="checkbox" class="fila-ponte-acessorio-check" value="Cabo 4 Pontas"> Cabo 4 Pontas</label>
+                                <label class="chip-select"><input type="checkbox" class="fila-ponte-acessorio-check" value="Gig do Segmento"> Gig do Segmento</label>
+                                <label class="chip-select"><input type="checkbox" class="fila-ponte-acessorio-check" value="Gig de Cabo de Aço"> Gig de Cabo de Aço</label>
+                                <label class="chip-select"><input type="checkbox" class="fila-ponte-acessorio-check" value="Gig do Zero"> Gig do Zero</label>
+                                <label class="chip-select"><input type="checkbox" class="fila-ponte-acessorio-check" value="Gig do Bender"> Gig do Bender</label>
+                                <label class="chip-select"><input type="checkbox" class="fila-ponte-acessorio-check" value="Cabo de Aço da Área"> Cabo de Aço da Área</label>
+                                <label class="chip-select"><input type="checkbox" class="fila-ponte-acessorio-check" value="Cinta"> Cinta</label>
                             </div>
                         </div>
                         <div style="display:flex; justify-content:flex-end; gap:8px;">
@@ -1982,28 +1996,28 @@
             <!-- 🆕 Modal "Iniciar" da Fila da Ponte: qual ponte física (221/146)
                  e quais acessórios de içamento vão ser usados. -->
             <div id="modal-iniciar-ponte" class="modal-overlay hidden" style="z-index:10001;">
-                <div class="modal-content" style="max-width:420px; text-align:left;">
+                <div class="modal-content" style="max-width:480px; text-align:left;">
                     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
                         <h2 style="color:var(--text-heading); margin:0;">🏗️ Iniciar Atendimento</h2>
                         <button class="btn-close-emergency" onclick="window.fecharModalIniciarPonte()"><i class="fas fa-times"></i></button>
                     </div>
                     <div class="input-group" style="margin-bottom:14px;">
                         <label>Qual ponte vai atender?</label>
-                        <div style="display:flex; gap:16px; margin-top:6px;">
-                            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="radio" name="modal-iniciar-ponte-radio" value="221" checked> Ponte 221</label>
-                            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="radio" name="modal-iniciar-ponte-radio" value="146"> Ponte 146</label>
+                        <div class="chip-select-radio" style="margin-top:8px;">
+                            <label class="chip-select"><input type="radio" name="modal-iniciar-ponte-radio" value="221" checked> Ponte 221</label>
+                            <label class="chip-select"><input type="radio" name="modal-iniciar-ponte-radio" value="146"> Ponte 146</label>
                         </div>
                     </div>
                     <div class="input-group" style="margin-bottom:16px;">
                         <label>Acessórios de içamento <span class="text-muted" style="font-weight:400;">(marque um ou mais)</span></label>
-                        <div id="modal-iniciar-ponte-acessorios" style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
-                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="modal-iniciar-ponte-check" value="Cabo 4 Pontas"> Cabo 4 Pontas</label>
-                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="modal-iniciar-ponte-check" value="Gig do Segmento"> Gig do Segmento</label>
-                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="modal-iniciar-ponte-check" value="Gig de Cabo de Aço"> Gig de Cabo de Aço</label>
-                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="modal-iniciar-ponte-check" value="Gig do Zero"> Gig do Zero</label>
-                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="modal-iniciar-ponte-check" value="Gig do Bender"> Gig do Bender</label>
-                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="modal-iniciar-ponte-check" value="Cabo de Aço da Área"> Cabo de Aço da Área</label>
-                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="modal-iniciar-ponte-check" value="Cinta"> Cinta</label>
+                        <div id="modal-iniciar-ponte-acessorios" class="chip-select-grid" style="margin-top:8px;">
+                            <label class="chip-select"><input type="checkbox" class="modal-iniciar-ponte-check" value="Cabo 4 Pontas"> Cabo 4 Pontas</label>
+                            <label class="chip-select"><input type="checkbox" class="modal-iniciar-ponte-check" value="Gig do Segmento"> Gig do Segmento</label>
+                            <label class="chip-select"><input type="checkbox" class="modal-iniciar-ponte-check" value="Gig de Cabo de Aço"> Gig de Cabo de Aço</label>
+                            <label class="chip-select"><input type="checkbox" class="modal-iniciar-ponte-check" value="Gig do Zero"> Gig do Zero</label>
+                            <label class="chip-select"><input type="checkbox" class="modal-iniciar-ponte-check" value="Gig do Bender"> Gig do Bender</label>
+                            <label class="chip-select"><input type="checkbox" class="modal-iniciar-ponte-check" value="Cabo de Aço da Área"> Cabo de Aço da Área</label>
+                            <label class="chip-select"><input type="checkbox" class="modal-iniciar-ponte-check" value="Cinta"> Cinta</label>
                         </div>
                     </div>
                     <div style="display:flex; justify-content:flex-end; gap:8px;">
