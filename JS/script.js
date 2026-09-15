@@ -6794,7 +6794,7 @@ window.renderFilaPonteRolante = async function() {
                         <span style="font-weight:700; color:${cor}; font-size:12px; min-width:60px;">${x.prioridade || 'Normal'}</span>
                         <div style="min-width:0;">
                             <div style="color:var(--text-body); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${x.descricao}</div>
-                            <div class="text-muted" style="font-size:11px;">${x.solicitante_area ? `Solicitado por: ${AREAS_OFICINA.find(a => a.chave === x.solicitante_area)?.nome || x.solicitante_area} — ` : ''}${x.duracao_estimada_min ? `~${x.duracao_estimada_min}min — ` : ''}${x.status}</div>
+                            <div class="text-muted" style="font-size:11px;">${x.solicitante_area ? `Solicitado por: ${AREAS_OFICINA.find(a => a.chave === x.solicitante_area)?.nome || x.solicitante_area} — ` : ''}${x.duracao_estimada_min ? `~${x.duracao_estimada_min}min — ` : ''}${x.equipamento_id ? `Ponte ${x.equipamento_id} — ` : ''}${x.status}</div>
                         </div>
                     </div>
                     <div style="display:flex; gap:6px; flex-shrink:0;">
@@ -6864,6 +6864,13 @@ window.criarSolicitacaoFilaPonteRolante = async function() {
 
 window.mudarStatusFilaPonteRolante = async function(id, novoStatus) {
     if (!verificarAcesso()) return;
+    // 🆕 Ao Iniciar, precisa dizer qual ponte física (221 ou 146) vai
+    // atender essa demanda — fila é única, mas o atendimento não é.
+    let ponteUtilizada = null;
+    if (novoStatus === 'Em Andamento') {
+        ponteUtilizada = (prompt('Qual ponte vai atender essa demanda? Digite 221 ou 146.') || '').trim();
+        if (ponteUtilizada !== '221' && ponteUtilizada !== '146') { alert('Escolha uma ponte válida: 221 ou 146.'); return; }
+    }
     const motivo = novoStatus === 'Concluído' ? (prompt('Observação ao concluir (opcional):') || null) : null;
     const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
     try {
@@ -6871,7 +6878,7 @@ window.mudarStatusFilaPonteRolante = async function(id, novoStatus) {
         const resp = await fetch(`${apiBase}/api/oficina/atividade/status`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id, status: novoStatus, motivo, operador })
+            body: JSON.stringify({ id, status: novoStatus, motivo, operador, ponte_utilizada: ponteUtilizada })
         });
         if (!resp.ok) {
             const erro = await resp.json().catch(() => ({}));
