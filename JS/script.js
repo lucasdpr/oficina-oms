@@ -5026,6 +5026,8 @@ window.renderPainelSupervisor = async function() {
     const efetivoEl = document.getElementById('painel-supervisor-efetivo');
     const estoqueEl = document.getElementById('painel-supervisor-estoque');
     const sinoticoEl = document.getElementById('painel-supervisor-sinotico');
+    const anomaliasEl = document.getElementById('painel-supervisor-anomalias');
+    const historicoTrocasEl = document.getElementById('painel-supervisor-historico-trocas');
     const qualidadeEl = document.getElementById('painel-supervisor-qualidade');
     const tendenciaEl = document.getElementById('painel-supervisor-tendencia');
     if (!heroEl) return; // aba nem existe nesta sessão (ex: HTML antigo em cache)
@@ -5317,6 +5319,111 @@ window.renderPainelSupervisor = async function() {
                 </div>
             `).join('')
             : `<div class="sup-vazio">Sem equipamentos instalados em nenhum veio agora.</div>`;
+    }
+
+    // ---------------------------------------------------------
+    // ANOMALIAS DE ROLO / MANCAL / HIDRÁULICA (dentro da seção Sinótico):
+    // esses 3 campos (rolos_travados, mancais_ocorrencias,
+    // barra_transversal) só existem no Sinótico 3D — BANCO_ATIVOS (o
+    // banco compartilhado do resto do app) só carrega rolos_travados,
+    // os outros dois nunca são mapeados nele. Por isso busca direto em
+    // /api/pecas (SELECT * — todas as colunas cruas da peça), replicando
+    // o MESMO parsing que o Sinótico 3D usa (parseRolosTravados/
+    // parseMancais/parseBarraTransversal, ver Sinotico3d.html) em vez de
+    // inventar uma lógica nova.
+    // ---------------------------------------------------------
+    if (anomaliasEl) {
+        anomaliasEl.innerHTML = `<div class="sup-vazio">Carregando…</div>`;
+        try {
+            const apiBase = await resolverApiBase();
+            const respPecas = await fetch(`${apiBase}/api/pecas`, { cache: 'no-store' });
+            const pecasCruas = respPecas.ok ? await respPecas.json() : [];
+
+            const comRoloTravado = [];
+            const comMancalOcorrencia = [];
+            const comHidraulicaRuim = [];
+
+            (Array.isArray(pecasCruas) ? pecasCruas : []).forEach(p => {
+                // Rolos travados: JSON array de ids de rolo travado.
+                let rolos = [];
+                try { rolos = JSON.parse(p.rolos_travados || '[]'); } catch (e) { rolos = []; }
+                if (Array.isArray(rolos) && rolos.length > 0) comRoloTravado.push({ id: p.id, qtd: rolos.length });
+
+                // Mancais: JSON objeto { posição: tipo_ocorrência }.
+                let mancais = {};
+                try { mancais = JSON.parse(p.mancais_ocorrencias || '{}'); } catch (e) { mancais = {}; }
+                const chavesMancal = mancais && typeof mancais === 'object' ? Object.keys(mancais) : [];
+                if (chavesMancal.length > 0) comMancalOcorrencia.push({ id: p.id, qtd: chavesMancal.length });
+
+                // Sistema hidráulico (barra transversal/cilindros/porcas):
+                // JSON objeto { componente: { ocorrencia, obs? } } — conta
+                // qualquer componente com ocorrência registrada e diferente
+                // de "ok" (mesmo padrão do Sinótico, só sem resolver a cor
+                // exata de severidade — aqui é só "tem ou não tem").
+                let barra = {};
+                try { barra = JSON.parse(p.barra_transversal || '{}'); } catch (e) { barra = {}; }
+                const componentesComOcorrencia = barra && typeof barra === 'object'
+                    ? Object.values(barra).filter(r => r && r.ocorrencia && r.ocorrencia !== 'ok').length
+                    : 0;
+                if (componentesComOcorrencia > 0) comHidraulicaRuim.push({ id: p.id, qtd: componentesComOcorrencia });
+            });
+
+            const cardAnomalia = (titulo, icone, cor, lista, unidade) => `
+                <div class="sup-card" style="--sup-cor:${cor};">
+                    <div class="sup-card-titulo"><span><i class="fas ${icone}"></i> ${titulo}</span><span style="font-weight:800; color:${cor};">${lista.length}</span></div>
+                    ${lista.length
+                        ? lista.slice(0, 6).map(x => `
+                            <div class="sup-lista-linha">
+                                <span style="color:var(--text-body);">${x.id}</span>
+                                <span class="text-muted" style="font-size:11px;">${x.qtd} ${unidade}${x.qtd === 1 ? '' : 's'}</span>
+                            </div>
+                        `).join('')
+                        : `<div class="sup-vazio">Nenhuma ocorrência registrada 👍</div>`}
+                </div>
+            `;
+
+            anomaliasEl.innerHTML =
+                cardAnomalia('Rolo Travado', 'fa-lock', '#ef4444', comRoloTravado, 'rolo')
+                + cardAnomalia('Mancal com Ocorrência', 'fa-gear', '#f59e0b', comMancalOcorrencia, 'mancal')
+                + cardAnomalia('Hidráulica com Anomalia', 'fa-droplet', '#eab308', comHidraulicaRuim, 'componente');
+        } catch (e) {
+            console.error('⚠️ Não consegui carregar anomalias (rolo/mancal/hidráulica) no Painel do Supervisor:', e);
+            anomaliasEl.innerHTML = `<div class="sup-vazio">Não foi possível carregar agora.</div>`;
+        }
+    }
+
+    // ---------------------------------------------------------
+    // HISTÓRICO DE TROCA NA MÁQUINA: cada Swap/instalação já grava 2
+    // linhas no histórico de auditoria (registrarHistorico → log_eventos,
+    // ver iniciarSwapAlocacao em JS/script.js — "📥 Entrou no slot..." /
+    // "📤 Saiu do slot..."). /api/registros_ocorrencia NÃO devolve esses
+    // eventos (filtra "categoria IS NOT NULL", e esses vão sem
+    // categoria) — por isso usa /api/historico_eventos (histórico
+    // completo, sem esse filtro) e separa só os de troca/instalação.
+    // ---------------------------------------------------------
+    if (historicoTrocasEl) {
+        historicoTrocasEl.innerHTML = `<div class="sup-vazio">Carregando…</div>`;
+        try {
+            const apiBase = await resolverApiBase();
+            const respHistorico = await fetch(`${apiBase}/api/historico_eventos?limite=400`, { cache: 'no-store' });
+            const eventos = respHistorico.ok ? await respHistorico.json() : [];
+
+            const trocas = (Array.isArray(eventos) ? eventos : [])
+                .filter(e => (e.acao || '').includes('Entrou no slot'))
+                .slice(0, 12);
+
+            historicoTrocasEl.innerHTML = trocas.length
+                ? `<div class="sup-card" style="--sup-cor:#6366f1; grid-column: 1 / -1;">` + trocas.map(e => `
+                    <div class="sup-lista-linha">
+                        <span style="color:var(--text-body);"><span class="font-code" style="font-weight:700; color:var(--text-heading);">${e.peca_id}</span> — ${e.acao}</span>
+                        <span class="text-muted" style="font-size:11px; white-space:nowrap; margin-left:10px;">${e.operador || 'Sistema'} · ${(e.data_hora || '').slice(0, 16).replace('T', ' ')}</span>
+                    </div>
+                `).join('') + `</div>`
+                : `<div class="sup-vazio">Nenhuma troca/instalação registrada ainda.</div>`;
+        } catch (e) {
+            console.error('⚠️ Não consegui carregar o histórico de trocas no Painel do Supervisor:', e);
+            historicoTrocasEl.innerHTML = `<div class="sup-vazio">Não foi possível carregar agora.</div>`;
+        }
     }
 
     // ---------------------------------------------------------

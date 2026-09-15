@@ -4746,6 +4746,7 @@ textarea,
 .painel-sup-secao-tendencia { --sup-secao-cor: #f59e0b; }
 .painel-sup-secao-efetivo { --sup-secao-cor: #14b8a6; }
 .painel-sup-secao-sinotico { --sup-secao-cor: #22d3ee; }
+.painel-sup-secao-historico { --sup-secao-cor: #6366f1; }
 .painel-sup-secao-qualidade { --sup-secao-cor: #a855f7; }
 .sup-secao-link {
     font-size: 11.5px;
