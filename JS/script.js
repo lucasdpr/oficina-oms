@@ -6734,6 +6734,184 @@ window.confirmarAtividadeOficina = async function() {
 // --------------------------------------------------------------
 // MUDAR STATUS (Pendente -> Em Andamento -> Concluído)
 // --------------------------------------------------------------
+// ==============================================================
+// FILA DA PONTE ROLANTE (221/146) — painel próprio na barra lateral,
+// separado da Central de Áreas: qualquer área solicita as pontes aqui
+// (fila única, compartilhada entre as duas), com prioridade
+// Urgente/Normal/Rápida, duração estimada, previsão de tempo de espera
+// antes de pedir, e reordenação manual (técnico da própria área da
+// ponte ou ADM podem passar um pedido pra frente).
+// ==============================================================
+const FILA_PONTE_CORES_PRIORIDADE = { Urgente: '#ef4444', Normal: '#94a3b8', 'Rápida': '#eab308' };
+
+window.renderFilaPonteRolante = async function() {
+    const lista = document.getElementById('fila-ponte-lista');
+    if (!lista) return;
+    lista.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">Carregando fila...</div>`;
+
+    try {
+        const apiBase = await resolverApiBase();
+        const [respAtividades, respEspera] = await Promise.all([
+            fetch(`${apiBase}/api/oficina/atividades?area=ponte-rolante`, { cache: 'no-store' }),
+            fetch(`${apiBase}/api/oficina/ponte_rolante/tempo_espera`, { cache: 'no-store' }),
+        ]);
+        const atividades = respAtividades.ok ? await respAtividades.json() : [];
+        const espera = respEspera.ok ? await respEspera.json() : { atividades_na_fila: 0, minutos_estimados: 0 };
+
+        document.getElementById('fila-ponte-kpi-fila').textContent = espera.atividades_na_fila;
+        const horas = Math.floor(espera.minutos_estimados / 60);
+        const minutos = espera.minutos_estimados % 60;
+        document.getElementById('fila-ponte-kpi-espera').textContent = espera.atividades_na_fila
+            ? (horas > 0 ? `${horas}h${minutos ? ` ${minutos}min` : ''}` : `${minutos}min`)
+            : '—';
+
+        const emAberto = atividades
+            .filter(a => a.status === 'Pendente' || a.status === 'Em Andamento')
+            .sort((a, b) => (a.ordem_fila ?? a.id) - (b.ordem_fila ?? b.id));
+        const finalizadas = atividades
+            .filter(a => a.status !== 'Pendente' && a.status !== 'Em Andamento')
+            .sort((a, b) => b.id - a.id)
+            .slice(0, 10);
+
+        // 🆕 Reordenar (subir/descer) só faz sentido pra quem atende a
+        // fila (técnico da área ponte-rolante) ou ADM — outras áreas só
+        // pedem, não decidem a ordem de atendimento das outras.
+        const podeReordenar = !!(OPERADOR_LOGADO && (OPERADOR_LOGADO.isAdm || OPERADOR_LOGADO.area === 'ponte-rolante'));
+
+        if (!emAberto.length) {
+            lista.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhuma solicitação na fila agora.</div>`;
+        } else {
+            lista.innerHTML = emAberto.map((x, i) => {
+                const cor = FILA_PONTE_CORES_PRIORIDADE[x.prioridade] || '#94a3b8';
+                return `
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--border);">
+                    <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+                        ${podeReordenar ? `
+                        <div style="display:flex; flex-direction:column; gap:2px;">
+                            <button class="btn-xs-primary" style="padding:2px 6px;" title="Subir na fila" ${i === 0 ? 'disabled' : ''} onclick="window.moverFilaPonteRolante(${x.id}, -1)"><i class="fas fa-caret-up"></i></button>
+                            <button class="btn-xs-primary" style="padding:2px 6px;" title="Descer na fila" ${i === emAberto.length - 1 ? 'disabled' : ''} onclick="window.moverFilaPonteRolante(${x.id}, 1)"><i class="fas fa-caret-down"></i></button>
+                        </div>` : ''}
+                        <span style="font-weight:700; color:${cor}; font-size:12px; min-width:60px;">${x.prioridade || 'Normal'}</span>
+                        <div style="min-width:0;">
+                            <div style="color:var(--text-body); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${x.descricao}</div>
+                            <div class="text-muted" style="font-size:11px;">${x.solicitante_area ? `Solicitado por: ${AREAS_OFICINA.find(a => a.chave === x.solicitante_area)?.nome || x.solicitante_area} — ` : ''}${x.duracao_estimada_min ? `~${x.duracao_estimada_min}min — ` : ''}${x.status}</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:6px; flex-shrink:0;">
+                        <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.abrirConversaAtividade(${x.id})" title="Conversa"><i class="fas fa-comments"></i></button>
+                        ${x.status === 'Pendente' ? `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusFilaPonteRolante(${x.id}, 'Em Andamento')">Iniciar</button>` : ''}
+                        ${x.status === 'Em Andamento' ? `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusFilaPonteRolante(${x.id}, 'Concluído')">Concluir</button>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        if (finalizadas.length) {
+            lista.innerHTML += `
+                <details style="margin-top:16px;">
+                    <summary class="text-muted" style="cursor:pointer; font-size:12px;">Últimas finalizadas</summary>
+                    ${finalizadas.map(x => `
+                        <div style="padding:8px 0; border-bottom:1px solid var(--border); font-size:12px;" class="text-muted">
+                            ${x.descricao} — ${x.status}
+                        </div>
+                    `).join('')}
+                </details>`;
+        }
+    } catch (e) {
+        console.error('⚠️ Não consegui carregar a fila da Ponte Rolante:', e);
+        lista.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">Não foi possível carregar a fila agora.</div>`;
+    }
+};
+
+window.criarSolicitacaoFilaPonteRolante = async function() {
+    if (!verificarAcesso()) return;
+    const descricao = document.getElementById('fila-ponte-descricao')?.value.trim();
+    if (!descricao) return alert('Descreva o que precisa da ponte.');
+    const prioridade = document.getElementById('fila-ponte-prioridade')?.value || 'Normal';
+    const duracaoStr = document.getElementById('fila-ponte-duracao')?.value;
+    const duracaoEstimadaMin = duracaoStr ? parseInt(duracaoStr, 10) : null;
+    const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/atividade`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                area: 'ponte-rolante',
+                descricao,
+                prioridade,
+                duracao_estimada_min: duracaoEstimadaMin,
+                operador,
+                solicitante_matricula: OPERADOR_LOGADO ? OPERADOR_LOGADO.matricula : null,
+            })
+        });
+        if (!resp.ok) {
+            const erro = await resp.json().catch(() => ({}));
+            alert(erro.detail || 'Não foi possível criar a solicitação.');
+            return;
+        }
+        document.getElementById('fila-ponte-descricao').value = '';
+        document.getElementById('fila-ponte-duracao').value = '';
+        document.getElementById('fila-ponte-prioridade').value = 'Normal';
+        document.getElementById('fila-ponte-form-card').classList.add('hidden');
+        await window.renderFilaPonteRolante();
+    } catch (e) {
+        console.error('⚠️ Erro ao solicitar a Ponte Rolante:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+};
+
+window.mudarStatusFilaPonteRolante = async function(id, novoStatus) {
+    if (!verificarAcesso()) return;
+    const motivo = novoStatus === 'Concluído' ? (prompt('Observação ao concluir (opcional):') || null) : null;
+    const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/atividade/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, status: novoStatus, motivo, operador })
+        });
+        if (!resp.ok) {
+            const erro = await resp.json().catch(() => ({}));
+            alert(erro.detail || 'Não foi possível atualizar o status.');
+            return;
+        }
+        await window.renderFilaPonteRolante();
+    } catch (e) {
+        console.error('⚠️ Erro ao atualizar status da fila da Ponte Rolante:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+};
+
+window.moverFilaPonteRolante = async function(id, direcao) {
+    const lista = document.getElementById('fila-ponte-lista');
+    if (!lista) return;
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/atividades?area=ponte-rolante`, { cache: 'no-store' });
+        const atividades = resp.ok ? await resp.json() : [];
+        const emAberto = atividades
+            .filter(a => a.status === 'Pendente' || a.status === 'Em Andamento')
+            .sort((a, b) => (a.ordem_fila ?? a.id) - (b.ordem_fila ?? b.id));
+        const indice = emAberto.findIndex(a => a.id === id);
+        const novoIndice = indice + direcao;
+        if (indice < 0 || novoIndice < 0 || novoIndice >= emAberto.length) return;
+        [emAberto[indice], emAberto[novoIndice]] = [emAberto[novoIndice], emAberto[indice]];
+
+        const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
+        await fetch(`${apiBase}/api/oficina/ponte_rolante/reordenar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ area: 'ponte-rolante', ids_em_ordem: emAberto.map(a => a.id), operador })
+        });
+        await window.renderFilaPonteRolante();
+    } catch (e) {
+        console.error('⚠️ Erro ao reordenar a fila da Ponte Rolante:', e);
+    }
+};
+
 window.mudarStatusAtividadeOficina = async function(id, novoStatus) {
     if (!verificarAcesso()) return;
 

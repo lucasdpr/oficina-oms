@@ -642,6 +642,7 @@
                      mesmo acessar o quadro de atividades/materiais/equipe. -->
                 <a href="#" id="nav-area-oficina" class="nav-link hidden" style="color:#fb923c;" data-area="" onclick="window.abrirAreaOficinaDireto(event, this.dataset.area)"><i class="fas fa-people-carry-box"></i> <span data-area-nome>Minha Área</span></a>
                 <a href="#" id="nav-oficina" class="nav-link" onclick="window.abrirAba(event,'aba-oficina')"><i class="fas fa-industry"></i> 🏭 Central de Áreas</a>
+                <a href="#" id="nav-fila-ponte" class="nav-link" style="color:#3b82f6;" onclick="window.abrirAba(event,'aba-fila-ponte'); window.renderFilaPonteRolante();"><i class="fas fa-crane"></i> Fila da Ponte Rolante</a>
                 <!-- 🆕 Central de Notificações — só supervisor/ADM/admin do
                      sistema (ver ativarCentralNotificacoesSeAutorizado em
                      script.js). Começa escondida; JS decide quem vê. -->
@@ -1904,6 +1905,66 @@
                     <p class="text-muted" style="font-size:13px;">Visão geral da equipe e atividades da Ponte Rolante.</p>
                 </div>
                 <div id="painel-ponte-rolante-container"></div>
+            </section>
+
+            <!-- 🆕 Fila da Ponte Rolante (221/146, fila única compartilhada) —
+                 painel próprio, separado da Central de Áreas: qualquer área pode
+                 solicitar as pontes daqui, com prioridade, previsão de tempo de
+                 espera, fila reordenável e chat com o técnico da ponte. -->
+            <section id="aba-fila-ponte" class="tab-content">
+                <div class="glass-panel" style="border-top:4px solid #3b82f6; padding:24px; margin-bottom:20px;">
+                    <h2 style="color:#3b82f6;"><i class="fas fa-crane"></i> Fila da Ponte Rolante</h2>
+                    <p class="text-muted" style="font-size:13px;">Solicite a Ponte 221 ou 146 — fila única, atendida pela ordem de prioridade.</p>
+                </div>
+
+                <div class="kpi-container" style="margin-bottom:20px;">
+                    <div class="kpi-card warning">
+                        <div class="kpi-icon glow-warning"><i class="fas fa-hourglass-half"></i></div>
+                        <div class="kpi-data"><h4 id="fila-ponte-kpi-fila">–</h4><p>Na Fila Agora</p></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="color:#3b82f6;"><i class="fas fa-clock"></i></div>
+                        <div class="kpi-data"><h4 id="fila-ponte-kpi-espera">–</h4><p>Tempo Médio de Espera</p></div>
+                    </div>
+                </div>
+
+                <div class="glass-panel" style="padding:24px; margin-bottom:20px;">
+                    <div class="flex-between" style="margin-bottom:16px;">
+                        <h3 style="color:var(--text-title); font-size:1rem;"><i class="fas fa-plus"></i> Solicitar a Ponte</h3>
+                        <button class="btn-xs-primary" style="color:var(--text-accent); background:rgba(59,130,246,0.1);" onclick="document.getElementById('fila-ponte-form-card').classList.toggle('hidden')">
+                            <i class="fas fa-plus"></i> Nova Solicitação
+                        </button>
+                    </div>
+                    <div class="hidden" id="fila-ponte-form-card">
+                        <div class="form-grid-4" style="margin-bottom:12px;">
+                            <div class="input-group" style="grid-column: span 2;">
+                                <label>O que precisa?</label>
+                                <textarea id="fila-ponte-descricao" class="premium-textarea" rows="1" placeholder="Ex: Içar molde do Veio C pra bancada..."></textarea>
+                            </div>
+                            <div class="input-group">
+                                <label>Prioridade</label>
+                                <select id="fila-ponte-prioridade" class="premium-select" style="width:100%;">
+                                    <option value="Normal">Normal</option>
+                                    <option value="Urgente">🔴 Urgente</option>
+                                    <option value="Rápida">⚡ Rápida</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Duração Estimada <span class="text-muted" style="font-weight:400;">(min)</span></label>
+                                <input type="number" id="fila-ponte-duracao" class="premium-input" style="width:100%;" min="1" placeholder="Ex: 30">
+                            </div>
+                        </div>
+                        <div style="display:flex; justify-content:flex-end; gap:8px;">
+                            <button class="btn-outline-danger" onclick="document.getElementById('fila-ponte-form-card').classList.add('hidden')">Cancelar</button>
+                            <button class="btn-premium" onclick="window.criarSolicitacaoFilaPonteRolante()"><i class="fas fa-paper-plane"></i> Solicitar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel" style="padding:24px;">
+                    <h3 style="color:var(--text-title); font-size:1rem; margin-bottom:16px;"><i class="fas fa-list-ol"></i> Fila Atual</h3>
+                    <div id="fila-ponte-lista"></div>
+                </div>
             </section>
 
             <section id="aba-painel-logistica" class="tab-content">
