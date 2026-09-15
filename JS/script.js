@@ -5026,6 +5026,7 @@ window.renderPainelSupervisor = async function() {
     const efetivoEl = document.getElementById('painel-supervisor-efetivo');
     const estoqueEl = document.getElementById('painel-supervisor-estoque');
     const sinoticoEl = document.getElementById('painel-supervisor-sinotico');
+    const qualidadeEl = document.getElementById('painel-supervisor-qualidade');
     const tendenciaEl = document.getElementById('painel-supervisor-tendencia');
     if (!heroEl) return; // aba nem existe nesta sessão (ex: HTML antigo em cache)
 
@@ -5403,6 +5404,88 @@ window.renderPainelSupervisor = async function() {
     }
 
     // ---------------------------------------------------------
+    // SEÇÃO — QUALIDADE E COMUNICAÇÃO: 4 fontes já existentes no
+    // sistema, cada uma com rota EM LOTE própria (sem precisar de N
+    // chamadas por área) — padrões de defeito recorrentes, mensagens
+    // Área↔ADM não lidas, avisos ainda sem confirmação de leitura de
+    // todo mundo, e as ocorrências mais recentes registradas.
+    // ---------------------------------------------------------
+    if (qualidadeEl) {
+        qualidadeEl.innerHTML = `<div class="sup-vazio">Carregando…</div>`;
+        try {
+            const apiBase = await resolverApiBase();
+            const [respPadroes, respMensagens, respAvisos, respOcorrencias] = await Promise.all([
+                fetch(`${apiBase}/api/qualidade/achados/padroes`, { cache: 'no-store' }).catch(() => null),
+                fetch(`${apiBase}/api/mensagens_area/resumo`, { cache: 'no-store' }).catch(() => null),
+                fetch(`${apiBase}/api/avisos/todos`, { cache: 'no-store' }).catch(() => null),
+                fetch(`${apiBase}/api/registros_ocorrencia?limite=6`, { cache: 'no-store' }).catch(() => null),
+            ]);
+            const padroes = respPadroes && respPadroes.ok ? await respPadroes.json() : [];
+            const mensagensResumo = respMensagens && respMensagens.ok ? await respMensagens.json() : [];
+            const avisosTodos = respAvisos && respAvisos.ok ? await respAvisos.json() : [];
+            const ocorrencias = respOcorrencias && respOcorrencias.ok ? await respOcorrencias.json() : [];
+
+            const mensagensNaoLidas = (Array.isArray(mensagensResumo) ? mensagensResumo : []).filter(m => Number(m.nao_lidas) > 0);
+            const avisosAtivosPendentes = (Array.isArray(avisosTodos) ? avisosTodos : [])
+                .filter(a => a.ativo && Number(a.total_leram) < Number(a.total_colaboradores))
+                .sort((a, b) => (a.total_leram / (a.total_colaboradores || 1)) - (b.total_leram / (b.total_colaboradores || 1)));
+
+            qualidadeEl.innerHTML = `
+                <div class="sup-card" style="--sup-cor:#a855f7;">
+                    <div class="sup-card-titulo"><span><i class="fas fa-magnifying-glass"></i> Defeitos Recorrentes (Qualidade)</span></div>
+                    ${Array.isArray(padroes) && padroes.length
+                        ? padroes.slice(0, 5).map(p => `
+                            <div class="sup-lista-linha">
+                                <span style="color:var(--text-body);">${p.categoria}</span>
+                                <span style="font-weight:700; color:#a855f7;">${p.total_equipamentos} equip.</span>
+                            </div>
+                        `).join('')
+                        : `<div class="sup-vazio">Nenhum padrão de defeito recorrente nos últimos dias 👍</div>`}
+                </div>
+                <div class="sup-card" style="--sup-cor:#ec4899;">
+                    <div class="sup-card-titulo">
+                        <span><i class="fas fa-comment-dots"></i> Mensagens Área ↔ ADM Não Lidas</span>
+                        <button class="btn-xs-primary" onclick="window.abrirAba(null,'aba-oficina')" style="color:var(--text-accent); background:rgba(59,130,246,0.1);">Ver <i class="fas fa-arrow-right"></i></button>
+                    </div>
+                    ${mensagensNaoLidas.length
+                        ? mensagensNaoLidas.slice(0, 6).map(m => `
+                            <div class="sup-lista-linha">
+                                <span style="color:var(--text-body);">${m.nome_area || m.area}</span>
+                                <span style="font-weight:700; color:#ec4899;">${m.nao_lidas}</span>
+                            </div>
+                        `).join('')
+                        : `<div class="sup-vazio">Nenhuma mensagem pendente 👍</div>`}
+                </div>
+                <div class="sup-card" style="--sup-cor:#f59e0b;">
+                    <div class="sup-card-titulo"><span><i class="fas fa-bullhorn"></i> Avisos Ainda Sem Confirmação de Todos</span></div>
+                    ${avisosAtivosPendentes.length
+                        ? avisosAtivosPendentes.slice(0, 5).map(a => `
+                            <div class="sup-lista-linha">
+                                <span style="color:var(--text-body);" title="${a.titulo}">${(a.titulo || 'Sem título').length > 34 ? a.titulo.slice(0, 34) + '…' : (a.titulo || 'Sem título')}</span>
+                                <span style="font-weight:700; color:#f59e0b;">${a.total_leram}/${a.total_colaboradores}</span>
+                            </div>
+                        `).join('')
+                        : `<div class="sup-vazio">Nenhum aviso ativo pendente de leitura 👍</div>`}
+                </div>
+                <div class="sup-card" style="--sup-cor:#38bdf8;">
+                    <div class="sup-card-titulo"><span><i class="fas fa-triangle-exclamation"></i> Ocorrências Mais Recentes</span></div>
+                    ${Array.isArray(ocorrencias) && ocorrencias.length
+                        ? ocorrencias.slice(0, 6).map(o => `
+                            <div class="sup-lista-linha">
+                                <span style="color:var(--text-body);">${o.peca_id ? o.peca_id + ' — ' : ''}${o.categoria || o.acao || 'Registro'}</span>
+                                <span class="text-muted" style="font-size:11px;">${(o.data_hora || '').slice(0, 10).split('-').reverse().join('/')}</span>
+                            </div>
+                        `).join('')
+                        : `<div class="sup-vazio">Nenhuma ocorrência registrada recentemente.</div>`}
+                </div>
+            `;
+        } catch (e) {
+            console.error('⚠️ Não consegui carregar Qualidade e Comunicação no Painel do Supervisor:', e);
+            qualidadeEl.innerHTML = `<div class="sup-vazio">Não foi possível carregar agora.</div>`;
+        }
+    }
+
+    // ---------------------------------------------------------
     // SEÇÃO 4 — HISTÓRICO E TENDÊNCIA
     // ---------------------------------------------------------
     if (tendenciaEl) {
@@ -5427,7 +5510,7 @@ window.renderPainelSupervisor = async function() {
                     : `<div class="sup-vazio">Ainda sem dado suficiente de conclusões nos últimos 14 dias.</div>`}
             </div>
             <div class="sup-card" style="--sup-cor:#3b82f6;">
-                <div class="sup-card-titulo"><span><i class="fas fa-file-invoice"></i> Ordens de Serviço — Abertas x Fechadas</span></div>
+                <div class="sup-card-titulo"><span><i class="fas fa-file-invoice"></i> Ordens de Serviço por Status</span></div>
                 <div id="painel-sup-os-trend"><div class="sup-vazio">Carregando…</div></div>
             </div>
             <div class="sup-card" style="--sup-cor:#a855f7;">
@@ -5443,13 +5526,21 @@ window.renderPainelSupervisor = async function() {
             const resp = await fetch(`${apiBase}/api/ordens_servico?limite=500`, { cache: 'no-store' });
             const listaOs = resp.ok ? await resp.json() : [];
             if (Array.isArray(listaOs)) {
-                const abertas = listaOs.filter(o => o.status !== 'Concluído').length;
-                const fechadas = listaOs.filter(o => o.status === 'Concluído').length;
-                const maxOs = Math.max(abertas, fechadas, 1);
+                // 🔧 Status real de OS é "Em Andamento" | "Concluído" | "Não
+                // Executada" (ver routers/ordens_servico.py) — antes isso
+                // só separava em "abertas" (tudo que não é Concluído,
+                // misturando Em Andamento com Não Executada) x "fechadas".
+                // Agora mostra os 3 status reais separados.
+                const emAndamentoOs = listaOs.filter(o => o.status === 'Em Andamento').length;
+                const concluidasOs = listaOs.filter(o => o.status === 'Concluído').length;
+                const naoExecutadasOs = listaOs.filter(o => o.status === 'Não Executada').length;
+                const maxOs = Math.max(emAndamentoOs, concluidasOs, naoExecutadasOs, 1);
                 const trendEl = document.getElementById('painel-sup-os-trend');
                 if (trendEl) {
-                    trendEl.innerHTML = (abertas + fechadas) > 0
-                        ? painelSupBarraHtml('Abertas', abertas, maxOs, '#ef4444') + painelSupBarraHtml('Fechadas', fechadas, maxOs, '#22c55e')
+                    trendEl.innerHTML = (emAndamentoOs + concluidasOs + naoExecutadasOs) > 0
+                        ? painelSupBarraHtml('Em Andamento', emAndamentoOs, maxOs, '#eab308')
+                            + painelSupBarraHtml('Concluídas', concluidasOs, maxOs, '#22c55e')
+                            + (naoExecutadasOs > 0 ? painelSupBarraHtml('Não Executadas', naoExecutadasOs, maxOs, '#ef4444') : '')
                         : `<div class="sup-vazio">Nenhuma OS registrada ainda.</div>`;
                 }
 

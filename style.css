@@ -4564,32 +4564,21 @@ textarea,
 /* ==========================================
    PAINEL DO SUPERVISOR — visão executiva
    ========================================== */
-/* 🆕 Cabeçalho com identidade própria — essa aba é pro chefe, não podia
-   ser mais um .glass-panel igual às outras 40 telas do app. Fundo
-   escuro entalhado + glow radial âmbar sutil no canto (mesma cor do
-   ícone de binóculos no menu) + selo "AO VIVO" pulsante. */
+/* 🔧 Repaginado a pedido do usuário ("muito efeito genérico e colorido,
+   quero sério/fino/minimalista — o supervisor vai olhar isso toda
+   hora"): a primeira versão usava gradiente escuro + glow radial + selo
+   pulsante grande + fundo colorido por seção — bonito uma vez, cansativo
+   no dia a dia. Trocado por: superfície plana igual ao resto do app
+   (mesmo --bg-card/--border de sempre), cor só como um traço fino de
+   identidade (borda de 2-3px), nunca como preenchimento/gradiente. */
 .sup-header {
     position: relative;
-    overflow: hidden;
-    background: linear-gradient(155deg, #17131a 0%, #1c1620 55%, #191322 100%);
-    border: 1px solid rgba(251,191,36,0.22);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-top: 2px solid #fbbf24;
     border-radius: var(--radius-lg, var(--radius));
-    padding: 26px 28px;
-    margin-bottom: 24px;
-    box-shadow: 0 14px 40px rgba(0,0,0,0.4);
-}
-:root[data-theme="light"] .sup-header,
-:root:not([data-theme="dark"]):not([data-theme="light"]) .sup-header {
-    background: linear-gradient(155deg, #14101a 0%, #1a1522 55%, #171224 100%);
-}
-.sup-header-glow {
-    position: absolute;
-    top: -60%;
-    right: -10%;
-    width: 420px;
-    height: 420px;
-    background: radial-gradient(circle, rgba(251,191,36,0.20) 0%, rgba(251,191,36,0) 70%);
-    pointer-events: none;
+    padding: 22px 26px;
+    margin-bottom: 20px;
 }
 .sup-header-linha {
     position: relative;
@@ -4603,16 +4592,16 @@ textarea,
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.65rem;
-    font-weight: 800;
+    font-size: 0.62rem;
+    font-weight: 700;
     letter-spacing: 1px;
-    color: #fbbf24;
-    background: rgba(251,191,36,0.12);
-    border: 1px solid rgba(251,191,36,0.35);
-    padding: 3px 10px 3px 8px;
-    border-radius: 20px;
-    margin-bottom: 10px;
+    color: var(--text-muted);
+    padding: 0;
+    margin-bottom: 8px;
 }
+/* Ponto pulsante "ao vivo" é um padrão comum em painel executivo sério
+   (Stripe/Datadog/Vercel usam) — mantido, mas discreto: sem cápsula
+   colorida ao redor, só o texto em cinza e o ponto âmbar piscando. */
 .sup-pulso {
     width: 6px;
     height: 6px;
@@ -4622,25 +4611,26 @@ textarea,
     animation: sup-pulso-anim 1.8s infinite;
 }
 @keyframes sup-pulso-anim {
-    0% { box-shadow: 0 0 0 0 rgba(251,191,36,0.55); }
-    70% { box-shadow: 0 0 0 8px rgba(251,191,36,0); }
+    0% { box-shadow: 0 0 0 0 rgba(251,191,36,0.5); }
+    70% { box-shadow: 0 0 0 6px rgba(251,191,36,0); }
     100% { box-shadow: 0 0 0 0 rgba(251,191,36,0); }
 }
 .sup-header-titulo-bloco h2 {
     margin: 0;
-    font-size: 1.55rem;
-    font-weight: 800;
-    color: #fff;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-heading);
     letter-spacing: -0.01em;
 }
 .sup-header-titulo-bloco h2 i {
     color: #fbbf24;
     margin-right: 8px;
+    font-size: 0.95em;
 }
 .sup-header-titulo-bloco p {
-    margin: 8px 0 0;
-    font-size: 13px;
-    color: rgba(255,255,255,0.62);
+    margin: 6px 0 0;
+    font-size: 12.5px;
+    color: var(--text-muted);
     max-width: 560px;
     line-height: 1.5;
 }
@@ -4649,7 +4639,7 @@ textarea,
 }
 .sup-header-timestamp {
     font-size: 11px;
-    color: rgba(255,255,255,0.45);
+    color: var(--text-muted);
     margin-top: 8px;
 }
 @media (max-width: 700px) {
@@ -4664,37 +4654,16 @@ textarea,
     margin-bottom: 24px;
 }
 .painel-sup-hero-card {
-    position: relative;
-    background: linear-gradient(155deg, var(--bg-card) 0%, color-mix(in srgb, var(--sup-cor, var(--text-accent)) 7%, var(--bg-card)) 100%);
+    background: var(--bg-card);
     border: 1px solid var(--border);
-    border-left: 4px solid var(--sup-cor, var(--text-accent));
+    border-left: 3px solid var(--sup-cor, var(--text-accent));
     border-radius: var(--radius);
-    padding: 20px 20px 18px;
+    padding: 18px 20px;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-    overflow: hidden;
-}
-.painel-sup-hero-card::after {
-    /* glow decorativo no canto, cor por severidade — some no hover pra
-       dar lugar à sombra colorida (ver :hover abaixo) */
-    content: "";
-    position: absolute;
-    top: -40%;
-    right: -20%;
-    width: 140px;
-    height: 140px;
-    border-radius: 50%;
-    background: radial-gradient(circle, var(--sup-cor, var(--text-accent)) 0%, transparent 72%);
-    opacity: 0.16;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
+    transition: border-color 0.15s ease;
 }
 .painel-sup-hero-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 28px rgba(0,0,0,0.35), 0 0 0 1px var(--sup-cor, var(--text-accent));
-}
-.painel-sup-hero-card:hover::after {
-    opacity: 0.26;
+    border-color: var(--sup-cor, var(--text-accent));
 }
 .painel-sup-hero-card .sup-hero-label {
     font-size: 0.68rem;
@@ -4708,8 +4677,8 @@ textarea,
     margin-bottom: 10px;
 }
 .painel-sup-hero-card .sup-hero-num {
-    font-size: 2.6rem;
-    font-weight: 800;
+    font-size: 2.15rem;
+    font-weight: 700;
     line-height: 1;
     color: var(--sup-cor, var(--text-title));
     font-variant-numeric: tabular-nums;
@@ -4724,68 +4693,60 @@ textarea,
 .painel-sup-secao {
     background: var(--bg-card);
     border: 1px solid var(--border);
+    border-left: 3px solid var(--sup-secao-cor, var(--border));
     border-radius: var(--radius-lg, var(--radius));
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     overflow: hidden;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.18);
 }
 .painel-sup-secao-titulo {
-    padding: 16px 22px;
+    padding: 14px 20px;
     display: flex;
     align-items: center;
-    gap: 14px;
-    letter-spacing: 0.2px;
+    gap: 12px;
+    letter-spacing: 0.1px;
+    border-bottom: 1px solid var(--border);
 }
-/* 🆕 Ícone em badge circular (em vez de <i> solto ao lado do texto) —
-   dá peso visual de "seção de dashboard executivo" em vez de um
-   cabeçalho de formulário comum. */
+/* 🔧 Ícone discreto (era badge circular preenchido de branco — chamava
+   atenção demais pra um elemento decorativo). Agora é só o glifo, na
+   cor de identidade da seção, sem fundo. */
 .sup-secao-icone {
     flex-shrink: 0;
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 15px;
-    color: #fff;
-    background: rgba(255,255,255,0.14);
-    border: 1px solid rgba(255,255,255,0.22);
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+    color: var(--sup-secao-cor, var(--text-muted));
 }
 .sup-secao-texto {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    font-weight: 800;
-    font-size: 1.02rem;
-    color: #fff;
+    gap: 1px;
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: var(--text-heading);
 }
 .sup-secao-texto small {
     font-weight: 500;
-    font-size: 11.5px;
+    font-size: 11px;
     letter-spacing: 0.1px;
-    color: rgba(255,255,255,0.65);
+    color: var(--text-muted);
     text-transform: none;
 }
 .painel-sup-secao-corpo {
-    padding: 20px 22px 22px;
+    padding: 18px 20px 20px;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 18px;
+    gap: 16px;
 }
-.painel-sup-secao-saude .painel-sup-secao-titulo { background: linear-gradient(90deg, rgba(239,68,68,0.30), rgba(249,115,22,0.08)); border-bottom: 1px solid rgba(239,68,68,0.25); }
-.painel-sup-secao-produtividade .painel-sup-secao-titulo { background: linear-gradient(90deg, rgba(59,130,246,0.30), rgba(56,189,248,0.08)); border-bottom: 1px solid rgba(59,130,246,0.25); }
-.painel-sup-secao-estoque .painel-sup-secao-titulo { background: linear-gradient(90deg, rgba(34,197,94,0.30), rgba(168,85,247,0.08)); border-bottom: 1px solid rgba(34,197,94,0.25); }
-.painel-sup-secao-tendencia .painel-sup-secao-titulo { background: linear-gradient(90deg, rgba(245,158,11,0.30), rgba(234,179,8,0.08)); border-bottom: 1px solid rgba(245,158,11,0.25); }
-.painel-sup-secao-saude .sup-secao-icone { color: #ef4444; }
-.painel-sup-secao-produtividade .sup-secao-icone { color: #3b82f6; }
-.painel-sup-secao-estoque .sup-secao-icone { color: #22c55e; }
-.painel-sup-secao-tendencia .sup-secao-icone { color: #f59e0b; }
-.painel-sup-secao-efetivo .painel-sup-secao-titulo { background: linear-gradient(90deg, rgba(20,184,166,0.30), rgba(6,182,212,0.08)); border-bottom: 1px solid rgba(20,184,166,0.25); }
-.painel-sup-secao-efetivo .sup-secao-icone { color: #14b8a6; }
-.painel-sup-secao-sinotico .painel-sup-secao-titulo { background: linear-gradient(90deg, rgba(34,211,238,0.30), rgba(236,72,153,0.08)); border-bottom: 1px solid rgba(34,211,238,0.25); }
-.painel-sup-secao-sinotico .sup-secao-icone { color: #22d3ee; }
+/* Uma cor por seção — só como traço fino (borda esquerda do bloco +
+   ícone do título), nunca como preenchimento de fundo. */
+.painel-sup-secao-saude { --sup-secao-cor: #ef4444; }
+.painel-sup-secao-produtividade { --sup-secao-cor: #3b82f6; }
+.painel-sup-secao-estoque { --sup-secao-cor: #22c55e; }
+.painel-sup-secao-tendencia { --sup-secao-cor: #f59e0b; }
+.painel-sup-secao-efetivo { --sup-secao-cor: #14b8a6; }
+.painel-sup-secao-sinotico { --sup-secao-cor: #22d3ee; }
+.painel-sup-secao-qualidade { --sup-secao-cor: #a855f7; }
 .sup-secao-link {
     font-size: 11.5px;
     padding: 6px 12px;
@@ -4817,8 +4778,7 @@ textarea,
     transition: background 0.2s ease, transform 0.15s ease;
 }
 .sup-efetivo-chip:hover {
-    background: color-mix(in srgb, var(--sup-cor, var(--border)) 8%, rgba(255,255,255,0.02));
-    transform: translateY(-2px);
+    border-color: var(--sup-cor, var(--border));
 }
 .sup-efetivo-chip-num {
     flex-shrink: 0;
