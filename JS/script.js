@@ -5023,7 +5023,10 @@ window.renderPainelSupervisor = async function() {
     const heroEl = document.getElementById('painel-supervisor-hero');
     const saudeEl = document.getElementById('painel-supervisor-saude');
     const produtividadeEl = document.getElementById('painel-supervisor-produtividade');
+    const efetivoEl = document.getElementById('painel-supervisor-efetivo');
     const estoqueEl = document.getElementById('painel-supervisor-estoque');
+    const sinoticoEl = document.getElementById('painel-supervisor-sinotico');
+    const qualidadeEl = document.getElementById('painel-supervisor-qualidade');
     const tendenciaEl = document.getElementById('painel-supervisor-tendencia');
     if (!heroEl) return; // aba nem existe nesta sessão (ex: HTML antigo em cache)
 
@@ -5184,6 +5187,10 @@ window.renderPainelSupervisor = async function() {
                 ${painelSupBarraHtml('Atrasadas', atividadesAtrasadas.length, Math.max(atividadesPendentes.length, atividadesAtrasadas.length, 1), '#ef4444')}
                 ${painelSupBarraHtml('Equip. críticos (desgaste ≥80%)', criticos.length, Math.max(criticos.length, 1), '#f97316')}
             </div>
+            <div class="sup-card" style="--sup-cor:#06b6d4; grid-column: 1 / -1;">
+                <div class="sup-card-titulo"><span><i class="fas fa-list-check"></i> Progresso dos Checklists de Execução em Andamento</span></div>
+                <div id="painel-sup-checklist-progresso"><div class="sup-vazio">Carregando…</div></div>
+            </div>
         `;
     }
 
@@ -5256,6 +5263,229 @@ window.renderPainelSupervisor = async function() {
     }
 
     // ---------------------------------------------------------
+    // SEÇÃO — OCUPAÇÃO DOS VEIOS (SINÓTICO): quantos equipamentos estão
+    // de fato instalados por MCC agora, e em que condição (mesmo corte
+    // verde <50% / amarelo 50-79% / vermelho ≥80% usado em
+    // renderizarGraficosMCC/painel de veios) — um resumo do que o
+    // Sinótico 3D mostra em 3D, aqui em números.
+    // ---------------------------------------------------------
+    if (sinoticoEl) {
+        const corPctDesgaste = (a) => {
+            const pct = a.meta > 0 ? (a.ton / a.meta) * 100 : 0;
+            if (pct >= 80) return 'vermelho';
+            if (pct >= 50) return 'amarelo';
+            return 'verde';
+        };
+        const mccsSinotico = [
+            { mcc: '4', cor: '#ec4899' },
+            { mcc: '2', cor: '#3b82f6' },
+            { mcc: '3', cor: '#8b5cf6' },
+        ].map(({ mcc, cor }) => {
+            const instalados = ativos.filter(a => a.status === 'Instalado' && (a.local || '').includes(`MCC ${mcc}`));
+            return {
+                mcc, cor,
+                total: instalados.length,
+                verde: instalados.filter(a => corPctDesgaste(a) === 'verde').length,
+                amarelo: instalados.filter(a => corPctDesgaste(a) === 'amarelo').length,
+                vermelho: instalados.filter(a => corPctDesgaste(a) === 'vermelho').length,
+            };
+        });
+        const totalInstaladosGeral = mccsSinotico.reduce((s, l) => s + l.total, 0);
+
+        sinoticoEl.innerHTML = totalInstaladosGeral > 0
+            ? mccsSinotico.map(l => `
+                <div class="sup-card" style="--sup-cor:${l.cor};">
+                    <div class="sup-card-titulo"><span><i class="fas fa-server"></i> MCC ${l.mcc}</span><span style="font-weight:800; color:${l.cor};">${l.total} instalado${l.total === 1 ? '' : 's'}</span></div>
+                    ${l.total > 0
+                        ? painelSupBarraHtml('🟢 Verde (<50% desgaste)', l.verde, l.total, '#22c55e')
+                            + painelSupBarraHtml('🟡 Amarelo (50-79%)', l.amarelo, l.total, '#eab308')
+                            + painelSupBarraHtml('🔴 Vermelho (≥80%)', l.vermelho, l.total, '#ef4444')
+                        : `<div class="sup-vazio">Nenhum equipamento instalado nesse MCC agora.</div>`}
+                </div>
+            `).join('')
+            : `<div class="sup-vazio">Sem equipamentos instalados em nenhum veio agora.</div>`;
+    }
+
+    // ---------------------------------------------------------
+    // SEÇÃO — EFETIVO POR ÁREA: todo o pessoal cadastrado na planilha do
+    // efetivo (ver /api/oficina/equipe/{area}, já usada no modal "Equipe
+    // da Área"), agora somado e separado por área numa visão só. Busca
+    // em paralelo (Promise.all) pra não fazer o supervisor esperar N
+    // chamadas em sequência — é só leitura, sem endpoint novo.
+    // ---------------------------------------------------------
+    if (efetivoEl) {
+        efetivoEl.innerHTML = `<div class="sup-vazio">Carregando efetivo…</div>`;
+        try {
+            const apiBase = await resolverApiBase();
+            const areasComEquipe = (typeof AREAS_OFICINA !== 'undefined' ? AREAS_OFICINA : []).filter(a => a.tipo === 'oficina' || a.tipo === 'administrativo');
+            const resultadosEfetivo = await Promise.all(areasComEquipe.map(async cfg => {
+                try {
+                    const resp = await fetch(`${apiBase}/api/oficina/equipe/${encodeURIComponent(cfg.chave)}`, { cache: 'no-store' });
+                    const lista = resp.ok ? await resp.json() : [];
+                    return { cfg, lista: Array.isArray(lista) ? lista : [] };
+                } catch (e) {
+                    return { cfg, lista: [] };
+                }
+            }));
+            const areasComGente = resultadosEfetivo.filter(r => r.lista.length > 0).sort((a, b) => b.lista.length - a.lista.length);
+            const totalEfetivo = resultadosEfetivo.reduce((s, r) => s + r.lista.length, 0);
+
+            const tituloEfetivoEl = document.getElementById('painel-sup-efetivo-titulo');
+            if (tituloEfetivoEl) {
+                tituloEfetivoEl.innerHTML = `Efetivo da Oficina <span style="color:#14b8a6;">(${totalEfetivo})</span><small>todo mundo, separado por área</small>`;
+            }
+
+            efetivoEl.innerHTML = areasComGente.length
+                ? `<div class="sup-efetivo-grid">` + areasComGente.map(({ cfg, lista }) => `
+                    <div class="sup-efetivo-chip" style="--sup-cor:${cfg.cor || '#14b8a6'};" onclick="window.abrirAreaOficina('${cfg.chave}')" title="${lista.map(p => `${p.nome} — ${p.cargo || 'sem cargo'}`).join('\n')}">
+                        <span class="sup-efetivo-chip-num">${lista.length}</span>
+                        <span class="sup-efetivo-chip-nome">${cfg.nome}<small>${lista.length === 1 ? '1 pessoa' : lista.length + ' pessoas'}</small></span>
+                    </div>
+                `).join('') + `</div>`
+                : `<div class="sup-vazio">Nenhuma área com efetivo cadastrado ainda.</div>`;
+        } catch (e) {
+            console.error('⚠️ Não consegui carregar o efetivo por área no Painel do Supervisor:', e);
+            efetivoEl.innerHTML = `<div class="sup-vazio">Não foi possível carregar o efetivo agora.</div>`;
+        }
+    }
+
+    // ---------------------------------------------------------
+    // PROGRESSO DOS CHECKLISTS DE EXECUÇÃO EM ANDAMENTO (dentro da seção
+    // Saúde): usa a mesma rota que a sub-aba "Reparo em Andamento" já
+    // consome (/api/checklist-execucao/execucoes/todas) pra saber QUAIS
+    // reparos estão rolando agora, e pra cada um busca o % de etapas já
+    // marcadas (/api/checklist-execucao/status/{id} — mesma rota que
+    // libera o botão "Concluir" no Folhão). Em paralelo, mesmo padrão
+    // do Efetivo acima.
+    // ---------------------------------------------------------
+    const progressoChecklistEl = document.getElementById('painel-sup-checklist-progresso');
+    if (progressoChecklistEl) {
+        try {
+            const apiBase = await resolverApiBase();
+            const respExecucoes = await fetch(`${apiBase}/api/checklist-execucao/execucoes/todas`, { cache: 'no-store' });
+            const execucoes = respExecucoes.ok ? await respExecucoes.json() : [];
+
+            if (!Array.isArray(execucoes) || execucoes.length === 0) {
+                progressoChecklistEl.innerHTML = `<div class="sup-vazio">Nenhum checklist de execução em andamento agora.</div>`;
+            } else {
+                const comProgresso = await Promise.all(execucoes.map(async ex => {
+                    try {
+                        const resp = await fetch(`${apiBase}/api/checklist-execucao/status/${encodeURIComponent(ex.equipamento_id)}`, { cache: 'no-store' });
+                        const status = resp.ok ? await resp.json() : null;
+                        return { ...ex, percentual: status ? Number(status.percentual) || 0 : 0, total: status ? status.total : 0 };
+                    } catch (e) {
+                        return { ...ex, percentual: 0, total: 0 };
+                    }
+                }));
+                comProgresso.sort((a, b) => a.percentual - b.percentual); // menor % primeiro — o que mais precisa de atenção
+
+                const mediaGeral = Math.round(comProgresso.reduce((s, e) => s + e.percentual, 0) / comProgresso.length);
+                const corPct = (p) => p >= 70 ? '#22c55e' : (p >= 35 ? '#eab308' : '#ef4444');
+
+                progressoChecklistEl.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
+                        <div style="font-size:1.8rem; font-weight:800; color:${corPct(mediaGeral)};">${mediaGeral}%</div>
+                        <div style="font-size:11.5px; color:var(--text-muted);">média de conclusão entre os ${comProgresso.length} reparo(s) com checklist em andamento agora</div>
+                    </div>
+                    ${comProgresso.slice(0, 8).map(ex => `
+                        <div class="sup-barra-linha">
+                            <span class="sup-barra-nome" title="${ex.equipamento_id} — ${ex.tecnico_nome || 'sem técnico'}">${ex.equipamento_id}</span>
+                            <span class="sup-barra-trilho"><span class="sup-barra-preenchimento" style="width:${Math.max(4, ex.percentual)}%; background:${corPct(ex.percentual)};"></span></span>
+                            <span class="sup-barra-valor">${ex.percentual}%</span>
+                        </div>
+                    `).join('')}
+                    ${comProgresso.length > 8 ? `<div class="sup-vazio" style="padding-top:8px;">+ ${comProgresso.length - 8} outro(s) em andamento</div>` : ''}
+                `;
+            }
+        } catch (e) {
+            console.error('⚠️ Não consegui carregar o progresso dos checklists no Painel do Supervisor:', e);
+            progressoChecklistEl.innerHTML = `<div class="sup-vazio">Não foi possível carregar agora.</div>`;
+        }
+    }
+
+    // ---------------------------------------------------------
+    // SEÇÃO — QUALIDADE E COMUNICAÇÃO: 4 fontes já existentes no
+    // sistema, cada uma com rota EM LOTE própria (sem precisar de N
+    // chamadas por área) — padrões de defeito recorrentes, mensagens
+    // Área↔ADM não lidas, avisos ainda sem confirmação de leitura de
+    // todo mundo, e as ocorrências mais recentes registradas.
+    // ---------------------------------------------------------
+    if (qualidadeEl) {
+        qualidadeEl.innerHTML = `<div class="sup-vazio">Carregando…</div>`;
+        try {
+            const apiBase = await resolverApiBase();
+            const [respPadroes, respMensagens, respAvisos, respOcorrencias] = await Promise.all([
+                fetch(`${apiBase}/api/qualidade/achados/padroes`, { cache: 'no-store' }).catch(() => null),
+                fetch(`${apiBase}/api/mensagens_area/resumo`, { cache: 'no-store' }).catch(() => null),
+                fetch(`${apiBase}/api/avisos/todos`, { cache: 'no-store' }).catch(() => null),
+                fetch(`${apiBase}/api/registros_ocorrencia?limite=6`, { cache: 'no-store' }).catch(() => null),
+            ]);
+            const padroes = respPadroes && respPadroes.ok ? await respPadroes.json() : [];
+            const mensagensResumo = respMensagens && respMensagens.ok ? await respMensagens.json() : [];
+            const avisosTodos = respAvisos && respAvisos.ok ? await respAvisos.json() : [];
+            const ocorrencias = respOcorrencias && respOcorrencias.ok ? await respOcorrencias.json() : [];
+
+            const mensagensNaoLidas = (Array.isArray(mensagensResumo) ? mensagensResumo : []).filter(m => Number(m.nao_lidas) > 0);
+            const avisosAtivosPendentes = (Array.isArray(avisosTodos) ? avisosTodos : [])
+                .filter(a => a.ativo && Number(a.total_leram) < Number(a.total_colaboradores))
+                .sort((a, b) => (a.total_leram / (a.total_colaboradores || 1)) - (b.total_leram / (b.total_colaboradores || 1)));
+
+            qualidadeEl.innerHTML = `
+                <div class="sup-card" style="--sup-cor:#a855f7;">
+                    <div class="sup-card-titulo"><span><i class="fas fa-magnifying-glass"></i> Defeitos Recorrentes (Qualidade)</span></div>
+                    ${Array.isArray(padroes) && padroes.length
+                        ? padroes.slice(0, 5).map(p => `
+                            <div class="sup-lista-linha">
+                                <span style="color:var(--text-body);">${p.categoria}</span>
+                                <span style="font-weight:700; color:#a855f7;">${p.total_equipamentos} equip.</span>
+                            </div>
+                        `).join('')
+                        : `<div class="sup-vazio">Nenhum padrão de defeito recorrente nos últimos dias 👍</div>`}
+                </div>
+                <div class="sup-card" style="--sup-cor:#ec4899;">
+                    <div class="sup-card-titulo">
+                        <span><i class="fas fa-comment-dots"></i> Mensagens Área ↔ ADM Não Lidas</span>
+                        <button class="btn-xs-primary" onclick="window.abrirAba(null,'aba-oficina')" style="color:var(--text-accent); background:rgba(59,130,246,0.1);">Ver <i class="fas fa-arrow-right"></i></button>
+                    </div>
+                    ${mensagensNaoLidas.length
+                        ? mensagensNaoLidas.slice(0, 6).map(m => `
+                            <div class="sup-lista-linha">
+                                <span style="color:var(--text-body);">${m.nome_area || m.area}</span>
+                                <span style="font-weight:700; color:#ec4899;">${m.nao_lidas}</span>
+                            </div>
+                        `).join('')
+                        : `<div class="sup-vazio">Nenhuma mensagem pendente 👍</div>`}
+                </div>
+                <div class="sup-card" style="--sup-cor:#f59e0b;">
+                    <div class="sup-card-titulo"><span><i class="fas fa-bullhorn"></i> Avisos Ainda Sem Confirmação de Todos</span></div>
+                    ${avisosAtivosPendentes.length
+                        ? avisosAtivosPendentes.slice(0, 5).map(a => `
+                            <div class="sup-lista-linha">
+                                <span style="color:var(--text-body);" title="${a.titulo}">${(a.titulo || 'Sem título').length > 34 ? a.titulo.slice(0, 34) + '…' : (a.titulo || 'Sem título')}</span>
+                                <span style="font-weight:700; color:#f59e0b;">${a.total_leram}/${a.total_colaboradores}</span>
+                            </div>
+                        `).join('')
+                        : `<div class="sup-vazio">Nenhum aviso ativo pendente de leitura 👍</div>`}
+                </div>
+                <div class="sup-card" style="--sup-cor:#38bdf8;">
+                    <div class="sup-card-titulo"><span><i class="fas fa-triangle-exclamation"></i> Ocorrências Mais Recentes</span></div>
+                    ${Array.isArray(ocorrencias) && ocorrencias.length
+                        ? ocorrencias.slice(0, 6).map(o => `
+                            <div class="sup-lista-linha">
+                                <span style="color:var(--text-body);">${o.peca_id ? o.peca_id + ' — ' : ''}${o.categoria || o.acao || 'Registro'}</span>
+                                <span class="text-muted" style="font-size:11px;">${(o.data_hora || '').slice(0, 10).split('-').reverse().join('/')}</span>
+                            </div>
+                        `).join('')
+                        : `<div class="sup-vazio">Nenhuma ocorrência registrada recentemente.</div>`}
+                </div>
+            `;
+        } catch (e) {
+            console.error('⚠️ Não consegui carregar Qualidade e Comunicação no Painel do Supervisor:', e);
+            qualidadeEl.innerHTML = `<div class="sup-vazio">Não foi possível carregar agora.</div>`;
+        }
+    }
+
+    // ---------------------------------------------------------
     // SEÇÃO 4 — HISTÓRICO E TENDÊNCIA
     // ---------------------------------------------------------
     if (tendenciaEl) {
@@ -5280,7 +5510,7 @@ window.renderPainelSupervisor = async function() {
                     : `<div class="sup-vazio">Ainda sem dado suficiente de conclusões nos últimos 14 dias.</div>`}
             </div>
             <div class="sup-card" style="--sup-cor:#3b82f6;">
-                <div class="sup-card-titulo"><span><i class="fas fa-file-invoice"></i> Ordens de Serviço — Abertas x Fechadas</span></div>
+                <div class="sup-card-titulo"><span><i class="fas fa-file-invoice"></i> Ordens de Serviço por Status</span></div>
                 <div id="painel-sup-os-trend"><div class="sup-vazio">Carregando…</div></div>
             </div>
             <div class="sup-card" style="--sup-cor:#a855f7;">
@@ -5296,13 +5526,21 @@ window.renderPainelSupervisor = async function() {
             const resp = await fetch(`${apiBase}/api/ordens_servico?limite=500`, { cache: 'no-store' });
             const listaOs = resp.ok ? await resp.json() : [];
             if (Array.isArray(listaOs)) {
-                const abertas = listaOs.filter(o => o.status !== 'Concluído').length;
-                const fechadas = listaOs.filter(o => o.status === 'Concluído').length;
-                const maxOs = Math.max(abertas, fechadas, 1);
+                // 🔧 Status real de OS é "Em Andamento" | "Concluído" | "Não
+                // Executada" (ver routers/ordens_servico.py) — antes isso
+                // só separava em "abertas" (tudo que não é Concluído,
+                // misturando Em Andamento com Não Executada) x "fechadas".
+                // Agora mostra os 3 status reais separados.
+                const emAndamentoOs = listaOs.filter(o => o.status === 'Em Andamento').length;
+                const concluidasOs = listaOs.filter(o => o.status === 'Concluído').length;
+                const naoExecutadasOs = listaOs.filter(o => o.status === 'Não Executada').length;
+                const maxOs = Math.max(emAndamentoOs, concluidasOs, naoExecutadasOs, 1);
                 const trendEl = document.getElementById('painel-sup-os-trend');
                 if (trendEl) {
-                    trendEl.innerHTML = (abertas + fechadas) > 0
-                        ? painelSupBarraHtml('Abertas', abertas, maxOs, '#ef4444') + painelSupBarraHtml('Fechadas', fechadas, maxOs, '#22c55e')
+                    trendEl.innerHTML = (emAndamentoOs + concluidasOs + naoExecutadasOs) > 0
+                        ? painelSupBarraHtml('Em Andamento', emAndamentoOs, maxOs, '#eab308')
+                            + painelSupBarraHtml('Concluídas', concluidasOs, maxOs, '#22c55e')
+                            + (naoExecutadasOs > 0 ? painelSupBarraHtml('Não Executadas', naoExecutadasOs, maxOs, '#ef4444') : '')
                         : `<div class="sup-vazio">Nenhuma OS registrada ainda.</div>`;
                 }
 

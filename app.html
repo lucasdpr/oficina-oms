@@ -1262,9 +1262,10 @@
                 <!-- 🆕 Cabeçalho executivo: fundo com textura sutil, selo
                      "AO VIVO" pulsante e assinatura de quem tá olhando —
                      essa aba é pro chefe, tinha que parecer isso, não mais
-                     um glass-panel igual às outras 40 telas do sistema. -->
+                     um glass-panel igual às outras 40 telas do sistema.
+                     (Repaginado pra sério/fino/minimalista a pedido do
+                     usuário — ver comentário grande em style.css.) -->
                 <div class="sup-header">
-                    <div class="sup-header-glow"></div>
                     <div class="sup-header-linha">
                         <div class="sup-header-titulo-bloco">
                             <div class="sup-header-selo"><span class="sup-pulso"></span> AO VIVO</div>
@@ -1296,13 +1297,22 @@
                 <!-- SEÇÃO 2 — Produtividade da equipe (azul) -->
                 <div class="painel-sup-secao painel-sup-secao-produtividade">
                     <div class="painel-sup-secao-titulo">
-                        <span class="sup-secao-icone"><i class="fas fa-user-hard-hat"></i></span>
+                        <span class="sup-secao-icone"><i class="fas fa-users-gear"></i></span>
                         <span class="sup-secao-texto">Produtividade da Equipe<small>quem está entregando, por área e por pessoa</small></span>
                     </div>
                     <div class="painel-sup-secao-corpo" id="painel-supervisor-produtividade"></div>
                 </div>
 
-                <!-- SEÇÃO 3 — Estoque e logística (verde/roxo) -->
+                <!-- SEÇÃO 3 — Efetivo por área (todo o pessoal, teal) -->
+                <div class="painel-sup-secao painel-sup-secao-efetivo">
+                    <div class="painel-sup-secao-titulo">
+                        <span class="sup-secao-icone"><i class="fas fa-people-group"></i></span>
+                        <span class="sup-secao-texto" id="painel-sup-efetivo-titulo">Efetivo da Oficina<small>todo mundo, separado por área</small></span>
+                    </div>
+                    <div class="painel-sup-secao-corpo" id="painel-supervisor-efetivo"></div>
+                </div>
+
+                <!-- SEÇÃO 4 — Estoque e logística (verde/roxo) -->
                 <div class="painel-sup-secao painel-sup-secao-estoque">
                     <div class="painel-sup-secao-titulo">
                         <span class="sup-secao-icone"><i class="fas fa-boxes-stacked"></i></span>
@@ -1311,7 +1321,26 @@
                     <div class="painel-sup-secao-corpo" id="painel-supervisor-estoque"></div>
                 </div>
 
-                <!-- SEÇÃO 4 — Histórico e tendência (accent) -->
+                <!-- SEÇÃO 5 — Sinótico: ocupação dos veios (ciano) -->
+                <div class="painel-sup-secao painel-sup-secao-sinotico">
+                    <div class="painel-sup-secao-titulo">
+                        <span class="sup-secao-icone"><i class="fas fa-cube"></i></span>
+                        <span class="sup-secao-texto">Ocupação dos Veios (Sinótico)<small>quanto tá instalado e em que condição, por MCC</small></span>
+                        <a href="Sinotico3d.html" target="_blank" class="btn-xs-primary sup-secao-link" style="margin-left:auto;">Abrir Sinótico 3D <i class="fas fa-arrow-up-right-from-square"></i></a>
+                    </div>
+                    <div class="painel-sup-secao-corpo" id="painel-supervisor-sinotico"></div>
+                </div>
+
+                <!-- SEÇÃO 6 — Qualidade e comunicação (roxo) -->
+                <div class="painel-sup-secao painel-sup-secao-qualidade">
+                    <div class="painel-sup-secao-titulo">
+                        <span class="sup-secao-icone"><i class="fas fa-comments"></i></span>
+                        <span class="sup-secao-texto">Qualidade e Comunicação<small>defeitos recorrentes, avisos e conversas pendentes</small></span>
+                    </div>
+                    <div class="painel-sup-secao-corpo" id="painel-supervisor-qualidade"></div>
+                </div>
+
+                <!-- SEÇÃO 7 — Histórico e tendência (accent) -->
                 <div class="painel-sup-secao painel-sup-secao-tendencia">
                     <div class="painel-sup-secao-titulo">
                         <span class="sup-secao-icone"><i class="fas fa-chart-line"></i></span>
