@@ -2091,7 +2091,7 @@ function renderizarResumoHistoricoIndividual(item) {
     if (item.local === "Oficina / Reparo" && item.dataReparo) {
         cardEntrada = formatarData(item.dataReparo);
         iconeDias = "fa-tools";
-        corDias = "#ef4444";
+        corDias = "var(--danger)";
     } else if (item.dataEntradaVeio && item.local && !item.local.includes("Oficina")) {
         // 🔧 Ver correção "Prontuário sem Data de Entrada" em
         // sincronizarAtivosReaisMCC4() (banco.js): quando não existe um
@@ -2101,7 +2101,7 @@ function renderizarResumoHistoricoIndividual(item) {
         // fingir ser uma data exata.
         cardEntrada = (item.dataEntradaEstimada ? "~" : "") + formatarData(item.dataEntradaVeio);
         iconeDias = "fa-industry";
-        corDias = "#22c55e";
+        corDias = "var(--success)";
     } else {
         cardEntrada = "--";
         iconeDias = "fa-question";
@@ -2116,17 +2116,23 @@ function renderizarResumoHistoricoIndividual(item) {
     const historicoItem = HISTORICO_ACOES.filter(h => h.tag === item.id);
     const folhoesFeitos = historicoItem.filter(h => (h.acao || "").toLowerCase().includes("folhão") || (h.acao || "").toLowerCase().includes("laudo")).length;
 
+    // 🔧 REFINAMENTO (Fase R2): chip sólido -- neutro (corDias ==
+    // var(--text-muted)) fica com fundo neutro, qualquer cor de status
+    // real vira preenchimento sólido com ícone claro por cima.
+    const neutro = corDias === 'var(--text-muted)';
+    const estiloChip = neutro ? '' : `background:${corDias}; color:#fff;`;
+
     container.innerHTML = `
-        <div class="kpi-card" style="border-top:3px solid ${corDias};">
-            <div class="kpi-icon" style="color:${corDias}; border-color:${corDias}33;"><i class="fas ${iconeDias}"></i></div>
+        <div class="kpi-card">
+            <div class="kpi-icon" style="${estiloChip}"><i class="fas ${iconeDias}"></i></div>
             <div class="kpi-data"><h4 style="font-size:1.3rem;">${cardEntrada}</h4><p>${item.local === "Oficina / Reparo" ? "Saiu do Veio em" : (item.dataEntradaEstimada ? "Data de Entrada (estimada)" : "Data de Entrada Atual")}</p></div>
         </div>
-        <div class="kpi-card" style="border-top:3px solid ${corDias};">
-            <div class="kpi-icon" style="color:${corDias}; border-color:${corDias}33;"><i class="fas fa-calendar-day"></i></div>
+        <div class="kpi-card">
+            <div class="kpi-icon" style="${estiloChip}"><i class="fas fa-calendar-day"></i></div>
             <div class="kpi-data"><h4 style="font-size:1.3rem;">${dias}</h4><p>${statusLabel}</p></div>
         </div>
-        <div class="kpi-card" style="border-top:3px solid var(--border-color);">
-            <div class="kpi-icon" style="color:var(--text-muted); border-color:var(--border-color);"><i class="fas fa-clipboard-check"></i></div>
+        <div class="kpi-card">
+            <div class="kpi-icon"><i class="fas fa-clipboard-check"></i></div>
             <div class="kpi-data"><h4 style="font-size:1.3rem;">${folhoesFeitos}</h4><p>Folhões Concluídos</p></div>
         </div>
     `;
@@ -4767,7 +4773,7 @@ window.renderPainelExecutivoAdm = async function(container) {
     container.innerHTML = `
         <div class="kpi-container" style="margin-bottom:20px;">
             <div class="kpi-card">
-                <div class="kpi-icon" style="color:#38bdf8;"><i class="fas fa-list-check"></i></div>
+                <div class="kpi-icon glow-brand"><i class="fas fa-list-check"></i></div>
                 <div class="kpi-data"><h4 id="adm-exec-kpi-abertas">–</h4><p>Atividades Abertas (todas as áreas)</p></div>
             </div>
             <div class="kpi-card danger">
@@ -4793,7 +4799,7 @@ window.renderPainelExecutivoAdm = async function(container) {
             <p class="text-muted" style="font-size:12px; margin-bottom:16px;">Colaboradores, Ordens de Serviço, Qualidade e Checklist de Execução — tudo num lugar só.</p>
             <div class="kpi-container">
                 <div class="kpi-card">
-                    <div class="kpi-icon" style="color:var(--text-accent);"><i class="fas fa-users"></i></div>
+                    <div class="kpi-icon glow-brand"><i class="fas fa-users"></i></div>
                     <div class="kpi-data"><h4 id="adm-exec-kpi-colaboradores">–</h4><p>Colaboradores Ativos</p></div>
                 </div>
                 <div class="kpi-card warning">
@@ -4801,7 +4807,7 @@ window.renderPainelExecutivoAdm = async function(container) {
                     <div class="kpi-data"><h4 id="adm-exec-kpi-primeiro-acesso">–</h4><p>Aguardando 1º Acesso</p></div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-icon" style="color:#f472b6;"><i class="fas fa-file-invoice"></i></div>
+                    <div class="kpi-icon glow-brand"><i class="fas fa-file-invoice"></i></div>
                     <div class="kpi-data"><h4 id="adm-exec-kpi-os-abertas">–</h4><p>OS em Aberto</p></div>
                 </div>
                 <div class="kpi-card danger">
@@ -4809,7 +4815,7 @@ window.renderPainelExecutivoAdm = async function(container) {
                     <div class="kpi-data"><h4 id="adm-exec-kpi-achados-qualidade">–</h4><p>Achados de Qualidade Pendentes</p></div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-icon" style="color:var(--text-accent);"><i class="fas fa-list-check"></i></div>
+                    <div class="kpi-icon glow-brand"><i class="fas fa-list-check"></i></div>
                     <div class="kpi-data"><h4 id="adm-exec-kpi-checklist-andamento">–</h4><p>Checklists de Execução em Andamento</p></div>
                 </div>
             </div>
@@ -11172,19 +11178,19 @@ window.renderizarKpisQualidade = function(lista) {
 
     container.innerHTML = `
         <div class="kpi-card warning">
-            <div class="kpi-icon"><i class="fas fa-hourglass-half"></i></div>
+            <div class="kpi-icon glow-warning"><i class="fas fa-hourglass-half"></i></div>
             <div class="kpi-data"><h4>${aguardando}</h4><p>Aguardando Saída</p></div>
         </div>
         <div class="kpi-card success">
-            <div class="kpi-icon"><i class="fas fa-check"></i></div>
+            <div class="kpi-icon glow-success"><i class="fas fa-check"></i></div>
             <div class="kpi-data"><h4>${concluidos}</h4><p>Concluídos</p></div>
         </div>
         <div class="kpi-card ${achadosPendentes > 0 ? 'danger' : ''}">
-            <div class="kpi-icon"><i class="fas fa-triangle-exclamation"></i></div>
+            <div class="kpi-icon ${achadosPendentes > 0 ? 'glow-danger' : ''}"><i class="fas fa-triangle-exclamation"></i></div>
             <div class="kpi-data"><h4>${achadosPendentes}</h4><p>Achados Pendentes</p></div>
         </div>
         <div class="kpi-card">
-            <div class="kpi-icon"><i class="fas fa-list-check"></i></div>
+            <div class="kpi-icon glow-brand"><i class="fas fa-list-check"></i></div>
             <div class="kpi-data"><h4>${achadosTotal}</h4><p>Achados no Total</p></div>
         </div>
     `;
