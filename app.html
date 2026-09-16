@@ -2020,6 +2020,18 @@
                             <label class="chip-select"><input type="checkbox" class="modal-iniciar-ponte-check" value="Cinta"> Cinta</label>
                         </div>
                     </div>
+                    <div class="input-group" style="margin-bottom:8px;">
+                        <label>Quem está operando a ponte hoje?</label>
+                        <div id="modal-iniciar-ponte-operadores" class="chip-select-radio" style="margin-top:8px;">
+                            <span class="text-muted" style="font-size:12px;">Carregando equipe...</span>
+                        </div>
+                    </div>
+                    <div class="input-group" style="margin-bottom:8px;">
+                        <input type="text" id="modal-iniciar-ponte-operador-outro" placeholder="Ou digite o nome de quem vai operar">
+                    </div>
+                    <div id="modal-iniciar-ponte-operador-aviso" class="hidden" style="margin-bottom:14px; padding:8px 10px; border-radius:8px; background:rgba(251,191,36,0.12); color:#fbbf24; font-size:12px;">
+                        <i class="fas fa-triangle-exclamation"></i> Troca de operador: será registrada em relação ao último operador desta ponte.
+                    </div>
                     <div style="display:flex; justify-content:flex-end; gap:8px;">
                         <button class="btn-outline-danger" onclick="window.fecharModalIniciarPonte()">Cancelar</button>
                         <button class="btn-premium" onclick="window.confirmarIniciarPonte()"><i class="fas fa-play"></i> Iniciar</button>

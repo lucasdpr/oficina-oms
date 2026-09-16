@@ -6927,6 +6927,85 @@ window.enviarStatusFilaPonteRolante = async function(id, novoStatus, extras) {
     }
 };
 
+// 🆕 Operador atual de cada ponte física, por dia — guardado localmente
+// (chave: número da ponte) pra não precisar perguntar de novo o dia
+// inteiro e pra detectar troca de operador comparando com o último
+// nome salvo. Zera sozinho quando muda a data.
+const CHAVE_OPERADOR_PONTE = 'oms_operador_ponte_v1';
+
+function obterOperadorSalvoPonte(ponte) {
+    try {
+        const todos = JSON.parse(localStorage.getItem(CHAVE_OPERADOR_PONTE) || '{}');
+        const registro = todos[ponte];
+        const hoje = new Date().toISOString().slice(0, 10);
+        if (registro && registro.data === hoje) return registro.nome;
+        return null;
+    } catch (e) {
+        return null;
+    }
+}
+
+function salvarOperadorPonte(ponte, nome) {
+    try {
+        const todos = JSON.parse(localStorage.getItem(CHAVE_OPERADOR_PONTE) || '{}');
+        todos[ponte] = { nome, data: new Date().toISOString().slice(0, 10) };
+        localStorage.setItem(CHAVE_OPERADOR_PONTE, JSON.stringify(todos));
+    } catch (e) { /* localStorage indisponível — segue sem persistir */ }
+}
+
+// 🆕 Recarrega a lista de operadores (equipe da Ponte Rolante) e marca
+// o operador salvo do dia, se houver, comparando com a ponte escolhida
+// no rádio. Chamado ao abrir o modal e sempre que a ponte é trocada.
+async function atualizarOperadoresModalIniciarPonte() {
+    const ponte = document.querySelector('input[name="modal-iniciar-ponte-radio"]:checked')?.value || '221';
+    const container = document.getElementById('modal-iniciar-ponte-operadores');
+    const operadorSalvo = obterOperadorSalvoPonte(ponte);
+
+    let equipe = [];
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/equipe/ponte-rolante`, { cache: 'no-store' });
+        equipe = resp.ok ? await resp.json() : [];
+    } catch (e) {
+        console.error('⚠️ Não consegui buscar a equipe da Ponte Rolante:', e);
+    }
+    const nomes = Array.isArray(equipe) ? equipe.map(p => p.nome).filter(Boolean) : [];
+    if (operadorSalvo && !nomes.some(n => n.toLowerCase() === operadorSalvo.toLowerCase())) {
+        nomes.unshift(operadorSalvo);
+    }
+
+    if (container) {
+        container.innerHTML = nomes.length
+            ? nomes.map(nome => `
+                <label class="chip-select">
+                    <input type="radio" name="modal-iniciar-ponte-operador-radio" value="${nome.replace(/"/g, '&quot;')}" ${nome === operadorSalvo ? 'checked' : ''}>
+                    ${nome}${nome === operadorSalvo ? ' <span class="text-muted" style="font-size:11px;">(atual)</span>' : ''}
+                </label>
+            `).join('')
+            : `<span class="text-muted" style="font-size:12px;">Nenhuma equipe cadastrada na Ponte Rolante — digite o nome abaixo.</span>`;
+    }
+    const inputOutro = document.getElementById('modal-iniciar-ponte-operador-outro');
+    if (inputOutro) inputOutro.value = '';
+    atualizarAvisoTrocaOperadorPonte();
+}
+
+// 🆕 Liga/desliga o aviso de troca comparando a escolha atual (rádio ou
+// campo livre) com o operador salvo daquela ponte. É só um aviso —
+// não bloqueia o Iniciar.
+function atualizarAvisoTrocaOperadorPonte() {
+    const ponte = document.querySelector('input[name="modal-iniciar-ponte-radio"]:checked')?.value || '221';
+    const operadorSalvo = obterOperadorSalvoPonte(ponte);
+    const escolhido = obterOperadorEscolhidoModalIniciarPonte();
+    const aviso = document.getElementById('modal-iniciar-ponte-operador-aviso');
+    if (aviso) aviso.classList.toggle('hidden', !operadorSalvo || !escolhido || escolhido.toLowerCase() === operadorSalvo.toLowerCase());
+}
+
+function obterOperadorEscolhidoModalIniciarPonte() {
+    const outro = document.getElementById('modal-iniciar-ponte-operador-outro')?.value.trim();
+    if (outro) return outro;
+    return document.querySelector('input[name="modal-iniciar-ponte-operador-radio"]:checked')?.value || '';
+}
+
 window.abrirModalIniciarPonte = function(id, acessoriosSugeridos) {
     FILA_PONTE_ID_INICIANDO = id;
     // 🆕 Pré-marca o que já foi sugerido na criação — o técnico só
@@ -6935,8 +7014,14 @@ window.abrirModalIniciarPonte = function(id, acessoriosSugeridos) {
     document.querySelectorAll('#modal-iniciar-ponte-acessorios .modal-iniciar-ponte-check').forEach(c => {
         c.checked = sugeridos.includes(c.value);
     });
-    document.querySelector('input[name="modal-iniciar-ponte-radio"][value="221"]').checked = true;
+    document.querySelectorAll('input[name="modal-iniciar-ponte-radio"]').forEach(r => {
+        r.checked = r.value === '221';
+        r.onchange = atualizarOperadoresModalIniciarPonte;
+    });
+    const inputOutro = document.getElementById('modal-iniciar-ponte-operador-outro');
+    if (inputOutro) inputOutro.oninput = atualizarAvisoTrocaOperadorPonte;
     document.getElementById('modal-iniciar-ponte')?.classList.remove('hidden');
+    atualizarOperadoresModalIniciarPonte();
 };
 
 window.fecharModalIniciarPonte = function() {
@@ -6948,12 +7033,22 @@ window.confirmarIniciarPonte = async function() {
     if (!FILA_PONTE_ID_INICIANDO) return;
     const ponteUtilizada = document.querySelector('input[name="modal-iniciar-ponte-radio"]:checked')?.value || '221';
     const acessorios = [...document.querySelectorAll('#modal-iniciar-ponte-acessorios .modal-iniciar-ponte-check:checked')].map(c => c.value);
+    const operadorPonte = obterOperadorEscolhidoModalIniciarPonte();
+    if (!operadorPonte) {
+        alert('Selecione ou digite quem está operando a ponte.');
+        return;
+    }
+    const operadorAnterior = obterOperadorSalvoPonte(ponteUtilizada);
+    const trocaOperador = !!operadorAnterior && operadorAnterior.toLowerCase() !== operadorPonte.toLowerCase();
     const id = FILA_PONTE_ID_INICIANDO;
     window.fecharModalIniciarPonte();
     await window.enviarStatusFilaPonteRolante(id, 'Em Andamento', {
         ponte_utilizada: ponteUtilizada,
         acessorios_ponte: acessorios.join(', ') || null,
+        operador_ponte: operadorPonte,
+        troca_operador: trocaOperador,
     });
+    salvarOperadorPonte(ponteUtilizada, operadorPonte);
 };
 
 // 🆕 Compartilhado entre moverFilaPonteRolante e mudarStatusFilaPonteRolante
