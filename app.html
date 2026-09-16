@@ -1390,6 +1390,21 @@
                 </div>
             </section>
 
+            <!-- 🆕 Modal de drill-down do Painel do Supervisor: clicando em
+                 qualquer linha/barra das seções de Saúde da Oficina, abre
+                 aqui a lista completa por trás do número, com dados de
+                 fácil acesso (área, status, responsável...). Ver
+                 window.abrirDetalheSupervisorPorIndice em script.js. -->
+            <div id="modal-supervisor-detalhe" class="modal-overlay hidden" style="z-index:10001;">
+                <div class="modal-content" style="max-width:560px; max-height:80vh; display:flex; flex-direction:column; text-align:left;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
+                        <h2 id="modal-supervisor-detalhe-titulo" style="color:var(--text-heading); margin:0; font-size:1.05rem;">Detalhe</h2>
+                        <button class="btn-close-emergency" onclick="window.fecharModalSupervisorDetalhe()"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div id="modal-supervisor-detalhe-lista" style="overflow-y:auto; flex:1;"></div>
+                </div>
+            </div>
+
             <!-- 🆕 REGISTRO DE OS (Ordem de Serviço) — foto da OS em papel +
                  acompanhamento de status (Em Andamento / Concluído). -->
             <section id="aba-ordens-servico" class="tab-content">

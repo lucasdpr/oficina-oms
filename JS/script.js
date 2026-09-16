@@ -4995,16 +4995,75 @@ window.renderPainelExecutivoAdm = async function(container) {
 // API de Ordens de Serviço, que já é consumida em outro lugar do app.
 const PAINEL_SUP_LIMITE_ESTOQUE_BAIXO = 10; // mesmo corte usado em renderMateriais()
 
-function painelSupBarraHtml(nome, valor, max, cor) {
+function painelSupBarraHtml(nome, valor, max, cor, onclick) {
     const pct = max > 0 ? Math.max(4, Math.round((valor / max) * 100)) : 0;
     return `
-        <div class="sup-barra-linha">
+        <div class="sup-barra-linha${onclick ? ' sup-lista-linha-clicavel' : ''}" ${onclick ? `onclick="${onclick}"` : ''}>
             <span class="sup-barra-nome" title="${nome}">${nome}</span>
             <span class="sup-barra-trilho"><span class="sup-barra-preenchimento" style="width:${valor > 0 ? pct : 0}%; background:${cor};"></span></span>
             <span class="sup-barra-valor">${valor}</span>
         </div>
     `;
 }
+
+// 🆕 Drill-down do Painel Supervisor: os cards de "Saúde da Oficina
+// Agora" eram só números/barras estáticas — clicar não fazia nada. Os
+// dados já existem em memória (atividades/ativos já carregados pro
+// resto do painel), só faltava um jeito de mostrar a lista por trás de
+// cada número. Como onclick="" é uma string HTML, não dá pra passar o
+// array de itens direto — guarda no cache por índice e o clique só
+// manda o índice.
+let SUP_DETALHE_CACHE = [];
+function registrarDetalheSupervisor(titulo, itens, tipo) {
+    SUP_DETALHE_CACHE.push({ titulo, itens: itens || [], tipo });
+    return SUP_DETALHE_CACHE.length - 1;
+}
+
+window.abrirDetalheSupervisorPorIndice = function(idx) {
+    const d = SUP_DETALHE_CACHE[idx];
+    if (!d) return;
+    const modal = document.getElementById('modal-supervisor-detalhe');
+    const tituloEl = document.getElementById('modal-supervisor-detalhe-titulo');
+    const cont = document.getElementById('modal-supervisor-detalhe-lista');
+    if (!modal || !cont) return;
+    if (tituloEl) tituloEl.textContent = `${d.titulo} (${d.itens.length})`;
+
+    if (!d.itens.length) {
+        cont.innerHTML = `<div class="sup-vazio">Nada aqui agora 👍</div>`;
+    } else if (d.tipo === 'ativo') {
+        cont.innerHTML = d.itens.map(a => {
+            const pct = a.meta > 0 ? Math.round((a.ton / a.meta) * 100) : null;
+            return `
+                <div class="sup-lista-linha sup-lista-linha-clicavel" style="flex-direction:column; align-items:stretch;" onclick="window.fecharModalSupervisorDetalhe(); window.abrirHistoricoIndividual('${a.id}')">
+                    <div style="display:flex; justify-content:space-between; width:100%;">
+                        <strong style="color:var(--text-heading);">${a.id}</strong>
+                        <span class="text-muted">${a.tipo || '—'}</span>
+                    </div>
+                    <div class="text-muted" style="font-size:11.5px;">Local: ${a.local || '—'}${pct !== null ? ` · Desgaste: ${pct}%` : ''}</div>
+                </div>
+            `;
+        }).join('');
+    } else {
+        cont.innerHTML = d.itens.map(x => `
+            <div class="sup-lista-linha" style="flex-direction:column; align-items:stretch;">
+                <div style="display:flex; justify-content:space-between; width:100%;">
+                    <strong style="color:var(--text-heading);">${x.equipamento_id || x.id || '—'}</strong>
+                    <span class="text-muted">${x.status || '—'}</span>
+                </div>
+                <div class="text-muted" style="font-size:11.5px;">
+                    Área: ${x.area || x.solicitante_area || '—'}${x.tipo ? ` · Tipo: ${x.tipo}` : ''}${x.responsavel ? ` · Responsável: ${x.responsavel}` : ''}${x.executado_por ? ` · Executado por: ${x.executado_por}` : ''}
+                </div>
+                ${x.descricao ? `<div style="font-size:12.5px; margin-top:4px; color:var(--text-body);">${x.descricao}</div>` : ''}
+                ${x.motivo ? `<div style="font-size:11.5px; margin-top:2px; color:var(--text-muted);">Obs: ${x.motivo}</div>` : ''}
+            </div>
+        `).join('');
+    }
+    modal.classList.remove('hidden');
+};
+
+window.fecharModalSupervisorDetalhe = function() {
+    document.getElementById('modal-supervisor-detalhe')?.classList.add('hidden');
+};
 
 function painelSupSparklineHtml(valores, cor) {
     const max = Math.max(1, ...valores.map(v => v.valor));
@@ -5032,6 +5091,8 @@ window.renderPainelSupervisor = async function() {
     const qualidadeEl = document.getElementById('painel-supervisor-qualidade');
     const tendenciaEl = document.getElementById('painel-supervisor-tendencia');
     if (!heroEl) return; // aba nem existe nesta sessão (ex: HTML antigo em cache)
+
+    SUP_DETALHE_CACHE = []; // reseta a cada render — índices só valem pra esta tela atual
 
     const ativos = Array.isArray(window.BANCO_ATIVOS) ? window.BANCO_ATIVOS : (typeof BANCO_ATIVOS !== 'undefined' ? BANCO_ATIVOS : []);
     const atividades = Array.isArray(window.OFICINA_ATIVIDADES_CACHE) ? window.OFICINA_ATIVIDADES_CACHE : (typeof OFICINA_ATIVIDADES_CACHE !== 'undefined' ? OFICINA_ATIVIDADES_CACHE : []);
@@ -5183,14 +5244,21 @@ window.renderPainelSupervisor = async function() {
             <div class="sup-card" style="--sup-cor:#ef4444;">
                 <div class="sup-card-titulo"><span><i class="fas fa-fire"></i> Atraso por Área</span></div>
                 ${rankingAtrasoAreas.length
-                    ? rankingAtrasoAreas.map(([nome, v]) => painelSupBarraHtml(nome, v, maxAtrasoArea, '#ef4444')).join('')
+                    ? rankingAtrasoAreas.map(([nome, v]) => painelSupBarraHtml(
+                        nome, v, maxAtrasoArea, '#ef4444',
+                        `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor(
+                            `Atrasadas — ${nome}`,
+                            atividadesAtrasadas.filter(x => (x.area || x.solicitante_area) === nome),
+                            'atividade'
+                        )})`
+                    )).join('')
                     : `<div class="sup-vazio">Nenhuma atividade atrasada agora 👍</div>`}
             </div>
             <div class="sup-card" style="--sup-cor:#f59e0b;">
                 <div class="sup-card-titulo"><span><i class="fas fa-hourglass-half"></i> Peças Há Mais Tempo em Reparo</span></div>
                 ${reparoMaisAntigos.length
                     ? reparoMaisAntigos.map(a => `
-                        <div class="sup-lista-linha">
+                        <div class="sup-lista-linha sup-lista-linha-clicavel" onclick="window.abrirHistoricoIndividual('${a.id}')">
                             <span style="color:var(--text-body);">${a.id} <span class="text-muted">(${a.tipo || '—'})</span></span>
                             <span style="font-weight:700; color:${a.diasReais > 15 ? '#ef4444' : '#f59e0b'};">${a.diasReais}d</span>
                         </div>
@@ -5199,9 +5267,12 @@ window.renderPainelSupervisor = async function() {
             </div>
             <div class="sup-card" style="--sup-cor:#eab308;">
                 <div class="sup-card-titulo"><span><i class="fas fa-clipboard-list"></i> Pendentes vs Críticos Agora</span></div>
-                ${painelSupBarraHtml('Pendentes (não iniciadas)', atividadesPendentes.length, Math.max(atividadesPendentes.length, atividadesAtrasadas.length, 1), '#eab308')}
-                ${painelSupBarraHtml('Atrasadas', atividadesAtrasadas.length, Math.max(atividadesPendentes.length, atividadesAtrasadas.length, 1), '#ef4444')}
-                ${painelSupBarraHtml('Equip. críticos (desgaste ≥80%)', criticos.length, Math.max(criticos.length, 1), '#f97316')}
+                ${painelSupBarraHtml('Pendentes (não iniciadas)', atividadesPendentes.length, Math.max(atividadesPendentes.length, atividadesAtrasadas.length, 1), '#eab308',
+                    `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor('Pendentes (não iniciadas)', atividadesPendentes, 'atividade')})`)}
+                ${painelSupBarraHtml('Atrasadas', atividadesAtrasadas.length, Math.max(atividadesPendentes.length, atividadesAtrasadas.length, 1), '#ef4444',
+                    `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor('Atrasadas', atividadesAtrasadas, 'atividade')})`)}
+                ${painelSupBarraHtml('Equip. críticos (desgaste ≥80%)', criticos.length, Math.max(criticos.length, 1), '#f97316',
+                    `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor('Equipamentos Críticos (desgaste ≥80%)', criticos, 'ativo')})`)}
             </div>
             <div class="sup-card" style="--sup-cor:#06b6d4; grid-column: 1 / -1;">
                 <div class="sup-card-titulo"><span><i class="fas fa-list-check"></i> Progresso dos Checklists de Execução em Andamento</span></div>
