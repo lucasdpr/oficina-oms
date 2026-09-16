@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" style="background:#0a0e14;">
 <head>
     <!-- ==============================================================
          🔧 CAPTURA DE ERROS VISÍVEL NA TELA — pega qualquer erro de
@@ -1112,9 +1112,9 @@
                         <div style="display:flex;gap:10px;flex-wrap:wrap;"><div class="login-input-wrapper" style="position:relative;width:260px;max-width:100%;"><input type="text" id="busca-material" placeholder="Buscar código ou descrição..." onkeyup="window.renderMateriais()" style="height:40px;border-radius:6px;padding-left:40px;"><i class="fas fa-search login-input-icon" style="top:11px;font-size:14px;"></i></div><button class="btn-premium" onclick="window.toggleFormMaterial()"><i class="fas fa-plus"></i> Cadastrar Entrada</button></div>
                     </div>
                     <div id="form-novo-material" class="cadastrar-box hidden" style="margin-top:16px;padding:20px;border-radius:var(--radius);background:rgba(0,0,0,0.2);border:1px dashed var(--border-color);">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><h3 style="color:#a855f7;"><i class="fas fa-box-open"></i> Lançamento de Entrada</h3><button class="btn-xs-primary" onclick="window.toggleFormMaterial()" style="color:var(--text-muted);"><i class="fas fa-times"></i> Fechar</button></div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><h3 style="color:var(--text-heading);"><i class="fas fa-box-open"></i> Lançamento de Entrada</h3><button class="btn-xs-primary" onclick="window.toggleFormMaterial()" style="color:var(--text-muted);"><i class="fas fa-times"></i> Fechar</button></div>
                         <p class="text-muted" style="font-size:12px;margin-bottom:12px;"><strong>Nota:</strong> Se o código (SKU) já existir, a quantidade será somada ao saldo.</p>
-                        <div class="form-grid-4"><div class="input-group"><label>Código (SKU)</label><input type="text" id="mat-codigo" placeholder="Ex: 1660669"></div><div class="input-group" style="grid-column:span 2;"><label>Descrição</label><input type="text" id="mat-descricao" placeholder="Descrição do material"></div><div class="input-group"><label>Quantidade</label><input type="number" id="mat-qtd" placeholder="Ex: 50" min="1"></div><div class="input-group" style="grid-column:span 4;display:flex;justify-content:flex-end;margin-top:8px;"><button class="btn-premium" style="background:#a855f7;color:#fff;border:none;padding:12px 25px;" onclick="window.salvarEntradaMaterial()"><i class="fas fa-save"></i> Processar Entrada</button></div></div>
+                        <div class="form-grid-4"><div class="input-group"><label>Código (SKU)</label><input type="text" id="mat-codigo" placeholder="Ex: 1660669"></div><div class="input-group" style="grid-column:span 2;"><label>Descrição</label><input type="text" id="mat-descricao" placeholder="Descrição do material"></div><div class="input-group"><label>Quantidade</label><input type="number" id="mat-qtd" placeholder="Ex: 50" min="1"></div><div class="input-group" style="grid-column:span 4;display:flex;justify-content:flex-end;margin-top:8px;"><button class="btn-premium" style="background:var(--brand);color:var(--text-on-primary);border:none;padding:12px 25px;" onclick="window.salvarEntradaMaterial()"><i class="fas fa-save"></i> Processar Entrada</button></div></div>
                     </div>
                     <div class="table-responsive" style="margin-top:16px;"><table class="premium-table"><thead><tr><th>Código</th><th>Descrição</th><th>Saldo</th><th>Status</th><th>Ações</th></tr></thead><tbody id="materiais-table-body"></tbody></table></div>
                 </div>
@@ -1172,7 +1172,7 @@
                         <h2 style="margin:0;"><i class="fas fa-boxes-stacked"></i> Catálogo de Materiais por Área</h2>
                         <div class="login-input-wrapper" style="position:relative; width:280px; max-width:100%;">
                             <input type="text" id="busca-material-oficina" placeholder="Buscar código, descrição ou área..." onkeyup="window.renderCatalogoMateriaisOficina()" style="height:40px; border-radius:6px; padding-left:40px;">
-                            <i class="fas fa-search login-input-icon" style="top:11px; font-size:14px; color:#a855f7;"></i>
+                            <i class="fas fa-search login-input-icon" style="top:11px; font-size:14px;"></i>
                         </div>
                     </div>
                     <div id="catalogo-materiais-oficina-lista" style="max-height:360px; overflow-y:auto;">
@@ -1228,7 +1228,7 @@
                     <div id="notificacoes-grade-toolbar" class="central-areas-toolbar" style="margin-bottom:16px;">
                         <div class="login-input-wrapper" style="position:relative; flex:1; min-width:200px;">
                             <input type="text" id="notificacoes-grade-busca" placeholder="Buscar área..." oninput="window.buscarGradeNotificacoes(this.value)" style="height:38px; border-radius:6px; padding-left:38px; width:100%;">
-                            <i class="fas fa-search login-input-icon" style="top:10px; font-size:13px; color:#a855f7;"></i>
+                            <i class="fas fa-search login-input-icon" style="top:10px; font-size:13px;"></i>
                         </div>
                         <div class="mcc-filter-group" id="notificacoes-grade-filtros">
                             <button class="btn-filter-mcc active" onclick="window.filtrarGradeNotificacoes('', this)">Todas</button>
@@ -2119,7 +2119,7 @@
                     </p>
                     <div class="login-input-wrapper" style="position:relative; max-width:340px; margin-bottom:16px;">
                         <input type="text" id="admin-colab-busca" placeholder="Buscar por nome, matrícula ou cargo..." oninput="window.filtrarAdminColaboradores()" style="height:40px; border-radius:6px; padding-left:40px; width:100%;">
-                        <i class="fas fa-search login-input-icon" style="top:11px; font-size:14px; color:#a855f7;"></i>
+                        <i class="fas fa-search login-input-icon" style="top:11px; font-size:14px;"></i>
                     </div>
                     <div class="table-responsive">
                         <table class="premium-table">

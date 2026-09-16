@@ -323,9 +323,9 @@ h1, h2, h3, h4, h5, h6 {
   border: 1px solid var(--border-color);
   max-height: 90vh;
   overflow-y: auto;
+  /* 🔧 REDESIGN: backdrop-filter removido, mesmo motivo do .glass-panel
+     acima. */
   background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
@@ -344,9 +344,10 @@ h1, h2, h3, h4, h5, h6 {
    GLASSMORPHISM E PAINÉIS
 ========================================== */
 .glass-panel {
+  /* 🔧 REDESIGN: backdrop-filter removido -- mesma causa da faixa/
+     artefato branco diagonal reportado em várias telas; --bg-card já
+     é 82% opaco. */
   background: var(--bg-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-card);
   transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.3s ease;
@@ -563,9 +564,11 @@ h1, h2, h3, h4, h5, h6 {
   flex-direction: column;
   padding: 24px 18px;
   flex-shrink: 0;
+  /* 🔧 REDESIGN: backdrop-filter removido -- mesmo bug de renderização
+     (artefato/tearing diagonal) já documentado em outros pontos deste
+     arquivo pra essa propriedade. --bg-sidebar já é 97% opaco, o blur
+     não fazia diferença visual perceptível. */
   background: var(--bg-sidebar);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   position: relative;
 }
 
@@ -1033,15 +1036,10 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: var(--shadow-hover);
 }
 
-.kpi-card.danger {
-  border-left-color: var(--danger);
-}
-.kpi-card.warning {
-  border-left-color: var(--warning);
-}
-.kpi-card.success {
-  border-left-color: var(--success);
-}
+/* 🔧 REDESIGN: os cards de KPI ganhavam uma cor de identidade na
+   borda esquerda (vermelho/amarelo/verde) -- removido. Card em si é
+   sempre neutro agora; quem carrega o status é só o chip do ícone
+   abaixo (preenchido sólido), como na referência (Linear/Vercel). */
 
 .kpi-icon {
   width: 52px;
@@ -1052,25 +1050,24 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: center;
   font-size: 22px;
   background: var(--bg-th);
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
+/* Chip sólido preenchido -- ícone claro por cima, sem anel/glow. */
 .glow-danger {
-  color: var(--danger);
-  box-shadow: inset 0 0 20px rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: var(--danger);
+  color: #fff;
 }
 
 .glow-warning {
-  color: var(--warning);
-  box-shadow: inset 0 0 20px rgba(245, 158, 11, 0.15);
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  background: var(--warning);
+  color: var(--text-on-primary);
 }
 
 .glow-success {
-  color: var(--success);
-  box-shadow: inset 0 0 20px rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  background: var(--success);
+  color: #fff;
 }
 
 .kpi-data h4 {
