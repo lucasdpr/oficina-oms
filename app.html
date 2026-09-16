@@ -45,7 +45,11 @@
 
     <!-- ============ PWA: permite instalar o app no Android/iPhone ============ -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#f59e0b">
+    <!-- 🔧 CORREÇÃO (regressão de amarelo): a barra de título do app/PWA
+         tinha ficado amarela numa aplicação anterior da paleta — esse
+         elemento é do sistema (Android/iOS), não conteúdo, e nunca devia
+         ter sido tocado. Volta pro neutro escuro (mesmo tom do fundo). -->
+    <meta name="theme-color" content="#0a0e14">
     <link rel="apple-touch-icon" href="JS/assets/icon-192.png?v=4">
     <!-- 🆕 BOTÃO INSTALAR APP — captura o evento ASSIM QUE POSSÍVEL (ver
          mesmo bloco em index.html). -->
