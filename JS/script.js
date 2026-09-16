@@ -4299,9 +4299,9 @@ function renderizarGridCentralAreas() {
     }
 
     const cardsOficina = visiveis.map(({ area: a, status: s }) => `
-        <div class="oficina-area-card" style="--area-color:${a.cor};" onclick="window.abrirAreaOficina('${a.chave}')">
+        <div class="oficina-area-card" onclick="window.abrirAreaOficina('${a.chave}')">
             <div class="oficina-area-topo">
-                <div class="oficina-area-icone" style="color:${a.cor};"><i class="fas ${a.icone}"></i></div>
+                <div class="oficina-area-icone"><i class="fas ${a.icone}"></i></div>
                 <span class="oficina-area-status-badge" style="color:${s.cor};">${s.emoji} ${s.label}</span>
             </div>
             <h4>${a.nome}</h4>
@@ -4310,7 +4310,7 @@ function renderizarGridCentralAreas() {
                 <span title="Em andamento"><i class="fas fa-person-running"></i> ${s.andamento}</span>
                 ${s.atrasadas > 0 ? `<span title="Atrasadas" style="color:var(--danger);"><i class="fas fa-triangle-exclamation"></i> ${s.atrasadas}</span>` : ''}
             </div>
-            <button class="oficina-area-acessar" style="color:${a.cor};">Acessar Área <i class="fas fa-arrow-right"></i></button>
+            <button class="oficina-area-acessar">Acessar Área <i class="fas fa-arrow-right"></i></button>
         </div>
     `).join('');
 
@@ -4323,12 +4323,12 @@ function renderizarGridCentralAreas() {
                 <div class="central-areas-secao-titulo">Painéis Administrativos</div>
                 <div id="oficina-grade-areas-admin" class="oficina-grade">
                     ${admVisiveis.map(a => `
-                        <div class="oficina-area-card oficina-area-card-admin" style="--area-color:${a.cor};" onclick="window.abrirAreaOficina('${a.chave}')">
+                        <div class="oficina-area-card oficina-area-card-admin" onclick="window.abrirAreaOficina('${a.chave}')">
                             <div class="oficina-area-topo">
-                                <div class="oficina-area-icone" style="color:${a.cor};"><i class="fas ${a.icone}"></i></div>
+                                <div class="oficina-area-icone"><i class="fas ${a.icone}"></i></div>
                             </div>
                             <h4>${a.nome}</h4>
-                            <button class="oficina-area-acessar" style="color:${a.cor};">Acessar Área <i class="fas fa-arrow-right"></i></button>
+                            <button class="oficina-area-acessar">Acessar Área <i class="fas fa-arrow-right"></i></button>
                         </div>
                     `).join('')}
                 </div>
@@ -4558,10 +4558,10 @@ let OFICINA_EDITANDO_ID = null; // null = criando atividade nova; número = edit
 // Configuração de cada painel: nome de exibição, cor, ícone e se deve
 // (ou não) mostrar o resumo do estoque de materiais.
 const PAINEL_AREA_CONFIG = {
-    'adm':            { nome: 'ADM',            cor: '#38bdf8', estoque: false },
-    'almoxarifado':   { nome: 'Almoxarifado',   cor: '#22c55e', estoque: true  },
-    'ponte-rolante':  { nome: 'Ponte Rolante',  cor: '#3b82f6', estoque: false },
-    'logistica':      { nome: 'Logística',      cor: '#a855f7', estoque: false },
+    'adm':            { nome: 'ADM',            estoque: false },
+    'almoxarifado':   { nome: 'Almoxarifado',   estoque: true  },
+    'ponte-rolante':  { nome: 'Ponte Rolante',  estoque: false },
+    'logistica':      { nome: 'Logística',      estoque: false },
 };
 
 // Limite abaixo do qual um material é considerado "saldo baixo" no
@@ -4588,7 +4588,7 @@ window.renderPainelAreaAdministrativa = async function(chave) {
     container.innerHTML = `
         <div class="kpi-container" style="margin-bottom:20px;">
             <div class="kpi-card">
-                <div class="kpi-icon" style="color:${cfg.cor};"><i class="fas fa-users"></i></div>
+                <div class="kpi-icon"><i class="fas fa-users"></i></div>
                 <div class="kpi-data"><h4 id="painel-${chave}-kpi-equipe">–</h4><p>Equipe Ativa</p></div>
             </div>
             <div class="kpi-card warning">
@@ -5375,14 +5375,10 @@ window.renderPainelSupervisor = async function() {
             if (pct >= 50) return 'amarelo';
             return 'verde';
         };
-        const mccsSinotico = [
-            { mcc: '4', cor: '#ec4899' },
-            { mcc: '2', cor: '#3b82f6' },
-            { mcc: '3', cor: '#8b5cf6' },
-        ].map(({ mcc, cor }) => {
+        const mccsSinotico = ['4', '2', '3'].map((mcc) => {
             const instalados = ativos.filter(a => a.status === 'Instalado' && (a.local || '').includes(`MCC ${mcc}`));
             return {
-                mcc, cor,
+                mcc,
                 total: instalados.length,
                 verde: instalados.filter(a => corPctDesgaste(a) === 'verde').length,
                 amarelo: instalados.filter(a => corPctDesgaste(a) === 'amarelo').length,
@@ -5393,12 +5389,12 @@ window.renderPainelSupervisor = async function() {
 
         sinoticoEl.innerHTML = totalInstaladosGeral > 0
             ? mccsSinotico.map(l => `
-                <div class="sup-card" style="--sup-cor:${l.cor};">
-                    <div class="sup-card-titulo"><span><i class="fas fa-server"></i> MCC ${l.mcc}</span><span style="font-weight:800; color:${l.cor};">${l.total} instalado${l.total === 1 ? '' : 's'}</span></div>
+                <div class="sup-card">
+                    <div class="sup-card-titulo"><span><i class="fas fa-server"></i> MCC ${l.mcc}</span><span style="font-weight:800; color:var(--text-heading);">${l.total} instalado${l.total === 1 ? '' : 's'}</span></div>
                     ${l.total > 0
-                        ? painelSupBarraHtml('🟢 Verde (<50% desgaste)', l.verde, l.total, '#22c55e')
-                            + painelSupBarraHtml('🟡 Amarelo (50-79%)', l.amarelo, l.total, '#eab308')
-                            + painelSupBarraHtml('🔴 Vermelho (≥80%)', l.vermelho, l.total, '#ef4444')
+                        ? painelSupBarraHtml('🟢 Verde (<50% desgaste)', l.verde, l.total, 'var(--success)')
+                            + painelSupBarraHtml('🟡 Amarelo (50-79%)', l.amarelo, l.total, 'var(--warning)')
+                            + painelSupBarraHtml('🔴 Vermelho (≥80%)', l.vermelho, l.total, 'var(--danger)')
                         : `<div class="sup-vazio">Nenhum equipamento instalado nesse MCC agora.</div>`}
                 </div>
             `).join('')
@@ -5540,12 +5536,12 @@ window.renderPainelSupervisor = async function() {
 
             const tituloEfetivoEl = document.getElementById('painel-sup-efetivo-titulo');
             if (tituloEfetivoEl) {
-                tituloEfetivoEl.innerHTML = `Efetivo da Oficina <span style="color:#14b8a6;">(${totalEfetivo})</span><small>todo mundo, separado por área</small>`;
+                tituloEfetivoEl.innerHTML = `Efetivo da Oficina <span style="color:var(--brand);">(${totalEfetivo})</span><small>todo mundo, separado por área</small>`;
             }
 
             efetivoEl.innerHTML = areasComGente.length
                 ? `<div class="sup-efetivo-grid">` + areasComGente.map(({ cfg, lista }) => `
-                    <div class="sup-efetivo-chip" style="--sup-cor:${cfg.cor || '#14b8a6'};" onclick="window.abrirAreaOficina('${cfg.chave}', 'equipe')" title="${lista.map(p => `${p.nome} — ${p.cargo || 'sem cargo'}`).join('\n')}">
+                    <div class="sup-efetivo-chip" onclick="window.abrirAreaOficina('${cfg.chave}', 'equipe')" title="${lista.map(p => `${p.nome} — ${p.cargo || 'sem cargo'}`).join('\n')}">
                         <span class="sup-efetivo-chip-num">${lista.length}</span>
                         <span class="sup-efetivo-chip-nome">${cfg.nome}<small>${lista.length === 1 ? '1 pessoa' : lista.length + ' pessoas'}</small></span>
                     </div>
@@ -6469,11 +6465,9 @@ window.abrirAreaOficina = async function(chave, abaInicial) {
     document.getElementById('area-oficina-nome').textContent = area.nome;
     const icone = document.getElementById('area-oficina-icone');
     icone.className = `fas ${area.icone}`;
-    icone.style.color = area.cor;
-    // Setado na section inteira (não só nas abas) porque os chips de
-    // material e os avatares da equipe, mais abaixo na tela, também
-    // usam essa variável e não são descendentes do bloco de abas.
-    document.getElementById('aba-area-oficina')?.style.setProperty('--area-color', area.cor);
+    // 🔧 REDESIGN: não seta mais --area-color (cor fixa por área) --
+    // os fallbacks das regras que usam essa variável (aba ativa, hover
+    // de material, avatar de equipe) já assumem neutro/dourado sozinhos.
 
     // Status calculado a partir das atividades em aberto (mesma lógica
     // da Central de Áreas) + timestamp de quando essa tela carregou.
@@ -10397,7 +10391,7 @@ function renderizarGradeNotificacoes(atividades, feed) {
     // divisor que reordena tudo de novo.
     const linhasHtml = visiveis.map(({ area: a, status: s, contagem }) => `
         <div class="notif-linha" style="--sev-color:${s.cor};" onclick="window.abrirDetalheAreaNotificacao('${a.chave}')">
-            <div class="notif-linha-icone" style="color:${a.cor}; background:color-mix(in srgb, ${a.cor} 16%, transparent);"><i class="fas ${a.icone}"></i></div>
+            <div class="notif-linha-icone"><i class="fas ${a.icone}"></i></div>
             <div class="notif-linha-corpo">
                 <div class="notif-linha-titulo">
                     ${a.nome}

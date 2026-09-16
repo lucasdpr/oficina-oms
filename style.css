@@ -3468,14 +3468,20 @@ h1, h2, h3, h4, h5, h6 {
     touch-action: manipulation;
 }
 
-/* Barra de brilho no topo, na cor da área (igual aos kpi-card do topo) */
+/* 🔧 REDESIGN: era uma cor fixa por área (--area-color, 16 áreas = 16
+   cores diferentes) -- vira neutro; o card já indica status (badge) e
+   fica dourado só no hover, como o resto do app. */
 .oficina-area-card::before {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 3px;
-    background: var(--area-color, var(--text-accent));
+    background: var(--area-color, var(--text-muted));
     opacity: 0.85;
+}
+
+#area-oficina-icone {
+    color: var(--text-muted);
 }
 
 .oficina-area-topo {
@@ -3493,7 +3499,7 @@ h1, h2, h3, h4, h5, h6 {
 .oficina-area-card:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-hover);
-    border-color: var(--area-color, rgba(255,255,255,0.14));
+    border-color: var(--area-color, var(--brand));
 }
 
 .oficina-area-card:active {
@@ -3507,7 +3513,7 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: color-mix(in srgb, var(--area-color, var(--text-accent)) 16%, transparent);
+    background: color-mix(in srgb, var(--area-color, var(--text-muted)) 16%, transparent);
     font-size: 16px;
     flex-shrink: 0;
     transition: transform var(--transition-base);
@@ -3538,6 +3544,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .oficina-area-acessar {
+    /* 🔧 REDESIGN: antes herdava a cor fixa da área (inline); agora é
+       sempre dourado, como qualquer link/ação de destaque do app. */
+    color: var(--brand);
     margin-top: 4px;
     background: none;
     border: none;
@@ -3592,6 +3601,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .notif-linha-icone {
+    /* 🔧 REDESIGN: era colorido por área (cor fixa) -- neutro agora, a
+       gravidade real já aparece na etiqueta de status ao lado. */
     width: 34px;
     height: 34px;
     border-radius: 9px;
@@ -3600,6 +3611,8 @@ h1, h2, h3, h4, h5, h6 {
     justify-content: center;
     font-size: 14px;
     flex-shrink: 0;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .notif-linha-corpo {
@@ -4108,9 +4121,12 @@ body.light-mode {
     font-size: 0.68rem;
 }
 #area-oficina-tabs .folhao-tab.active {
-    color: var(--area-color, var(--text-accent));
-    border-bottom-color: var(--area-color, var(--text-accent));
-    background: color-mix(in srgb, var(--area-color, var(--text-accent)) 12%, transparent);
+    /* 🔧 REDESIGN: aba ativa agora é sempre dourada (--brand), como
+       qualquer outro "ativo" do app -- não herda mais a cor fixa da
+       área (--area-color, que deixou de ser setada). */
+    color: var(--area-color, var(--brand));
+    border-bottom-color: var(--area-color, var(--brand));
+    background: color-mix(in srgb, var(--area-color, var(--brand)) 12%, transparent);
 }
 
 /* ---- Mini KPIs no topo da aba Atividades ---- */
@@ -4183,7 +4199,7 @@ body.light-mode {
     margin-bottom: 6px;
 }
 .material-chip:hover {
-    border-color: var(--area-color, var(--border-color));
+    border-color: var(--area-color, var(--brand));
 }
 
 /* ---- Avatar de iniciais para Equipe da Área ---- */
@@ -4197,7 +4213,7 @@ body.light-mode {
     font-size: 10.5px;
     font-weight: 700;
     color: var(--text-on-primary);
-    background: var(--area-color, var(--text-accent));
+    background: var(--area-color, var(--text-muted));
     flex-shrink: 0;
 }
 .equipe-card {
@@ -4235,7 +4251,7 @@ body.light-mode {
     gap: 10px;
     background: var(--bg-th);
     border: 1px solid var(--border-color);
-    border-left: 3px solid var(--area-color, var(--text-accent));
+    border-left: 3px solid var(--area-color, var(--border-color));
     border-radius: var(--radius-sm);
     padding: 9px 12px;
     margin-bottom: 6px;
