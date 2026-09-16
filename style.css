@@ -855,12 +855,14 @@ h1, h2, h3, h4, h5, h6 {
   filter: drop-shadow(0 0 4px rgba(255, 193, 7, 0.5));
 }
 
-/* Área Restrita (dev) — 🔧 REDESIGN: era âmbar (#fbbf24), quase idêntico
-   ao novo dourado de marca (--brand) — ficaria confundível com um item
-   de menu ativo normal. Trocado pra --purple, que sobrou livre depois
-   da neutralização dos highlights acima. */
+/* Área Restrita (dev) — 🔧 CORREÇÃO (regressão de cor): isso tinha virado
+   --purple numa passagem anterior do redesign (pra não confundir com o
+   dourado de marca), mas cor de identidade fixa por seção é exatamente
+   o que a regra atual proíbe — vira neutra, igual ao resto do menu.
+   Item ativo aqui usa a mesma cor de destaque de qualquer .nav-link
+   ativo (var(--brand)), sem cor própria só pra essa seção. */
 .nav-divider-dev {
-  color: var(--purple);
+  color: var(--text-muted);
   opacity: 0.85;
 }
 .nav-divider-dev i {
@@ -868,25 +870,31 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .nav-link-dev {
-  color: var(--purple);
+  color: var(--text-muted);
   border-left-color: transparent;
 }
 .nav-link-dev i {
-  color: var(--purple);
+  color: var(--text-muted);
 }
 .nav-link-dev:hover {
-  background: var(--purple-bg);
+  background: var(--bg-hover);
   color: var(--text-heading);
 }
 .nav-link-dev.active {
-  border-left-color: var(--purple);
-  background: var(--purple-bg);
+  border-left-color: var(--brand);
+  background: var(--brand-bg);
   color: var(--text-heading);
-  box-shadow: inset 0 0 14px rgba(168, 85, 247, 0.15);
 }
 .nav-link-dev.active i {
-  color: var(--purple);
-  filter: drop-shadow(0 0 4px rgba(168, 85, 247, 0.55));
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: var(--brand);
+  color: var(--text-on-primary);
+  flex-shrink: 0;
 }
 
 /* ==========================================
