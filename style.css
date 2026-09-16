@@ -21,14 +21,22 @@
   --text-main: #c8d2e0;
   --text-muted: #7c8aa5;
   --text-heading: #e8ecf4;
-  --text-accent: #38bdf8;
+  --text-accent: #38bdf8; /* 🔧 REDESIGN: deixa de ser a cor de destaque/identidade principal — agora é só "info neutro" secundário. Destaque de marca passa a ser --brand. */
   --text-on-primary: #04121c;
-  
-  /* Cores de Status - mesma paleta do Sinótico 3D (CORES = {normal, alerta, limite, falha}) */
+
+  /* 🆕 REDESIGN — Cor de marca (CSN): dourado/âmbar, substitui o azul como
+     destaque primário (botões primários, ícones de navegação ativa,
+     indicadores "ao vivo"). Ver prompt de redesign visual. */
+  --brand: #FFC107;
+  --brand-bg: rgba(255, 193, 7, 0.15);
+
+  /* Cores de Status - recalibradas no redesign pra não colidir com o
+     dourado de marca acima (--warning saiu de #eab308, muito perto de
+     --brand, pra um âmbar mais alaranjado e distinto) */
   --success: #22c55e;
   --success-bg: rgba(34, 197, 94, 0.15);
-  --warning: #eab308;
-  --warning-bg: rgba(234, 179, 8, 0.15);
+  --warning: #F59E0B;
+  --warning-bg: rgba(245, 158, 11, 0.15);
   --limit: #f97316;
   --limit-bg: rgba(249, 115, 22, 0.15);
   --danger: #ef4444;
@@ -37,7 +45,7 @@
   --info-bg: rgba(56, 189, 248, 0.12);
   --purple: #a855f7;
   --purple-bg: rgba(168, 85, 247, 0.12);
-  
+
   /* Bordas e Sombras */
   --border-color: rgba(255, 255, 255, 0.07);
   --border-glow: rgba(56, 189, 248, 0.3);
@@ -86,13 +94,26 @@ body.light-mode {
   --text-main: #2d3748;
   --text-muted: #64748b;
   --text-heading: #0f172a;
-  --text-accent: #0284c7;
+  --text-accent: #0284c7; /* 🔧 REDESIGN: idem dark mode — vira "info neutro" secundário, não é mais a cor de destaque principal. */
   --text-on-primary: #ffffff;
-  
+
+  /* 🆕 REDESIGN — mesmo dourado de marca do dark mode. Usado só em
+     elementos PREENCHIDOS (botão/badge com --text-on-primary por cima)
+     ou ícones sobre fundo escuro da sidebar — como texto solto sobre
+     fundo claro, o dourado tem contraste baixo; ver nota de validação
+     visual da Fase 2. */
+  --brand: #FFC107;
+  --brand-bg: rgba(255, 193, 7, 0.10);
+
+  /* 🔧 REDESIGN: --warning recalibrado (âmbar mais escuro que o dark
+     mode, #B45309, em vez de usar #F59E0B direto) — só em texto/ícone
+     sobre fundo branco, #F59E0B claro demais fica ilegível (contraste
+     baixo). Os outros 3 status já tinham valor próprio calibrado pro
+     modo claro e não colidem com a marca — mantidos como estavam. */
   --success: #16a34a;
   --success-bg: rgba(22, 163, 74, 0.10);
-  --warning: #ca8a04;
-  --warning-bg: rgba(202, 138, 4, 0.10);
+  --warning: #B45309;
+  --warning-bg: rgba(180, 83, 9, 0.10);
   --limit: #ea580c;
   --limit-bg: rgba(234, 88, 12, 0.10);
   --danger: #dc2626;
@@ -101,7 +122,7 @@ body.light-mode {
   --info-bg: rgba(2, 132, 199, 0.08);
   --purple: #7c3aed;
   --purple-bg: rgba(124, 58, 237, 0.08);
-  
+
   --border-color: rgba(0, 0, 0, 0.08);
   --border-glow: rgba(2, 132, 199, 0.25);
   --shadow-card: 0 2px 16px rgba(0, 0, 0, 0.06);
@@ -347,10 +368,13 @@ h1, h2, h3, h4, h5, h6 {
 /* ==========================================
    BUTTONS - INDUSTRIAL
 ========================================== */
+/* 🔧 REDESIGN: botão principal do app inteiro -- era azul
+   (--text-accent), agora dourado (--brand), como o documento pede
+   explicitamente pra "botões primários". */
 .btn-premium {
-  background: var(--info-bg);
-  border: 1px solid var(--text-accent);
-  color: var(--text-accent);
+  background: var(--brand-bg);
+  border: 1px solid var(--brand);
+  color: var(--brand);
   padding: 8px 18px;
   border-radius: var(--radius-sm);
   font-weight: 600;
@@ -378,9 +402,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-premium:hover {
-  background: var(--text-accent);
+  background: var(--brand);
   color: var(--text-on-primary) !important;
-  box-shadow: 0 0 20px var(--border-glow);
+  box-shadow: 0 0 20px var(--brand-bg);
   transform: translateY(-1px);
 }
 
@@ -457,8 +481,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-xs-primary:hover {
-  background: var(--info-bg);
-  color: var(--text-accent);
+  background: var(--brand-bg);
+  color: var(--brand);
 }
 
 .btn-close-emergency {
@@ -727,92 +751,70 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .nav-link.active {
-  border-left-color: var(--text-accent);
-  background: var(--info-bg);
+  border-left-color: var(--brand);
+  background: var(--brand-bg);
   color: var(--text-heading);
-  box-shadow: inset 0 0 14px rgba(56, 189, 248, 0.08);
+  box-shadow: inset 0 0 14px rgba(255, 193, 7, 0.08);
 }
 
 .nav-link.active i {
-  color: var(--text-accent);
-  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.5));
+  color: var(--brand);
+  filter: drop-shadow(0 0 4px rgba(255, 193, 7, 0.5));
 }
 
-/* Highlight Variants */
-.highlight-warning {
-  color: var(--warning);
-}
-.highlight-warning i {
-  color: var(--warning);
-}
-.highlight-warning.active {
-  border-left-color: var(--warning);
-  background: var(--warning-bg);
-  color: var(--warning);
-  box-shadow: inset 0 0 14px rgba(245, 158, 11, 0.1);
-}
-
-.highlight-success {
-  color: var(--success);
-}
-.highlight-success i {
-  color: var(--success);
-}
-.highlight-success.active {
-  border-left-color: var(--success);
-  background: var(--success-bg);
-  color: var(--success);
-  box-shadow: inset 0 0 14px rgba(34, 197, 94, 0.1);
-}
-
-.highlight-rolos {
-  color: var(--text-accent);
-}
-.highlight-rolos i {
-  color: var(--text-accent);
-}
-.highlight-rolos.active {
-  border-left-color: var(--text-accent);
-  background: var(--info-bg);
-  color: var(--text-accent);
-  box-shadow: inset 0 0 14px rgba(56, 189, 248, 0.1);
-}
-
-.highlight-almoxarifado {
-  color: var(--purple);
-}
-.highlight-almoxarifado i {
-  color: var(--purple);
-}
-.highlight-almoxarifado.active {
-  border-left-color: var(--purple);
-  background: var(--purple-bg);
-  color: var(--purple);
-  box-shadow: inset 0 0 14px rgba(168, 85, 247, 0.1);
-}
-
+/* 🔧 REDESIGN: estas 5 variantes davam uma cor de identidade FIXA por
+   item de menu (amarelo/verde/azul/roxo/laranja, sempre visível, não só
+   quando ativo) — exatamente o "cada aba tem sua cor sem critério" que
+   o redesign elimina. Nav/sidebar agora só usa neutro (padrão/hover) +
+   dourado de marca (ativo), igual a qualquer outro link do menu.
+   Classes mantidas (não mexe no HTML/JS que as aplica), só o resultado
+   visual que agora é unificado. */
+.highlight-warning,
+.highlight-success,
+.highlight-rolos,
+.highlight-almoxarifado,
 .highlight-hidraulica {
-  color: #f97316;
+  color: var(--text-muted);
 }
+.highlight-warning i,
+.highlight-success i,
+.highlight-rolos i,
+.highlight-almoxarifado i,
 .highlight-hidraulica i {
-  color: #f97316;
+  color: var(--text-muted);
 }
+.highlight-warning:hover,
+.highlight-success:hover,
+.highlight-rolos:hover,
+.highlight-almoxarifado:hover,
 .highlight-hidraulica:hover {
-  background: rgba(249, 115, 22, 0.08);
+  background: var(--bg-hover);
 }
+.highlight-warning.active,
+.highlight-success.active,
+.highlight-rolos.active,
+.highlight-almoxarifado.active,
 .highlight-hidraulica.active {
-  border-left-color: #f97316;
-  background: rgba(249, 115, 22, 0.12);
-  color: #f97316;
-  box-shadow: inset 0 0 14px rgba(249, 115, 22, 0.15);
+  border-left-color: var(--brand);
+  background: var(--brand-bg);
+  color: var(--text-heading);
+  box-shadow: inset 0 0 14px rgba(255, 193, 7, 0.08);
 }
+.highlight-warning.active i,
+.highlight-success.active i,
+.highlight-rolos.active i,
+.highlight-almoxarifado.active i,
 .highlight-hidraulica.active i {
-  filter: drop-shadow(0 0 4px rgba(249, 115, 22, 0.55));
+  color: var(--brand);
+  filter: drop-shadow(0 0 4px rgba(255, 193, 7, 0.5));
 }
 
-/* Área Restrita (dev) */
+/* Área Restrita (dev) — 🔧 REDESIGN: era âmbar (#fbbf24), quase idêntico
+   ao novo dourado de marca (--brand) — ficaria confundível com um item
+   de menu ativo normal. Trocado pra --purple, que sobrou livre depois
+   da neutralização dos highlights acima. */
 .nav-divider-dev {
-  color: #fbbf24;
+  color: var(--purple);
   opacity: 0.85;
 }
 .nav-divider-dev i {
@@ -820,25 +822,25 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .nav-link-dev {
-  color: #fbbf24;
+  color: var(--purple);
   border-left-color: transparent;
 }
 .nav-link-dev i {
-  color: #fbbf24;
+  color: var(--purple);
 }
 .nav-link-dev:hover {
-  background: rgba(251, 191, 36, 0.1);
-  color: #fde68a;
+  background: var(--purple-bg);
+  color: var(--text-heading);
 }
 .nav-link-dev.active {
-  border-left-color: #fbbf24;
-  background: rgba(251, 191, 36, 0.12);
-  color: #fde68a;
-  box-shadow: inset 0 0 14px rgba(251, 191, 36, 0.15);
+  border-left-color: var(--purple);
+  background: var(--purple-bg);
+  color: var(--text-heading);
+  box-shadow: inset 0 0 14px rgba(168, 85, 247, 0.15);
 }
 .nav-link-dev.active i {
-  color: #fbbf24;
-  filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.55));
+  color: var(--purple);
+  filter: drop-shadow(0 0 4px rgba(168, 85, 247, 0.55));
 }
 
 /* ==========================================
@@ -888,10 +890,10 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-veio-tab.active {
-  background: var(--text-accent);
+  background: var(--brand);
   color: var(--text-on-primary);
-  border-color: var(--text-accent);
-  box-shadow: 0 0 20px var(--border-glow);
+  border-color: var(--brand);
+  box-shadow: 0 0 20px var(--brand-bg);
 }
 
 /* ==========================================
@@ -934,7 +936,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-filter-mcc.active {
-  background: var(--text-accent);
+  background: var(--brand);
   color: var(--text-on-primary) !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
@@ -1815,9 +1817,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .folhao-tab.active {
-  color: var(--text-accent);
-  border-bottom-color: var(--text-accent);
-  background: var(--info-bg);
+  color: var(--brand);
+  border-bottom-color: var(--brand);
+  background: var(--brand-bg);
 }
 
 .folhao-content {
@@ -2474,7 +2476,7 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
     gap: 12px;
     padding: 8px 12px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-color);
     font-size: 13px;
 }
 .atividade-item:last-child {
@@ -2588,14 +2590,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 .btn-quick-action {
     background: rgba(20, 30, 50, 0.4);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius);
     padding: 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 12px;
-    color: var(--text-body);
+    color: var(--text-main);
     font-size: 0.85rem;
     font-weight: 600;
     transition: all var(--transition);
@@ -2604,13 +2606,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 .btn-quick-action i {
     font-size: 1.6rem;
-    color: var(--primary);
+    color: var(--brand);
     transition: transform var(--transition);
 }
 .btn-quick-action:hover {
     background: rgba(245, 158, 11, 0.1);
-    border-color: var(--primary);
-    color: var(--text-title);
+    border-color: var(--brand);
+    color: var(--text-heading);
     transform: translateY(-3px);
     box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
 }
@@ -2619,23 +2621,23 @@ h1, h2, h3, h4, h5, h6 {
 }
 .btn-quick-action.action-danger:hover {
     background: rgba(239, 68, 68, 0.1);
-    border-color: #ef4444;
+    border-color: var(--danger);
     box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15);
 }
-.btn-quick-action.action-danger i { color: #ef4444; }
+.btn-quick-action.action-danger i { color: var(--danger); }
 
 .btn-quick-action.action-success:hover {
     background: rgba(16, 185, 129, 0.1);
-    border-color: #10b981;
+    border-color: var(--success);
     box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
 }
-.btn-quick-action.action-success i { color: #10b981; }
+.btn-quick-action.action-success i { color: var(--success); }
 
 /* Timeline de Monitoramento (Auditoria Rápida) */
 .timeline-widget {
     margin-top: 24px;
     padding-top: 20px;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--border-color);
 }
 .timeline-feed {
     list-style: none;
@@ -2647,7 +2649,7 @@ h1, h2, h3, h4, h5, h6 {
     padding-left: 32px;
     margin-bottom: 18px;
     font-size: 0.85rem;
-    color: var(--text-body);
+    color: var(--text-main);
 }
 .timeline-feed li::before {
     content: '';
@@ -2657,8 +2659,8 @@ h1, h2, h3, h4, h5, h6 {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: var(--primary);
-    box-shadow: 0 0 8px var(--primary);
+    background: var(--brand);
+    box-shadow: 0 0 8px var(--brand);
 }
 .timeline-feed li::after {
     content: '';
@@ -2667,7 +2669,7 @@ h1, h2, h3, h4, h5, h6 {
     top: 20px;
     width: 2px;
     height: calc(100% + 5px);
-    background: var(--border);
+    background: var(--border-color);
 }
 .timeline-feed li:last-child::after { display: none; }
 .timeline-feed li:last-child { margin-bottom: 0; }
@@ -2680,8 +2682,8 @@ h1, h2, h3, h4, h5, h6 {
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
-.timeline-feed li.alert::before { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
-.timeline-feed li.success::before { background: #10b981; box-shadow: 0 0 8px #10b981; }
+.timeline-feed li.alert::before { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+.timeline-feed li.success::before { background: var(--success); box-shadow: 0 0 8px var(--success); }
 
 /* Badges e Status da Planta */
 .plant-status-badge {
@@ -2689,8 +2691,8 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
     gap: 8px;
     background: rgba(16, 185, 129, 0.15);
-    border: 1px solid #10b981;
-    color: #10b981;
+    border: 1px solid var(--success);
+    color: var(--success);
     padding: 6px 14px;
     border-radius: 30px;
     font-size: 0.75rem;
@@ -2715,8 +2717,8 @@ h1, h2, h3, h4, h5, h6 {
     margin-top: 6px;
     font-weight: 600;
 }
-.trend-up { color: #ef4444; }
-.trend-down { color: #10b981; }
+.trend-up { color: var(--danger); }
+.trend-down { color: var(--success); }
 .trend-neutral { color: var(--text-muted); }
 
 /* Responsividade Avançada da Home */
@@ -3014,8 +3016,8 @@ h1, h2, h3, h4, h5, h6 {
 .login-status-linha span { display: inline-flex; align-items: center; gap: 6px; }
 .login-status-linha-dot {
     width: 6px; height: 6px; border-radius: 50%;
-    background: #10b981;
-    box-shadow: 0 0 6px #10b981;
+    background: var(--success);
+    box-shadow: 0 0 6px var(--success);
     animation: blink 2s infinite;
 }
 @media (prefers-reduced-motion: reduce) { .login-status-linha-dot { animation: none; } }
@@ -3024,13 +3026,13 @@ h1, h2, h3, h4, h5, h6 {
 .login-status-badge {
     position: absolute; top: 24px; right: 24px; z-index: 4;
     background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3);
-    color: #10b981; padding: 6px 14px; border-radius: 20px;
+    color: var(--success); padding: 6px 14px; border-radius: 20px;
     font-size: 0.7rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
     display: flex; align-items: center; gap: 8px; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
 }
 .login-status-dot {
-    width: 8px; height: 8px; background: #10b981; border-radius: 50%;
-    box-shadow: 0 0 8px #10b981;
+    width: 8px; height: 8px; background: var(--success); border-radius: 50%;
+    box-shadow: 0 0 8px var(--success);
     animation: blink 2s infinite;
 }
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
@@ -3093,6 +3095,9 @@ h1, h2, h3, h4, h5, h6 {
     gap: 12px;
     margin-top: 20px;
 }
+/* 🔧 REDESIGN: os 4 atalhos tinham cada um sua cor fixa (laranja, azul,
+   roxo, amarelo) -- neutro em repouso, dourado no hover, como o resto
+   dos elementos clicáveis do app. */
 .tecnico-atalho-btn {
     background: var(--bg-card, var(--bg-th));
     border: 1.5px solid var(--border-color);
@@ -3108,6 +3113,11 @@ h1, h2, h3, h4, h5, h6 {
     transition: all 0.2s ease;
     min-height: 88px;
     touch-action: manipulation;
+    color: var(--text-muted);
+}
+.tecnico-atalho-btn:hover {
+    border-color: var(--brand);
+    color: var(--brand);
 }
 .tecnico-atalho-btn:active {
     transform: scale(0.96);
@@ -3169,7 +3179,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 .tecnico-card-critico { border-left: 3px solid var(--danger); }
 .tecnico-card-normal { border-left: 3px solid var(--text-accent, #3b82f6); }
-.tecnico-card-reserva { border-left: 3px solid #22c55e; flex-direction: row; align-items: center; }
+.tecnico-card-reserva { border-left: 3px solid var(--success); flex-direction: row; align-items: center; }
 .tecnico-card-topo {
     display: flex;
     flex-direction: column;
@@ -3469,14 +3479,20 @@ h1, h2, h3, h4, h5, h6 {
     touch-action: manipulation;
 }
 
-/* Barra de brilho no topo, na cor da área (igual aos kpi-card do topo) */
+/* 🔧 REDESIGN: era uma cor fixa por área (--area-color, 16 áreas = 16
+   cores diferentes) -- vira neutro; o card já indica status (badge) e
+   fica dourado só no hover, como o resto do app. */
 .oficina-area-card::before {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 3px;
-    background: var(--area-color, var(--text-accent));
+    background: var(--area-color, var(--text-muted));
     opacity: 0.85;
+}
+
+#area-oficina-icone {
+    color: var(--text-muted);
 }
 
 .oficina-area-topo {
@@ -3494,7 +3510,7 @@ h1, h2, h3, h4, h5, h6 {
 .oficina-area-card:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-hover);
-    border-color: var(--area-color, rgba(255,255,255,0.14));
+    border-color: var(--area-color, var(--brand));
 }
 
 .oficina-area-card:active {
@@ -3508,7 +3524,7 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: color-mix(in srgb, var(--area-color, var(--text-accent)) 16%, transparent);
+    background: color-mix(in srgb, var(--area-color, var(--text-muted)) 16%, transparent);
     font-size: 16px;
     flex-shrink: 0;
     transition: transform var(--transition-base);
@@ -3539,6 +3555,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .oficina-area-acessar {
+    /* 🔧 REDESIGN: antes herdava a cor fixa da área (inline); agora é
+       sempre dourado, como qualquer link/ação de destaque do app. */
+    color: var(--brand);
     margin-top: 4px;
     background: none;
     border: none;
@@ -3593,6 +3612,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .notif-linha-icone {
+    /* 🔧 REDESIGN: era colorido por área (cor fixa) -- neutro agora, a
+       gravidade real já aparece na etiqueta de status ao lado. */
     width: 34px;
     height: 34px;
     border-radius: 9px;
@@ -3601,6 +3622,8 @@ h1, h2, h3, h4, h5, h6 {
     justify-content: center;
     font-size: 14px;
     flex-shrink: 0;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .notif-linha-corpo {
@@ -3714,7 +3737,7 @@ h1, h2, h3, h4, h5, h6 {
    item). */
 .notificacoes-item-linha {
     font-size: 12.5px;
-    color: var(--text-body);
+    color: var(--text-main);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -4053,7 +4076,11 @@ body.light-mode {
 }
 
 .nav-link.active {
-  background: linear-gradient(90deg, var(--info-bg), transparent);
+  /* 🔧 REDESIGN: essa regra vem depois da .nav-link.active lá em cima
+     (linha ~750) e ganhava no empate de especificidade, mantendo o
+     fundo do item ativo azul (--info-bg) mesmo depois de trocar tudo
+     pro dourado de marca. */
+  background: linear-gradient(90deg, var(--brand-bg), transparent);
 }
 
 .sidebar-header h2 {
@@ -4105,9 +4132,12 @@ body.light-mode {
     font-size: 0.68rem;
 }
 #area-oficina-tabs .folhao-tab.active {
-    color: var(--area-color, var(--text-accent));
-    border-bottom-color: var(--area-color, var(--text-accent));
-    background: color-mix(in srgb, var(--area-color, var(--text-accent)) 12%, transparent);
+    /* 🔧 REDESIGN: aba ativa agora é sempre dourada (--brand), como
+       qualquer outro "ativo" do app -- não herda mais a cor fixa da
+       área (--area-color, que deixou de ser setada). */
+    color: var(--area-color, var(--brand));
+    border-bottom-color: var(--area-color, var(--brand));
+    background: color-mix(in srgb, var(--area-color, var(--brand)) 12%, transparent);
 }
 
 /* ---- Mini KPIs no topo da aba Atividades ---- */
@@ -4178,9 +4208,10 @@ body.light-mode {
     border-radius: var(--radius-sm);
     padding: 7px 10px;
     margin-bottom: 6px;
+    transition: border-color var(--transition-fast);
 }
 .material-chip:hover {
-    border-color: var(--area-color, var(--border-color));
+    border-color: var(--area-color, var(--brand));
 }
 
 /* ---- Avatar de iniciais para Equipe da Área ---- */
@@ -4194,7 +4225,7 @@ body.light-mode {
     font-size: 10.5px;
     font-weight: 700;
     color: var(--text-on-primary);
-    background: var(--area-color, var(--text-accent));
+    background: var(--area-color, var(--text-muted));
     flex-shrink: 0;
 }
 .equipe-card {
@@ -4232,7 +4263,7 @@ body.light-mode {
     gap: 10px;
     background: var(--bg-th);
     border: 1px solid var(--border-color);
-    border-left: 3px solid var(--area-color, var(--text-accent));
+    border-left: 3px solid var(--area-color, var(--border-color));
     border-radius: var(--radius-sm);
     padding: 9px 12px;
     margin-bottom: 6px;
@@ -4448,7 +4479,7 @@ textarea,
         flex-direction: column;
         gap: 10px;
         background: var(--bg-th);
-        border: 1px solid var(--border);
+        border: 1px solid var(--border-color);
         border-radius: 10px;
         padding: 12px 14px;
         margin: 0 0 10px 0;
@@ -4574,7 +4605,7 @@ textarea,
 .sup-header {
     position: relative;
     background: var(--bg-card);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-top: 2px solid #fbbf24;
     border-radius: var(--radius-lg, var(--radius));
     padding: 22px 26px;
@@ -4655,15 +4686,15 @@ textarea,
 }
 .painel-sup-hero-card {
     background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--sup-cor, var(--text-accent));
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--sup-cor, var(--border-color));
     border-radius: var(--radius);
     padding: 18px 20px;
     cursor: pointer;
     transition: border-color 0.15s ease;
 }
 .painel-sup-hero-card:hover {
-    border-color: var(--sup-cor, var(--text-accent));
+    border-color: var(--sup-cor, var(--brand));
 }
 .painel-sup-hero-card .sup-hero-label {
     font-size: 0.68rem;
@@ -4680,7 +4711,7 @@ textarea,
     font-size: 2.15rem;
     font-weight: 700;
     line-height: 1;
-    color: var(--sup-cor, var(--text-title));
+    color: var(--sup-cor, var(--text-heading));
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
 }
@@ -4692,8 +4723,8 @@ textarea,
 
 .painel-sup-secao {
     background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--sup-secao-cor, var(--border));
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--sup-secao-cor, var(--border-color));
     border-radius: var(--radius-lg, var(--radius));
     margin-bottom: 16px;
     overflow: hidden;
@@ -4704,7 +4735,7 @@ textarea,
     align-items: center;
     gap: 12px;
     letter-spacing: 0.1px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-color);
 }
 /* 🔧 Ícone discreto (era badge circular preenchido de branco — chamava
    atenção demais pra um elemento decorativo). Agora é só o glifo, na
@@ -4738,17 +4769,12 @@ textarea,
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 16px;
 }
-/* Uma cor por seção — só como traço fino (borda esquerda do bloco +
-   ícone do título), nunca como preenchimento de fundo. */
-.painel-sup-secao-saude { --sup-secao-cor: #ef4444; }
-.painel-sup-secao-produtividade { --sup-secao-cor: #3b82f6; }
-.painel-sup-secao-estoque { --sup-secao-cor: #22c55e; }
-.painel-sup-secao-tendencia { --sup-secao-cor: #f59e0b; }
-.painel-sup-secao-efetivo { --sup-secao-cor: #14b8a6; }
-.painel-sup-secao-sinotico { --sup-secao-cor: #22d3ee; }
-.painel-sup-secao-historico { --sup-secao-cor: #6366f1; }
-.painel-sup-secao-previsoes { --sup-secao-cor: #0ea5e9; }
-.painel-sup-secao-qualidade { --sup-secao-cor: #a855f7; }
+/* 🔧 REDESIGN: cada seção tinha sua cor fixa própria (vermelho, azul,
+   verde, âmbar, teal, ciano, índigo, azul, roxo) — a regra de ouro do
+   redesign é nav/cards/seções só neutro + marca, cor de verdade só em
+   status. --sup-secao-cor não é mais setada aqui: os fallbacks já
+   existentes (var(--border-color) na borda, var(--text-muted) no
+   ícone) assumem sozinhos, deixando todas as seções neutras/iguais. */
 .sup-secao-link {
     font-size: 11.5px;
     padding: 6px 12px;
@@ -4774,13 +4800,13 @@ textarea,
     padding: 10px 12px;
     border-radius: 10px;
     background: rgba(255,255,255,0.02);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--sup-cor, var(--border));
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--sup-cor, var(--border-color));
     cursor: pointer;
     transition: background 0.2s ease, transform 0.15s ease;
 }
 .sup-efetivo-chip:hover {
-    border-color: var(--sup-cor, var(--border));
+    border-color: var(--sup-cor, var(--border-color));
 }
 .sup-efetivo-chip-num {
     flex-shrink: 0;
@@ -4793,12 +4819,12 @@ textarea,
     font-weight: 800;
     font-size: 14px;
     color: #fff;
-    background: var(--sup-cor, var(--text-accent));
+    background: var(--sup-cor, var(--text-muted));
 }
 .sup-efetivo-chip-nome {
     font-size: 12.5px;
     font-weight: 600;
-    color: var(--text-body);
+    color: var(--text-main);
     line-height: 1.25;
 }
 .sup-efetivo-chip-nome small {
@@ -4810,15 +4836,15 @@ textarea,
 
 .sup-card {
     background: rgba(255,255,255,0.02);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--sup-cor, var(--border));
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--sup-cor, var(--border-color));
     border-radius: 10px;
     padding: 16px 18px;
     transition: background 0.2s ease, border-color 0.2s ease;
 }
 .sup-card:hover {
-    background: color-mix(in srgb, var(--sup-cor, var(--border)) 5%, rgba(255,255,255,0.02));
-    border-color: color-mix(in srgb, var(--sup-cor, var(--border)) 40%, var(--border));
+    background: color-mix(in srgb, var(--sup-cor, var(--border-color)) 5%, rgba(255,255,255,0.02));
+    border-color: color-mix(in srgb, var(--sup-cor, var(--border-color)) 40%, var(--border-color));
 }
 .sup-card-titulo {
     font-size: 0.72rem;
@@ -4841,7 +4867,7 @@ textarea,
 }
 .sup-barra-linha .sup-barra-nome {
     flex: 0 0 150px;
-    color: var(--text-body);
+    color: var(--text-main);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -4863,7 +4889,7 @@ textarea,
     flex: 0 0 auto;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
-    color: var(--text-heading, var(--text-title));
+    color: var(--text-heading);
     font-size: 12px;
     min-width: 20px;
     text-align: right;
@@ -4873,7 +4899,7 @@ textarea,
     justify-content: space-between;
     gap: 10px;
     padding: 8px 0;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-color);
     font-size: 12.5px;
 }
 .sup-lista-linha:last-child { border-bottom: none; }
@@ -4900,7 +4926,7 @@ textarea,
     flex: 1;
     min-width: 4px;
     border-radius: 3px 3px 0 0;
-    background: var(--sup-cor, var(--text-accent));
+    background: var(--sup-cor, var(--brand));
     opacity: 0.85;
     transition: height 0.4s ease;
 }
@@ -4953,7 +4979,7 @@ textarea,
     height: calc(100vh - 140px);
     min-height: 420px;
     background: var(--bg-card);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-lg, 18px);
     overflow: hidden;
 }
@@ -4963,7 +4989,7 @@ textarea,
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    border-right: 1px solid var(--border);
+    border-right: 1px solid var(--border-color);
     background: rgba(255, 255, 255, 0.015);
 }
 
@@ -4971,8 +4997,8 @@ textarea,
     padding: 16px 18px;
     font-weight: 700;
     font-size: 14px;
-    color: var(--text-heading, var(--text-title));
-    border-bottom: 1px solid var(--border);
+    color: var(--text-heading);
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -4989,19 +5015,22 @@ textarea,
     gap: 10px;
     padding: 12px 16px;
     cursor: pointer;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-color);
     transition: background 0.15s ease;
 }
 .chat-conversa-item:hover { background: rgba(255, 255, 255, 0.04); }
-.chat-conversa-item.ativa { background: rgba(37, 211, 102, 0.09); }
+.chat-conversa-item.ativa { background: var(--brand-bg); }
 
 .chat-conversa-avatar {
+    /* 🔧 REDESIGN: era verde estilo WhatsApp — trocado pro dourado de
+       marca, igual ao resto do app; --text-on-primary já existe
+       exatamente pra dar contraste em cima de --brand. */
     flex-shrink: 0;
     width: 38px;
     height: 38px;
     border-radius: 50%;
-    background: linear-gradient(145deg, #25d366, #128c7e);
-    color: #fff;
+    background: var(--brand);
+    color: var(--text-on-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -5015,9 +5044,9 @@ textarea,
     justify-content: space-between;
     gap: 8px;
     font-size: 13px;
-    color: var(--text-body);
+    color: var(--text-main);
 }
-.chat-conversa-topo strong { color: var(--text-heading, var(--text-title)); }
+.chat-conversa-topo strong { color: var(--text-heading); }
 .chat-conversa-hora { font-size: 10.5px; color: var(--text-muted); flex-shrink: 0; }
 .chat-conversa-preview {
     font-size: 11.5px;
@@ -5028,9 +5057,11 @@ textarea,
     margin-top: 2px;
 }
 .chat-conversa-badge {
+    /* 🔧 REDESIGN: unificado com os outros badges de não lida do
+       sistema (nav, notificações) -- vermelho, não verde. */
     flex-shrink: 0;
-    background: #25d366;
-    color: #04120c;
+    background: var(--danger);
+    color: #fff;
     font-size: 11px;
     font-weight: 800;
     border-radius: 50%;
@@ -5047,7 +5078,7 @@ textarea,
     flex-direction: column;
     min-width: 0;
     background:
-        radial-gradient(circle at 20% 10%, rgba(37, 211, 102, 0.04) 0%, transparent 40%),
+        radial-gradient(circle at 20% 10%, rgba(255, 193, 7, 0.04) 0%, transparent 40%),
         var(--bg-main, #0a0e14);
 }
 
@@ -5056,13 +5087,13 @@ textarea,
     align-items: center;
     gap: 12px;
     padding: 14px 18px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-color);
     background: var(--bg-card);
 }
 .chat-thread-voltar {
     background: transparent;
     border: none;
-    color: var(--text-body);
+    color: var(--text-main);
     font-size: 16px;
     cursor: pointer;
     padding: 4px;
@@ -5081,7 +5112,7 @@ textarea,
 .chat-thread-titulo {
     font-weight: 700;
     font-size: 14.5px;
-    color: var(--text-heading, var(--text-title));
+    color: var(--text-heading);
 }
 
 .chat-thread-mensagens {
@@ -5104,13 +5135,15 @@ textarea,
 .chat-bolha-outro {
     align-self: flex-start;
     background: var(--bg-input);
-    color: var(--text-body);
+    color: var(--text-main);
     border-bottom-left-radius: 4px;
 }
 .chat-bolha-minha {
+    /* 🔧 REDESIGN: era verde WhatsApp -- dourado de marca, como o
+       resto do app. */
     align-self: flex-end;
-    background: linear-gradient(145deg, #25d366, #1fa855);
-    color: #04120c;
+    background: var(--brand);
+    color: var(--text-on-primary);
     border-bottom-right-radius: 4px;
 }
 .chat-bolha-remetente {
@@ -5132,20 +5165,20 @@ textarea,
     align-items: center;
     gap: 10px;
     padding: 12px 16px;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--border-color);
     background: var(--bg-card);
 }
 .chat-thread-input {
     flex: 1;
     background: var(--bg-input);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-radius: 22px;
     padding: 10px 16px;
-    color: var(--text-heading, var(--text-title));
+    color: var(--text-heading);
     font-size: 13.5px;
     outline: none;
 }
-.chat-thread-input:focus { border-color: #25d366; }
+.chat-thread-input:focus { border-color: var(--brand); }
 .chat-thread-input::placeholder { color: var(--text-muted); }
 .chat-thread-enviar {
     flex-shrink: 0;
@@ -5153,8 +5186,8 @@ textarea,
     height: 40px;
     border-radius: 50%;
     border: none;
-    background: #25d366;
-    color: #04120c;
+    background: var(--brand);
+    color: var(--text-on-primary);
     font-size: 15px;
     cursor: pointer;
     display: flex;

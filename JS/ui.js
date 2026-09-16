@@ -305,12 +305,12 @@ window.mudarSubAbaReserva = function(aba) {
     const btnMaquina = document.getElementById("subaba-reserva-maquina");
     const btnOficina = document.getElementById("subaba-reserva-oficina");
     if (btnMaquina) {
-        btnMaquina.style.borderBottomColor = aba === 'maquina' ? '#22c55e' : 'transparent';
-        btnMaquina.style.color = aba === 'maquina' ? '#22c55e' : 'var(--text-muted)';
+        btnMaquina.style.borderBottomColor = aba === 'maquina' ? 'var(--brand)' : 'transparent';
+        btnMaquina.style.color = aba === 'maquina' ? 'var(--brand)' : 'var(--text-muted)';
     }
     if (btnOficina) {
-        btnOficina.style.borderBottomColor = aba === 'oficina' ? '#f59e0b' : 'transparent';
-        btnOficina.style.color = aba === 'oficina' ? '#f59e0b' : 'var(--text-muted)';
+        btnOficina.style.borderBottomColor = aba === 'oficina' ? 'var(--brand)' : 'transparent';
+        btnOficina.style.color = aba === 'oficina' ? 'var(--brand)' : 'var(--text-muted)';
     }
     renderReservas();
 };

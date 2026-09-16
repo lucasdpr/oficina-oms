@@ -2125,8 +2125,8 @@ function renderizarResumoHistoricoIndividual(item) {
             <div class="kpi-icon" style="color:${corDias}; border-color:${corDias}33;"><i class="fas fa-calendar-day"></i></div>
             <div class="kpi-data"><h4 style="font-size:1.3rem;">${dias}</h4><p>${statusLabel}</p></div>
         </div>
-        <div class="kpi-card" style="border-top:3px solid var(--primary);">
-            <div class="kpi-icon" style="color:var(--primary); border-color:rgba(56,189,248,0.2);"><i class="fas fa-clipboard-check"></i></div>
+        <div class="kpi-card" style="border-top:3px solid var(--border-color);">
+            <div class="kpi-icon" style="color:var(--text-muted); border-color:var(--border-color);"><i class="fas fa-clipboard-check"></i></div>
             <div class="kpi-data"><h4 style="font-size:1.3rem;">${folhoesFeitos}</h4><p>Folhões Concluídos</p></div>
         </div>
     `;
@@ -4299,9 +4299,9 @@ function renderizarGridCentralAreas() {
     }
 
     const cardsOficina = visiveis.map(({ area: a, status: s }) => `
-        <div class="oficina-area-card" style="--area-color:${a.cor};" onclick="window.abrirAreaOficina('${a.chave}')">
+        <div class="oficina-area-card" onclick="window.abrirAreaOficina('${a.chave}')">
             <div class="oficina-area-topo">
-                <div class="oficina-area-icone" style="color:${a.cor};"><i class="fas ${a.icone}"></i></div>
+                <div class="oficina-area-icone"><i class="fas ${a.icone}"></i></div>
                 <span class="oficina-area-status-badge" style="color:${s.cor};">${s.emoji} ${s.label}</span>
             </div>
             <h4>${a.nome}</h4>
@@ -4310,7 +4310,7 @@ function renderizarGridCentralAreas() {
                 <span title="Em andamento"><i class="fas fa-person-running"></i> ${s.andamento}</span>
                 ${s.atrasadas > 0 ? `<span title="Atrasadas" style="color:var(--danger);"><i class="fas fa-triangle-exclamation"></i> ${s.atrasadas}</span>` : ''}
             </div>
-            <button class="oficina-area-acessar" style="color:${a.cor};">Acessar Área <i class="fas fa-arrow-right"></i></button>
+            <button class="oficina-area-acessar">Acessar Área <i class="fas fa-arrow-right"></i></button>
         </div>
     `).join('');
 
@@ -4323,12 +4323,12 @@ function renderizarGridCentralAreas() {
                 <div class="central-areas-secao-titulo">Painéis Administrativos</div>
                 <div id="oficina-grade-areas-admin" class="oficina-grade">
                     ${admVisiveis.map(a => `
-                        <div class="oficina-area-card oficina-area-card-admin" style="--area-color:${a.cor};" onclick="window.abrirAreaOficina('${a.chave}')">
+                        <div class="oficina-area-card oficina-area-card-admin" onclick="window.abrirAreaOficina('${a.chave}')">
                             <div class="oficina-area-topo">
-                                <div class="oficina-area-icone" style="color:${a.cor};"><i class="fas ${a.icone}"></i></div>
+                                <div class="oficina-area-icone"><i class="fas ${a.icone}"></i></div>
                             </div>
                             <h4>${a.nome}</h4>
-                            <button class="oficina-area-acessar" style="color:${a.cor};">Acessar Área <i class="fas fa-arrow-right"></i></button>
+                            <button class="oficina-area-acessar">Acessar Área <i class="fas fa-arrow-right"></i></button>
                         </div>
                     `).join('')}
                 </div>
@@ -4558,10 +4558,10 @@ let OFICINA_EDITANDO_ID = null; // null = criando atividade nova; número = edit
 // Configuração de cada painel: nome de exibição, cor, ícone e se deve
 // (ou não) mostrar o resumo do estoque de materiais.
 const PAINEL_AREA_CONFIG = {
-    'adm':            { nome: 'ADM',            cor: '#38bdf8', estoque: false },
-    'almoxarifado':   { nome: 'Almoxarifado',   cor: '#22c55e', estoque: true  },
-    'ponte-rolante':  { nome: 'Ponte Rolante',  cor: '#3b82f6', estoque: false },
-    'logistica':      { nome: 'Logística',      cor: '#a855f7', estoque: false },
+    'adm':            { nome: 'ADM',            estoque: false },
+    'almoxarifado':   { nome: 'Almoxarifado',   estoque: true  },
+    'ponte-rolante':  { nome: 'Ponte Rolante',  estoque: false },
+    'logistica':      { nome: 'Logística',      estoque: false },
 };
 
 // Limite abaixo do qual um material é considerado "saldo baixo" no
@@ -4588,7 +4588,7 @@ window.renderPainelAreaAdministrativa = async function(chave) {
     container.innerHTML = `
         <div class="kpi-container" style="margin-bottom:20px;">
             <div class="kpi-card">
-                <div class="kpi-icon" style="color:${cfg.cor};"><i class="fas fa-users"></i></div>
+                <div class="kpi-icon"><i class="fas fa-users"></i></div>
                 <div class="kpi-data"><h4 id="painel-${chave}-kpi-equipe">–</h4><p>Equipe Ativa</p></div>
             </div>
             <div class="kpi-card warning">
@@ -4608,8 +4608,8 @@ window.renderPainelAreaAdministrativa = async function(chave) {
         ${cfg.estoque ? `
         <div class="glass-panel" style="padding:24px; margin-bottom:20px;">
             <div class="flex-between" style="margin-bottom:12px;">
-                <h3 style="color:var(--text-title); font-size:1rem;"><i class="fas fa-boxes-stacked"></i> Resumo do Estoque</h3>
-                <button class="btn-xs-primary" onclick="window.abrirAba(null,'aba-almoxarifado')" style="color:var(--text-accent); background:rgba(59,130,246,0.1);">
+                <h3 style="color:var(--text-heading); font-size:1rem;"><i class="fas fa-boxes-stacked"></i> Resumo do Estoque</h3>
+                <button class="btn-xs-primary" onclick="window.abrirAba(null,'aba-almoxarifado')" style="color:var(--brand); background:var(--brand-bg);">
                     Ver Almoxarifado Completo <i class="fas fa-arrow-right"></i>
                 </button>
             </div>
@@ -4624,8 +4624,8 @@ window.renderPainelAreaAdministrativa = async function(chave) {
         <div class="dashboard-main-grid">
             <div class="glass-panel" style="padding:24px;">
                 <div class="flex-between" style="margin-bottom:16px;">
-                    <h3 style="color:var(--text-title); font-size:1rem;"><i class="fas fa-list"></i> Atividades Recentes</h3>
-                    <button class="btn-xs-primary" onclick="window.abrirAreaOficina('${chave}')" style="color:var(--text-accent); background:rgba(59,130,246,0.1);">
+                    <h3 style="color:var(--text-heading); font-size:1rem;"><i class="fas fa-list"></i> Atividades Recentes</h3>
+                    <button class="btn-xs-primary" onclick="window.abrirAreaOficina('${chave}')" style="color:var(--brand); background:var(--brand-bg);">
                         <i class="fas fa-plus"></i> Lançar Atividade
                     </button>
                 </div>
@@ -4633,7 +4633,7 @@ window.renderPainelAreaAdministrativa = async function(chave) {
             </div>
 
             <div class="glass-panel" style="padding:24px;">
-                <h3 style="color:var(--text-title); font-size:1rem; margin-bottom:16px;"><i class="fas fa-user-hard-hat"></i> Equipe da Área</h3>
+                <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:16px;"><i class="fas fa-user-hard-hat"></i> Equipe da Área</h3>
                 <div id="painel-${chave}-equipe-lista"></div>
             </div>
         </div>
@@ -4789,7 +4789,7 @@ window.renderPainelExecutivoAdm = async function(container) {
              cada uma dessas coisas só dava pra ver abrindo a aba
              específica; ADM precisa do resumo sem entrar em cada uma. -->
         <div class="glass-panel" style="padding:24px; margin-bottom:20px;">
-            <h3 style="color:var(--text-title); font-size:1rem; margin-bottom:4px;"><i class="fas fa-chart-simple"></i> Visão Geral do Sistema</h3>
+            <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:4px;"><i class="fas fa-chart-simple"></i> Visão Geral do Sistema</h3>
             <p class="text-muted" style="font-size:12px; margin-bottom:16px;">Colaboradores, Ordens de Serviço, Qualidade e Checklist de Execução — tudo num lugar só.</p>
             <div class="kpi-container">
                 <div class="kpi-card">
@@ -4817,13 +4817,13 @@ window.renderPainelExecutivoAdm = async function(container) {
 
         <div class="dashboard-main-grid">
             <div class="glass-panel" style="padding:24px;">
-                <h3 style="color:var(--text-title); font-size:1rem; margin-bottom:4px;"><i class="fas fa-ranking-star"></i> Áreas com Mais Atraso</h3>
+                <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:4px;"><i class="fas fa-ranking-star"></i> Áreas com Mais Atraso</h3>
                 <p class="text-muted" style="font-size:12px; margin-bottom:16px;">Quantas atividades atrasadas cada área tem agora — onde apertar primeiro.</p>
                 <div id="adm-exec-ranking-areas"></div>
             </div>
 
             <div class="glass-panel" style="padding:24px;">
-                <h3 style="color:var(--text-title); font-size:1rem; margin-bottom:4px;"><i class="fas fa-rotate-left"></i> Retrabalho (Atividades Mais Reabertas)</h3>
+                <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:4px;"><i class="fas fa-rotate-left"></i> Retrabalho (Atividades Mais Reabertas)</h3>
                 <p class="text-muted" style="font-size:12px; margin-bottom:16px;">O mesmo problema voltando — vale investigar a causa raiz, não só reabrir de novo.</p>
                 <div id="adm-exec-retrabalho"></div>
             </div>
@@ -4835,7 +4835,7 @@ window.renderPainelExecutivoAdm = async function(container) {
              progresso de leitura e arquivar. -->
         <div class="glass-panel" style="padding:24px; margin-top:20px;">
             <div class="flex-between" style="margin-bottom:4px;">
-                <h3 style="color:var(--text-title); font-size:1rem;"><i class="fas fa-bullhorn"></i> Avisos do Sistema</h3>
+                <h3 style="color:var(--text-heading); font-size:1rem;"><i class="fas fa-bullhorn"></i> Avisos do Sistema</h3>
                 <button class="btn-premium btn-success" style="padding:6px 14px;" onclick="window.abrirModalCriarAviso()">
                     <i class="fas fa-plus"></i> Novo Aviso
                 </button>
@@ -5339,7 +5339,7 @@ window.renderPainelSupervisor = async function() {
             <div class="sup-card" style="--sup-cor:#ef4444;">
                 <div class="sup-card-titulo">
                     <span><i class="fas fa-boxes-packing"></i> Materiais em Falta</span>
-                    <button class="btn-xs-primary" onclick="window.abrirAba(null,'aba-almoxarifado')" style="color:var(--text-accent); background:rgba(59,130,246,0.1);">Ver Almoxarifado <i class="fas fa-arrow-right"></i></button>
+                    <button class="btn-xs-primary" onclick="window.abrirAba(null,'aba-almoxarifado')" style="color:var(--brand); background:var(--brand-bg);">Ver Almoxarifado <i class="fas fa-arrow-right"></i></button>
                 </div>
                 ${painelSupBarraHtml('Zerados', materiaisZerados.length, Math.max(materiaisZerados.length, materiaisBaixo.length, 1), '#ef4444')}
                 ${painelSupBarraHtml(`Saldo baixo (≤${PAINEL_SUP_LIMITE_ESTOQUE_BAIXO})`, materiaisBaixo.length, Math.max(materiaisZerados.length, materiaisBaixo.length, 1), '#f59e0b')}
@@ -5375,14 +5375,10 @@ window.renderPainelSupervisor = async function() {
             if (pct >= 50) return 'amarelo';
             return 'verde';
         };
-        const mccsSinotico = [
-            { mcc: '4', cor: '#ec4899' },
-            { mcc: '2', cor: '#3b82f6' },
-            { mcc: '3', cor: '#8b5cf6' },
-        ].map(({ mcc, cor }) => {
+        const mccsSinotico = ['4', '2', '3'].map((mcc) => {
             const instalados = ativos.filter(a => a.status === 'Instalado' && (a.local || '').includes(`MCC ${mcc}`));
             return {
-                mcc, cor,
+                mcc,
                 total: instalados.length,
                 verde: instalados.filter(a => corPctDesgaste(a) === 'verde').length,
                 amarelo: instalados.filter(a => corPctDesgaste(a) === 'amarelo').length,
@@ -5393,12 +5389,12 @@ window.renderPainelSupervisor = async function() {
 
         sinoticoEl.innerHTML = totalInstaladosGeral > 0
             ? mccsSinotico.map(l => `
-                <div class="sup-card" style="--sup-cor:${l.cor};">
-                    <div class="sup-card-titulo"><span><i class="fas fa-server"></i> MCC ${l.mcc}</span><span style="font-weight:800; color:${l.cor};">${l.total} instalado${l.total === 1 ? '' : 's'}</span></div>
+                <div class="sup-card">
+                    <div class="sup-card-titulo"><span><i class="fas fa-server"></i> MCC ${l.mcc}</span><span style="font-weight:800; color:var(--text-heading);">${l.total} instalado${l.total === 1 ? '' : 's'}</span></div>
                     ${l.total > 0
-                        ? painelSupBarraHtml('🟢 Verde (<50% desgaste)', l.verde, l.total, '#22c55e')
-                            + painelSupBarraHtml('🟡 Amarelo (50-79%)', l.amarelo, l.total, '#eab308')
-                            + painelSupBarraHtml('🔴 Vermelho (≥80%)', l.vermelho, l.total, '#ef4444')
+                        ? painelSupBarraHtml('🟢 Verde (<50% desgaste)', l.verde, l.total, 'var(--success)')
+                            + painelSupBarraHtml('🟡 Amarelo (50-79%)', l.amarelo, l.total, 'var(--warning)')
+                            + painelSupBarraHtml('🔴 Vermelho (≥80%)', l.vermelho, l.total, 'var(--danger)')
                         : `<div class="sup-vazio">Nenhum equipamento instalado nesse MCC agora.</div>`}
                 </div>
             `).join('')
@@ -5540,12 +5536,12 @@ window.renderPainelSupervisor = async function() {
 
             const tituloEfetivoEl = document.getElementById('painel-sup-efetivo-titulo');
             if (tituloEfetivoEl) {
-                tituloEfetivoEl.innerHTML = `Efetivo da Oficina <span style="color:#14b8a6;">(${totalEfetivo})</span><small>todo mundo, separado por área</small>`;
+                tituloEfetivoEl.innerHTML = `Efetivo da Oficina <span style="color:var(--brand);">(${totalEfetivo})</span><small>todo mundo, separado por área</small>`;
             }
 
             efetivoEl.innerHTML = areasComGente.length
                 ? `<div class="sup-efetivo-grid">` + areasComGente.map(({ cfg, lista }) => `
-                    <div class="sup-efetivo-chip" style="--sup-cor:${cfg.cor || '#14b8a6'};" onclick="window.abrirAreaOficina('${cfg.chave}', 'equipe')" title="${lista.map(p => `${p.nome} — ${p.cargo || 'sem cargo'}`).join('\n')}">
+                    <div class="sup-efetivo-chip" onclick="window.abrirAreaOficina('${cfg.chave}', 'equipe')" title="${lista.map(p => `${p.nome} — ${p.cargo || 'sem cargo'}`).join('\n')}">
                         <span class="sup-efetivo-chip-num">${lista.length}</span>
                         <span class="sup-efetivo-chip-nome">${cfg.nome}<small>${lista.length === 1 ? '1 pessoa' : lista.length + ' pessoas'}</small></span>
                     </div>
@@ -5712,7 +5708,7 @@ window.renderPainelSupervisor = async function() {
                 <div class="sup-card" style="--sup-cor:#ec4899;">
                     <div class="sup-card-titulo">
                         <span><i class="fas fa-comment-dots"></i> Mensagens Área ↔ ADM Não Lidas</span>
-                        <button class="btn-xs-primary" onclick="window.abrirAba(null,'aba-oficina')" style="color:var(--text-accent); background:rgba(59,130,246,0.1);">Ver <i class="fas fa-arrow-right"></i></button>
+                        <button class="btn-xs-primary" onclick="window.abrirAba(null,'aba-oficina')" style="color:var(--brand); background:var(--brand-bg);">Ver <i class="fas fa-arrow-right"></i></button>
                     </div>
                     ${mensagensNaoLidas.length
                         ? mensagensNaoLidas.slice(0, 6).map(m => `
@@ -6469,11 +6465,9 @@ window.abrirAreaOficina = async function(chave, abaInicial) {
     document.getElementById('area-oficina-nome').textContent = area.nome;
     const icone = document.getElementById('area-oficina-icone');
     icone.className = `fas ${area.icone}`;
-    icone.style.color = area.cor;
-    // Setado na section inteira (não só nas abas) porque os chips de
-    // material e os avatares da equipe, mais abaixo na tela, também
-    // usam essa variável e não são descendentes do bloco de abas.
-    document.getElementById('aba-area-oficina')?.style.setProperty('--area-color', area.cor);
+    // 🔧 REDESIGN: não seta mais --area-color (cor fixa por área) --
+    // os fallbacks das regras que usam essa variável (aba ativa, hover
+    // de material, avatar de equipe) já assumem neutro/dourado sozinhos.
 
     // Status calculado a partir das atividades em aberto (mesma lógica
     // da Central de Áreas) + timestamp de quando essa tela carregou.
@@ -6990,7 +6984,7 @@ window.renderFilaPonteRolante = async function() {
                     <summary class="text-muted" style="cursor:pointer; font-size:12px;">Arquivo — atendimentos por dia</summary>
                     ${diasOrdenados.map(dia => `
                         <div style="margin-top:10px;">
-                            <div style="font-weight:700; font-size:12px; color:var(--text-title); margin-bottom:4px;">${dia ? new Date(dia + 'T00:00:00').toLocaleDateString('pt-BR') : 'Sem data'}</div>
+                            <div style="font-weight:700; font-size:12px; color:var(--text-heading); margin-bottom:4px;">${dia ? new Date(dia + 'T00:00:00').toLocaleDateString('pt-BR') : 'Sem data'}</div>
                             ${porDia.get(dia).map(x => `
                                 <div style="padding:8px 0; border-bottom:1px solid var(--border); font-size:12px;" class="text-muted">
                                     ${x.descricao} — ${x.status}${x.equipamento_id ? ` — Ponte ${x.equipamento_id}` : ''}
@@ -10397,7 +10391,7 @@ function renderizarGradeNotificacoes(atividades, feed) {
     // divisor que reordena tudo de novo.
     const linhasHtml = visiveis.map(({ area: a, status: s, contagem }) => `
         <div class="notif-linha" style="--sev-color:${s.cor};" onclick="window.abrirDetalheAreaNotificacao('${a.chave}')">
-            <div class="notif-linha-icone" style="color:${a.cor}; background:color-mix(in srgb, ${a.cor} 16%, transparent);"><i class="fas ${a.icone}"></i></div>
+            <div class="notif-linha-icone"><i class="fas ${a.icone}"></i></div>
             <div class="notif-linha-corpo">
                 <div class="notif-linha-titulo">
                     ${a.nome}
@@ -10956,7 +10950,7 @@ function renderAchadosPendentesLista() {
     container.innerHTML = QUALIDADE_ACHADOS_LISTA.map((a, i) => `
         <div style="display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid var(--border);">
             ${a.fotos_base64 && a.fotos_base64[0] ? `<img src="${a.fotos_base64[0]}" style="width:36px; height:36px; object-fit:cover; border-radius:6px; flex-shrink:0;">` : `<div style="width:36px; height:36px; flex-shrink:0;"></div>`}
-            <span style="flex:1; font-size:12px; color:var(--text-body);">${a.categoria ? `<span style="color:#a78bfa; font-weight:700;">[${a.categoria}]</span> ` : ''}${a.descricao}${a.fotos_base64 && a.fotos_base64.length > 1 ? ` <span style="color:var(--text-muted);">(${a.fotos_base64.length} fotos)</span>` : ''}</span>
+            <span style="flex:1; font-size:12px; color:var(--text-body);">${a.categoria ? `<span style="color:var(--brand); font-weight:700;">[${a.categoria}]</span> ` : ''}${a.descricao}${a.fotos_base64 && a.fotos_base64.length > 1 ? ` <span style="color:var(--text-muted);">(${a.fotos_base64.length} fotos)</span>` : ''}</span>
             <button type="button" onclick="window.removerAchadoDaLista(${i})" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:12px;"><i class="fas fa-trash"></i></button>
         </div>
     `).join('');
@@ -11142,7 +11136,7 @@ window.carregarPadroesQualidade = async function() {
                 </h3>
                 ${padroes.map(p => `
                     <div style="padding:10px 0; border-top:1px solid rgba(239,68,68,0.2);">
-                        <div style="font-weight:700; color:var(--text-title);">${p.categoria} — ${p.total_equipamentos} equipamentos</div>
+                        <div style="font-weight:700; color:var(--text-heading);">${p.categoria} — ${p.total_equipamentos} equipamentos</div>
                         <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
                             ${(p.equipamentos || []).join(', ')}
                         </div>
@@ -11233,8 +11227,8 @@ window.renderizarListaQualidade = function() {
                 </div>
                 <div style="position:relative; cursor:${fotoCapaSaida ? 'pointer' : 'default'};" title="Fotos de Saída" ${fotoCapaSaida ? `onclick="window.abrirGaleriaQualidade(${r.id}, 'saida', '${r.peca_id}')"` : ''}>
                     ${fotoCapaSaida ? `
-                        <img src="${fotoCapaSaida}" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:2px solid #a78bfa;">
-                        <span style="position:absolute; bottom:-6px; left:2px; background:#a78bfa; color:#04121c; font-size:9px; font-weight:800; padding:1px 5px; border-radius:8px;">SAÍDA</span>
+                        <img src="${fotoCapaSaida}" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:2px solid var(--brand);">
+                        <span style="position:absolute; bottom:-6px; left:2px; background:var(--brand); color:var(--text-on-primary); font-size:9px; font-weight:800; padding:1px 5px; border-radius:8px;">SAÍDA</span>
                     ` : `<div style="width:64px; height:64px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; color:var(--text-muted); border:1px dashed var(--border);"><i class="fas fa-hourglass-half" style="font-size:16px; opacity:0.4;"></i></div>`}
                 </div>
             </div>
@@ -11244,7 +11238,7 @@ window.renderizarListaQualidade = function() {
                     <span style="font-size:11px; font-weight:700; color:${corStatus};">${iconeStatus} ${r.status}</span>
                 </div>
                 ${r.observacao_entrada ? `<div style="font-size:12px; color:var(--text-body); margin-bottom:2px;"><strong style="color:#38bdf8;">Entrada:</strong> ${r.observacao_entrada}</div>` : ''}
-                ${r.observacao_saida ? `<div style="font-size:12px; color:var(--text-body); margin-bottom:2px;"><strong style="color:#a78bfa;">Saída:</strong> ${r.observacao_saida}</div>` : ''}
+                ${r.observacao_saida ? `<div style="font-size:12px; color:var(--text-body); margin-bottom:2px;"><strong style="color:var(--brand);">Saída:</strong> ${r.observacao_saida}</div>` : ''}
                 ${Number(r.achados_total) > 0 ? `
                     <div style="margin:6px 0;">
                         <button type="button" onclick="window.abrirModalAchadosQualidade(${r.id}, '${r.peca_id}', ${!concluido})" style="background:${Number(r.achados_pendentes) > 0 ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.12)'}; color:${Number(r.achados_pendentes) > 0 ? 'var(--danger)' : 'var(--success)'}; border:1px solid currentColor; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:700; cursor:pointer;">
@@ -11351,7 +11345,7 @@ window.abrirModalSaidaQualidade = function(registroId, pecaId) {
                         </button>
                         <div id="qualidade-fotos-saida-preview" class="hidden" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;"></div>
                     </div>
-                    <button class="btn-premium" id="btn-abrir-checklist-qualidade" style="width:100%; margin-bottom:10px; border-color:#a78bfa; color:#a78bfa;">
+                    <button class="btn-premium" id="btn-abrir-checklist-qualidade" style="width:100%; margin-bottom:10px;">
                         <i class="fas fa-clipboard-check"></i> Preencher Checklist de Saída
                     </button>
                     <button class="btn-premium btn-success w-100" id="btn-confirmar-saida-qualidade">
