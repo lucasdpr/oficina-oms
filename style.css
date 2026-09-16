@@ -323,9 +323,9 @@ h1, h2, h3, h4, h5, h6 {
   border: 1px solid var(--border-color);
   max-height: 90vh;
   overflow-y: auto;
+  /* 🔧 REDESIGN: backdrop-filter removido, mesmo motivo do .glass-panel
+     acima. */
   background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
@@ -344,9 +344,10 @@ h1, h2, h3, h4, h5, h6 {
    GLASSMORPHISM E PAINÉIS
 ========================================== */
 .glass-panel {
+  /* 🔧 REDESIGN: backdrop-filter removido -- mesma causa da faixa/
+     artefato branco diagonal reportado em várias telas; --bg-card já
+     é 82% opaco. */
   background: var(--bg-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-card);
   transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.3s ease;
@@ -563,9 +564,11 @@ h1, h2, h3, h4, h5, h6 {
   flex-direction: column;
   padding: 24px 18px;
   flex-shrink: 0;
+  /* 🔧 REDESIGN: backdrop-filter removido -- mesmo bug de renderização
+     (artefato/tearing diagonal) já documentado em outros pontos deste
+     arquivo pra essa propriedade. --bg-sidebar já é 97% opaco, o blur
+     não fazia diferença visual perceptível. */
   background: var(--bg-sidebar);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   position: relative;
 }
 
@@ -1017,13 +1020,12 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .kpi-card {
-  padding: 22px 24px;
-  border-radius: var(--radius-lg);
+  padding: 26px 28px;
+  border-radius: var(--radius-card, var(--radius-lg));
   display: flex;
   align-items: center;
   gap: 18px;
   transition: all var(--transition-base);
-  border-left: 4px solid transparent;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
 }
@@ -1033,44 +1035,50 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: var(--shadow-hover);
 }
 
-.kpi-card.danger {
-  border-left-color: var(--danger);
-}
-.kpi-card.warning {
-  border-left-color: var(--warning);
-}
-.kpi-card.success {
-  border-left-color: var(--success);
+/* 🔧 REDESIGN: os cards de KPI ganhavam uma cor de identidade na
+   borda esquerda (vermelho/amarelo/verde) -- removido. Card em si é
+   sempre neutro agora; quem carrega o status é só o chip do ícone
+   abaixo (preenchido sólido), como na referência (Linear/Vercel). */
+
+/* 🔧 REFINAMENTO (Fase R2): raio próprio pro card de KPI, mais
+   generoso que o --radius-lg padrão (usado em modais etc.) -- variável
+   nova pra não afetar outros componentes que já usam --radius-lg. */
+:root {
+  --radius-card: 20px;
 }
 
 .kpi-icon {
-  width: 52px;
-  height: 52px;
+  width: 46px;
+  height: 46px;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 19px;
   background: var(--bg-th);
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
+/* Chip sólido preenchido -- ícone claro por cima, sem anel/glow. */
 .glow-danger {
-  color: var(--danger);
-  box-shadow: inset 0 0 20px rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: var(--danger);
+  color: #fff;
 }
 
 .glow-warning {
-  color: var(--warning);
-  box-shadow: inset 0 0 20px rgba(245, 158, 11, 0.15);
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  background: var(--warning);
+  color: var(--text-on-primary);
 }
 
 .glow-success {
-  color: var(--success);
-  box-shadow: inset 0 0 20px rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  background: var(--success);
+  color: #fff;
+}
+
+.glow-brand {
+  background: var(--brand);
+  color: var(--text-on-primary);
 }
 
 .kpi-data h4 {
@@ -1327,25 +1335,31 @@ h1, h2, h3, h4, h5, h6 {
 ========================================== */
 .table-responsive {
   overflow-x: auto;
+  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   width: 100%;
+  /* 🔧 REFINAMENTO (Fase R5): cantos arredondados de verdade na
+     tabela (como um card), sem herdar o --radius-card grande demais
+     pra uma grade densa de linhas. */
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--border-color);
 }
 
 .premium-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 12px;
+  margin-top: 0;
   font-size: 0.85rem;
 }
 
 .premium-table thead th {
   background: var(--bg-th);
-  padding: 12px 16px;
+  padding: 14px 18px;
   font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   color: var(--text-muted);
-  border-bottom: 2px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
   text-align: left;
   font-weight: 700;
   position: sticky;
@@ -1354,12 +1368,16 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .premium-table tbody td {
-  padding: 12px 16px;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--border-color);
   background: var(--bg-td);
   transition: background var(--transition-fast);
   color: var(--text-main);
   vertical-align: middle;
+}
+
+.premium-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .premium-table tbody tr {
@@ -2708,18 +2726,22 @@ h1, h2, h3, h4, h5, h6 {
     100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
 
-/* Indicadores de Tendência nos KPIs */
+/* 🔧 REFINAMENTO (Fase R2): era só texto solto colorido -- agora é uma
+   tag/pill discreta com fundo sutil na mesma cor, como a referência
+   ("+9% compared to last week"). */
 .kpi-trend {
     font-size: 0.7rem;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 4px;
-    margin-top: 6px;
-    font-weight: 600;
+    margin-top: 8px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-weight: 700;
 }
-.trend-up { color: var(--danger); }
-.trend-down { color: var(--success); }
-.trend-neutral { color: var(--text-muted); }
+.trend-up { color: var(--danger); background: var(--danger-bg); }
+.trend-down { color: var(--success); background: var(--success-bg); }
+.trend-neutral { color: var(--text-muted); background: rgba(255,255,255,0.05); }
 
 /* Responsividade Avançada da Home */
 @media (max-width: 1200px) {
@@ -3649,14 +3671,34 @@ h1, h2, h3, h4, h5, h6 {
     flex-shrink: 0;
 }
 
-/* Status como etiqueta discreta ao lado do nome — não é mais um divisor
-   de seção, só um lembrete visual (a ordem já é por novidade). */
+/* 🔧 REFINAMENTO (Fase R4): status como etiqueta discreta ao lado do
+   nome — não é mais um divisor de seção, só um lembrete visual (a
+   ordem já é por novidade). Virou badge/pill de verdade (fundo sutil
+   na cor do status), como "Active"/"Maintenance" da referência, em
+   vez de texto solto colorido. */
 .notif-linha-status {
     font-size: 10px;
     font-weight: 700;
     white-space: nowrap;
     margin-left: auto;
-    padding-left: 8px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--sev-color, var(--text-muted)) 15%, transparent);
+}
+
+/* 🔧 REFINAMENTO (Fase R4): mesmo tratamento de "pill" do notif-linha-status,
+   só que genérico — para os vários lugares do app que ainda mostravam o
+   status de uma atividade/OS como texto colorido solto (sem fundo), ao
+   lado de outras tags que já eram pill (ex: "ATRASADA", "Reaberta Nx").
+   Define --sev-color inline no elemento para escolher a cor. */
+.status-text-pill {
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    padding: 3px 9px;
+    border-radius: 999px;
+    color: var(--sev-color, var(--text-muted));
+    background: color-mix(in srgb, var(--sev-color, var(--text-muted)) 15%, transparent);
 }
 
 .notif-linha-meta {

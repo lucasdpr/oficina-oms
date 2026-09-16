@@ -2091,7 +2091,7 @@ function renderizarResumoHistoricoIndividual(item) {
     if (item.local === "Oficina / Reparo" && item.dataReparo) {
         cardEntrada = formatarData(item.dataReparo);
         iconeDias = "fa-tools";
-        corDias = "#ef4444";
+        corDias = "var(--danger)";
     } else if (item.dataEntradaVeio && item.local && !item.local.includes("Oficina")) {
         // 🔧 Ver correção "Prontuário sem Data de Entrada" em
         // sincronizarAtivosReaisMCC4() (banco.js): quando não existe um
@@ -2101,7 +2101,7 @@ function renderizarResumoHistoricoIndividual(item) {
         // fingir ser uma data exata.
         cardEntrada = (item.dataEntradaEstimada ? "~" : "") + formatarData(item.dataEntradaVeio);
         iconeDias = "fa-industry";
-        corDias = "#22c55e";
+        corDias = "var(--success)";
     } else {
         cardEntrada = "--";
         iconeDias = "fa-question";
@@ -2116,17 +2116,23 @@ function renderizarResumoHistoricoIndividual(item) {
     const historicoItem = HISTORICO_ACOES.filter(h => h.tag === item.id);
     const folhoesFeitos = historicoItem.filter(h => (h.acao || "").toLowerCase().includes("folhão") || (h.acao || "").toLowerCase().includes("laudo")).length;
 
+    // 🔧 REFINAMENTO (Fase R2): chip sólido -- neutro (corDias ==
+    // var(--text-muted)) fica com fundo neutro, qualquer cor de status
+    // real vira preenchimento sólido com ícone claro por cima.
+    const neutro = corDias === 'var(--text-muted)';
+    const estiloChip = neutro ? '' : `background:${corDias}; color:#fff;`;
+
     container.innerHTML = `
-        <div class="kpi-card" style="border-top:3px solid ${corDias};">
-            <div class="kpi-icon" style="color:${corDias}; border-color:${corDias}33;"><i class="fas ${iconeDias}"></i></div>
+        <div class="kpi-card">
+            <div class="kpi-icon" style="${estiloChip}"><i class="fas ${iconeDias}"></i></div>
             <div class="kpi-data"><h4 style="font-size:1.3rem;">${cardEntrada}</h4><p>${item.local === "Oficina / Reparo" ? "Saiu do Veio em" : (item.dataEntradaEstimada ? "Data de Entrada (estimada)" : "Data de Entrada Atual")}</p></div>
         </div>
-        <div class="kpi-card" style="border-top:3px solid ${corDias};">
-            <div class="kpi-icon" style="color:${corDias}; border-color:${corDias}33;"><i class="fas fa-calendar-day"></i></div>
+        <div class="kpi-card">
+            <div class="kpi-icon" style="${estiloChip}"><i class="fas fa-calendar-day"></i></div>
             <div class="kpi-data"><h4 style="font-size:1.3rem;">${dias}</h4><p>${statusLabel}</p></div>
         </div>
-        <div class="kpi-card" style="border-top:3px solid var(--border-color);">
-            <div class="kpi-icon" style="color:var(--text-muted); border-color:var(--border-color);"><i class="fas fa-clipboard-check"></i></div>
+        <div class="kpi-card">
+            <div class="kpi-icon"><i class="fas fa-clipboard-check"></i></div>
             <div class="kpi-data"><h4 style="font-size:1.3rem;">${folhoesFeitos}</h4><p>Folhões Concluídos</p></div>
         </div>
     `;
@@ -2687,9 +2693,9 @@ function renderMateriais() {
 
     tbody.innerHTML = filtrados.map(m => {
         let statusHtml = "";
-        if (m.qtd > 10) statusHtml = `<span class="status-pill operação" style="color: var(--success); border-color: var(--success);"><i class="fas fa-check-circle"></i> Normal</span>`;
-        else if (m.qtd > 0) statusHtml = `<span class="status-pill reserva" style="color: var(--warning); border-color: var(--warning);"><i class="fas fa-exclamation-triangle"></i> Baixo</span>`;
-        else statusHtml = `<span class="status-pill reparo" style="color: var(--danger); border-color: var(--danger);"><i class="fas fa-times-circle"></i> Zerado</span>`;
+        if (m.qtd > 10) statusHtml = `<span class="status-pill operação"><i class="fas fa-check-circle"></i> Normal</span>`;
+        else if (m.qtd > 0) statusHtml = `<span class="status-pill" style="background: var(--warning-bg); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.25);"><i class="fas fa-exclamation-triangle"></i> Baixo</span>`;
+        else statusHtml = `<span class="status-pill reparo"><i class="fas fa-times-circle"></i> Zerado</span>`;
         
         return `
             <tr>
@@ -4696,7 +4702,7 @@ window.renderPainelAreaAdministrativa = async function(chave) {
                         <div style="padding:10px 0; border-bottom:1px solid var(--border);">
                             <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
                                 <span style="color:var(--text-body); font-size:13px;">${a.descricao || 'Sem descrição'}</span>
-                                <span style="font-size:11px; font-weight:700; color:${corStatus};">${atrasada ? 'ATRASADA' : (a.status || '').toUpperCase()}</span>
+                                <span class="status-text-pill" style="--sev-color:${corStatus};">${atrasada ? 'ATRASADA' : (a.status || '').toUpperCase()}</span>
                             </div>
                             <div class="text-muted" style="font-size:11px; margin-top:2px;">
                                 ${
@@ -4767,7 +4773,7 @@ window.renderPainelExecutivoAdm = async function(container) {
     container.innerHTML = `
         <div class="kpi-container" style="margin-bottom:20px;">
             <div class="kpi-card">
-                <div class="kpi-icon" style="color:#38bdf8;"><i class="fas fa-list-check"></i></div>
+                <div class="kpi-icon glow-brand"><i class="fas fa-list-check"></i></div>
                 <div class="kpi-data"><h4 id="adm-exec-kpi-abertas">–</h4><p>Atividades Abertas (todas as áreas)</p></div>
             </div>
             <div class="kpi-card danger">
@@ -4793,7 +4799,7 @@ window.renderPainelExecutivoAdm = async function(container) {
             <p class="text-muted" style="font-size:12px; margin-bottom:16px;">Colaboradores, Ordens de Serviço, Qualidade e Checklist de Execução — tudo num lugar só.</p>
             <div class="kpi-container">
                 <div class="kpi-card">
-                    <div class="kpi-icon" style="color:var(--text-accent);"><i class="fas fa-users"></i></div>
+                    <div class="kpi-icon glow-brand"><i class="fas fa-users"></i></div>
                     <div class="kpi-data"><h4 id="adm-exec-kpi-colaboradores">–</h4><p>Colaboradores Ativos</p></div>
                 </div>
                 <div class="kpi-card warning">
@@ -4801,7 +4807,7 @@ window.renderPainelExecutivoAdm = async function(container) {
                     <div class="kpi-data"><h4 id="adm-exec-kpi-primeiro-acesso">–</h4><p>Aguardando 1º Acesso</p></div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-icon" style="color:#f472b6;"><i class="fas fa-file-invoice"></i></div>
+                    <div class="kpi-icon glow-brand"><i class="fas fa-file-invoice"></i></div>
                     <div class="kpi-data"><h4 id="adm-exec-kpi-os-abertas">–</h4><p>OS em Aberto</p></div>
                 </div>
                 <div class="kpi-card danger">
@@ -4809,7 +4815,7 @@ window.renderPainelExecutivoAdm = async function(container) {
                     <div class="kpi-data"><h4 id="adm-exec-kpi-achados-qualidade">–</h4><p>Achados de Qualidade Pendentes</p></div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-icon" style="color:var(--text-accent);"><i class="fas fa-list-check"></i></div>
+                    <div class="kpi-icon glow-brand"><i class="fas fa-list-check"></i></div>
                     <div class="kpi-data"><h4 id="adm-exec-kpi-checklist-andamento">–</h4><p>Checklists de Execução em Andamento</p></div>
                 </div>
             </div>
@@ -6709,7 +6715,7 @@ function renderizarAtividadesArea() {
                     ${x.equipamento_id
                         ? `<span class="font-code" style="font-weight:700; color:var(--text-heading);">${x.equipamento_id}</span>`
                         : `<span class="ind-card-tag bg-tag">Tarefa avulsa</span>`}
-                    <span style="font-size:11px; color:${corStatus[x.status] || 'var(--text-muted)'}; font-weight:700;">${x.status}</span>
+                    <span class="status-text-pill" style="--sev-color:${corStatus[x.status] || 'var(--text-muted)'};">${x.status}</span>
                     ${iconePrioridade[x.prioridade] ? `<span title="Prioridade ${x.prioridade}">${iconePrioridade[x.prioridade]}</span>` : ''}
                     ${atrasada ? `<span style="font-size:10px; background:var(--danger); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">ATRASADA</span>` : ''}
                     ${x.reaberturas_count > 0 ? `<span style="font-size:10px; background:#f97316; color:#fff; padding:2px 6px; border-radius:4px; font-weight:700; cursor:pointer;" onclick="window.verHistoricoReaberturasAtividade(${x.id})" title="Ver histórico de reaberturas"><i class="fas fa-rotate-left"></i> Reaberta ${x.reaberturas_count}x</span>` : ''}
@@ -9867,7 +9873,7 @@ window.renderizarListaOrdensServico = function() {
             <div style="flex:1; min-width:0;">
                 <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
                     <span class="font-code" style="font-weight:700; color:var(--text-heading);">${os.numero_os ? `OS ${os.numero_os}` : `#${os.id}`}</span>
-                    <span style="font-size:11px; font-weight:700; color:${corStatus};">${iconeStatus} ${os.status}</span>
+                    <span class="status-text-pill" style="--sev-color:${corStatus};">${iconeStatus} ${os.status}</span>
                 </div>
                 ${os.descricao ? `<div style="font-size:13px; color:var(--text-body); margin-bottom:4px;">${os.descricao}</div>` : ''}
                 ${naoExecutada && os.motivo_nao_executada ? `
@@ -11172,19 +11178,19 @@ window.renderizarKpisQualidade = function(lista) {
 
     container.innerHTML = `
         <div class="kpi-card warning">
-            <div class="kpi-icon"><i class="fas fa-hourglass-half"></i></div>
+            <div class="kpi-icon glow-warning"><i class="fas fa-hourglass-half"></i></div>
             <div class="kpi-data"><h4>${aguardando}</h4><p>Aguardando Saída</p></div>
         </div>
         <div class="kpi-card success">
-            <div class="kpi-icon"><i class="fas fa-check"></i></div>
+            <div class="kpi-icon glow-success"><i class="fas fa-check"></i></div>
             <div class="kpi-data"><h4>${concluidos}</h4><p>Concluídos</p></div>
         </div>
         <div class="kpi-card ${achadosPendentes > 0 ? 'danger' : ''}">
-            <div class="kpi-icon"><i class="fas fa-triangle-exclamation"></i></div>
+            <div class="kpi-icon ${achadosPendentes > 0 ? 'glow-danger' : ''}"><i class="fas fa-triangle-exclamation"></i></div>
             <div class="kpi-data"><h4>${achadosPendentes}</h4><p>Achados Pendentes</p></div>
         </div>
         <div class="kpi-card">
-            <div class="kpi-icon"><i class="fas fa-list-check"></i></div>
+            <div class="kpi-icon glow-brand"><i class="fas fa-list-check"></i></div>
             <div class="kpi-data"><h4>${achadosTotal}</h4><p>Achados no Total</p></div>
         </div>
     `;
@@ -11221,8 +11227,8 @@ window.renderizarListaQualidade = function() {
             <div style="display:flex; gap:6px; flex-shrink:0;">
                 <div style="position:relative; cursor:pointer;" title="Fotos de Entrada" onclick="window.abrirGaleriaQualidade(${r.id}, 'entrada', '${r.peca_id}')">
                     ${fotoCapaEntrada ? `
-                        <img src="${fotoCapaEntrada}" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:2px solid #38bdf8;">
-                        <span style="position:absolute; bottom:-6px; left:2px; background:#38bdf8; color:#04121c; font-size:9px; font-weight:800; padding:1px 5px; border-radius:8px;">ENTRADA</span>
+                        <img src="${fotoCapaEntrada}" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:2px solid var(--info);">
+                        <span style="position:absolute; bottom:-6px; left:2px; background:var(--info); color:#04121c; font-size:9px; font-weight:800; padding:1px 5px; border-radius:8px;">ENTRADA</span>
                     ` : `<div style="width:64px; height:64px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; color:var(--text-muted);"><i class="fas fa-image" style="font-size:18px; opacity:0.4;"></i></div>`}
                 </div>
                 <div style="position:relative; cursor:${fotoCapaSaida ? 'pointer' : 'default'};" title="Fotos de Saída" ${fotoCapaSaida ? `onclick="window.abrirGaleriaQualidade(${r.id}, 'saida', '${r.peca_id}')"` : ''}>
@@ -11235,9 +11241,9 @@ window.renderizarListaQualidade = function() {
             <div style="flex:1; min-width:180px;">
                 <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
                     <span class="font-code" style="font-weight:700; color:var(--text-heading);">${r.peca_id}</span>
-                    <span style="font-size:11px; font-weight:700; color:${corStatus};">${iconeStatus} ${r.status}</span>
+                    <span class="status-text-pill" style="--sev-color:${corStatus};">${iconeStatus} ${r.status}</span>
                 </div>
-                ${r.observacao_entrada ? `<div style="font-size:12px; color:var(--text-body); margin-bottom:2px;"><strong style="color:#38bdf8;">Entrada:</strong> ${r.observacao_entrada}</div>` : ''}
+                ${r.observacao_entrada ? `<div style="font-size:12px; color:var(--text-body); margin-bottom:2px;"><strong style="color:var(--info);">Entrada:</strong> ${r.observacao_entrada}</div>` : ''}
                 ${r.observacao_saida ? `<div style="font-size:12px; color:var(--text-body); margin-bottom:2px;"><strong style="color:var(--brand);">Saída:</strong> ${r.observacao_saida}</div>` : ''}
                 ${Number(r.achados_total) > 0 ? `
                     <div style="margin:6px 0;">
