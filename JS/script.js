@@ -4370,7 +4370,7 @@ window.carregarOficina = async function() {
                 <button class="btn-filter-mcc" onclick="window.filtrarCentralAreas('Atenção', this)">🟡 Atenção</button>
             </div>
             ${OPERADOR_LOGADO && OPERADOR_LOGADO.isAdm ? `
-                <button class="btn-premium" onclick="window.abrirModalAtividadeMassa()">
+                <button class="btn-outline-neutral" onclick="window.abrirModalAtividadeMassa()">
                     <i class="fas fa-layer-group"></i> Atividade em Massa
                 </button>
             ` : ''}
