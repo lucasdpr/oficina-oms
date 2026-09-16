@@ -275,6 +275,162 @@ function renderDonutRiscoAtivos() {
 }
 
 // ==============================================================
+// 5) DONUT — STATUS DAS ATIVIDADES (todas as áreas da Oficina)
+//    🆕 Busca própria (mesmo endpoint de renderAtrasadasGlobais acima),
+//    em vez de ler OFICINA_ATIVIDADES_CACHE: esse cache só é
+//    preenchido quando a aba Central de Áreas chega a carregar — se a
+//    pessoa for direto pro Painel Geral, ficaria vazio sem motivo
+//    aparente. Mesmas cores já usadas pra status de atividade em
+//    outras telas do sistema (Pendente=warning, Em Andamento=info,
+//    Concluído=success, Aguardando=laranja, Recusado=danger).
+// ==============================================================
+async function renderDonutStatusAtividades() {
+    const container = document.getElementById('painel-donut-status');
+    if (!container) return;
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/atividades`, { cache: 'no-store' });
+        const todas = resp.ok ? await resp.json() : [];
+        const lista = Array.isArray(todas) ? todas : [];
+
+        const categorias = [
+            { chave: 'Pendente', cor: 'var(--warning)' },
+            { chave: 'Em Andamento', cor: 'var(--info)' },
+            { chave: 'Concluído', cor: 'var(--success)' },
+            { chave: 'Aguardando', cor: 'var(--limit)' },
+            { chave: 'Recusado', cor: 'var(--danger)' },
+        ].map(c => ({ ...c, qtd: lista.filter(a => a.status === c.chave).length }));
+
+        const total = categorias.reduce((soma, c) => soma + c.qtd, 0);
+        if (total === 0) {
+            container.innerHTML = `<div class="painel-donut-corpo"><div class="painel-donut-vazio">Nenhuma atividade registrada no momento.</div></div>`;
+            return;
+        }
+
+        let acumulado = 0;
+        const fatias = categorias
+            .filter(c => c.qtd > 0)
+            .map(c => {
+                const inicio = acumulado;
+                acumulado += (c.qtd / total) * 100;
+                return `${c.cor} ${inicio}% ${acumulado}%`;
+            });
+        const anelCss = `conic-gradient(${fatias.join(', ')})`;
+
+        const legenda = categorias
+            .filter(c => c.qtd > 0)
+            .map(c => `
+                <div class="painel-donut-legenda-item">
+                    <span><span class="painel-donut-legenda-dot" style="background:${c.cor};"></span>${c.chave}</span>
+                    <strong>${c.qtd}</strong>
+                </div>
+            `).join('');
+
+        container.innerHTML = `
+            <div class="painel-donut-corpo">
+                <div class="painel-donut-anel" style="background:${anelCss};">
+                    <div class="painel-donut-centro">
+                        <strong>${total}</strong>
+                        <span>Atividades</span>
+                    </div>
+                </div>
+                <div class="painel-donut-legenda">${legenda}</div>
+            </div>
+        `;
+    } catch (e) {
+        console.error('⚠️ Não consegui carregar o status das atividades:', e);
+        container.innerHTML = `<div class="painel-donut-corpo"><div class="painel-donut-vazio">Não foi possível carregar.</div></div>`;
+    }
+}
+
+// ==============================================================
+// 6) LINHA — TONELAGEM POR DIA (últimos 7 dias)
+//    SVG puro (sem lib), mesmo endpoint de renderProducaoLancada
+//    (/api/historico_apontamentos_geral), só que aqui mantém a
+//    granularidade diária em vez de agregar tudo em "hoje"/"semana".
+// ==============================================================
+async function renderLinhaTonelagem() {
+    const container = document.getElementById('painel-linha-tonelagem');
+    if (!container) return;
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/historico_apontamentos_geral`, { cache: 'no-store' });
+        const logs = resp.ok ? await resp.json() : [];
+        const lista = Array.isArray(logs) ? logs : [];
+
+        // Monta os 7 baldes de dia (mais antigo → mais novo, hoje por
+        // último), já com a data-chave (AAAA-MM-DD em horário local) e
+        // o rótulo curto de dia da semana pro eixo X.
+        const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        const baldes = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const chave = d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+            baldes.push({ chave, label: diasSemana[d.getDay()], total: 0 });
+        }
+        const porChave = Object.fromEntries(baldes.map(b => [b.chave, b]));
+
+        lista.filter(l => l.desfeito !== 1).forEach(log => {
+            if (!log.data_hora) return;
+            const dataUTC = new Date(log.data_hora.replace(' ', 'T') + 'Z');
+            const chave = dataUTC.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+            const balde = porChave[chave];
+            if (balde) balde.total += (log.qtd_mcc2 || 0) + (log.qtd_mcc3 || 0) + (log.qtd_mcc4 || 0);
+        });
+
+        const valores = baldes.map(b => b.total);
+        const somaTotal = valores.reduce((a, b) => a + b, 0);
+        if (somaTotal === 0) {
+            container.innerHTML = `<div class="painel-donut-corpo"><div class="painel-donut-vazio">Sem apontamentos nos últimos 7 dias.</div></div>`;
+            return;
+        }
+
+        // Geometria do SVG: eixo Y de 0 até o maior valor (+10% de
+        // folga pra o ponto mais alto não colar no topo do card).
+        const larguraSvg = 560, alturaSvg = 160, margemBaixo = 24, margemLados = 12;
+        const maiorValor = Math.max(...valores) * 1.1 || 1;
+        const passoX = (larguraSvg - margemLados * 2) / (baldes.length - 1);
+        const pontos = baldes.map((b, i) => {
+            const x = margemLados + i * passoX;
+            const y = (alturaSvg - margemBaixo) - (b.total / maiorValor) * (alturaSvg - margemBaixo);
+            return { x, y, b };
+        });
+
+        const linhaPath = pontos.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+        const areaPath = `${linhaPath} L ${pontos[pontos.length - 1].x.toFixed(1)} ${alturaSvg - margemBaixo} L ${pontos[0].x.toFixed(1)} ${alturaSvg - margemBaixo} Z`;
+
+        const circulos = pontos.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="var(--info)" stroke="var(--bg-card)" stroke-width="1.5" />`).join('');
+        const rotulos = pontos.map(p => `<text x="${p.x.toFixed(1)}" y="${alturaSvg - 6}" font-size="9" fill="var(--text-muted)" text-anchor="middle">${p.b.label}</text>`).join('');
+
+        const hoje = baldes[baldes.length - 1].total;
+        container.innerHTML = `
+            <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:8px; flex-shrink:0;">
+                <strong style="font-size:1.4rem; font-weight:800; color:var(--text-heading); font-family:var(--font-mono);">${hoje.toLocaleString('pt-BR')}</strong>
+                <span style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase;">ton hoje</span>
+            </div>
+            <svg viewBox="0 0 ${larguraSvg} ${alturaSvg}" style="width:100%; flex:1; min-height:0;" preserveAspectRatio="none">
+                <defs>
+                    <linearGradient id="painelLinhaGradiente" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="var(--info)" stop-opacity="0.25" />
+                        <stop offset="100%" stop-color="var(--info)" stop-opacity="0" />
+                    </linearGradient>
+                </defs>
+                <path d="${areaPath}" fill="url(#painelLinhaGradiente)" />
+                <path d="${linhaPath}" fill="none" stroke="var(--info)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+                ${circulos}
+                ${rotulos}
+            </svg>
+        `;
+    } catch (e) {
+        console.error('⚠️ Não consegui carregar a tonelagem por dia:', e);
+        container.innerHTML = `<div class="painel-donut-corpo"><div class="painel-donut-vazio">Não foi possível carregar.</div></div>`;
+    }
+}
+
+// ==============================================================
 // ORQUESTRADOR — chamado junto com o resto do Painel Geral
 // ==============================================================
 window.renderPainelGeralExtra = function() {
@@ -282,6 +438,8 @@ window.renderPainelGeralExtra = function() {
     renderAtrasadasGlobais();
     renderProducaoLancada();
     renderDonutRiscoAtivos();
+    renderDonutStatusAtividades();
+    renderLinhaTonelagem();
 };
 
 export { renderRankingVeios, renderAtrasadasGlobais, renderProducaoLancada };
