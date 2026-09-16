@@ -2125,8 +2125,8 @@ function renderizarResumoHistoricoIndividual(item) {
             <div class="kpi-icon" style="color:${corDias}; border-color:${corDias}33;"><i class="fas fa-calendar-day"></i></div>
             <div class="kpi-data"><h4 style="font-size:1.3rem;">${dias}</h4><p>${statusLabel}</p></div>
         </div>
-        <div class="kpi-card" style="border-top:3px solid var(--primary);">
-            <div class="kpi-icon" style="color:var(--primary); border-color:rgba(56,189,248,0.2);"><i class="fas fa-clipboard-check"></i></div>
+        <div class="kpi-card" style="border-top:3px solid var(--border-color);">
+            <div class="kpi-icon" style="color:var(--text-muted); border-color:var(--border-color);"><i class="fas fa-clipboard-check"></i></div>
             <div class="kpi-data"><h4 style="font-size:1.3rem;">${folhoesFeitos}</h4><p>Folhões Concluídos</p></div>
         </div>
     `;
@@ -4608,7 +4608,7 @@ window.renderPainelAreaAdministrativa = async function(chave) {
         ${cfg.estoque ? `
         <div class="glass-panel" style="padding:24px; margin-bottom:20px;">
             <div class="flex-between" style="margin-bottom:12px;">
-                <h3 style="color:var(--text-title); font-size:1rem;"><i class="fas fa-boxes-stacked"></i> Resumo do Estoque</h3>
+                <h3 style="color:var(--text-heading); font-size:1rem;"><i class="fas fa-boxes-stacked"></i> Resumo do Estoque</h3>
                 <button class="btn-xs-primary" onclick="window.abrirAba(null,'aba-almoxarifado')" style="color:var(--brand); background:var(--brand-bg);">
                     Ver Almoxarifado Completo <i class="fas fa-arrow-right"></i>
                 </button>
@@ -4624,7 +4624,7 @@ window.renderPainelAreaAdministrativa = async function(chave) {
         <div class="dashboard-main-grid">
             <div class="glass-panel" style="padding:24px;">
                 <div class="flex-between" style="margin-bottom:16px;">
-                    <h3 style="color:var(--text-title); font-size:1rem;"><i class="fas fa-list"></i> Atividades Recentes</h3>
+                    <h3 style="color:var(--text-heading); font-size:1rem;"><i class="fas fa-list"></i> Atividades Recentes</h3>
                     <button class="btn-xs-primary" onclick="window.abrirAreaOficina('${chave}')" style="color:var(--brand); background:var(--brand-bg);">
                         <i class="fas fa-plus"></i> Lançar Atividade
                     </button>
@@ -4633,7 +4633,7 @@ window.renderPainelAreaAdministrativa = async function(chave) {
             </div>
 
             <div class="glass-panel" style="padding:24px;">
-                <h3 style="color:var(--text-title); font-size:1rem; margin-bottom:16px;"><i class="fas fa-user-hard-hat"></i> Equipe da Área</h3>
+                <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:16px;"><i class="fas fa-user-hard-hat"></i> Equipe da Área</h3>
                 <div id="painel-${chave}-equipe-lista"></div>
             </div>
         </div>
@@ -4789,7 +4789,7 @@ window.renderPainelExecutivoAdm = async function(container) {
              cada uma dessas coisas só dava pra ver abrindo a aba
              específica; ADM precisa do resumo sem entrar em cada uma. -->
         <div class="glass-panel" style="padding:24px; margin-bottom:20px;">
-            <h3 style="color:var(--text-title); font-size:1rem; margin-bottom:4px;"><i class="fas fa-chart-simple"></i> Visão Geral do Sistema</h3>
+            <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:4px;"><i class="fas fa-chart-simple"></i> Visão Geral do Sistema</h3>
             <p class="text-muted" style="font-size:12px; margin-bottom:16px;">Colaboradores, Ordens de Serviço, Qualidade e Checklist de Execução — tudo num lugar só.</p>
             <div class="kpi-container">
                 <div class="kpi-card">
@@ -4817,13 +4817,13 @@ window.renderPainelExecutivoAdm = async function(container) {
 
         <div class="dashboard-main-grid">
             <div class="glass-panel" style="padding:24px;">
-                <h3 style="color:var(--text-title); font-size:1rem; margin-bottom:4px;"><i class="fas fa-ranking-star"></i> Áreas com Mais Atraso</h3>
+                <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:4px;"><i class="fas fa-ranking-star"></i> Áreas com Mais Atraso</h3>
                 <p class="text-muted" style="font-size:12px; margin-bottom:16px;">Quantas atividades atrasadas cada área tem agora — onde apertar primeiro.</p>
                 <div id="adm-exec-ranking-areas"></div>
             </div>
 
             <div class="glass-panel" style="padding:24px;">
-                <h3 style="color:var(--text-title); font-size:1rem; margin-bottom:4px;"><i class="fas fa-rotate-left"></i> Retrabalho (Atividades Mais Reabertas)</h3>
+                <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:4px;"><i class="fas fa-rotate-left"></i> Retrabalho (Atividades Mais Reabertas)</h3>
                 <p class="text-muted" style="font-size:12px; margin-bottom:16px;">O mesmo problema voltando — vale investigar a causa raiz, não só reabrir de novo.</p>
                 <div id="adm-exec-retrabalho"></div>
             </div>
@@ -4835,7 +4835,7 @@ window.renderPainelExecutivoAdm = async function(container) {
              progresso de leitura e arquivar. -->
         <div class="glass-panel" style="padding:24px; margin-top:20px;">
             <div class="flex-between" style="margin-bottom:4px;">
-                <h3 style="color:var(--text-title); font-size:1rem;"><i class="fas fa-bullhorn"></i> Avisos do Sistema</h3>
+                <h3 style="color:var(--text-heading); font-size:1rem;"><i class="fas fa-bullhorn"></i> Avisos do Sistema</h3>
                 <button class="btn-premium btn-success" style="padding:6px 14px;" onclick="window.abrirModalCriarAviso()">
                     <i class="fas fa-plus"></i> Novo Aviso
                 </button>
@@ -6984,7 +6984,7 @@ window.renderFilaPonteRolante = async function() {
                     <summary class="text-muted" style="cursor:pointer; font-size:12px;">Arquivo — atendimentos por dia</summary>
                     ${diasOrdenados.map(dia => `
                         <div style="margin-top:10px;">
-                            <div style="font-weight:700; font-size:12px; color:var(--text-title); margin-bottom:4px;">${dia ? new Date(dia + 'T00:00:00').toLocaleDateString('pt-BR') : 'Sem data'}</div>
+                            <div style="font-weight:700; font-size:12px; color:var(--text-heading); margin-bottom:4px;">${dia ? new Date(dia + 'T00:00:00').toLocaleDateString('pt-BR') : 'Sem data'}</div>
                             ${porDia.get(dia).map(x => `
                                 <div style="padding:8px 0; border-bottom:1px solid var(--border); font-size:12px;" class="text-muted">
                                     ${x.descricao} — ${x.status}${x.equipamento_id ? ` — Ponte ${x.equipamento_id}` : ''}
@@ -11136,7 +11136,7 @@ window.carregarPadroesQualidade = async function() {
                 </h3>
                 ${padroes.map(p => `
                     <div style="padding:10px 0; border-top:1px solid rgba(239,68,68,0.2);">
-                        <div style="font-weight:700; color:var(--text-title);">${p.categoria} — ${p.total_equipamentos} equipamentos</div>
+                        <div style="font-weight:700; color:var(--text-heading);">${p.categoria} — ${p.total_equipamentos} equipamentos</div>
                         <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
                             ${(p.equipamentos || []).join(', ')}
                         </div>
