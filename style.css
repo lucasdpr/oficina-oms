@@ -3661,14 +3661,19 @@ h1, h2, h3, h4, h5, h6 {
     flex-shrink: 0;
 }
 
-/* Status como etiqueta discreta ao lado do nome — não é mais um divisor
-   de seção, só um lembrete visual (a ordem já é por novidade). */
+/* 🔧 REFINAMENTO (Fase R4): status como etiqueta discreta ao lado do
+   nome — não é mais um divisor de seção, só um lembrete visual (a
+   ordem já é por novidade). Virou badge/pill de verdade (fundo sutil
+   na cor do status), como "Active"/"Maintenance" da referência, em
+   vez de texto solto colorido. */
 .notif-linha-status {
     font-size: 10px;
     font-weight: 700;
     white-space: nowrap;
     margin-left: auto;
-    padding-left: 8px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--sev-color, var(--text-muted)) 15%, transparent);
 }
 
 .notif-linha-meta {
