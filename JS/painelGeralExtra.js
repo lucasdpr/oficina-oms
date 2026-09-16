@@ -214,12 +214,74 @@ async function renderProducaoLancada() {
 }
 
 // ==============================================================
+// 4) DONUT — RISCO DOS ATIVOS (Crítico/Atenção/Normal)
+//    Mesma população e limiares já usados no KPI "Ativos Críticos"
+//    (calcularKpisGlobais, script.js): só ativos fora da Oficina
+//    (>= 80% = Crítico), pra bater com o número que já aparece ali.
+// ==============================================================
+function renderDonutRiscoAtivos() {
+    const container = document.getElementById('painel-donut-risco');
+    if (!container) return;
+
+    let critico = 0, atencao = 0, normal = 0;
+    BANCO_ATIVOS.forEach(a => {
+        if (a.local && a.local.includes('Oficina')) return;
+        const pct = a.meta > 0 ? (a.ton / a.meta) * 100 : 0;
+        if (pct >= 80) critico++;
+        else if (pct >= 50) atencao++;
+        else normal++;
+    });
+
+    const total = critico + atencao + normal;
+    if (total === 0) {
+        container.innerHTML = `<div class="painel-donut-corpo"><div class="painel-donut-vazio">Sem ativos instalados no momento.</div></div>`;
+        return;
+    }
+
+    const pctCritico = (critico / total) * 100;
+    const pctAtencao = (atencao / total) * 100;
+    // Fatia "Normal" pega o resto até 100%, evitando sobra/falta por
+    // arredondamento nas duas primeiras.
+    const anelCss = `conic-gradient(
+        var(--danger) 0% ${pctCritico}%,
+        var(--warning) ${pctCritico}% ${pctCritico + pctAtencao}%,
+        var(--success) ${pctCritico + pctAtencao}% 100%
+    )`;
+
+    container.innerHTML = `
+        <div class="painel-donut-corpo">
+            <div class="painel-donut-anel" style="background:${anelCss};">
+                <div class="painel-donut-centro">
+                    <strong>${total}</strong>
+                    <span>Ativos</span>
+                </div>
+            </div>
+            <div class="painel-donut-legenda">
+                <div class="painel-donut-legenda-item">
+                    <span><span class="painel-donut-legenda-dot" style="background:var(--danger);"></span>Crítico</span>
+                    <strong>${critico}</strong>
+                </div>
+                <div class="painel-donut-legenda-item">
+                    <span><span class="painel-donut-legenda-dot" style="background:var(--warning);"></span>Atenção</span>
+                    <strong>${atencao}</strong>
+                </div>
+                <div class="painel-donut-legenda-item">
+                    <span><span class="painel-donut-legenda-dot" style="background:var(--success);"></span>Normal</span>
+                    <strong>${normal}</strong>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// ==============================================================
 // ORQUESTRADOR — chamado junto com o resto do Painel Geral
 // ==============================================================
 window.renderPainelGeralExtra = function() {
     renderRankingVeios();
     renderAtrasadasGlobais();
     renderProducaoLancada();
+    renderDonutRiscoAtivos();
 };
 
 export { renderRankingVeios, renderAtrasadasGlobais, renderProducaoLancada };
