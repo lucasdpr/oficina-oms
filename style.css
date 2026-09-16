@@ -717,12 +717,29 @@ h1, h2, h3, h4, h5, h6 {
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 5px;
   flex: 1;
   overflow-y: auto;
   padding-right: 4px;
   scrollbar-width: thin;
   scrollbar-color: rgba(56, 189, 248, 0.3) transparent;
+}
+
+/* --------------------------------------------------------------
+   SIDEBAR FOOTER — ação/perfil na base (Opção B do redesign de
+   sidebar): notificação/instalar/logout saíram do topo (dentro do
+   .operator-box) e vieram pra cá, fora da área rolável da nav. Fica
+   sempre visível, sem precisar rolar a lista de menu até o fim.
+   -------------------------------------------------------------- */
+.sidebar-footer {
+  flex-shrink: 0;
+  padding-top: 14px;
+  margin-top: 10px;
+  border-top: 1px solid var(--border-color);
+}
+
+.sidebar-footer .btn-auth:last-child {
+  margin-bottom: 0;
 }
 
 .sidebar-nav::-webkit-scrollbar {
@@ -757,7 +774,7 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
+  padding: 12px 14px;
   color: var(--text-muted);
   text-decoration: none;
   border-radius: var(--radius-sm);
@@ -851,8 +868,15 @@ h1, h2, h3, h4, h5, h6 {
 .highlight-rolos.active i,
 .highlight-almoxarifado.active i,
 .highlight-hidraulica.active i {
-  color: var(--brand);
-  filter: drop-shadow(0 0 4px rgba(255, 193, 7, 0.5));
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: var(--brand);
+  color: var(--text-on-primary);
+  flex-shrink: 0;
 }
 
 /* Área Restrita (dev) — 🔧 CORREÇÃO (regressão de cor): isso tinha virado

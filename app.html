@@ -625,6 +625,12 @@
         <!-- SIDEBAR -->
         <aside id="sidebar-menu" class="sidebar glass-panel">
             <div class="sidebar-header flex-between"><h2><i class="fas fa-industry text-accent"></i> Painel OMS</h2><button class="btn-close-sidebar hidden-desktop" onclick="window.toggleSidebar()"><i class="fas fa-times"></i></button></div>
+            <!-- 🔧 REDESIGN (sidebar): identidade fica só no topo agora — os
+                 botões de ação (notificação/instalar/logout) saíram daqui e
+                 foram pra .sidebar-footer, depois da nav. Mesma lógica de
+                 organização da referência: identidade no topo, navegação
+                 no meio (rolável), ação na base (fixa, sem precisar rolar
+                 até o fim da lista de menu pra encerrar o turno). -->
             <div class="operator-box">
                 <div class="operator-info">
                     <i class="fas fa-user-shield"></i>
@@ -634,23 +640,6 @@
                         <span id="badge-cargo-operador" class="operator-role-badge"></span>
                     </div>
                 </div>
-                <!-- 🆕 Botão manual de ativar notificações — some sozinho quando
-                     já está ativado ou quando o navegador não suporta. Existe
-                     porque no iPhone o pedido de permissão só funciona quando
-                     é resposta DIRETA de um toque (ver ativarPushNotification
-                     em script.js); chamar automático depois do login (que já
-                     passou por uma chamada de rede) não funciona no Safari/iOS
-                     — o toque neste botão é o gesto "fresco" que falta. -->
-                <button id="btn-ativar-notificacoes" class="btn-auth hidden" style="margin-top:8px; background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);" onclick="window.ativarPushNotification()">
-                    <i class="fas fa-bell"></i> Ativar Notificações
-                </button>
-                <!-- 🆕 Botão "Instalar App" — mesmo esquema do de notificações
-                     acima: some sozinho se o app já estiver instalado ou se o
-                     navegador não suportar. Ver window.instalarAppOMS. -->
-                <button class="btn-auth btn-instalar-pwa hidden" style="margin-top:8px; background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.3);" onclick="window.instalarAppOMS()">
-                    <i class="fas fa-download"></i> Instalar App
-                </button>
-                <button class="btn-auth" onclick="window.fazerLogout()">Encerrar Turno</button>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" id="nav-painel" class="nav-link active" onclick="window.abrirAba(event,'aba-painel')"><i class="fas fa-chart-pie"></i> Painel Geral OMS</a>
@@ -662,8 +651,8 @@
                      tinha que ADM/supervisor abrir a área dele pra ele
                      mesmo acessar o quadro de atividades/materiais/equipe. -->
                 <a href="#" id="nav-area-oficina" class="nav-link hidden" data-area="" onclick="window.abrirAreaOficinaDireto(event, this.dataset.area)"><i class="fas fa-people-carry-box"></i> <span data-area-nome>Minha Área</span></a>
-                <a href="#" id="nav-oficina" class="nav-link" onclick="window.abrirAba(event,'aba-oficina')"><i class="fas fa-industry"></i> 🏭 Central de Áreas</a>
-                <a href="#" id="nav-fila-ponte" class="nav-link" onclick="window.abrirAba(event,'aba-fila-ponte'); window.renderFilaPonteRolante();">🏗️ Fila da Ponte Rolante</a>
+                <a href="#" id="nav-oficina" class="nav-link" onclick="window.abrirAba(event,'aba-oficina')"><i class="fas fa-industry"></i> Central de Áreas</a>
+                <a href="#" id="nav-fila-ponte" class="nav-link" onclick="window.abrirAba(event,'aba-fila-ponte'); window.renderFilaPonteRolante();"><i class="fas fa-truck-ramp-box"></i> Fila da Ponte Rolante</a>
                 <!-- 🆕 Aba única de Chats — antes eram vários botões/modais
                      espalhados (badge na Área da Oficina, "Mensagens das
                      Áreas" no painel ADM). Agora é um lugar só, estilo
@@ -701,6 +690,25 @@
                 <a href="#" id="nav-admin-colaboradores" class="nav-link nav-link-dev hidden" onclick="window.abrirAba(event,'aba-admin-colaboradores')"><i class="fas fa-user-gear"></i> Administração</a>
                 <a href="#" id="nav-dev-teste" class="nav-link nav-link-dev hidden" onclick="window.abrirAba(event,'aba-dev-teste')"><i class="fas fa-flask"></i> Teste de Folhões</a>
             </nav>
+            <div class="sidebar-footer">
+                <!-- 🆕 Botão manual de ativar notificações — some sozinho quando
+                     já está ativado ou quando o navegador não suporta. Existe
+                     porque no iPhone o pedido de permissão só funciona quando
+                     é resposta DIRETA de um toque (ver ativarPushNotification
+                     em script.js); chamar automático depois do login (que já
+                     passou por uma chamada de rede) não funciona no Safari/iOS
+                     — o toque neste botão é o gesto "fresco" que falta. -->
+                <button id="btn-ativar-notificacoes" class="btn-auth hidden" style="margin-bottom:8px; background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);" onclick="window.ativarPushNotification()">
+                    <i class="fas fa-bell"></i> Ativar Notificações
+                </button>
+                <!-- 🆕 Botão "Instalar App" — mesmo esquema do de notificações
+                     acima: some sozinho se o app já estiver instalado ou se o
+                     navegador não suportar. Ver window.instalarAppOMS. -->
+                <button class="btn-auth btn-instalar-pwa hidden" style="margin-bottom:8px; background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.3);" onclick="window.instalarAppOMS()">
+                    <i class="fas fa-download"></i> Instalar App
+                </button>
+                <button class="btn-auth" onclick="window.fazerLogout()">Encerrar Turno</button>
+            </div>
         </aside>
 
         <main class="main-content">
