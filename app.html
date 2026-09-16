@@ -107,18 +107,18 @@
             overflow-x: hidden;
             min-height: 100vh;
         }
-        /* ===== BUTTONS ===== */
-        .btn-premium { position: relative; overflow: hidden; background: rgba(245,158,11,0.12); border: 1px solid var(--primary); color: var(--primary); padding: 10px 20px; border-radius: var(--radius); font-weight: 600; font-size: 0.85rem; transition: all var(--transition); cursor: pointer; display: inline-flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 0.3px; }
-        .btn-premium:hover { background: var(--primary); color: #0a0e17; box-shadow: 0 0 24px rgba(245,158,11,0.3); transform: translateY(-2px); }
-        .btn-premium:active { transform: translateY(0) scale(0.98); }
-        .btn-premium.btn-success { border-color: #10b981; color: #10b981; background: rgba(16,185,129,0.12); }
-        .btn-premium.btn-success:hover { background: #10b981; color: #0a0e17; box-shadow: 0 0 24px rgba(16,185,129,0.3); }
-        .btn-premium.btn-warning { border-color: #f59e0b; color: #f59e0b; background: rgba(245,158,11,0.12); }
-        .btn-premium.btn-warning:hover { background: #f59e0b; color: #0a0e17; }
-        .btn-premium.btn-danger { border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.12); }
-        .btn-premium.btn-danger:hover { background: #ef4444; color: #0a0e17; }
-        .btn-outline-danger { position: relative; overflow: hidden; background: transparent; border: 1px solid #ef4444; color: #ef4444; padding: 6px 14px; border-radius: var(--radius); cursor: pointer; font-size: 0.75rem; font-weight: 600; transition: all var(--transition); }
-        .btn-outline-danger:hover { background: #ef4444; color: #0a0e17; box-shadow: 0 0 20px rgba(239,68,68,0.3); }
+        /* ===== BUTTONS =====
+           🔧 REDESIGN: removidas as definições de .btn-premium/
+           .btn-outline-danger daqui -- eram um SEGUNDO conjunto de
+           regras (Sistema B, hardcoded em hex e var(--primary) antigo)
+           conflitando com as versões corretas do style.css. Como esse
+           <style> inline vem DEPOIS do <link> do style.css no <head>,
+           essa versão sempre vencia o empate de especificidade --
+           causava o fundo âmbar "sujo" nos botões .btn-premium (ex:
+           "Tirar Foto/Anexar" na tela de Qualidade), sem relação
+           nenhuma com o dourado de marca novo. style.css já tem tudo
+           isso, com as variáveis certas (var(--danger)/var(--warning)/
+           var(--success)/var(--text-on-primary)). */
         .btn-outline-danger:active { transform: scale(0.98); }
         .btn-xs-primary { background: transparent; border: none; color: var(--text-muted); font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: var(--radius); cursor: pointer; transition: color var(--transition); }
         .btn-xs-primary:hover { color: var(--text-accent); }
