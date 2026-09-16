@@ -1020,13 +1020,12 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .kpi-card {
-  padding: 22px 24px;
-  border-radius: var(--radius-lg);
+  padding: 26px 28px;
+  border-radius: var(--radius-card, var(--radius-lg));
   display: flex;
   align-items: center;
   gap: 18px;
   transition: all var(--transition-base);
-  border-left: 4px solid transparent;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
 }
@@ -1041,14 +1040,21 @@ h1, h2, h3, h4, h5, h6 {
    sempre neutro agora; quem carrega o status é só o chip do ícone
    abaixo (preenchido sólido), como na referência (Linear/Vercel). */
 
+/* 🔧 REFINAMENTO (Fase R2): raio próprio pro card de KPI, mais
+   generoso que o --radius-lg padrão (usado em modais etc.) -- variável
+   nova pra não afetar outros componentes que já usam --radius-lg. */
+:root {
+  --radius-card: 20px;
+}
+
 .kpi-icon {
-  width: 52px;
-  height: 52px;
+  width: 46px;
+  height: 46px;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 19px;
   background: var(--bg-th);
   color: var(--text-muted);
   flex-shrink: 0;
@@ -1068,6 +1074,11 @@ h1, h2, h3, h4, h5, h6 {
 .glow-success {
   background: var(--success);
   color: #fff;
+}
+
+.glow-brand {
+  background: var(--brand);
+  color: var(--text-on-primary);
 }
 
 .kpi-data h4 {
@@ -2705,18 +2716,22 @@ h1, h2, h3, h4, h5, h6 {
     100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
 
-/* Indicadores de Tendência nos KPIs */
+/* 🔧 REFINAMENTO (Fase R2): era só texto solto colorido -- agora é uma
+   tag/pill discreta com fundo sutil na mesma cor, como a referência
+   ("+9% compared to last week"). */
 .kpi-trend {
     font-size: 0.7rem;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 4px;
-    margin-top: 6px;
-    font-weight: 600;
+    margin-top: 8px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-weight: 700;
 }
-.trend-up { color: var(--danger); }
-.trend-down { color: var(--success); }
-.trend-neutral { color: var(--text-muted); }
+.trend-up { color: var(--danger); background: var(--danger-bg); }
+.trend-down { color: var(--success); background: var(--success-bg); }
+.trend-neutral { color: var(--text-muted); background: rgba(255,255,255,0.05); }
 
 /* Responsividade Avançada da Home */
 @media (max-width: 1200px) {
