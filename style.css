@@ -554,7 +554,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .btn-auth:hover {
   background: var(--text-accent);
-  box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
+  box-shadow: 0 2px 8px rgba(56, 189, 248, 0.35);
   transform: translateY(-1px);
 }
 
@@ -1347,6 +1347,7 @@ h1, h2, h3, h4, h5, h6 {
 .painel-geral-linha3 {
   display: grid;
   grid-template-columns: 2fr 1fr;
+  align-items: start;
   gap: 20px;
   margin-top: 24px;
 }
