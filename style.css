@@ -1335,25 +1335,31 @@ h1, h2, h3, h4, h5, h6 {
 ========================================== */
 .table-responsive {
   overflow-x: auto;
+  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   width: 100%;
+  /* 🔧 REFINAMENTO (Fase R5): cantos arredondados de verdade na
+     tabela (como um card), sem herdar o --radius-card grande demais
+     pra uma grade densa de linhas. */
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--border-color);
 }
 
 .premium-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 12px;
+  margin-top: 0;
   font-size: 0.85rem;
 }
 
 .premium-table thead th {
   background: var(--bg-th);
-  padding: 12px 16px;
+  padding: 14px 18px;
   font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   color: var(--text-muted);
-  border-bottom: 2px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
   text-align: left;
   font-weight: 700;
   position: sticky;
@@ -1362,12 +1368,16 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .premium-table tbody td {
-  padding: 12px 16px;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--border-color);
   background: var(--bg-td);
   transition: background var(--transition-fast);
   color: var(--text-main);
   vertical-align: middle;
+}
+
+.premium-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .premium-table tbody tr {
