@@ -776,8 +776,15 @@
 
     <!-- 2.5. LINHA 2 — gráficos (reestruturação de layout, passo a passo:
          Fase 1 = donut Risco dos Ativos; Fase 2 = donut Status das
-         Atividades; Fase 3 = linha de Tonelagem; Fase 4 = grid completo). -->
+         Atividades; Fase 3 = linha de Tonelagem; Fase 4 = grid completo
+         ✅ concluída — ordem final: linha (2fr) + 2 donuts (1fr cada)). -->
     <div class="painel-graficos-linha2">
+        <div class="glass-panel painel-linha-card">
+            <h3 class="painel-donut-titulo">
+                <i class="fas fa-chart-line" style="color:var(--info);"></i> Tonelagem por Dia (últimos 7 dias)
+            </h3>
+            <div id="painel-linha-tonelagem" style="flex:1; display:flex; flex-direction:column; min-height:0;"></div>
+        </div>
         <div class="glass-panel painel-donut-card">
             <h3 class="painel-donut-titulo">
                 <i class="fas fa-chart-pie" style="color:var(--danger);"></i> Risco dos Ativos
