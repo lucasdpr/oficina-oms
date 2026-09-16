@@ -4991,15 +4991,18 @@ textarea,
     transition: background 0.15s ease;
 }
 .chat-conversa-item:hover { background: rgba(255, 255, 255, 0.04); }
-.chat-conversa-item.ativa { background: rgba(37, 211, 102, 0.09); }
+.chat-conversa-item.ativa { background: var(--brand-bg); }
 
 .chat-conversa-avatar {
+    /* 🔧 REDESIGN: era verde estilo WhatsApp — trocado pro dourado de
+       marca, igual ao resto do app; --text-on-primary já existe
+       exatamente pra dar contraste em cima de --brand. */
     flex-shrink: 0;
     width: 38px;
     height: 38px;
     border-radius: 50%;
-    background: linear-gradient(145deg, #25d366, #128c7e);
-    color: #fff;
+    background: var(--brand);
+    color: var(--text-on-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -5026,9 +5029,11 @@ textarea,
     margin-top: 2px;
 }
 .chat-conversa-badge {
+    /* 🔧 REDESIGN: unificado com os outros badges de não lida do
+       sistema (nav, notificações) -- vermelho, não verde. */
     flex-shrink: 0;
-    background: #25d366;
-    color: #04120c;
+    background: var(--danger);
+    color: #fff;
     font-size: 11px;
     font-weight: 800;
     border-radius: 50%;
@@ -5045,7 +5050,7 @@ textarea,
     flex-direction: column;
     min-width: 0;
     background:
-        radial-gradient(circle at 20% 10%, rgba(37, 211, 102, 0.04) 0%, transparent 40%),
+        radial-gradient(circle at 20% 10%, rgba(255, 193, 7, 0.04) 0%, transparent 40%),
         var(--bg-main, #0a0e14);
 }
 
@@ -5106,9 +5111,11 @@ textarea,
     border-bottom-left-radius: 4px;
 }
 .chat-bolha-minha {
+    /* 🔧 REDESIGN: era verde WhatsApp -- dourado de marca, como o
+       resto do app. */
     align-self: flex-end;
-    background: linear-gradient(145deg, #25d366, #1fa855);
-    color: #04120c;
+    background: var(--brand);
+    color: var(--text-on-primary);
     border-bottom-right-radius: 4px;
 }
 .chat-bolha-remetente {
@@ -5143,7 +5150,7 @@ textarea,
     font-size: 13.5px;
     outline: none;
 }
-.chat-thread-input:focus { border-color: #25d366; }
+.chat-thread-input:focus { border-color: var(--brand); }
 .chat-thread-input::placeholder { color: var(--text-muted); }
 .chat-thread-enviar {
     flex-shrink: 0;
@@ -5151,8 +5158,8 @@ textarea,
     height: 40px;
     border-radius: 50%;
     border: none;
-    background: #25d366;
-    color: #04120c;
+    background: var(--brand);
+    color: var(--text-on-primary);
     font-size: 15px;
     cursor: pointer;
     display: flex;
