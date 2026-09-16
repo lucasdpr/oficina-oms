@@ -841,20 +841,20 @@
 
                 <!-- ATALHOS RÁPIDOS -->
                 <div class="tecnico-atalhos-grid">
-                    <button class="tecnico-atalho-btn" style="border-color:#f59e0b;" onclick="window.abrirAbaReparo('iniciar')">
-                        <i class="fas fa-wrench" style="color:#f59e0b;"></i>
+                    <button class="tecnico-atalho-btn" onclick="window.abrirAbaReparo('iniciar')">
+                        <i class="fas fa-wrench"></i>
                         <span>Iniciar Reparo</span>
                     </button>
-                    <button class="tecnico-atalho-btn" style="border-color:#38bdf8;" onclick="window.abrirAbaReparo('andamento')">
-                        <i class="fas fa-hourglass-half" style="color:#38bdf8;"></i>
+                    <button class="tecnico-atalho-btn" onclick="window.abrirAbaReparo('andamento')">
+                        <i class="fas fa-hourglass-half"></i>
                         <span>Reparo em Andamento</span>
                     </button>
-                    <button class="tecnico-atalho-btn" style="border-color:#a78bfa;" onclick="window.irParaAreaTecnico()">
-                        <i class="fas fa-industry" style="color:#a78bfa;"></i>
+                    <button class="tecnico-atalho-btn" onclick="window.irParaAreaTecnico()">
+                        <i class="fas fa-industry"></i>
                         <span>Área</span>
                     </button>
-                    <button class="tecnico-atalho-btn" style="border-color:#eab308;" onclick="window.irCriarAtividadeTecnico()">
-                        <i class="fas fa-plus" style="color:#eab308;"></i>
+                    <button class="tecnico-atalho-btn" onclick="window.irCriarAtividadeTecnico()">
+                        <i class="fas fa-plus"></i>
                         <span>Criar Atividade</span>
                     </button>
                 </div>
@@ -1416,7 +1416,7 @@
                  acompanhamento de status (Em Andamento / Concluído). -->
             <section id="aba-ordens-servico" class="tab-content">
                 <div class="glass-panel" style="padding:24px; margin-bottom:24px;">
-                    <h2 style="color:#f472b6;"><i class="fas fa-file-invoice"></i> Registro de OS</h2>
+                    <h2><i class="fas fa-file-invoice"></i> Registro de OS</h2>
                     <p class="text-muted" style="font-size:13px; margin-bottom:20px;">
                         Tire foto de cada página da OS em papel (pode escolher várias de uma vez) pra deixar ela
                         registrada digitalmente. Acompanhe o status até marcar como concluída.
@@ -1478,7 +1478,7 @@
                  -> Concluído. -->
             <section id="aba-qualidade" class="tab-content">
                 <div class="glass-panel" style="padding:24px; margin-bottom:24px;">
-                    <h2 style="color:#a78bfa;"><i class="fas fa-magnifying-glass"></i> Qualidade — Entrada e Saída da Oficina</h2>
+                    <h2><i class="fas fa-magnifying-glass"></i> Qualidade — Entrada e Saída da Oficina</h2>
                     <p class="text-muted" style="font-size:13px; margin-bottom:20px;">
                         Registre com fotos como o equipamento chegou na oficina. Quando o serviço terminar, registre
                         também como ele está saindo. Tudo fica salvo aqui pra conferência.
@@ -1521,8 +1521,8 @@
                         <div id="qualidade-fotos-entrada-preview" class="hidden" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;"></div>
                     </div>
 
-                    <div class="glass-panel" style="padding:16px; margin-bottom:16px; background:rgba(167,139,250,0.05); border:1px solid rgba(167,139,250,0.2);">
-                        <label style="display:block; margin-bottom:10px; color:#a78bfa; font-weight:700;"><i class="fas fa-triangle-exclamation"></i> Achados (problemas encontrados na inspeção)</label>
+                    <div class="glass-panel" style="padding:16px; margin-bottom:16px; background:var(--warning-bg); border:1px solid var(--border-color);">
+                        <label style="display:block; margin-bottom:10px; color:var(--warning); font-weight:700;"><i class="fas fa-triangle-exclamation"></i> Achados (problemas encontrados na inspeção)</label>
         <!-- 🆕 Categoria — ver CATEGORIAS_ACHADO_QUALIDADE (JS/Core/dados.js) e
              verificar_padrao_achados (backend, app_core.py): quando preenchida,
              deixa o sistema avisar sozinho se o mesmo tipo de defeito aparecer em

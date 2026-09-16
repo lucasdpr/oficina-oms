@@ -10950,7 +10950,7 @@ function renderAchadosPendentesLista() {
     container.innerHTML = QUALIDADE_ACHADOS_LISTA.map((a, i) => `
         <div style="display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid var(--border);">
             ${a.fotos_base64 && a.fotos_base64[0] ? `<img src="${a.fotos_base64[0]}" style="width:36px; height:36px; object-fit:cover; border-radius:6px; flex-shrink:0;">` : `<div style="width:36px; height:36px; flex-shrink:0;"></div>`}
-            <span style="flex:1; font-size:12px; color:var(--text-body);">${a.categoria ? `<span style="color:#a78bfa; font-weight:700;">[${a.categoria}]</span> ` : ''}${a.descricao}${a.fotos_base64 && a.fotos_base64.length > 1 ? ` <span style="color:var(--text-muted);">(${a.fotos_base64.length} fotos)</span>` : ''}</span>
+            <span style="flex:1; font-size:12px; color:var(--text-body);">${a.categoria ? `<span style="color:var(--brand); font-weight:700;">[${a.categoria}]</span> ` : ''}${a.descricao}${a.fotos_base64 && a.fotos_base64.length > 1 ? ` <span style="color:var(--text-muted);">(${a.fotos_base64.length} fotos)</span>` : ''}</span>
             <button type="button" onclick="window.removerAchadoDaLista(${i})" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:12px;"><i class="fas fa-trash"></i></button>
         </div>
     `).join('');
@@ -11227,8 +11227,8 @@ window.renderizarListaQualidade = function() {
                 </div>
                 <div style="position:relative; cursor:${fotoCapaSaida ? 'pointer' : 'default'};" title="Fotos de Saída" ${fotoCapaSaida ? `onclick="window.abrirGaleriaQualidade(${r.id}, 'saida', '${r.peca_id}')"` : ''}>
                     ${fotoCapaSaida ? `
-                        <img src="${fotoCapaSaida}" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:2px solid #a78bfa;">
-                        <span style="position:absolute; bottom:-6px; left:2px; background:#a78bfa; color:#04121c; font-size:9px; font-weight:800; padding:1px 5px; border-radius:8px;">SAÍDA</span>
+                        <img src="${fotoCapaSaida}" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:2px solid var(--brand);">
+                        <span style="position:absolute; bottom:-6px; left:2px; background:var(--brand); color:var(--text-on-primary); font-size:9px; font-weight:800; padding:1px 5px; border-radius:8px;">SAÍDA</span>
                     ` : `<div style="width:64px; height:64px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; color:var(--text-muted); border:1px dashed var(--border);"><i class="fas fa-hourglass-half" style="font-size:16px; opacity:0.4;"></i></div>`}
                 </div>
             </div>
@@ -11238,7 +11238,7 @@ window.renderizarListaQualidade = function() {
                     <span style="font-size:11px; font-weight:700; color:${corStatus};">${iconeStatus} ${r.status}</span>
                 </div>
                 ${r.observacao_entrada ? `<div style="font-size:12px; color:var(--text-body); margin-bottom:2px;"><strong style="color:#38bdf8;">Entrada:</strong> ${r.observacao_entrada}</div>` : ''}
-                ${r.observacao_saida ? `<div style="font-size:12px; color:var(--text-body); margin-bottom:2px;"><strong style="color:#a78bfa;">Saída:</strong> ${r.observacao_saida}</div>` : ''}
+                ${r.observacao_saida ? `<div style="font-size:12px; color:var(--text-body); margin-bottom:2px;"><strong style="color:var(--brand);">Saída:</strong> ${r.observacao_saida}</div>` : ''}
                 ${Number(r.achados_total) > 0 ? `
                     <div style="margin:6px 0;">
                         <button type="button" onclick="window.abrirModalAchadosQualidade(${r.id}, '${r.peca_id}', ${!concluido})" style="background:${Number(r.achados_pendentes) > 0 ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.12)'}; color:${Number(r.achados_pendentes) > 0 ? 'var(--danger)' : 'var(--success)'}; border:1px solid currentColor; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:700; cursor:pointer;">
@@ -11345,7 +11345,7 @@ window.abrirModalSaidaQualidade = function(registroId, pecaId) {
                         </button>
                         <div id="qualidade-fotos-saida-preview" class="hidden" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;"></div>
                     </div>
-                    <button class="btn-premium" id="btn-abrir-checklist-qualidade" style="width:100%; margin-bottom:10px; border-color:#a78bfa; color:#a78bfa;">
+                    <button class="btn-premium" id="btn-abrir-checklist-qualidade" style="width:100%; margin-bottom:10px;">
                         <i class="fas fa-clipboard-check"></i> Preencher Checklist de Saída
                     </button>
                     <button class="btn-premium btn-success w-100" id="btn-confirmar-saida-qualidade">

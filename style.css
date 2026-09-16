@@ -3095,6 +3095,9 @@ h1, h2, h3, h4, h5, h6 {
     gap: 12px;
     margin-top: 20px;
 }
+/* 🔧 REDESIGN: os 4 atalhos tinham cada um sua cor fixa (laranja, azul,
+   roxo, amarelo) -- neutro em repouso, dourado no hover, como o resto
+   dos elementos clicáveis do app. */
 .tecnico-atalho-btn {
     background: var(--bg-card, var(--bg-th));
     border: 1.5px solid var(--border-color);
@@ -3110,6 +3113,11 @@ h1, h2, h3, h4, h5, h6 {
     transition: all 0.2s ease;
     min-height: 88px;
     touch-action: manipulation;
+    color: var(--text-muted);
+}
+.tecnico-atalho-btn:hover {
+    border-color: var(--brand);
+    color: var(--brand);
 }
 .tecnico-atalho-btn:active {
     transform: scale(0.96);
