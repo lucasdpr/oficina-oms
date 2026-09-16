@@ -5030,6 +5030,17 @@ window.abrirDetalheSupervisorPorIndice = function(idx) {
 
     if (!d.itens.length) {
         cont.innerHTML = `<div class="sup-vazio">Nada aqui agora 👍</div>`;
+    } else if (d.tipo === 'os') {
+        cont.innerHTML = d.itens.map(os => `
+            <div class="sup-lista-linha sup-lista-linha-clicavel" style="flex-direction:column; align-items:stretch;" onclick="window.fecharModalSupervisorDetalhe(); window.abrirGaleriaOs(${os.id}, '${os.numero_os ? `OS ${os.numero_os}` : `OS #${os.id}`}')">
+                <div style="display:flex; justify-content:space-between; width:100%;">
+                    <strong style="color:var(--text-heading);">${os.numero_os ? `OS ${os.numero_os}` : `#${os.id}`}</strong>
+                    <span class="text-muted">${os.status || '—'}</span>
+                </div>
+                <div class="text-muted" style="font-size:11.5px;">${os.criado_por || 'Sistema'} · ${os.criado_em || ''}${os.area ? ` · ${os.area}` : ''}</div>
+                ${os.descricao ? `<div style="font-size:12.5px; margin-top:4px; color:var(--text-body);">${os.descricao}</div>` : ''}
+            </div>
+        `).join('');
     } else if (d.tipo === 'ativo') {
         cont.innerHTML = d.itens.map(a => {
             const pct = a.meta > 0 ? Math.round((a.ton / a.meta) * 100) : null;
@@ -5704,7 +5715,7 @@ window.renderPainelSupervisor = async function() {
                     </div>
                     ${mensagensNaoLidas.length
                         ? mensagensNaoLidas.slice(0, 6).map(m => `
-                            <div class="sup-lista-linha">
+                            <div class="sup-lista-linha sup-lista-linha-clicavel" onclick="window.abrirChatAdmArea('${m.area}')">
                                 <span style="color:var(--text-body);">${m.nome_area || m.area}</span>
                                 <span style="font-weight:700; color:#ec4899;">${m.nao_lidas}</span>
                             </div>
@@ -5726,7 +5737,7 @@ window.renderPainelSupervisor = async function() {
                     <div class="sup-card-titulo"><span><i class="fas fa-triangle-exclamation"></i> Ocorrências Mais Recentes</span></div>
                     ${Array.isArray(ocorrencias) && ocorrencias.length
                         ? ocorrencias.slice(0, 6).map(o => `
-                            <div class="sup-lista-linha">
+                            <div class="sup-lista-linha${o.peca_id ? ' sup-lista-linha-clicavel' : ''}" ${o.peca_id ? `onclick="window.abrirHistoricoIndividual('${o.peca_id}')"` : ''}>
                                 <span style="color:var(--text-body);">${o.peca_id ? o.peca_id + ' — ' : ''}${o.categoria || o.acao || 'Registro'}</span>
                                 <span class="text-muted" style="font-size:11px;">${(o.data_hora || '').slice(0, 10).split('-').reverse().join('/')}</span>
                             </div>
@@ -5741,7 +5752,7 @@ window.renderPainelSupervisor = async function() {
                     </div>
                     ${laudos7dias.length
                         ? laudos7dias.slice(0, 5).map(l => `
-                            <div class="sup-lista-linha">
+                            <div class="sup-lista-linha${l.peca_id ? ' sup-lista-linha-clicavel' : ''}" ${l.peca_id ? `onclick="window.abrirHistoricoIndividual('${l.peca_id}')"` : ''}>
                                 <span style="color:var(--text-body);">${l.peca_id}<span class="text-muted"> — ${l.tipo || ''}</span></span>
                                 <span class="text-muted" style="font-size:11px;">${(l.criado_em || '').slice(0, 10).split('-').reverse().join('/')}</span>
                             </div>
@@ -5751,7 +5762,18 @@ window.renderPainelSupervisor = async function() {
                 <div class="sup-card" style="--sup-cor:#f97316; grid-column: 1 / -1;">
                     <div class="sup-card-titulo"><span><i class="fas fa-arrows-rotate"></i> Retrabalho — Tipos Que Mais Reabrem (travam o fluxo)</span></div>
                     ${rankingReaberturas.length
-                        ? rankingReaberturas.map(([nome, v]) => painelSupBarraHtml(nome, v, maxReaberturas, '#f97316')).join('')
+                        ? rankingReaberturas.map(([nome, v]) => painelSupBarraHtml(
+                            nome, v, maxReaberturas, '#f97316',
+                            `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor(
+                                `Retrabalho — ${nome}`,
+                                reabertas.filter(r => {
+                                    const peca = ativos.find(a => a.id === r.equipamento_id);
+                                    const chave = peca ? peca.tipo : (r.equipamento_id || 'Tarefa avulsa');
+                                    return chave === nome;
+                                }),
+                                'atividade'
+                            )})`
+                        )).join('')
                         : `<div class="sup-vazio">Nenhuma atividade reaberta registrada 👍 — sem retrabalho até agora.</div>`}
                 </div>
             `;
@@ -5814,9 +5836,12 @@ window.renderPainelSupervisor = async function() {
                 const trendEl = document.getElementById('painel-sup-os-trend');
                 if (trendEl) {
                     trendEl.innerHTML = (emAndamentoOs + concluidasOs + naoExecutadasOs) > 0
-                        ? painelSupBarraHtml('Em Andamento', emAndamentoOs, maxOs, '#eab308')
-                            + painelSupBarraHtml('Concluídas', concluidasOs, maxOs, '#22c55e')
-                            + (naoExecutadasOs > 0 ? painelSupBarraHtml('Não Executadas', naoExecutadasOs, maxOs, '#ef4444') : '')
+                        ? painelSupBarraHtml('Em Andamento', emAndamentoOs, maxOs, '#eab308',
+                            `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor('OS Em Andamento', listaOs.filter(o => o.status === 'Em Andamento'), 'os')})`)
+                            + painelSupBarraHtml('Concluídas', concluidasOs, maxOs, '#22c55e',
+                                `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor('OS Concluídas', listaOs.filter(o => o.status === 'Concluído'), 'os')})`)
+                            + (naoExecutadasOs > 0 ? painelSupBarraHtml('Não Executadas', naoExecutadasOs, maxOs, '#ef4444',
+                                `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor('OS Não Executadas', listaOs.filter(o => o.status === 'Não Executada'), 'os')})`) : '')
                         : `<div class="sup-vazio">Nenhuma OS registrada ainda.</div>`;
                 }
 
@@ -5894,7 +5919,7 @@ window.renderPainelSupervisor = async function() {
                 <div class="sup-card-titulo"><span><i class="fas fa-gauge-high"></i> Próximas a Bater a Meta de Desgaste</span></div>
                 ${instaladosComRitmo.length
                     ? instaladosComRitmo.map(a => `
-                        <div class="sup-lista-linha">
+                        <div class="sup-lista-linha sup-lista-linha-clicavel" onclick="window.abrirHistoricoIndividual('${a.id}')">
                             <span style="color:var(--text-body);">${a.id} <span class="text-muted">(${a.tipo || '—'})</span></span>
                             <span style="font-weight:700; color:${corPrevisao(a.diasParaMeta)};">~${a.diasParaMeta}d</span>
                         </div>
@@ -5907,10 +5932,14 @@ window.renderPainelSupervisor = async function() {
                     <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:10px;">
                         <div style="font-size:1.4rem; font-weight:800; color:${corBacklog};">${pioraOuMelhora === 'piorando' ? '📈' : (pioraOuMelhora === 'melhorando' ? '📉' : '➖')} ${pioraOuMelhora}</div>
                     </div>
-                    ${painelSupBarraHtml('Criadas (antes)', criadasAntes, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#94a3b8')}
-                    ${painelSupBarraHtml('Concl. (antes)', concluidasAntes, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#64748b')}
-                    ${painelSupBarraHtml('Criadas (agora)', criadasDepois, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#eab308')}
-                    ${painelSupBarraHtml('Concl. (agora)', concluidasDepois, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#22c55e')}
+                    ${painelSupBarraHtml('Criadas (antes)', criadasAntes, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#94a3b8',
+                        `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor('Criadas (7 dias anteriores)', atividades.filter(x => x.criado_em && meiaJanela.includes(x.criado_em.slice(0, 10))), 'atividade')})`)}
+                    ${painelSupBarraHtml('Concl. (antes)', concluidasAntes, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#64748b',
+                        `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor('Concluídas (7 dias anteriores)', atividades.filter(x => x.concluido_em && meiaJanela.includes(x.concluido_em.slice(0, 10))), 'atividade')})`)}
+                    ${painelSupBarraHtml('Criadas (agora)', criadasDepois, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#eab308',
+                        `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor('Criadas (últimos 7 dias)', atividades.filter(x => x.criado_em && janelaRecente.includes(x.criado_em.slice(0, 10))), 'atividade')})`)}
+                    ${painelSupBarraHtml('Concl. (agora)', concluidasDepois, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#22c55e',
+                        `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor('Concluídas (últimos 7 dias)', atividades.filter(x => x.concluido_em && janelaRecente.includes(x.concluido_em.slice(0, 10))), 'atividade')})`)}
                     <div style="font-size:10.5px; color:var(--text-muted); margin-top:6px;">Compara os 7 dias mais recentes com os 7 anteriores — mostra direção, não um prazo exato.</div>
                 ` : `<div class="sup-vazio">Sem dado suficiente nos últimos 14 dias pra calcular tendência.</div>`}
             </div>
