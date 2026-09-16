@@ -165,9 +165,31 @@ async function renderProducaoLancada() {
         const totaisTon = somarPeriodo(Array.isArray(logsGeral) ? logsGeral : []);
         const totaisPanelas = somarPeriodo(Array.isArray(logsMoldes) ? logsMoldes : []);
 
-        const linha = (label, cor, dados, unidade) => `
+        // 🆕 Tag de variação percentual (pedido do usuário, referência
+        // "John Hardward") — só aqui, onde já existe dado histórico real
+        // (hoje x últimos 7 dias, já buscado acima). Compara o total de
+        // hoje com a MÉDIA DIÁRIA da semana (soma da semana ÷ 7), não
+        // com a soma da semana inteira — senão "hoje" (1 dia) nunca
+        // ganharia de "semana" (7 dias) e a variação seria sempre
+        // negativa sem dizer nada de real. Não fabrica número: se não
+        // houver dado suficiente (semana zerada), simplesmente não
+        // mostra a tag, em vez de inventar um percentual.
+        const tagVariacao = (dadosHoje, dadosSemana) => {
+            const totalHoje = dadosHoje.mcc2 + dadosHoje.mcc3 + dadosHoje.mcc4;
+            const totalSemana = dadosSemana.mcc2 + dadosSemana.mcc3 + dadosSemana.mcc4;
+            const mediaDiaria = totalSemana / 7;
+            if (mediaDiaria <= 0) return '';
+            const variacao = ((totalHoje - mediaDiaria) / mediaDiaria) * 100;
+            const positivo = variacao >= 0;
+            const cor = positivo ? 'var(--success)' : 'var(--danger)';
+            const bg = positivo ? 'var(--success-bg)' : 'var(--danger-bg)';
+            const seta = positivo ? '▲' : '▼';
+            return `<span style="font-size:10.5px; font-weight:700; color:${cor}; background:${bg}; padding:2px 7px; border-radius:999px; margin-left:6px;">${seta} ${Math.abs(variacao).toFixed(0)}% vs média/dia</span>`;
+        };
+
+        const linha = (label, cor, dados, unidade, variacaoHtml) => `
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; padding:8px 10px; background:var(--bg-th); border-radius:6px; border-left:3px solid ${cor}; margin-bottom:6px;">
-                <span style="font-size:12px; font-weight:600;">${label}</span>
+                <span style="font-size:12px; font-weight:600;">${label}${variacaoHtml || ''}</span>
                 <span style="font-family:var(--font-mono, monospace); font-size:12px; line-height:1.6;">
                     <b>${dados.mcc2.toLocaleString('pt-BR')}</b> MCC2 ·
                     <b>${dados.mcc3.toLocaleString('pt-BR')}</b> MCC3 ·
@@ -179,10 +201,10 @@ async function renderProducaoLancada() {
 
         container.innerHTML = `
             <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Tonelagem</div>
-            ${linha('Hoje', '#3b82f6', totaisTon.hoje, 'ton')}
+            ${linha('Hoje', '#3b82f6', totaisTon.hoje, 'ton', tagVariacao(totaisTon.hoje, totaisTon.semana))}
             ${linha('Últimos 7 dias', '#8b5cf6', totaisTon.semana, 'ton')}
             <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin:14px 0 6px 0;">Panelas de Molde</div>
-            ${linha('Hoje', '#f97316', totaisPanelas.hoje, 'panelas')}
+            ${linha('Hoje', '#f97316', totaisPanelas.hoje, 'panelas', tagVariacao(totaisPanelas.hoje, totaisPanelas.semana))}
             ${linha('Últimos 7 dias', '#eab308', totaisPanelas.semana, 'panelas')}
         `;
     } catch (e) {

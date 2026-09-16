@@ -786,9 +786,20 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: inset 0 0 14px rgba(255, 193, 7, 0.08);
 }
 
+/* 🔧 AJUSTE (pedido do usuário, referência "John Hardward"): o ícone do
+   item ativo ganha um chip quadrado de fundo sólido atrás dele, não só
+   o ícone colorido solto — mesma linguagem visual dos chips de ícone
+   dos KPI cards. */
 .nav-link.active i {
-  color: var(--brand);
-  filter: drop-shadow(0 0 4px rgba(255, 193, 7, 0.5));
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: var(--brand);
+  color: var(--text-on-primary);
+  flex-shrink: 0;
 }
 
 /* 🔧 REDESIGN: estas 5 variantes davam uma cor de identidade FIXA por
@@ -1122,6 +1133,73 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 0.6rem;
   font-weight: 700;
   color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------
+   KPI CARD v2 — reestruturação pedida pelo usuário (referência
+   "John Hardward"): chip de ícone PEQUENO no canto (não mais um
+   círculo grande vertical-center dominando o card), label discreto
+   ao lado do ícone, número grande sozinho embaixo, tag de variação
+   com fundo sutil por último. Escopado só no Painel Geral (classes
+   -v2, novas) até ser aprovado pra replicar — .kpi-card "clássico"
+   continua intacto em todo o resto do app.
+   -------------------------------------------------------------- */
+.kpi-card-v2 {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card, var(--radius-lg));
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  transition: all var(--transition-base);
+}
+
+.kpi-card-v2 .kpi-trend {
+  margin-top: 0;
+}
+
+.kpi-card-v2:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-hover);
+}
+
+.kpi-v2-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kpi-icon-v2 {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.kpi-v2-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.kpi-v2-value {
+  font-size: 1.9rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text-heading);
+  font-family: var(--font-mono);
+}
+
+@media (max-width: 480px) {
+  .kpi-v2-value {
+    font-size: 1.6rem;
+  }
 }
 
 /* ==========================================
@@ -1919,6 +1997,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .folhao-content input[type="checkbox"] {
+  position: relative;
   appearance: none;
   -webkit-appearance: none;
   width: 16px;
