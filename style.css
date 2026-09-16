@@ -4941,3 +4941,256 @@ textarea,
     .sup-efetivo-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
     .sup-efetivo-chip { padding: 8px 10px; }
 }
+
+/* ==========================================
+   ABA DE CHATS — layout de duas colunas (lista de conversas + thread),
+   estilo apps de mensagem. Substitui os modais soltos que existiam
+   antes. Ver #aba-chats no app.html e window.renderAbaChats em
+   script.js.
+========================================== */
+.chat-shell {
+    display: flex;
+    height: calc(100vh - 140px);
+    min-height: 420px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg, 18px);
+    overflow: hidden;
+}
+
+.chat-lista-painel {
+    width: 300px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.015);
+}
+
+.chat-lista-header {
+    padding: 16px 18px;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-heading, var(--text-title));
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chat-lista-conversas {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.chat-conversa-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s ease;
+}
+.chat-conversa-item:hover { background: rgba(255, 255, 255, 0.04); }
+.chat-conversa-item.ativa { background: rgba(37, 211, 102, 0.09); }
+
+.chat-conversa-avatar {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #25d366, #128c7e);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.chat-conversa-corpo { flex: 1; min-width: 0; }
+.chat-conversa-topo {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-body);
+}
+.chat-conversa-topo strong { color: var(--text-heading, var(--text-title)); }
+.chat-conversa-hora { font-size: 10.5px; color: var(--text-muted); flex-shrink: 0; }
+.chat-conversa-preview {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+}
+.chat-conversa-badge {
+    flex-shrink: 0;
+    background: #25d366;
+    color: #04120c;
+    font-size: 11px;
+    font-weight: 800;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chat-thread-painel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background:
+        radial-gradient(circle at 20% 10%, rgba(37, 211, 102, 0.04) 0%, transparent 40%),
+        var(--bg-main, #0a0e14);
+}
+
+.chat-thread-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-card);
+}
+.chat-thread-voltar {
+    background: transparent;
+    border: none;
+    color: var(--text-body);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px;
+}
+.chat-thread-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(56, 189, 248, 0.15);
+    color: var(--text-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.chat-thread-titulo {
+    font-weight: 700;
+    font-size: 14.5px;
+    color: var(--text-heading, var(--text-title));
+}
+
+.chat-thread-mensagens {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.chat-bolha {
+    max-width: 68%;
+    padding: 9px 13px;
+    border-radius: 14px;
+    font-size: 13.5px;
+    line-height: 1.4;
+    position: relative;
+}
+.chat-bolha-outro {
+    align-self: flex-start;
+    background: var(--bg-input);
+    color: var(--text-body);
+    border-bottom-left-radius: 4px;
+}
+.chat-bolha-minha {
+    align-self: flex-end;
+    background: linear-gradient(145deg, #25d366, #1fa855);
+    color: #04120c;
+    border-bottom-right-radius: 4px;
+}
+.chat-bolha-remetente {
+    font-weight: 700;
+    font-size: 10.5px;
+    opacity: 0.75;
+    margin-bottom: 2px;
+}
+.chat-bolha-texto { white-space: pre-wrap; word-break: break-word; }
+.chat-bolha-hora {
+    font-size: 9.5px;
+    opacity: 0.7;
+    margin-top: 4px;
+    text-align: right;
+}
+
+.chat-thread-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-card);
+}
+.chat-thread-input {
+    flex: 1;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 10px 16px;
+    color: var(--text-heading, var(--text-title));
+    font-size: 13.5px;
+    outline: none;
+}
+.chat-thread-input:focus { border-color: #25d366; }
+.chat-thread-input::placeholder { color: var(--text-muted); }
+.chat-thread-enviar {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: #25d366;
+    color: #04120c;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: filter 0.15s ease;
+}
+.chat-thread-enviar:hover { filter: brightness(1.08); }
+
+.chat-vazio {
+    margin: auto;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12.5px;
+    padding: 20px;
+}
+
+@media (max-width: 860px) {
+    .chat-shell { height: calc(100vh - 110px); }
+    .chat-lista-painel {
+        width: 100%;
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+    }
+    .chat-lista-painel.hidden { display: none; }
+    .chat-thread-painel { position: relative; z-index: 0; }
+    /* No mobile, some as duas colunas ocupando a tela toda — a lista
+       fica "por baixo" até uma conversa ser selecionada, aí a thread
+       sobe por cima (classe aplicada em chatsSelecionarConversa). */
+    .chat-shell { position: relative; }
+    .chat-thread-painel:not(.chat-thread-mobile-ativo) { display: none; }
+    .chat-lista-painel:not(.hidden) ~ .chat-thread-painel.chat-thread-mobile-ativo {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        display: flex;
+    }
+}

@@ -657,6 +657,13 @@
                 <a href="#" id="nav-area-oficina" class="nav-link hidden" style="color:#fb923c;" data-area="" onclick="window.abrirAreaOficinaDireto(event, this.dataset.area)"><i class="fas fa-people-carry-box"></i> <span data-area-nome>Minha Área</span></a>
                 <a href="#" id="nav-oficina" class="nav-link" onclick="window.abrirAba(event,'aba-oficina')"><i class="fas fa-industry"></i> 🏭 Central de Áreas</a>
                 <a href="#" id="nav-fila-ponte" class="nav-link" style="color:#3b82f6;" onclick="window.abrirAba(event,'aba-fila-ponte'); window.renderFilaPonteRolante();">🏗️ Fila da Ponte Rolante</a>
+                <!-- 🆕 Aba única de Chats — antes eram vários botões/modais
+                     espalhados (badge na Área da Oficina, "Mensagens das
+                     Áreas" no painel ADM). Agora é um lugar só, estilo
+                     lista de conversas, pra técnico falar com o ADM e o
+                     ADM ver/responder todas as áreas (ver renderAbaChats
+                     em script.js). -->
+                <a href="#" id="nav-chats" class="nav-link" style="color:#25d366;" onclick="window.abrirAba(event,'aba-chats')"><i class="fas fa-comments"></i> Chats <span id="nav-chats-badge" class="hidden" style="background:var(--danger); color:#fff; font-size:10px; font-weight:700; padding:1px 6px; border-radius:10px; margin-left:4px;">0</span></a>
                 <!-- 🆕 Central de Notificações — só supervisor/ADM/admin do
                      sistema (ver ativarCentralNotificacoesSeAutorizado em
                      script.js). Começa escondida; JS decide quem vê. -->
@@ -1390,6 +1397,21 @@
                 </div>
             </section>
 
+            <!-- 🆕 Modal de drill-down do Painel do Supervisor: clicando em
+                 qualquer linha/barra das seções de Saúde da Oficina, abre
+                 aqui a lista completa por trás do número, com dados de
+                 fácil acesso (área, status, responsável...). Ver
+                 window.abrirDetalheSupervisorPorIndice em script.js. -->
+            <div id="modal-supervisor-detalhe" class="modal-overlay hidden" style="z-index:10001;">
+                <div class="modal-content" style="max-width:560px; max-height:80vh; display:flex; flex-direction:column; text-align:left;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
+                        <h2 id="modal-supervisor-detalhe-titulo" style="color:var(--text-heading); margin:0; font-size:1.05rem;">Detalhe</h2>
+                        <button class="btn-close-emergency" onclick="window.fecharModalSupervisorDetalhe()"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div id="modal-supervisor-detalhe-lista" style="overflow-y:auto; flex:1;"></div>
+                </div>
+            </div>
+
             <!-- 🆕 REGISTRO DE OS (Ordem de Serviço) — foto da OS em papel +
                  acompanhamento de status (Em Andamento / Concluído). -->
             <section id="aba-ordens-servico" class="tab-content">
@@ -1866,31 +1888,37 @@
         </div>
     </div>
 
-    <!-- 💬 Chat Área <-> ADM — visão da própria área (ver window.abrirChatAreaAdm em script.js) -->
-    <div id="modal-chat-area-adm" class="modal-overlay hidden" style="z-index:10002;">
-        <div class="modal-content" style="max-width:480px; text-align:left; display:flex; flex-direction:column; max-height:80vh;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <h2 style="color:var(--text-heading); margin:0; font-size:1.05rem;"><i class="fas fa-comments"></i> Falar com o ADM</h2>
-                <button class="btn-close-emergency" style="padding:6px 10px;" onclick="window.fecharChatAreaAdm()"><i class="fas fa-times"></i></button>
-            </div>
-            <div id="chat-area-adm-mensagens" style="flex:1; overflow-y:auto; min-height:200px; max-height:50vh; display:flex; flex-direction:column; gap:8px; padding:4px; margin-bottom:10px;"></div>
-            <div style="display:flex; gap:8px;">
-                <input id="chat-area-adm-input" class="premium-input" placeholder="Escreva sua mensagem..." style="flex:1;" onkeydown="if(event.key==='Enter'){window.enviarMensagemChatAreaAdm();}">
-                <button class="btn-premium" style="padding:8px 14px;" onclick="window.enviarMensagemChatAreaAdm()"><i class="fas fa-paper-plane"></i></button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 💬 Chat Área <-> ADM — visão do ADM (lista de áreas + conversa de cada uma) -->
-    <div id="modal-chat-adm-lista" class="modal-overlay hidden" style="z-index:10002;">
-        <div class="modal-content" style="max-width:480px; text-align:left; display:flex; flex-direction:column; max-height:80vh;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <h2 style="color:var(--text-heading); margin:0; font-size:1.05rem;"><i class="fas fa-comments"></i> Mensagens das Áreas</h2>
-                <button class="btn-close-emergency" style="padding:6px 10px;" onclick="window.fecharChatAdmLista()"><i class="fas fa-times"></i></button>
-            </div>
-            <div id="chat-adm-lista-areas" style="overflow-y:auto; max-height:60vh;"></div>
-        </div>
-    </div>
+            <!-- 🆕 ABA ÚNICA DE CHATS — substitui os dois modais soltos que
+                 existiam antes (chat da área + lista de áreas do ADM).
+                 Layout de duas colunas estilo apps de mensagem: lista de
+                 conversas à esquerda (só o ADM vê, técnico já cai direto
+                 na conversa dele) e a conversa em si à direita. Ver
+                 window.renderAbaChats/chatsSelecionarConversa/
+                 chatsEnviarMensagem em script.js. -->
+            <section id="aba-chats" class="tab-content">
+                <div class="chat-shell">
+                    <div id="chat-lista-painel" class="chat-lista-painel hidden">
+                        <div class="chat-lista-header"><i class="fas fa-comments"></i> Conversas</div>
+                        <div id="chat-lista-conversas" class="chat-lista-conversas">
+                            <div class="chat-vazio">Carregando...</div>
+                        </div>
+                    </div>
+                    <div id="chat-thread-painel" class="chat-thread-painel">
+                        <div class="chat-thread-header">
+                            <button id="chat-thread-voltar" class="chat-thread-voltar hidden" onclick="window.chatsVoltarParaLista()"><i class="fas fa-arrow-left"></i></button>
+                            <div class="chat-thread-avatar"><i class="fas fa-user-tie"></i></div>
+                            <div id="chat-thread-titulo" class="chat-thread-titulo">Selecione uma conversa</div>
+                        </div>
+                        <div id="chat-thread-mensagens" class="chat-thread-mensagens">
+                            <div class="chat-vazio">Escolha uma conversa pra começar.</div>
+                        </div>
+                        <div class="chat-thread-input-row">
+                            <input id="chat-thread-input" class="chat-thread-input" placeholder="Digite uma mensagem..." onkeydown="if(event.key==='Enter'){window.chatsEnviarMensagem();}">
+                            <button class="chat-thread-enviar" onclick="window.chatsEnviarMensagem()"><i class="fas fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
             <section id="aba-painel-adm" class="tab-content">
                 <div class="glass-panel" style="border-top:4px solid #38bdf8; padding:24px; margin-bottom:20px;">
@@ -2019,6 +2047,18 @@
                             <label class="chip-select"><input type="checkbox" class="modal-iniciar-ponte-check" value="Cabo de Aço da Área"> Cabo de Aço da Área</label>
                             <label class="chip-select"><input type="checkbox" class="modal-iniciar-ponte-check" value="Cinta"> Cinta</label>
                         </div>
+                    </div>
+                    <div class="input-group" style="margin-bottom:8px;">
+                        <label>Quem está operando a ponte hoje?</label>
+                        <div id="modal-iniciar-ponte-operadores" class="chip-select-radio" style="margin-top:8px;">
+                            <span class="text-muted" style="font-size:12px;">Carregando equipe...</span>
+                        </div>
+                    </div>
+                    <div class="input-group" style="margin-bottom:8px;">
+                        <input type="text" id="modal-iniciar-ponte-operador-outro" placeholder="Ou digite o nome de quem vai operar">
+                    </div>
+                    <div id="modal-iniciar-ponte-operador-aviso" class="hidden" style="margin-bottom:14px; padding:8px 10px; border-radius:8px; background:rgba(251,191,36,0.12); color:#fbbf24; font-size:12px;">
+                        <i class="fas fa-triangle-exclamation"></i> Troca de operador: será registrada em relação ao último operador desta ponte.
                     </div>
                     <div style="display:flex; justify-content:flex-end; gap:8px;">
                         <button class="btn-outline-danger" onclick="window.fecharModalIniciarPonte()">Cancelar</button>

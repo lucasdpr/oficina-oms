@@ -558,6 +558,7 @@ async function finalizarLogin(nome, cargo, matricula, area, isAdm, token) {
     // comunicado do ADM que precisa de leitura confirmada. Só pra quem
     // tem matrícula real (visitante não entra nessa, matricula é null).
     if (typeof window.verificarAvisosPendentes === 'function') window.verificarAvisosPendentes();
+    if (typeof window.atualizarBadgeChatAreaAdm === 'function') executarSeguro(() => window.atualizarBadgeChatAreaAdm(), 'atualizarBadgeChatAreaAdm');
 
     // 🔧 CORREÇÃO ("encerra o turno, loga de novo, continua com os dados
     // vazios/velhos até fechar e abrir o app"): antes, a sincronização com
@@ -1315,7 +1316,7 @@ function atualizarInterfaceUsuario() {
 // usa no dia a dia (Sinótico 3D, Sequenciamento de Veios, Registro de
 // OS) — o resto do menu lateral fica escondido.
 // ADM (MATRICULAS_ADM) e visitante continuam vendo o menu completo.
-const NAV_IDS_LIBERADOS_TECNICO = ['nav-tecnico', 'nav-area-oficina', 'nav-sinotico', 'nav-fluxo', 'nav-ordens-servico', 'nav-fila-ponte'];
+const NAV_IDS_LIBERADOS_TECNICO = ['nav-tecnico', 'nav-area-oficina', 'nav-sinotico', 'nav-fluxo', 'nav-ordens-servico', 'nav-fila-ponte', 'nav-chats'];
 
 function aplicarRestricaoNavTecnico() {
     const restrito = !!(OPERADOR_LOGADO && !OPERADOR_LOGADO.visitante && !OPERADOR_LOGADO.isAdm && OPERADOR_LOGADO.area);
@@ -1366,7 +1367,7 @@ function aplicarRestricaoNavTecnico() {
     if (restrito) {
         const abaAtual = document.querySelector('.tab-content.active');
         const idAtual = abaAtual ? abaAtual.id : null;
-        const abaAindaPermitida = idAtual === 'aba-tecnico' || idAtual === 'aba-fluxo' || idAtual === 'aba-ordens-servico' || idAtual === 'aba-fila-ponte';
+        const abaAindaPermitida = idAtual === 'aba-tecnico' || idAtual === 'aba-fluxo' || idAtual === 'aba-ordens-servico' || idAtual === 'aba-fila-ponte' || idAtual === 'aba-chats';
         if (!abaAindaPermitida) window.abrirAba(null, 'aba-tecnico');
     }
 }
@@ -4995,16 +4996,86 @@ window.renderPainelExecutivoAdm = async function(container) {
 // API de Ordens de Serviço, que já é consumida em outro lugar do app.
 const PAINEL_SUP_LIMITE_ESTOQUE_BAIXO = 10; // mesmo corte usado em renderMateriais()
 
-function painelSupBarraHtml(nome, valor, max, cor) {
+function painelSupBarraHtml(nome, valor, max, cor, onclick) {
     const pct = max > 0 ? Math.max(4, Math.round((valor / max) * 100)) : 0;
     return `
-        <div class="sup-barra-linha">
+        <div class="sup-barra-linha${onclick ? ' sup-lista-linha-clicavel' : ''}" ${onclick ? `onclick="${onclick}"` : ''}>
             <span class="sup-barra-nome" title="${nome}">${nome}</span>
             <span class="sup-barra-trilho"><span class="sup-barra-preenchimento" style="width:${valor > 0 ? pct : 0}%; background:${cor};"></span></span>
             <span class="sup-barra-valor">${valor}</span>
         </div>
     `;
 }
+
+// 🆕 Drill-down do Painel Supervisor: os cards de "Saúde da Oficina
+// Agora" eram só números/barras estáticas — clicar não fazia nada. Os
+// dados já existem em memória (atividades/ativos já carregados pro
+// resto do painel), só faltava um jeito de mostrar a lista por trás de
+// cada número. Como onclick="" é uma string HTML, não dá pra passar o
+// array de itens direto — guarda no cache por índice e o clique só
+// manda o índice.
+let SUP_DETALHE_CACHE = [];
+function registrarDetalheSupervisor(titulo, itens, tipo) {
+    SUP_DETALHE_CACHE.push({ titulo, itens: itens || [], tipo });
+    return SUP_DETALHE_CACHE.length - 1;
+}
+
+window.abrirDetalheSupervisorPorIndice = function(idx) {
+    const d = SUP_DETALHE_CACHE[idx];
+    if (!d) return;
+    const modal = document.getElementById('modal-supervisor-detalhe');
+    const tituloEl = document.getElementById('modal-supervisor-detalhe-titulo');
+    const cont = document.getElementById('modal-supervisor-detalhe-lista');
+    if (!modal || !cont) return;
+    if (tituloEl) tituloEl.textContent = `${d.titulo} (${d.itens.length})`;
+
+    if (!d.itens.length) {
+        cont.innerHTML = `<div class="sup-vazio">Nada aqui agora 👍</div>`;
+    } else if (d.tipo === 'os') {
+        cont.innerHTML = d.itens.map(os => `
+            <div class="sup-lista-linha sup-lista-linha-clicavel" style="flex-direction:column; align-items:stretch;" onclick="window.fecharModalSupervisorDetalhe(); window.abrirGaleriaOs(${os.id}, '${os.numero_os ? `OS ${os.numero_os}` : `OS #${os.id}`}')">
+                <div style="display:flex; justify-content:space-between; width:100%;">
+                    <strong style="color:var(--text-heading);">${os.numero_os ? `OS ${os.numero_os}` : `#${os.id}`}</strong>
+                    <span class="text-muted">${os.status || '—'}</span>
+                </div>
+                <div class="text-muted" style="font-size:11.5px;">${os.criado_por || 'Sistema'} · ${os.criado_em || ''}${os.area ? ` · ${os.area}` : ''}</div>
+                ${os.descricao ? `<div style="font-size:12.5px; margin-top:4px; color:var(--text-body);">${os.descricao}</div>` : ''}
+            </div>
+        `).join('');
+    } else if (d.tipo === 'ativo') {
+        cont.innerHTML = d.itens.map(a => {
+            const pct = a.meta > 0 ? Math.round((a.ton / a.meta) * 100) : null;
+            return `
+                <div class="sup-lista-linha sup-lista-linha-clicavel" style="flex-direction:column; align-items:stretch;" onclick="window.fecharModalSupervisorDetalhe(); window.abrirHistoricoIndividual('${a.id}')">
+                    <div style="display:flex; justify-content:space-between; width:100%;">
+                        <strong style="color:var(--text-heading);">${a.id}</strong>
+                        <span class="text-muted">${a.tipo || '—'}</span>
+                    </div>
+                    <div class="text-muted" style="font-size:11.5px;">Local: ${a.local || '—'}${pct !== null ? ` · Desgaste: ${pct}%` : ''}</div>
+                </div>
+            `;
+        }).join('');
+    } else {
+        cont.innerHTML = d.itens.map(x => `
+            <div class="sup-lista-linha" style="flex-direction:column; align-items:stretch;">
+                <div style="display:flex; justify-content:space-between; width:100%;">
+                    <strong style="color:var(--text-heading);">${x.equipamento_id || x.id || '—'}</strong>
+                    <span class="text-muted">${x.status || '—'}</span>
+                </div>
+                <div class="text-muted" style="font-size:11.5px;">
+                    Área: ${x.area || x.solicitante_area || '—'}${x.tipo ? ` · Tipo: ${x.tipo}` : ''}${x.responsavel ? ` · Responsável: ${x.responsavel}` : ''}${x.executado_por ? ` · Executado por: ${x.executado_por}` : ''}
+                </div>
+                ${x.descricao ? `<div style="font-size:12.5px; margin-top:4px; color:var(--text-body);">${x.descricao}</div>` : ''}
+                ${x.motivo ? `<div style="font-size:11.5px; margin-top:2px; color:var(--text-muted);">Obs: ${x.motivo}</div>` : ''}
+            </div>
+        `).join('');
+    }
+    modal.classList.remove('hidden');
+};
+
+window.fecharModalSupervisorDetalhe = function() {
+    document.getElementById('modal-supervisor-detalhe')?.classList.add('hidden');
+};
 
 function painelSupSparklineHtml(valores, cor) {
     const max = Math.max(1, ...valores.map(v => v.valor));
@@ -5032,6 +5103,8 @@ window.renderPainelSupervisor = async function() {
     const qualidadeEl = document.getElementById('painel-supervisor-qualidade');
     const tendenciaEl = document.getElementById('painel-supervisor-tendencia');
     if (!heroEl) return; // aba nem existe nesta sessão (ex: HTML antigo em cache)
+
+    SUP_DETALHE_CACHE = []; // reseta a cada render — índices só valem pra esta tela atual
 
     const ativos = Array.isArray(window.BANCO_ATIVOS) ? window.BANCO_ATIVOS : (typeof BANCO_ATIVOS !== 'undefined' ? BANCO_ATIVOS : []);
     const atividades = Array.isArray(window.OFICINA_ATIVIDADES_CACHE) ? window.OFICINA_ATIVIDADES_CACHE : (typeof OFICINA_ATIVIDADES_CACHE !== 'undefined' ? OFICINA_ATIVIDADES_CACHE : []);
@@ -5183,14 +5256,21 @@ window.renderPainelSupervisor = async function() {
             <div class="sup-card" style="--sup-cor:#ef4444;">
                 <div class="sup-card-titulo"><span><i class="fas fa-fire"></i> Atraso por Área</span></div>
                 ${rankingAtrasoAreas.length
-                    ? rankingAtrasoAreas.map(([nome, v]) => painelSupBarraHtml(nome, v, maxAtrasoArea, '#ef4444')).join('')
+                    ? rankingAtrasoAreas.map(([nome, v]) => painelSupBarraHtml(
+                        nome, v, maxAtrasoArea, '#ef4444',
+                        `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor(
+                            `Atrasadas — ${nome}`,
+                            atividadesAtrasadas.filter(x => (x.area || x.solicitante_area) === nome),
+                            'atividade'
+                        )})`
+                    )).join('')
                     : `<div class="sup-vazio">Nenhuma atividade atrasada agora 👍</div>`}
             </div>
             <div class="sup-card" style="--sup-cor:#f59e0b;">
                 <div class="sup-card-titulo"><span><i class="fas fa-hourglass-half"></i> Peças Há Mais Tempo em Reparo</span></div>
                 ${reparoMaisAntigos.length
                     ? reparoMaisAntigos.map(a => `
-                        <div class="sup-lista-linha">
+                        <div class="sup-lista-linha sup-lista-linha-clicavel" onclick="window.abrirHistoricoIndividual('${a.id}')">
                             <span style="color:var(--text-body);">${a.id} <span class="text-muted">(${a.tipo || '—'})</span></span>
                             <span style="font-weight:700; color:${a.diasReais > 15 ? '#ef4444' : '#f59e0b'};">${a.diasReais}d</span>
                         </div>
@@ -5199,9 +5279,12 @@ window.renderPainelSupervisor = async function() {
             </div>
             <div class="sup-card" style="--sup-cor:#eab308;">
                 <div class="sup-card-titulo"><span><i class="fas fa-clipboard-list"></i> Pendentes vs Críticos Agora</span></div>
-                ${painelSupBarraHtml('Pendentes (não iniciadas)', atividadesPendentes.length, Math.max(atividadesPendentes.length, atividadesAtrasadas.length, 1), '#eab308')}
-                ${painelSupBarraHtml('Atrasadas', atividadesAtrasadas.length, Math.max(atividadesPendentes.length, atividadesAtrasadas.length, 1), '#ef4444')}
-                ${painelSupBarraHtml('Equip. críticos (desgaste ≥80%)', criticos.length, Math.max(criticos.length, 1), '#f97316')}
+                ${painelSupBarraHtml('Pendentes (não iniciadas)', atividadesPendentes.length, Math.max(atividadesPendentes.length, atividadesAtrasadas.length, 1), '#eab308',
+                    `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor('Pendentes (não iniciadas)', atividadesPendentes, 'atividade')})`)}
+                ${painelSupBarraHtml('Atrasadas', atividadesAtrasadas.length, Math.max(atividadesPendentes.length, atividadesAtrasadas.length, 1), '#ef4444',
+                    `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor('Atrasadas', atividadesAtrasadas, 'atividade')})`)}
+                ${painelSupBarraHtml('Equip. críticos (desgaste ≥80%)', criticos.length, Math.max(criticos.length, 1), '#f97316',
+                    `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor('Equipamentos Críticos (desgaste ≥80%)', criticos, 'ativo')})`)}
             </div>
             <div class="sup-card" style="--sup-cor:#06b6d4; grid-column: 1 / -1;">
                 <div class="sup-card-titulo"><span><i class="fas fa-list-check"></i> Progresso dos Checklists de Execução em Andamento</span></div>
@@ -5633,7 +5716,7 @@ window.renderPainelSupervisor = async function() {
                     </div>
                     ${mensagensNaoLidas.length
                         ? mensagensNaoLidas.slice(0, 6).map(m => `
-                            <div class="sup-lista-linha">
+                            <div class="sup-lista-linha sup-lista-linha-clicavel" onclick="window.abrirChatAdmArea('${m.area}')">
                                 <span style="color:var(--text-body);">${m.nome_area || m.area}</span>
                                 <span style="font-weight:700; color:#ec4899;">${m.nao_lidas}</span>
                             </div>
@@ -5655,7 +5738,7 @@ window.renderPainelSupervisor = async function() {
                     <div class="sup-card-titulo"><span><i class="fas fa-triangle-exclamation"></i> Ocorrências Mais Recentes</span></div>
                     ${Array.isArray(ocorrencias) && ocorrencias.length
                         ? ocorrencias.slice(0, 6).map(o => `
-                            <div class="sup-lista-linha">
+                            <div class="sup-lista-linha${o.peca_id ? ' sup-lista-linha-clicavel' : ''}" ${o.peca_id ? `onclick="window.abrirHistoricoIndividual('${o.peca_id}')"` : ''}>
                                 <span style="color:var(--text-body);">${o.peca_id ? o.peca_id + ' — ' : ''}${o.categoria || o.acao || 'Registro'}</span>
                                 <span class="text-muted" style="font-size:11px;">${(o.data_hora || '').slice(0, 10).split('-').reverse().join('/')}</span>
                             </div>
@@ -5670,7 +5753,7 @@ window.renderPainelSupervisor = async function() {
                     </div>
                     ${laudos7dias.length
                         ? laudos7dias.slice(0, 5).map(l => `
-                            <div class="sup-lista-linha">
+                            <div class="sup-lista-linha${l.peca_id ? ' sup-lista-linha-clicavel' : ''}" ${l.peca_id ? `onclick="window.abrirHistoricoIndividual('${l.peca_id}')"` : ''}>
                                 <span style="color:var(--text-body);">${l.peca_id}<span class="text-muted"> — ${l.tipo || ''}</span></span>
                                 <span class="text-muted" style="font-size:11px;">${(l.criado_em || '').slice(0, 10).split('-').reverse().join('/')}</span>
                             </div>
@@ -5680,7 +5763,18 @@ window.renderPainelSupervisor = async function() {
                 <div class="sup-card" style="--sup-cor:#f97316; grid-column: 1 / -1;">
                     <div class="sup-card-titulo"><span><i class="fas fa-arrows-rotate"></i> Retrabalho — Tipos Que Mais Reabrem (travam o fluxo)</span></div>
                     ${rankingReaberturas.length
-                        ? rankingReaberturas.map(([nome, v]) => painelSupBarraHtml(nome, v, maxReaberturas, '#f97316')).join('')
+                        ? rankingReaberturas.map(([nome, v]) => painelSupBarraHtml(
+                            nome, v, maxReaberturas, '#f97316',
+                            `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor(
+                                `Retrabalho — ${nome}`,
+                                reabertas.filter(r => {
+                                    const peca = ativos.find(a => a.id === r.equipamento_id);
+                                    const chave = peca ? peca.tipo : (r.equipamento_id || 'Tarefa avulsa');
+                                    return chave === nome;
+                                }),
+                                'atividade'
+                            )})`
+                        )).join('')
                         : `<div class="sup-vazio">Nenhuma atividade reaberta registrada 👍 — sem retrabalho até agora.</div>`}
                 </div>
             `;
@@ -5743,9 +5837,12 @@ window.renderPainelSupervisor = async function() {
                 const trendEl = document.getElementById('painel-sup-os-trend');
                 if (trendEl) {
                     trendEl.innerHTML = (emAndamentoOs + concluidasOs + naoExecutadasOs) > 0
-                        ? painelSupBarraHtml('Em Andamento', emAndamentoOs, maxOs, '#eab308')
-                            + painelSupBarraHtml('Concluídas', concluidasOs, maxOs, '#22c55e')
-                            + (naoExecutadasOs > 0 ? painelSupBarraHtml('Não Executadas', naoExecutadasOs, maxOs, '#ef4444') : '')
+                        ? painelSupBarraHtml('Em Andamento', emAndamentoOs, maxOs, '#eab308',
+                            `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor('OS Em Andamento', listaOs.filter(o => o.status === 'Em Andamento'), 'os')})`)
+                            + painelSupBarraHtml('Concluídas', concluidasOs, maxOs, '#22c55e',
+                                `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor('OS Concluídas', listaOs.filter(o => o.status === 'Concluído'), 'os')})`)
+                            + (naoExecutadasOs > 0 ? painelSupBarraHtml('Não Executadas', naoExecutadasOs, maxOs, '#ef4444',
+                                `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor('OS Não Executadas', listaOs.filter(o => o.status === 'Não Executada'), 'os')})`) : '')
                         : `<div class="sup-vazio">Nenhuma OS registrada ainda.</div>`;
                 }
 
@@ -5823,7 +5920,7 @@ window.renderPainelSupervisor = async function() {
                 <div class="sup-card-titulo"><span><i class="fas fa-gauge-high"></i> Próximas a Bater a Meta de Desgaste</span></div>
                 ${instaladosComRitmo.length
                     ? instaladosComRitmo.map(a => `
-                        <div class="sup-lista-linha">
+                        <div class="sup-lista-linha sup-lista-linha-clicavel" onclick="window.abrirHistoricoIndividual('${a.id}')">
                             <span style="color:var(--text-body);">${a.id} <span class="text-muted">(${a.tipo || '—'})</span></span>
                             <span style="font-weight:700; color:${corPrevisao(a.diasParaMeta)};">~${a.diasParaMeta}d</span>
                         </div>
@@ -5836,10 +5933,14 @@ window.renderPainelSupervisor = async function() {
                     <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:10px;">
                         <div style="font-size:1.4rem; font-weight:800; color:${corBacklog};">${pioraOuMelhora === 'piorando' ? '📈' : (pioraOuMelhora === 'melhorando' ? '📉' : '➖')} ${pioraOuMelhora}</div>
                     </div>
-                    ${painelSupBarraHtml('Criadas (antes)', criadasAntes, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#94a3b8')}
-                    ${painelSupBarraHtml('Concl. (antes)', concluidasAntes, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#64748b')}
-                    ${painelSupBarraHtml('Criadas (agora)', criadasDepois, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#eab308')}
-                    ${painelSupBarraHtml('Concl. (agora)', concluidasDepois, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#22c55e')}
+                    ${painelSupBarraHtml('Criadas (antes)', criadasAntes, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#94a3b8',
+                        `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor('Criadas (7 dias anteriores)', atividades.filter(x => x.criado_em && meiaJanela.includes(x.criado_em.slice(0, 10))), 'atividade')})`)}
+                    ${painelSupBarraHtml('Concl. (antes)', concluidasAntes, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#64748b',
+                        `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor('Concluídas (7 dias anteriores)', atividades.filter(x => x.concluido_em && meiaJanela.includes(x.concluido_em.slice(0, 10))), 'atividade')})`)}
+                    ${painelSupBarraHtml('Criadas (agora)', criadasDepois, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#eab308',
+                        `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor('Criadas (últimos 7 dias)', atividades.filter(x => x.criado_em && janelaRecente.includes(x.criado_em.slice(0, 10))), 'atividade')})`)}
+                    ${painelSupBarraHtml('Concl. (agora)', concluidasDepois, Math.max(criadasAntes, criadasDepois, concluidasAntes, concluidasDepois, 1), '#22c55e',
+                        `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor('Concluídas (últimos 7 dias)', atividades.filter(x => x.concluido_em && janelaRecente.includes(x.concluido_em.slice(0, 10))), 'atividade')})`)}
                     <div style="font-size:10.5px; color:var(--text-muted); margin-top:6px;">Compara os 7 dias mais recentes com os 7 anteriores — mostra direção, não um prazo exato.</div>
                 ` : `<div class="sup-vazio">Sem dado suficiente nos últimos 14 dias pra calcular tendência.</div>`}
             </div>
@@ -5981,56 +6082,119 @@ window.excluirAvisoAdm = async function(id) {
 // não dá pra fechar sem confirmar (sem botão de fechar/X, de propósito:
 // é leitura obrigatória, não um toast que dá pra ignorar).
 // ==========================================================================
-// 💬 CHAT ÁREA <-> ADM — pedido: "as áreas podem enviar mensagem pra área
-// de adm?". Antes disso não existia canal formal nenhum (só eventos
-// automáticos que o ADM via passivamente). Um único par de modais
-// (modal-chat-area-adm) serve tanto pra área falar com o ADM quanto pro
-// ADM responder uma área — o contexto (qual área, de qual lado) fica em
-// CHAT_AREA_ADM_CTX.
+// 💬 ABA DE CHATS — canal Área ↔ ADM, reorganizado numa aba única em vez
+// dos dois modais soltos que existiam antes (um pra área falar com o
+// ADM, outro só do ADM com a lista de áreas). Mesmo backend
+// (/api/mensagens_area*), layout novo: lista de conversas + thread,
+// como qualquer app de mensagens. O contexto (qual área, de qual lado
+// da conversa quem está logado enxerga) fica em CHAT_AREA_ADM_CTX.
 // ==========================================================================
-let CHAT_AREA_ADM_CTX = { area: null, deAdm: false, voltaParaLista: false };
+let CHAT_AREA_ADM_CTX = { area: null, deAdm: false };
 
-window.abrirChatAreaAdm = async function() {
-    if (!OFICINA_AREA_ATUAL) return;
-    await window._abrirChatAreaAdmInterno(OFICINA_AREA_ATUAL, false, false);
-};
+window.renderAbaChats = async function() {
+    const isAdm = !!(OPERADOR_LOGADO && OPERADOR_LOGADO.isAdm);
+    const painelLista = document.getElementById('chat-lista-painel');
+    if (painelLista) painelLista.classList.toggle('hidden', !isAdm);
 
-window.abrirChatAdmArea = async function(area) {
-    document.getElementById('modal-chat-adm-lista')?.classList.add('hidden');
-    await window._abrirChatAreaAdmInterno(area, true, true);
-};
-
-window._abrirChatAreaAdmInterno = async function(area, deAdm, voltaParaLista) {
-    CHAT_AREA_ADM_CTX = { area, deAdm, voltaParaLista };
-    const areaInfo = AREAS_OFICINA.find(a => a.chave === area);
-    const tituloEl = document.querySelector('#modal-chat-area-adm h2');
-    if (tituloEl) {
-        tituloEl.innerHTML = deAdm
-            ? `<i class="fas fa-comments"></i> ${areaInfo ? areaInfo.nome : area}`
-            : `<i class="fas fa-comments"></i> Falar com o ADM`;
+    if (isAdm) {
+        await window.chatsCarregarListaConversas();
+        // Sem conversa selecionada ainda nesta visita à aba — mantém o
+        // que já estava selecionado se a pessoa só voltou pra aba.
+        if (!CHAT_AREA_ADM_CTX.area) {
+            const tituloEl = document.getElementById('chat-thread-titulo');
+            if (tituloEl) tituloEl.textContent = 'Selecione uma conversa';
+        }
+    } else {
+        if (!OFICINA_AREA_ATUAL) {
+            const tituloEl = document.getElementById('chat-thread-titulo');
+            if (tituloEl) tituloEl.textContent = 'Abra uma área primeiro';
+            return;
+        }
+        await window.chatsSelecionarConversa(OFICINA_AREA_ATUAL, false);
     }
-    document.getElementById('modal-chat-area-adm')?.classList.remove('hidden');
-    await window.carregarMensagensChatAreaAdm();
+};
+
+// ---- Lista de conversas (só o ADM vê) ----
+window.chatsCarregarListaConversas = async function() {
+    const cont = document.getElementById('chat-lista-conversas');
+    if (!cont) return;
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/mensagens_area/resumo`, { cache: 'no-store' });
+        const linhas = resp.ok ? await resp.json() : [];
+        cont.innerHTML = linhas.length ? linhas.map(l => {
+            const dataFmt = l.ultima_em ? new Date(l.ultima_em.replace(' ', 'T')).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+            const ativa = CHAT_AREA_ADM_CTX.area === l.area;
+            return `
+                <div class="chat-conversa-item${ativa ? ' ativa' : ''}" onclick="window.chatsSelecionarConversa('${l.area}', true)">
+                    <div class="chat-conversa-avatar">${(l.nome_area || l.area || '?').slice(0, 1).toUpperCase()}</div>
+                    <div class="chat-conversa-corpo">
+                        <div class="chat-conversa-topo">
+                            <strong>${l.nome_area || l.area}</strong>
+                            <span class="chat-conversa-hora">${dataFmt}</span>
+                        </div>
+                        ${l.ultima_mensagem ? `<div class="chat-conversa-preview">${l.ultima_mensagem.slice(0, 40)}</div>` : ''}
+                    </div>
+                    ${l.nao_lidas > 0 ? `<span class="chat-conversa-badge">${l.nao_lidas > 9 ? '9+' : l.nao_lidas}</span>` : ''}
+                </div>
+            `;
+        }).join('') : '<div class="chat-vazio">Nenhuma conversa ainda.</div>';
+    } catch (e) {
+        cont.innerHTML = '<div class="chat-vazio">Não consegui carregar as conversas.</div>';
+    }
+};
+
+// ---- Selecionar/abrir uma conversa na thread ----
+// deAdm=true quando é o ADM abrindo a conversa de uma área; false
+// quando é a própria área abrindo a conversa dela com o ADM.
+window.chatsSelecionarConversa = async function(area, deAdm) {
+    CHAT_AREA_ADM_CTX = { area, deAdm: !!deAdm };
+    const areaInfo = AREAS_OFICINA.find(a => a.chave === area);
+    const tituloEl = document.getElementById('chat-thread-titulo');
+    if (tituloEl) tituloEl.textContent = deAdm ? (areaInfo ? areaInfo.nome : area) : 'ADM';
+
+    const voltar = document.getElementById('chat-thread-voltar');
+    if (voltar) voltar.classList.toggle('hidden', !deAdm);
+    document.getElementById('chat-thread-painel')?.classList.toggle('chat-thread-mobile-ativo', deAdm);
+
+    document.querySelectorAll('#chat-lista-conversas .chat-conversa-item').forEach(el => el.classList.remove('ativa'));
+
+    await window.chatsCarregarMensagens();
 
     try {
         const apiBase = await resolverApiBase();
         await fetch(`${apiBase}/api/mensagens_area/marcar_lida`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ area, de_adm: deAdm, matricula: OPERADOR_LOGADO ? OPERADOR_LOGADO.matricula : null })
+            body: JSON.stringify({ area, de_adm: !!deAdm, matricula: OPERADOR_LOGADO ? OPERADOR_LOGADO.matricula : null })
         });
     } catch (e) { /* não bloqueia a leitura por isso */ }
 
-    if (!deAdm && typeof window.atualizarBadgeChatAreaAdm === 'function') window.atualizarBadgeChatAreaAdm();
+    if (deAdm) {
+        await window.chatsCarregarListaConversas(); // atualiza contagem de não lidas na lista
+    } else if (typeof window.atualizarBadgeChatAreaAdm === 'function') {
+        window.atualizarBadgeChatAreaAdm();
+    }
     if (typeof window.atualizarBadgeNotificacoesNaoLidas === 'function') window.atualizarBadgeNotificacoesNaoLidas();
 };
 
-window.carregarMensagensChatAreaAdm = async function() {
-    const cont = document.getElementById('chat-area-adm-mensagens');
-    if (!cont) return;
+// ---- Mobile: sai da thread e volta pra lista (só existe quando é ADM) ----
+window.chatsVoltarParaLista = function() {
+    CHAT_AREA_ADM_CTX = { area: null, deAdm: false };
+    document.getElementById('chat-thread-painel')?.classList.remove('chat-thread-mobile-ativo');
+    const tituloEl = document.getElementById('chat-thread-titulo');
+    if (tituloEl) tituloEl.textContent = 'Selecione uma conversa';
+    const msgsEl = document.getElementById('chat-thread-mensagens');
+    if (msgsEl) msgsEl.innerHTML = '<div class="chat-vazio">Escolha uma conversa pra começar.</div>';
+    document.getElementById('chat-thread-voltar')?.classList.add('hidden');
+};
+
+window.chatsCarregarMensagens = async function() {
+    const cont = document.getElementById('chat-thread-mensagens');
+    if (!cont || !CHAT_AREA_ADM_CTX.area) return;
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/mensagens_area?area=${encodeURIComponent(CHAT_AREA_ADM_CTX.area)}`);
+        const resp = await fetch(`${apiBase}/api/mensagens_area?area=${encodeURIComponent(CHAT_AREA_ADM_CTX.area)}`, { cache: 'no-store' });
         const lista = resp.ok ? await resp.json() : [];
         cont.innerHTML = lista.length ? lista.map(m => {
             // "Minha" mensagem é a que partiu do MESMO lado de quem está
@@ -6038,30 +6202,21 @@ window.carregarMensagensChatAreaAdm = async function() {
             const minha = m.de_adm === CHAT_AREA_ADM_CTX.deAdm;
             const hora = m.criado_em ? new Date(m.criado_em.replace(' ', 'T')).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
             return `
-                <div style="align-self:${minha ? 'flex-end' : 'flex-start'}; max-width:80%; background:${minha ? 'var(--accent-color, #38bdf8)' : 'var(--bg-secondary, #1e293b)'}; color:${minha ? '#fff' : 'var(--text-body)'}; padding:8px 12px; border-radius:12px; font-size:13px;">
-                    <div style="font-weight:700; font-size:10.5px; opacity:0.8; margin-bottom:2px;">${m.de_adm ? 'ADM' : (m.remetente || 'Técnico')}</div>
-                    <div style="white-space:pre-wrap;">${m.mensagem}</div>
-                    <div style="font-size:9.5px; opacity:0.7; margin-top:3px; text-align:right;">${hora}</div>
+                <div class="chat-bolha ${minha ? 'chat-bolha-minha' : 'chat-bolha-outro'}">
+                    <div class="chat-bolha-remetente">${m.de_adm ? 'ADM' : (m.remetente || 'Técnico')}</div>
+                    <div class="chat-bolha-texto">${m.mensagem}</div>
+                    <div class="chat-bolha-hora">${hora}</div>
                 </div>
             `;
-        }).join('') : '<p class="text-muted" style="text-align:center; font-size:12px;">Nenhuma mensagem ainda.</p>';
+        }).join('') : '<div class="chat-vazio">Nenhuma mensagem ainda — mande a primeira 👋</div>';
         cont.scrollTop = cont.scrollHeight;
     } catch (e) {
-        cont.innerHTML = '<p class="text-muted" style="text-align:center; font-size:12px;">Não consegui carregar a conversa.</p>';
+        cont.innerHTML = '<div class="chat-vazio">Não consegui carregar a conversa.</div>';
     }
 };
 
-window.fecharChatAreaAdm = function() {
-    document.getElementById('modal-chat-area-adm')?.classList.add('hidden');
-    if (CHAT_AREA_ADM_CTX.voltaParaLista) {
-        window.abrirChatAdmLista();
-    } else if (typeof window.atualizarBadgeChatAreaAdm === 'function') {
-        window.atualizarBadgeChatAreaAdm();
-    }
-};
-
-window.enviarMensagemChatAreaAdm = async function() {
-    const input = document.getElementById('chat-area-adm-input');
+window.chatsEnviarMensagem = async function() {
+    const input = document.getElementById('chat-thread-input');
     const texto = input ? input.value.trim() : '';
     if (!texto || !CHAT_AREA_ADM_CTX.area) return;
     const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
@@ -6080,57 +6235,64 @@ window.enviarMensagemChatAreaAdm = async function() {
             })
         });
         input.value = '';
-        await window.carregarMensagensChatAreaAdm();
+        await window.chatsCarregarMensagens();
+        if (CHAT_AREA_ADM_CTX.deAdm) await window.chatsCarregarListaConversas();
     } catch (e) {
         alert('Não consegui enviar a mensagem. Verifique sua conexão.');
     }
 };
 
+// ---- Atalhos de compatibilidade — botões antigos (badge na Área da
+// Oficina, "Mensagens das Áreas" no painel ADM) continuam chamando
+// esses nomes; agora só levam pra aba de Chats em vez de abrir modal. ----
+window.abrirChatAreaAdm = async function() {
+    if (!OFICINA_AREA_ATUAL) return;
+    window.abrirAba(null, 'aba-chats');
+    await window.chatsSelecionarConversa(OFICINA_AREA_ATUAL, false);
+};
+
+window.abrirChatAdmArea = async function(area) {
+    window.abrirAba(null, 'aba-chats');
+    await window.chatsSelecionarConversa(area, true);
+};
+
+window.abrirChatAdmLista = function() {
+    window.abrirAba(null, 'aba-chats');
+};
+
+function aplicarBadgeElemento(el, total) {
+    if (!el) return;
+    if (total > 0) {
+        el.textContent = total > 9 ? '9+' : total;
+        el.classList.remove('hidden');
+    } else {
+        el.classList.add('hidden');
+    }
+}
+
 window.atualizarBadgeChatAreaAdm = async function() {
-    const badge = document.getElementById('area-oficina-chat-badge');
-    if (!badge || !OFICINA_AREA_ATUAL) return;
+    const isAdm = !!(OPERADOR_LOGADO && OPERADOR_LOGADO.isAdm);
+    const navBadge = document.getElementById('nav-chats-badge');
+    if (isAdm) {
+        // ADM: badge do nav soma as não lidas de todas as áreas.
+        try {
+            const apiBase = await resolverApiBase();
+            const resp = await fetch(`${apiBase}/api/mensagens_area/resumo`, { cache: 'no-store' });
+            const linhas = resp.ok ? await resp.json() : [];
+            const total = Array.isArray(linhas) ? linhas.reduce((s, l) => s + (Number(l.nao_lidas) || 0), 0) : 0;
+            aplicarBadgeElemento(navBadge, total);
+        } catch (e) { /* badge é cosmético — sem retry aqui */ }
+        return;
+    }
+    const badgeArea = document.getElementById('area-oficina-chat-badge');
+    if (!OFICINA_AREA_ATUAL) return;
     try {
         const apiBase = await resolverApiBase();
         const resp = await fetch(`${apiBase}/api/mensagens_area/nao_lidas?area=${encodeURIComponent(OFICINA_AREA_ATUAL)}`);
         const dados = resp.ok ? await resp.json() : { nao_lidas: 0 };
-        if (dados.nao_lidas > 0) {
-            badge.textContent = dados.nao_lidas > 9 ? '9+' : dados.nao_lidas;
-            badge.classList.remove('hidden');
-        } else {
-            badge.classList.add('hidden');
-        }
+        aplicarBadgeElemento(badgeArea, dados.nao_lidas || 0);
+        aplicarBadgeElemento(navBadge, dados.nao_lidas || 0);
     } catch (e) { /* badge é cosmético — sem retry aqui */ }
-};
-
-// ---- Visão do ADM: lista de áreas com conversa + não-lidas ----
-window.abrirChatAdmLista = async function() {
-    document.getElementById('modal-chat-adm-lista')?.classList.remove('hidden');
-    const cont = document.getElementById('chat-adm-lista-areas');
-    if (!cont) return;
-    cont.innerHTML = '<p class="text-muted" style="text-align:center; font-size:12px; padding:14px;">Carregando...</p>';
-    try {
-        const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/mensagens_area/resumo`);
-        const linhas = resp.ok ? await resp.json() : [];
-        cont.innerHTML = linhas.length ? linhas.map(l => {
-            const dataFmt = l.ultima_em ? new Date(l.ultima_em.replace(' ', 'T')).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
-            return `
-                <div style="cursor:pointer; padding:10px 6px; border-bottom:1px solid var(--border-color, #334155); display:flex; justify-content:space-between; align-items:center;" onclick="window.abrirChatAdmArea('${l.area}')">
-                    <div>
-                        <strong style="font-size:13px;">${l.nome_area}</strong>
-                        <div class="text-muted" style="font-size:11px;">${dataFmt}</div>
-                    </div>
-                    ${l.nao_lidas > 0 ? `<span style="background:#ef4444; color:#fff; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700;">${l.nao_lidas}</span>` : ''}
-                </div>
-            `;
-        }).join('') : '<p class="text-muted" style="text-align:center; font-size:12px; padding:20px;">Nenhuma mensagem ainda.</p>';
-    } catch (e) {
-        cont.innerHTML = '<p class="text-muted" style="text-align:center; font-size:12px; padding:14px;">Não consegui carregar as conversas.</p>';
-    }
-};
-
-window.fecharChatAdmLista = function() {
-    document.getElementById('modal-chat-adm-lista')?.classList.add('hidden');
 };
 
 let FILA_AVISOS_PENDENTES = [];
@@ -6927,6 +7089,85 @@ window.enviarStatusFilaPonteRolante = async function(id, novoStatus, extras) {
     }
 };
 
+// 🆕 Operador atual de cada ponte física, por dia — guardado localmente
+// (chave: número da ponte) pra não precisar perguntar de novo o dia
+// inteiro e pra detectar troca de operador comparando com o último
+// nome salvo. Zera sozinho quando muda a data.
+const CHAVE_OPERADOR_PONTE = 'oms_operador_ponte_v1';
+
+function obterOperadorSalvoPonte(ponte) {
+    try {
+        const todos = JSON.parse(localStorage.getItem(CHAVE_OPERADOR_PONTE) || '{}');
+        const registro = todos[ponte];
+        const hoje = new Date().toISOString().slice(0, 10);
+        if (registro && registro.data === hoje) return registro.nome;
+        return null;
+    } catch (e) {
+        return null;
+    }
+}
+
+function salvarOperadorPonte(ponte, nome) {
+    try {
+        const todos = JSON.parse(localStorage.getItem(CHAVE_OPERADOR_PONTE) || '{}');
+        todos[ponte] = { nome, data: new Date().toISOString().slice(0, 10) };
+        localStorage.setItem(CHAVE_OPERADOR_PONTE, JSON.stringify(todos));
+    } catch (e) { /* localStorage indisponível — segue sem persistir */ }
+}
+
+// 🆕 Recarrega a lista de operadores (equipe da Ponte Rolante) e marca
+// o operador salvo do dia, se houver, comparando com a ponte escolhida
+// no rádio. Chamado ao abrir o modal e sempre que a ponte é trocada.
+async function atualizarOperadoresModalIniciarPonte() {
+    const ponte = document.querySelector('input[name="modal-iniciar-ponte-radio"]:checked')?.value || '221';
+    const container = document.getElementById('modal-iniciar-ponte-operadores');
+    const operadorSalvo = obterOperadorSalvoPonte(ponte);
+
+    let equipe = [];
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/equipe/ponte-rolante`, { cache: 'no-store' });
+        equipe = resp.ok ? await resp.json() : [];
+    } catch (e) {
+        console.error('⚠️ Não consegui buscar a equipe da Ponte Rolante:', e);
+    }
+    const nomes = Array.isArray(equipe) ? equipe.map(p => p.nome).filter(Boolean) : [];
+    if (operadorSalvo && !nomes.some(n => n.toLowerCase() === operadorSalvo.toLowerCase())) {
+        nomes.unshift(operadorSalvo);
+    }
+
+    if (container) {
+        container.innerHTML = nomes.length
+            ? nomes.map(nome => `
+                <label class="chip-select">
+                    <input type="radio" name="modal-iniciar-ponte-operador-radio" value="${nome.replace(/"/g, '&quot;')}" ${nome === operadorSalvo ? 'checked' : ''}>
+                    ${nome}${nome === operadorSalvo ? ' <span class="text-muted" style="font-size:11px;">(atual)</span>' : ''}
+                </label>
+            `).join('')
+            : `<span class="text-muted" style="font-size:12px;">Nenhuma equipe cadastrada na Ponte Rolante — digite o nome abaixo.</span>`;
+    }
+    const inputOutro = document.getElementById('modal-iniciar-ponte-operador-outro');
+    if (inputOutro) inputOutro.value = '';
+    atualizarAvisoTrocaOperadorPonte();
+}
+
+// 🆕 Liga/desliga o aviso de troca comparando a escolha atual (rádio ou
+// campo livre) com o operador salvo daquela ponte. É só um aviso —
+// não bloqueia o Iniciar.
+function atualizarAvisoTrocaOperadorPonte() {
+    const ponte = document.querySelector('input[name="modal-iniciar-ponte-radio"]:checked')?.value || '221';
+    const operadorSalvo = obterOperadorSalvoPonte(ponte);
+    const escolhido = obterOperadorEscolhidoModalIniciarPonte();
+    const aviso = document.getElementById('modal-iniciar-ponte-operador-aviso');
+    if (aviso) aviso.classList.toggle('hidden', !operadorSalvo || !escolhido || escolhido.toLowerCase() === operadorSalvo.toLowerCase());
+}
+
+function obterOperadorEscolhidoModalIniciarPonte() {
+    const outro = document.getElementById('modal-iniciar-ponte-operador-outro')?.value.trim();
+    if (outro) return outro;
+    return document.querySelector('input[name="modal-iniciar-ponte-operador-radio"]:checked')?.value || '';
+}
+
 window.abrirModalIniciarPonte = function(id, acessoriosSugeridos) {
     FILA_PONTE_ID_INICIANDO = id;
     // 🆕 Pré-marca o que já foi sugerido na criação — o técnico só
@@ -6935,8 +7176,14 @@ window.abrirModalIniciarPonte = function(id, acessoriosSugeridos) {
     document.querySelectorAll('#modal-iniciar-ponte-acessorios .modal-iniciar-ponte-check').forEach(c => {
         c.checked = sugeridos.includes(c.value);
     });
-    document.querySelector('input[name="modal-iniciar-ponte-radio"][value="221"]').checked = true;
+    document.querySelectorAll('input[name="modal-iniciar-ponte-radio"]').forEach(r => {
+        r.checked = r.value === '221';
+        r.onchange = atualizarOperadoresModalIniciarPonte;
+    });
+    const inputOutro = document.getElementById('modal-iniciar-ponte-operador-outro');
+    if (inputOutro) inputOutro.oninput = atualizarAvisoTrocaOperadorPonte;
     document.getElementById('modal-iniciar-ponte')?.classList.remove('hidden');
+    atualizarOperadoresModalIniciarPonte();
 };
 
 window.fecharModalIniciarPonte = function() {
@@ -6948,12 +7195,22 @@ window.confirmarIniciarPonte = async function() {
     if (!FILA_PONTE_ID_INICIANDO) return;
     const ponteUtilizada = document.querySelector('input[name="modal-iniciar-ponte-radio"]:checked')?.value || '221';
     const acessorios = [...document.querySelectorAll('#modal-iniciar-ponte-acessorios .modal-iniciar-ponte-check:checked')].map(c => c.value);
+    const operadorPonte = obterOperadorEscolhidoModalIniciarPonte();
+    if (!operadorPonte) {
+        alert('Selecione ou digite quem está operando a ponte.');
+        return;
+    }
+    const operadorAnterior = obterOperadorSalvoPonte(ponteUtilizada);
+    const trocaOperador = !!operadorAnterior && operadorAnterior.toLowerCase() !== operadorPonte.toLowerCase();
     const id = FILA_PONTE_ID_INICIANDO;
     window.fecharModalIniciarPonte();
     await window.enviarStatusFilaPonteRolante(id, 'Em Andamento', {
         ponte_utilizada: ponteUtilizada,
         acessorios_ponte: acessorios.join(', ') || null,
+        operador_ponte: operadorPonte,
+        troca_operador: trocaOperador,
     });
+    salvarOperadorPonte(ponteUtilizada, operadorPonte);
 };
 
 // 🆕 Compartilhado entre moverFilaPonteRolante e mudarStatusFilaPonteRolante
@@ -8452,7 +8709,8 @@ window.abrirAba = function(event, idAba) {
     if (idAba === "aba-painel-almoxarifado" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('almoxarifado');
     if (idAba === "aba-painel-ponte-rolante" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('ponte-rolante');
     if (idAba === "aba-painel-logistica" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('logistica');
-    
+    if (idAba === "aba-chats" && typeof window.renderAbaChats === 'function') window.renderAbaChats();
+
     if (idAba === "aba-producao") {
         if (typeof window.carregarHistoricoApontamentoGeral === 'function') window.carregarHistoricoApontamentoGeral();
         if (typeof window.carregarHistoricoApontamentoMoldes === 'function') window.carregarHistoricoApontamentoMoldes();
