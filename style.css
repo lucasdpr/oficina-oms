@@ -748,92 +748,70 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .nav-link.active {
-  border-left-color: var(--text-accent);
-  background: var(--info-bg);
+  border-left-color: var(--brand);
+  background: var(--brand-bg);
   color: var(--text-heading);
-  box-shadow: inset 0 0 14px rgba(56, 189, 248, 0.08);
+  box-shadow: inset 0 0 14px rgba(255, 193, 7, 0.08);
 }
 
 .nav-link.active i {
-  color: var(--text-accent);
-  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.5));
+  color: var(--brand);
+  filter: drop-shadow(0 0 4px rgba(255, 193, 7, 0.5));
 }
 
-/* Highlight Variants */
-.highlight-warning {
-  color: var(--warning);
-}
-.highlight-warning i {
-  color: var(--warning);
-}
-.highlight-warning.active {
-  border-left-color: var(--warning);
-  background: var(--warning-bg);
-  color: var(--warning);
-  box-shadow: inset 0 0 14px rgba(245, 158, 11, 0.1);
-}
-
-.highlight-success {
-  color: var(--success);
-}
-.highlight-success i {
-  color: var(--success);
-}
-.highlight-success.active {
-  border-left-color: var(--success);
-  background: var(--success-bg);
-  color: var(--success);
-  box-shadow: inset 0 0 14px rgba(34, 197, 94, 0.1);
-}
-
-.highlight-rolos {
-  color: var(--text-accent);
-}
-.highlight-rolos i {
-  color: var(--text-accent);
-}
-.highlight-rolos.active {
-  border-left-color: var(--text-accent);
-  background: var(--info-bg);
-  color: var(--text-accent);
-  box-shadow: inset 0 0 14px rgba(56, 189, 248, 0.1);
-}
-
-.highlight-almoxarifado {
-  color: var(--purple);
-}
-.highlight-almoxarifado i {
-  color: var(--purple);
-}
-.highlight-almoxarifado.active {
-  border-left-color: var(--purple);
-  background: var(--purple-bg);
-  color: var(--purple);
-  box-shadow: inset 0 0 14px rgba(168, 85, 247, 0.1);
-}
-
+/* 🔧 REDESIGN: estas 5 variantes davam uma cor de identidade FIXA por
+   item de menu (amarelo/verde/azul/roxo/laranja, sempre visível, não só
+   quando ativo) — exatamente o "cada aba tem sua cor sem critério" que
+   o redesign elimina. Nav/sidebar agora só usa neutro (padrão/hover) +
+   dourado de marca (ativo), igual a qualquer outro link do menu.
+   Classes mantidas (não mexe no HTML/JS que as aplica), só o resultado
+   visual que agora é unificado. */
+.highlight-warning,
+.highlight-success,
+.highlight-rolos,
+.highlight-almoxarifado,
 .highlight-hidraulica {
-  color: #f97316;
+  color: var(--text-muted);
 }
+.highlight-warning i,
+.highlight-success i,
+.highlight-rolos i,
+.highlight-almoxarifado i,
 .highlight-hidraulica i {
-  color: #f97316;
+  color: var(--text-muted);
 }
+.highlight-warning:hover,
+.highlight-success:hover,
+.highlight-rolos:hover,
+.highlight-almoxarifado:hover,
 .highlight-hidraulica:hover {
-  background: rgba(249, 115, 22, 0.08);
+  background: var(--bg-hover);
 }
+.highlight-warning.active,
+.highlight-success.active,
+.highlight-rolos.active,
+.highlight-almoxarifado.active,
 .highlight-hidraulica.active {
-  border-left-color: #f97316;
-  background: rgba(249, 115, 22, 0.12);
-  color: #f97316;
-  box-shadow: inset 0 0 14px rgba(249, 115, 22, 0.15);
+  border-left-color: var(--brand);
+  background: var(--brand-bg);
+  color: var(--text-heading);
+  box-shadow: inset 0 0 14px rgba(255, 193, 7, 0.08);
 }
+.highlight-warning.active i,
+.highlight-success.active i,
+.highlight-rolos.active i,
+.highlight-almoxarifado.active i,
 .highlight-hidraulica.active i {
-  filter: drop-shadow(0 0 4px rgba(249, 115, 22, 0.55));
+  color: var(--brand);
+  filter: drop-shadow(0 0 4px rgba(255, 193, 7, 0.5));
 }
 
-/* Área Restrita (dev) */
+/* Área Restrita (dev) — 🔧 REDESIGN: era âmbar (#fbbf24), quase idêntico
+   ao novo dourado de marca (--brand) — ficaria confundível com um item
+   de menu ativo normal. Trocado pra --purple, que sobrou livre depois
+   da neutralização dos highlights acima. */
 .nav-divider-dev {
-  color: #fbbf24;
+  color: var(--purple);
   opacity: 0.85;
 }
 .nav-divider-dev i {
@@ -841,25 +819,25 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .nav-link-dev {
-  color: #fbbf24;
+  color: var(--purple);
   border-left-color: transparent;
 }
 .nav-link-dev i {
-  color: #fbbf24;
+  color: var(--purple);
 }
 .nav-link-dev:hover {
-  background: rgba(251, 191, 36, 0.1);
-  color: #fde68a;
+  background: var(--purple-bg);
+  color: var(--text-heading);
 }
 .nav-link-dev.active {
-  border-left-color: #fbbf24;
-  background: rgba(251, 191, 36, 0.12);
-  color: #fde68a;
-  box-shadow: inset 0 0 14px rgba(251, 191, 36, 0.15);
+  border-left-color: var(--purple);
+  background: var(--purple-bg);
+  color: var(--text-heading);
+  box-shadow: inset 0 0 14px rgba(168, 85, 247, 0.15);
 }
 .nav-link-dev.active i {
-  color: #fbbf24;
-  filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.55));
+  color: var(--purple);
+  filter: drop-shadow(0 0 4px rgba(168, 85, 247, 0.55));
 }
 
 /* ==========================================
@@ -2495,7 +2473,7 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
     gap: 12px;
     padding: 8px 12px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-color);
     font-size: 13px;
 }
 .atividade-item:last-child {
@@ -2609,14 +2587,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 .btn-quick-action {
     background: rgba(20, 30, 50, 0.4);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius);
     padding: 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 12px;
-    color: var(--text-body);
+    color: var(--text-main);
     font-size: 0.85rem;
     font-weight: 600;
     transition: all var(--transition);
@@ -2625,13 +2603,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 .btn-quick-action i {
     font-size: 1.6rem;
-    color: var(--primary);
+    color: var(--brand);
     transition: transform var(--transition);
 }
 .btn-quick-action:hover {
     background: rgba(245, 158, 11, 0.1);
-    border-color: var(--primary);
-    color: var(--text-title);
+    border-color: var(--brand);
+    color: var(--text-heading);
     transform: translateY(-3px);
     box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
 }
@@ -2640,23 +2618,23 @@ h1, h2, h3, h4, h5, h6 {
 }
 .btn-quick-action.action-danger:hover {
     background: rgba(239, 68, 68, 0.1);
-    border-color: #ef4444;
+    border-color: var(--danger);
     box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15);
 }
-.btn-quick-action.action-danger i { color: #ef4444; }
+.btn-quick-action.action-danger i { color: var(--danger); }
 
 .btn-quick-action.action-success:hover {
     background: rgba(16, 185, 129, 0.1);
-    border-color: #10b981;
+    border-color: var(--success);
     box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
 }
-.btn-quick-action.action-success i { color: #10b981; }
+.btn-quick-action.action-success i { color: var(--success); }
 
 /* Timeline de Monitoramento (Auditoria Rápida) */
 .timeline-widget {
     margin-top: 24px;
     padding-top: 20px;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--border-color);
 }
 .timeline-feed {
     list-style: none;
@@ -2668,7 +2646,7 @@ h1, h2, h3, h4, h5, h6 {
     padding-left: 32px;
     margin-bottom: 18px;
     font-size: 0.85rem;
-    color: var(--text-body);
+    color: var(--text-main);
 }
 .timeline-feed li::before {
     content: '';
@@ -2678,8 +2656,8 @@ h1, h2, h3, h4, h5, h6 {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: var(--primary);
-    box-shadow: 0 0 8px var(--primary);
+    background: var(--brand);
+    box-shadow: 0 0 8px var(--brand);
 }
 .timeline-feed li::after {
     content: '';
@@ -2688,7 +2666,7 @@ h1, h2, h3, h4, h5, h6 {
     top: 20px;
     width: 2px;
     height: calc(100% + 5px);
-    background: var(--border);
+    background: var(--border-color);
 }
 .timeline-feed li:last-child::after { display: none; }
 .timeline-feed li:last-child { margin-bottom: 0; }
@@ -2701,8 +2679,8 @@ h1, h2, h3, h4, h5, h6 {
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
-.timeline-feed li.alert::before { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
-.timeline-feed li.success::before { background: #10b981; box-shadow: 0 0 8px #10b981; }
+.timeline-feed li.alert::before { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+.timeline-feed li.success::before { background: var(--success); box-shadow: 0 0 8px var(--success); }
 
 /* Badges e Status da Planta */
 .plant-status-badge {
@@ -2710,8 +2688,8 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
     gap: 8px;
     background: rgba(16, 185, 129, 0.15);
-    border: 1px solid #10b981;
-    color: #10b981;
+    border: 1px solid var(--success);
+    color: var(--success);
     padding: 6px 14px;
     border-radius: 30px;
     font-size: 0.75rem;
@@ -2736,8 +2714,8 @@ h1, h2, h3, h4, h5, h6 {
     margin-top: 6px;
     font-weight: 600;
 }
-.trend-up { color: #ef4444; }
-.trend-down { color: #10b981; }
+.trend-up { color: var(--danger); }
+.trend-down { color: var(--success); }
 .trend-neutral { color: var(--text-muted); }
 
 /* Responsividade Avançada da Home */
@@ -3035,8 +3013,8 @@ h1, h2, h3, h4, h5, h6 {
 .login-status-linha span { display: inline-flex; align-items: center; gap: 6px; }
 .login-status-linha-dot {
     width: 6px; height: 6px; border-radius: 50%;
-    background: #10b981;
-    box-shadow: 0 0 6px #10b981;
+    background: var(--success);
+    box-shadow: 0 0 6px var(--success);
     animation: blink 2s infinite;
 }
 @media (prefers-reduced-motion: reduce) { .login-status-linha-dot { animation: none; } }
@@ -3045,13 +3023,13 @@ h1, h2, h3, h4, h5, h6 {
 .login-status-badge {
     position: absolute; top: 24px; right: 24px; z-index: 4;
     background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3);
-    color: #10b981; padding: 6px 14px; border-radius: 20px;
+    color: var(--success); padding: 6px 14px; border-radius: 20px;
     font-size: 0.7rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
     display: flex; align-items: center; gap: 8px; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
 }
 .login-status-dot {
-    width: 8px; height: 8px; background: #10b981; border-radius: 50%;
-    box-shadow: 0 0 8px #10b981;
+    width: 8px; height: 8px; background: var(--success); border-radius: 50%;
+    box-shadow: 0 0 8px var(--success);
     animation: blink 2s infinite;
 }
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
@@ -3190,7 +3168,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 .tecnico-card-critico { border-left: 3px solid var(--danger); }
 .tecnico-card-normal { border-left: 3px solid var(--text-accent, #3b82f6); }
-.tecnico-card-reserva { border-left: 3px solid #22c55e; flex-direction: row; align-items: center; }
+.tecnico-card-reserva { border-left: 3px solid var(--success); flex-direction: row; align-items: center; }
 .tecnico-card-topo {
     display: flex;
     flex-direction: column;
@@ -3735,7 +3713,7 @@ h1, h2, h3, h4, h5, h6 {
    item). */
 .notificacoes-item-linha {
     font-size: 12.5px;
-    color: var(--text-body);
+    color: var(--text-main);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -4469,7 +4447,7 @@ textarea,
         flex-direction: column;
         gap: 10px;
         background: var(--bg-th);
-        border: 1px solid var(--border);
+        border: 1px solid var(--border-color);
         border-radius: 10px;
         padding: 12px 14px;
         margin: 0 0 10px 0;
@@ -4595,7 +4573,7 @@ textarea,
 .sup-header {
     position: relative;
     background: var(--bg-card);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-top: 2px solid #fbbf24;
     border-radius: var(--radius-lg, var(--radius));
     padding: 22px 26px;
@@ -4676,15 +4654,15 @@ textarea,
 }
 .painel-sup-hero-card {
     background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--sup-cor, var(--text-accent));
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--sup-cor, var(--border-color));
     border-radius: var(--radius);
     padding: 18px 20px;
     cursor: pointer;
     transition: border-color 0.15s ease;
 }
 .painel-sup-hero-card:hover {
-    border-color: var(--sup-cor, var(--text-accent));
+    border-color: var(--sup-cor, var(--brand));
 }
 .painel-sup-hero-card .sup-hero-label {
     font-size: 0.68rem;
@@ -4701,7 +4679,7 @@ textarea,
     font-size: 2.15rem;
     font-weight: 700;
     line-height: 1;
-    color: var(--sup-cor, var(--text-title));
+    color: var(--sup-cor, var(--text-heading));
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
 }
@@ -4713,8 +4691,8 @@ textarea,
 
 .painel-sup-secao {
     background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--sup-secao-cor, var(--border));
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--sup-secao-cor, var(--border-color));
     border-radius: var(--radius-lg, var(--radius));
     margin-bottom: 16px;
     overflow: hidden;
@@ -4725,7 +4703,7 @@ textarea,
     align-items: center;
     gap: 12px;
     letter-spacing: 0.1px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-color);
 }
 /* 🔧 Ícone discreto (era badge circular preenchido de branco — chamava
    atenção demais pra um elemento decorativo). Agora é só o glifo, na
@@ -4759,17 +4737,12 @@ textarea,
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 16px;
 }
-/* Uma cor por seção — só como traço fino (borda esquerda do bloco +
-   ícone do título), nunca como preenchimento de fundo. */
-.painel-sup-secao-saude { --sup-secao-cor: #ef4444; }
-.painel-sup-secao-produtividade { --sup-secao-cor: #3b82f6; }
-.painel-sup-secao-estoque { --sup-secao-cor: #22c55e; }
-.painel-sup-secao-tendencia { --sup-secao-cor: #f59e0b; }
-.painel-sup-secao-efetivo { --sup-secao-cor: #14b8a6; }
-.painel-sup-secao-sinotico { --sup-secao-cor: #22d3ee; }
-.painel-sup-secao-historico { --sup-secao-cor: #6366f1; }
-.painel-sup-secao-previsoes { --sup-secao-cor: #0ea5e9; }
-.painel-sup-secao-qualidade { --sup-secao-cor: #a855f7; }
+/* 🔧 REDESIGN: cada seção tinha sua cor fixa própria (vermelho, azul,
+   verde, âmbar, teal, ciano, índigo, azul, roxo) — a regra de ouro do
+   redesign é nav/cards/seções só neutro + marca, cor de verdade só em
+   status. --sup-secao-cor não é mais setada aqui: os fallbacks já
+   existentes (var(--border-color) na borda, var(--text-muted) no
+   ícone) assumem sozinhos, deixando todas as seções neutras/iguais. */
 .sup-secao-link {
     font-size: 11.5px;
     padding: 6px 12px;
@@ -4795,13 +4768,13 @@ textarea,
     padding: 10px 12px;
     border-radius: 10px;
     background: rgba(255,255,255,0.02);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--sup-cor, var(--border));
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--sup-cor, var(--border-color));
     cursor: pointer;
     transition: background 0.2s ease, transform 0.15s ease;
 }
 .sup-efetivo-chip:hover {
-    border-color: var(--sup-cor, var(--border));
+    border-color: var(--sup-cor, var(--border-color));
 }
 .sup-efetivo-chip-num {
     flex-shrink: 0;
@@ -4814,12 +4787,12 @@ textarea,
     font-weight: 800;
     font-size: 14px;
     color: #fff;
-    background: var(--sup-cor, var(--text-accent));
+    background: var(--sup-cor, var(--text-muted));
 }
 .sup-efetivo-chip-nome {
     font-size: 12.5px;
     font-weight: 600;
-    color: var(--text-body);
+    color: var(--text-main);
     line-height: 1.25;
 }
 .sup-efetivo-chip-nome small {
@@ -4831,15 +4804,15 @@ textarea,
 
 .sup-card {
     background: rgba(255,255,255,0.02);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--sup-cor, var(--border));
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--sup-cor, var(--border-color));
     border-radius: 10px;
     padding: 16px 18px;
     transition: background 0.2s ease, border-color 0.2s ease;
 }
 .sup-card:hover {
-    background: color-mix(in srgb, var(--sup-cor, var(--border)) 5%, rgba(255,255,255,0.02));
-    border-color: color-mix(in srgb, var(--sup-cor, var(--border)) 40%, var(--border));
+    background: color-mix(in srgb, var(--sup-cor, var(--border-color)) 5%, rgba(255,255,255,0.02));
+    border-color: color-mix(in srgb, var(--sup-cor, var(--border-color)) 40%, var(--border-color));
 }
 .sup-card-titulo {
     font-size: 0.72rem;
@@ -4862,7 +4835,7 @@ textarea,
 }
 .sup-barra-linha .sup-barra-nome {
     flex: 0 0 150px;
-    color: var(--text-body);
+    color: var(--text-main);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -4884,7 +4857,7 @@ textarea,
     flex: 0 0 auto;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
-    color: var(--text-heading, var(--text-title));
+    color: var(--text-heading);
     font-size: 12px;
     min-width: 20px;
     text-align: right;
@@ -4894,7 +4867,7 @@ textarea,
     justify-content: space-between;
     gap: 10px;
     padding: 8px 0;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-color);
     font-size: 12.5px;
 }
 .sup-lista-linha:last-child { border-bottom: none; }
@@ -4921,7 +4894,7 @@ textarea,
     flex: 1;
     min-width: 4px;
     border-radius: 3px 3px 0 0;
-    background: var(--sup-cor, var(--text-accent));
+    background: var(--sup-cor, var(--brand));
     opacity: 0.85;
     transition: height 0.4s ease;
 }
@@ -4974,7 +4947,7 @@ textarea,
     height: calc(100vh - 140px);
     min-height: 420px;
     background: var(--bg-card);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-lg, 18px);
     overflow: hidden;
 }
@@ -4984,7 +4957,7 @@ textarea,
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    border-right: 1px solid var(--border);
+    border-right: 1px solid var(--border-color);
     background: rgba(255, 255, 255, 0.015);
 }
 
@@ -4992,8 +4965,8 @@ textarea,
     padding: 16px 18px;
     font-weight: 700;
     font-size: 14px;
-    color: var(--text-heading, var(--text-title));
-    border-bottom: 1px solid var(--border);
+    color: var(--text-heading);
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -5010,7 +4983,7 @@ textarea,
     gap: 10px;
     padding: 12px 16px;
     cursor: pointer;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-color);
     transition: background 0.15s ease;
 }
 .chat-conversa-item:hover { background: rgba(255, 255, 255, 0.04); }
@@ -5036,9 +5009,9 @@ textarea,
     justify-content: space-between;
     gap: 8px;
     font-size: 13px;
-    color: var(--text-body);
+    color: var(--text-main);
 }
-.chat-conversa-topo strong { color: var(--text-heading, var(--text-title)); }
+.chat-conversa-topo strong { color: var(--text-heading); }
 .chat-conversa-hora { font-size: 10.5px; color: var(--text-muted); flex-shrink: 0; }
 .chat-conversa-preview {
     font-size: 11.5px;
@@ -5077,13 +5050,13 @@ textarea,
     align-items: center;
     gap: 12px;
     padding: 14px 18px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-color);
     background: var(--bg-card);
 }
 .chat-thread-voltar {
     background: transparent;
     border: none;
-    color: var(--text-body);
+    color: var(--text-main);
     font-size: 16px;
     cursor: pointer;
     padding: 4px;
@@ -5102,7 +5075,7 @@ textarea,
 .chat-thread-titulo {
     font-weight: 700;
     font-size: 14.5px;
-    color: var(--text-heading, var(--text-title));
+    color: var(--text-heading);
 }
 
 .chat-thread-mensagens {
@@ -5125,7 +5098,7 @@ textarea,
 .chat-bolha-outro {
     align-self: flex-start;
     background: var(--bg-input);
-    color: var(--text-body);
+    color: var(--text-main);
     border-bottom-left-radius: 4px;
 }
 .chat-bolha-minha {
@@ -5153,16 +5126,16 @@ textarea,
     align-items: center;
     gap: 10px;
     padding: 12px 16px;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--border-color);
     background: var(--bg-card);
 }
 .chat-thread-input {
     flex: 1;
     background: var(--bg-input);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-radius: 22px;
     padding: 10px 16px;
-    color: var(--text-heading, var(--text-title));
+    color: var(--text-heading);
     font-size: 13.5px;
     outline: none;
 }
