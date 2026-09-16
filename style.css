@@ -1313,6 +1313,65 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* --------------------------------------------------------------
+   LINHA 3 DO PAINEL GERAL — Fila de Inspeção (2fr) + coluna lateral
+   de contexto (1fr, empilhada). Antes eram 2 grids separados
+   (.dashboard-main-grid full-width + .painel-geral-grid-3 com 3
+   colunas iguais) — passo 5 da reestruturação, junta os dois numa
+   composição só, como no wireframe aprovado.
+   -------------------------------------------------------------- */
+.painel-geral-linha3 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.painel-geral-linha3-lateral {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media (max-width: 900px) {
+  .painel-geral-linha3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --------------------------------------------------------------
+   ORDEM MOBILE DO PAINEL GERAL — combinada e aprovada antes de
+   implementar: KPIs → Fila de Inspeção (mais acionável) → Tonelagem
+   → donuts → coluna lateral (Risco por Veio/Atrasadas/Produção).
+   Sem isso, a ordem no mobile seria a mesma do DOM (KPIs → Linha 2
+   inteira → Fila → lateral), que não é a leitura que foi combinada.
+   .painel-geral-linha3 vira "display:contents" só nesse breakpoint —
+   ela some como caixa, os 2 filhos dela (Fila e coluna lateral) viram
+   itens diretos do flex do #aba-painel, aí dá pra intercalar cada um
+   com "order" independente do resto.
+   -------------------------------------------------------------- */
+@media (max-width: 900px) {
+  #aba-painel {
+    display: flex;
+    flex-direction: column;
+  }
+  .kpi-container-v2 {
+    order: 1;
+  }
+  .painel-geral-linha3 {
+    display: contents;
+  }
+  .painel-fila-inspecao {
+    order: 2;
+  }
+  .painel-graficos-linha2 {
+    order: 3;
+  }
+  .painel-geral-linha3-lateral {
+    order: 4;
+  }
+}
+
 .kpi-icon-v2 {
   width: 34px;
   height: 34px;
