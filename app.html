@@ -448,10 +448,16 @@
          De propósito NÃO recarrega sozinho: se a pessoa estiver no meio
          de um Folhão sem salvar, um reload forçado derrubaria o
          progresso. Fica esperando o clique. -->
-    <div id="aviso-nova-versao" class="hidden" style="position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:99999; background:var(--panel-2, #1e293b); color:#fff; padding:12px 16px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,0.4); border:1px solid rgba(245,158,11,0.4); display:flex; align-items:center; gap:12px;">
-        <i class="fas fa-rotate" style="color:#f59e0b;"></i>
+    <!-- 🔧 CORREÇÃO (regressão de amarelo): decisão registrada — o botão
+         "Atualizar agora" FICA amarelo (é o único CTA deste toast
+         isolado, só aparece quando há atualização de verdade; bate com
+         a categoria (a) da regra: CTA de ação primária). O que era só
+         decoração ao redor (ícone e borda âmbar) virou neutro — o
+         amarelo fica reservado pra quem de fato executa a ação. -->
+    <div id="aviso-nova-versao" class="hidden" style="position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:99999; background:var(--panel-2, #1e293b); color:#fff; padding:12px 16px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,0.4); border:1px solid var(--border-color); display:flex; align-items:center; gap:12px;">
+        <i class="fas fa-rotate" style="color:var(--text-muted);"></i>
         <span>Nova versão do sistema disponível.</span>
-        <button type="button" onclick="window.forcarAtualizacaoOMS()" style="background:#f59e0b; color:#111827; border:none; padding:6px 14px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12.5px;">Atualizar agora</button>
+        <button type="button" onclick="window.forcarAtualizacaoOMS()" style="background:var(--brand); color:var(--text-on-primary); border:none; padding:6px 14px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12.5px;">Atualizar agora</button>
     </div>
 
     <!-- TELA DE LOGIN AVANÇADA -->
