@@ -275,6 +275,76 @@ function renderDonutRiscoAtivos() {
 }
 
 // ==============================================================
+// 5) DONUT — STATUS DAS ATIVIDADES (todas as áreas da Oficina)
+//    🆕 Busca própria (mesmo endpoint de renderAtrasadasGlobais acima),
+//    em vez de ler OFICINA_ATIVIDADES_CACHE: esse cache só é
+//    preenchido quando a aba Central de Áreas chega a carregar — se a
+//    pessoa for direto pro Painel Geral, ficaria vazio sem motivo
+//    aparente. Mesmas cores já usadas pra status de atividade em
+//    outras telas do sistema (Pendente=warning, Em Andamento=info,
+//    Concluído=success, Aguardando=laranja, Recusado=danger).
+// ==============================================================
+async function renderDonutStatusAtividades() {
+    const container = document.getElementById('painel-donut-status');
+    if (!container) return;
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/atividades`, { cache: 'no-store' });
+        const todas = resp.ok ? await resp.json() : [];
+        const lista = Array.isArray(todas) ? todas : [];
+
+        const categorias = [
+            { chave: 'Pendente', cor: 'var(--warning)' },
+            { chave: 'Em Andamento', cor: 'var(--info)' },
+            { chave: 'Concluído', cor: 'var(--success)' },
+            { chave: 'Aguardando', cor: 'var(--limit)' },
+            { chave: 'Recusado', cor: 'var(--danger)' },
+        ].map(c => ({ ...c, qtd: lista.filter(a => a.status === c.chave).length }));
+
+        const total = categorias.reduce((soma, c) => soma + c.qtd, 0);
+        if (total === 0) {
+            container.innerHTML = `<div class="painel-donut-corpo"><div class="painel-donut-vazio">Nenhuma atividade registrada no momento.</div></div>`;
+            return;
+        }
+
+        let acumulado = 0;
+        const fatias = categorias
+            .filter(c => c.qtd > 0)
+            .map(c => {
+                const inicio = acumulado;
+                acumulado += (c.qtd / total) * 100;
+                return `${c.cor} ${inicio}% ${acumulado}%`;
+            });
+        const anelCss = `conic-gradient(${fatias.join(', ')})`;
+
+        const legenda = categorias
+            .filter(c => c.qtd > 0)
+            .map(c => `
+                <div class="painel-donut-legenda-item">
+                    <span><span class="painel-donut-legenda-dot" style="background:${c.cor};"></span>${c.chave}</span>
+                    <strong>${c.qtd}</strong>
+                </div>
+            `).join('');
+
+        container.innerHTML = `
+            <div class="painel-donut-corpo">
+                <div class="painel-donut-anel" style="background:${anelCss};">
+                    <div class="painel-donut-centro">
+                        <strong>${total}</strong>
+                        <span>Atividades</span>
+                    </div>
+                </div>
+                <div class="painel-donut-legenda">${legenda}</div>
+            </div>
+        `;
+    } catch (e) {
+        console.error('⚠️ Não consegui carregar o status das atividades:', e);
+        container.innerHTML = `<div class="painel-donut-corpo"><div class="painel-donut-vazio">Não foi possível carregar.</div></div>`;
+    }
+}
+
+// ==============================================================
 // ORQUESTRADOR — chamado junto com o resto do Painel Geral
 // ==============================================================
 window.renderPainelGeralExtra = function() {
@@ -282,6 +352,7 @@ window.renderPainelGeralExtra = function() {
     renderAtrasadasGlobais();
     renderProducaoLancada();
     renderDonutRiscoAtivos();
+    renderDonutStatusAtividades();
 };
 
 export { renderRankingVeios, renderAtrasadasGlobais, renderProducaoLancada };
