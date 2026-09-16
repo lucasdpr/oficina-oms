@@ -21,14 +21,22 @@
   --text-main: #c8d2e0;
   --text-muted: #7c8aa5;
   --text-heading: #e8ecf4;
-  --text-accent: #38bdf8;
+  --text-accent: #38bdf8; /* 🔧 REDESIGN: deixa de ser a cor de destaque/identidade principal — agora é só "info neutro" secundário. Destaque de marca passa a ser --brand. */
   --text-on-primary: #04121c;
-  
-  /* Cores de Status - mesma paleta do Sinótico 3D (CORES = {normal, alerta, limite, falha}) */
+
+  /* 🆕 REDESIGN — Cor de marca (CSN): dourado/âmbar, substitui o azul como
+     destaque primário (botões primários, ícones de navegação ativa,
+     indicadores "ao vivo"). Ver prompt de redesign visual. */
+  --brand: #FFC107;
+  --brand-bg: rgba(255, 193, 7, 0.15);
+
+  /* Cores de Status - recalibradas no redesign pra não colidir com o
+     dourado de marca acima (--warning saiu de #eab308, muito perto de
+     --brand, pra um âmbar mais alaranjado e distinto) */
   --success: #22c55e;
   --success-bg: rgba(34, 197, 94, 0.15);
-  --warning: #eab308;
-  --warning-bg: rgba(234, 179, 8, 0.15);
+  --warning: #F59E0B;
+  --warning-bg: rgba(245, 158, 11, 0.15);
   --limit: #f97316;
   --limit-bg: rgba(249, 115, 22, 0.15);
   --danger: #ef4444;
@@ -37,7 +45,7 @@
   --info-bg: rgba(56, 189, 248, 0.12);
   --purple: #a855f7;
   --purple-bg: rgba(168, 85, 247, 0.12);
-  
+
   /* Bordas e Sombras */
   --border-color: rgba(255, 255, 255, 0.07);
   --border-glow: rgba(56, 189, 248, 0.3);
@@ -86,13 +94,26 @@ body.light-mode {
   --text-main: #2d3748;
   --text-muted: #64748b;
   --text-heading: #0f172a;
-  --text-accent: #0284c7;
+  --text-accent: #0284c7; /* 🔧 REDESIGN: idem dark mode — vira "info neutro" secundário, não é mais a cor de destaque principal. */
   --text-on-primary: #ffffff;
-  
+
+  /* 🆕 REDESIGN — mesmo dourado de marca do dark mode. Usado só em
+     elementos PREENCHIDOS (botão/badge com --text-on-primary por cima)
+     ou ícones sobre fundo escuro da sidebar — como texto solto sobre
+     fundo claro, o dourado tem contraste baixo; ver nota de validação
+     visual da Fase 2. */
+  --brand: #FFC107;
+  --brand-bg: rgba(255, 193, 7, 0.10);
+
+  /* 🔧 REDESIGN: --warning recalibrado (âmbar mais escuro que o dark
+     mode, #B45309, em vez de usar #F59E0B direto) — só em texto/ícone
+     sobre fundo branco, #F59E0B claro demais fica ilegível (contraste
+     baixo). Os outros 3 status já tinham valor próprio calibrado pro
+     modo claro e não colidem com a marca — mantidos como estavam. */
   --success: #16a34a;
   --success-bg: rgba(22, 163, 74, 0.10);
-  --warning: #ca8a04;
-  --warning-bg: rgba(202, 138, 4, 0.10);
+  --warning: #B45309;
+  --warning-bg: rgba(180, 83, 9, 0.10);
   --limit: #ea580c;
   --limit-bg: rgba(234, 88, 12, 0.10);
   --danger: #dc2626;
@@ -101,7 +122,7 @@ body.light-mode {
   --info-bg: rgba(2, 132, 199, 0.08);
   --purple: #7c3aed;
   --purple-bg: rgba(124, 58, 237, 0.08);
-  
+
   --border-color: rgba(0, 0, 0, 0.08);
   --border-glow: rgba(2, 132, 199, 0.25);
   --shadow-card: 0 2px 16px rgba(0, 0, 0, 0.06);
