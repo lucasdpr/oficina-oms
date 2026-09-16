@@ -1212,10 +1212,10 @@ function renderPainelDevTeste() {
                 <td>${item.tipo || "-"}</td>
                 <td>${item.local || "-"}</td>
                 <td style="display:flex; gap:6px; flex-wrap:wrap;">
-                    <button class="btn-premium" style="padding:4px 12px; font-size:12px;" onclick="window.abrirFolhaoPorTipo('${item.id}')">
+                    <button class="btn-outline-neutral" style="padding:4px 12px; font-size:12px;" onclick="window.abrirFolhaoPorTipo('${item.id}')">
                         <i class="fas fa-file-alt"></i> Abrir Folhão
                     </button>
-                    <button class="btn-premium" style="padding:4px 12px; font-size:12px;" onclick="window.previsualizarFolhaoDoReparo('${item.id}')" title="Ver como o Folhão está ficando, sem precisar completar o Checklist de Execução">
+                    <button class="btn-outline-neutral" style="padding:4px 12px; font-size:12px;" onclick="window.previsualizarFolhaoDoReparo('${item.id}')" title="Ver como o Folhão está ficando, sem precisar completar o Checklist de Execução">
                         <i class="fas fa-eye"></i> Pré-visualizar
                     </button>
                 </td>
@@ -2278,7 +2278,7 @@ async function atualizarTabelaHistoricoComServidor(id) {
             if (ehAtividadePendente) {
                 marcadorPendencia = jaConcluida
                     ? `<span style="font-size:10px; color:#22c55e; font-weight:700; margin-left:8px; white-space:nowrap;"><i class="fas fa-check-circle"></i> Concluída</span>`
-                    : `<button class="btn-premium" style="padding:2px 8px; font-size:10px; margin-left:8px; white-space:nowrap;" onclick="window.concluirAtividadePendenteProntuario(${e.id}, '${id}')"><i class="fas fa-check"></i> Concluir</button>`;
+                    : `<button class="btn-outline-neutral" style="padding:2px 8px; font-size:10px; margin-left:8px; white-space:nowrap;" onclick="window.concluirAtividadePendenteProntuario(${e.id}, '${id}')"><i class="fas fa-check"></i> Concluir</button>`;
             }
             return `
             <tr>
@@ -4096,10 +4096,10 @@ window.filtrarAdminColaboradores = function() {
                 ${c.primeiro_acesso ? '<br><small class="text-muted">Primeiro acesso pendente</small>' : ''}
             </td>
             <td style="white-space:nowrap;">
-                <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarCargoColaborador('${c.matricula}', '${(c.cargo || '').replace(/'/g, "\\'")}')" title="Trocar cargo">
+                <button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.mudarCargoColaborador('${c.matricula}', '${(c.cargo || '').replace(/'/g, "\\'")}')" title="Trocar cargo">
                     <i class="fas fa-id-badge"></i>
                 </button>
-                <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.resetarSenhaColaborador('${c.matricula}', '${c.nome.replace(/'/g, "\\'")}')" title="Resetar senha">
+                <button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.resetarSenhaColaborador('${c.matricula}', '${c.nome.replace(/'/g, "\\'")}')" title="Resetar senha">
                     <i class="fas fa-key"></i>
                 </button>
                 <button class="${c.ativo ? 'btn-outline-danger' : 'btn-premium btn-success'}" style="padding:4px 10px; font-size:11px;" onclick="window.alternarAtivoColaborador('${c.matricula}', ${!c.ativo}, '${c.nome.replace(/'/g, "\\'")}')" title="${c.ativo ? 'Desativar acesso' : 'Reativar acesso'}">
@@ -4370,7 +4370,7 @@ window.carregarOficina = async function() {
                 <button class="btn-filter-mcc" onclick="window.filtrarCentralAreas('Atenção', this)">🟡 Atenção</button>
             </div>
             ${OPERADOR_LOGADO && OPERADOR_LOGADO.isAdm ? `
-                <button class="btn-premium" onclick="window.abrirModalAtividadeMassa()">
+                <button class="btn-outline-neutral" onclick="window.abrirModalAtividadeMassa()">
                     <i class="fas fa-layer-group"></i> Atividade em Massa
                 </button>
             ` : ''}
@@ -6635,7 +6635,7 @@ function renderizarAtividadesArea() {
                         <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">${x.responsavel ? `${x.responsavel} · ` : ''}${x.criado_em || ''}</div>
                     </div>
                     <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
-                        <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.editarAtividadeOficina(${x.id})"><i class="fas fa-pen"></i></button>
+                        <button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.editarAtividadeOficina(${x.id})"><i class="fas fa-pen"></i></button>
                         <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.excluirAtividadeOficina(${x.id})"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>`;
@@ -6679,18 +6679,18 @@ function renderizarAtividadesArea() {
         if (estaNoQuadroExecutor) {
             if (x.status === 'Pendente') {
                 botoesAcao = `
-                    <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Em Andamento')">Iniciar</button>
+                    <button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Em Andamento')">Iniciar</button>
                     <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Recusado')">Recusar</button>
                 `;
             } else if (x.status === 'Em Andamento') {
                 botoesAcao = `
-                    <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Concluído')">Concluir</button>
+                    <button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Concluído')">Concluir</button>
                     <button class="btn-premium" style="padding:4px 10px; font-size:11px; background:#f97316; border-color:#f97316;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Aguardando')">Aguardando</button>
                 `;
             } else if (x.status === 'Aguardando') {
-                botoesAcao = `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Em Andamento')"><i class="fas fa-play"></i> Retomar</button>`;
+                botoesAcao = `<button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Em Andamento')"><i class="fas fa-play"></i> Retomar</button>`;
             } else if (x.status === 'Recusado') {
-                botoesAcao = `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Pendente')"><i class="fas fa-rotate-left"></i> Reabrir</button>`;
+                botoesAcao = `<button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Pendente')"><i class="fas fa-rotate-left"></i> Reabrir</button>`;
             }
         }
         // 🆕 Reabrir uma atividade CONCLUÍDA é exceção à regra acima
@@ -6699,7 +6699,7 @@ function renderizarAtividadesArea() {
         // Iniciar/Recusar/Concluir, que são só de quem executa. Por
         // isso fica fora do "if (estaNoQuadroExecutor)".
         if (x.status === 'Concluído') {
-            botoesAcao += `<button class="btn-premium" style="padding:4px 10px; font-size:11px; background:#8b5cf6; border-color:#8b5cf6;" onclick="window.reabrirAtividadeOficina(${x.id})"><i class="fas fa-rotate-left"></i> Reabrir</button>`;
+            botoesAcao += `<button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.reabrirAtividadeOficina(${x.id})"><i class="fas fa-rotate-left"></i> Reabrir</button>`;
         }
 
         return `
@@ -6758,10 +6758,10 @@ function renderizarAtividadesArea() {
             </div>
             <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
                 ${botoesAcao}
-                <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.abrirConversaAtividade(${x.id})" title="Conversa">
+                <button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.abrirConversaAtividade(${x.id})" title="Conversa">
                     <i class="fas fa-comments"></i>
                 </button>
-                <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.editarAtividadeOficina(${x.id})">
+                <button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.editarAtividadeOficina(${x.id})">
                     <i class="fas fa-pen"></i>
                 </button>
                 <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.excluirAtividadeOficina(${x.id})">
@@ -6964,9 +6964,9 @@ window.renderFilaPonteRolante = async function() {
                         </div>
                     </div>
                     <div style="display:flex; gap:6px; flex-shrink:0;">
-                        <button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.abrirConversaAtividade(${x.id})" title="Conversa"><i class="fas fa-comments"></i></button>
-                        ${podeAtender && x.status === 'Pendente' ? `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusFilaPonteRolante(${x.id}, 'Em Andamento')">Iniciar</button>` : ''}
-                        ${podeAtender && x.status === 'Em Andamento' ? `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusFilaPonteRolante(${x.id}, 'Concluído')">Concluir</button>` : ''}
+                        <button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.abrirConversaAtividade(${x.id})" title="Conversa"><i class="fas fa-comments"></i></button>
+                        ${podeAtender && x.status === 'Pendente' ? `<button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusFilaPonteRolante(${x.id}, 'Em Andamento')">Iniciar</button>` : ''}
+                        ${podeAtender && x.status === 'Em Andamento' ? `<button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusFilaPonteRolante(${x.id}, 'Concluído')">Concluir</button>` : ''}
                         ${podeExcluir(x) ? `<button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.excluirSolicitacaoFilaPonteRolante(${x.id})" title="Excluir"><i class="fas fa-trash"></i></button>` : ''}
                     </div>
                 </div>`;
@@ -7932,7 +7932,7 @@ function renderProcedimentosArea(chave) {
                     <div class="text-muted" style="font-size:11px;">Nº ${p.id} · Rev. ${p.revisao || '-'} · ${p.frequencia || ''}</div>
                 </div>
             </div>
-            <button class="btn-premium" style="flex-shrink:0; padding:6px 12px; font-size:11.5px;" onclick="window.abrirProcedimento('${chave}','${p.id}')">
+            <button class="btn-outline-neutral" style="flex-shrink:0; padding:6px 12px; font-size:11.5px;" onclick="window.abrirProcedimento('${chave}','${p.id}')">
                 <i class="fas fa-clipboard-check"></i> Abrir
             </button>
         </div>
@@ -9890,7 +9890,7 @@ window.renderizarListaOrdensServico = function() {
             <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
                 ${!concluida ? `<button class="btn-premium btn-success" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusOrdemServico(${os.id}, 'Concluído')">Concluir</button>` : ''}
                 ${!naoExecutada ? `<button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.marcarOsNaoExecutada(${os.id})">Não Executada</button>` : ''}
-                ${(concluida || naoExecutada) ? `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusOrdemServico(${os.id}, 'Em Andamento')">Reabrir</button>` : ''}
+                ${(concluida || naoExecutada) ? `<button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusOrdemServico(${os.id}, 'Em Andamento')">Reabrir</button>` : ''}
                 <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.excluirOrdemServico(${os.id})">
                     <i class="fas fa-trash"></i> Excluir
                 </button>
@@ -11258,7 +11258,7 @@ window.renderizarListaQualidade = function() {
                 </div>
             </div>
             <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
-                ${!concluido ? `<button class="btn-premium" style="padding:4px 10px; font-size:11px;" onclick="window.abrirModalAchadosQualidade(${r.id}, '${r.peca_id}', true)"><i class="fas fa-plus"></i> Achado</button>` : ''}
+                ${!concluido ? `<button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.abrirModalAchadosQualidade(${r.id}, '${r.peca_id}', true)"><i class="fas fa-plus"></i> Achado</button>` : ''}
                 ${!concluido ? `<button class="btn-premium btn-success" style="padding:4px 10px; font-size:11px;" onclick="window.abrirModalSaidaQualidade(${r.id}, '${r.peca_id}')"><i class="fas fa-right-from-bracket"></i> Registrar Saída</button>` : ''}
                 <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.excluirQualidade(${r.id})">
                     <i class="fas fa-trash"></i> Excluir

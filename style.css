@@ -468,6 +468,32 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
 }
 
+/* 🔧 CORREÇÃO (regressão de amarelo): botão de ação que se repete por
+   LINHA de lista (Iniciar/Concluir/Retomar/Reabrir em cada atividade,
+   card, item da fila) — o dourado é reservado pra CTA única de tela
+   (ex: "Cadastrar Entrada"), não pra ação que aparece 1x por item numa
+   lista com várias linhas (isso virava "parede de amarelo" com 4-5
+   linhas na tela ao mesmo tempo). Mesmo padrão do .btn-outline-danger,
+   só que neutro. */
+.btn-outline-neutral {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+  font-family: var(--font-family);
+}
+
+.btn-outline-neutral:hover {
+  background: var(--bg-hover);
+  color: var(--text-heading);
+  border-color: var(--text-muted);
+}
+
 .btn-xs-primary {
   background: transparent;
   border: none;
@@ -4642,13 +4668,11 @@ textarea,
    hora"): a primeira versão usava gradiente escuro + glow radial + selo
    pulsante grande + fundo colorido por seção — bonito uma vez, cansativo
    no dia a dia. Trocado por: superfície plana igual ao resto do app
-   (mesmo --bg-card/--border de sempre), cor só como um traço fino de
-   identidade (borda de 2-3px), nunca como preenchimento/gradiente. */
+   (mesmo --bg-card/--border de sempre), sem cor de destaque na moldura. */
 .sup-header {
     position: relative;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-top: 2px solid #fbbf24;
     border-radius: var(--radius-lg, var(--radius));
     padding: 22px 26px;
     margin-bottom: 20px;
@@ -4696,7 +4720,7 @@ textarea,
     letter-spacing: -0.01em;
 }
 .sup-header-titulo-bloco h2 i {
-    color: #fbbf24;
+    color: var(--text-muted);
     margin-right: 8px;
     font-size: 0.95em;
 }
