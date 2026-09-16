@@ -786,9 +786,20 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: inset 0 0 14px rgba(255, 193, 7, 0.08);
 }
 
+/* 🔧 AJUSTE (pedido do usuário, referência "John Hardward"): o ícone do
+   item ativo ganha um chip quadrado de fundo sólido atrás dele, não só
+   o ícone colorido solto — mesma linguagem visual dos chips de ícone
+   dos KPI cards. */
 .nav-link.active i {
-  color: var(--brand);
-  filter: drop-shadow(0 0 4px rgba(255, 193, 7, 0.5));
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: var(--brand);
+  color: var(--text-on-primary);
+  flex-shrink: 0;
 }
 
 /* 🔧 REDESIGN: estas 5 variantes davam uma cor de identidade FIXA por
