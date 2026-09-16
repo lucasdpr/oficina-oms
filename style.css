@@ -4052,7 +4052,11 @@ body.light-mode {
 }
 
 .nav-link.active {
-  background: linear-gradient(90deg, var(--info-bg), transparent);
+  /* 🔧 REDESIGN: essa regra vem depois da .nav-link.active lá em cima
+     (linha ~750) e ganhava no empate de especificidade, mantendo o
+     fundo do item ativo azul (--info-bg) mesmo depois de trocar tudo
+     pro dourado de marca. */
+  background: linear-gradient(90deg, var(--brand-bg), transparent);
 }
 
 .sidebar-header h2 {

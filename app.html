@@ -647,40 +647,40 @@
             </div>
             <nav class="sidebar-nav">
                 <a href="#" id="nav-painel" class="nav-link active" onclick="window.abrirAba(event,'aba-painel')"><i class="fas fa-chart-pie"></i> Painel Geral OMS</a>
-                <a href="#" id="nav-tecnico" class="nav-link" style="color:#22c55e;" onclick="window.abrirAba(event,'aba-tecnico')"><i class="fas fa-hard-hat"></i> Painel do Técnico</a>
+                <a href="#" id="nav-tecnico" class="nav-link" onclick="window.abrirAba(event,'aba-tecnico')"><i class="fas fa-hard-hat"></i> Painel do Técnico</a>
                 <!-- 🆕 Atalho direto pra área do PRÓPRIO técnico (ver
                      aplicarRestricaoNavTecnico em script.js, que descobre a
                      área pelo OPERADOR_LOGADO e preenche o nome aqui) — sem
                      isso, um técnico restrito só via "Painel do Técnico" e
                      tinha que ADM/supervisor abrir a área dele pra ele
                      mesmo acessar o quadro de atividades/materiais/equipe. -->
-                <a href="#" id="nav-area-oficina" class="nav-link hidden" style="color:#fb923c;" data-area="" onclick="window.abrirAreaOficinaDireto(event, this.dataset.area)"><i class="fas fa-people-carry-box"></i> <span data-area-nome>Minha Área</span></a>
+                <a href="#" id="nav-area-oficina" class="nav-link hidden" data-area="" onclick="window.abrirAreaOficinaDireto(event, this.dataset.area)"><i class="fas fa-people-carry-box"></i> <span data-area-nome>Minha Área</span></a>
                 <a href="#" id="nav-oficina" class="nav-link" onclick="window.abrirAba(event,'aba-oficina')"><i class="fas fa-industry"></i> 🏭 Central de Áreas</a>
-                <a href="#" id="nav-fila-ponte" class="nav-link" style="color:#3b82f6;" onclick="window.abrirAba(event,'aba-fila-ponte'); window.renderFilaPonteRolante();">🏗️ Fila da Ponte Rolante</a>
+                <a href="#" id="nav-fila-ponte" class="nav-link" onclick="window.abrirAba(event,'aba-fila-ponte'); window.renderFilaPonteRolante();">🏗️ Fila da Ponte Rolante</a>
                 <!-- 🆕 Aba única de Chats — antes eram vários botões/modais
                      espalhados (badge na Área da Oficina, "Mensagens das
                      Áreas" no painel ADM). Agora é um lugar só, estilo
                      lista de conversas, pra técnico falar com o ADM e o
                      ADM ver/responder todas as áreas (ver renderAbaChats
                      em script.js). -->
-                <a href="#" id="nav-chats" class="nav-link" style="color:#25d366;" onclick="window.abrirAba(event,'aba-chats')"><i class="fas fa-comments"></i> Chats <span id="nav-chats-badge" class="hidden" style="background:var(--danger); color:#fff; font-size:10px; font-weight:700; padding:1px 6px; border-radius:10px; margin-left:4px;">0</span></a>
+                <a href="#" id="nav-chats" class="nav-link" onclick="window.abrirAba(event,'aba-chats')"><i class="fas fa-comments"></i> Chats <span id="nav-chats-badge" class="hidden" style="background:var(--danger); color:#fff; font-size:10px; font-weight:700; padding:1px 6px; border-radius:10px; margin-left:4px;">0</span></a>
                 <!-- 🆕 Central de Notificações — só supervisor/ADM/admin do
                      sistema (ver ativarCentralNotificacoesSeAutorizado em
                      script.js). Começa escondida; JS decide quem vê. -->
-                <a href="#" id="nav-notificacoes" class="nav-link hidden" style="color:#f43f5e;" onclick="window.abrirAba(event,'aba-notificacoes')"><i class="fas fa-bell"></i> Central de Notificações <span id="badge-notificacoes-nao-lidas" class="hidden" style="background:var(--danger); color:#fff; font-size:10px; font-weight:700; padding:1px 6px; border-radius:10px; margin-left:4px;">0</span></a>
+                <a href="#" id="nav-notificacoes" class="nav-link hidden" onclick="window.abrirAba(event,'aba-notificacoes')"><i class="fas fa-bell"></i> Central de Notificações <span id="badge-notificacoes-nao-lidas" class="hidden" style="background:var(--danger); color:#fff; font-size:10px; font-weight:700; padding:1px 6px; border-radius:10px; margin-left:4px;">0</span></a>
                 <!-- 🆕 Painel do Supervisor — visão executiva de cima da
                      oficina inteira (saúde agora, produtividade, estoque e
                      tendência), num lugar só. Mesma regra de acesso da
                      Central de Notificações (ver ativarPainelSupervisorSeAutorizado
                      em script.js): começa escondido, JS decide quem vê. -->
-                <a href="#" id="nav-painel-supervisor" class="nav-link hidden" style="color:#fbbf24;" onclick="window.abrirAba(event,'aba-painel-supervisor')"><i class="fas fa-binoculars"></i> Painel do Supervisor</a>
+                <a href="#" id="nav-painel-supervisor" class="nav-link hidden" onclick="window.abrirAba(event,'aba-painel-supervisor')"><i class="fas fa-binoculars"></i> Painel do Supervisor</a>
 
                 <div class="nav-divider">Monitoramento de Máquinas</div>
                 <a href="#" id="nav-fluxo" class="nav-link" onclick="window.abrirAba(event,'aba-fluxo')"><i class="fas fa-stream"></i> Sequenciamento Veios</a>
-                <a href="Sinotico3d.html" id="nav-sinotico" class="nav-link" style="color:#22d3ee;" target="_blank" title="Abre em uma nova aba"><i class="fas fa-cube"></i> Sinótico 3D</a>
-                <a href="#" id="nav-producao" class="nav-link" style="color: #3b82f6;" onclick="window.abrirAba(event,'aba-producao')"><i class="fas fa-calculator"></i> Lançamento de Produção</a>
-                <a href="#" id="nav-ordens-servico" class="nav-link" style="color:#f472b6;" onclick="window.abrirAba(event,'aba-ordens-servico')"><i class="fas fa-file-invoice"></i> Registro de OS</a>
-                <a href="#" id="nav-qualidade" class="nav-link" style="color:#a78bfa;" onclick="window.abrirAba(event,'aba-qualidade')"><i class="fas fa-magnifying-glass"></i> Qualidade (Entrada/Saída)</a>
+                <a href="Sinotico3d.html" id="nav-sinotico" class="nav-link" target="_blank" title="Abre em uma nova aba"><i class="fas fa-cube"></i> Sinótico 3D</a>
+                <a href="#" id="nav-producao" class="nav-link" onclick="window.abrirAba(event,'aba-producao')"><i class="fas fa-calculator"></i> Lançamento de Produção</a>
+                <a href="#" id="nav-ordens-servico" class="nav-link" onclick="window.abrirAba(event,'aba-ordens-servico')"><i class="fas fa-file-invoice"></i> Registro de OS</a>
+                <a href="#" id="nav-qualidade" class="nav-link" onclick="window.abrirAba(event,'aba-qualidade')"><i class="fas fa-magnifying-glass"></i> Qualidade (Entrada/Saída)</a>
 
                 <div class="nav-divider">Oficina</div>
                 <a href="#" id="nav-reparos" class="nav-link highlight-warning" onclick="window.abrirAba(event,'aba-reparos')"><i class="fas fa-wrench"></i> Peças em Reparo</a>
