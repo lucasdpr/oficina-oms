@@ -3686,6 +3686,21 @@ h1, h2, h3, h4, h5, h6 {
     background: color-mix(in srgb, var(--sev-color, var(--text-muted)) 15%, transparent);
 }
 
+/* 🔧 REFINAMENTO (Fase R4): mesmo tratamento de "pill" do notif-linha-status,
+   só que genérico — para os vários lugares do app que ainda mostravam o
+   status de uma atividade/OS como texto colorido solto (sem fundo), ao
+   lado de outras tags que já eram pill (ex: "ATRASADA", "Reaberta Nx").
+   Define --sev-color inline no elemento para escolher a cor. */
+.status-text-pill {
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    padding: 3px 9px;
+    border-radius: 999px;
+    color: var(--sev-color, var(--text-muted));
+    background: color-mix(in srgb, var(--sev-color, var(--text-muted)) 15%, transparent);
+}
+
 .notif-linha-meta {
     display: flex;
     align-items: center;

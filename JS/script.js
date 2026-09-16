@@ -2693,9 +2693,9 @@ function renderMateriais() {
 
     tbody.innerHTML = filtrados.map(m => {
         let statusHtml = "";
-        if (m.qtd > 10) statusHtml = `<span class="status-pill operação" style="color: var(--success); border-color: var(--success);"><i class="fas fa-check-circle"></i> Normal</span>`;
-        else if (m.qtd > 0) statusHtml = `<span class="status-pill reserva" style="color: var(--warning); border-color: var(--warning);"><i class="fas fa-exclamation-triangle"></i> Baixo</span>`;
-        else statusHtml = `<span class="status-pill reparo" style="color: var(--danger); border-color: var(--danger);"><i class="fas fa-times-circle"></i> Zerado</span>`;
+        if (m.qtd > 10) statusHtml = `<span class="status-pill operação"><i class="fas fa-check-circle"></i> Normal</span>`;
+        else if (m.qtd > 0) statusHtml = `<span class="status-pill" style="background: var(--warning-bg); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.25);"><i class="fas fa-exclamation-triangle"></i> Baixo</span>`;
+        else statusHtml = `<span class="status-pill reparo"><i class="fas fa-times-circle"></i> Zerado</span>`;
         
         return `
             <tr>
@@ -4702,7 +4702,7 @@ window.renderPainelAreaAdministrativa = async function(chave) {
                         <div style="padding:10px 0; border-bottom:1px solid var(--border);">
                             <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
                                 <span style="color:var(--text-body); font-size:13px;">${a.descricao || 'Sem descrição'}</span>
-                                <span style="font-size:11px; font-weight:700; color:${corStatus};">${atrasada ? 'ATRASADA' : (a.status || '').toUpperCase()}</span>
+                                <span class="status-text-pill" style="--sev-color:${corStatus};">${atrasada ? 'ATRASADA' : (a.status || '').toUpperCase()}</span>
                             </div>
                             <div class="text-muted" style="font-size:11px; margin-top:2px;">
                                 ${
@@ -6715,7 +6715,7 @@ function renderizarAtividadesArea() {
                     ${x.equipamento_id
                         ? `<span class="font-code" style="font-weight:700; color:var(--text-heading);">${x.equipamento_id}</span>`
                         : `<span class="ind-card-tag bg-tag">Tarefa avulsa</span>`}
-                    <span style="font-size:11px; color:${corStatus[x.status] || 'var(--text-muted)'}; font-weight:700;">${x.status}</span>
+                    <span class="status-text-pill" style="--sev-color:${corStatus[x.status] || 'var(--text-muted)'};">${x.status}</span>
                     ${iconePrioridade[x.prioridade] ? `<span title="Prioridade ${x.prioridade}">${iconePrioridade[x.prioridade]}</span>` : ''}
                     ${atrasada ? `<span style="font-size:10px; background:var(--danger); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">ATRASADA</span>` : ''}
                     ${x.reaberturas_count > 0 ? `<span style="font-size:10px; background:#f97316; color:#fff; padding:2px 6px; border-radius:4px; font-weight:700; cursor:pointer;" onclick="window.verHistoricoReaberturasAtividade(${x.id})" title="Ver histórico de reaberturas"><i class="fas fa-rotate-left"></i> Reaberta ${x.reaberturas_count}x</span>` : ''}
@@ -9873,7 +9873,7 @@ window.renderizarListaOrdensServico = function() {
             <div style="flex:1; min-width:0;">
                 <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
                     <span class="font-code" style="font-weight:700; color:var(--text-heading);">${os.numero_os ? `OS ${os.numero_os}` : `#${os.id}`}</span>
-                    <span style="font-size:11px; font-weight:700; color:${corStatus};">${iconeStatus} ${os.status}</span>
+                    <span class="status-text-pill" style="--sev-color:${corStatus};">${iconeStatus} ${os.status}</span>
                 </div>
                 ${os.descricao ? `<div style="font-size:13px; color:var(--text-body); margin-bottom:4px;">${os.descricao}</div>` : ''}
                 ${naoExecutada && os.motivo_nao_executada ? `
@@ -11227,8 +11227,8 @@ window.renderizarListaQualidade = function() {
             <div style="display:flex; gap:6px; flex-shrink:0;">
                 <div style="position:relative; cursor:pointer;" title="Fotos de Entrada" onclick="window.abrirGaleriaQualidade(${r.id}, 'entrada', '${r.peca_id}')">
                     ${fotoCapaEntrada ? `
-                        <img src="${fotoCapaEntrada}" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:2px solid #38bdf8;">
-                        <span style="position:absolute; bottom:-6px; left:2px; background:#38bdf8; color:#04121c; font-size:9px; font-weight:800; padding:1px 5px; border-radius:8px;">ENTRADA</span>
+                        <img src="${fotoCapaEntrada}" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:2px solid var(--info);">
+                        <span style="position:absolute; bottom:-6px; left:2px; background:var(--info); color:#04121c; font-size:9px; font-weight:800; padding:1px 5px; border-radius:8px;">ENTRADA</span>
                     ` : `<div style="width:64px; height:64px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; color:var(--text-muted);"><i class="fas fa-image" style="font-size:18px; opacity:0.4;"></i></div>`}
                 </div>
                 <div style="position:relative; cursor:${fotoCapaSaida ? 'pointer' : 'default'};" title="Fotos de Saída" ${fotoCapaSaida ? `onclick="window.abrirGaleriaQualidade(${r.id}, 'saida', '${r.peca_id}')"` : ''}>
@@ -11241,9 +11241,9 @@ window.renderizarListaQualidade = function() {
             <div style="flex:1; min-width:180px;">
                 <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
                     <span class="font-code" style="font-weight:700; color:var(--text-heading);">${r.peca_id}</span>
-                    <span style="font-size:11px; font-weight:700; color:${corStatus};">${iconeStatus} ${r.status}</span>
+                    <span class="status-text-pill" style="--sev-color:${corStatus};">${iconeStatus} ${r.status}</span>
                 </div>
-                ${r.observacao_entrada ? `<div style="font-size:12px; color:var(--text-body); margin-bottom:2px;"><strong style="color:#38bdf8;">Entrada:</strong> ${r.observacao_entrada}</div>` : ''}
+                ${r.observacao_entrada ? `<div style="font-size:12px; color:var(--text-body); margin-bottom:2px;"><strong style="color:var(--info);">Entrada:</strong> ${r.observacao_entrada}</div>` : ''}
                 ${r.observacao_saida ? `<div style="font-size:12px; color:var(--text-body); margin-bottom:2px;"><strong style="color:var(--brand);">Saída:</strong> ${r.observacao_saida}</div>` : ''}
                 ${Number(r.achados_total) > 0 ? `
                     <div style="margin:6px 0;">
