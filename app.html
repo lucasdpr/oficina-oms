@@ -723,44 +723,48 @@
         </div>
     </div>
 
-    <!-- 2. KPIs MACRO (Visão Geral de Alto Nível) -->
-    <div class="kpi-container">
-        <div class="kpi-card danger" style="cursor:pointer;" onclick="window.abrirCriticos()">
-            <div class="kpi-icon glow-danger"><i class="fas fa-radiation"></i></div>
-            <div class="kpi-data">
-                <h4 id="kpi-criticos">0</h4>
-                <p>Ativos Críticos (&gt;= 80%)</p>
-                <div class="kpi-trend trend-up"><i class="fas fa-arrow-trend-up"></i> Requer Atenção Imediata</div>
+    <!-- 2. KPIs MACRO (Visão Geral de Alto Nível)
+         🔧 REESTRUTURAÇÃO (pedido do usuário, referência "John Hardward"):
+         chip de ícone pequeno no canto (não mais vertical-center dominando
+         o card), label discreto ao lado do ícone, número grande embaixo,
+         tag de variação com fundo sutil. Escopado só nestes 4 cards
+         (classes -v2, novas) — o resto do app continua em .kpi-card até
+         aprovação pra replicar. -->
+    <div class="kpi-container kpi-container-v2">
+        <div class="kpi-card-v2" style="cursor:pointer;" onclick="window.abrirCriticos()">
+            <div class="kpi-v2-top">
+                <div class="kpi-icon-v2 glow-danger"><i class="fas fa-radiation"></i></div>
+                <span class="kpi-v2-label">Ativos Críticos (&gt;= 80%)</span>
             </div>
+            <div class="kpi-v2-value" id="kpi-criticos">0</div>
+            <div class="kpi-trend trend-up"><i class="fas fa-arrow-trend-up"></i> Requer Atenção Imediata</div>
         </div>
-        
-        <div class="kpi-card warning" style="cursor:pointer;" onclick="window.abrirAba(null,'aba-reparos')">
-            <div class="kpi-icon glow-warning"><i class="fas fa-wrench"></i></div>
-            <div class="kpi-data">
-                <h4 id="kpi-reparo">0</h4>
-                <p>Oficina / Reparo</p>
-                <div class="kpi-trend trend-neutral"><i class="fas fa-minus"></i> Volume Estável</div>
+
+        <div class="kpi-card-v2" style="cursor:pointer;" onclick="window.abrirAba(null,'aba-reparos')">
+            <div class="kpi-v2-top">
+                <div class="kpi-icon-v2 glow-warning"><i class="fas fa-wrench"></i></div>
+                <span class="kpi-v2-label">Oficina / Reparo</span>
             </div>
+            <div class="kpi-v2-value" id="kpi-reparo">0</div>
+            <div class="kpi-trend trend-neutral"><i class="fas fa-minus"></i> Volume Estável</div>
         </div>
-        
-        <div class="kpi-card success" style="cursor:pointer;" onclick="window.abrirAba(null,'aba-reservas')">
-            <div class="kpi-icon glow-success"><i class="fas fa-boxes"></i></div>
-            <div class="kpi-data">
-                <h4 id="kpi-reserva">0</h4>
-                <p>Reserva Pronta (Swap)</p>
-                <div class="kpi-trend trend-down"><i class="fas fa-arrow-trend-up" style="color:#10b981;"></i> Abastecimento em dia</div>
+
+        <div class="kpi-card-v2" style="cursor:pointer;" onclick="window.abrirAba(null,'aba-reservas')">
+            <div class="kpi-v2-top">
+                <div class="kpi-icon-v2 glow-success"><i class="fas fa-boxes"></i></div>
+                <span class="kpi-v2-label">Reserva Pronta (Swap)</span>
             </div>
+            <div class="kpi-v2-value" id="kpi-reserva">0</div>
+            <div class="kpi-trend trend-down"><i class="fas fa-arrow-trend-up" style="color:#10b981;"></i> Abastecimento em dia</div>
         </div>
-        
-        <div class="kpi-card">
-            <div class="kpi-icon glow-brand">
-                <i class="fas fa-microchip"></i>
+
+        <div class="kpi-card-v2">
+            <div class="kpi-v2-top">
+                <div class="kpi-icon-v2 glow-brand"><i class="fas fa-microchip"></i></div>
+                <span class="kpi-v2-label">Ativos Monitorados</span>
             </div>
-            <div class="kpi-data">
-                <h4 id="kpi-total">0</h4>
-                <p>Ativos Monitorados</p>
-                <div class="kpi-trend trend-neutral"><i class="fas fa-check-circle"></i> Sincronizado</div>
-            </div>
+            <div class="kpi-v2-value" id="kpi-total">0</div>
+            <div class="kpi-trend trend-neutral"><i class="fas fa-check-circle"></i> Sincronizado</div>
         </div>
     </div>
 
@@ -776,7 +780,7 @@
                     </h3>
                     <p class="text-muted" style="font-size: 0.8rem;">Ativos com maior índice de desgaste registrado.</p>
                 </div>
-                <button class="btn-xs-primary" onclick="window.abrirCriticos()" style="color:var(--text-accent); padding: 8px 12px; background: rgba(59,130,246,0.1);">
+                <button class="btn-outline-neutral" onclick="window.abrirCriticos()" style="padding: 8px 12px;">
                     Ver Relatório Completo <i class="fas fa-arrow-right"></i>
                 </button>
             </div>
