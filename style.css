@@ -4208,6 +4208,7 @@ body.light-mode {
     border-radius: var(--radius-sm);
     padding: 7px 10px;
     margin-bottom: 6px;
+    transition: border-color var(--transition-fast);
 }
 .material-chip:hover {
     border-color: var(--area-color, var(--brand));
