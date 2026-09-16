@@ -141,8 +141,18 @@
         }
         .ui-ripple { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.5); transform: scale(0); animation: ui-ripple-anim 0.55s ease-out; pointer-events: none; }
         @keyframes ui-ripple-anim { to { transform: scale(2.6); opacity: 0; } }
-        /* ===== GLASS PANEL ===== */
-        .glass-panel { background: var(--bg-card); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--border-color); box-shadow: var(--shadow); border-radius: var(--radius-lg); transition: all var(--transition); }
+        /* ===== GLASS PANEL =====
+           🔧 CORREÇÃO (faixa diagonal): esta é a MESMA duplicata de
+           .glass-panel (Sistema B, carrega depois do style.css e
+           ganhava o empate de especificidade) que já tinha causado o
+           artefato branco diagonal corrigido antes — só que aqui
+           ninguém tinha reparado que o backdrop-filter continuava
+           definido NESTE bloco, então a correção em style.css nunca
+           chegou a valer em runtime. É por isso que a faixa/glow
+           diagonal reportada na Central de Áreas e no Sequenciamento
+           de Veios (ambos usam .glass-panel) continuava aparecendo
+           mesmo depois da "correção". --bg-card já é 82% opaco. */
+        .glass-panel { background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow); border-radius: var(--radius-lg); transition: all var(--transition); }
         .glass-panel:hover { box-shadow: 0 12px 40px rgba(0,0,0,0.5); }
         /* ===== WELCOME BOX ===== */
         .welcome-box { background: linear-gradient(145deg, rgba(22,29,43,0.95), rgba(9,12,18,0.95)); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 28px 32px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
@@ -307,37 +317,18 @@
         .kpi-container .kpi-card:nth-child(4) { animation-delay: 0.18s; }
         .kpi-card { animation: appleFadeIn 0.45s ease-out; }
 
-        /* ===== fundo com leve textura de profundidade — bem discreto, sem neon ===== */
-        .apple-aurora {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            pointer-events: none;
-            overflow: hidden;
-        }
-        .apple-aurora span {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(130px);
-            opacity: 0.05;
-            animation: apple-aurora-float 30s ease-in-out infinite;
-        }
-        .apple-aurora span:nth-child(1) {
-            width: 480px; height: 480px;
-            top: -14%; left: 10%;
-            background: var(--brand);
-        }
-        .apple-aurora span:nth-child(2) {
-            width: 420px; height: 420px;
-            bottom: -16%; right: 6%;
-            background: var(--warning);
-            opacity: 0.035;
-            animation-delay: -12s;
-        }
-        @keyframes apple-aurora-float {
-            0%, 100% { transform: translate(0, 0); }
-            50% { transform: translate(30px, -20px); }
-        }
+        /* 🔧 CORREÇÃO (faixa/glow diagonal): a "aurora" era este elemento
+           fixo (position:fixed, inset:0) com 2 círculos enormes
+           (480px/420px) borrados em blur(130px), um deles usando
+           var(--brand) — cobria a tela INTEIRA atrás de tudo, em
+           qualquer aba, por isso aparecia igual na Central de Áreas e
+           no Sequenciamento de Veios. Antes do redesign a cor era
+           outra (menos chamativa no tema escuro); virando --brand
+           (dourado) ficou muito mais perceptível — só notaram agora,
+           mas o elemento em si é mais antigo que esta sessão. Removido
+           por completo: puramente decorativo, nunca foi pedido em
+           nenhuma fase, e o comentário abaixo já mostra que ele tinha
+           causado OUTRO bug antes (menu mobile) só pra existir. */
         /* 🎯 CAUSA RAIZ FINAL do "menu ocupa espaço e empurra tudo pra
            baixo no celular" — confirmado por diagnóstico ao vivo no
            navegador: esta regra dava "position: relative" pra um monte
@@ -388,8 +379,22 @@
             background: var(--brand);
         }
 
-        /* ===== shimmer sutil no botão premium ao passar o mouse ===== */
+        /* ===== shimmer sutil no botão premium ao passar o mouse =====
+           🔧 CORREÇÃO (CAUSA RAIZ da faixa/glow diagonal): faltava
+           "position: relative" aqui. O ::before logo abaixo é
+           "position: absolute; height: 100%" — sem um ancestral
+           posicionado no próprio botão, ele "escapava" pro ancestral
+           posicionado mais próximo (".tab-content", que tem
+           position:relative e ocupa a altura inteira da página) e
+           virava um retângulo gigante (a altura da tela inteira),
+           depois distorcido com skewX(-20deg) — isso QUE era a faixa
+           diagonal reportada na Central de Áreas e no Sequenciamento
+           de Veios, em qualquer tela com um .btn-premium visível.
+           "isolation: isolate" sozinho não resolve isso — cria um
+           contexto de empilhamento (z-index), não um bloco de
+           contenção pra elemento posicionado; só "position" faz isso. */
         .btn-premium {
+            position: relative;
             isolation: isolate;
         }
         .btn-premium::before {
@@ -423,13 +428,10 @@
             .welcome-box, .kpi-container, .dashboard-main-grid, .kpi-card {
                 animation: none !important;
             }
-            .apple-aurora { display: none; }
         }
     </style>
 </head>
 <body>
-
-    <div class="apple-aurora" aria-hidden="true"><span></span><span></span></div>
 
     <!-- 🔧 CORREÇÃO: folhaoPersistencia.js (restaurarRascunhoNoModal) sempre
          procurou por este elemento pra avisar "progresso restaurado", mas
