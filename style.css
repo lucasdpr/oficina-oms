@@ -481,8 +481,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-xs-primary:hover {
-  background: var(--info-bg);
-  color: var(--text-accent);
+  background: var(--brand-bg);
+  color: var(--brand);
 }
 
 .btn-close-emergency {
@@ -890,10 +890,10 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-veio-tab.active {
-  background: var(--text-accent);
+  background: var(--brand);
   color: var(--text-on-primary);
-  border-color: var(--text-accent);
-  box-shadow: 0 0 20px var(--border-glow);
+  border-color: var(--brand);
+  box-shadow: 0 0 20px var(--brand-bg);
 }
 
 /* ==========================================
@@ -936,7 +936,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-filter-mcc.active {
-  background: var(--text-accent);
+  background: var(--brand);
   color: var(--text-on-primary) !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
@@ -1817,9 +1817,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .folhao-tab.active {
-  color: var(--text-accent);
-  border-bottom-color: var(--text-accent);
-  background: var(--info-bg);
+  color: var(--brand);
+  border-bottom-color: var(--brand);
+  background: var(--brand-bg);
 }
 
 .folhao-content {

@@ -190,7 +190,7 @@
         .mcc-filters-wrapper { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
         .mcc-filter-group { display: flex; gap: 4px; background: rgba(0,0,0,0.2); padding: 4px; border-radius: var(--radius); border: 1px solid var(--border); }
         .btn-filter-mcc { background: transparent; border: none; color: var(--text-muted); padding: 6px 14px; border-radius: var(--radius); font-weight: 600; font-size: 0.75rem; cursor: pointer; transition: all var(--transition); }
-        .btn-filter-mcc.active { background: var(--primary); color: #0a0e17; box-shadow: 0 4px 12px rgba(245,158,11,0.3); }
+        .btn-filter-mcc.active { background: var(--brand); color: var(--text-on-primary); box-shadow: 0 4px 12px rgba(255,193,7,0.3); }
         .btn-filter-mcc:hover:not(.active) { color: var(--text-title); }
         /* ===== GRAFICOS CARDS ===== */
         .graficos-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 18px; padding: 8px 0; }
@@ -904,8 +904,8 @@
 
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
                         
-                        <div style="background: rgba(0,0,0,0.2); border: 1px solid #3b82f6; border-radius: 12px; padding: 20px;">
-                            <h3 style="color: #3b82f6; margin-bottom: 15px;"><i class="fas fa-industry"></i> Tonelagem (Equipamentos Gerais)</h3>
+                        <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                            <h3 style="color: var(--text-heading); margin-bottom: 15px;"><i class="fas fa-industry"></i> Tonelagem (Equipamentos Gerais)</h3>
                             <p style="color: var(--text-muted); font-size: 11px; margin-bottom: 15px;">Atualiza o desgaste de Bows, Horizontais, Benders, etc.</p>
                             <div class="input-group" style="margin-bottom: 12px;">
                                 <label style="color: #3b82f6;">MCC #2 (Ton)</label>
@@ -922,8 +922,8 @@
                             <button class="btn-premium btn-success w-100" onclick="window.processarProducaoDiaria()"><i class="fas fa-check-double"></i> Atualizar Fábrica Inteira</button>
                         </div>
 
-                        <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--warning); border-radius: 12px; padding: 20px;">
-                            <h3 style="color: var(--warning); margin-bottom: 15px;"><i class="fas fa-fire"></i> Apontamento de Moldes</h3>
+                        <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                            <h3 style="color: var(--text-heading); margin-bottom: 15px;"><i class="fas fa-fire"></i> Apontamento de Moldes</h3>
                             <p style="color: var(--text-muted); font-size: 11px; margin-bottom: 15px;">Exclusivo para vida útil de Moldes (Contagem em Corridas).</p>
                             <div class="input-group" style="margin-bottom: 12px;">
                                 <label style="color: #3b82f6;">MCC #2 (Panelas)</label>
@@ -969,9 +969,9 @@
             </section>
 
             <section id="aba-reparos" class="tab-content">
-                <div class="glass-panel" style="border-top:4px solid #f59e0b;padding:24px;">
+                <div class="glass-panel" style="border-top:4px solid var(--border-color);padding:24px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
-                        <div><h2 style="color:#f59e0b;"><i class="fas fa-tools"></i> Setor de Manutenção (Reparo)</h2><p class="text-muted" style="font-size:13px;">Equipamentos que precisam de intervenção mecânica.</p></div>
+                        <div><h2><i class="fas fa-tools"></i> Setor de Manutenção (Reparo)</h2><p class="text-muted" style="font-size:13px;">Equipamentos que precisam de intervenção mecânica.</p></div>
                        
                     </div>
 
@@ -992,9 +992,9 @@
             </section>
 
             <section id="aba-reservas" class="tab-content">
-                <div class="glass-panel" style="border-top:4px solid #10b981;padding:24px;margin-bottom:24px;">
+                <div class="glass-panel" style="border-top:4px solid var(--border-color);padding:24px;margin-bottom:24px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;margin-bottom:16px;">
-                        <div><h2 style="color:#10b981;"><i class="fas fa-boxes"></i> Estoque Disponível (Reserva)</h2><p class="text-muted" style="font-size:13px;">Peças prontas para alocação via Swap Automático.</p></div>
+                        <div><h2><i class="fas fa-boxes"></i> Estoque Disponível (Reserva)</h2><p class="text-muted" style="font-size:13px;">Peças prontas para alocação via Swap Automático.</p></div>
                         <button class="btn-premium" onclick="window.toggleFormAdicionar()"><i class="fas fa-plus"></i> Cadastrar Peça Nova</button>
                         <!-- FORMULÁRIO DE CADASTRO DE NOVA PEÇA -->
 <div id="form-novo-equipamento" class="cadastrar-box hidden" style="margin-top: 20px; background: rgba(0,0,0,0.2); border: 1px dashed var(--primary); padding: 20px; border-radius: var(--radius);">
@@ -1073,8 +1073,8 @@
                          na mesma tabela — confuso de ler). Cada botão troca qual grupo
                          de peças aparece na tabela abaixo; ver window.mudarSubAbaReserva
                          em ui.js. -->
-                    <div style="display:flex; gap:8px; margin-top:16px; border-bottom:2px solid var(--border);">
-                        <button id="subaba-reserva-maquina" class="btn-subaba-reserva ativo" onclick="window.mudarSubAbaReserva('maquina')" style="padding:10px 20px; background:none; border:none; border-bottom:3px solid #22c55e; color:#22c55e; font-weight:700; cursor:pointer; font-size:14px;">
+                    <div style="display:flex; gap:8px; margin-top:16px; border-bottom:2px solid var(--border-color);">
+                        <button id="subaba-reserva-maquina" class="btn-subaba-reserva ativo" onclick="window.mudarSubAbaReserva('maquina')" style="padding:10px 20px; background:none; border:none; border-bottom:3px solid var(--brand); color:var(--brand); font-weight:700; cursor:pointer; font-size:14px;">
                             <i class="fas fa-industry"></i> Reserva na Máquina <span id="subaba-reserva-maquina-count"></span>
                         </button>
                         <button id="subaba-reserva-oficina" class="btn-subaba-reserva" onclick="window.mudarSubAbaReserva('oficina')" style="padding:10px 20px; background:none; border:none; border-bottom:3px solid transparent; color:var(--text-muted); font-weight:700; cursor:pointer; font-size:14px;">
@@ -1091,28 +1091,28 @@
             </section>
 
             <section id="aba-rolos" class="tab-content">
-                <div class="glass-panel" style="border-top:4px solid var(--text-accent);padding:24px;">
-                    <h2 style="color:var(--text-accent);"><i class="fas fa-scroll"></i> Estoque de Rolos</h2>
+                <div class="glass-panel" style="border-top:4px solid var(--border-color);padding:24px;">
+                    <h2><i class="fas fa-scroll"></i> Estoque de Rolos</h2>
                     <p class="text-muted" style="font-size:13px;">Controle de quantitativo agrupado por equipamento.</p>
                     <div class="table-responsive" style="margin-top:16px;"><table class="premium-table"><thead><tr><th>Modelo / Tipo</th><th>Conjunto</th><th>Família</th><th>Saldo</th><th>Ações</th></tr></thead><tbody id="rolos-table-body"></tbody></table></div>
                 </div>
             </section>
 
             <section id="aba-hidraulica" class="tab-content">
-                <div class="glass-panel" style="border-top:4px solid #f97316;padding:24px;">
-                    <h2 style="color:#f97316;"><i class="fas fa-oil-can"></i> Estoque Hidráulico</h2>
+                <div class="glass-panel" style="border-top:4px solid var(--border-color);padding:24px;">
+                    <h2><i class="fas fa-oil-can"></i> Estoque Hidráulico</h2>
                     <p class="text-muted" style="font-size:13px;">Porcas hidráulicas e cilindros, agrupados por MCC — separado entre o que está aplicado na máquina e o que está de reserva na oficina.</p>
                     <div class="table-responsive" style="margin-top:16px;"><table class="premium-table"><thead><tr><th>Item</th><th>Conjunto</th><th>Família</th><th><i class="fas fa-industry"></i> Aplicado na Máquina</th><th><i class="fas fa-warehouse"></i> Reserva (Oficina)</th><th>Total</th></tr></thead><tbody id="hidraulica-table-body"></tbody></table></div>
                 </div>
             </section>
 
             <section id="aba-almoxarifado" class="tab-content">
-                <div class="glass-panel" style="border-top:4px solid #a855f7;padding:24px;">
+                <div class="glass-panel" style="border-top:4px solid var(--border-color);padding:24px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;margin-bottom:16px;">
-                        <div><h2 style="color:#a855f7;"><i class="fas fa-pallet"></i> Almoxarifado Central</h2><p class="text-muted" style="font-size:13px;">Gestão de estoque geral por código de material.</p></div>
-                        <div style="display:flex;gap:10px;flex-wrap:wrap;"><div class="login-input-wrapper" style="position:relative;width:260px;max-width:100%;"><input type="text" id="busca-material" placeholder="Buscar código ou descrição..." onkeyup="window.renderMateriais()" style="height:40px;border-radius:6px;padding-left:40px;"><i class="fas fa-search login-input-icon" style="top:11px;font-size:14px;color:#a855f7;"></i></div><button class="btn-premium" style="border-color:#a855f7;color:#a855f7;background:rgba(168,85,247,0.12);" onclick="window.toggleFormMaterial()"><i class="fas fa-plus"></i> Cadastrar Entrada</button></div>
+                        <div><h2><i class="fas fa-pallet"></i> Almoxarifado Central</h2><p class="text-muted" style="font-size:13px;">Gestão de estoque geral por código de material.</p></div>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;"><div class="login-input-wrapper" style="position:relative;width:260px;max-width:100%;"><input type="text" id="busca-material" placeholder="Buscar código ou descrição..." onkeyup="window.renderMateriais()" style="height:40px;border-radius:6px;padding-left:40px;"><i class="fas fa-search login-input-icon" style="top:11px;font-size:14px;"></i></div><button class="btn-premium" onclick="window.toggleFormMaterial()"><i class="fas fa-plus"></i> Cadastrar Entrada</button></div>
                     </div>
-                    <div id="form-novo-material" class="cadastrar-box hidden" style="border-color:#a855f7;margin-top:16px;padding:20px;border-radius:var(--radius);background:rgba(0,0,0,0.2);border:1px dashed #a855f7;">
+                    <div id="form-novo-material" class="cadastrar-box hidden" style="margin-top:16px;padding:20px;border-radius:var(--radius);background:rgba(0,0,0,0.2);border:1px dashed var(--border-color);">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><h3 style="color:#a855f7;"><i class="fas fa-box-open"></i> Lançamento de Entrada</h3><button class="btn-xs-primary" onclick="window.toggleFormMaterial()" style="color:var(--text-muted);"><i class="fas fa-times"></i> Fechar</button></div>
                         <p class="text-muted" style="font-size:12px;margin-bottom:12px;"><strong>Nota:</strong> Se o código (SKU) já existir, a quantidade será somada ao saldo.</p>
                         <div class="form-grid-4"><div class="input-group"><label>Código (SKU)</label><input type="text" id="mat-codigo" placeholder="Ex: 1660669"></div><div class="input-group" style="grid-column:span 2;"><label>Descrição</label><input type="text" id="mat-descricao" placeholder="Descrição do material"></div><div class="input-group"><label>Quantidade</label><input type="number" id="mat-qtd" placeholder="Ex: 50" min="1"></div><div class="input-group" style="grid-column:span 4;display:flex;justify-content:flex-end;margin-top:8px;"><button class="btn-premium" style="background:#a855f7;color:#fff;border:none;padding:12px 25px;" onclick="window.salvarEntradaMaterial()"><i class="fas fa-save"></i> Processar Entrada</button></div></div>
@@ -1191,7 +1191,7 @@
                 <div class="glass-panel" style="padding:24px; margin-bottom:24px;">
                     <div class="flex-between" style="flex-wrap:wrap; gap:10px;">
                         <div>
-                            <h2 style="color:#f43f5e; margin:0;"><i class="fas fa-bell"></i> Central de Notificações</h2>
+                            <h2 style="margin:0;"><i class="fas fa-bell"></i> Central de Notificações</h2>
                             <p class="text-muted" style="font-size:13px; margin:6px 0 0;">
                                 Tudo que precisa de atenção agora: áreas críticas, e a atividade recente (ocorrências, OS e achados de
                                 Qualidade) — de todas as áreas. O que você ainda não abriu fica marcado; abrir marca como visto só
@@ -1921,10 +1921,10 @@
             </section>
 
             <section id="aba-painel-adm" class="tab-content">
-                <div class="glass-panel" style="border-top:4px solid #38bdf8; padding:24px; margin-bottom:20px;">
+                <div class="glass-panel" style="border-top:4px solid var(--border-color); padding:24px; margin-bottom:20px;">
                     <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
                         <div>
-                            <h2 style="color:#38bdf8; margin-bottom:4px;"><i class="fas fa-file-lines"></i> Painel — ADM</h2>
+                            <h2 style="margin-bottom:4px;"><i class="fas fa-file-lines"></i> Painel — ADM</h2>
                             <p class="text-muted" style="font-size:13px; margin:0;">Visão geral da equipe e atividades administrativas.</p>
                         </div>
                         <button class="btn-premium" style="padding:8px 14px; font-size:12.5px;" onclick="window.abrirChatAdmLista()"><i class="fas fa-comments"></i> Mensagens das Áreas</button>
@@ -1934,16 +1934,16 @@
             </section>
 
             <section id="aba-painel-almoxarifado" class="tab-content">
-                <div class="glass-panel" style="border-top:4px solid #22c55e; padding:24px; margin-bottom:20px;">
-                    <h2 style="color:#22c55e;"><i class="fas fa-boxes-stacked"></i> Painel — Almoxarifado</h2>
+                <div class="glass-panel" style="border-top:4px solid var(--border-color); padding:24px; margin-bottom:20px;">
+                    <h2><i class="fas fa-boxes-stacked"></i> Painel — Almoxarifado</h2>
                     <p class="text-muted" style="font-size:13px;">Visão geral da equipe, atividades e estoque do Almoxarifado.</p>
                 </div>
                 <div id="painel-almoxarifado-container"></div>
             </section>
 
             <section id="aba-painel-ponte-rolante" class="tab-content">
-                <div class="glass-panel" style="border-top:4px solid #3b82f6; padding:24px; margin-bottom:20px;">
-                    <h2 style="color:#3b82f6;"><i class="fas fa-crane"></i> Painel — Ponte Rolante</h2>
+                <div class="glass-panel" style="border-top:4px solid var(--border-color); padding:24px; margin-bottom:20px;">
+                    <h2><i class="fas fa-crane"></i> Painel — Ponte Rolante</h2>
                     <p class="text-muted" style="font-size:13px;">Visão geral da equipe e atividades da Ponte Rolante.</p>
                 </div>
                 <div id="painel-ponte-rolante-container"></div>
@@ -1954,8 +1954,8 @@
                  solicitar as pontes daqui, com prioridade, previsão de tempo de
                  espera, fila reordenável e chat com o técnico da ponte. -->
             <section id="aba-fila-ponte" class="tab-content">
-                <div class="glass-panel" style="border-top:4px solid #3b82f6; padding:24px; margin-bottom:20px;">
-                    <h2 style="color:#3b82f6;">🏗️ Fila da Ponte Rolante</h2>
+                <div class="glass-panel" style="border-top:4px solid var(--border-color); padding:24px; margin-bottom:20px;">
+                    <h2>🏗️ Fila da Ponte Rolante</h2>
                     <p class="text-muted" style="font-size:13px;">Solicite a Ponte 221 ou 146 — fila única, atendida pela ordem de prioridade.</p>
                 </div>
 
@@ -1973,7 +1973,7 @@
                 <div class="glass-panel" style="padding:24px; margin-bottom:20px;">
                     <div class="flex-between" style="margin-bottom:16px;">
                         <h3 style="color:var(--text-title); font-size:1rem;"><i class="fas fa-plus"></i> Solicitar a Ponte</h3>
-                        <button class="btn-xs-primary" style="color:var(--text-accent); background:rgba(59,130,246,0.1);" onclick="document.getElementById('fila-ponte-form-card').classList.toggle('hidden')">
+                        <button class="btn-xs-primary" style="color:var(--brand); background:var(--brand-bg);" onclick="document.getElementById('fila-ponte-form-card').classList.toggle('hidden')">
                             <i class="fas fa-plus"></i> Nova Solicitação
                         </button>
                     </div>
@@ -2068,8 +2068,8 @@
             </div>
 
             <section id="aba-painel-logistica" class="tab-content">
-                <div class="glass-panel" style="border-top:4px solid #a855f7; padding:24px; margin-bottom:20px;">
-                    <h2 style="color:#a855f7;"><i class="fas fa-truck"></i> Painel — Logística</h2>
+                <div class="glass-panel" style="border-top:4px solid var(--border-color); padding:24px; margin-bottom:20px;">
+                    <h2><i class="fas fa-truck"></i> Painel — Logística</h2>
                     <p class="text-muted" style="font-size:13px;">Visão geral da equipe e atividades da Logística.</p>
                 </div>
                 <div id="painel-logistica-container"></div>

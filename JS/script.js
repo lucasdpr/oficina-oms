@@ -4609,7 +4609,7 @@ window.renderPainelAreaAdministrativa = async function(chave) {
         <div class="glass-panel" style="padding:24px; margin-bottom:20px;">
             <div class="flex-between" style="margin-bottom:12px;">
                 <h3 style="color:var(--text-title); font-size:1rem;"><i class="fas fa-boxes-stacked"></i> Resumo do Estoque</h3>
-                <button class="btn-xs-primary" onclick="window.abrirAba(null,'aba-almoxarifado')" style="color:var(--text-accent); background:rgba(59,130,246,0.1);">
+                <button class="btn-xs-primary" onclick="window.abrirAba(null,'aba-almoxarifado')" style="color:var(--brand); background:var(--brand-bg);">
                     Ver Almoxarifado Completo <i class="fas fa-arrow-right"></i>
                 </button>
             </div>
@@ -4625,7 +4625,7 @@ window.renderPainelAreaAdministrativa = async function(chave) {
             <div class="glass-panel" style="padding:24px;">
                 <div class="flex-between" style="margin-bottom:16px;">
                     <h3 style="color:var(--text-title); font-size:1rem;"><i class="fas fa-list"></i> Atividades Recentes</h3>
-                    <button class="btn-xs-primary" onclick="window.abrirAreaOficina('${chave}')" style="color:var(--text-accent); background:rgba(59,130,246,0.1);">
+                    <button class="btn-xs-primary" onclick="window.abrirAreaOficina('${chave}')" style="color:var(--brand); background:var(--brand-bg);">
                         <i class="fas fa-plus"></i> Lançar Atividade
                     </button>
                 </div>
@@ -5339,7 +5339,7 @@ window.renderPainelSupervisor = async function() {
             <div class="sup-card" style="--sup-cor:#ef4444;">
                 <div class="sup-card-titulo">
                     <span><i class="fas fa-boxes-packing"></i> Materiais em Falta</span>
-                    <button class="btn-xs-primary" onclick="window.abrirAba(null,'aba-almoxarifado')" style="color:var(--text-accent); background:rgba(59,130,246,0.1);">Ver Almoxarifado <i class="fas fa-arrow-right"></i></button>
+                    <button class="btn-xs-primary" onclick="window.abrirAba(null,'aba-almoxarifado')" style="color:var(--brand); background:var(--brand-bg);">Ver Almoxarifado <i class="fas fa-arrow-right"></i></button>
                 </div>
                 ${painelSupBarraHtml('Zerados', materiaisZerados.length, Math.max(materiaisZerados.length, materiaisBaixo.length, 1), '#ef4444')}
                 ${painelSupBarraHtml(`Saldo baixo (≤${PAINEL_SUP_LIMITE_ESTOQUE_BAIXO})`, materiaisBaixo.length, Math.max(materiaisZerados.length, materiaisBaixo.length, 1), '#f59e0b')}
@@ -5708,7 +5708,7 @@ window.renderPainelSupervisor = async function() {
                 <div class="sup-card" style="--sup-cor:#ec4899;">
                     <div class="sup-card-titulo">
                         <span><i class="fas fa-comment-dots"></i> Mensagens Área ↔ ADM Não Lidas</span>
-                        <button class="btn-xs-primary" onclick="window.abrirAba(null,'aba-oficina')" style="color:var(--text-accent); background:rgba(59,130,246,0.1);">Ver <i class="fas fa-arrow-right"></i></button>
+                        <button class="btn-xs-primary" onclick="window.abrirAba(null,'aba-oficina')" style="color:var(--brand); background:var(--brand-bg);">Ver <i class="fas fa-arrow-right"></i></button>
                     </div>
                     ${mensagensNaoLidas.length
                         ? mensagensNaoLidas.slice(0, 6).map(m => `
