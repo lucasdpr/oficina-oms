@@ -41,15 +41,15 @@ function renderRankingVeios() {
     const maiorMedia = Math.max(...linhas.map(l => l.media), 1);
 
     container.innerHTML = linhas.map(l => {
-        const corBarra = l.media >= 80 ? '#ef4444' : (l.media >= 50 ? '#f59e0b' : '#22c55e');
+        const corBarra = l.media >= 80 ? 'var(--danger)' : (l.media >= 50 ? 'var(--warning)' : 'var(--success)');
         const larguraPct = Math.min(100, (l.media / maiorMedia) * 100);
         return `
             <div style="margin-bottom:14px;">
-                <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px; font-size:13px; margin-bottom:4px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; font-size:13px; margin-bottom:4px;">
                     <span style="font-weight:600; color:var(--text-heading);">${l.chave}</span>
-                    <span style="color:${corBarra}; font-weight:700;">
-                        ${l.media.toFixed(1)}% méd.
-                        ${l.criticos > 0 ? ` · ${l.criticos} crítico${l.criticos > 1 ? 's' : ''}` : ''}
+                    <span style="display:flex; align-items:center; gap:6px;">
+                        <span style="color:${corBarra}; font-weight:700;">${l.media.toFixed(1)}% méd.</span>
+                        ${l.criticos > 0 ? `<span style="font-size:11px; font-weight:700; color:var(--danger); background:var(--danger-bg); padding:2px 8px; border-radius:12px;">${l.criticos} crítico${l.criticos > 1 ? 's' : ''}</span>` : ''}
                     </span>
                 </div>
                 <div style="background:var(--bg-th); border-radius:6px; height:8px; overflow:hidden;">
