@@ -429,6 +429,32 @@
                 animation: none !important;
             }
         }
+
+        @media (max-width: 768px) {
+            /* 🔧 Um toast fixo no RODAPÉ da viewport sempre acaba cobrindo
+               o que estiver na dobra inferior visível no momento (era o
+               3º KPI, "Reserva Pronta", no load inicial) — dar padding no
+               fim da página não ajuda, porque não move o que já está
+               visível na tela sem rolar. Movido pro TOPO, logo abaixo do
+               cabeçalho fixo: nenhum card do app é desenhado colado ali,
+               então esse espaço fica sempre livre nas telas internas.
+               Só a tela de login usa esse mesmo topo pro botão de
+               visitante — por isso a regra abaixo desativa o reposicionamento
+               enquanto #tela-login-home ainda está visível (display!=none). */
+            /* !important necessário: o elemento tem bottom:16px no atributo
+               style inline (HTML mais abaixo), que sempre vence regra de
+               stylesheet, mesmo dentro de media query — sem isso, top E
+               bottom ficavam ativos ao mesmo tempo e o box esticava de
+               uma borda a outra da tela. */
+            #aviso-nova-versao {
+                top: max(76px, calc(env(safe-area-inset-top) + 66px)) !important;
+                bottom: auto !important;
+            }
+            body:has(#tela-login-home:not([style*="display: none"])) #aviso-nova-versao {
+                top: auto !important;
+                bottom: 16px !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -791,19 +817,21 @@
             <h3 class="painel-donut-titulo">
                 <i class="fas fa-chart-line" style="color:var(--info);"></i> Tonelagem por Dia (últimos 7 dias)
             </h3>
-            <div id="painel-linha-tonelagem" style="flex:1; display:flex; flex-direction:column; min-height:0;"></div>
+            <div id="painel-linha-tonelagem" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+                <div class="text-muted" style="text-align:center; margin:auto; padding:20px 0;">Carregando...</div>
+            </div>
         </div>
         <div class="glass-panel painel-donut-card">
             <h3 class="painel-donut-titulo">
                 <i class="fas fa-chart-pie" style="color:var(--danger);"></i> Risco dos Ativos
             </h3>
-            <div id="painel-donut-risco"></div>
+            <div id="painel-donut-risco"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
         </div>
         <div class="glass-panel painel-donut-card">
             <h3 class="painel-donut-titulo">
                 <i class="fas fa-chart-pie" style="color:var(--info);"></i> Status das Atividades
             </h3>
-            <div id="painel-donut-status"></div>
+            <div id="painel-donut-status"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
         </div>
     </div>
 
