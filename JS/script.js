@@ -4322,8 +4322,16 @@ function renderizarGridCentralAreas() {
         return diff !== 0 ? diff : b.status.emAberto - a.status.emAberto;
     });
 
+    // 🆕 Peso visual real pro card crítico (não só a cor da faixa de
+    // topo): elevação/sombra mais forte + fundo levemente saturado na
+    // cor de severidade. De propósito SEM reduzir opacidade dos card
+    // normais — passaria a impressão de "desabilitado/com problema"
+    // pra quem escaneia rápido, quando o normal é exatamente "tudo
+    // certo por aqui". Só Crítico ganha o destaque; Restrição/Atenção
+    // continuam só com a faixa de cor (já é hierarquia suficiente pra
+    // eles, o crítico é o que precisa saltar aos olhos).
     const cardsOficina = visiveis.map(({ area: a, status: s }) => `
-        <div class="oficina-area-card" style="--area-severidade-cor:${s.cor};" onclick="window.abrirAreaOficina('${a.chave}')">
+        <div class="oficina-area-card ${s.label === 'Crítico' ? 'oficina-area-card-critico' : ''}" style="--area-severidade-cor:${s.cor};" onclick="window.abrirAreaOficina('${a.chave}')">
             <div class="oficina-area-topo">
                 <div class="oficina-area-icone"><i class="fas ${a.icone}"></i></div>
                 <span class="oficina-area-status-badge" style="color:${s.cor};">${s.emoji} ${s.label}</span>
