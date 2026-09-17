@@ -585,6 +585,23 @@ h1, h2, h3, h4, h5, h6 {
   transform: translateY(0);
 }
 
+/* 🆕 "Sair" (antes "Encerrar Turno") — mesmo padrão semântico já usado
+   em .btn-danger pra qualquer ação de saída/encerramento: fundo
+   tingido de vermelho + texto vermelho em repouso, vermelho sólido no
+   hover. Precisa vir DEPOIS de .btn-auth (mesma especificidade —
+   classe única — quem carrega por último ganha o empate), senão o
+   background neutro de .btn-auth ganhava. Antes era só o cinza neutro
+   de qualquer botão do rodapé — sem destaque, meio perdido ali. */
+.btn-auth-sair {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.btn-auth-sair:hover {
+  background: var(--danger);
+  color: var(--text-on-primary);
+  box-shadow: var(--btn-glow-shape) rgba(239, 68, 68, 0.35);
+}
+
 /* ==========================================
    LAYOUT PRINCIPAL
 ========================================== */
@@ -4066,9 +4083,19 @@ h1, h2, h3, h4, h5, h6 {
     flex-direction: column;
     gap: 8px;
     cursor: pointer;
-    transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
+    transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base), background var(--transition-base);
     min-height: 44px;
     touch-action: manipulation;
+}
+
+/* 🆕 Peso visual real pro card Crítico (não só a faixa de cor no topo):
+   elevação já ativa em repouso (não só no hover, como os demais cards)
+   + fundo levemente tingido de vermelho. De propósito não mexe em
+   Restrição/Atenção/Normal — só o Crítico precisa saltar aos olhos
+   antes de ler o texto do badge. */
+.oficina-area-card-critico {
+    background: color-mix(in srgb, var(--danger) 5%, var(--bg-card));
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4), 0 0 0 1px color-mix(in srgb, var(--danger) 25%, transparent);
 }
 
 /* 🔧 REDESIGN: era uma cor fixa por área (--area-color, 16 áreas = 16
@@ -4108,6 +4135,14 @@ h1, h2, h3, h4, h5, h6 {
     transform: translateY(-4px);
     box-shadow: var(--shadow-hover);
     border-color: var(--area-color, var(--brand));
+}
+
+/* Precisa vir DEPOIS de .oficina-area-card:hover (mesma especificidade,
+   0,2,0 — quem carrega por último ganha o empate) pra manter a sombra
+   mais forte do crítico mesmo com o mouse em cima, em vez do hover
+   genérico apagar o destaque. */
+.oficina-area-card-critico:hover {
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45), 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent);
 }
 
 .oficina-area-card:active {
@@ -4152,9 +4187,16 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .oficina-area-acessar {
-    /* 🔧 REDESIGN: antes herdava a cor fixa da área (inline); agora é
-       sempre dourado, como qualquer link/ação de destaque do app. */
-    color: var(--brand);
+    /* 🔧 CORREÇÃO ("cara de IA" — dourado repetido em todo item de
+       lista ao mesmo tempo): antes era sempre var(--brand), então TODO
+       card da grade tinha o link "Acessar Área" sólido amarelo ao
+       mesmo tempo — quebra a mesma regra já aplicada em .btn-outline-neutral
+       e .nav-link-dev (dourado só em destaque único/ativo, nunca
+       repetido por item de uma lista inteira). Neutro em repouso;
+       dourado só quando o card em questão está em hover/foco — mesmo
+       princípio, sem virar um botão com borda (o formato de link de
+       texto compacto no rodapé do card continua). */
+    color: var(--text-muted);
     margin-top: 4px;
     background: none;
     border: none;
@@ -4163,6 +4205,11 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 700;
     text-align: left;
     cursor: pointer;
+    transition: color var(--transition-fast);
+}
+.oficina-area-card:hover .oficina-area-acessar,
+.oficina-area-acessar:focus-visible {
+    color: var(--brand);
 }
 .oficina-area-acessar i {
     margin-left: 4px;
