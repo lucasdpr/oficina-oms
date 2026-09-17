@@ -402,9 +402,19 @@
            "isolation: isolate" sozinho não resolve isso — cria um
            contexto de empilhamento (z-index), não um bloco de
            contenção pra elemento posicionado; só "position" faz isso. */
+        /* 🐛 CORREÇÃO (o "efeito de luz" que aparece vazando de vários
+           botões, ex: "ATUALIZAR"): não é o box-shadow (isso já foi
+           corrigido em rodadas anteriores) — é ESTE brilho diagonal
+           (::before, skewX) varrendo o botão no hover. position:relative
+           sozinho só define a partir de onde o ::before absolute conta
+           sua posição — não corta visualmente o que passa da borda. Sem
+           overflow:hidden aqui, a faixa de luz (35% de largura, torta em
+           -20°) ultrapassava o botão e "vazava" pro fundo escuro ao
+           redor, principalmente em botões estreitos. */
         .btn-premium {
             position: relative;
             isolation: isolate;
+            overflow: hidden;
         }
         .btn-premium::before {
             content: '';
@@ -417,7 +427,9 @@
             z-index: -1;
             pointer-events: none;
         }
-        .btn-premium:hover::before { left: 130%; }
+        @media (hover: hover) and (pointer: fine) {
+            .btn-premium:hover::before { left: 130%; }
+        }
 
         /* ===== transição mais macia na troca de aba dos folhões e no menu ===== */
         .folhao-tab {

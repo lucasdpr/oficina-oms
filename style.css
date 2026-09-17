@@ -3663,11 +3663,13 @@ h1, h2, h3, h4, h5, h6 {
     transform: skewX(-20deg);
     transition: left 0.55s ease;
 }
+@media (hover: hover) and (pointer: fine) {
 .login-btn-submit:hover::before { left: 130%; }
 .login-btn-submit:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(245, 158, 11, 0.5);
     background: linear-gradient(135deg, #fbbf24, #f59e0b);
+}
 }
 @media (prefers-reduced-motion: reduce) { .login-btn-submit::before { display: none; } }
 
