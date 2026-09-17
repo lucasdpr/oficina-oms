@@ -4056,7 +4056,21 @@ function atualizarPainelCompleto() {
     executarSeguro(() => atualizarNovosKPIs(), 'atualizarNovosKPIs');
     executarSeguro(() => atualizarKPIsAvancados(), 'atualizarKPIsAvancados');
     executarSeguro(() => renderizarTopCriticos(), 'renderizarTopCriticos');
-    executarSeguro(() => renderizarGraficosPainelGeral(), 'renderizarGraficosPainelGeral');
+    // 🔧 CORREÇÃO ("várias coisas bugando" — vários fetches duplicados,
+    // console cheio de erro de rede, cards de gráfico piscando):
+    // JS/painelGeralExtra.js JÁ preenche estes mesmos cards (donuts,
+    // ranking de veios, atrasadas, produção lançada, tonelagem) desde
+    // antes desta sessão — eu não tinha visto esse arquivo quando
+    // "corrigi" esses cards achando que estavam mortos, e criei uma
+    // SEGUNDA implementação aqui rodando em paralelo com a primeira,
+    // ambas escrevendo nos mesmos elementos e disparando os mesmos
+    // fetches em dobro (piorando exatamente o problema de cold-start
+    // do Render que já tínhamos identificado). Chamada removida — quem
+    // cuida desses cards é window.renderPainelGeralExtra() (chamado em
+    // app.html). As funções construirHtmlDonutRisco/Status/RankingVeios
+    // e buscarDadosApontamentos7dias/construirHtmlTonelagemSvg/
+    // construirHtmlProducaoLancada continuam existindo pois o Painel do
+    // Supervisor (mais abaixo) as reaproveita pros cards dele.
 }
 
 // 🆕 Peças reutilizáveis dos "gráficos padrão" do sistema (donut de
@@ -4137,71 +4151,6 @@ function construirHtmlRankingVeios(ativos) {
             </div>`;
         }).join('')
         : `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhum equipamento instalado no veio.</div>`;
-}
-
-// 🆕 Preenche os 6 blocos do Painel Geral que ficavam presos em
-// "Carregando..." pra sempre (referência mandada pelo usuário): a
-// linha de gráficos (Tonelagem/Risco dos Ativos/Status das
-// Atividades) e a linha de Risco por Veio/Atividades Atrasadas/
-// Produção Lançada. O HTML e CSS desses cards já existiam — só
-// nunca tinha sido escrito o JS que os alimenta.
-async function renderizarGraficosPainelGeral() {
-    const elTonelagem = document.getElementById('painel-linha-tonelagem');
-    const elDonutRisco = document.getElementById('painel-donut-risco');
-    const elDonutStatus = document.getElementById('painel-donut-status');
-    const elRankingVeios = document.getElementById('painel-ranking-veios');
-    const elAtrasadasGlobais = document.getElementById('painel-atrasadas-globais');
-    const elProducaoLancada = document.getElementById('painel-producao-lancada');
-    if (!elDonutRisco && !elDonutStatus && !elRankingVeios) return; // aba nem existe (HTML antigo em cache)
-
-    const ativos = Array.isArray(window.BANCO_ATIVOS) ? window.BANCO_ATIVOS : [];
-    const atividades = Array.isArray(window.OFICINA_ATIVIDADES_CACHE) ? window.OFICINA_ATIVIDADES_CACHE : [];
-
-    if (elDonutRisco) elDonutRisco.innerHTML = construirHtmlDonutRisco(ativos);
-    if (elDonutStatus) elDonutStatus.innerHTML = construirHtmlDonutStatus(atividades);
-    if (elRankingVeios) elRankingVeios.innerHTML = construirHtmlRankingVeios(ativos);
-
-    // ---------------------------------------------------------
-    // ATIVIDADES ATRASADAS — ranking por área, igual ao Painel do Supervisor
-    // ---------------------------------------------------------
-    if (elAtrasadasGlobais) {
-        const atrasadas = atividades.filter(x =>
-            !atividadeAindaNaoComecou(x) && x.status !== 'Concluído' && x.status !== 'Recusado' && atividadeEstaAtrasada(x)
-        );
-        const porArea = {};
-        atrasadas.forEach(x => {
-            const area = x.area || x.solicitante_area || '—';
-            porArea[area] = (porArea[area] || 0) + 1;
-        });
-        const ranking = Object.entries(porArea).sort((a, b) => b[1] - a[1]).slice(0, 6);
-        const max = Math.max(1, ...ranking.map(([, v]) => v));
-        elAtrasadasGlobais.innerHTML = ranking.length
-            ? ranking.map(([area, v]) => `
-                <div style="margin-bottom:12px;">
-                    <div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:4px;">
-                        <span style="color:var(--text-body); text-transform:capitalize;">${area}</span>
-                        <span style="color:var(--danger); font-weight:700;">${v}</span>
-                    </div>
-                    <div style="height:6px; background:var(--bg-input); border-radius:4px; overflow:hidden;">
-                        <div style="height:100%; width:${(v / max * 100).toFixed(1)}%; background:var(--danger); border-radius:4px;"></div>
-                    </div>
-                </div>`).join('')
-            : `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhuma atividade atrasada agora 👍</div>`;
-    }
-
-    // ---------------------------------------------------------
-    // TONELAGEM POR DIA (7 dias) + PRODUÇÃO LANÇADA
-    // ---------------------------------------------------------
-    if (elTonelagem || elProducaoLancada) {
-        try {
-            const dados = await buscarDadosApontamentos7dias();
-            if (elTonelagem) elTonelagem.innerHTML = construirHtmlTonelagemSvg(dados);
-            if (elProducaoLancada) elProducaoLancada.innerHTML = construirHtmlProducaoLancada(dados);
-        } catch (e) {
-            if (elTonelagem) elTonelagem.innerHTML = `<div class="text-muted" style="text-align:center; margin:auto;">Não foi possível carregar.</div>`;
-            if (elProducaoLancada) elProducaoLancada.innerHTML = `<div class="text-muted" style="text-align:center;">Não foi possível carregar.</div>`;
-        }
-    }
 }
 
 // 🆕 Busca + agrega os apontamentos reais (geral + moldes) dos últimos
