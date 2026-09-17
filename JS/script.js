@@ -1288,7 +1288,7 @@ function atualizarInterfaceUsuario() {
         return;
     }
 
-    if (btnLogout) btnLogout.innerText = "Encerrar Turno";
+    if (btnLogout) btnLogout.innerText = "Sair";
 
     // Extrai o cargo entre colchetes do nome cadastrado, ex: "Filipe [Líder]"
     const match = (OPERADOR_LOGADO.nome || "").match(/\[(.+?)\]/);
