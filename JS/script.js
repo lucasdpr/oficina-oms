@@ -6617,7 +6617,36 @@ window.chatsCarregarListaConversas = async function() {
         const apiBase = await resolverApiBase();
         const resp = await fetch(`${apiBase}/api/mensagens_area/resumo`, { cache: 'no-store' });
         const linhas = resp.ok ? await resp.json() : [];
-        cont.innerHTML = linhas.length ? linhas.map(l => {
+        const porArea = new Map(linhas.map(l => [l.area, l]));
+
+        // 🔧 CORREÇÃO ("chat só mostra Caldeiraria, preciso de todas as
+        // áreas ali pra mandar mensagem"): /api/mensagens_area/resumo só
+        // devolve áreas que JÁ têm pelo menos 1 mensagem trocada — uma
+        // área que o ADM nunca escreveu simplesmente não existia na
+        // lista, mesmo que a Central de Áreas mostrasse ela normalmente.
+        // Agora a lista parte de TODAS as áreas cadastradas
+        // (AREAS_OFICINA), usando o resumo só pra completar quem já tem
+        // histórico (última mensagem/não lidas); quem não tem, aparece
+        // do mesmo jeito, só sem prévia — clicar já abre a conversa
+        // vazia, pronta pra mandar a primeira mensagem.
+        const todasAreas = (typeof AREAS_OFICINA !== 'undefined' ? AREAS_OFICINA : [])
+            .filter(a => a.chave !== 'adm') // ADM é quem está vendo essa lista — não faz sentido conversar com ela mesma.
+            .map(a => ({
+            area: a.chave,
+            nome_area: a.nome,
+            ultima_em: porArea.get(a.chave)?.ultima_em || null,
+            ultima_mensagem: porArea.get(a.chave)?.ultima_mensagem || null,
+            nao_lidas: porArea.get(a.chave)?.nao_lidas || 0,
+        }));
+        // Quem tem mensagem mais recente primeiro; empate por ordem alfabética.
+        todasAreas.sort((a, b) => {
+            if (a.ultima_em && b.ultima_em) return b.ultima_em.localeCompare(a.ultima_em);
+            if (a.ultima_em) return -1;
+            if (b.ultima_em) return 1;
+            return (a.nome_area || a.area).localeCompare(b.nome_area || b.area);
+        });
+
+        cont.innerHTML = todasAreas.length ? todasAreas.map(l => {
             const dataFmt = l.ultima_em ? new Date(l.ultima_em.replace(' ', 'T')).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
             const ativa = CHAT_AREA_ADM_CTX.area === l.area;
             return `
@@ -6628,12 +6657,12 @@ window.chatsCarregarListaConversas = async function() {
                             <strong>${l.nome_area || l.area}</strong>
                             <span class="chat-conversa-hora">${dataFmt}</span>
                         </div>
-                        ${l.ultima_mensagem ? `<div class="chat-conversa-preview">${l.ultima_mensagem.slice(0, 40)}</div>` : ''}
+                        ${l.ultima_mensagem ? `<div class="chat-conversa-preview">${l.ultima_mensagem.slice(0, 40)}</div>` : '<div class="chat-conversa-preview text-muted">Nenhuma mensagem ainda</div>'}
                     </div>
                     ${l.nao_lidas > 0 ? `<span class="chat-conversa-badge">${l.nao_lidas > 9 ? '9+' : l.nao_lidas}</span>` : ''}
                 </div>
             `;
-        }).join('') : '<div class="chat-vazio">Nenhuma conversa ainda.</div>';
+        }).join('') : '<div class="chat-vazio">Nenhuma área cadastrada ainda.</div>';
     } catch (e) {
         cont.innerHTML = '<div class="chat-vazio">Não consegui carregar as conversas.</div>';
     }

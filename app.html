@@ -1618,6 +1618,16 @@
                             <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-oficina')"><i class="fas fa-industry"></i><span>Central de Áreas</span></button>
                             <button class="tecnico-atalho-btn" onclick="window.abrirCriticos()"><i class="fas fa-chart-column"></i><span>Relatórios</span></button>
                             <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-reservas')"><i class="fas fa-boxes"></i><span>Estoque</span></button>
+                            <!-- 🆕 Pedido do usuário: "onde tá o negócio de lançar
+                                 atividade pra todo mundo, e lançar comunicado pra
+                                 todo mundo?" — já existiam (abrirModalAtividadeMassa/
+                                 abrirModalCriarAviso), só estavam enterrados dentro
+                                 da Central de Áreas / painel administrativo, difíceis
+                                 de achar. Reaproveita as mesmas funções/modais, só
+                                 dá um atalho visível daqui. Ambas já se fecham
+                                 sozinhas se quem clicar não for ADM. -->
+                            <button class="tecnico-atalho-btn" onclick="window.abrirModalAtividadeMassa()"><i class="fas fa-layer-group"></i><span>Atividade em Massa</span></button>
+                            <button class="tecnico-atalho-btn" onclick="window.abrirModalCriarAviso()"><i class="fas fa-bullhorn"></i><span>Novo Comunicado</span></button>
                         </div>
                     </div>
                     <div class="glass-panel painel-ajuda-card">
