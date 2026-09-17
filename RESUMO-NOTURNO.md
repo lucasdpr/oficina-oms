@@ -67,7 +67,7 @@ nada, mas não tenho a confirmação visual completa que o critério de aceite p
 
 ## ❌ Não iniciado / bloqueado
 
-**Tarefa 0 (CRÍTICA) — Menu mobile não troca de aba**
+**Tarefa 0 (CRÍTICA) — Menu mobile não troca de aba — testado por simulação, aguardando confirmação em dispositivo real**
 🔶 **Não consegui reproduzir o bug.** Testei com Playwright em viewport
 mobile (390×844), com eventos de toque reais (`tap()`, não só `click()`),
 em 5 itens diferentes do menu (`Central de Áreas`, `Fila da Ponte Rolante`,
@@ -78,10 +78,14 @@ elemento de backdrop no HTML, só uma classe `.sidebar-backdrop` órfã no CSS
 que não é usada — não é a causa, já que não há elemento pra ela estilizar).
 **Isso NÃO significa que o bug não existe** — meu ambiente de teste é
 headless/simulado, sem um dispositivo real (iOS Safari, Android Chrome), que
-é onde bugs de touch-action/scroll geralmente aparecem. Preciso que alguém
-reproduza num celular real e descreva o passo a passo exato (item específico,
-depois de rolar o menu ou não, primeiro toque ou toque duplo) pra eu conseguir
-investigar mais fundo. Não tomei nenhuma ação de código aqui porque não tinha
+é onde bugs de touch-action/scroll geralmente aparecem. **Status real: testado
+por simulação (Playwright, toque sintético), não testado em hardware —
+combinado com o usuário que ele confirma num celular de verdade antes de
+considerar essa tarefa fechada.** Não é "concluído", é "não reproduzido até
+agora, aguardando teste real". Preciso que alguém reproduza num celular real
+e descreva o passo a passo exato (item específico, depois de rolar o menu ou
+não, primeiro toque ou toque duplo) pra eu conseguir investigar mais fundo se
+o problema persistir. Não tomei nenhuma ação de código aqui porque não tinha
 uma causa confirmada pra corrigir — só "consertar" às cegas.
 
 **Tarefa 8 — Melhorias em "Risco por Veio" e "Atividades Atrasadas"**
