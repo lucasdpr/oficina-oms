@@ -6495,6 +6495,25 @@ textarea,
     align-items: center;
     justify-content: center;
 }
+.chat-atividade-preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 16px 0;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(251, 191, 36, 0.12);
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    color: #fbbf24;
+    font-size: 12.5px;
+}
+.chat-atividade-preview span {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 .chat-thread-anexo {
     flex-shrink: 0;
     width: 38px;

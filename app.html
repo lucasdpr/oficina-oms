@@ -71,7 +71,7 @@
     <meta name="apple-mobile-web-app-title" content="OMS CSN">
     <!-- ========================================================================= -->
 
-    <link rel="stylesheet" href="style.css?v=12" />
+    <link rel="stylesheet" href="style.css?v=13" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="icon" href="JS/assets/icon-192.png?v=4">
 
@@ -2236,21 +2236,12 @@
          atividade específica (funciona tanto aberto do quadro da área
          quanto da lista de Atividade Extra no Checklist de Execução —
          os dois lados usam o mesmo modal/thread). -->
-    <div id="modal-conversa-atividade" class="modal-overlay hidden" style="z-index:10001;">
-        <div class="modal-content" style="max-width:560px; max-height:85vh; display:flex; flex-direction:column; text-align:left;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
-                <h2 style="color:var(--text-heading); margin:0;"><i class="fas fa-comments"></i> Conversa da Atividade</h2>
-                <button class="btn-close-emergency" onclick="window.fecharConversaAtividade()"><i class="fas fa-times"></i></button>
-            </div>
-            <div id="conversa-atividade-contexto" style="font-size:12px; color:var(--text-muted); margin:-6px 0 12px 0;"></div>
-            <div id="conversa-atividade-lista" style="flex:1; overflow-y:auto; min-height:120px; max-height:50vh; padding:6px; border:1px solid var(--border-color); border-radius:8px; margin-bottom:12px; background:var(--bg-td);">
-            </div>
-            <div style="display:flex; gap:8px;">
-                <input id="conversa-atividade-texto" class="premium-input" style="flex:1;" placeholder="Escreva uma mensagem..." onkeydown="if(event.key==='Enter'){window.enviarMensagemConversaAtividade();}">
-                <button class="btn-premium btn-success" onclick="window.enviarMensagemConversaAtividade()"><i class="fas fa-paper-plane"></i></button>
-            </div>
-        </div>
-    </div>
+    <!-- 🗑️ Removido o modal "Conversa da Atividade" — pedido do usuário:
+         "parece que tem 2 chats" (essa telinha + o canal Entre Técnicos
+         do chat da área, que já recebia uma cópia espelhada da mesma
+         mensagem). Agora existe só 1 chat: clicar em "Conversa" numa
+         atividade (window.abrirConversaAtividade, script.js) abre
+         direto a aba Chats, no canal Entre Técnicos da área certa. -->
 
     <!-- 🆕 Modal "Criar Aviso" — ADM cria um comunicado (ver
          window.abrirModalCriarAviso/salvarNovoAviso em script.js). -->
@@ -2335,6 +2326,17 @@
                         <div id="chat-thread-foto-preview" class="chat-foto-preview hidden">
                             <img id="chat-thread-foto-preview-img" src="" alt="Prévia da foto">
                             <button type="button" class="chat-foto-preview-remover" onclick="window.chatsCancelarFoto()" title="Remover foto"><i class="fas fa-xmark"></i></button>
+                        </div>
+                        <!-- 🆕 "Respondendo: ..." — pedido do usuário: unificar o
+                             chat da atividade com o Entre Técnicos (antes eram
+                             2 chats separados pro mesmo assunto). Clicar em
+                             "Conversa" numa atividade (window.abrirConversaAtividade,
+                             script.js) abre esse canal já com essa referência
+                             pendurada; a próxima mensagem enviada sai marcada. -->
+                        <div id="chat-thread-atividade-preview" class="chat-atividade-preview hidden">
+                            <i class="fas fa-link"></i>
+                            <span id="chat-thread-atividade-preview-texto">Respondendo: —</span>
+                            <button type="button" class="chat-foto-preview-remover" onclick="window.chatsCancelarRespostaAtividade()" title="Cancelar resposta"><i class="fas fa-xmark"></i></button>
                         </div>
                         <div class="chat-thread-input-row">
                             <input type="file" id="chat-thread-foto-galeria" accept="image/*" class="hidden" onchange="window.chatsProcessarFoto(this.files[0])">
@@ -3309,7 +3311,7 @@
     <!-- SCRIPTS (consolidados)                   -->
     <!-- ========================================= -->
     <script type="module">
-        import './JS/script.js?v=34';
+        import './JS/script.js?v=36';
         import './JS/Oficina/procedimentosOficina.js?v=1';
         import './JS/ui.js?v=13';
         import './JS/painelGeralExtra.js?v=1';

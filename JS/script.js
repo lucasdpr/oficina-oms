@@ -1424,8 +1424,14 @@ function atualizarInterfaceUsuario() {
     const match = (OPERADOR_LOGADO.nome || "").match(/\[(.+?)\]/);
     const cargo = match ? match[1] : "Operador";
     const nomeLimpo = (OPERADOR_LOGADO.nome || "").replace(/\s*\[.+?\]/, "");
+    // 🐛 CORREÇÃO: nome completo ("Wesley Oliveira De So...") estourava a
+    // largura do card da sidebar e cortava no meio de uma palavra — feio
+    // e ilegível. Mostra só primeiro e último nome ali (nome completo
+    // continua disponível em qualquer outro lugar que precise dele).
+    const partesNome = nomeLimpo.trim().split(/\s+/).filter(Boolean);
+    const nomeCurto = partesNome.length > 1 ? `${partesNome[0]} ${partesNome[partesNome.length - 1]}` : nomeLimpo;
 
-    if (nomeEl) nomeEl.innerText = nomeLimpo || "Não identificado";
+    if (nomeEl) nomeEl.innerText = nomeCurto || "Não identificado";
     if (saudacaoEl) saudacaoEl.innerText = (nomeLimpo || "Não identificado").split(" ")[0];
     if (matriculaEl) {
         matriculaEl.innerText = `Matrícula: ${OPERADOR_LOGADO.matricula || "--"}`;
@@ -6884,6 +6890,7 @@ window.chatsSelecionarConversa = async function(area, deAdm) {
     // evita ficar preso na aba "Entre Técnicos" de uma área ao abrir
     // outra sem perceber.
     CHAT_AREA_ADM_CTX = { area, deAdm: !!deAdm, canal: 'supervisao' };
+    window.chatsCancelarRespostaAtividade();
     const areaInfo = AREAS_OFICINA.find(a => a.chave === area);
     const tituloEl = document.getElementById('chat-thread-titulo');
     if (tituloEl) tituloEl.textContent = deAdm ? (areaInfo ? areaInfo.nome : area) : 'ADM';
@@ -6938,6 +6945,7 @@ window.chatsVoltarParaLista = function() {
 window.chatsTrocarCanal = function(canal) {
     if (!CHAT_AREA_ADM_CTX.area) return;
     CHAT_AREA_ADM_CTX.canal = canal;
+    window.chatsCancelarRespostaAtividade();
     document.querySelectorAll('#chat-thread-canais .chat-thread-canal-btn').forEach(btn => {
         btn.classList.toggle('active', btn.textContent.trim().includes(canal === 'tecnicos' ? 'Técnicos' : 'Supervisão'));
     });
@@ -6993,6 +7001,21 @@ window.chatsCarregarMensagens = async function() {
 // padrão de FOTO_INTERVENCAO_BASE64/OFICINA_FOTO_BASE64 já usado).
 let CHAT_FOTO_PENDENTE_BASE64 = null;
 
+// 🆕 Referência de atividade pendente de envio — pedido do usuário:
+// "parece que tem 2 chats" (o modal "Conversa da Atividade" + o
+// espelho no canal Entre Técnicos eram, na prática, duas conversas
+// diferentes pro mesmo assunto). Agora existe só 1 chat: clicar em
+// "Conversa" numa atividade (window.abrirConversaAtividade) abre
+// direto o canal Entre Técnicos da área certa, com essa referência
+// pendurada — a próxima mensagem enviada já sai marcada "Respondendo:
+// ...", sem precisar de tabela/endpoint separado nem modal.
+let CHAT_ATIVIDADE_PENDENTE_REFERENCIA = null;
+
+window.chatsCancelarRespostaAtividade = function() {
+    CHAT_ATIVIDADE_PENDENTE_REFERENCIA = null;
+    document.getElementById('chat-thread-atividade-preview')?.classList.add('hidden');
+};
+
 window.chatsProcessarFoto = async function(arquivo) {
     if (!arquivo) return;
     try {
@@ -7047,12 +7070,14 @@ window.chatsEnviarMensagem = async function() {
                 remetente_matricula: matricula,
                 mensagem: texto,
                 foto_base64: foto,
-                canal: canal
+                canal: canal,
+                atividade_referencia: CHAT_ATIVIDADE_PENDENTE_REFERENCIA || null
             })
         });
         if (!resp.ok) throw new Error('Falha ao enviar');
         input.value = '';
         window.chatsCancelarFoto();
+        window.chatsCancelarRespostaAtividade();
         await window.chatsCarregarMensagens();
         if (CHAT_AREA_ADM_CTX.deAdm) await window.chatsCarregarListaConversas();
     } catch (e) {
@@ -8294,148 +8319,45 @@ window.excluirAtividadeOficina = async function(id) {
 };
 
 // --------------------------------------------------------------
-// 🆕 CONVERSA DA ATIVIDADE — mensagens de mão dupla numa atividade
-// específica. Mesmo modal/thread é usado tanto aqui (quadro da área)
-// quanto na lista de Atividade Extra do Checklist de Execução (ver
-// checklist-execucao.js), então essas funções ficam em window.* pra
-// os dois lados chamarem.
+// 🆕 "Conversa" de uma atividade — pedido do usuário: existiam DOIS
+// chats pro mesmo assunto (o modal "Conversa da Atividade", com sua
+// própria tabela/endpoint, e o espelho dessa mesma mensagem no canal
+// "Entre Técnicos" do chat da área). Confuso e redundante. Agora só
+// existe 1 chat: clicar em "Conversa" numa atividade abre direto a
+// aba Chats, no canal Entre Técnicos da área certa, com a referência
+// da atividade pendurada — a próxima mensagem já sai marcada
+// "Respondendo: equipamento — descrição", sem modal e sem endpoint
+// separado (window.chatsEnviarMensagem manda tudo pro mesmo lugar).
 // --------------------------------------------------------------
-let CONVERSA_ATIVIDADE_ID_ATUAL = null;
-
 window.abrirConversaAtividade = async function(atividadeId) {
-    CONVERSA_ATIVIDADE_ID_ATUAL = atividadeId;
-    const modal = document.getElementById('modal-conversa-atividade');
-    if (!modal) return;
-    document.getElementById('conversa-atividade-texto').value = '';
-
-    // 🔧 CORREÇÃO ("não dá pra saber com quem é a conversa"): o modal só
-    // mostrava um título genérico, sem dizer o equipamento nem quem
-    // criou/está executando a atividade. Busca no cache já carregado
-    // (evita outra chamada de rede só pra isso).
-    const contexto = document.getElementById('conversa-atividade-contexto');
-    if (contexto) {
-        const atividade = (typeof OFICINA_ATIVIDADES_CACHE !== 'undefined')
-            ? OFICINA_ATIVIDADES_CACHE.find(a => a.id === atividadeId)
-            : null;
-        if (atividade) {
-            const partes = [];
-            if (atividade.equipamento_id) partes.push(`<strong>${atividade.equipamento_id}</strong>`);
-            partes.push(atividade.descricao || 'Sem descrição');
-            if (atividade.criado_por) partes.push(`Criado por ${atividade.criado_por}`);
-            if (atividade.executado_por) partes.push(`Executando: ${atividade.executado_por}`);
-            contexto.innerHTML = partes.join(' · ');
-        } else {
-            contexto.innerHTML = '';
-        }
-    }
-
-    modal.classList.remove('hidden');
-    await window.carregarMensagensConversaAtividade();
-};
-
-window.fecharConversaAtividade = function() {
-    const modal = document.getElementById('modal-conversa-atividade');
-    if (modal) modal.classList.add('hidden');
-    CONVERSA_ATIVIDADE_ID_ATUAL = null;
-};
-
-window.carregarMensagensConversaAtividade = async function() {
-    if (!CONVERSA_ATIVIDADE_ID_ATUAL) return;
-    const lista = document.getElementById('conversa-atividade-lista');
-    if (!lista) return;
-    try {
-        const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/oficina/atividade/mensagens/${CONVERSA_ATIVIDADE_ID_ATUAL}`, { cache: 'no-store' });
-        const mensagens = resp.ok ? await resp.json() : [];
-        const minhaMatricula = (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula || '').toUpperCase();
-
-        lista.innerHTML = mensagens.length === 0
-            ? `<p class="text-muted" style="text-align:center; font-size:11.5px; padding:12px;">Nenhuma mensagem ainda — escreva a primeira abaixo.</p>`
-            : mensagens.map(m => {
-                const minha = (m.autor_matricula || '').toUpperCase() === minhaMatricula && minhaMatricula !== '';
-                const quando = m.criado_em ? new Date(m.criado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
-                return `
-                    <div style="margin-bottom:8px; text-align:${minha ? 'right' : 'left'};">
-                        <div style="display:inline-block; max-width:80%; padding:6px 10px; border-radius:10px; font-size:12.5px; text-align:left;
-                                    background:${minha ? 'var(--text-accent, #3b82f6)' : 'var(--bg-card, #1f2937)'}; color:${minha ? '#fff' : 'var(--text-body)'};">
-                            <div style="font-weight:700; font-size:10.5px; opacity:0.85; margin-bottom:2px;">${m.autor_nome || 'Sistema'}</div>
-                            ${m.mensagem}
-                        </div>
-                        <div style="font-size:9.5px; color:var(--text-muted); margin-top:2px;">${quando}</div>
-                    </div>
-                `;
-            }).join('');
-        lista.scrollTop = lista.scrollHeight;
-    } catch (e) {
-        console.error('⚠️ Erro ao carregar mensagens da atividade:', e);
-        lista.innerHTML = `<p class="text-muted" style="text-align:center; font-size:11.5px;">Não foi possível carregar a conversa.</p>`;
-    }
-};
-
-window.enviarMensagemConversaAtividade = async function() {
-    if (!CONVERSA_ATIVIDADE_ID_ATUAL) return;
-    const input = document.getElementById('conversa-atividade-texto');
-    const mensagem = input.value.trim();
-    if (!mensagem) return;
-
-    const tecnico = OPERADOR_LOGADO || {};
-    try {
-        const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/oficina/atividade/mensagem`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                atividade_id: CONVERSA_ATIVIDADE_ID_ATUAL,
-                autor_matricula: tecnico.matricula || '',
-                autor_nome: tecnico.nome || tecnico.matricula || 'Sistema',
-                mensagem
-            })
-        });
-        if (!resp.ok) { alert('Não foi possível enviar a mensagem.'); return; }
-    } catch (e) {
-        console.error('⚠️ Erro ao enviar mensagem da atividade:', e);
-        alert('Não foi possível conectar ao servidor.');
+    const atividade = (typeof OFICINA_ATIVIDADES_CACHE !== 'undefined')
+        ? OFICINA_ATIVIDADES_CACHE.find(a => a.id === atividadeId)
+        : null;
+    if (!atividade || !atividade.area) {
+        alert('Não consegui identificar a área dessa atividade.');
         return;
     }
-    input.value = '';
-    await window.carregarMensagensConversaAtividade();
 
-    // 🆕 Espelha a resposta no canal "Entre Técnicos" do chat da área
-    // dessa atividade, marcada com a referência (pedido do usuário:
-    // "quando tiver uma atividade extra criada a caldeiraria responder
-    // tem que aparecer nesse chat e marcado tipo respondendo atividade
-    // tal e a mensagem que ele mandou"). Best-effort: se falhar, não
-    // atrapalha o envio da Conversa da Atividade em si (que já
-    // aconteceu com sucesso acima).
-    try {
-        const atividade = (typeof OFICINA_ATIVIDADES_CACHE !== 'undefined')
-            ? OFICINA_ATIVIDADES_CACHE.find(a => a.id === CONVERSA_ATIVIDADE_ID_ATUAL)
-            : null;
-        if (atividade && atividade.area) {
-            const referencia = [atividade.equipamento_id, atividade.descricao].filter(Boolean).join(' — ').slice(0, 80);
-            const apiBase = await resolverApiBase();
-            await fetch(`${apiBase}/api/mensagens_area`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    area: atividade.area,
-                    de_adm: false,
-                    remetente: tecnico.nome || tecnico.matricula || 'Sistema',
-                    remetente_matricula: tecnico.matricula || null,
-                    mensagem,
-                    canal: 'tecnicos',
-                    atividade_referencia: referencia || `Atividade #${CONVERSA_ATIVIDADE_ID_ATUAL}`
-                })
-            });
-            // Se o chat da área dessa atividade estiver aberto agora
-            // (mesma área + canal tecnicos), atualiza na hora.
-            if (CHAT_AREA_ADM_CTX.area === atividade.area && CHAT_AREA_ADM_CTX.canal === 'tecnicos') {
-                window.chatsCarregarMensagens();
-            }
-        }
-    } catch (e) {
-        console.error('⚠️ Não consegui espelhar a resposta no chat da área (a Conversa da Atividade já foi enviada normalmente):', e);
-    }
+    const referencia = [atividade.equipamento_id, atividade.descricao].filter(Boolean).join(' — ').slice(0, 80) || `Atividade #${atividadeId}`;
+
+    const isAdm = !!(OPERADOR_LOGADO && OPERADOR_LOGADO.isAdm);
+    window.abrirAba(null, 'aba-chats');
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    document.getElementById('nav-chats')?.classList.add('active');
+
+    await window.chatsSelecionarConversa(atividade.area, isAdm);
+    window.chatsTrocarCanal('tecnicos');
+    // 🔧 Setada só AQUI, depois de trocar conversa/canal — os dois passos
+    // acima limpam CHAT_ATIVIDADE_PENDENTE_REFERENCIA de propósito (evita
+    // ficar "grudada" se a pessoa trocar de conversa manualmente depois).
+    CHAT_ATIVIDADE_PENDENTE_REFERENCIA = referencia;
+
+    const preview = document.getElementById('chat-thread-atividade-preview');
+    const previewTexto = document.getElementById('chat-thread-atividade-preview-texto');
+    if (previewTexto) previewTexto.textContent = `Respondendo: ${referencia}`;
+    if (preview) preview.classList.remove('hidden');
+
+    document.getElementById('chat-thread-input')?.focus();
 };
 
 // --------------------------------------------------------------
@@ -11781,7 +11703,7 @@ function dataDentroDaJanelaRecente(dataHoraStr) {
 // 'mensagem' abre a Conversa; 'status'/'criacao'/'edicao' abre a
 // Atividade destacada no quadro da área.
 window.abrirDestinoAtividadeNotificacao = function(area, atividadeId, tipoEvento) {
-    if (tipoEvento === 'mensagem' && atividadeId && typeof window.abrirConversaAtividade === 'function' && document.getElementById('modal-conversa-atividade')) {
+    if (tipoEvento === 'mensagem' && atividadeId && typeof window.abrirConversaAtividade === 'function') {
         window.abrirConversaAtividade(atividadeId);
     } else if (atividadeId) {
         window.irParaAreaOficinaViaNotificacao(area, atividadeId);
