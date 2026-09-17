@@ -4895,6 +4895,31 @@ h1, h2, h3, h4, h5, h6 {
     }
 }
 
+/* 🆕 Agrupamento por área do feed de notificações (pedido do usuário:
+   "tá bonito, porém tá confuso, não é separado por área") — cabeçalho
+   simples entre grupos, mesmo padrão visual dos títulos de seção já
+   usados no resto do sistema. */
+.notif-grupo-area {
+    margin-bottom: 18px;
+}
+.notif-grupo-area-titulo {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 6px 2px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    text-transform: capitalize;
+}
+.notif-grupo-area-titulo .text-muted {
+    font-size: 0.72rem;
+    font-weight: 500;
+    text-transform: none;
+}
+
 /* 🆕 Item da Central de Notificações (ocorrências/OS) — ícone redondo +
    accent lateral na cor do item, pra não ficar só texto puro encostado
    um no outro (era o que deixava a lista "estranha" antes). */

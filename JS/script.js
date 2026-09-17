@@ -10902,7 +10902,11 @@ window.irParaAchadoEspecifico = async function(pecaId) {
 // ==============================================================
 let NOTIF_FLAT_FILTRO = 'todas'; // 'todas' | 'criticas' | 'atencao' | 'nao-vistas'
 let NOTIF_FLAT_BUSCA = '';
-let NOTIF_FLAT_ORDEM = 'recentes'; // 'recentes' | 'nao-lidas' | 'severidade'
+// 🔧 Padrão trocado de 'recentes' pra 'area' — pedido do usuário
+// ("tá bonito, porém tá confuso, não é separado por área"): a lista
+// crua misturada era o próprio problema reportado, não algo que só
+// precisava virar uma opção a mais escondida no dropdown.
+let NOTIF_FLAT_ORDEM = 'area'; // 'area' | 'recentes' | 'nao-lidas' | 'severidade'
 
 // Severidade de UM item de notificação: reaproveita o status calculado
 // da ÁREA dele (mesmo cálculo que já colore os cards da Central de
@@ -10936,11 +10940,11 @@ window.filtrarFeedNotificacoesFlat = function(filtro) {
 window.limparFiltrosNotificacoesFlat = function() {
     NOTIF_FLAT_FILTRO = 'todas';
     NOTIF_FLAT_BUSCA = '';
-    NOTIF_FLAT_ORDEM = 'recentes';
+    NOTIF_FLAT_ORDEM = 'area';
     const busca = document.getElementById('notificacoes-busca-flat');
     if (busca) busca.value = '';
     const ordenar = document.getElementById('notificacoes-ordenar');
-    if (ordenar) ordenar.value = 'recentes';
+    if (ordenar) ordenar.value = 'area';
     renderizarNotificacoesFlat(NOTIF_FEED_CACHE);
 };
 
@@ -11037,13 +11041,14 @@ function renderizarNotificacoesFlat(feedBruto) {
         itens.sort((a, b) => ORDEM[a.sev.label] - ORDEM[b.sev.label]);
     }
     // 'recentes' é a ordem que o feed já vem do backend (mais novo primeiro).
+    // 'area' é tratado à parte logo abaixo (agrupa em vez de só ordenar).
 
     if (itens.length === 0) {
         container.innerHTML = `<div class="text-muted" style="text-align:center; padding:30px 0;"><i class="fas fa-magnifying-glass"></i> Nenhuma notificação encontrada com esse filtro/busca.</div>`;
         return;
     }
 
-    container.innerHTML = itens.map(({ item, sev }) => {
+    const htmlItem = ({ item, sev }) => {
         const referencia = item.referencia;
         return `
         <div class="notificacoes-item" style="--item-cor:${sev.cor}; ${!item.lida ? 'background:color-mix(in srgb, var(--text-accent) 5%, var(--bg-card));' : ''}"
@@ -11069,7 +11074,48 @@ function renderizarNotificacoesFlat(feedBruto) {
             ` : ''}
         </div>
         `;
-    }).join('');
+    };
+
+    // 🆕 "Agrupar por Área" (pedido do usuário: "tá bonito, porém tá
+    // confuso, não é separado por área") — em vez de só ordenar a
+    // lista, quebra em seções com um cabeçalho por área (nome +
+    // contagem + selo de severidade da área mais grave dentro dela),
+    // mantendo a ordenação por severidade DENTRO de cada área. Áreas
+    // mais críticas aparecem primeiro; "Sem área" (eventos que não têm
+    // área associada) sempre por último.
+    if (NOTIF_FLAT_ORDEM === 'area') {
+        const ORDEM_SEV = { 'Crítico': 0, 'Atenção': 1, 'Novo': 2, 'Normal': 3 };
+        const grupos = new Map();
+        itens.forEach(x => {
+            const chave = x.item.area || '__sem_area__';
+            if (!grupos.has(chave)) grupos.set(chave, []);
+            grupos.get(chave).push(x);
+        });
+        const areasOrdenadas = Array.from(grupos.entries()).sort((a, b) => {
+            if (a[0] === '__sem_area__') return 1;
+            if (b[0] === '__sem_area__') return -1;
+            const piorA = Math.min(...a[1].map(x => ORDEM_SEV[x.sev.label]));
+            const piorB = Math.min(...b[1].map(x => ORDEM_SEV[x.sev.label]));
+            return piorA - piorB;
+        });
+
+        container.innerHTML = areasOrdenadas.map(([chave, grupo]) => {
+            grupo.sort((a, b) => ORDEM_SEV[a.sev.label] - ORDEM_SEV[b.sev.label]);
+            const nomeArea = chave === '__sem_area__' ? 'Sem área' : nomeAreaOficina(chave);
+            const naoVistasArea = grupo.filter(x => !x.item.lida).length;
+            return `
+                <div class="notif-grupo-area">
+                    <div class="notif-grupo-area-titulo">
+                        <span>${escapeHtmlNotif(nomeArea)}</span>
+                        <span class="text-muted">${grupo.length} notificaç${grupo.length === 1 ? 'ão' : 'ões'}${naoVistasArea ? ` · ${naoVistasArea} não vista${naoVistasArea === 1 ? '' : 's'}` : ''}</span>
+                    </div>
+                    ${grupo.map(htmlItem).join('')}
+                </div>`;
+        }).join('');
+        return;
+    }
+
+    container.innerHTML = itens.map(htmlItem).join('');
 }
 
 // 🆕 Grade única com TODAS as áreas (oficina + administrativo + estoque
