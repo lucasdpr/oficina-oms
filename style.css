@@ -4066,9 +4066,19 @@ h1, h2, h3, h4, h5, h6 {
     flex-direction: column;
     gap: 8px;
     cursor: pointer;
-    transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
+    transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base), background var(--transition-base);
     min-height: 44px;
     touch-action: manipulation;
+}
+
+/* 🆕 Peso visual real pro card Crítico (não só a faixa de cor no topo):
+   elevação já ativa em repouso (não só no hover, como os demais cards)
+   + fundo levemente tingido de vermelho. De propósito não mexe em
+   Restrição/Atenção/Normal — só o Crítico precisa saltar aos olhos
+   antes de ler o texto do badge. */
+.oficina-area-card-critico {
+    background: color-mix(in srgb, var(--danger) 5%, var(--bg-card));
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4), 0 0 0 1px color-mix(in srgb, var(--danger) 25%, transparent);
 }
 
 /* 🔧 REDESIGN: era uma cor fixa por área (--area-color, 16 áreas = 16
@@ -4108,6 +4118,14 @@ h1, h2, h3, h4, h5, h6 {
     transform: translateY(-4px);
     box-shadow: var(--shadow-hover);
     border-color: var(--area-color, var(--brand));
+}
+
+/* Precisa vir DEPOIS de .oficina-area-card:hover (mesma especificidade,
+   0,2,0 — quem carrega por último ganha o empate) pra manter a sombra
+   mais forte do crítico mesmo com o mouse em cima, em vez do hover
+   genérico apagar o destaque. */
+.oficina-area-card-critico:hover {
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45), 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent);
 }
 
 .oficina-area-card:active {
