@@ -76,27 +76,42 @@ window.carregarStatusChecklistExecucaoReparo = async function(idsEquipamentos, f
     if (pendentes.length === 0) return;
     pendentes.forEach(id => CHECKLIST_EXECUCAO_CARREGANDO_IDS.add(id));
 
-    await Promise.all(pendentes.map(async (id) => {
-        try {
-            const [respStatus, respLaudos] = await Promise.all([
-                fetch(`${apiBase}/api/checklist-execucao/status/${encodeURIComponent(id)}`, { cache: 'no-store' }),
-                fetch(`${apiBase}/api/laudos?peca_id=${encodeURIComponent(id)}&limite=1`, { cache: 'no-store' })
-            ]);
-            const status = respStatus.ok ? await respStatus.json() : { total: 0, marcadas: 0, percentual: 0, completo: false };
-            const laudos = respLaudos.ok ? await respLaudos.json() : [];
-            window.CHECKLIST_EXECUCAO_STATUS_CACHE[id] = {
-                ...status,
-                folhaoSalvo: Array.isArray(laudos) && laudos.length > 0
-            };
-        } catch (e) {
-            console.error(`⚠️ Não consegui buscar status do Checklist de Execução (${id}):`, e);
-            // Mesmo com erro, marca algo em cache pra não ficar tentando de
-            // novo pra sempre em loop — só tenta de novo se "forcar".
-            window.CHECKLIST_EXECUCAO_STATUS_CACHE[id] = window.CHECKLIST_EXECUCAO_STATUS_CACHE[id] || { total: 0, marcadas: 0, percentual: 0, completo: false, folhaoSalvo: false };
-        } finally {
-            CHECKLIST_EXECUCAO_CARREGANDO_IDS.delete(id);
-        }
-    }));
+    // 🔧 CORREÇÃO ("servidor gratuito do Render sobrecarregado, onda de
+    // erro de CORS/Failed to fetch"): antes, TODOS os ids pendentes
+    // disparavam fetch ao mesmo tempo via Promise.all — 2 requisições
+    // por equipamento (status + laudos), então uma lista com 20+ itens
+    // (comum no Painel do Supervisor, que chama isto com forcar=true
+    // pra tudo que está em andamento) virava 40+ chamadas simultâneas.
+    // Isso é o pior cenário possível justo quando o backend gratuito
+    // está "acordando" de um autosuspend: a enxurrada de conexões
+    // concorrentes atrapalha o próprio servidor terminar de subir,
+    // fazendo TODAS falharem em vez de só a primeira. Processa em
+    // lotes pequenos (poucas de cada vez) em vez de tudo de uma vez.
+    const TAMANHO_LOTE = 4;
+    for (let inicio = 0; inicio < pendentes.length; inicio += TAMANHO_LOTE) {
+        const lote = pendentes.slice(inicio, inicio + TAMANHO_LOTE);
+        await Promise.all(lote.map(async (id) => {
+            try {
+                const [respStatus, respLaudos] = await Promise.all([
+                    fetch(`${apiBase}/api/checklist-execucao/status/${encodeURIComponent(id)}`, { cache: 'no-store' }),
+                    fetch(`${apiBase}/api/laudos?peca_id=${encodeURIComponent(id)}&limite=1`, { cache: 'no-store' })
+                ]);
+                const status = respStatus.ok ? await respStatus.json() : { total: 0, marcadas: 0, percentual: 0, completo: false };
+                const laudos = respLaudos.ok ? await respLaudos.json() : [];
+                window.CHECKLIST_EXECUCAO_STATUS_CACHE[id] = {
+                    ...status,
+                    folhaoSalvo: Array.isArray(laudos) && laudos.length > 0
+                };
+            } catch (e) {
+                console.error(`⚠️ Não consegui buscar status do Checklist de Execução (${id}):`, e);
+                // Mesmo com erro, marca algo em cache pra não ficar tentando de
+                // novo pra sempre em loop — só tenta de novo se "forcar".
+                window.CHECKLIST_EXECUCAO_STATUS_CACHE[id] = window.CHECKLIST_EXECUCAO_STATUS_CACHE[id] || { total: 0, marcadas: 0, percentual: 0, completo: false, folhaoSalvo: false };
+            } finally {
+                CHECKLIST_EXECUCAO_CARREGANDO_IDS.delete(id);
+            }
+        }));
+    }
 
     // Redesenha a tabela de Reparo ("Iniciar Reparo") E a lista de
     // "Reparo em Andamento" (se estiverem na tela) pra refletir o status
