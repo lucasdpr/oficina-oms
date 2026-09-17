@@ -1276,33 +1276,41 @@
             </section>
 
             <section id="aba-oficina" class="tab-content">
+                <!-- 🔧 CORREÇÃO (referência mandada pelo usuário): eram 4 KPIs de
+                     ATIVIDADE (Pendentes/Andamento/Atrasadas/Concluídas) — a
+                     referência resume por ÁREA (quantas áreas estão em cada
+                     severidade), que é a pergunta que essa tela de verdade
+                     responde ("quais áreas precisam de atenção"), não quantas
+                     atividades soltas existem no total. Pendentes/Atrasadas
+                     continuam visíveis em cada card individual, só não
+                     repetidas aqui em duplicidade. -->
                 <div class="kpi-container" id="oficina-kpi-container" style="margin-bottom:20px;">
-                    <div class="kpi-card warning">
-                        <div class="kpi-icon glow-warning"><i class="fas fa-hourglass-half"></i></div>
+                    <div class="kpi-card danger">
+                        <div class="kpi-icon glow-danger"><i class="fas fa-triangle-exclamation"></i></div>
                         <div class="kpi-data">
-                            <h4 id="oficina-kpi-pendentes">0</h4>
-                            <p>Pendentes</p>
+                            <h4 id="oficina-kpi-criticas">0</h4>
+                            <p>Críticas</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card warning">
+                        <div class="kpi-icon glow-warning"><i class="fas fa-circle-exclamation"></i></div>
+                        <div class="kpi-data">
+                            <h4 id="oficina-kpi-atencao">0</h4>
+                            <p>Atenção</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card success">
+                        <div class="kpi-icon glow-success"><i class="fas fa-circle-check"></i></div>
+                        <div class="kpi-data">
+                            <h4 id="oficina-kpi-normais">0</h4>
+                            <p>Normais</p>
                         </div>
                     </div>
                     <div class="kpi-card">
                         <div class="kpi-icon glow-brand"><i class="fas fa-person-running"></i></div>
                         <div class="kpi-data">
                             <h4 id="oficina-kpi-andamento">0</h4>
-                            <p>Em Andamento</p>
-                        </div>
-                    </div>
-                    <div class="kpi-card danger">
-                        <div class="kpi-icon glow-danger"><i class="fas fa-triangle-exclamation"></i></div>
-                        <div class="kpi-data">
-                            <h4 id="oficina-kpi-atrasadas">0</h4>
-                            <p>Atrasadas</p>
-                        </div>
-                    </div>
-                    <div class="kpi-card success">
-                        <div class="kpi-icon glow-success"><i class="fas fa-check-double"></i></div>
-                        <div class="kpi-data">
-                            <h4 id="oficina-kpi-concluidas">0</h4>
-                            <p>Concluídas (últimos 7 dias)</p>
+                            <p>Atividades em Andamento</p>
                         </div>
                     </div>
                 </div>
@@ -1316,7 +1324,14 @@
                      "Atividades da Oficina" estava ERRADO: não lista atividades
                      nenhuma, é a própria Central de Áreas. Corrigido o título
                      e movido pra cima do Catálogo de Materiais. -->
-                <div class="glass-panel" style="padding:24px; margin-bottom:24px;"><h2><i class="fas fa-industry"></i> Central de Áreas</h2><div id="oficina-container" style="margin-top:20px;">
+                <!-- 🆕 Título + subtítulo (referência mandada pelo usuário): faltava
+                     completamente aqui, diferente de outras telas (Central de
+                     Notificações, Painel do Supervisor) que já têm esse padrão —
+                     um dos motivos concretos do "muito simples". -->
+                <div class="glass-panel" style="padding:24px; margin-bottom:24px;">
+                    <h2 style="margin-bottom:4px;"><i class="fas fa-industry"></i> Central de Áreas</h2>
+                    <p class="text-muted" style="font-size:0.85rem; margin-bottom:16px;">Visão geral do status das áreas de manutenção e oficina.</p>
+                    <div id="oficina-container" style="margin-top:20px;">
                     <div class="skeleton-row"><div class="skeleton skeleton-circle"></div><div style="flex:1;"><div class="skeleton skeleton-line" style="width:60%;"></div><div class="skeleton skeleton-line"></div></div></div>
                     <div class="skeleton-row"><div class="skeleton skeleton-circle"></div><div style="flex:1;"><div class="skeleton skeleton-line" style="width:45%;"></div><div class="skeleton skeleton-line"></div></div></div>
                     <div class="skeleton-row"><div class="skeleton skeleton-circle"></div><div style="flex:1;"><div class="skeleton skeleton-line" style="width:70%;"></div><div class="skeleton skeleton-line"></div></div></div>

@@ -4333,7 +4333,14 @@ function renderizarGridCentralAreas() {
     // certo por aqui". Só Crítico ganha o destaque; Restrição/Atenção
     // continuam só com a faixa de cor (já é hierarquia suficiente pra
     // eles, o crítico é o que precisa saltar aos olhos).
-    const cardsOficina = visiveis.map(({ area: a, status: s }) => `
+    // 🆕 Barra de progresso por card (referência mandada pelo usuário):
+    // % do trabalho em aberto que já está em andamento (não só parado
+    // pendente) — sem nada em aberto, conta como 100% (nada travado).
+    // Não é um dado novo, só uma leitura visual do que a.status já
+    // calcula (pendentes/andamento/emAberto).
+    const cardsOficina = visiveis.map(({ area: a, status: s }) => {
+        const progresso = s.emAberto > 0 ? Math.round((s.andamento / s.emAberto) * 100) : 100;
+        return `
         <div class="oficina-area-card ${s.label === 'Crítico' ? 'oficina-area-card-critico' : ''}" style="--area-severidade-cor:${s.cor};" onclick="window.abrirAreaOficina('${a.chave}')">
             <div class="oficina-area-topo">
                 <div class="oficina-area-icone"><i class="fas ${a.icone}"></i></div>
@@ -4345,9 +4352,16 @@ function renderizarGridCentralAreas() {
                 <span title="Em andamento"><i class="fas fa-person-running"></i> ${s.andamento} em andamento</span>
                 ${s.atrasadas > 0 ? `<span title="Atrasadas" style="color:var(--danger);"><i class="fas fa-triangle-exclamation"></i> ${s.atrasadas} atrasada${s.atrasadas === 1 ? '' : 's'}</span>` : ''}
             </div>
+            <div class="oficina-area-progresso" title="${progresso}% do trabalho em aberto já em andamento">
+                <div class="oficina-area-progresso-trilha">
+                    <div class="oficina-area-progresso-barra" style="width:${progresso}%; background:${s.cor};"></div>
+                </div>
+                <span class="oficina-area-progresso-texto">${progresso}%</span>
+            </div>
             <button class="oficina-area-acessar">Acessar Área <i class="fas fa-arrow-right"></i></button>
         </div>
-    `).join('');
+    `;
+    }).join('');
 
     let cardsAdmin = '';
     if (!CENTRAL_AREAS_FILTRO_STATUS) {
@@ -4547,29 +4561,31 @@ function atividadeAindaNaoComecou(x) {
 // --------------------------------------------------------------
 // KPIs GLOBAIS DA OFICINA (topo da aba, acima da grade de áreas)
 // --------------------------------------------------------------
+// 🔧 CORREÇÃO (referência mandada pelo usuário): resumo virou por ÁREA
+// (quantas estão Crítico/Restrição+Atenção/Normal), não mais por
+// atividade solta — mesma classificação que já colore a faixa de topo
+// de cada card (calcularStatusArea), só somada aqui. "Em Andamento"
+// continua sendo atividade (não faz sentido contar área "em andamento").
 function atualizarKpisOficina() {
-    const hoje = new Date().toISOString().slice(0, 10);
-    const dataLimite7dias = (() => {
-        const d = new Date();
-        d.setDate(d.getDate() - 7);
-        return d.toISOString().slice(0, 10);
-    })();
-
-    const pendentes = OFICINA_ATIVIDADES_CACHE.filter(x => x.status === 'Pendente').length;
     const emAndamento = OFICINA_ATIVIDADES_CACHE.filter(x => x.status === 'Em Andamento').length;
-    const atrasadas = OFICINA_ATIVIDADES_CACHE.filter(atividadeEstaAtrasada).length;
-    const concluidasRecentes = OFICINA_ATIVIDADES_CACHE.filter(x =>
-        x.status === 'Concluído' && x.concluido_em && x.concluido_em.slice(0, 10) >= dataLimite7dias
-    ).length;
+
+    const areas = AREAS_OFICINA.filter(a => a.tipo === 'oficina');
+    let criticas = 0, atencao = 0, normais = 0;
+    areas.forEach(a => {
+        const s = calcularStatusArea(a.chave);
+        if (s.label === 'Crítico') criticas++;
+        else if (s.label === 'Restrição' || s.label === 'Atenção') atencao++;
+        else normais++;
+    });
 
     const definirTexto = (id, valor) => {
         const el = document.getElementById(id);
         if (el) el.textContent = valor;
     };
-    definirTexto('oficina-kpi-pendentes', pendentes);
+    definirTexto('oficina-kpi-criticas', criticas);
+    definirTexto('oficina-kpi-atencao', atencao);
+    definirTexto('oficina-kpi-normais', normais);
     definirTexto('oficina-kpi-andamento', emAndamento);
-    definirTexto('oficina-kpi-atrasadas', atrasadas);
-    definirTexto('oficina-kpi-concluidas', concluidasRecentes);
 }
 
 // Estado local do módulo de Oficina.

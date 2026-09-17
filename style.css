@@ -4254,6 +4254,36 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 10px;
 }
 
+/* 🆕 Barra de progresso por card (referência mandada pelo usuário) —
+   % do trabalho em aberto já em andamento, cor = severidade da área.
+   Texto fica AO LADO da barra (flex row), não sobreposto por cima —
+   a barra sozinha é fina demais (6px) pra conter texto legível com
+   overflow:hidden sem cortar. */
+.oficina-area-progresso {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 2px 0;
+}
+.oficina-area-progresso-trilha {
+    flex: 1;
+    height: 6px;
+    background: var(--bg-th);
+    border-radius: 999px;
+    overflow: hidden;
+}
+.oficina-area-progresso-barra {
+    height: 100%;
+    border-radius: 999px;
+    transition: width var(--transition-base, 0.3s ease);
+}
+.oficina-area-progresso-texto {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
 .oficina-area-acessar {
     /* 🔧 CORREÇÃO ("cara de IA" — dourado repetido em todo item de
        lista ao mesmo tempo): antes era sempre var(--brand), então TODO
