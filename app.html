@@ -519,6 +519,17 @@
         <span>Conectando ao servidor... pode levar até 1 minuto na primeira vez.</span>
     </div>
 
+    <!-- 🆕 Modo leitura offline ("Nível A") — quando um GET falha de vez
+         (sem internet mesmo depois do retry), fetchComRetry (script.js)
+         mostra o último dado salvo em cache em vez de tela quebrada, e
+         acende este aviso fixo (fica ligado até a próxima atualização
+         bem-sucedida, não some sozinho — o dado na tela continua velho
+         até lá). NÃO cobre lançar/editar nada — só leitura. -->
+    <div id="aviso-modo-offline-cache" class="hidden" style="position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:99999; background:#78350f; color:#fff; padding:12px 16px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,0.4); border:1px solid #b45309; display:flex; align-items:center; gap:10px;">
+        <i class="fas fa-wifi" style="color:#fbbf24;"></i>
+        <span>Sem conexão — mostrando dados salvos às <span id="aviso-modo-offline-cache-hora">--:--</span>. Lançamentos exigem internet.</span>
+    </div>
+
     <!-- TELA DE LOGIN AVANÇADA -->
 <div id="tela-login-home" class="login-home-container no-print">
     
@@ -3298,7 +3309,7 @@
     <!-- SCRIPTS (consolidados)                   -->
     <!-- ========================================= -->
     <script type="module">
-        import './JS/script.js?v=33';
+        import './JS/script.js?v=34';
         import './JS/Oficina/procedimentosOficina.js?v=1';
         import './JS/ui.js?v=13';
         import './JS/painelGeralExtra.js?v=1';
