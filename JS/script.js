@@ -377,9 +377,62 @@ function esconderAvisoConectandoServidor() {
     }
 }
 
+// ==========================================
+// 🆕 MODO LEITURA OFFLINE ("Nível A" — pedido do usuário: mostrar o
+// último dado conhecido em vez de tela quebrada quando cai a conexão.
+// NÃO é offline de escrita — lançar OS/atividade continua exigindo
+// internet; isso só evita tela em branco/erro cru em telas de leitura).
+// Guarda a última resposta OK de cada GET no localStorage; se um GET
+// falhar de vez (sem internet mesmo depois do retry), devolve o último
+// dado salvo em vez de propagar o erro, e acende um aviso fixo
+// avisando que o dado pode estar desatualizado.
+// ==========================================
+const OFFLINE_CACHE_PREFIXO = 'oms_offline_cache::';
+const OFFLINE_CACHE_TAMANHO_MAX = 400_000; // não guarda respostas gigantes (ex: fotos em base64)
+
+function offlineCacheSalvar(url, texto) {
+    try {
+        if (texto.length > OFFLINE_CACHE_TAMANHO_MAX) return;
+        localStorage.setItem(OFFLINE_CACHE_PREFIXO + url, JSON.stringify({ ts: Date.now(), body: texto }));
+    } catch (e) { /* localStorage cheio ou indisponível — só não guarda, não é crítico */ }
+}
+
+function offlineCacheLer(url) {
+    try {
+        const bruto = localStorage.getItem(OFFLINE_CACHE_PREFIXO + url);
+        if (!bruto) return null;
+        return JSON.parse(bruto);
+    } catch (e) { return null; }
+}
+
+let _offlineCacheAtivosContador = 0;
+function mostrarAvisoModoOfflineCache(ts) {
+    _offlineCacheAtivosContador++;
+    const el = document.getElementById('aviso-modo-offline-cache');
+    if (!el) return;
+    el.classList.remove('hidden');
+    const spanHora = document.getElementById('aviso-modo-offline-cache-hora');
+    if (spanHora && ts) spanHora.textContent = new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+// 🔧 Sem contador de "esconder": ao contrário do aviso de "conectando",
+// esse fica ligado até a PRÓXIMA navegação/atualização bem-sucedida —
+// não some sozinho, porque enquanto não recarregar a tela o dado
+// exibido continua sendo o velho.
+window.esconderAvisoModoOfflineCache = function() {
+    _offlineCacheAtivosContador = 0;
+    const el = document.getElementById('aviso-modo-offline-cache');
+    if (el) el.classList.add('hidden');
+};
+
+window.fetchComRetry = (...args) => fetchComRetry(...args);
+
 async function fetchComRetry(url, opcoes = {}, tentativas = 4, esperaMs = 4000, timeoutMs = 30000) {
+    const metodo = (opcoes.method || 'GET').toUpperCase();
+    const podeUsarCacheOffline = metodo === 'GET';
+
     let ultimaResposta = null;
     let avisoAtivo = false;
+    let erroFinal = null;
     try {
         for (let i = 0; i <= tentativas; i++) {
             const controller = new AbortController();
@@ -402,10 +455,15 @@ async function fetchComRetry(url, opcoes = {}, tentativas = 4, esperaMs = 4000, 
                     await new Promise(resolve => setTimeout(resolve, esperaMs));
                     continue;
                 }
+                if (podeUsarCacheOffline && resp.ok) {
+                    resp.clone().text().then(texto => offlineCacheSalvar(url, texto)).catch(() => {});
+                    if (typeof window.esconderAvisoModoOfflineCache === 'function') window.esconderAvisoModoOfflineCache();
+                }
                 return resp;
             } catch (e) {
                 clearTimeout(timer);
-                if (i === tentativas) throw e; // acabaram as tentativas, propaga o erro
+                erroFinal = e;
+                if (i === tentativas) break; // acabaram as tentativas — tenta cache offline antes de desistir
                 console.warn(`⚠️ Falha/timeout de conexão (tentativa ${i + 1}/${tentativas + 1}). Tentando de novo em ${esperaMs / 1000}s...`);
                 if (!avisoAtivo) { avisoAtivo = true; mostrarAvisoConectandoServidor(); }
                 await new Promise(resolve => setTimeout(resolve, esperaMs));
@@ -413,6 +471,18 @@ async function fetchComRetry(url, opcoes = {}, tentativas = 4, esperaMs = 4000, 
         }
     } finally {
         if (avisoAtivo) esconderAvisoConectandoServidor();
+    }
+
+    if (erroFinal) {
+        if (podeUsarCacheOffline) {
+            const cache = offlineCacheLer(url);
+            if (cache) {
+                console.warn(`📦 Sem conexão — servindo dado em cache (${url}), salvo às ${new Date(cache.ts).toLocaleTimeString('pt-BR')}.`);
+                mostrarAvisoModoOfflineCache(cache.ts);
+                return new Response(cache.body, { status: 200, headers: { 'Content-Type': 'application/json' } });
+            }
+        }
+        throw erroFinal; // sem cache pra recorrer — comportamento antigo, propaga o erro
     }
     return ultimaResposta;
 }
