@@ -87,11 +87,17 @@
            pros nomes do style.css (fonte única de verdade de cor) e as
            definições duplicadas removidas daqui. Ficam só os tokens que
            NÃO são de cor (espaçamento/sombra/transição/fonte) e que o
-           style.css não define com esses nomes. */
+           style.css não define com esses nomes.
+           🔧 CORREÇÃO (Tarefa 6, consistência de border-radius): --radius
+           e --radius-lg TAMBÉM eram duplicados daqui (12px/18px), com
+           valor DIFERENTE do --radius-lg que o style.css já definia
+           (12px) — como este bloco carrega depois, sempre vencia, sem
+           nenhum aviso visual de que havia dois valores "oficiais"
+           diferentes pro mesmo nome. Consolidado só em style.css (agora
+           com 18px, o valor que já estava valendo de fato em produção)
+           e removido daqui. */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --radius: 12px;
-            --radius-lg: 18px;
             --shadow: 0 10px 32px rgba(0, 0, 0, 0.4);
             --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;

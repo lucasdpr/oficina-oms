@@ -64,10 +64,20 @@
   --spacing-xl: 32px;
   --spacing-xxl: 48px;
   
-  /* Bordas */
+  /* Bordas
+     🔧 CORREÇÃO (Tarefa 6, consistência de border-radius): --radius e
+     --radius-lg eram redefinidos de novo dentro do <style> inline de
+     app.html (12px e 18px, respectivamente — diferente dos 12px daqui),
+     e por carregar depois, sempre venciam. Todo elemento que usa
+     --radius-lg no app inteiro já renderiza a 18px hoje (é o valor que
+     de fato aparece em produção, validado visualmente em várias rodadas
+     de print desta sessão) — trazido pra cá como o valor único e
+     canônico, e a duplicata em app.html removida, em vez de mudar o
+     visual já aprovado. */
+  --radius: 12px;
   --radius-sm: 4px;
   --radius-md: 8px;
-  --radius-lg: 12px;
+  --radius-lg: 18px;
   --radius-xl: 16px;
   
   /* Transições */
@@ -3077,7 +3087,7 @@ h1, h2, h3, h4, h5, h6 {
 .btn-quick-action {
     background: rgba(20, 30, 50, 0.4);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius);
+    border-radius: var(--radius-lg);
     padding: 16px;
     display: flex;
     flex-direction: column;
@@ -5115,7 +5125,7 @@ textarea,
     position: relative;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg, var(--radius));
+    border-radius: var(--radius-lg);
     padding: 22px 26px;
     margin-bottom: 20px;
 }
@@ -5196,7 +5206,7 @@ textarea,
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-left: 3px solid var(--sup-cor, var(--border-color));
-    border-radius: var(--radius);
+    border-radius: var(--radius-lg);
     padding: 18px 20px;
     cursor: pointer;
     transition: border-color 0.15s ease;
@@ -5233,7 +5243,7 @@ textarea,
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-left: 3px solid var(--sup-secao-cor, var(--border-color));
-    border-radius: var(--radius-lg, var(--radius));
+    border-radius: var(--radius-lg);
     margin-bottom: 16px;
     overflow: hidden;
 }
