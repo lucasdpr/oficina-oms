@@ -977,10 +977,27 @@ h1, h2, h3, h4, h5, h6 {
      instalar/encerrar turno) continuam sempre visíveis por extenso —
      são ações raras e importantes, não item de navegação do dia a dia. */
   .sidebar.collapsed .sidebar-header-texto,
-  .sidebar.collapsed .operator-box,
   .sidebar.collapsed .nav-divider,
   .sidebar.collapsed .nav-divider-dev {
     display: none;
+  }
+  /* 🔧 CORREÇÃO (pedido do usuário: "Sair" tem que continuar visível
+     mesmo com a sidebar recolhida): antes o .operator-box inteiro
+     sumia junto com a identidade (regra acima), levando o botão
+     "Sair" — que mora dentro dele — junto. Agora só a identidade
+     (.operator-info) some; o card encolhe pra caber só o botão,
+     centralizado, como um item de rail normal. */
+  .sidebar.collapsed .operator-box {
+    padding: 8px 0;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: center;
+  }
+  .sidebar.collapsed .operator-info {
+    display: none;
+  }
+  .sidebar.collapsed .btn-auth-sair-topo {
+    position: static;
   }
   .sidebar.collapsed .sidebar-header {
     justify-content: center;
