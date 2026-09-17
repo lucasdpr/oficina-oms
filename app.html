@@ -747,6 +747,7 @@
                      Central de Notificações (ver ativarPainelSupervisorSeAutorizado
                      em script.js): começa escondido, JS decide quem vê. -->
                 <a href="#" id="nav-painel-supervisor" class="nav-link hidden" onclick="window.abrirAba(event,'aba-painel-supervisor')"><i class="fas fa-binoculars"></i> Painel do Supervisor</a>
+                <a href="#" id="nav-painel-adm" class="nav-link hidden" onclick="window.abrirAba(event,'aba-painel-adm')"><i class="fas fa-user-shield"></i> Painel ADM</a>
 
                 <div class="nav-divider">Monitoramento de Máquinas</div>
                 <a href="#" id="nav-fluxo" class="nav-link" onclick="window.abrirAba(event,'aba-fluxo')"><i class="fas fa-stream"></i> Sequenciamento Veios</a>
@@ -1500,7 +1501,7 @@
                                     <input type="text" id="notificacoes-busca-flat" placeholder="Buscar por área, referência, descrição..." oninput="window.buscarFeedNotificacoesFlat(this.value)" style="height:38px; border-radius:6px; padding-left:38px; width:100%;">
                                     <i class="fas fa-search login-input-icon" style="top:10px; font-size:13px;"></i>
                                 </div>
-                                <button class="btn-outline-neutral" onclick="window.limparFiltrosNotificacoesFlat()"><i class="fas fa-xmark"></i> Limpar</button>
+                                <button class="btn-outline-neutral" onclick="window.limparTudoNotificacoesFlat(event)" title="Marca tudo como visto e reseta filtro/busca"><i class="fas fa-check-double"></i> Limpar</button>
                             </div>
                             <div id="notificacoes-feed-flat" style="margin-top:14px;">
                                 <div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>
@@ -2336,17 +2337,87 @@
                 </div>
             </section>
 
+            <!-- 🆕 Painel ADM — pedido do usuário: "não tem mais esse painel,
+                 só existe a área... crie um painel adm seguindo as coisas
+                 do painel supervisor, porém não repita as coisas pra não
+                 ficar igual, adm é uma coisa e supervisor é outra". Reusa
+                 o mesmo padrão visual (.painel-hero, .painel-sup-secao)
+                 mas o CONTEÚDO é administração do sistema (comunicados,
+                 mensagens das áreas, colaboradores, auditoria) — não
+                 duplica nada do que já é do Supervisor (ativos, produção,
+                 equipe técnica da oficina). -->
             <section id="aba-painel-adm" class="tab-content">
-                <div class="glass-panel" style="border-top:4px solid var(--border-color); padding:24px; margin-bottom:20px;">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
-                        <div>
-                            <h2 style="margin-bottom:4px;"><i class="fas fa-file-lines"></i> Painel — ADM</h2>
-                            <p class="text-muted" style="font-size:13px; margin:0;">Visão geral da equipe e atividades administrativas.</p>
+                <div class="painel-hero">
+                    <div class="painel-hero-fundo"></div>
+                    <div class="painel-hero-conteudo">
+                        <div class="sup-header-selo" style="margin-bottom:10px;"><span class="sup-pulso"></span> PAINEL ADM</div>
+                        <div class="painel-hero-titulo">
+                            <div class="painel-hero-icone"><i class="fas fa-user-shield"></i></div>
+                            <div>
+                                <h1 id="painel-adm-saudacao">Olá!</h1>
+                                <p>Aqui você administra comunicados, conversas com as áreas e colaboradores do sistema.</p>
+                            </div>
                         </div>
-                        <button class="btn-premium" style="padding:8px 14px; font-size:12.5px;" onclick="window.abrirChatAdmLista()"><i class="fas fa-comments"></i> Mensagens das Áreas</button>
+                        <div class="painel-hero-badges">
+                            <button class="painel-hero-badge" style="cursor:pointer; font-family:inherit;" onclick="window.renderPainelAdmExecutivo()"><i class="fas fa-rotate"></i> Atualizar<span>dados</span></button>
+                            <div class="painel-hero-badge" id="painel-adm-badge-comunicados"><i class="fas fa-bullhorn"></i> – <span>Comunicados ativos</span></div>
+                            <div class="painel-hero-badge" id="painel-adm-badge-mensagens"><i class="fas fa-comments"></i> – <span>Mensagens não lidas</span></div>
+                            <div class="painel-hero-badge" id="painel-adm-badge-colaboradores"><i class="fas fa-users"></i> – <span>Colaboradores ativos</span></div>
+                        </div>
                     </div>
                 </div>
-                <div id="painel-adm-container"></div>
+
+                <div class="painel-geral-linha4">
+                    <div class="glass-panel painel-acesso-rapido-card">
+                        <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:2px;">Acesso Rápido</h3>
+                        <p class="text-muted" style="font-size:0.75rem; margin-bottom:16px;">Rotinas administrativas.</p>
+                        <div class="tecnico-atalhos-grid">
+                            <button class="tecnico-atalho-btn" onclick="window.abrirModalCriarAviso()"><i class="fas fa-bullhorn"></i><span>Novo Comunicado</span></button>
+                            <button class="tecnico-atalho-btn" onclick="window.abrirModalAtividadeMassa()"><i class="fas fa-layer-group"></i><span>Atividade em Massa</span></button>
+                            <button class="tecnico-atalho-btn" onclick="window.abrirChatAdmLista()"><i class="fas fa-comments"></i><span>Mensagens das Áreas</span></button>
+                            <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-admin-colaboradores')"><i class="fas fa-user-gear"></i><span>Colaboradores</span></button>
+                            <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-historico')"><i class="fas fa-history"></i><span>Auditoria</span></button>
+                        </div>
+                    </div>
+                    <div class="glass-panel painel-ajuda-card">
+                        <div class="painel-ajuda-icone"><i class="fas fa-circle-question"></i></div>
+                        <div>
+                            <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:2px;">Precisa de ajuda?</h3>
+                            <p class="text-muted" style="font-size:0.8rem; margin-bottom:12px;">Acesse o suporte do sistema.</p>
+                            <button class="btn-outline-neutral" style="width:100%;" onclick="alert('Suporte: fale com o administrador do sistema ou o setor de TI da CSN.')">Falar com suporte <i class="fas fa-arrow-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="painel-sup-secao painel-sup-secao-qualidade">
+                    <div class="painel-sup-secao-titulo">
+                        <span class="sup-secao-icone"><i class="fas fa-bullhorn"></i></span>
+                        <span class="sup-secao-texto">Comunicados do Sistema<small>o que foi avisado, e quem já leu</small></span>
+                    </div>
+                    <div class="painel-sup-secao-corpo" id="adm-exec-avisos-lista"></div>
+                </div>
+
+                <div class="painel-geral-linha3-lateral" style="grid-template-columns: 1fr 1fr;">
+                    <div class="glass-panel" style="padding:20px;">
+                        <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:4px;"><i class="fas fa-comments" style="color:var(--brand);"></i> Mensagens das Áreas</h3>
+                        <p class="text-muted" style="font-size:0.75rem; margin-bottom:14px;">Conversas por área — supervisão e não lidas.</p>
+                        <div id="painel-adm-mensagens-areas"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
+                    </div>
+                    <div class="glass-panel" style="padding:20px;">
+                        <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:4px;"><i class="fas fa-users" style="color:var(--info);"></i> Colaboradores</h3>
+                        <p class="text-muted" style="font-size:0.75rem; margin-bottom:14px;">Ativos e inativos, por cargo.</p>
+                        <div id="painel-adm-colaboradores-resumo"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
+                    </div>
+                </div>
+
+                <div class="glass-panel" style="padding:20px; margin-top:24px;">
+                    <div class="flex-between" style="margin-bottom:4px;">
+                        <h3 style="color:var(--text-heading); font-size:1rem;"><i class="fas fa-clock-rotate-left" style="color:var(--warning);"></i> Últimos Eventos do Sistema</h3>
+                        <button class="btn-outline-neutral" style="padding:6px 12px; font-size:12px;" onclick="window.abrirAba(event,'aba-historico')">Ver Auditoria Completa <i class="fas fa-arrow-right"></i></button>
+                    </div>
+                    <p class="text-muted" style="font-size:0.75rem; margin-bottom:14px;">Últimos eventos registrados, de todas as áreas.</p>
+                    <div id="painel-adm-eventos-recentes"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
+                </div>
             </section>
 
             <section id="aba-painel-almoxarifado" class="tab-content">
@@ -3227,7 +3298,7 @@
     <!-- SCRIPTS (consolidados)                   -->
     <!-- ========================================= -->
     <script type="module">
-        import './JS/script.js?v=31';
+        import './JS/script.js?v=33';
         import './JS/Oficina/procedimentosOficina.js?v=1';
         import './JS/ui.js?v=13';
         import './JS/painelGeralExtra.js?v=1';

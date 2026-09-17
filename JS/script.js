@@ -1188,6 +1188,32 @@ function ativarPainelSupervisorSeAutorizado() {
 }
 window.ativarPainelSupervisorSeAutorizado = ativarPainelSupervisorSeAutorizado;
 
+// 🆕 Painel ADM — pedido do usuário: "não tem mais esse painel, só
+// existe a área... crie um painel adm... porém não repita as coisas
+// pra não ficar igual, adm é uma coisa e supervisor é outra". O Painel
+// do Supervisor é sobre a OFICINA (ativos, produção, equipe técnica);
+// este aqui é sobre ADMINISTRAÇÃO DO SISTEMA (comunicados, mensagens
+// das áreas, colaboradores) — só visível pra ADM de sistema de verdade,
+// não pra supervisor/técnico com área.
+function ativarPainelAdmSeAutorizado() {
+    const link = document.getElementById("nav-painel-adm");
+    if (!link) return;
+
+    const autorizado = operadorEhAdmDeSistema();
+
+    if (autorizado) {
+        link.classList.remove("hidden");
+    } else {
+        link.classList.add("hidden");
+        const aba = document.getElementById("aba-painel-adm");
+        if (aba && aba.classList.contains("active") && typeof window.abrirAba === 'function') {
+            const navPainel = document.getElementById("nav-painel");
+            if (navPainel) window.abrirAba({ preventDefault(){}, currentTarget: navPainel }, "aba-painel");
+        }
+    }
+}
+window.ativarPainelAdmSeAutorizado = ativarPainelAdmSeAutorizado;
+
 function ativarPainelDevSeAutorizado() {
     const link = document.getElementById("nav-dev-teste");
     const divisor = document.getElementById("nav-divider-dev");
@@ -1292,6 +1318,7 @@ function atualizarInterfaceUsuario() {
         ativarAuditoriaSeAutorizado();
         ativarCentralNotificacoesSeAutorizado();
         ativarPainelSupervisorSeAutorizado();
+        ativarPainelAdmSeAutorizado();
         atualizarBotaoAtivarNotificacoes();
         return;
     }
@@ -1316,6 +1343,7 @@ function atualizarInterfaceUsuario() {
         ativarAuditoriaSeAutorizado();
         ativarCentralNotificacoesSeAutorizado();
         ativarPainelSupervisorSeAutorizado();
+        ativarPainelAdmSeAutorizado();
         atualizarBotaoAtivarNotificacoes();
         return;
     }
@@ -1343,6 +1371,7 @@ function atualizarInterfaceUsuario() {
     ativarAuditoriaSeAutorizado();
     ativarCentralNotificacoesSeAutorizado();
     ativarPainelSupervisorSeAutorizado();
+    ativarPainelAdmSeAutorizado();
     atualizarBotaoAtivarNotificacoes();
     aplicarRestricaoNavTecnico();
 }
@@ -6447,6 +6476,115 @@ window.renderPainelSupervisor = async function() {
 };
 
 // --------------------------------------------------------------
+// 🆕 PAINEL ADM — orquestra o carregamento de tudo que aparece na aba
+// aba-painel-adm: comunicados (reaproveita renderizarListaAvisosAdm,
+// já existia), mensagens das áreas, colaboradores e eventos recentes.
+// --------------------------------------------------------------
+window.renderPainelAdmExecutivo = async function() {
+    const saudacaoEl = document.getElementById('painel-adm-saudacao');
+    if (saudacaoEl) {
+        const nomeAdm = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || '').replace(/\s*\[.+?\]/, '').trim() : '';
+        saudacaoEl.textContent = nomeAdm ? `Olá, ${nomeAdm}!` : 'Olá!';
+    }
+
+    if (typeof window.renderizarListaAvisosAdm === 'function') window.renderizarListaAvisosAdm();
+
+    const apiBase = await resolverApiBase();
+
+    // Comunicados ativos (badge do hero) — mesma fonte da lista abaixo.
+    (async () => {
+        const badge = document.getElementById('painel-adm-badge-comunicados');
+        try {
+            const resp = await fetch(`${apiBase}/api/avisos/todos`, { cache: 'no-store' });
+            const avisos = resp.ok ? await resp.json() : [];
+            const ativos = Array.isArray(avisos) ? avisos.filter(a => a.ativo).length : 0;
+            if (badge) badge.innerHTML = `<i class="fas fa-bullhorn"></i> ${ativos} <span>Comunicados ativos</span>`;
+        } catch (e) {
+            if (badge) badge.innerHTML = `<i class="fas fa-bullhorn"></i> – <span>Comunicados ativos</span>`;
+        }
+    })();
+
+    // Mensagens das áreas — resumo por área (canal supervisão) + badge de não lidas.
+    (async () => {
+        const container = document.getElementById('painel-adm-mensagens-areas');
+        const badge = document.getElementById('painel-adm-badge-mensagens');
+        try {
+            const resp = await fetch(`${apiBase}/api/mensagens_area/resumo`, { cache: 'no-store' });
+            const resumo = resp.ok ? await resp.json() : [];
+            const totalNaoLidas = Array.isArray(resumo) ? resumo.reduce((s, r) => s + (Number(r.nao_lidas) || 0), 0) : 0;
+            if (badge) badge.innerHTML = `<i class="fas fa-comments"></i> ${totalNaoLidas} <span>Mensagens não lidas</span>`;
+
+            if (container) {
+                const comConversa = Array.isArray(resumo) ? resumo.slice().sort((a, b) => (Number(b.nao_lidas) || 0) - (Number(a.nao_lidas) || 0)) : [];
+                container.innerHTML = comConversa.length
+                    ? comConversa.slice(0, 8).map(r => `
+                        <div class="flex-between" style="padding:8px 0; border-top:1px solid var(--border-color); cursor:pointer;" onclick="window.abrirAba(event,'aba-chats'); window.chatsSelecionarConversa && window.chatsSelecionarConversa('${r.area}', true);">
+                            <span style="font-size:0.85rem; color:var(--text-body);">${r.nome_area || r.area}</span>
+                            ${Number(r.nao_lidas) > 0 ? `<span style="background:var(--danger); color:#fff; font-size:11px; font-weight:700; padding:1px 8px; border-radius:10px;">${r.nao_lidas}</span>` : `<span class="text-muted" style="font-size:11px;">em dia</span>`}
+                        </div>`).join('')
+                    : `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhuma conversa ainda.</div>`;
+            }
+        } catch (e) {
+            if (container) container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">Não foi possível carregar.</div>`;
+        }
+    })();
+
+    // Colaboradores — ativos/inativos, por cargo.
+    (async () => {
+        const container = document.getElementById('painel-adm-colaboradores-resumo');
+        const badge = document.getElementById('painel-adm-badge-colaboradores');
+        try {
+            const resp = await fetch(`${apiBase}/api/colaboradores/todos`, { cache: 'no-store' });
+            const colaboradores = resp.ok ? await resp.json() : [];
+            const ativos = Array.isArray(colaboradores) ? colaboradores.filter(c => c.ativo) : [];
+            if (badge) badge.innerHTML = `<i class="fas fa-users"></i> ${ativos.length} <span>Colaboradores ativos</span>`;
+
+            if (container) {
+                const porCargo = {};
+                ativos.forEach(c => { const cargo = c.cargo || 'Sem cargo'; porCargo[cargo] = (porCargo[cargo] || 0) + 1; });
+                const inativos = Array.isArray(colaboradores) ? colaboradores.length - ativos.length : 0;
+                const linhas = Object.entries(porCargo).sort((a, b) => b[1] - a[1]);
+                container.innerHTML = `
+                    ${linhas.map(([cargo, qtd]) => `
+                        <div class="flex-between" style="padding:6px 0; border-top:1px solid var(--border-color);">
+                            <span style="font-size:0.85rem; color:var(--text-body);">${cargo}</span>
+                            <span style="font-size:0.85rem; font-weight:600; color:var(--text-heading);">${qtd}</span>
+                        </div>`).join('')}
+                    ${inativos > 0 ? `<div class="flex-between" style="padding:6px 0; border-top:1px solid var(--border-color);">
+                        <span class="text-muted" style="font-size:0.8rem;">Inativos</span>
+                        <span class="text-muted" style="font-size:0.8rem;">${inativos}</span>
+                    </div>` : ''}
+                `;
+            }
+        } catch (e) {
+            if (container) container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">Não foi possível carregar.</div>`;
+        }
+    })();
+
+    // Últimos eventos do sistema (mesma fonte da Auditoria Global).
+    (async () => {
+        const container = document.getElementById('painel-adm-eventos-recentes');
+        if (!container) return;
+        try {
+            const resp = await fetchComRetry(`${apiBase}/api/historico_eventos?limite=10`);
+            const eventos = resp.ok ? await resp.json() : [];
+            container.innerHTML = Array.isArray(eventos) && eventos.length
+                ? eventos.slice(0, 10).map(e => {
+                    const hora = e.data_hora ? new Date(e.data_hora.replace(' ', 'T') + 'Z').toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '–';
+                    return `
+                    <div style="display:flex; gap:12px; padding:8px 0; border-top:1px solid var(--border-color);">
+                        <span class="text-muted" style="font-size:0.72rem; font-family:var(--font-mono); flex-shrink:0; white-space:nowrap;">${hora}</span>
+                        <span style="font-size:0.8rem; color:var(--text-body);">${e.acao || e.peca_id || 'Evento registrado'}</span>
+                    </div>`;
+                }).join('')
+                : `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhum evento recente.</div>`;
+        } catch (e) {
+            container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">Não foi possível carregar.</div>`;
+        }
+    })();
+};
+
+// --------------------------------------------------------------
 // 🆕 AVISOS DO SISTEMA — gestão (ADM) + leitura obrigatória (todo mundo)
 // --------------------------------------------------------------
 // Lista todos os avisos (ativos e arquivados) com progresso de leitura,
@@ -9457,6 +9595,7 @@ window.abrirAba = function(event, idAba) {
         }
         if (idAba === "aba-qualidade" && typeof window.renderAbaQualidade === 'function') window.renderAbaQualidade();
         if (idAba === "aba-painel-adm" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('adm');
+        if (idAba === "aba-painel-adm" && typeof window.renderPainelAdmExecutivo === 'function') window.renderPainelAdmExecutivo();
         if (idAba === "aba-painel-almoxarifado" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('almoxarifado');
         if (idAba === "aba-painel-ponte-rolante" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('ponte-rolante');
         if (idAba === "aba-painel-logistica" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('logistica');
@@ -11101,12 +11240,52 @@ window.filtrarFeedNotificacoesFlat = function(filtro) {
 window.limparFiltrosNotificacoesFlat = function() {
     NOTIF_FLAT_FILTRO = 'todas';
     NOTIF_FLAT_BUSCA = '';
-    NOTIF_FLAT_ORDEM = 'recentes';
+    NOTIF_FLAT_ORDEM = 'area';
     const busca = document.getElementById('notificacoes-busca-flat');
     if (busca) busca.value = '';
     const ordenar = document.getElementById('notificacoes-ordenar');
-    if (ordenar) ordenar.value = 'recentes';
+    if (ordenar) ordenar.value = 'area';
     renderizarNotificacoesFlat(NOTIF_FEED_CACHE);
+};
+
+// 🆕 "Limpar" na Central de Notificações: o usuário esperava que isso
+// LIMPASSE as notificações (marcasse tudo como visto), não só resetasse
+// o filtro/busca — antes o botão só fazia a segunda coisa, então na
+// prática parecia "não funcionar" (a lista continuava do mesmo jeito).
+// Agora marca todas como lidas (mesmo endpoint usado item a item) e
+// também reseta o filtro/busca, num botão só.
+window.limparTudoNotificacoesFlat = async function(event) {
+    if (!OPERADOR_LOGADO || !OPERADOR_LOGADO.matricula) {
+        window.limparFiltrosNotificacoesFlat();
+        return;
+    }
+
+    const restritoAPropriaArea = operadorTecnicoComArea();
+    const base = restritoAPropriaArea
+        ? NOTIF_FEED_CACHE.filter(item => item.area === OPERADOR_LOGADO.area)
+        : NOTIF_FEED_CACHE;
+    const naoLidas = base.filter(item => !item.lida);
+
+    const botao = event ? event.currentTarget : null;
+    const htmlOriginal = botao ? botao.innerHTML : null;
+    if (botao) { botao.disabled = true; botao.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Limpando...'; }
+
+    try {
+        if (naoLidas.length > 0) {
+            const apiBase = await resolverApiBase();
+            await Promise.all(naoLidas.map(item => fetch(`${apiBase}/api/notificacoes/marcar_lido`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tipo: item.tipo, evento_id: String(item.evento_id), matricula: OPERADOR_LOGADO.matricula })
+            })));
+        }
+    } catch (e) {
+        console.error('⚠️ Erro ao limpar notificações:', e);
+    } finally {
+        if (botao) { botao.disabled = false; botao.innerHTML = htmlOriginal; }
+        window.limparFiltrosNotificacoesFlat();
+        if (typeof window.carregarCentralNotificacoes === 'function') window.carregarCentralNotificacoes();
+    }
 };
 
 function renderizarNotificacoesFlat(feedBruto) {
