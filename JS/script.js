@@ -3335,6 +3335,14 @@ function renderPainelTecnico() {
 
     const criticos = criticosTodos.slice(0, 5);
 
+    // 🆕 Badges do hero (referência de estilo do usuário — mesmo padrão
+    // do Painel Geral/Supervisor). Reaproveita as contagens já
+    // calculadas acima, sem nenhum cálculo novo.
+    const badgeEquip = document.getElementById('tecnico-badge-equipamentos');
+    if (badgeEquip) badgeEquip.textContent = equipamentosVeioArea.length;
+    const badgeCriticos = document.getElementById('tecnico-badge-criticos');
+    if (badgeCriticos) badgeCriticos.textContent = criticosTodos.length;
+
     if (semArea && !isAdm) {
         listaCriticos.innerHTML = linhaVazia("⚠️ Sua área ainda não foi cadastrada. Fale com um ADM.");
     } else if (criticos.length === 0) {
@@ -3369,6 +3377,9 @@ function renderPainelTecnico() {
     const reservasMaquina = filtrarPorAreaTecnico(
         BANCO_ATIVOS.filter(a => a.local === "Máquina / Reserva")
     ).lista;
+
+    const badgeReservas = document.getElementById('tecnico-badge-reservas');
+    if (badgeReservas) badgeReservas.textContent = reservasOficina.length + reservasMaquina.length;
 
     const cardReserva = a => `
             <div class="tecnico-card-item tecnico-card-reserva" onclick="window.abrirAba(null,'aba-reservas')">
