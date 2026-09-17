@@ -10466,6 +10466,19 @@ window.carregarListaOrdensServico = async function() {
         if (!resp.ok) throw new Error('Falha ao buscar');
         OS_CACHE = await resp.json();
         window.renderizarListaOrdensServico();
+
+        // 🆕 Badges do hero (referência de estilo do usuário) — só
+        // atualiza com contagem confiável quando não há filtro de status
+        // ativo (OS_CACHE já vem filtrado do servidor pelo status
+        // escolhido; com filtro ativo, o total deixaria de bater).
+        if (!FILTRO_OS_ATUAL && Array.isArray(OS_CACHE)) {
+            const badgeTotal = document.getElementById('os-badge-total');
+            if (badgeTotal) badgeTotal.textContent = OS_CACHE.length;
+            const badgeAndamento = document.getElementById('os-badge-andamento');
+            if (badgeAndamento) badgeAndamento.textContent = OS_CACHE.filter(os => os.status === 'Em Andamento').length;
+            const badgeConcluido = document.getElementById('os-badge-concluido');
+            if (badgeConcluido) badgeConcluido.textContent = OS_CACHE.filter(os => os.status === 'Concluído').length;
+        }
     } catch (e) {
         console.error('⚠️ Erro ao carregar OS:', e);
         container.innerHTML = `<div class="text-muted" style="text-align:center; padding:30px 0;">Não foi possível carregar. Verifique sua internet.</div>`;
