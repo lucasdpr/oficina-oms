@@ -9187,15 +9187,35 @@ window.fazerLogout = function() {
 window.abrirAba = function(event, idAba) {
     if (event) event.preventDefault();
 
-    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+    // 🔧 CORREÇÃO ("todas as abas mostram a aba antiga empilhada
+    // embaixo da nova, só no celular" — confirmado pelo usuário que
+    // acontece em QUALQUER troca, sem exceção): a troca de aba
+    // dependia só da classe "active" pro CSS (.tab-content{display:
+    // none} / .tab-content.active{display:block}) decidir o que
+    // mostrar. Em algum cenário no navegador do celular esse
+    // display:none não está de fato sendo aplicado — a aba anterior
+    // continua pintada na tela, "por baixo" da aba nova (que também
+    // aparece, já que ambas ficam com display:block ao mesmo tempo).
+    // Em vez de caçar qual regra CSS está sendo vencida nesse
+    // navegador específico, força o display diretamente via JS aqui —
+    // estilo inline sempre vence qualquer regra de stylesheet, então
+    // isso garante a troca não importa o que mais esteja acontecendo
+    // com CSS/animação/especificidade.
+    document.querySelectorAll(".tab-content").forEach(c => {
+        c.classList.remove("active");
+        c.style.display = "none";
+    });
     document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
 
     if (event && event.currentTarget) {
         event.currentTarget.classList.add("active");
     }
-    
+
     const abaDestino = document.getElementById(idAba);
-    if (abaDestino) abaDestino.classList.add("active");
+    if (abaDestino) {
+        abaDestino.classList.add("active");
+        abaDestino.style.display = "block";
+    }
 
     // 🔧 CORREÇÃO ("mobile não troca de aba, acontece com QUALQUER item"
     // — usuário confirmou que não é lógica de uma aba específica):
