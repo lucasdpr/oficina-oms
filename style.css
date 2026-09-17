@@ -717,7 +717,7 @@ h1, h2, h3, h4, h5, h6 {
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 9px;
   flex: 1;
   overflow-y: auto;
   padding-right: 4px;
