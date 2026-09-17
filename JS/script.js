@@ -1278,7 +1278,10 @@ function atualizarInterfaceUsuario() {
         }
         // Visitante não tem "turno" pra encerrar — o botão vira um
         // atalho direto de volta pro login, sem confirmação nem alerta.
-        if (btnLogout) btnLogout.innerText = "Voltar ao Login";
+        // 🔧 Botão virou ícone-only (movido pro topo da sidebar) — trocar
+        // innerText aqui apagaria o <i> do ícone; só o title (tooltip)
+        // muda agora.
+        if (btnLogout) btnLogout.title = "Voltar ao Login";
         renderHistorico();
         ativarPainelDevSeAutorizado();
         ativarAuditoriaSeAutorizado();
@@ -1288,7 +1291,7 @@ function atualizarInterfaceUsuario() {
         return;
     }
 
-    if (btnLogout) btnLogout.innerText = "Sair";
+    if (btnLogout) btnLogout.title = "Sair";
 
     // Extrai o cargo entre colchetes do nome cadastrado, ex: "Filipe [Líder]"
     const match = (OPERADOR_LOGADO.nome || "").match(/\[(.+?)\]/);

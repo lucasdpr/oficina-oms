@@ -251,7 +251,10 @@
         .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 12px 24px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2); }
         .modal-footer .btn-success { background: #10b981; color: #fff; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: background 0.2s, box-shadow 0.2s; }
         .modal-footer .btn-secondary { background: #6c757d; color: #fff; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
-        .modal-footer .btn-success:hover { background: #059669; box-shadow: var(--btn-glow-shape) rgba(16,185,129,0.35); }
+        @media (hover: hover) and (pointer: fine) {
+            .modal-footer .btn-success:hover { background: #059669; box-shadow: var(--btn-glow-shape) rgba(16,185,129,0.35); }
+        }
+        .modal-footer .btn-success:active { background: #059669; }
         .modal-footer .btn-secondary:hover { background: #5a6268; }
         /* ===== ABA TABS ===== */
         .folhao-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; border-bottom: 2px solid rgba(56,189,248,0.25); margin-bottom: 10px; padding-bottom: 2px; position: relative; }
@@ -684,6 +687,12 @@
                         <span id="badge-cargo-operador" class="operator-role-badge"></span>
                     </div>
                 </div>
+                <!-- 🆕 "Sair" movido do rodapé (lá embaixo, de onde tinha que
+                     rolar a lista inteira pra achar) pro topo, junto da
+                     identidade — pedido direto do usuário. -->
+                <button id="btn-encerrar-turno" class="btn-auth-sair-topo" onclick="window.fazerLogout()" title="Sair">
+                    <i class="fas fa-right-from-bracket"></i>
+                </button>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" id="nav-painel" class="nav-link active" onclick="window.abrirAba(event,'aba-painel')"><i class="fas fa-chart-pie"></i> Painel Geral OMS</a>
@@ -751,7 +760,6 @@
                 <button class="btn-auth btn-instalar-pwa hidden" style="margin-bottom:8px; background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.3);" onclick="window.instalarAppOMS()">
                     <i class="fas fa-download"></i> Instalar App
                 </button>
-                <button id="btn-encerrar-turno" class="btn-auth btn-auth-sair" onclick="window.fazerLogout()">Sair</button>
             </div>
         </aside>
 

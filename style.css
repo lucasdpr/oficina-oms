@@ -425,33 +425,10 @@ h1, h2, h3, h4, h5, h6 {
   padding: 8px !important;
 }
 
-/* 🔧 CORREÇÃO (bug de glow vazando): blur de 20px sem spread negativo
-   virava uma auréola nítida ao redor do botão inteiro, em vez de um
-   feedback de hover contido — pior ainda em botões grandes (w-100)
-   como "Atualizar Fábrica Inteira"/"Salvar Corridas". Mesmo padrão
-   trocado em todos os modificadores de cor sólida abaixo: blur bem
-   menor + leve offset pra baixo, sombra de elevação normal, não glow. */
-.btn-premium:hover {
-  background: var(--brand);
-  color: var(--text-on-primary) !important;
-  box-shadow: var(--btn-glow-shape) rgba(0, 0, 0, 0.35);
-  transform: translateY(-1px);
-}
-
-.btn-premium:active {
-  transform: translateY(0px) scale(0.98);
-}
-
 .btn-success {
   border-color: var(--success);
   color: var(--success);
   background: var(--success-bg);
-}
-
-.btn-success:hover {
-  background: var(--success);
-  color: var(--text-on-primary) !important;
-  box-shadow: var(--btn-glow-shape) rgba(16, 185, 129, 0.35);
 }
 
 .btn-warning {
@@ -460,22 +437,10 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--warning-bg);
 }
 
-.btn-warning:hover {
-  background: var(--warning);
-  color: var(--text-on-primary) !important;
-  box-shadow: var(--btn-glow-shape) rgba(245, 158, 11, 0.35);
-}
-
 .btn-danger {
   border-color: var(--danger);
   color: var(--danger);
   background: var(--danger-bg);
-}
-
-.btn-danger:hover {
-  background: var(--danger);
-  color: var(--text-on-primary) !important;
-  box-shadow: var(--btn-glow-shape) rgba(239, 68, 68, 0.35);
 }
 
 .btn-outline-danger {
@@ -491,10 +456,59 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-family);
 }
 
-.btn-outline-danger:hover {
-  background: var(--danger);
-  color: var(--text-on-primary) !important;
-  box-shadow: var(--btn-glow-shape) rgba(239, 68, 68, 0.3);
+/* 🔧 CORREÇÃO ESTRUTURAL DO GLOW (causa raiz de verdade, não mais só a
+   forma da sombra): em celular/tablet não existe "mouse saindo do
+   botão" — então, depois de TOCAR num botão, o navegador aplica
+   :hover e ele fica "grudado" naquele estado (background sólido +
+   glow) até a pessoa tocar em outro lugar da tela. Toda essa
+   investigação de rodadas anteriores (blur, offset, variável única)
+   olhou pro FORMATO da sombra, que já estava certo — o problema real
+   é que qualquer :hover, por mais bem contido que seja, aparece como
+   um "bug permanente" pra quem só usa touch, porque nunca reseta
+   sozinho. `@media (hover: hover) and (pointer: fine)` só é verdadeiro
+   em dispositivos com mouse/trackpad de verdade — em touch (celular,
+   tablet), essas regras nunca chegam a valer, e o botão nunca fica
+   "preso" aceso. Feedback de toque continua existindo via :active
+   (que solta sozinho quando o dedo sai). */
+@media (hover: hover) and (pointer: fine) {
+  .btn-premium:hover {
+    background: var(--brand);
+    color: var(--text-on-primary) !important;
+    box-shadow: var(--btn-glow-shape) rgba(0, 0, 0, 0.35);
+    transform: translateY(-1px);
+  }
+  .btn-success:hover {
+    background: var(--success);
+    color: var(--text-on-primary) !important;
+    box-shadow: var(--btn-glow-shape) rgba(16, 185, 129, 0.35);
+  }
+  .btn-warning:hover {
+    background: var(--warning);
+    color: var(--text-on-primary) !important;
+    box-shadow: var(--btn-glow-shape) rgba(245, 158, 11, 0.35);
+  }
+  .btn-danger:hover {
+    background: var(--danger);
+    color: var(--text-on-primary) !important;
+    box-shadow: var(--btn-glow-shape) rgba(239, 68, 68, 0.35);
+  }
+  .btn-outline-danger:hover {
+    background: var(--danger);
+    color: var(--text-on-primary) !important;
+    box-shadow: var(--btn-glow-shape) rgba(239, 68, 68, 0.3);
+  }
+}
+
+.btn-premium:active {
+  transform: translateY(0px) scale(0.98);
+  background: var(--brand);
+  color: var(--text-on-primary);
+}
+.btn-success:active,
+.btn-warning:active,
+.btn-danger:active,
+.btn-outline-danger:active {
+  transform: scale(0.98);
 }
 
 /* 🔧 CORREÇÃO (regressão de amarelo): botão de ação que se repete por
@@ -575,14 +589,17 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: 0.5px;
 }
 
-.btn-auth:hover {
-  background: var(--text-accent);
-  box-shadow: var(--btn-glow-shape) rgba(56, 189, 248, 0.35);
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .btn-auth:hover {
+    background: var(--text-accent);
+    box-shadow: var(--btn-glow-shape) rgba(56, 189, 248, 0.35);
+    transform: translateY(-1px);
+  }
 }
 
 .btn-auth:active {
   transform: translateY(0);
+  background: var(--text-accent);
 }
 
 /* 🆕 "Sair" (antes "Encerrar Turno") — mesmo padrão semântico já usado
@@ -596,10 +613,16 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--danger-bg);
   color: var(--danger);
 }
-.btn-auth-sair:hover {
+@media (hover: hover) and (pointer: fine) {
+  .btn-auth-sair:hover {
+    background: var(--danger);
+    color: var(--text-on-primary);
+    box-shadow: var(--btn-glow-shape) rgba(239, 68, 68, 0.35);
+  }
+}
+.btn-auth-sair:active {
   background: var(--danger);
   color: var(--text-on-primary);
-  box-shadow: var(--btn-glow-shape) rgba(239, 68, 68, 0.35);
 }
 
 /* ==========================================
@@ -682,6 +705,7 @@ h1, h2, h3, h4, h5, h6 {
   background: linear-gradient(160deg, var(--bg-th), rgba(56, 189, 248, 0.06));
   border: 1px solid var(--border-color);
   padding: 16px;
+  padding-right: 46px;
   border-radius: var(--radius-md);
   margin-bottom: 22px;
   position: relative;
@@ -689,9 +713,46 @@ h1, h2, h3, h4, h5, h6 {
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.operator-box:hover {
-  border-color: rgba(56, 189, 248, 0.35);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+@media (hover: hover) and (pointer: fine) {
+  .operator-box:hover {
+    border-color: rgba(56, 189, 248, 0.35);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+  }
+}
+
+/* 🆕 "Sair" — movido do rodapé da sidebar (pedido do usuário: "lugar
+   de sair ta la embaixo, coloque em cima") pro canto do card de
+   identidade, no topo. .operator-box já é position:relative, então dá
+   pra encaixar aqui sem mexer no layout interno dele (ícone + nome/
+   matrícula/cargo continuam do jeito que estavam). */
+.btn-auth-sair-topo {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+  background: var(--danger-bg);
+  color: var(--danger);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn-auth-sair-topo:hover {
+    background: var(--danger);
+    color: var(--text-on-primary);
+    box-shadow: var(--btn-glow-shape) rgba(239, 68, 68, 0.35);
+  }
+}
+.btn-auth-sair-topo:active {
+  background: var(--danger);
+  color: var(--text-on-primary);
+  transform: scale(0.94);
 }
 
 .operator-info {
@@ -3214,28 +3275,29 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--brand);
     transition: transform var(--transition);
 }
-.btn-quick-action:hover {
-    background: rgba(245, 158, 11, 0.1);
-    border-color: var(--brand);
-    color: var(--text-heading);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
-}
-.btn-quick-action:hover i {
-    transform: scale(1.1);
-}
-.btn-quick-action.action-danger:hover {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: var(--danger);
-    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15);
+@media (hover: hover) and (pointer: fine) {
+    .btn-quick-action:hover {
+        background: rgba(245, 158, 11, 0.1);
+        border-color: var(--brand);
+        color: var(--text-heading);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
+    }
+    .btn-quick-action:hover i {
+        transform: scale(1.1);
+    }
+    .btn-quick-action.action-danger:hover {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: var(--danger);
+        box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15);
+    }
+    .btn-quick-action.action-success:hover {
+        background: rgba(16, 185, 129, 0.1);
+        border-color: var(--success);
+        box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
+    }
 }
 .btn-quick-action.action-danger i { color: var(--danger); }
-
-.btn-quick-action.action-success:hover {
-    background: rgba(16, 185, 129, 0.1);
-    border-color: var(--success);
-    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
-}
 .btn-quick-action.action-success i { color: var(--success); }
 
 /* Timeline de Monitoramento (Auditoria Rápida) */
@@ -3667,10 +3729,15 @@ h1, h2, h3, h4, h5, h6 {
     -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); cursor: pointer; transition: all 0.3s ease;
 
 }
-.btn-visitante-top:hover {
+@media (hover: hover) and (pointer: fine) {
+    .btn-visitante-top:hover {
+        background: #f59e0b; color: #0a0e17;
+        box-shadow: var(--btn-glow-shape) rgba(245, 158, 11, 0.35);
+        transform: translateY(-1px);
+    }
+}
+.btn-visitante-top:active {
     background: #f59e0b; color: #0a0e17;
-    box-shadow: var(--btn-glow-shape) rgba(245, 158, 11, 0.35);
-    transform: translateY(-1px);
 }
 
 /* Cartão de ajuda "1º acesso" — antes vivia dentro do card de login
@@ -4808,9 +4875,11 @@ body.light-mode {
 /* --------------------------------------------------------------
    BOTÕES PRINCIPAIS — leve profundidade extra no hover.
    -------------------------------------------------------------- */
-.btn-premium:hover,
-.btn-quick-action:hover {
-  transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+  .btn-premium:hover,
+  .btn-quick-action:hover {
+    transform: translateY(-2px);
+  }
 }
 
 /* --------------------------------------------------------------

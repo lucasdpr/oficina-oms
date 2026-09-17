@@ -40,22 +40,29 @@ function renderRankingVeios() {
 
     const maiorMedia = Math.max(...linhas.map(l => l.media), 1);
 
+    // 🔧 CORREÇÃO ("cards espremidos com grande área vazia"): antes cada
+    // linha era só texto solto + uma barrinha fina, sem fundo nem borda —
+    // ficava "leve" demais comparado ao card vizinho ("Atividades
+    // Atrasadas", que já usa linhas com fundo/borda lateral). Mesma
+    // caixa/densidade visual agora nos dois, então o conjunto de cards
+    // da coluna lateral fica com peso consistente em vez de alternar
+    // "cheio"/"vazio" dependendo de qual card é.
     container.innerHTML = linhas.map(l => {
         const corBarra = l.media >= 80 ? 'var(--danger)' : (l.media >= 50 ? 'var(--warning)' : 'var(--success)');
         const larguraPct = Math.min(100, (l.media / maiorMedia) * 100);
         return `
-            <div style="margin-bottom:14px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; font-size:13px; margin-bottom:4px;">
+            <div style="padding:10px 12px; background:var(--bg-th); border-radius:6px; border-left:3px solid ${corBarra}; margin-bottom:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; font-size:13px; margin-bottom:6px;">
                     <span style="font-weight:600; color:var(--text-heading);">${l.chave}</span>
                     <span style="display:flex; align-items:center; gap:6px;">
                         <span style="color:${corBarra}; font-weight:700;">${l.media.toFixed(1)}% méd.</span>
                         ${l.criticos > 0 ? `<span style="font-size:11px; font-weight:700; color:var(--danger); background:var(--danger-bg); padding:2px 8px; border-radius:12px;">${l.criticos} crítico${l.criticos > 1 ? 's' : ''}</span>` : ''}
                     </span>
                 </div>
-                <div style="background:var(--bg-th); border-radius:6px; height:8px; overflow:hidden;">
+                <div style="background:var(--bg-card); border-radius:6px; height:8px; overflow:hidden;">
                     <div style="width:${larguraPct}%; height:100%; background:${corBarra};"></div>
                 </div>
-                <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${l.qtd} ativo${l.qtd > 1 ? 's' : ''} nesse veio</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">${l.qtd} ativo${l.qtd > 1 ? 's' : ''} nesse veio</div>
             </div>
         `;
     }).join('');
