@@ -1658,22 +1658,26 @@ h1, h2, h3, h4, h5, h6 {
    colunas iguais) — passo 5 da reestruturação, junta os dois numa
    composição só, como no wireframe aprovado.
    -------------------------------------------------------------- */
-.painel-geral-linha3 {
+/* 🔧 CORREÇÃO ("espaço vazio enorme do lado", print real): Fila de
+   Inspeção e a coluna lateral eram 2 colunas de uma MESMA grid
+   (2fr/1fr). Fila de Inspeção tem altura limitada (max-height:400px +
+   scroll); a lateral cresce sem limite com dado real (vários veios,
+   várias áreas atrasadas) — a diferença de altura entre as duas
+   colunas de uma mesma linha de grid deixava um vazio enorme do lado
+   da mais curta. Não são mais colunas de uma mesma grid: Fila de
+   Inspeção agora é um bloco full-width sozinho (estilo inline em
+   app.html), e .painel-geral-linha3-lateral é OUTRO bloco full-width
+   logo abaixo — cada um com sua própria altura, sem "emprestar" vazio
+   pro vizinho. */
+.painel-geral-linha3-lateral {
   display: grid;
-  grid-template-columns: 2fr 1fr;
-  align-items: start;
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
   margin-top: 24px;
 }
 
-.painel-geral-linha3-lateral {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
 @media (max-width: 900px) {
-  .painel-geral-linha3 {
+  .painel-geral-linha3-lateral {
     grid-template-columns: 1fr;
   }
 }
@@ -1684,11 +1688,9 @@ h1, h2, h3, h4, h5, h6 {
    → donuts → coluna lateral (Risco por Veio/Atrasadas/Produção).
    Sem isso, a ordem no mobile seria a mesma do DOM (KPIs → Linha 2
    inteira → Fila → lateral), que não é a leitura que foi combinada.
-   .painel-geral-linha3 vira "display:contents" só nesse breakpoint —
-   ela some como caixa, os 2 filhos dela (Fila e coluna lateral) viram
-   itens diretos do flex do #aba-painel, aí dá pra intercalar cada um
-   com "order" independente do resto.
-   -------------------------------------------------------------- */
+   Fila de Inspeção e a lateral já são blocos diretos do flex de
+   #aba-painel agora (não precisam mais do truque de
+   "display:contents" num wrapper — esse wrapper não existe mais). */
 @media (max-width: 900px) {
   #aba-painel {
     display: flex;
@@ -1696,9 +1698,6 @@ h1, h2, h3, h4, h5, h6 {
   }
   .kpi-container-v2 {
     order: 1;
-  }
-  .painel-geral-linha3 {
-    display: contents;
   }
   .painel-fila-inspecao {
     order: 2;

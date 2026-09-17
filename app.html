@@ -904,38 +904,49 @@
         </div>
     </div>
 
-    <!-- 3. LINHA 3 — Fila de Inspeção (2fr) + coluna lateral de contexto
-         (1fr, empilhada: Risco por Veio / Atividades Atrasadas / Produção
-         Lançada). Antes eram 2 grids separados, cada bloco full-width —
-         passo 5 da reestruturação, junta tudo numa companhia só. -->
-    <div class="painel-geral-linha3">
-
-        <!-- COLUNA ESQUERDA: Fila de Críticos e Gargalos -->
-        <div class="glass-panel painel-fila-inspecao" style="padding: 24px; display: flex; flex-direction: column; height:auto;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
-                <div>
-                    <h3 style="color:var(--text-heading); font-size:1.1rem;">
-                        <i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i> Fila de Inspeção Prioritária
-                    </h3>
-                    <p class="text-muted" style="font-size: 0.8rem;">Ativos com maior índice de desgaste registrado.</p>
-                </div>
-                <button class="btn-outline-neutral" onclick="window.abrirCriticos()" style="padding: 8px 12px;">
-                    Ver Relatório Completo <i class="fas fa-arrow-right"></i>
-                </button>
+    <!-- 3. FILA DE INSPEÇÃO — full width, sozinha.
+         🔧 CORREÇÃO ("espaço vazio enorme do lado", print real do
+         usuário): antes ficava numa grid de 2 colunas lado a lado com
+         a coluna dos 3 cards abaixo (Risco por Veio/Atrasadas/
+         Produção). Como esta aqui tem altura LIMITADA (max-height:400px
+         + scroll, corrigido numa rodada anterior) e a coluna vizinha
+         cresce sem limite com dado real (6 veios, várias áreas
+         atrasadas...), a diferença de altura entre as duas colunas
+         deixava um vazio enorme do lado da mais curta — comportamento
+         normal de grid/flex com align-items:start, não dá pra "colar"
+         uma na altura da outra sem ou esticar a curta (largando espaço
+         vazio DENTRO dela, o problema que já foi corrigido antes) ou
+         aceitar o vazio do LADO dela (o que apareceu agora). Solução:
+         não ficam mais lado a lado — cada uma agora é sua própria linha
+         full-width, então a altura de uma nunca deixa vazio ao lado da
+         outra. -->
+    <div class="glass-panel painel-fila-inspecao" style="padding: 24px; display: flex; flex-direction: column; height:auto; margin-top: 24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+            <div>
+                <h3 style="color:var(--text-heading); font-size:1.1rem;">
+                    <i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i> Fila de Inspeção Prioritária
+                </h3>
+                <p class="text-muted" style="font-size: 0.8rem;">Ativos com maior índice de desgaste registrado.</p>
             </div>
-
-            <!-- O Container original que o JS popula -->
-            <div id="top-criticos-container" style="max-height: 400px; overflow-y: auto; padding-right: 8px;">
-                <!-- Fallback enquanto o JS não carrega -->
-                <div class="text-muted" style="text-align:center; padding: 40px 0; border: 1px dashed var(--border-color); border-radius: var(--radius);">
-                    <i class="fas fa-satellite-dish fa-spin" style="font-size: 2rem; margin-bottom: 10px; color: var(--brand);"></i>
-                    <p>Coletando telemetria dos veios...</p>
-                </div>
-            </div>
+            <button class="btn-outline-neutral" onclick="window.abrirCriticos()" style="padding: 8px 12px;">
+                Ver Relatório Completo <i class="fas fa-arrow-right"></i>
+            </button>
         </div>
 
-        <!-- COLUNA LATERAL: contexto complementar, empilhado -->
-        <div class="painel-geral-linha3-lateral">
+        <!-- O Container original que o JS popula -->
+        <div id="top-criticos-container" style="max-height: 400px; overflow-y: auto; padding-right: 8px;">
+            <!-- Fallback enquanto o JS não carrega -->
+            <div class="text-muted" style="text-align:center; padding: 40px 0; border: 1px dashed var(--border-color); border-radius: var(--radius);">
+                <i class="fas fa-satellite-dish fa-spin" style="font-size: 2rem; margin-bottom: 10px; color: var(--brand);"></i>
+                <p>Coletando telemetria dos veios...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Risco por Veio / Atividades Atrasadas / Produção Lançada —
+         3 colunas lado a lado (não mais empilhadas numa coluna lateral
+         estreita), cada uma com altura independente entre si. -->
+    <div class="painel-geral-linha3-lateral">
             <div class="glass-panel" style="padding: 20px;">
                 <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom: 4px;">
                     <i class="fas fa-ranking-star" style="color:#f59e0b;"></i> Risco por Veio
@@ -966,7 +977,6 @@
                 </div>
             </div>
         </div>
-    </div>
 
 </section>
 
