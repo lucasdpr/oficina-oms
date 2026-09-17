@@ -87,11 +87,17 @@
            pros nomes do style.css (fonte única de verdade de cor) e as
            definições duplicadas removidas daqui. Ficam só os tokens que
            NÃO são de cor (espaçamento/sombra/transição/fonte) e que o
-           style.css não define com esses nomes. */
+           style.css não define com esses nomes.
+           🔧 CORREÇÃO (Tarefa 6, consistência de border-radius): --radius
+           e --radius-lg TAMBÉM eram duplicados daqui (12px/18px), com
+           valor DIFERENTE do --radius-lg que o style.css já definia
+           (12px) — como este bloco carrega depois, sempre vencia, sem
+           nenhum aviso visual de que havia dois valores "oficiais"
+           diferentes pro mesmo nome. Consolidado só em style.css (agora
+           com 18px, o valor que já estava valendo de fato em produção)
+           e removido daqui. */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --radius: 12px;
-            --radius-lg: 18px;
             --shadow: 0 10px 32px rgba(0, 0, 0, 0.4);
             --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -429,6 +435,32 @@
                 animation: none !important;
             }
         }
+
+        @media (max-width: 768px) {
+            /* 🔧 Um toast fixo no RODAPÉ da viewport sempre acaba cobrindo
+               o que estiver na dobra inferior visível no momento (era o
+               3º KPI, "Reserva Pronta", no load inicial) — dar padding no
+               fim da página não ajuda, porque não move o que já está
+               visível na tela sem rolar. Movido pro TOPO, logo abaixo do
+               cabeçalho fixo: nenhum card do app é desenhado colado ali,
+               então esse espaço fica sempre livre nas telas internas.
+               Só a tela de login usa esse mesmo topo pro botão de
+               visitante — por isso a regra abaixo desativa o reposicionamento
+               enquanto #tela-login-home ainda está visível (display!=none). */
+            /* !important necessário: o elemento tem bottom:16px no atributo
+               style inline (HTML mais abaixo), que sempre vence regra de
+               stylesheet, mesmo dentro de media query — sem isso, top E
+               bottom ficavam ativos ao mesmo tempo e o box esticava de
+               uma borda a outra da tela. */
+            #aviso-nova-versao {
+                top: max(76px, calc(env(safe-area-inset-top) + 66px)) !important;
+                bottom: auto !important;
+            }
+            body:has(#tela-login-home:not([style*="display: none"])) #aviso-nova-versao {
+                top: auto !important;
+                bottom: 16px !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -725,7 +757,38 @@
             </section>
 
             <section id="aba-painel" class="tab-content active">
-    
+
+    <!-- 0. HEADER SUPERIOR (referência "John Hardward") — proposta pra
+         aprovação, implementado só aqui no Painel Geral antes de replicar
+         nas outras telas. Não duplica matrícula/cargo (já na sidebar):
+         saudação com o primeiro nome (mesma fonte que já preenche a
+         sidebar, ver saudacaoEl em atualizarInterfaceUsuario/script.js),
+         busca que filtra os itens do menu lateral em tempo real (função
+         nova window.filtrarMenuHeader em script.js — não inventa uma
+         busca "de verdade" sobre dados ainda sem endpoint pra isso), sino
+         que reaproveita a Central de Notificações já existente (mesmo
+         badge, só espelhado aqui) e um avatar simples (iniciais) que abre
+         o mesmo menu de Encerrar Turno da sidebar. -->
+    <div class="header-topo-painel glass-panel">
+        <div class="header-topo-saudacao">
+            <span class="header-topo-saudacao-label">Bem-vindo(a),</span>
+            <strong id="header-topo-saudacao-nome">--</strong>
+        </div>
+        <div class="header-topo-busca">
+            <i class="fas fa-magnifying-glass"></i>
+            <input type="text" id="header-topo-busca-input" placeholder="Buscar no menu..." oninput="window.filtrarMenuHeader(this.value)" onkeydown="if(event.key==='Escape'){this.value='';window.filtrarMenuHeader('');this.blur();}">
+        </div>
+        <div class="header-topo-acoes">
+            <button type="button" id="header-topo-sino-pai" class="header-topo-sino hidden" title="Notificações" onclick="window.abrirAba(null,'aba-notificacoes')">
+                <i class="fas fa-bell"></i>
+                <span id="header-topo-sino-badge" class="hidden"></span>
+            </button>
+            <button type="button" class="header-topo-avatar" title="Menu do operador" onclick="window.toggleSidebar()">
+                <i class="fas fa-user"></i>
+            </button>
+        </div>
+    </div>
+
     <!-- 1. HEADER & STATUS DA PLANTA -->
     <div class="welcome-box">
         <div>
@@ -791,19 +854,21 @@
             <h3 class="painel-donut-titulo">
                 <i class="fas fa-chart-line" style="color:var(--info);"></i> Tonelagem por Dia (últimos 7 dias)
             </h3>
-            <div id="painel-linha-tonelagem" style="flex:1; display:flex; flex-direction:column; min-height:0;"></div>
+            <div id="painel-linha-tonelagem" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+                <div class="text-muted" style="text-align:center; margin:auto; padding:20px 0;">Carregando...</div>
+            </div>
         </div>
         <div class="glass-panel painel-donut-card">
             <h3 class="painel-donut-titulo">
                 <i class="fas fa-chart-pie" style="color:var(--danger);"></i> Risco dos Ativos
             </h3>
-            <div id="painel-donut-risco"></div>
+            <div id="painel-donut-risco"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
         </div>
         <div class="glass-panel painel-donut-card">
             <h3 class="painel-donut-titulo">
                 <i class="fas fa-chart-pie" style="color:var(--info);"></i> Status das Atividades
             </h3>
-            <div id="painel-donut-status"></div>
+            <div id="painel-donut-status"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
         </div>
     </div>
 

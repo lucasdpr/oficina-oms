@@ -64,10 +64,20 @@
   --spacing-xl: 32px;
   --spacing-xxl: 48px;
   
-  /* Bordas */
+  /* Bordas
+     🔧 CORREÇÃO (Tarefa 6, consistência de border-radius): --radius e
+     --radius-lg eram redefinidos de novo dentro do <style> inline de
+     app.html (12px e 18px, respectivamente — diferente dos 12px daqui),
+     e por carregar depois, sempre venciam. Todo elemento que usa
+     --radius-lg no app inteiro já renderiza a 18px hoje (é o valor que
+     de fato aparece em produção, validado visualmente em várias rodadas
+     de print desta sessão) — trazido pra cá como o valor único e
+     canônico, e a duplicata em app.html removida, em vez de mudar o
+     visual já aprovado. */
+  --radius: 12px;
   --radius-sm: 4px;
   --radius-md: 8px;
-  --radius-lg: 12px;
+  --radius-lg: 18px;
   --radius-xl: 16px;
   
   /* Transições */
@@ -717,7 +727,7 @@ h1, h2, h3, h4, h5, h6 {
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 9px;
   flex: 1;
   overflow-y: auto;
   padding-right: 4px;
@@ -1217,6 +1227,140 @@ h1, h2, h3, h4, h5, h6 {
    altura de card — o donut usa o espaço sobrando ao redor do círculo
    pra uma legenda com os números, em vez de ficar vazio).
    -------------------------------------------------------------- */
+/* --------------------------------------------------------------
+   HEADER SUPERIOR DO PAINEL GERAL (referência "John Hardward") —
+   proposta em avaliação, só nesta tela por enquanto. Reaproveita
+   glass-panel (mesmo fundo/blur dos outros cards) em vez de criar um
+   estilo de superfície novo.
+   -------------------------------------------------------------- */
+.header-topo-painel {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 14px 20px;
+  margin-bottom: 20px;
+}
+
+.header-topo-saudacao {
+  flex-shrink: 0;
+  font-size: 0.95rem;
+  color: var(--text-heading);
+  white-space: nowrap;
+}
+
+.header-topo-saudacao-label {
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-right: 4px;
+}
+
+.header-topo-busca {
+  flex: 1;
+  max-width: 420px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-th);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  color: var(--text-muted);
+}
+
+.header-topo-busca input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-heading);
+  font-size: 0.85rem;
+  font-family: var(--font-family);
+}
+
+.header-topo-busca input::placeholder {
+  color: var(--text-muted);
+}
+
+.header-topo-acoes {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-topo-sino,
+.header-topo-avatar {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background: var(--bg-th);
+  color: var(--text-heading);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.header-topo-sino:hover,
+.header-topo-avatar:hover {
+  background: var(--bg-hover);
+  transform: translateY(-1px);
+}
+
+.header-topo-avatar {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--text-on-primary);
+}
+
+#header-topo-sino-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Item do menu escondido pela busca do header (Tarefa "header superior") */
+.header-busca-oculto {
+  display: none !important;
+}
+
+@media (max-width: 900px) {
+  .header-topo-painel {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px 16px;
+  }
+  .header-topo-saudacao {
+    order: 1;
+    font-size: 0.85rem;
+  }
+  .header-topo-acoes {
+    order: 2;
+    margin-left: auto;
+  }
+  .header-topo-busca {
+    order: 3;
+    max-width: none;
+    width: 100%;
+  }
+}
+
 .painel-graficos-linha2 {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
@@ -2787,8 +2931,11 @@ h1, h2, h3, h4, h5, h6 {
 /* ===== TOP CRÍTICOS ===== */
 .top-critico-item {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
+    row-gap: 4px;
+    column-gap: 8px;
     padding: 8px 12px;
     border-radius: var(--radius-sm);
     background: var(--bg-td);
@@ -2940,7 +3087,7 @@ h1, h2, h3, h4, h5, h6 {
 .btn-quick-action {
     background: rgba(20, 30, 50, 0.4);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius);
+    border-radius: var(--radius-lg);
     padding: 16px;
     display: flex;
     flex-direction: column;
@@ -4978,7 +5125,7 @@ textarea,
     position: relative;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg, var(--radius));
+    border-radius: var(--radius-lg);
     padding: 22px 26px;
     margin-bottom: 20px;
 }
@@ -5059,7 +5206,7 @@ textarea,
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-left: 3px solid var(--sup-cor, var(--border-color));
-    border-radius: var(--radius);
+    border-radius: var(--radius-lg);
     padding: 18px 20px;
     cursor: pointer;
     transition: border-color 0.15s ease;
@@ -5096,7 +5243,7 @@ textarea,
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-left: 3px solid var(--sup-secao-cor, var(--border-color));
-    border-radius: var(--radius-lg, var(--radius));
+    border-radius: var(--radius-lg);
     margin-bottom: 16px;
     overflow: hidden;
 }

@@ -1107,6 +1107,8 @@ function ativarCentralNotificacoesSeAutorizado() {
     if (!link) return;
 
     const autorizado = operadorPodeVerNotificacoes();
+    const sinoHeader = document.getElementById("header-topo-sino-pai");
+    if (sinoHeader) sinoHeader.classList.toggle("hidden", !autorizado);
 
     if (autorizado) {
         link.classList.remove("hidden");
@@ -1249,8 +1251,11 @@ function atualizarInterfaceUsuario() {
     const matriculaEl = document.getElementById("matricula-operador-logado");
     const btnLogout = document.getElementById("btn-encerrar-turno");
 
+    const saudacaoEl = document.getElementById("header-topo-saudacao-nome");
+
     if (!OPERADOR_LOGADO) {
         if (nomeEl) nomeEl.innerText = "Não identificado";
+        if (saudacaoEl) saudacaoEl.innerText = "visitante";
         if (matriculaEl) matriculaEl.style.display = "none";
         if (badgeEl) badgeEl.style.display = "none";
         renderHistorico();
@@ -1264,6 +1269,7 @@ function atualizarInterfaceUsuario() {
 
     if (OPERADOR_LOGADO.visitante) {
         if (nomeEl) nomeEl.innerText = `👁️ ${OPERADOR_LOGADO.nome || "Visitante"}`;
+        if (saudacaoEl) saudacaoEl.innerText = OPERADOR_LOGADO.nome || "Visitante";
         if (matriculaEl) matriculaEl.style.display = "none";
         if (badgeEl) {
             badgeEl.innerText = "Somente leitura";
@@ -1290,6 +1296,7 @@ function atualizarInterfaceUsuario() {
     const nomeLimpo = (OPERADOR_LOGADO.nome || "").replace(/\s*\[.+?\]/, "");
 
     if (nomeEl) nomeEl.innerText = nomeLimpo || "Não identificado";
+    if (saudacaoEl) saudacaoEl.innerText = (nomeLimpo || "Não identificado").split(" ")[0];
     if (matriculaEl) {
         matriculaEl.innerText = `Matrícula: ${OPERADOR_LOGADO.matricula || "--"}`;
         matriculaEl.style.display = "block";
@@ -8623,6 +8630,26 @@ window.fecharModalProducao = function() {
 // ==============================================================
 // 1. FUNÇÕES VISUAIS E NAVEGAÇÃO DA INTERFACE
 // ==============================================================
+// 🆕 Busca do header do Painel Geral — funcionalmente simples de
+// propósito (filtra os itens já carregados no menu lateral pelo texto
+// visível), já que não existe ainda um endpoint de busca unificada por
+// ativo/veio no backend. Abre a sidebar sozinha se estiver fechada no
+// mobile, pra quem digitar já ver o resultado sem precisar abrir o
+// menu manualmente antes.
+window.filtrarMenuHeader = function(valor) {
+    const termo = (valor || "").trim().toLowerCase();
+    const links = document.querySelectorAll("#sidebar-menu .nav-link");
+    links.forEach(link => {
+        const texto = link.innerText.trim().toLowerCase();
+        const bate = !termo || texto.includes(termo);
+        link.classList.toggle("header-busca-oculto", !bate);
+    });
+    if (termo && window.innerWidth <= 768) {
+        const sidebar = document.getElementById('sidebar-menu');
+        if (sidebar && !sidebar.classList.contains('open')) sidebar.classList.add('open');
+    }
+};
+
 window.toggleSidebar = function() {
     const sidebar = document.getElementById('sidebar-menu');
     if (sidebar) sidebar.classList.toggle('open');
@@ -10103,11 +10130,19 @@ window.atualizarBadgeNotificacoesNaoLidas = async function(feedPronto) {
         ? feed.filter(item => item.area === OPERADOR_LOGADO.area)
         : feed;
     const naoLidas = feedDoOperador.filter(item => !item.lida).length;
+    // 🆕 Espelha no sino do header do Painel Geral (mesmo número, mesmo
+    // critério de exibir/esconder) — ver header-topo-sino-badge em
+    // app.html. Não é uma segunda fonte de verdade, só outro elemento
+    // mostrando o mesmo estado.
+    const badgeHeader = document.getElementById('header-topo-sino-badge');
     if (naoLidas > 0) {
-        badge.innerText = naoLidas > 99 ? '99+' : String(naoLidas);
+        const texto = naoLidas > 99 ? '99+' : String(naoLidas);
+        badge.innerText = texto;
         badge.classList.remove('hidden');
+        if (badgeHeader) { badgeHeader.innerText = texto; badgeHeader.classList.remove('hidden'); }
     } else {
         badge.classList.add('hidden');
+        if (badgeHeader) badgeHeader.classList.add('hidden');
     }
 };
 
