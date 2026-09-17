@@ -4285,6 +4285,7 @@ function calcularStatusArea(chave) {
 
 let CENTRAL_AREAS_FILTRO_STATUS = '';
 let CENTRAL_AREAS_BUSCA = '';
+let CENTRAL_AREAS_ORDEM = 'prioridade'; // 🆕 'prioridade' (padrão, já existia) | 'nome'
 
 window.filtrarCentralAreas = function(statusLabel, botao) {
     CENTRAL_AREAS_FILTRO_STATUS = statusLabel;
@@ -4298,6 +4299,43 @@ window.buscarCentralAreas = function(valor) {
     renderizarGridCentralAreas();
 };
 
+window.ordenarCentralAreas = function(valor) {
+    CENTRAL_AREAS_ORDEM = valor;
+    renderizarGridCentralAreas();
+};
+
+// 🆕 "Prioridades agora" (referência mandada pelo usuário) — ranking
+// das áreas mais urgentes, sem precisar escanear a grade inteira. Não
+// é dado novo: mesma severidade/pendências que já colorem os cards,
+// só ordenado e resumido numa lista curta. Só entra quem tem pelo
+// menos 1 pendência em aberto (Normal com 0 não é "prioridade").
+function renderizarPrioridadesAgora(todasComStatus) {
+    const container = document.getElementById('oficina-prioridades-lista');
+    if (!container) return;
+
+    const ORDEM_SEVERIDADE = { 'Crítico': 0, 'Atenção': 1, 'Normal': 2 };
+    const prioridades = todasComStatus
+        .filter(v => v.status.emAberto > 0)
+        .sort((a, b) => {
+            const diff = ORDEM_SEVERIDADE[a.status.label] - ORDEM_SEVERIDADE[b.status.label];
+            return diff !== 0 ? diff : b.status.emAberto - a.status.emAberto;
+        })
+        .slice(0, 5);
+
+    if (prioridades.length === 0) {
+        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:16px 0; font-size:13px;"><i class="fas fa-circle-check" style="color:var(--success);"></i> Nenhuma pendência em aberto agora.</div>`;
+        return;
+    }
+
+    container.innerHTML = prioridades.map((v, i) => `
+        <div class="oficina-prioridade-item" onclick="window.abrirAreaOficina('${v.area.chave}')">
+            <span class="oficina-prioridade-num" style="background:${v.status.cor};">${i + 1}</span>
+            <span class="oficina-prioridade-nome">${v.area.nome}</span>
+            <span class="oficina-prioridade-qtd" style="color:${v.status.cor};">${v.status.emAberto} pendênc${v.status.emAberto > 1 ? 'ias' : 'ia'}</span>
+        </div>
+    `).join('');
+}
+
 function renderizarGridCentralAreas() {
     const grid = document.getElementById('oficina-grade-areas');
     if (!grid) return;
@@ -4305,8 +4343,31 @@ function renderizarGridCentralAreas() {
     const areasOficina = AREAS_OFICINA.filter(a => a.tipo === 'oficina');
     const areasAdmin = AREAS_OFICINA.filter(a => a.tipo === 'administrativo');
 
-    let visiveis = areasOficina.map(a => ({ area: a, status: calcularStatusArea(a.chave) }));
+    // 🔧 CORREÇÃO (referência mandada pelo usuário): a referência só tem
+    // 3 níveis de severidade (Crítica/Atenção/Normal), não 4 — o cálculo
+    // em calcularStatusArea() continua com a granularidade original
+    // (Restrição = 5+ itens em aberto, mais grave que Atenção = 1-4) pra
+    // não perder informação nos outros lugares que usam essa função
+    // (quadro da própria área, etc.); só AQUI, na Central de Áreas, o
+    // rótulo exibido funde Restrição dentro de Atenção — mesmo balde
+    // visual da referência.
+    const todasComStatus = areasOficina.map(a => {
+        const status = calcularStatusArea(a.chave);
+        if (status.label === 'Restrição') {
+            status.label = 'Atenção';
+            status.cor = 'var(--warning)';
+            status.emoji = '🟡';
+        }
+        return { area: a, status };
+    });
 
+    // 🆕 "Prioridades agora" sempre reflete TODAS as áreas, mesmo com
+    // busca/filtro ativos na grade — mesmo princípio já usado no resumo
+    // da Central de Notificações (ver atualizarResumoNotificacoes):
+    // filtrar pra focar não devia esconder o que é urgente lá fora.
+    renderizarPrioridadesAgora(todasComStatus);
+
+    let visiveis = todasComStatus;
     if (CENTRAL_AREAS_BUSCA) {
         visiveis = visiveis.filter(v => v.area.nome.toLowerCase().includes(CENTRAL_AREAS_BUSCA));
     }
@@ -4319,11 +4380,18 @@ function renderizarGridCentralAreas() {
     // de atenção primeiro. Ordena por severidade (Crítico > Restrição >
     // Atenção > Normal, empate por mais itens em aberto) — não muda o
     // formato de grid, só a hierarquia de leitura.
-    const ORDEM_SEVERIDADE = { 'Crítico': 0, 'Restrição': 1, 'Atenção': 2, 'Normal': 3 };
-    visiveis.sort((a, b) => {
-        const diff = ORDEM_SEVERIDADE[a.status.label] - ORDEM_SEVERIDADE[b.status.label];
-        return diff !== 0 ? diff : b.status.emAberto - a.status.emAberto;
-    });
+    // 🆕 "Ordenar por" (referência mandada pelo usuário): "Prioridade" é
+    // a ordenação por severidade que já existia (agora com opção pra
+    // trocar, antes era fixa); "Nome" é nova, alfabética simples.
+    if (CENTRAL_AREAS_ORDEM === 'nome') {
+        visiveis.sort((a, b) => a.area.nome.localeCompare(b.area.nome, 'pt-BR'));
+    } else {
+        const ORDEM_SEVERIDADE = { 'Crítico': 0, 'Atenção': 1, 'Normal': 2 };
+        visiveis.sort((a, b) => {
+            const diff = ORDEM_SEVERIDADE[a.status.label] - ORDEM_SEVERIDADE[b.status.label];
+            return diff !== 0 ? diff : b.status.emAberto - a.status.emAberto;
+        });
+    }
 
     // 🆕 Peso visual real pro card crítico (não só a cor da faixa de
     // topo): elevação/sombra mais forte + fundo levemente saturado na
@@ -4408,17 +4476,43 @@ window.carregarOficina = async function() {
             </div>
             <div class="mcc-filter-group" id="central-areas-filtros">
                 <button class="btn-filter-mcc active" onclick="window.filtrarCentralAreas('', this)">Todas</button>
-                <button class="btn-filter-mcc" onclick="window.filtrarCentralAreas('Crítico', this)">🔴 Crítico</button>
-                <button class="btn-filter-mcc" onclick="window.filtrarCentralAreas('Restrição', this)">🟠 Restrição</button>
+                <button class="btn-filter-mcc" onclick="window.filtrarCentralAreas('Crítico', this)">🔴 Crítica</button>
                 <button class="btn-filter-mcc" onclick="window.filtrarCentralAreas('Atenção', this)">🟡 Atenção</button>
+                <button class="btn-filter-mcc" onclick="window.filtrarCentralAreas('Normal', this)">🟢 Normal</button>
             </div>
+            <!-- 🆕 Ordenar por (referência mandada pelo usuário): "Prioridade"
+                 é a ordenação por severidade que já existia (sem opção antes
+                 de mudar); "Nome (A-Z)" é nova. -->
+            <select id="central-areas-ordenar" class="premium-select" style="height:38px; width:auto;" onchange="window.ordenarCentralAreas(this.value)">
+                <option value="prioridade">Ordenar por: Prioridade</option>
+                <option value="nome">Ordenar por: Nome (A-Z)</option>
+            </select>
             ${OPERADOR_LOGADO && OPERADOR_LOGADO.isAdm ? `
                 <button class="btn-outline-neutral" onclick="window.abrirModalAtividadeMassa()">
                     <i class="fas fa-layer-group"></i> Atividade em Massa
                 </button>
             ` : ''}
         </div>
-        <div id="oficina-grade-areas" class="oficina-grade"></div>
+        <div class="oficina-areas-layout">
+            <!-- 🔧 wrapper próprio (não o grid de 2 colunas direto): o JS
+                 troca #oficina-grade-areas por "grade + Painéis
+                 Administrativos" junto (outerHTML com 2 nós de uma vez) —
+                 sem esse wrapper, o segundo nó (Painéis Administrativos)
+                 vira irmão direto dentro do grid de 2 colunas da direita,
+                 empurrando o painel de prioridades pra linha de baixo. -->
+            <div class="oficina-areas-principal">
+                <div id="oficina-grade-areas" class="oficina-grade"></div>
+            </div>
+            <!-- 🆕 "Prioridades agora" (referência mandada pelo usuário):
+                 ranking das áreas mais urgentes, pra não precisar escanear
+                 a grade inteira procurando o que precisa de atenção
+                 primeiro. Não é dado novo — mesmo cálculo de severidade/
+                 pendências que já colore os cards, só resumido em lista. -->
+            <div class="oficina-prioridades-painel">
+                <h3><i class="fas fa-list-ol" style="color:var(--danger);"></i> Prioridades agora</h3>
+                <div id="oficina-prioridades-lista"></div>
+            </div>
+        </div>
     `;
 
     try {
