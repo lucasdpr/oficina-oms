@@ -6699,7 +6699,8 @@ window.chatsCarregarMensagens = async function() {
             return `
                 <div class="chat-bolha ${minha ? 'chat-bolha-minha' : 'chat-bolha-outro'}">
                     <div class="chat-bolha-remetente">${m.de_adm ? 'ADM' : (m.remetente || 'Técnico')}</div>
-                    <div class="chat-bolha-texto">${m.mensagem}</div>
+                    ${m.foto_base64 ? `<img class="chat-bolha-foto" src="${m.foto_base64}" alt="Foto enviada" onclick="window.abrirFotoAmpliada('${m.foto_base64}', '${escapeAtributoNotif(hora)}')">` : ''}
+                    ${m.mensagem ? `<div class="chat-bolha-texto">${m.mensagem}</div>` : ''}
                     <div class="chat-bolha-hora">${hora}</div>
                 </div>
             `;
@@ -6710,15 +6711,53 @@ window.chatsCarregarMensagens = async function() {
     }
 };
 
+// 🆕 Foto escolhida (câmera ou galeria) aguardando envio — guardada já
+// comprimida em base64 (reaproveita comprimirFotoParaBase64, mesma
+// função já usada em outras telas do sistema). Um chat só tem uma
+// conversa aberta por vez, então uma variável simples basta (mesmo
+// padrão de FOTO_INTERVENCAO_BASE64/OFICINA_FOTO_BASE64 já usado).
+let CHAT_FOTO_PENDENTE_BASE64 = null;
+
+window.chatsProcessarFoto = async function(arquivo) {
+    if (!arquivo) return;
+    try {
+        CHAT_FOTO_PENDENTE_BASE64 = await comprimirFotoParaBase64(arquivo);
+        const preview = document.getElementById('chat-thread-foto-preview');
+        const previewImg = document.getElementById('chat-thread-foto-preview-img');
+        if (previewImg) previewImg.src = CHAT_FOTO_PENDENTE_BASE64;
+        if (preview) preview.classList.remove('hidden');
+    } catch (e) {
+        alert('Não consegui processar essa foto. Tente outra.');
+    } finally {
+        // Limpa os dois <input type=file> — sem isso, escolher o MESMO
+        // arquivo de novo depois de remover não dispara "onchange".
+        const galeria = document.getElementById('chat-thread-foto-galeria');
+        const camera = document.getElementById('chat-thread-foto-camera');
+        if (galeria) galeria.value = '';
+        if (camera) camera.value = '';
+    }
+};
+
+window.chatsCancelarFoto = function() {
+    CHAT_FOTO_PENDENTE_BASE64 = null;
+    document.getElementById('chat-thread-foto-preview')?.classList.add('hidden');
+    const previewImg = document.getElementById('chat-thread-foto-preview-img');
+    if (previewImg) previewImg.src = '';
+};
+
 window.chatsEnviarMensagem = async function() {
     const input = document.getElementById('chat-thread-input');
     const texto = input ? input.value.trim() : '';
-    if (!texto || !CHAT_AREA_ADM_CTX.area) return;
+    const foto = CHAT_FOTO_PENDENTE_BASE64;
+    // 🆕 Manda se tiver texto OU foto (antes só permitia texto) — pedido
+    // do usuário: "posso anexar uma foto ou tirar uma foto", inclusive
+    // sem legenda nenhuma.
+    if ((!texto && !foto) || !CHAT_AREA_ADM_CTX.area) return;
     const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
     const matricula = OPERADOR_LOGADO ? OPERADOR_LOGADO.matricula : null;
     try {
         const apiBase = await resolverApiBase();
-        await fetch(`${apiBase}/api/mensagens_area`, {
+        const resp = await fetch(`${apiBase}/api/mensagens_area`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -6726,10 +6765,13 @@ window.chatsEnviarMensagem = async function() {
                 de_adm: CHAT_AREA_ADM_CTX.deAdm,
                 remetente: CHAT_AREA_ADM_CTX.deAdm ? 'ADM' : operador,
                 remetente_matricula: matricula,
-                mensagem: texto
+                mensagem: texto,
+                foto_base64: foto
             })
         });
+        if (!resp.ok) throw new Error('Falha ao enviar');
         input.value = '';
+        window.chatsCancelarFoto();
         await window.chatsCarregarMensagens();
         if (CHAT_AREA_ADM_CTX.deAdm) await window.chatsCarregarListaConversas();
     } catch (e) {

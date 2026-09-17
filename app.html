@@ -2257,7 +2257,20 @@
                         <div id="chat-thread-mensagens" class="chat-thread-mensagens">
                             <div class="chat-vazio">Escolha uma conversa pra começar.</div>
                         </div>
+                        <!-- 🆕 Preview da foto escolhida (câmera ou galeria) antes
+                             de enviar — some sozinho depois de enviada ou ao
+                             cancelar. Comprimida em window.chatsProcessarFoto
+                             antes de virar base64 (script.js), pra não mandar
+                             fotos de câmera em resolução cheia sem necessidade. -->
+                        <div id="chat-thread-foto-preview" class="chat-foto-preview hidden">
+                            <img id="chat-thread-foto-preview-img" src="" alt="Prévia da foto">
+                            <button type="button" class="chat-foto-preview-remover" onclick="window.chatsCancelarFoto()" title="Remover foto"><i class="fas fa-xmark"></i></button>
+                        </div>
                         <div class="chat-thread-input-row">
+                            <input type="file" id="chat-thread-foto-galeria" accept="image/*" class="hidden" onchange="window.chatsProcessarFoto(this.files[0])">
+                            <input type="file" id="chat-thread-foto-camera" accept="image/*" capture="environment" class="hidden" onchange="window.chatsProcessarFoto(this.files[0])">
+                            <button type="button" class="chat-thread-anexo" title="Anexar foto da galeria" onclick="document.getElementById('chat-thread-foto-galeria').click()"><i class="fas fa-paperclip"></i></button>
+                            <button type="button" class="chat-thread-anexo" title="Tirar foto" onclick="document.getElementById('chat-thread-foto-camera').click()"><i class="fas fa-camera"></i></button>
                             <input id="chat-thread-input" class="chat-thread-input" placeholder="Digite uma mensagem..." onkeydown="if(event.key==='Enter'){window.chatsEnviarMensagem();}">
                             <button class="chat-thread-enviar" onclick="window.chatsEnviarMensagem()"><i class="fas fa-paper-plane"></i></button>
                         </div>
