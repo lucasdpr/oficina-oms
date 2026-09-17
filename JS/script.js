@@ -1424,8 +1424,14 @@ function atualizarInterfaceUsuario() {
     const match = (OPERADOR_LOGADO.nome || "").match(/\[(.+?)\]/);
     const cargo = match ? match[1] : "Operador";
     const nomeLimpo = (OPERADOR_LOGADO.nome || "").replace(/\s*\[.+?\]/, "");
+    // 🐛 CORREÇÃO: nome completo ("Wesley Oliveira De So...") estourava a
+    // largura do card da sidebar e cortava no meio de uma palavra — feio
+    // e ilegível. Mostra só primeiro e último nome ali (nome completo
+    // continua disponível em qualquer outro lugar que precise dele).
+    const partesNome = nomeLimpo.trim().split(/\s+/).filter(Boolean);
+    const nomeCurto = partesNome.length > 1 ? `${partesNome[0]} ${partesNome[partesNome.length - 1]}` : nomeLimpo;
 
-    if (nomeEl) nomeEl.innerText = nomeLimpo || "Não identificado";
+    if (nomeEl) nomeEl.innerText = nomeCurto || "Não identificado";
     if (saudacaoEl) saudacaoEl.innerText = (nomeLimpo || "Não identificado").split(" ")[0];
     if (matriculaEl) {
         matriculaEl.innerText = `Matrícula: ${OPERADOR_LOGADO.matricula || "--"}`;
