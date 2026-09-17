@@ -4161,76 +4161,83 @@ async function renderizarGraficosPainelGeral() {
     }
 
     // ---------------------------------------------------------
-    // TONELAGEM POR DIA (7 dias) + PRODUÇÃO LANÇADA — a partir dos
-    // apontamentos reais (geral + moldes), somando qtd_mcc2/3/4 por
-    // dia, ignorando lançamentos desfeitos.
+    // TONELAGEM POR DIA (7 dias) + PRODUÇÃO LANÇADA
     // ---------------------------------------------------------
     if (elTonelagem || elProducaoLancada) {
         try {
-            const apiBase = await resolverApiBase();
-            const [resGeral, resMoldes] = await Promise.all([
-                fetchComRetry(`${apiBase}/api/historico_apontamentos_geral`),
-                fetchComRetry(`${apiBase}/api/historico_apontamentos_moldes`)
-            ]);
-            const logsGeral = resGeral.ok ? await resGeral.json() : [];
-            const logsMoldes = resMoldes.ok ? await resMoldes.json() : [];
-            const logs = [...(Array.isArray(logsGeral) ? logsGeral : []), ...(Array.isArray(logsMoldes) ? logsMoldes : [])]
-                .filter(l => l.desfeito !== 1);
-
-            // 7 últimos dias (chave yyyy-mm-dd → total do dia)
-            const dias = [];
-            for (let i = 6; i >= 0; i--) {
-                const d = new Date(); d.setDate(d.getDate() - i);
-                dias.push(d.toISOString().slice(0, 10));
-            }
-            const totalPorDia = {};
-            dias.forEach(d => totalPorDia[d] = 0);
-            const totalPorMcc = { mcc2: 0, mcc3: 0, mcc4: 0 };
-            const hoje = new Date().toISOString().slice(0, 10);
-            let totalHoje = 0;
-            logs.forEach(l => {
-                const dataChave = (l.data_hora || '').slice(0, 10);
-                const soma = (Number(l.qtd_mcc2) || 0) + (Number(l.qtd_mcc3) || 0) + (Number(l.qtd_mcc4) || 0);
-                if (dataChave in totalPorDia) totalPorDia[dataChave] += soma;
-                if (dataChave === hoje) totalHoje += soma;
-                totalPorMcc.mcc2 += Number(l.qtd_mcc2) || 0;
-                totalPorMcc.mcc3 += Number(l.qtd_mcc3) || 0;
-                totalPorMcc.mcc4 += Number(l.qtd_mcc4) || 0;
-            });
-
-            if (elTonelagem) {
-                const valores = dias.map(d => totalPorDia[d]);
-                const max = Math.max(1, ...valores);
-                const largura = 600, altura = 160, passo = largura / (dias.length - 1);
-                const pontos = valores.map((v, i) => `${(i * passo).toFixed(1)},${(altura - (v / max) * (altura - 20) - 4).toFixed(1)}`).join(' ');
-                const labels = dias.map(d => new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', ''));
-                elTonelagem.innerHTML = `
-                    <svg viewBox="0 0 ${largura} ${altura}" style="width:100%; height:140px; overflow:visible;">
-                        <polyline points="${pontos}" fill="none" stroke="var(--info)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></polyline>
-                        ${valores.map((v, i) => `<circle cx="${(i * passo).toFixed(1)}" cy="${(altura - (v / max) * (altura - 20) - 4).toFixed(1)}" r="3.5" fill="var(--info)"></circle>`).join('')}
-                    </svg>
-                    <div style="display:flex; justify-content:space-between; margin-top:6px;">
-                        ${labels.map(l => `<span style="font-size:0.65rem; color:var(--text-muted); text-transform:capitalize;">${l}</span>`).join('')}
-                    </div>`;
-            }
-            if (elProducaoLancada) {
-                const totalSemana = Object.values(totalPorDia).reduce((s, v) => s + v, 0);
-                elProducaoLancada.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; margin-bottom:14px;">
-                        <div><div style="font-size:1.4rem; font-weight:800; color:var(--text-heading); font-family:var(--font-mono);">${totalHoje}</div><div style="font-size:0.7rem; color:var(--text-muted);">Hoje</div></div>
-                        <div style="text-align:right;"><div style="font-size:1.4rem; font-weight:800; color:var(--text-heading); font-family:var(--font-mono);">${totalSemana}</div><div style="font-size:0.7rem; color:var(--text-muted);">Últimos 7 dias</div></div>
-                    </div>
-                    ${['mcc2', 'mcc3', 'mcc4'].map(m => `
-                        <div style="display:flex; justify-content:space-between; font-size:0.78rem; padding:4px 0; border-top:1px solid var(--border-color);">
-                            <span style="color:var(--text-body); text-transform:uppercase;">${m}</span>
-                            <strong style="color:var(--text-heading); font-family:var(--font-mono);">${totalPorMcc[m]}</strong>
-                        </div>`).join('')}`;
-            }
+            const dados = await buscarDadosApontamentos7dias();
+            if (elTonelagem) elTonelagem.innerHTML = construirHtmlTonelagemSvg(dados);
+            if (elProducaoLancada) elProducaoLancada.innerHTML = construirHtmlProducaoLancada(dados);
         } catch (e) {
             if (elTonelagem) elTonelagem.innerHTML = `<div class="text-muted" style="text-align:center; margin:auto;">Não foi possível carregar.</div>`;
             if (elProducaoLancada) elProducaoLancada.innerHTML = `<div class="text-muted" style="text-align:center;">Não foi possível carregar.</div>`;
         }
     }
+}
+
+// 🆕 Busca + agrega os apontamentos reais (geral + moldes) dos últimos
+// 7 dias — extraído do Painel Geral pra ser reaproveitado também no
+// Painel do Supervisor (mesmo dado, uma só fonte de verdade).
+async function buscarDadosApontamentos7dias() {
+    const apiBase = await resolverApiBase();
+    const [resGeral, resMoldes] = await Promise.all([
+        fetchComRetry(`${apiBase}/api/historico_apontamentos_geral`),
+        fetchComRetry(`${apiBase}/api/historico_apontamentos_moldes`)
+    ]);
+    const logsGeral = resGeral.ok ? await resGeral.json() : [];
+    const logsMoldes = resMoldes.ok ? await resMoldes.json() : [];
+    const logs = [...(Array.isArray(logsGeral) ? logsGeral : []), ...(Array.isArray(logsMoldes) ? logsMoldes : [])]
+        .filter(l => l.desfeito !== 1);
+
+    const dias = [];
+    for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); dias.push(d.toISOString().slice(0, 10)); }
+    const totalPorDia = {};
+    dias.forEach(d => totalPorDia[d] = 0);
+    const totalPorMcc = { mcc2: 0, mcc3: 0, mcc4: 0 };
+    const hoje = new Date().toISOString().slice(0, 10);
+    let totalHoje = 0;
+    logs.forEach(l => {
+        const dataChave = (l.data_hora || '').slice(0, 10);
+        const soma = (Number(l.qtd_mcc2) || 0) + (Number(l.qtd_mcc3) || 0) + (Number(l.qtd_mcc4) || 0);
+        if (dataChave in totalPorDia) totalPorDia[dataChave] += soma;
+        if (dataChave === hoje) totalHoje += soma;
+        totalPorMcc.mcc2 += Number(l.qtd_mcc2) || 0;
+        totalPorMcc.mcc3 += Number(l.qtd_mcc3) || 0;
+        totalPorMcc.mcc4 += Number(l.qtd_mcc4) || 0;
+    });
+    return { dias, totalPorDia, totalPorMcc, totalHoje };
+}
+
+function construirHtmlTonelagemSvg(dados) {
+    const { dias, totalPorDia } = dados;
+    const valores = dias.map(d => totalPorDia[d]);
+    const max = Math.max(1, ...valores);
+    const largura = 600, altura = 160, passo = largura / (dias.length - 1);
+    const pontos = valores.map((v, i) => `${(i * passo).toFixed(1)},${(altura - (v / max) * (altura - 20) - 4).toFixed(1)}`).join(' ');
+    const labels = dias.map(d => new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', ''));
+    return `
+        <svg viewBox="0 0 ${largura} ${altura}" style="width:100%; height:140px; overflow:visible;">
+            <polyline points="${pontos}" fill="none" stroke="var(--info)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></polyline>
+            ${valores.map((v, i) => `<circle cx="${(i * passo).toFixed(1)}" cy="${(altura - (v / max) * (altura - 20) - 4).toFixed(1)}" r="3.5" fill="var(--info)"></circle>`).join('')}
+        </svg>
+        <div style="display:flex; justify-content:space-between; margin-top:6px;">
+            ${labels.map(l => `<span style="font-size:0.65rem; color:var(--text-muted); text-transform:capitalize;">${l}</span>`).join('')}
+        </div>`;
+}
+
+function construirHtmlProducaoLancada(dados) {
+    const { totalPorDia, totalPorMcc, totalHoje } = dados;
+    const totalSemana = Object.values(totalPorDia).reduce((s, v) => s + v, 0);
+    return `
+        <div style="display:flex; justify-content:space-between; margin-bottom:14px;">
+            <div><div style="font-size:1.4rem; font-weight:800; color:var(--text-heading); font-family:var(--font-mono);">${totalHoje}</div><div style="font-size:0.7rem; color:var(--text-muted);">Hoje</div></div>
+            <div style="text-align:right;"><div style="font-size:1.4rem; font-weight:800; color:var(--text-heading); font-family:var(--font-mono);">${totalSemana}</div><div style="font-size:0.7rem; color:var(--text-muted);">Últimos 7 dias</div></div>
+        </div>
+        ${['mcc2', 'mcc3', 'mcc4'].map(m => `
+            <div style="display:flex; justify-content:space-between; font-size:0.78rem; padding:4px 0; border-top:1px solid var(--border-color);">
+                <span style="color:var(--text-body); text-transform:uppercase;">${m}</span>
+                <strong style="color:var(--text-heading); font-family:var(--font-mono);">${totalPorMcc[m]}</strong>
+            </div>`).join('')}`;
 }
 
 // 🗑️ Removida a aba "Registro Recente" (e as funções
@@ -5607,15 +5614,15 @@ window.renderPainelSupervisor = async function() {
     // Vistas (mesmo NOTIF_FEED_CACHE usado na Central de Notificações).
     // ---------------------------------------------------------
     const badgesEl = document.getElementById('painel-supervisor-kpi-badges');
+    const chavesArea = (typeof AREAS_OFICINA !== 'undefined' ? AREAS_OFICINA : []).map(a => a.chave);
+    let areasCriticas = 0, areasAtencao = 0;
+    chavesArea.forEach(chave => {
+        const st = calcularStatusArea(chave);
+        if (st.label === 'Crítico') areasCriticas++;
+        else if (st.label === 'Restrição' || st.label === 'Atenção') areasAtencao++;
+    });
+    const naoVistas = (typeof NOTIF_FEED_CACHE !== 'undefined' ? NOTIF_FEED_CACHE : []).filter(item => !item.lida).length;
     if (badgesEl) {
-        const chavesArea = (typeof AREAS_OFICINA !== 'undefined' ? AREAS_OFICINA : []).map(a => a.chave);
-        let areasCriticas = 0, areasAtencao = 0;
-        chavesArea.forEach(chave => {
-            const st = calcularStatusArea(chave);
-            if (st.label === 'Crítico') areasCriticas++;
-            else if (st.label === 'Restrição' || st.label === 'Atenção') areasAtencao++;
-        });
-        const naoVistas = (typeof NOTIF_FEED_CACHE !== 'undefined' ? NOTIF_FEED_CACHE : []).filter(item => !item.lida).length;
         badgesEl.innerHTML = `
             <div class="sup-kpi-badge" style="--sup-cor:#ef4444;" onclick="window.abrirAba(null,'aba-oficina')"><i class="fas fa-triangle-exclamation"></i> ${areasCriticas} Áreas Críticas</div>
             <div class="sup-kpi-badge" style="--sup-cor:#eab308;" onclick="window.abrirAba(null,'aba-oficina')"><i class="fas fa-circle-exclamation"></i> ${areasAtencao} Em Atenção</div>
@@ -5699,6 +5706,61 @@ window.renderPainelSupervisor = async function() {
                 </tr>`;
             }).join('')
             : `<tr><td colspan="4" class="text-center text-muted">Nenhum equipamento instalado no veio.</td></tr>`;
+    }
+
+    // ---------------------------------------------------------
+    // 🆕 RESUMO DA SUPERVISÃO — reaproveita as mesmas contagens da
+    // faixa de KPIs + concluídas (7 dias), sem calcular nada de novo.
+    // ---------------------------------------------------------
+    const elSupResumo = document.getElementById('painel-supervisor-resumo');
+    if (elSupResumo) {
+        const linha = (label, valor, cor) => `
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; padding:6px 0; border-top:1px solid var(--border-color);">
+                <span style="color:var(--text-body);"><i class="fas fa-circle" style="color:${cor}; font-size:6px; margin-right:8px;"></i>${label}</span>
+                <strong style="color:var(--text-heading); font-family:var(--font-mono);">${valor}</strong>
+            </div>`;
+        elSupResumo.innerHTML =
+            linha('Críticas', areasCriticas, 'var(--danger)') +
+            linha('Atenção', areasAtencao, 'var(--warning)') +
+            linha('Não vistas', naoVistas, 'var(--info)') +
+            linha('Concluídas (7d)', concluidas7dias.length, 'var(--success)');
+    }
+
+    // ---------------------------------------------------------
+    // 🆕 PRODUÇÃO LANÇADA — mesmo dado real do Painel Geral.
+    // ---------------------------------------------------------
+    const elSupProducao = document.getElementById('painel-supervisor-producao-lancada');
+    if (elSupProducao) {
+        buscarDadosApontamentos7dias()
+            .then(dados => { elSupProducao.innerHTML = construirHtmlProducaoLancada(dados); })
+            .catch(() => { elSupProducao.innerHTML = `<div class="text-muted" style="text-align:center;">Não foi possível carregar.</div>`; });
+    }
+
+    // ---------------------------------------------------------
+    // 🆕 ATIVIDADES RECENTES — últimos eventos globais do sistema
+    // (mesma fonte da Auditoria, /api/historico_eventos).
+    // ---------------------------------------------------------
+    const elSupRecentes = document.getElementById('painel-supervisor-atividades-recentes');
+    if (elSupRecentes) {
+        (async () => {
+            try {
+                const apiBase = await resolverApiBase();
+                const resp = await fetchComRetry(`${apiBase}/api/historico_eventos?limite=6`);
+                const eventos = resp.ok ? await resp.json() : [];
+                elSupRecentes.innerHTML = Array.isArray(eventos) && eventos.length
+                    ? eventos.slice(0, 6).map(e => {
+                        const hora = e.data_hora ? new Date(e.data_hora.replace(' ', 'T') + 'Z').toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }) : '--:--';
+                        return `
+                        <div style="display:flex; gap:10px; padding:8px 0; border-top:1px solid var(--border-color);">
+                            <span class="text-muted" style="font-size:0.72rem; font-family:var(--font-mono); flex-shrink:0;">${hora}</span>
+                            <span style="font-size:0.8rem; color:var(--text-body);">${e.acao || e.peca_id || 'Evento registrado'}</span>
+                        </div>`;
+                    }).join('')
+                    : `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhum evento recente.</div>`;
+            } catch (e) {
+                elSupRecentes.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">Não foi possível carregar.</div>`;
+            }
+        })();
     }
 
     // ---------------------------------------------------------
@@ -6397,7 +6459,13 @@ window.renderPainelSupervisor = async function() {
     }
 
     const tsEl = document.getElementById('painel-supervisor-ultima-atualizacao');
-    if (tsEl) tsEl.textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    if (tsEl) tsEl.textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    const saudacaoEl = document.getElementById('painel-supervisor-saudacao');
+    if (saudacaoEl) {
+        const nomeSup = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || '').replace(/\s*\[.+?\]/, '').trim() : '';
+        saudacaoEl.textContent = nomeSup ? `Olá, ${nomeSup}!` : 'Olá!';
+    }
 };
 
 // --------------------------------------------------------------

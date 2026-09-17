@@ -1516,20 +1516,29 @@
                      um glass-panel igual às outras 40 telas do sistema.
                      (Repaginado pra sério/fino/minimalista a pedido do
                      usuário — ver comentário grande em style.css.) -->
-                <div class="sup-header">
-                    <div class="sup-header-linha">
-                        <div class="sup-header-titulo-bloco">
-                            <div class="sup-header-selo"><span class="sup-pulso"></span> AO VIVO</div>
-                            <h2><i class="fas fa-binoculars"></i> Painel do Supervisor</h2>
-                            <p>O olhar de cima da oficina inteira — o que precisa de atenção agora, quem está fazendo o quê,
-                                como está o estoque e se a tendência é melhorar ou piorar.</p>
+                <!-- 🆕 Hero com foto de fundo (mesma referência/mesmo padrão já
+                     usado no Painel Geral — reaproveita .painel-hero* sem
+                     criar classe nova) + selo "AO VIVO" e botão Atualizar
+                     mantidos, só que agora dentro do hero. -->
+                <div class="painel-hero">
+                    <div class="painel-hero-fundo"></div>
+                    <div class="painel-hero-conteudo">
+                        <div class="sup-header-selo" style="margin-bottom:10px;"><span class="sup-pulso"></span> PAINEL DO SUPERVISOR</div>
+                        <div class="painel-hero-titulo">
+                            <div class="painel-hero-icone"><i class="fas fa-binoculars"></i></div>
+                            <div>
+                                <h1 id="painel-supervisor-saudacao">Olá!</h1>
+                                <p>Aqui você acompanha o desempenho das áreas, ativos e indicadores da manutenção em tempo real.</p>
+                            </div>
                         </div>
-                        <div class="sup-header-acao">
-                            <button class="btn-premium" onclick="window.renderPainelSupervisor()">
-                                <i class="fas fa-rotate"></i> Atualizar
-                            </button>
-                            <div id="painel-supervisor-ultima-atualizacao" class="sup-header-timestamp"></div>
+                        <div class="painel-hero-badges">
+                            <button class="painel-hero-badge" style="cursor:pointer; font-family:inherit;" onclick="window.renderPainelSupervisor()"><i class="fas fa-rotate"></i> Atualizar<span>dados</span></button>
+                            <div class="painel-hero-badge"><i class="fas fa-server"></i> MCC 2/3/4 <span>Áreas de atuação</span></div>
                         </div>
+                    </div>
+                    <div class="painel-hero-status-card">
+                        <div class="plant-status-badge"><i class="fas fa-circle"></i> Sistema Online</div>
+                        <div class="text-muted" style="font-size:11px; margin-top:4px;">Última atualização: <span id="painel-supervisor-ultima-atualizacao"></span></div>
                     </div>
                 </div>
 
@@ -1606,6 +1615,28 @@
                             <p class="text-muted" style="font-size:0.8rem; margin-bottom:12px;">Acesse o suporte do sistema.</p>
                             <button class="btn-outline-neutral" style="width:100%;" onclick="alert('Suporte: fale com o administrador do sistema ou o setor de TI da CSN.')">Falar com suporte <i class="fas fa-arrow-right"></i></button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- 🆕 Atividades Recentes / Produção Lançada / Resumo da
+                     Supervisão (referência) — 3 colunas iguais. Produção
+                     Lançada reaproveita o mesmo dado real dos apontamentos
+                     já usado no Painel Geral. -->
+                <div class="painel-geral-linha3-lateral">
+                    <div class="glass-panel" style="padding:20px;">
+                        <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:4px;"><i class="fas fa-clock-rotate-left" style="color:var(--warning);"></i> Atividades Recentes</h3>
+                        <p class="text-muted" style="font-size:0.75rem; margin-bottom:14px;">Últimos eventos registrados no sistema.</p>
+                        <div id="painel-supervisor-atividades-recentes"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
+                    </div>
+                    <div class="glass-panel" style="padding:20px;">
+                        <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:4px;"><i class="fas fa-industry" style="color:#3b82f6;"></i> Produção Lançada</h3>
+                        <p class="text-muted" style="font-size:0.75rem; margin-bottom:14px;">Toneladas apontadas por MCC, hoje e nos últimos 7 dias.</p>
+                        <div id="painel-supervisor-producao-lancada"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
+                    </div>
+                    <div class="glass-panel" style="padding:20px;">
+                        <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:4px;"><i class="fas fa-clipboard-list" style="color:var(--brand);"></i> Resumo da Supervisão</h3>
+                        <p class="text-muted" style="font-size:0.75rem; margin-bottom:14px;">Panorama geral das áreas e atividades.</p>
+                        <div id="painel-supervisor-resumo"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
                     </div>
                 </div>
 
