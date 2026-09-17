@@ -788,6 +788,37 @@
         </aside>
 
         <main class="main-content">
+            <!-- 🆕 HEADER SUPERIOR (referência "John Hardward") — movido pra
+                 FORA de qualquer .tab-content: antes vivia só dentro de
+                 #aba-painel ("implementado só aqui, antes de replicar nas
+                 outras telas" — nunca tinha sido replicado). Ficando aqui,
+                 direto dentro de .main-content, aparece em TODAS as abas
+                 sem duplicar id nenhum (getElementById só funciona uma vez
+                 por id — duplicar essa marcação em cada aba quebraria a
+                 busca/sino/avatar depois da primeira aba visitada). Não
+                 muda de conteúdo entre abas (mesma saudação, mesma busca no
+                 menu, mesmo sino, mesmo avatar sempre), então não precisa
+                 mesmo viver dentro de uma aba específica. -->
+            <div class="header-topo-painel glass-panel">
+                <div class="header-topo-saudacao">
+                    <span class="header-topo-saudacao-label">Bem-vindo(a),</span>
+                    <strong id="header-topo-saudacao-nome">--</strong>
+                </div>
+                <div class="header-topo-busca">
+                    <i class="fas fa-magnifying-glass"></i>
+                    <input type="text" id="header-topo-busca-input" placeholder="Buscar no menu..." oninput="window.filtrarMenuHeader(this.value)" onkeydown="if(event.key==='Escape'){this.value='';window.filtrarMenuHeader('');this.blur();}">
+                </div>
+                <div class="header-topo-acoes">
+                    <button type="button" id="header-topo-sino-pai" class="header-topo-sino hidden" title="Notificações" onclick="window.abrirAba(null,'aba-notificacoes')">
+                        <i class="fas fa-bell"></i>
+                        <span id="header-topo-sino-badge" class="hidden"></span>
+                    </button>
+                    <button type="button" class="header-topo-avatar" title="Menu do operador" onclick="window.toggleSidebar()">
+                        <i class="fas fa-user"></i>
+                    </button>
+                </div>
+            </div>
+
             <section id="seletor-veios-container" class="veios-selector-section glass-panel hidden">
                 <h3><i class="fas fa-compress-alt"></i> Filtragem Rápida de Veio</h3>
                 <div class="veios-grid-buttons">
@@ -801,37 +832,6 @@
             </section>
 
             <section id="aba-painel" class="tab-content active">
-
-    <!-- 0. HEADER SUPERIOR (referência "John Hardward") — proposta pra
-         aprovação, implementado só aqui no Painel Geral antes de replicar
-         nas outras telas. Não duplica matrícula/cargo (já na sidebar):
-         saudação com o primeiro nome (mesma fonte que já preenche a
-         sidebar, ver saudacaoEl em atualizarInterfaceUsuario/script.js),
-         busca que filtra os itens do menu lateral em tempo real (função
-         nova window.filtrarMenuHeader em script.js — não inventa uma
-         busca "de verdade" sobre dados ainda sem endpoint pra isso), sino
-         que reaproveita a Central de Notificações já existente (mesmo
-         badge, só espelhado aqui) e um avatar simples (iniciais) que abre
-         o mesmo menu de Encerrar Turno da sidebar. -->
-    <div class="header-topo-painel glass-panel">
-        <div class="header-topo-saudacao">
-            <span class="header-topo-saudacao-label">Bem-vindo(a),</span>
-            <strong id="header-topo-saudacao-nome">--</strong>
-        </div>
-        <div class="header-topo-busca">
-            <i class="fas fa-magnifying-glass"></i>
-            <input type="text" id="header-topo-busca-input" placeholder="Buscar no menu..." oninput="window.filtrarMenuHeader(this.value)" onkeydown="if(event.key==='Escape'){this.value='';window.filtrarMenuHeader('');this.blur();}">
-        </div>
-        <div class="header-topo-acoes">
-            <button type="button" id="header-topo-sino-pai" class="header-topo-sino hidden" title="Notificações" onclick="window.abrirAba(null,'aba-notificacoes')">
-                <i class="fas fa-bell"></i>
-                <span id="header-topo-sino-badge" class="hidden"></span>
-            </button>
-            <button type="button" class="header-topo-avatar" title="Menu do operador" onclick="window.toggleSidebar()">
-                <i class="fas fa-user"></i>
-            </button>
-        </div>
-    </div>
 
     <!-- 1. HERO — referência mandada pelo usuário: banner com foto de
          fundo (reaproveitada a mesma imagem já usada na tela de login,
