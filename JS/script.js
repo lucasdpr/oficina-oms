@@ -4311,17 +4311,28 @@ function renderizarGridCentralAreas() {
         visiveis = visiveis.filter(v => v.status.label === CENTRAL_AREAS_FILTRO_STATUS);
     }
 
+    // 🆕 Proposta A (Central de Áreas — "está esquisita"): antes todo card
+    // tinha o mesmo peso visual, sem nada guiando o olho pro que precisa
+    // de atenção primeiro. Ordena por severidade (Crítico > Restrição >
+    // Atenção > Normal, empate por mais itens em aberto) — não muda o
+    // formato de grid, só a hierarquia de leitura.
+    const ORDEM_SEVERIDADE = { 'Crítico': 0, 'Restrição': 1, 'Atenção': 2, 'Normal': 3 };
+    visiveis.sort((a, b) => {
+        const diff = ORDEM_SEVERIDADE[a.status.label] - ORDEM_SEVERIDADE[b.status.label];
+        return diff !== 0 ? diff : b.status.emAberto - a.status.emAberto;
+    });
+
     const cardsOficina = visiveis.map(({ area: a, status: s }) => `
-        <div class="oficina-area-card" onclick="window.abrirAreaOficina('${a.chave}')">
+        <div class="oficina-area-card" style="--area-severidade-cor:${s.cor};" onclick="window.abrirAreaOficina('${a.chave}')">
             <div class="oficina-area-topo">
                 <div class="oficina-area-icone"><i class="fas ${a.icone}"></i></div>
                 <span class="oficina-area-status-badge" style="color:${s.cor};">${s.emoji} ${s.label}</span>
             </div>
             <h4>${a.nome}</h4>
             <div class="oficina-area-resumo">
-                <span title="Pendentes"><i class="fas fa-hourglass-half"></i> ${s.pendentes}</span>
-                <span title="Em andamento"><i class="fas fa-person-running"></i> ${s.andamento}</span>
-                ${s.atrasadas > 0 ? `<span title="Atrasadas" style="color:var(--danger);"><i class="fas fa-triangle-exclamation"></i> ${s.atrasadas}</span>` : ''}
+                <span title="Pendentes"><i class="fas fa-hourglass-half"></i> ${s.pendentes} pendente${s.pendentes === 1 ? '' : 's'}</span>
+                <span title="Em andamento"><i class="fas fa-person-running"></i> ${s.andamento} em andamento</span>
+                ${s.atrasadas > 0 ? `<span title="Atrasadas" style="color:var(--danger);"><i class="fas fa-triangle-exclamation"></i> ${s.atrasadas} atrasada${s.atrasadas === 1 ? '' : 's'}</span>` : ''}
             </div>
             <button class="oficina-area-acessar">Acessar Área <i class="fas fa-arrow-right"></i></button>
         </div>
@@ -10798,6 +10809,35 @@ window.marcarTodasLidasDaArea = async function() {
     }
 };
 
+// 🆕 Proposta A (Central de Notificações — "está horrível"): antes só
+// dava pra marcar como lida abrindo o item (que também navega pra
+// fora da Central) ou marcando TODAS de uma área de uma vez. Essa aqui
+// marca só UM item, sem sair da lista — o botão fica dentro da linha,
+// visível só quando a notificação está não lida (ver renderItemNotificacao).
+// event.stopPropagation() é essencial: a linha inteira (.notificacoes-item)
+// já tem onclick pra abrir/navegar — sem isso, clicar no botão também
+// dispararia a navegação por cima.
+window.marcarNotificacaoLidaRapido = async function(event, tipo, eventoId) {
+    event.stopPropagation();
+    if (!OPERADOR_LOGADO || !OPERADOR_LOGADO.matricula) return;
+
+    const botao = event.currentTarget;
+    if (botao) { botao.disabled = true; botao.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+
+    try {
+        const apiBase = await resolverApiBase();
+        await fetch(`${apiBase}/api/notificacoes/marcar_lido`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tipo, evento_id: String(eventoId), matricula: OPERADOR_LOGADO.matricula })
+        });
+    } catch (e) {
+        console.error('⚠️ Erro ao marcar notificação como lida:', e);
+    } finally {
+        window.carregarCentralNotificacoes();
+    }
+};
+
 // 🆕 Detalhe de UMA área — chamado ao clicar num card da grade (ou de
 // novo pelo polling, se a pessoa já estiver dentro do detalhe). Não
 // agrupa mais por área (já é uma área só aqui); a separação por área
@@ -10903,20 +10943,34 @@ function renderItemNotificacao(item) {
     const icone = ICONE_POR_TIPO_NOTIFICACAO[item.tipo] || '📋';
     const cor = naoLida ? 'var(--danger)' : 'var(--border-color)';
     const referencia = item.referencia;
+    // 🆕 Proposta A (Central de Notificações): o ponto de "não lida" era
+    // um "●" pequeno solto no meio do texto, fácil de não notar numa
+    // lista comprida — virou um indicador dedicado (.notificacoes-item-dot),
+    // com o mesmo tamanho sempre (lida ou não), só a cor/preenchimento
+    // muda, pra não pular o layout da linha. E o botão de marcar como
+    // lida direto na linha evita ter que abrir cada item (que também
+    // navega pra fora da Central) só pra limpar o "não lida".
     return `
     <div class="notificacoes-item" style="--item-cor:${cor}; ${naoLida ? 'background:color-mix(in srgb, var(--danger) 6%, var(--bg-card));' : ''}"
          onclick="window.abrirItemNotificacao('${escapeAtributoNotif(item.tipo)}', '${escapeAtributoNotif(item.evento_id)}', '${escapeAtributoNotif(referencia)}', '${escapeAtributoNotif(item.area)}', ${item.atividade_id != null ? Number(item.atividade_id) : 'null'}, '${escapeAtributoNotif(item.tipo_evento || 'status')}')">
+        <span class="notificacoes-item-dot ${naoLida ? 'nao-lida' : ''}" title="${naoLida ? 'Não lida' : 'Lida'}"></span>
         <div class="notificacoes-item-icone" style="${naoLida ? 'color:var(--danger);' : ''}">${icone}</div>
         <div class="notificacoes-item-corpo">
             <div class="notificacoes-item-topo">
                 <span class="font-code" style="font-weight:700; color:var(--text-heading);">
-                    ${naoLida ? '<span style="color:var(--danger);">●</span> ' : ''}${escapeHtmlNotif(item.referencia) || '-'}
+                    ${escapeHtmlNotif(item.referencia) || '-'}
                 </span>
                 <span style="font-size:10.5px; color:var(--text-muted);">${escapeHtmlNotif(item.data_hora)}</span>
             </div>
             <div class="notificacoes-item-linha">${escapeHtmlNotif(limparMarcadorTecnicoDescricao(item.descricao))}</div>
             <div style="font-size:10.5px; color:var(--text-accent);">${escapeHtmlNotif(item.autor) || 'Sistema'}</div>
         </div>
+        ${naoLida ? `
+        <button type="button" class="notificacoes-item-marcar-lida" title="Marcar como lida"
+                onclick="window.marcarNotificacaoLidaRapido(event, '${escapeAtributoNotif(item.tipo)}', '${escapeAtributoNotif(item.evento_id)}')">
+            <i class="fas fa-check"></i>
+        </button>
+        ` : ''}
     </div>
     `;
 }
