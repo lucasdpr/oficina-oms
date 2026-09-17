@@ -6401,6 +6401,72 @@ textarea,
     text-align: right;
 }
 
+/* 🆕 Foto anexada/tirada no chat (pedido do usuário) — mesma ideia
+   visual das fotos em miniatura já usadas em outras telas do sistema
+   (Qualidade, Achados), clicável pra abrir no lightbox já existente. */
+.chat-bolha-foto {
+    display: block;
+    max-width: 100%;
+    max-height: 240px;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    object-fit: cover;
+}
+
+/* 🆕 Prévia da foto escolhida antes de enviar, e botões de anexo/câmera
+   na linha de envio. */
+.chat-foto-preview {
+    position: relative;
+    display: inline-block;
+    margin: 8px 16px 0;
+    width: 84px;
+}
+.chat-foto-preview img {
+    width: 84px;
+    height: 84px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+.chat-foto-preview-remover {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    background: var(--danger);
+    color: #fff;
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.chat-thread-anexo {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: var(--bg-input);
+    color: var(--text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color var(--transition-fast, 0.15s ease), border-color var(--transition-fast, 0.15s ease);
+}
+@media (hover: hover) and (pointer: fine) {
+    .chat-thread-anexo:hover {
+        color: var(--brand);
+        border-color: var(--brand);
+    }
+}
+
 .chat-thread-input-row {
     display: flex;
     align-items: center;
