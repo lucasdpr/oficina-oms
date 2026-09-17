@@ -1005,6 +1005,44 @@
             </div>
         </div>
 
+    <!-- 5. Acesso Rápido + Precisa de ajuda? — referência mandada pelo
+         usuário. Reaproveita .tecnico-atalho-btn (mesmo padrão ícone
+         em cima + label embaixo já usado no Painel do Técnico). -->
+    <div class="painel-geral-linha4">
+        <div class="glass-panel painel-acesso-rapido-card">
+            <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:2px;">Acesso Rápido</h3>
+            <p class="text-muted" style="font-size:0.75rem; margin-bottom:16px;">Principais rotinas do sistema.</p>
+            <div class="tecnico-atalhos-grid">
+                <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-ordens-servico')">
+                    <i class="fas fa-file-invoice"></i>
+                    <span>Lançar OS</span>
+                </button>
+                <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-fluxo')">
+                    <i class="fas fa-magnifying-glass"></i>
+                    <span>Consultar Ativos</span>
+                </button>
+                <button class="tecnico-atalho-btn" onclick="window.abrirCriticos()">
+                    <i class="fas fa-chart-column"></i>
+                    <span>Relatórios</span>
+                </button>
+                <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-reservas')">
+                    <i class="fas fa-boxes"></i>
+                    <span>Estoque</span>
+                </button>
+            </div>
+        </div>
+        <div class="glass-panel painel-ajuda-card">
+            <div class="painel-ajuda-icone"><i class="fas fa-circle-question"></i></div>
+            <div>
+                <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:2px;">Precisa de ajuda?</h3>
+                <p class="text-muted" style="font-size:0.8rem; margin-bottom:12px;">Acesse o suporte do sistema.</p>
+                <button class="btn-outline-neutral" style="width:100%;" onclick="alert('Suporte: fale com o administrador do sistema ou o setor de TI da CSN.')">
+                    Falar com suporte <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
 </section>
 
             <section id="aba-tecnico" class="tab-content">

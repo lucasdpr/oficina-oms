@@ -4027,6 +4027,208 @@ function atualizarPainelCompleto() {
     executarSeguro(() => atualizarNovosKPIs(), 'atualizarNovosKPIs');
     executarSeguro(() => atualizarKPIsAvancados(), 'atualizarKPIsAvancados');
     executarSeguro(() => renderizarTopCriticos(), 'renderizarTopCriticos');
+    executarSeguro(() => renderizarGraficosPainelGeral(), 'renderizarGraficosPainelGeral');
+}
+
+// 🆕 Preenche os 6 blocos do Painel Geral que ficavam presos em
+// "Carregando..." pra sempre (referência mandada pelo usuário): a
+// linha de gráficos (Tonelagem/Risco dos Ativos/Status das
+// Atividades) e a linha de Risco por Veio/Atividades Atrasadas/
+// Produção Lançada. O HTML e CSS desses cards já existiam — só
+// nunca tinha sido escrito o JS que os alimenta.
+async function renderizarGraficosPainelGeral() {
+    const elTonelagem = document.getElementById('painel-linha-tonelagem');
+    const elDonutRisco = document.getElementById('painel-donut-risco');
+    const elDonutStatus = document.getElementById('painel-donut-status');
+    const elRankingVeios = document.getElementById('painel-ranking-veios');
+    const elAtrasadasGlobais = document.getElementById('painel-atrasadas-globais');
+    const elProducaoLancada = document.getElementById('painel-producao-lancada');
+    if (!elDonutRisco && !elDonutStatus && !elRankingVeios) return; // aba nem existe (HTML antigo em cache)
+
+    const ativos = Array.isArray(window.BANCO_ATIVOS) ? window.BANCO_ATIVOS : [];
+    const atividades = Array.isArray(window.OFICINA_ATIVIDADES_CACHE) ? window.OFICINA_ATIVIDADES_CACHE : [];
+    const instalados = ativos.filter(a => a.local && a.local.includes('Veio') && !a.local.includes('Oficina'));
+
+    // ---------------------------------------------------------
+    // DONUT — Risco dos Ativos (Crítico ≥80% / Atenção 50-79% / Normal <50%)
+    // ---------------------------------------------------------
+    if (elDonutRisco) {
+        const comPct = instalados.map(a => ({ ...a, pct: a.meta > 0 ? (a.ton / a.meta) * 100 : 0 }));
+        const critico = comPct.filter(a => a.pct >= 80).length;
+        const atencao = comPct.filter(a => a.pct >= 50 && a.pct < 80).length;
+        const normal = comPct.length - critico - atencao;
+        const total = comPct.length || 1;
+        const pctCritico = (critico / total) * 100;
+        const pctAtencao = (atencao / total) * 100;
+        elDonutRisco.innerHTML = `
+            <div class="painel-donut-corpo">
+                <div class="painel-donut-anel" style="background:conic-gradient(var(--danger) 0% ${pctCritico}%, var(--warning) ${pctCritico}% ${pctCritico + pctAtencao}%, var(--success) ${pctCritico + pctAtencao}% 100%);">
+                    <div class="painel-donut-centro"><strong>${comPct.length}</strong><span>Ativos</span></div>
+                </div>
+                <div class="painel-donut-legenda">
+                    <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--danger);"></span>Crítico</span><strong>${critico} (${pctCritico.toFixed(0)}%)</strong></div>
+                    <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--warning);"></span>Atenção</span><strong>${atencao} (${pctAtencao.toFixed(0)}%)</strong></div>
+                    <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--success);"></span>Normal</span><strong>${normal} (${(100 - pctCritico - pctAtencao).toFixed(0)}%)</strong></div>
+                </div>
+            </div>`;
+    }
+
+    // ---------------------------------------------------------
+    // DONUT — Status das Atividades (Pendente/Em Andamento/Concluído)
+    // ---------------------------------------------------------
+    if (elDonutStatus) {
+        const pendente = atividades.filter(x => x.status === 'Pendente').length;
+        const andamento = atividades.filter(x => x.status === 'Em Andamento').length;
+        const concluido = atividades.filter(x => x.status === 'Concluído').length;
+        const total = (pendente + andamento + concluido) || 1;
+        const pctPendente = (pendente / total) * 100;
+        const pctAndamento = (andamento / total) * 100;
+        elDonutStatus.innerHTML = `
+            <div class="painel-donut-corpo">
+                <div class="painel-donut-anel" style="background:conic-gradient(var(--warning) 0% ${pctPendente}%, var(--info) ${pctPendente}% ${pctPendente + pctAndamento}%, var(--success) ${pctPendente + pctAndamento}% 100%);">
+                    <div class="painel-donut-centro"><strong>${pendente + andamento + concluido}</strong><span>Atividades</span></div>
+                </div>
+                <div class="painel-donut-legenda">
+                    <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--warning);"></span>Pendente</span><strong>${pendente} (${pctPendente.toFixed(0)}%)</strong></div>
+                    <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--info);"></span>Em Andamento</span><strong>${andamento} (${pctAndamento.toFixed(0)}%)</strong></div>
+                    <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--success);"></span>Concluído</span><strong>${concluido} (${(100 - pctPendente - pctAndamento).toFixed(0)}%)</strong></div>
+                </div>
+            </div>`;
+    }
+
+    // ---------------------------------------------------------
+    // RISCO POR VEIO — desgaste médio agrupado por letra do veio
+    // ---------------------------------------------------------
+    if (elRankingVeios) {
+        const porVeio = {};
+        instalados.forEach(a => {
+            const match = (a.local || '').match(/Veio\s*([A-Z])/i);
+            const veio = match ? match[1].toUpperCase() : '—';
+            const pct = a.meta > 0 ? (a.ton / a.meta) * 100 : 0;
+            if (!porVeio[veio]) porVeio[veio] = { soma: 0, qtd: 0 };
+            porVeio[veio].soma += pct;
+            porVeio[veio].qtd += 1;
+        });
+        const ranking = Object.entries(porVeio)
+            .map(([veio, v]) => ({ veio, media: v.soma / v.qtd, qtd: v.qtd }))
+            .sort((a, b) => b.media - a.media)
+            .slice(0, 6);
+        elRankingVeios.innerHTML = ranking.length
+            ? ranking.map(r => {
+                const cor = r.media >= 80 ? 'var(--danger)' : (r.media >= 50 ? 'var(--warning)' : 'var(--success)');
+                return `
+                <div style="margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:4px;">
+                        <span style="color:var(--text-body);">Veio ${r.veio}</span>
+                        <span style="color:${cor}; font-weight:700;">${r.media.toFixed(1)}% méd.</span>
+                    </div>
+                    <div style="height:6px; background:var(--bg-input); border-radius:4px; overflow:hidden;">
+                        <div style="height:100%; width:${Math.min(100, r.media).toFixed(1)}%; background:${cor}; border-radius:4px;"></div>
+                    </div>
+                </div>`;
+            }).join('')
+            : `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhum equipamento instalado no veio.</div>`;
+    }
+
+    // ---------------------------------------------------------
+    // ATIVIDADES ATRASADAS — ranking por área, igual ao Painel do Supervisor
+    // ---------------------------------------------------------
+    if (elAtrasadasGlobais) {
+        const atrasadas = atividades.filter(x =>
+            !atividadeAindaNaoComecou(x) && x.status !== 'Concluído' && x.status !== 'Recusado' && atividadeEstaAtrasada(x)
+        );
+        const porArea = {};
+        atrasadas.forEach(x => {
+            const area = x.area || x.solicitante_area || '—';
+            porArea[area] = (porArea[area] || 0) + 1;
+        });
+        const ranking = Object.entries(porArea).sort((a, b) => b[1] - a[1]).slice(0, 6);
+        const max = Math.max(1, ...ranking.map(([, v]) => v));
+        elAtrasadasGlobais.innerHTML = ranking.length
+            ? ranking.map(([area, v]) => `
+                <div style="margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:4px;">
+                        <span style="color:var(--text-body); text-transform:capitalize;">${area}</span>
+                        <span style="color:var(--danger); font-weight:700;">${v}</span>
+                    </div>
+                    <div style="height:6px; background:var(--bg-input); border-radius:4px; overflow:hidden;">
+                        <div style="height:100%; width:${(v / max * 100).toFixed(1)}%; background:var(--danger); border-radius:4px;"></div>
+                    </div>
+                </div>`).join('')
+            : `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhuma atividade atrasada agora 👍</div>`;
+    }
+
+    // ---------------------------------------------------------
+    // TONELAGEM POR DIA (7 dias) + PRODUÇÃO LANÇADA — a partir dos
+    // apontamentos reais (geral + moldes), somando qtd_mcc2/3/4 por
+    // dia, ignorando lançamentos desfeitos.
+    // ---------------------------------------------------------
+    if (elTonelagem || elProducaoLancada) {
+        try {
+            const apiBase = await resolverApiBase();
+            const [resGeral, resMoldes] = await Promise.all([
+                fetchComRetry(`${apiBase}/api/historico_apontamentos_geral`),
+                fetchComRetry(`${apiBase}/api/historico_apontamentos_moldes`)
+            ]);
+            const logsGeral = resGeral.ok ? await resGeral.json() : [];
+            const logsMoldes = resMoldes.ok ? await resMoldes.json() : [];
+            const logs = [...(Array.isArray(logsGeral) ? logsGeral : []), ...(Array.isArray(logsMoldes) ? logsMoldes : [])]
+                .filter(l => l.desfeito !== 1);
+
+            // 7 últimos dias (chave yyyy-mm-dd → total do dia)
+            const dias = [];
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date(); d.setDate(d.getDate() - i);
+                dias.push(d.toISOString().slice(0, 10));
+            }
+            const totalPorDia = {};
+            dias.forEach(d => totalPorDia[d] = 0);
+            const totalPorMcc = { mcc2: 0, mcc3: 0, mcc4: 0 };
+            const hoje = new Date().toISOString().slice(0, 10);
+            let totalHoje = 0;
+            logs.forEach(l => {
+                const dataChave = (l.data_hora || '').slice(0, 10);
+                const soma = (Number(l.qtd_mcc2) || 0) + (Number(l.qtd_mcc3) || 0) + (Number(l.qtd_mcc4) || 0);
+                if (dataChave in totalPorDia) totalPorDia[dataChave] += soma;
+                if (dataChave === hoje) totalHoje += soma;
+                totalPorMcc.mcc2 += Number(l.qtd_mcc2) || 0;
+                totalPorMcc.mcc3 += Number(l.qtd_mcc3) || 0;
+                totalPorMcc.mcc4 += Number(l.qtd_mcc4) || 0;
+            });
+
+            if (elTonelagem) {
+                const valores = dias.map(d => totalPorDia[d]);
+                const max = Math.max(1, ...valores);
+                const largura = 600, altura = 160, passo = largura / (dias.length - 1);
+                const pontos = valores.map((v, i) => `${(i * passo).toFixed(1)},${(altura - (v / max) * (altura - 20) - 4).toFixed(1)}`).join(' ');
+                const labels = dias.map(d => new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', ''));
+                elTonelagem.innerHTML = `
+                    <svg viewBox="0 0 ${largura} ${altura}" style="width:100%; height:140px; overflow:visible;">
+                        <polyline points="${pontos}" fill="none" stroke="var(--info)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></polyline>
+                        ${valores.map((v, i) => `<circle cx="${(i * passo).toFixed(1)}" cy="${(altura - (v / max) * (altura - 20) - 4).toFixed(1)}" r="3.5" fill="var(--info)"></circle>`).join('')}
+                    </svg>
+                    <div style="display:flex; justify-content:space-between; margin-top:6px;">
+                        ${labels.map(l => `<span style="font-size:0.65rem; color:var(--text-muted); text-transform:capitalize;">${l}</span>`).join('')}
+                    </div>`;
+            }
+            if (elProducaoLancada) {
+                const totalSemana = Object.values(totalPorDia).reduce((s, v) => s + v, 0);
+                elProducaoLancada.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:14px;">
+                        <div><div style="font-size:1.4rem; font-weight:800; color:var(--text-heading); font-family:var(--font-mono);">${totalHoje}</div><div style="font-size:0.7rem; color:var(--text-muted);">Hoje</div></div>
+                        <div style="text-align:right;"><div style="font-size:1.4rem; font-weight:800; color:var(--text-heading); font-family:var(--font-mono);">${totalSemana}</div><div style="font-size:0.7rem; color:var(--text-muted);">Últimos 7 dias</div></div>
+                    </div>
+                    ${['mcc2', 'mcc3', 'mcc4'].map(m => `
+                        <div style="display:flex; justify-content:space-between; font-size:0.78rem; padding:4px 0; border-top:1px solid var(--border-color);">
+                            <span style="color:var(--text-body); text-transform:uppercase;">${m}</span>
+                            <strong style="color:var(--text-heading); font-family:var(--font-mono);">${totalPorMcc[m]}</strong>
+                        </div>`).join('')}`;
+            }
+        } catch (e) {
+            if (elTonelagem) elTonelagem.innerHTML = `<div class="text-muted" style="text-align:center; margin:auto;">Não foi possível carregar.</div>`;
+            if (elProducaoLancada) elProducaoLancada.innerHTML = `<div class="text-muted" style="text-align:center;">Não foi possível carregar.</div>`;
+        }
+    }
 }
 
 // 🗑️ Removida a aba "Registro Recente" (e as funções

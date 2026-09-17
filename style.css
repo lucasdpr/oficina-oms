@@ -1831,6 +1831,48 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* --------------------------------------------------------------
+   LINHA 4 DO PAINEL GERAL — Acesso Rápido + Precisa de ajuda?
+   (referência mandada pelo usuário). Acesso Rápido é 2fr (mais
+   espaço pros 4 atalhos), ajuda é 1fr.
+   -------------------------------------------------------------- */
+.painel-geral-linha4 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.painel-acesso-rapido-card,
+.painel-ajuda-card {
+  padding: 20px;
+}
+
+.painel-ajuda-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.painel-ajuda-icone {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--brand) 15%, transparent);
+  color: var(--brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .painel-geral-linha4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --------------------------------------------------------------
    ORDEM MOBILE DO PAINEL GERAL — combinada e aprovada antes de
    implementar: KPIs → Fila de Inspeção (mais acionável) → Tonelagem
    → donuts → coluna lateral (Risco por Veio/Atrasadas/Produção).
