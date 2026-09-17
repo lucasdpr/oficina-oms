@@ -71,7 +71,7 @@
     <meta name="apple-mobile-web-app-title" content="OMS CSN">
     <!-- ========================================================================= -->
 
-    <link rel="stylesheet" href="style.css?v=10" />
+    <link rel="stylesheet" href="style.css?v=12" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="icon" href="JS/assets/icon-192.png?v=4">
 
@@ -860,14 +860,37 @@
                 <i class="fas fa-circle"></i> Sistema Online
             </div>
             <div class="text-muted" style="font-size:11px; margin-top:4px;">Última atualização: <span id="painel-hero-hora-atualizacao">--:--</span></div>
+            <!-- 🆕 Pedido do usuário: "faltou a MCC3,4" — o card só mostrava
+                 MCC 2. Agora lista as 3 áreas de atuação do sistema, cada
+                 uma com seu próprio selo de status (mesmo texto estático
+                 "Operação Normal" de antes — não existe hoje uma fonte de
+                 dado real de "operação normal/anormal" por MCC pra
+                 calcular isso de verdade; ver nota se quiser que isso vire
+                 dinâmico depois). -->
             <div class="painel-hero-status-widget">
                 <div class="painel-hero-status-icone"><i class="fas fa-industry"></i></div>
                 <div>
                     <strong>Aciaria</strong>
                     <span class="text-muted" style="display:block; font-size:11px;">MCC 2</span>
                 </div>
+                <div class="painel-hero-status-selo">Operação Normal</div>
             </div>
-            <div class="painel-hero-status-selo">Operação Normal</div>
+            <div class="painel-hero-status-widget">
+                <div class="painel-hero-status-icone"><i class="fas fa-industry"></i></div>
+                <div>
+                    <strong>Aciaria</strong>
+                    <span class="text-muted" style="display:block; font-size:11px;">MCC 3</span>
+                </div>
+                <div class="painel-hero-status-selo">Operação Normal</div>
+            </div>
+            <div class="painel-hero-status-widget">
+                <div class="painel-hero-status-icone"><i class="fas fa-industry"></i></div>
+                <div>
+                    <strong>Aciaria</strong>
+                    <span class="text-muted" style="display:block; font-size:11px;">MCC 4</span>
+                </div>
+                <div class="painel-hero-status-selo">Operação Normal</div>
+            </div>
         </div>
     </div>
 
@@ -1618,6 +1641,16 @@
                             <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-oficina')"><i class="fas fa-industry"></i><span>Central de Áreas</span></button>
                             <button class="tecnico-atalho-btn" onclick="window.abrirCriticos()"><i class="fas fa-chart-column"></i><span>Relatórios</span></button>
                             <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-reservas')"><i class="fas fa-boxes"></i><span>Estoque</span></button>
+                            <!-- 🆕 Pedido do usuário: "onde tá o negócio de lançar
+                                 atividade pra todo mundo, e lançar comunicado pra
+                                 todo mundo?" — já existiam (abrirModalAtividadeMassa/
+                                 abrirModalCriarAviso), só estavam enterrados dentro
+                                 da Central de Áreas / painel administrativo, difíceis
+                                 de achar. Reaproveita as mesmas funções/modais, só
+                                 dá um atalho visível daqui. Ambas já se fecham
+                                 sozinhas se quem clicar não for ADM. -->
+                            <button class="tecnico-atalho-btn" onclick="window.abrirModalAtividadeMassa()"><i class="fas fa-layer-group"></i><span>Atividade em Massa</span></button>
+                            <button class="tecnico-atalho-btn" onclick="window.abrirModalCriarAviso()"><i class="fas fa-bullhorn"></i><span>Novo Comunicado</span></button>
                         </div>
                     </div>
                     <div class="glass-panel painel-ajuda-card">
@@ -2269,6 +2302,15 @@
                             <button id="chat-thread-voltar" class="chat-thread-voltar hidden" onclick="window.chatsVoltarParaLista()"><i class="fas fa-arrow-left"></i></button>
                             <div class="chat-thread-avatar"><i class="fas fa-user-tie"></i></div>
                             <div id="chat-thread-titulo" class="chat-thread-titulo">Selecione uma conversa</div>
+                        </div>
+                        <!-- 🆕 2 canais dentro da MESMA conversa da área (pedido do
+                             usuário: "em um chat só, tem a mensagem pra supervisão
+                             e a mensagem entre os técnicos, que a supervisão e os
+                             adm podem ver"). "Entre Técnicos" só aparece pra quem
+                             tem conversa selecionada (ver chatsSelecionarConversa). -->
+                        <div id="chat-thread-canais" class="chat-thread-canais hidden">
+                            <button class="chat-thread-canal-btn active" onclick="window.chatsTrocarCanal('supervisao')"><i class="fas fa-user-tie"></i> Com a Supervisão</button>
+                            <button class="chat-thread-canal-btn" onclick="window.chatsTrocarCanal('tecnicos')"><i class="fas fa-users"></i> Entre Técnicos</button>
                         </div>
                         <div id="chat-thread-mensagens" class="chat-thread-mensagens">
                             <div class="chat-vazio">Escolha uma conversa pra começar.</div>
@@ -3185,7 +3227,7 @@
     <!-- SCRIPTS (consolidados)                   -->
     <!-- ========================================= -->
     <script type="module">
-        import './JS/script.js?v=29';
+        import './JS/script.js?v=31';
         import './JS/Oficina/procedimentosOficina.js?v=1';
         import './JS/ui.js?v=13';
         import './JS/painelGeralExtra.js?v=1';
