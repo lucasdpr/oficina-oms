@@ -4030,6 +4030,86 @@ function atualizarPainelCompleto() {
     executarSeguro(() => renderizarGraficosPainelGeral(), 'renderizarGraficosPainelGeral');
 }
 
+// 🆕 Peças reutilizáveis dos "gráficos padrão" do sistema (donut de
+// risco dos ativos, donut de status das atividades, ranking de
+// desgaste por veio) — usadas tanto no Painel Geral quanto no Painel
+// do Supervisor, pra não duplicar a mesma conta de duas formas
+// diferentes (o mesmo erro que já causou bug de severidade divergente
+// entre Central de Áreas e Central de Notificações antes).
+function construirHtmlDonutRisco(ativos) {
+    const instalados = ativos.filter(a => a.local && a.local.includes('Veio') && !a.local.includes('Oficina'));
+    const comPct = instalados.map(a => ({ ...a, pct: a.meta > 0 ? (a.ton / a.meta) * 100 : 0 }));
+    const critico = comPct.filter(a => a.pct >= 80).length;
+    const atencao = comPct.filter(a => a.pct >= 50 && a.pct < 80).length;
+    const normal = comPct.length - critico - atencao;
+    const total = comPct.length || 1;
+    const pctCritico = (critico / total) * 100;
+    const pctAtencao = (atencao / total) * 100;
+    return `
+        <div class="painel-donut-corpo">
+            <div class="painel-donut-anel" style="background:conic-gradient(var(--danger) 0% ${pctCritico}%, var(--warning) ${pctCritico}% ${pctCritico + pctAtencao}%, var(--success) ${pctCritico + pctAtencao}% 100%);">
+                <div class="painel-donut-centro"><strong>${comPct.length}</strong><span>Ativos</span></div>
+            </div>
+            <div class="painel-donut-legenda">
+                <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--danger);"></span>Crítico</span><strong>${critico} (${pctCritico.toFixed(0)}%)</strong></div>
+                <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--warning);"></span>Atenção</span><strong>${atencao} (${pctAtencao.toFixed(0)}%)</strong></div>
+                <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--success);"></span>Normal</span><strong>${normal} (${(100 - pctCritico - pctAtencao).toFixed(0)}%)</strong></div>
+            </div>
+        </div>`;
+}
+
+function construirHtmlDonutStatus(atividades) {
+    const pendente = atividades.filter(x => x.status === 'Pendente').length;
+    const andamento = atividades.filter(x => x.status === 'Em Andamento').length;
+    const concluido = atividades.filter(x => x.status === 'Concluído').length;
+    const total = (pendente + andamento + concluido) || 1;
+    const pctPendente = (pendente / total) * 100;
+    const pctAndamento = (andamento / total) * 100;
+    return `
+        <div class="painel-donut-corpo">
+            <div class="painel-donut-anel" style="background:conic-gradient(var(--warning) 0% ${pctPendente}%, var(--info) ${pctPendente}% ${pctPendente + pctAndamento}%, var(--success) ${pctPendente + pctAndamento}% 100%);">
+                <div class="painel-donut-centro"><strong>${pendente + andamento + concluido}</strong><span>Atividades</span></div>
+            </div>
+            <div class="painel-donut-legenda">
+                <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--warning);"></span>Pendente</span><strong>${pendente} (${pctPendente.toFixed(0)}%)</strong></div>
+                <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--info);"></span>Em Andamento</span><strong>${andamento} (${pctAndamento.toFixed(0)}%)</strong></div>
+                <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--success);"></span>Concluído</span><strong>${concluido} (${(100 - pctPendente - pctAndamento).toFixed(0)}%)</strong></div>
+            </div>
+        </div>`;
+}
+
+function construirHtmlRankingVeios(ativos) {
+    const instalados = ativos.filter(a => a.local && a.local.includes('Veio') && !a.local.includes('Oficina'));
+    const porVeio = {};
+    instalados.forEach(a => {
+        const match = (a.local || '').match(/Veio\s*([A-Z])/i);
+        const veio = match ? match[1].toUpperCase() : '—';
+        const pct = a.meta > 0 ? (a.ton / a.meta) * 100 : 0;
+        if (!porVeio[veio]) porVeio[veio] = { soma: 0, qtd: 0 };
+        porVeio[veio].soma += pct;
+        porVeio[veio].qtd += 1;
+    });
+    const ranking = Object.entries(porVeio)
+        .map(([veio, v]) => ({ veio, media: v.soma / v.qtd, qtd: v.qtd }))
+        .sort((a, b) => b.media - a.media)
+        .slice(0, 6);
+    return ranking.length
+        ? ranking.map(r => {
+            const cor = r.media >= 80 ? 'var(--danger)' : (r.media >= 50 ? 'var(--warning)' : 'var(--success)');
+            return `
+            <div style="margin-bottom:12px;">
+                <div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:4px;">
+                    <span style="color:var(--text-body);">Veio ${r.veio}</span>
+                    <span style="color:${cor}; font-weight:700;">${r.media.toFixed(1)}% méd.</span>
+                </div>
+                <div style="height:6px; background:var(--bg-input); border-radius:4px; overflow:hidden;">
+                    <div style="height:100%; width:${Math.min(100, r.media).toFixed(1)}%; background:${cor}; border-radius:4px;"></div>
+                </div>
+            </div>`;
+        }).join('')
+        : `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhum equipamento instalado no veio.</div>`;
+}
+
 // 🆕 Preenche os 6 blocos do Painel Geral que ficavam presos em
 // "Carregando..." pra sempre (referência mandada pelo usuário): a
 // linha de gráficos (Tonelagem/Risco dos Ativos/Status das
@@ -4047,88 +4127,10 @@ async function renderizarGraficosPainelGeral() {
 
     const ativos = Array.isArray(window.BANCO_ATIVOS) ? window.BANCO_ATIVOS : [];
     const atividades = Array.isArray(window.OFICINA_ATIVIDADES_CACHE) ? window.OFICINA_ATIVIDADES_CACHE : [];
-    const instalados = ativos.filter(a => a.local && a.local.includes('Veio') && !a.local.includes('Oficina'));
 
-    // ---------------------------------------------------------
-    // DONUT — Risco dos Ativos (Crítico ≥80% / Atenção 50-79% / Normal <50%)
-    // ---------------------------------------------------------
-    if (elDonutRisco) {
-        const comPct = instalados.map(a => ({ ...a, pct: a.meta > 0 ? (a.ton / a.meta) * 100 : 0 }));
-        const critico = comPct.filter(a => a.pct >= 80).length;
-        const atencao = comPct.filter(a => a.pct >= 50 && a.pct < 80).length;
-        const normal = comPct.length - critico - atencao;
-        const total = comPct.length || 1;
-        const pctCritico = (critico / total) * 100;
-        const pctAtencao = (atencao / total) * 100;
-        elDonutRisco.innerHTML = `
-            <div class="painel-donut-corpo">
-                <div class="painel-donut-anel" style="background:conic-gradient(var(--danger) 0% ${pctCritico}%, var(--warning) ${pctCritico}% ${pctCritico + pctAtencao}%, var(--success) ${pctCritico + pctAtencao}% 100%);">
-                    <div class="painel-donut-centro"><strong>${comPct.length}</strong><span>Ativos</span></div>
-                </div>
-                <div class="painel-donut-legenda">
-                    <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--danger);"></span>Crítico</span><strong>${critico} (${pctCritico.toFixed(0)}%)</strong></div>
-                    <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--warning);"></span>Atenção</span><strong>${atencao} (${pctAtencao.toFixed(0)}%)</strong></div>
-                    <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--success);"></span>Normal</span><strong>${normal} (${(100 - pctCritico - pctAtencao).toFixed(0)}%)</strong></div>
-                </div>
-            </div>`;
-    }
-
-    // ---------------------------------------------------------
-    // DONUT — Status das Atividades (Pendente/Em Andamento/Concluído)
-    // ---------------------------------------------------------
-    if (elDonutStatus) {
-        const pendente = atividades.filter(x => x.status === 'Pendente').length;
-        const andamento = atividades.filter(x => x.status === 'Em Andamento').length;
-        const concluido = atividades.filter(x => x.status === 'Concluído').length;
-        const total = (pendente + andamento + concluido) || 1;
-        const pctPendente = (pendente / total) * 100;
-        const pctAndamento = (andamento / total) * 100;
-        elDonutStatus.innerHTML = `
-            <div class="painel-donut-corpo">
-                <div class="painel-donut-anel" style="background:conic-gradient(var(--warning) 0% ${pctPendente}%, var(--info) ${pctPendente}% ${pctPendente + pctAndamento}%, var(--success) ${pctPendente + pctAndamento}% 100%);">
-                    <div class="painel-donut-centro"><strong>${pendente + andamento + concluido}</strong><span>Atividades</span></div>
-                </div>
-                <div class="painel-donut-legenda">
-                    <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--warning);"></span>Pendente</span><strong>${pendente} (${pctPendente.toFixed(0)}%)</strong></div>
-                    <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--info);"></span>Em Andamento</span><strong>${andamento} (${pctAndamento.toFixed(0)}%)</strong></div>
-                    <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--success);"></span>Concluído</span><strong>${concluido} (${(100 - pctPendente - pctAndamento).toFixed(0)}%)</strong></div>
-                </div>
-            </div>`;
-    }
-
-    // ---------------------------------------------------------
-    // RISCO POR VEIO — desgaste médio agrupado por letra do veio
-    // ---------------------------------------------------------
-    if (elRankingVeios) {
-        const porVeio = {};
-        instalados.forEach(a => {
-            const match = (a.local || '').match(/Veio\s*([A-Z])/i);
-            const veio = match ? match[1].toUpperCase() : '—';
-            const pct = a.meta > 0 ? (a.ton / a.meta) * 100 : 0;
-            if (!porVeio[veio]) porVeio[veio] = { soma: 0, qtd: 0 };
-            porVeio[veio].soma += pct;
-            porVeio[veio].qtd += 1;
-        });
-        const ranking = Object.entries(porVeio)
-            .map(([veio, v]) => ({ veio, media: v.soma / v.qtd, qtd: v.qtd }))
-            .sort((a, b) => b.media - a.media)
-            .slice(0, 6);
-        elRankingVeios.innerHTML = ranking.length
-            ? ranking.map(r => {
-                const cor = r.media >= 80 ? 'var(--danger)' : (r.media >= 50 ? 'var(--warning)' : 'var(--success)');
-                return `
-                <div style="margin-bottom:12px;">
-                    <div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:4px;">
-                        <span style="color:var(--text-body);">Veio ${r.veio}</span>
-                        <span style="color:${cor}; font-weight:700;">${r.media.toFixed(1)}% méd.</span>
-                    </div>
-                    <div style="height:6px; background:var(--bg-input); border-radius:4px; overflow:hidden;">
-                        <div style="height:100%; width:${Math.min(100, r.media).toFixed(1)}%; background:${cor}; border-radius:4px;"></div>
-                    </div>
-                </div>`;
-            }).join('')
-            : `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhum equipamento instalado no veio.</div>`;
-    }
+    if (elDonutRisco) elDonutRisco.innerHTML = construirHtmlDonutRisco(ativos);
+    if (elDonutStatus) elDonutStatus.innerHTML = construirHtmlDonutStatus(atividades);
+    if (elRankingVeios) elRankingVeios.innerHTML = construirHtmlRankingVeios(ativos);
 
     // ---------------------------------------------------------
     // ATIVIDADES ATRASADAS — ranking por área, igual ao Painel do Supervisor
@@ -5598,6 +5600,106 @@ window.renderPainelSupervisor = async function() {
         // deixa claro visualmente que é clicável.
         card.style.cursor = 'pointer';
     });
+
+    // ---------------------------------------------------------
+    // 🆕 FAIXA DE KPIS (referência) — Áreas Críticas/Em Atenção (mesma
+    // conta de calcularStatusArea usada na Central de Áreas) + Não
+    // Vistas (mesmo NOTIF_FEED_CACHE usado na Central de Notificações).
+    // ---------------------------------------------------------
+    const badgesEl = document.getElementById('painel-supervisor-kpi-badges');
+    if (badgesEl) {
+        const chavesArea = (typeof AREAS_OFICINA !== 'undefined' ? AREAS_OFICINA : []).map(a => a.chave);
+        let areasCriticas = 0, areasAtencao = 0;
+        chavesArea.forEach(chave => {
+            const st = calcularStatusArea(chave);
+            if (st.label === 'Crítico') areasCriticas++;
+            else if (st.label === 'Restrição' || st.label === 'Atenção') areasAtencao++;
+        });
+        const naoVistas = (typeof NOTIF_FEED_CACHE !== 'undefined' ? NOTIF_FEED_CACHE : []).filter(item => !item.lida).length;
+        badgesEl.innerHTML = `
+            <div class="sup-kpi-badge" style="--sup-cor:#ef4444;" onclick="window.abrirAba(null,'aba-oficina')"><i class="fas fa-triangle-exclamation"></i> ${areasCriticas} Áreas Críticas</div>
+            <div class="sup-kpi-badge" style="--sup-cor:#eab308;" onclick="window.abrirAba(null,'aba-oficina')"><i class="fas fa-circle-exclamation"></i> ${areasAtencao} Em Atenção</div>
+            <div class="sup-kpi-badge" style="--sup-cor:#3b82f6;" onclick="window.abrirAba(null,'aba-notificacoes')"><i class="fas fa-bell"></i> ${naoVistas} Não Vistas</div>
+        `;
+    }
+
+    // ---------------------------------------------------------
+    // 🆕 Tendência (7 dias) + donuts (reaproveita as mesmas peças do
+    // Painel Geral — mesma função, mesmo dado, nenhum cálculo novo).
+    // ---------------------------------------------------------
+    const elSupDonutRisco = document.getElementById('painel-supervisor-donut-risco');
+    const elSupDonutStatus = document.getElementById('painel-supervisor-donut-status');
+    const elSupRankingVeios = document.getElementById('painel-supervisor-ranking-veios');
+    if (elSupDonutRisco) elSupDonutRisco.innerHTML = construirHtmlDonutRisco(ativos);
+    if (elSupDonutStatus) elSupDonutStatus.innerHTML = construirHtmlDonutStatus(atividades);
+    if (elSupRankingVeios) elSupRankingVeios.innerHTML = construirHtmlRankingVeios(ativos);
+
+    const elSupTonelagem = document.getElementById('painel-supervisor-tonelagem');
+    if (elSupTonelagem) {
+        (async () => {
+            try {
+                const apiBase = await resolverApiBase();
+                const [resGeral, resMoldes] = await Promise.all([
+                    fetchComRetry(`${apiBase}/api/historico_apontamentos_geral`),
+                    fetchComRetry(`${apiBase}/api/historico_apontamentos_moldes`)
+                ]);
+                const logsGeral = resGeral.ok ? await resGeral.json() : [];
+                const logsMoldes = resMoldes.ok ? await resMoldes.json() : [];
+                const logs = [...(Array.isArray(logsGeral) ? logsGeral : []), ...(Array.isArray(logsMoldes) ? logsMoldes : [])]
+                    .filter(l => l.desfeito !== 1);
+                const dias = [];
+                for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); dias.push(d.toISOString().slice(0, 10)); }
+                const totalPorDia = {};
+                dias.forEach(d => totalPorDia[d] = 0);
+                logs.forEach(l => {
+                    const dataChave = (l.data_hora || '').slice(0, 10);
+                    const soma = (Number(l.qtd_mcc2) || 0) + (Number(l.qtd_mcc3) || 0) + (Number(l.qtd_mcc4) || 0);
+                    if (dataChave in totalPorDia) totalPorDia[dataChave] += soma;
+                });
+                const valores = dias.map(d => totalPorDia[d]);
+                const max = Math.max(1, ...valores);
+                const largura = 600, altura = 160, passo = largura / (dias.length - 1);
+                const pontos = valores.map((v, i) => `${(i * passo).toFixed(1)},${(altura - (v / max) * (altura - 20) - 4).toFixed(1)}`).join(' ');
+                const labels = dias.map(d => new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', ''));
+                elSupTonelagem.innerHTML = `
+                    <svg viewBox="0 0 ${largura} ${altura}" style="width:100%; height:140px; overflow:visible;">
+                        <polyline points="${pontos}" fill="none" stroke="var(--info)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></polyline>
+                        ${valores.map((v, i) => `<circle cx="${(i * passo).toFixed(1)}" cy="${(altura - (v / max) * (altura - 20) - 4).toFixed(1)}" r="3.5" fill="var(--info)"></circle>`).join('')}
+                    </svg>
+                    <div style="display:flex; justify-content:space-between; margin-top:6px;">
+                        ${labels.map(l => `<span style="font-size:0.65rem; color:var(--text-muted); text-transform:capitalize;">${l}</span>`).join('')}
+                    </div>`;
+            } catch (e) {
+                elSupTonelagem.innerHTML = `<div class="text-muted" style="text-align:center; margin:auto;">Não foi possível carregar.</div>`;
+            }
+        })();
+    }
+
+    // ---------------------------------------------------------
+    // 🆕 Fila de Inspeção Prioritária (tabela) — mesmo critério de
+    // ordenação por desgaste já usado em renderizarTopCriticos().
+    // ---------------------------------------------------------
+    const elSupFila = document.getElementById('painel-supervisor-fila-inspecao');
+    if (elSupFila) {
+        const instaladosFila = ativos.filter(a => a.local && a.local.includes('Veio') && !a.local.includes('Oficina'));
+        const filaOrdenada = instaladosFila
+            .map(a => ({ ...a, pct: a.meta > 0 ? (a.ton / a.meta) * 100 : 0 }))
+            .sort((a, b) => b.pct - a.pct)
+            .slice(0, 8);
+        elSupFila.innerHTML = filaOrdenada.length
+            ? filaOrdenada.map(a => {
+                const cor = a.pct >= 80 ? 'var(--danger)' : (a.pct >= 50 ? 'var(--warning)' : 'var(--success)');
+                const statusLabel = a.pct >= 80 ? 'Crítico' : (a.pct >= 50 ? 'Atenção' : 'Normal');
+                const match = (a.local || '').match(/Veio\s*([A-Z])/i);
+                return `<tr>
+                    <td style="text-align:left;"><strong>${a.id}</strong><br><span class="text-muted" style="font-size:0.72rem;">${a.tipo || ''}</span></td>
+                    <td>${a.mcc_compat ? 'MCC ' + a.mcc_compat : '—'}</td>
+                    <td><span style="color:${cor}; font-weight:700;">${statusLabel}</span></td>
+                    <td style="color:${cor}; font-weight:700;">${a.pct.toFixed(1)}%</td>
+                </tr>`;
+            }).join('')
+            : `<tr><td colspan="4" class="text-center text-muted">Nenhum equipamento instalado no veio.</td></tr>`;
+    }
 
     // ---------------------------------------------------------
     // SEÇÃO 1 — SAÚDE

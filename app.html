@@ -1533,8 +1533,81 @@
                     </div>
                 </div>
 
+                <!-- 🆕 Faixa de KPIs rápidos (referência mandada pelo usuário):
+                     áreas críticas/em atenção (Central de Áreas) + não vistas
+                     (Central de Notificações) — clicáveis, levam pra tela cheia. -->
+                <div class="sup-kpi-badges-linha" id="painel-supervisor-kpi-badges"></div>
+
                 <!-- HERO — os números mais críticos, grandes, com cor por severidade -->
                 <div id="painel-supervisor-hero" class="painel-sup-hero"></div>
+
+                <!-- 🆕 Tendência + donuts + resumo lateral (referência mandada
+                     pelo usuário) — mesmas peças já usadas no Painel Geral
+                     (construirHtmlDonutRisco/Status/RankingVeios), alimentadas
+                     com o mesmo BANCO_ATIVOS/OFICINA_ATIVIDADES_CACHE. -->
+                <div class="painel-graficos-linha2 painel-sup-graficos">
+                    <div class="glass-panel painel-linha-card">
+                        <h3 class="painel-donut-titulo"><i class="fas fa-chart-line" style="color:var(--info);"></i> Tendência de Manutenções (7 dias)</h3>
+                        <div id="painel-supervisor-tonelagem" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+                            <div class="text-muted" style="text-align:center; margin:auto;">Carregando...</div>
+                        </div>
+                    </div>
+                    <div class="glass-panel painel-donut-card">
+                        <h3 class="painel-donut-titulo"><i class="fas fa-chart-pie" style="color:var(--danger);"></i> Risco dos Ativos</h3>
+                        <div id="painel-supervisor-donut-risco"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
+                    </div>
+                    <div class="glass-panel painel-donut-card">
+                        <h3 class="painel-donut-titulo"><i class="fas fa-chart-pie" style="color:var(--info);"></i> Status das Atividades</h3>
+                        <div id="painel-supervisor-donut-status"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
+                    </div>
+                </div>
+
+                <!-- 🆕 Fila de Inspeção (tabela) + Risco por Veio (referência) -->
+                <div class="glass-panel painel-fila-inspecao" style="padding: 24px; margin-top: 24px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                        <div>
+                            <h3 style="color:var(--text-heading); font-size:1.1rem;"><i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i> Fila de Inspeção Prioritária</h3>
+                            <p class="text-muted" style="font-size:0.8rem;">Ativos com maior índice de desgaste registrado.</p>
+                        </div>
+                        <button class="btn-outline-neutral" onclick="window.abrirCriticos()" style="padding:8px 12px;">Ver Relatório Completo <i class="fas fa-arrow-right"></i></button>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="premium-table" style="width:100%;">
+                            <thead><tr><th>Código / Equipamento</th><th>Área</th><th>Status</th><th>% Vida Útil</th></tr></thead>
+                            <tbody id="painel-supervisor-fila-inspecao"><tr><td colspan="4" class="text-center text-muted">Carregando...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="painel-geral-linha3-lateral" style="grid-template-columns: 1fr;">
+                    <div class="glass-panel" style="padding:20px;">
+                        <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:4px;"><i class="fas fa-ranking-star" style="color:#f59e0b;"></i> Risco por Veio</h3>
+                        <p class="text-muted" style="font-size:0.75rem; margin-bottom:14px;">Desgaste médio, dos veios mais críticos aos mais tranquilos.</p>
+                        <div id="painel-supervisor-ranking-veios"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
+                    </div>
+                </div>
+
+                <!-- 🆕 Acesso Rápido + Precisa de ajuda? (referência) -->
+                <div class="painel-geral-linha4">
+                    <div class="glass-panel painel-acesso-rapido-card">
+                        <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:2px;">Acesso Rápido</h3>
+                        <p class="text-muted" style="font-size:0.75rem; margin-bottom:16px;">Principais rotinas do sistema.</p>
+                        <div class="tecnico-atalhos-grid">
+                            <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-ordens-servico')"><i class="fas fa-file-invoice"></i><span>Lançar OS</span></button>
+                            <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-oficina')"><i class="fas fa-industry"></i><span>Central de Áreas</span></button>
+                            <button class="tecnico-atalho-btn" onclick="window.abrirCriticos()"><i class="fas fa-chart-column"></i><span>Relatórios</span></button>
+                            <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-reservas')"><i class="fas fa-boxes"></i><span>Estoque</span></button>
+                        </div>
+                    </div>
+                    <div class="glass-panel painel-ajuda-card">
+                        <div class="painel-ajuda-icone"><i class="fas fa-circle-question"></i></div>
+                        <div>
+                            <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:2px;">Precisa de ajuda?</h3>
+                            <p class="text-muted" style="font-size:0.8rem; margin-bottom:12px;">Acesse o suporte do sistema.</p>
+                            <button class="btn-outline-neutral" style="width:100%;" onclick="alert('Suporte: fale com o administrador do sistema ou o setor de TI da CSN.')">Falar com suporte <i class="fas fa-arrow-right"></i></button>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- SEÇÃO 1 — Saúde da oficina agora (vermelho/laranja) -->
                 <div class="painel-sup-secao painel-sup-secao-saude">

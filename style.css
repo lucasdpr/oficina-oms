@@ -1873,6 +1873,35 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* --------------------------------------------------------------
+   FAIXA DE KPIS DO PAINEL DO SUPERVISOR — 3 badges clicáveis
+   (Áreas Críticas / Em Atenção / Não Vistas), referência do usuário.
+   -------------------------------------------------------------- */
+.sup-kpi-badges-linha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 14px 0 18px;
+}
+
+.sup-kpi-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sup-cor, var(--brand)) 14%, var(--bg-card));
+  border: 1px solid color-mix(in srgb, var(--sup-cor, var(--brand)) 35%, transparent);
+  color: var(--text-heading);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sup-kpi-badge i {
+  color: var(--sup-cor, var(--brand));
+}
+
+/* --------------------------------------------------------------
    ORDEM MOBILE DO PAINEL GERAL — combinada e aprovada antes de
    implementar: KPIs → Fila de Inspeção (mais acionável) → Tonelagem
    → donuts → coluna lateral (Risco por Veio/Atrasadas/Produção).
