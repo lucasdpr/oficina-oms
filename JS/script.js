@@ -8655,6 +8655,31 @@ window.toggleSidebar = function() {
     if (sidebar) sidebar.classList.toggle('open');
 };
 
+// 🆕 Sidebar icon-rail (Opção A) — só afeta desktop (a regra CSS que dá
+// efeito ao '.collapsed' só existe em @media (min-width:769px); no
+// mobile a classe fica no elemento sem efeito nenhum, então não precisa
+// checar largura de tela aqui). Recolhida por padrão, lembrada entre
+// sessões via localStorage — sem isso, toda vez que o usuário abrisse
+// o app de novo o menu voltaria expandido, mesmo tendo escolhido
+// recolher da última vez.
+const CHAVE_SIDEBAR_COLAPSADA = 'oms_sidebar_colapsada_v1';
+window.toggleSidebarColapsada = function() {
+    const sidebar = document.getElementById('sidebar-menu');
+    if (!sidebar) return;
+    const colapsada = sidebar.classList.toggle('collapsed');
+    try { localStorage.setItem(CHAVE_SIDEBAR_COLAPSADA, colapsada ? '1' : '0'); } catch (e) { /* localStorage pode falhar em modo privado — não é crítico */ }
+};
+(function aplicarEstadoInicialSidebarRail() {
+    const sidebar = document.getElementById('sidebar-menu');
+    if (!sidebar) return;
+    let salvo;
+    try { salvo = localStorage.getItem(CHAVE_SIDEBAR_COLAPSADA); } catch (e) { salvo = null; }
+    // Sem preferência salva ainda: começa recolhida (só ícone), como
+    // pedido — "sidebar estreita, só com ícones por padrão".
+    const colapsada = salvo === null ? true : salvo === '1';
+    sidebar.classList.toggle('collapsed', colapsada);
+})();
+
 window.fazerLogout = function() {
     // Visitante não tem "turno" — some sem perguntar, é só um "voltar".
     const ehVisitante = OPERADOR_LOGADO && OPERADOR_LOGADO.visitante;

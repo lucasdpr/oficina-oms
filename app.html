@@ -251,7 +251,7 @@
         .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 12px 24px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2); }
         .modal-footer .btn-success { background: #10b981; color: #fff; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: background 0.2s, box-shadow 0.2s; }
         .modal-footer .btn-secondary { background: #6c757d; color: #fff; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
-        .modal-footer .btn-success:hover { background: #059669; box-shadow: 0 2px 8px rgba(16,185,129,0.35); }
+        .modal-footer .btn-success:hover { background: #059669; box-shadow: var(--btn-glow-shape) rgba(16,185,129,0.35); }
         .modal-footer .btn-secondary:hover { background: #5a6268; }
         /* ===== ABA TABS ===== */
         .folhao-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; border-bottom: 2px solid rgba(56,189,248,0.25); margin-bottom: 10px; padding-bottom: 2px; position: relative; }
@@ -656,7 +656,19 @@
 
         <!-- SIDEBAR -->
         <aside id="sidebar-menu" class="sidebar glass-panel">
-            <div class="sidebar-header flex-between"><h2><i class="fas fa-industry text-accent"></i> Painel OMS</h2><button class="btn-close-sidebar hidden-desktop" onclick="window.toggleSidebar()"><i class="fas fa-times"></i></button></div>
+            <div class="sidebar-header flex-between">
+                <h2><i class="fas fa-industry text-accent"></i> <span class="sidebar-header-texto">Painel OMS</span></h2>
+                <button class="btn-close-sidebar hidden-desktop" onclick="window.toggleSidebar()"><i class="fas fa-times"></i></button>
+                <!-- 🆕 Toggle icon-rail (Opção A) — só desktop (hidden-mobile
+                     via CSS, ver .btn-toggle-sidebar-rail em style.css).
+                     Recolhida por padrão; expande revelando o texto ao lado
+                     dos ícones. Clicar no ícone SEM expandir continua
+                     navegando normal (o onclick de cada .nav-link não
+                     depende do estado colapsado/expandido). -->
+                <button class="btn-toggle-sidebar-rail" onclick="window.toggleSidebarColapsada()" title="Expandir/recolher menu">
+                    <i class="fas fa-angles-right"></i>
+                </button>
+            </div>
             <!-- 🔧 REDESIGN (sidebar): identidade fica só no topo agora — os
                  botões de ação (notificação/instalar/logout) saíram daqui e
                  foram pra .sidebar-footer, depois da nav. Mesma lógica de
