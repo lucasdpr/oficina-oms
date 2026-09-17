@@ -4396,6 +4396,113 @@ h1, h2, h3, h4, h5, h6 {
    severidade, propositalmente diferente da grade de ícones da Central
    de Áreas (oficina-grade/oficina-area-card), pra não parecer a mesma
    tela duas vezes. */
+/* 🆕 Lista única de notificações (referência mandada pelo usuário) —
+   layout com coluna principal + coluna lateral de contexto. */
+.notif-layout-grid {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 20px;
+    align-items: start;
+}
+@media (max-width: 900px) {
+    .notif-layout-grid {
+        grid-template-columns: 1fr;
+    }
+}
+.notif-coluna-lateral {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.notif-resumo-topo {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+.notif-pill-resumo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--pill-cor) 12%, var(--bg-card));
+    border: 1px solid color-mix(in srgb, var(--pill-cor) 30%, transparent);
+    color: var(--pill-cor);
+    font-size: 1.1rem;
+}
+.notif-pill-resumo div {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+.notif-pill-resumo strong {
+    font-size: 1.1rem;
+    color: var(--text-heading);
+}
+.notif-pill-resumo span {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.notif-abas-filtro {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.notif-busca-linha {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+}
+
+.notif-filtro-rapido {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    background: var(--bg-th);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    color: var(--text-main);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 8px;
+    transition: background var(--transition-fast, 0.15s ease), border-color var(--transition-fast, 0.15s ease);
+}
+.notif-filtro-rapido:last-child { margin-bottom: 0; }
+.notif-filtro-rapido i:last-child {
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--text-muted);
+}
+@media (hover: hover) and (pointer: fine) {
+    .notif-filtro-rapido:hover {
+        background: var(--bg-hover);
+        border-color: var(--brand);
+    }
+}
+
+.notif-item-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 10.5px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.notif-dica-box {
+    background: color-mix(in srgb, var(--text-accent) 6%, var(--bg-card));
+    border-color: color-mix(in srgb, var(--text-accent) 25%, transparent);
+}
+
 .notif-lista {
     display: flex;
     flex-direction: column;

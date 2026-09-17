@@ -10355,8 +10355,21 @@ window.carregarCentralNotificacoes = async function() {
         // de apagar com uma falha.
         if (Array.isArray(feed)) NOTIF_FEED_CACHE = feed;
         NOTIF_ATIVIDADES_CACHE = Array.isArray(atividades) ? atividades : [];
+        // 🐛 CORREÇÃO (severidade saindo sempre "Normal"/"Novo" na lista de
+        // notificações): severidadeNotificacaoItem() reaproveita
+        // calcularStatusArea(), que lê de OFICINA_ATIVIDADES_CACHE — uma
+        // variável de módulo DIFERENTE, preenchida só pela Central de
+        // Áreas (window.carregarOficina). Quem entra direto na Central de
+        // Notificações sem nunca ter aberto a Central de Áreas nessa
+        // sessão via essa variável vazia, e toda área calculava "Normal"
+        // mesmo tendo pendência/atrasada de verdade. Os dois caches vêm
+        // do MESMO endpoint (/api/oficina/atividades) — sincroniza aqui
+        // também, só quando a busca deu certo (não sobrescreve o cache
+        // bom da Central de Áreas com [] numa falha de rede só desta
+        // busca).
+        if (Array.isArray(atividades)) OFICINA_ATIVIDADES_CACHE = atividades;
         NOTIF_ULTIMO_FETCH_FALHOU = !Array.isArray(atividades) || !Array.isArray(feed);
-        renderizarGradeNotificacoes(Array.isArray(atividades) ? atividades : null, Array.isArray(feed) ? feed : null);
+        renderizarNotificacoesFlat(Array.isArray(feed) ? feed : null);
         // 🐛 CORREÇÃO: mantém o sino da barra lateral em dia sempre que a
         // Central busca o feed (reaproveita o que já veio, sem outro
         // fetch) — antes só o timer global de 2 min mexia nele, então
@@ -10459,12 +10472,198 @@ window.irParaAchadoEspecifico = async function(pecaId) {
     if (typeof window.buscarQualidade === 'function') window.buscarQualidade(pecaId || '');
 };
 
+// ==============================================================
+// 🆕 LISTA ÚNICA DE NOTIFICAÇÕES (referência mandada pelo usuário) —
+// substitui o modelo "grade de área -> clica -> detalhe" por um feed
+// só, com todas as notificações de todas as áreas juntas, abas de
+// filtro por contagem, busca, ordenação e uma coluna lateral de
+// contexto (resumo, atalhos, dica). As funções antigas de
+// grade/detalhe por área continuam no arquivo (não removidas), só não
+// são mais chamadas — os ids de elemento delas não existem mais no
+// HTML, então ficam inertes.
+// ==============================================================
+let NOTIF_FLAT_FILTRO = 'todas'; // 'todas' | 'criticas' | 'atencao' | 'nao-vistas'
+let NOTIF_FLAT_BUSCA = '';
+let NOTIF_FLAT_ORDEM = 'recentes'; // 'recentes' | 'nao-lidas' | 'severidade'
+
+// Severidade de UM item de notificação: reaproveita o status calculado
+// da ÁREA dele (mesmo cálculo que já colore os cards da Central de
+// Áreas) — não é um dado novo por notificação, é herdado da área.
+// "Novo" (azul) só aparece quando a área está Normal mas o item ainda
+// não foi visto; áreas Crítico/Atenção mantêm a cor delas mesmo lidas,
+// porque a urgência é da área, não de ter sido vista ou não.
+function severidadeNotificacaoItem(item) {
+    const areaStatus = item.area ? calcularStatusArea(item.area) : null;
+    if (areaStatus && areaStatus.label === 'Crítico') return { label: 'Crítico', cor: 'var(--danger)', emoji: '🔴' };
+    if (areaStatus && (areaStatus.label === 'Restrição' || areaStatus.label === 'Atenção')) return { label: 'Atenção', cor: 'var(--warning)', emoji: '🟡' };
+    if (!item.lida) return { label: 'Novo', cor: 'var(--text-accent)', emoji: '🔵' };
+    return { label: 'Normal', cor: 'var(--success)', emoji: '🟢' };
+}
+
+window.buscarFeedNotificacoesFlat = function(valor) {
+    NOTIF_FLAT_BUSCA = (valor || '').toLowerCase().trim();
+    renderizarNotificacoesFlat(NOTIF_FEED_CACHE);
+};
+
+window.ordenarFeedNotificacoesFlat = function(valor) {
+    NOTIF_FLAT_ORDEM = valor;
+    renderizarNotificacoesFlat(NOTIF_FEED_CACHE);
+};
+
+window.filtrarFeedNotificacoesFlat = function(filtro) {
+    NOTIF_FLAT_FILTRO = filtro;
+    renderizarNotificacoesFlat(NOTIF_FEED_CACHE);
+};
+
+window.limparFiltrosNotificacoesFlat = function() {
+    NOTIF_FLAT_FILTRO = 'todas';
+    NOTIF_FLAT_BUSCA = '';
+    NOTIF_FLAT_ORDEM = 'recentes';
+    const busca = document.getElementById('notificacoes-busca-flat');
+    if (busca) busca.value = '';
+    const ordenar = document.getElementById('notificacoes-ordenar');
+    if (ordenar) ordenar.value = 'recentes';
+    renderizarNotificacoesFlat(NOTIF_FEED_CACHE);
+};
+
+function renderizarNotificacoesFlat(feedBruto) {
+    const container = document.getElementById('notificacoes-feed-flat');
+    if (!container) return;
+
+    if (feedBruto === null) {
+        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0; color:var(--warning);">⚠️ Não foi possível verificar as notificações agora. Toque em "Atualizar" pra tentar de novo.</div>`;
+        return;
+    }
+
+    const restritoAPropriaArea = operadorTecnicoComArea();
+    let itens = (restritoAPropriaArea
+        ? feedBruto.filter(item => item.area === OPERADOR_LOGADO.area)
+        : feedBruto
+    ).map(item => ({ item, sev: severidadeNotificacaoItem(item) }));
+
+    // Pills do topo + abas de filtro sempre refletem TODAS as
+    // notificações (antes do filtro de busca/aba atual) — mesmo
+    // princípio já usado no resumo da Central de Áreas: filtrar pra
+    // focar não devia esconder a contagem real lá em cima.
+    const totalGeral = itens.length;
+    const criticasGeral = itens.filter(x => x.sev.label === 'Crítico').length;
+    const atencaoGeral = itens.filter(x => x.sev.label === 'Atenção').length;
+    const naoVistasGeral = itens.filter(x => !x.item.lida).length;
+
+    const resumoTopo = document.getElementById('notificacoes-resumo-topo');
+    if (resumoTopo) {
+        resumoTopo.innerHTML = `
+            <div class="notif-pill-resumo" style="--pill-cor:var(--danger);"><i class="fas fa-triangle-exclamation"></i><div><strong>${criticasGeral}</strong><span>Crítica${criticasGeral === 1 ? '' : 's'}</span></div></div>
+            <div class="notif-pill-resumo" style="--pill-cor:var(--warning);"><i class="fas fa-circle-exclamation"></i><div><strong>${atencaoGeral}</strong><span>Atenção</span></div></div>
+            <div class="notif-pill-resumo" style="--pill-cor:var(--text-accent);"><i class="fas fa-bell"></i><div><strong>${naoVistasGeral}</strong><span>Não vistas</span></div></div>
+        `;
+    }
+
+    const abas = document.getElementById('notificacoes-abas-filtro');
+    if (abas) {
+        const btn = (valor, label, qtd) => `<button class="btn-filter-mcc ${NOTIF_FLAT_FILTRO === valor ? 'active' : ''}" onclick="window.filtrarFeedNotificacoesFlat('${valor}')">${label} (${qtd})</button>`;
+        abas.innerHTML = btn('todas', 'Todas', totalGeral) + btn('criticas', '🔴 Críticas', criticasGeral) + btn('atencao', '🟡 Atenção', atencaoGeral) + btn('nao-vistas', '🔵 Não vistas', naoVistasGeral);
+    }
+
+    // Donut de resumo (mesmo padrão conic-gradient já usado em outros
+    // donuts do sistema, ex: painel-donut-anel no Painel Geral).
+    const donut = document.getElementById('notificacoes-resumo-donut');
+    if (donut) {
+        const normaisGeral = Math.max(0, totalGeral - criticasGeral - atencaoGeral);
+        if (totalGeral === 0) {
+            donut.innerHTML = `<div class="text-muted" style="text-align:center; padding:10px 0; font-size:12px;">Sem notificações.</div>`;
+        } else {
+            const pctCrit = (criticasGeral / totalGeral) * 100;
+            const pctAtn = (atencaoGeral / totalGeral) * 100;
+            donut.innerHTML = `
+                <div style="display:flex; align-items:center; gap:16px;">
+                    <div class="painel-donut-anel" style="background:conic-gradient(var(--danger) 0% ${pctCrit}%, var(--warning) ${pctCrit}% ${pctCrit + pctAtn}%, var(--success) ${pctCrit + pctAtn}% 100%); width:84px; height:84px; flex-shrink:0;">
+                        <div class="painel-donut-centro" style="inset:12px;"><strong style="font-size:1rem;">${totalGeral}</strong><span>Total</span></div>
+                    </div>
+                    <div class="painel-donut-legenda" style="flex:1;">
+                        <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--danger);"></span>Críticas</span><strong>${criticasGeral} (${Math.round(pctCrit)}%)</strong></div>
+                        <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--warning);"></span>Atenção</span><strong>${atencaoGeral} (${Math.round(pctAtn)}%)</strong></div>
+                        <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--text-accent);"></span>Não vistas</span><strong>${naoVistasGeral}</strong></div>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    const rapidos = document.getElementById('notificacoes-filtros-rapidos');
+    if (rapidos && !restritoAPropriaArea) {
+        rapidos.innerHTML = `
+            <button class="notif-filtro-rapido" onclick="window.filtrarFeedNotificacoesFlat('criticas')"><i class="fas fa-triangle-exclamation" style="color:var(--danger);"></i> Apenas críticas <i class="fas fa-chevron-right"></i></button>
+            <button class="notif-filtro-rapido" onclick="window.filtrarFeedNotificacoesFlat('nao-vistas')"><i class="fas fa-bell" style="color:var(--text-accent);"></i> Apenas não vistas <i class="fas fa-chevron-right"></i></button>
+        `;
+    } else if (rapidos) {
+        rapidos.innerHTML = `<button class="notif-filtro-rapido" onclick="window.filtrarFeedNotificacoesFlat('nao-vistas')"><i class="fas fa-bell" style="color:var(--text-accent);"></i> Apenas não vistas <i class="fas fa-chevron-right"></i></button>`;
+    }
+
+    // Filtro de aba + busca (área, referência, descrição).
+    if (NOTIF_FLAT_FILTRO === 'criticas') itens = itens.filter(x => x.sev.label === 'Crítico');
+    else if (NOTIF_FLAT_FILTRO === 'atencao') itens = itens.filter(x => x.sev.label === 'Atenção');
+    else if (NOTIF_FLAT_FILTRO === 'nao-vistas') itens = itens.filter(x => !x.item.lida);
+
+    if (NOTIF_FLAT_BUSCA) {
+        itens = itens.filter(({ item }) => {
+            const alvo = `${nomeAreaOficina(item.area) || ''} ${item.referencia || ''} ${item.descricao || ''}`.toLowerCase();
+            return alvo.includes(NOTIF_FLAT_BUSCA);
+        });
+    }
+
+    if (NOTIF_FLAT_ORDEM === 'nao-lidas') {
+        itens.sort((a, b) => (a.item.lida === b.item.lida) ? 0 : (a.item.lida ? 1 : -1));
+    } else if (NOTIF_FLAT_ORDEM === 'severidade') {
+        const ORDEM = { 'Crítico': 0, 'Atenção': 1, 'Novo': 2, 'Normal': 3 };
+        itens.sort((a, b) => ORDEM[a.sev.label] - ORDEM[b.sev.label]);
+    }
+    // 'recentes' é a ordem que o feed já vem do backend (mais novo primeiro).
+
+    if (itens.length === 0) {
+        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:30px 0;"><i class="fas fa-magnifying-glass"></i> Nenhuma notificação encontrada com esse filtro/busca.</div>`;
+        return;
+    }
+
+    container.innerHTML = itens.map(({ item, sev }) => {
+        const referencia = item.referencia;
+        return `
+        <div class="notificacoes-item" style="--item-cor:${sev.cor}; ${!item.lida ? 'background:color-mix(in srgb, var(--text-accent) 5%, var(--bg-card));' : ''}"
+             onclick="window.abrirItemNotificacao('${escapeAtributoNotif(item.tipo)}', '${escapeAtributoNotif(item.evento_id)}', '${escapeAtributoNotif(referencia)}', '${escapeAtributoNotif(item.area)}', ${item.atividade_id != null ? Number(item.atividade_id) : 'null'}, '${escapeAtributoNotif(item.tipo_evento || 'status')}')">
+            <span class="notificacoes-item-dot ${!item.lida ? 'nao-lida' : ''}" title="${!item.lida ? 'Não vista' : 'Vista'}"></span>
+            <div class="notificacoes-item-icone" style="color:${sev.cor}; background:color-mix(in srgb, ${sev.cor} 15%, transparent);">${ICONE_POR_TIPO_NOTIFICACAO[item.tipo] || '📋'}</div>
+            <div class="notificacoes-item-corpo">
+                <div class="notificacoes-item-topo">
+                    <span class="font-code" style="font-weight:700; color:var(--text-heading);">${escapeHtmlNotif(referencia) || '-'}</span>
+                    <span class="notif-linha-status" style="color:${sev.cor}; background:color-mix(in srgb, ${sev.cor} 15%, transparent);">${sev.emoji} ${sev.label}</span>
+                </div>
+                <div class="notificacoes-item-linha">${escapeHtmlNotif(limparMarcadorTecnicoDescricao(item.descricao))}</div>
+                <div class="notif-item-meta">
+                    ${item.area ? `<span>Área: ${escapeHtmlNotif(nomeAreaOficina(item.area))}</span>` : ''}
+                    <span>${escapeHtmlNotif(item.data_hora)}</span>
+                </div>
+            </div>
+            ${!item.lida ? `
+            <button type="button" class="notificacoes-item-marcar-lida" title="Marcar como vista"
+                    onclick="window.marcarNotificacaoLidaRapido(event, '${escapeAtributoNotif(item.tipo)}', '${escapeAtributoNotif(item.evento_id)}')">
+                <i class="fas fa-check"></i>
+            </button>
+            ` : ''}
+        </div>
+        `;
+    }).join('');
+}
+
 // 🆕 Grade única com TODAS as áreas (oficina + administrativo + estoque
 // de Rolos/Hidráulica) — mesmo modelo de navegação da Central de Áreas.
 // Cada card mostra status (quando é área de reparo, com atividades) e
 // quantas notificações tem (total/não lidas); clicar abre o detalhe só
 // daquela área (ver abrirDetalheAreaNotificacao). Substitui a antiga
 // lista "Atividade Recente" com tudo misturado.
+// 🗑️ NÃO É MAIS CHAMADA (ver renderizarNotificacoesFlat acima) — os ids
+// de elemento que ela procura não existem mais no HTML, então fica
+// inerte. Mantida sem remover pra não perder a lógica de agrupamento
+// por área caso precise voltar a esse modelo.
 function renderizarGradeNotificacoes(atividades, feed) {
     const container = document.getElementById('notificacoes-grade-container');
     if (!container) return;
