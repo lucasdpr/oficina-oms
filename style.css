@@ -1223,6 +1223,154 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ==========================================
+   HERO DO PAINEL GERAL (referência mandada pelo usuário) — substitui
+   .welcome-box (texto solto sem imagem). .welcome-box não foi
+   removido do CSS (só não é mais usado no HTML) pra não afetar outro
+   lugar que porventura ainda reaproveite a classe.
+========================================== */
+.painel-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  padding: 28px 32px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  min-height: 200px;
+}
+.painel-hero-fundo {
+  position: absolute;
+  inset: 0;
+  background: url('JS/assets/Placa.jpeg') center/cover no-repeat;
+  z-index: 0;
+}
+.painel-hero-fundo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* Escurece a foto pra manter o texto legível — mesmo princípio do
+     overlay já usado na tela de login (.login-bg-overlay), só mais
+     opaco aqui porque o hero não tem um card central sólido por cima
+     pra "descansar" a leitura como o login tem. */
+  background: linear-gradient(100deg, rgba(10,14,20,0.94) 0%, rgba(10,14,20,0.75) 55%, rgba(10,14,20,0.55) 100%);
+}
+.painel-hero-conteudo {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 280px;
+}
+.painel-hero-titulo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.painel-hero-icone {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--brand-bg);
+  border: 1px solid var(--brand);
+  color: var(--brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.painel-hero-titulo h1 {
+  font-size: 1.5rem;
+  color: var(--text-heading);
+  margin: 0;
+}
+.painel-hero-titulo p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 4px 0 0;
+}
+.painel-hero-badges {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.painel-hero-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border-color);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-heading);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.painel-hero-badge i {
+  color: var(--brand);
+}
+.painel-hero-badge span {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  display: block;
+}
+.painel-hero-status-card {
+  position: relative;
+  z-index: 1;
+  background: rgba(10,14,20,0.7);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  min-width: 200px;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+.painel-hero-status-widget {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-color);
+}
+.painel-hero-status-icone {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--brand-bg);
+  color: var(--brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.painel-hero-status-selo {
+  margin-top: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--success);
+  background: var(--success-bg);
+  padding: 4px 10px;
+  border-radius: 999px;
+  display: inline-block;
+}
+@media (max-width: 768px) {
+  .painel-hero {
+    padding: 20px;
+  }
+  .painel-hero-status-card {
+    width: 100%;
+  }
+}
+
+/* ==========================================
    WELCOME BOX
 ========================================== */
 .welcome-box {

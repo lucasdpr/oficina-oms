@@ -4015,6 +4015,10 @@ function atualizarNovosKPIs() {
 }
 
 function atualizarPainelCompleto() {
+    // 🆕 Hora do card de status do hero (referência mandada pelo usuário).
+    const horaHero = document.getElementById('painel-hero-hora-atualizacao');
+    if (horaHero) horaHero.textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
     // 🔧 Cada pedaço do Painel Geral roda isolado — se um card específico
     // falhar, os outros continuam aparecendo normalmente.
     if (typeof calcularKpisGlobais === 'function') {

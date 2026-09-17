@@ -821,14 +821,41 @@
         </div>
     </div>
 
-    <!-- 1. HEADER & STATUS DA PLANTA -->
-    <div class="welcome-box">
-        <div>
-            <h1>Plataforma OMS - Gestão Avançada de Aciaria</h1>
-            <p>Visão computacional e desgaste preditivo de componentes do lingotamento.</p>
-            <div class="plant-status-badge">
-                <i class="fas fa-circle"></i> Sistema Online & Monitorando
+    <!-- 1. HERO — referência mandada pelo usuário: banner com foto de
+         fundo (reaproveitada a mesma imagem já usada na tela de login,
+         JS/assets/Placa.jpeg — sem asset novo), badges de destaque do
+         sistema, e um card flutuante de status à direita. Substitui o
+         .welcome-box anterior (texto solto sem imagem). -->
+    <div class="painel-hero">
+        <div class="painel-hero-fundo"></div>
+        <div class="painel-hero-conteudo">
+            <div class="painel-hero-titulo">
+                <div class="painel-hero-icone"><i class="fas fa-gear"></i></div>
+                <div>
+                    <h1>OMS <span class="text-muted" style="font-weight:400; font-size:0.6em;">Gestão Inteligente da Manutenção</span></h1>
+                    <p>Mais controle, rastreabilidade e performance para os ativos da CSN.</p>
+                </div>
             </div>
+            <div class="painel-hero-badges">
+                <div class="painel-hero-badge"><i class="fas fa-layer-group"></i> 15+ <span>Módulos</span></div>
+                <div class="painel-hero-badge"><i class="fas fa-server"></i> MCC 2/3/4 <span>Áreas de atuação</span></div>
+                <div class="painel-hero-badge"><i class="fas fa-shield-halved"></i> 100% <span>Digital</span></div>
+                <div class="painel-hero-badge"><i class="fas fa-wifi"></i> PWA <span>Funciona offline</span></div>
+            </div>
+        </div>
+        <div class="painel-hero-status-card">
+            <div class="plant-status-badge">
+                <i class="fas fa-circle"></i> Sistema Online
+            </div>
+            <div class="text-muted" style="font-size:11px; margin-top:4px;">Última atualização: <span id="painel-hero-hora-atualizacao">--:--</span></div>
+            <div class="painel-hero-status-widget">
+                <div class="painel-hero-status-icone"><i class="fas fa-industry"></i></div>
+                <div>
+                    <strong>Aciaria</strong>
+                    <span class="text-muted" style="display:block; font-size:11px;">MCC 2</span>
+                </div>
+            </div>
+            <div class="painel-hero-status-selo">Operação Normal</div>
         </div>
     </div>
 
