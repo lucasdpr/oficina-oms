@@ -10477,9 +10477,21 @@ function renderizarGradeNotificacoes(atividades, feed) {
     // Restrição/Atenção) — chegou notificação, a área sobe. O status
     // continua visível, só que como etiqueta discreta na linha, não como
     // divisor que reordena tudo de novo.
+    // 🔧 CORREÇÃO ("muito simples", print real): o quadrado do ícone era
+    // cinza apagado (var(--text-muted), 14px) sobre um fundo quase
+    // idêntico ao card — na prática ilegível/invisível numa tela real,
+    // por isso toda a lista parecia "vazia"/genérica. Cada área já tem
+    // sua PRÓPRIA cor cadastrada (a.cor, usada em Central de Áreas) que
+    // não estava sendo aproveitada aqui — virou o fundo/ícone do chip,
+    // igual ao padrão de ícone colorido já usado nos KPIs. Isso NÃO é a
+    // mesma coisa que "cor de identidade fixa por item" (a regra que
+    // proíbe amarelo repetido): aqui são cores DIFERENTES por área
+    // (várias cores, não uma só reaproveitada em todo item), só pra dar
+    // variedade visual de lista — a gravidade real continua exclusivamente
+    // na etiqueta de status (s.cor), sem mudar.
     const linhasHtml = visiveis.map(({ area: a, status: s, contagem }) => `
         <div class="notif-linha" style="--sev-color:${s.cor};" onclick="window.abrirDetalheAreaNotificacao('${a.chave}')">
-            <div class="notif-linha-icone"><i class="fas ${a.icone}"></i></div>
+            <div class="notif-linha-icone" style="background:color-mix(in srgb, ${a.cor || 'var(--text-muted)'} 18%, transparent); color:${a.cor || 'var(--text-muted)'};"><i class="fas ${a.icone}"></i></div>
             <div class="notif-linha-corpo">
                 <div class="notif-linha-titulo">
                     ${a.nome}

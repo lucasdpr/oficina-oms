@@ -4353,11 +4353,18 @@ h1, h2, h3, h4, h5, h6 {
     overflow-wrap: break-word;
 }
 
+/* 🔧 CORREÇÃO ("sinal confuso", print real): era sempre var(--danger)
+   (vermelho) mesmo quando a etiqueta de status ao lado é "Novo" (azul)
+   ou qualquer outra cor — dava a entender "crítico" só por ter
+   notificação nova, mesmo numa área totalmente normal. Vermelho fica
+   reservado pra gravidade de verdade (etiqueta de status); "tem
+   novidade" agora é uma cor neutra de destaque (--text-accent), sem
+   reivindicar severidade que não é dela. */
 .notif-ponto-novo {
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: var(--danger);
+    background: var(--text-accent);
     flex-shrink: 0;
 }
 
