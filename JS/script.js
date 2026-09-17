@@ -6798,7 +6798,12 @@ window.excluirAvisoAdm = async function(id) {
 // como qualquer app de mensagens. O contexto (qual área, de qual lado
 // da conversa quem está logado enxerga) fica em CHAT_AREA_ADM_CTX.
 // ==========================================================================
-let CHAT_AREA_ADM_CTX = { area: null, deAdm: false, canal: 'supervisao' };
+// 🆕 areaDestinoTecnicos: a OUTRA área da conversa no canal 'tecnicos'
+// (pedido do usuário: "caldeiraria tem que ter chat com o molde,
+// bender, zero etc, tem que ter com todos" — deixou de ser "só dentro
+// da própria área" e virou área-a-área). null = ainda não escolheu com
+// qual área conversar (mostra o seletor em vez da thread).
+let CHAT_AREA_ADM_CTX = { area: null, deAdm: false, canal: 'supervisao', areaDestinoTecnicos: null };
 
 window.renderAbaChats = async function() {
     const isAdm = !!(OPERADOR_LOGADO && OPERADOR_LOGADO.isAdm);
@@ -6889,7 +6894,7 @@ window.chatsSelecionarConversa = async function(area, deAdm) {
     // 🆕 canal sempre reseta pra 'supervisao' ao trocar de conversa —
     // evita ficar preso na aba "Entre Técnicos" de uma área ao abrir
     // outra sem perceber.
-    CHAT_AREA_ADM_CTX = { area, deAdm: !!deAdm, canal: 'supervisao' };
+    CHAT_AREA_ADM_CTX = { area, deAdm: !!deAdm, canal: 'supervisao', areaDestinoTecnicos: null };
     window.chatsCancelarRespostaAtividade();
     const areaInfo = AREAS_OFICINA.find(a => a.chave === area);
     const tituloEl = document.getElementById('chat-thread-titulo');
@@ -6928,7 +6933,7 @@ window.chatsSelecionarConversa = async function(area, deAdm) {
 
 // ---- Mobile: sai da thread e volta pra lista (só existe quando é ADM) ----
 window.chatsVoltarParaLista = function() {
-    CHAT_AREA_ADM_CTX = { area: null, deAdm: false, canal: 'supervisao' };
+    CHAT_AREA_ADM_CTX = { area: null, deAdm: false, canal: 'supervisao', areaDestinoTecnicos: null };
     document.getElementById('chat-thread-painel')?.classList.remove('chat-thread-mobile-ativo');
     document.getElementById('chat-thread-canais')?.classList.add('hidden');
     const tituloEl = document.getElementById('chat-thread-titulo');
@@ -6945,6 +6950,7 @@ window.chatsVoltarParaLista = function() {
 window.chatsTrocarCanal = function(canal) {
     if (!CHAT_AREA_ADM_CTX.area) return;
     CHAT_AREA_ADM_CTX.canal = canal;
+    CHAT_AREA_ADM_CTX.areaDestinoTecnicos = null;
     window.chatsCancelarRespostaAtividade();
     document.querySelectorAll('#chat-thread-canais .chat-thread-canal-btn').forEach(btn => {
         btn.classList.toggle('active', btn.textContent.trim().includes(canal === 'tecnicos' ? 'Técnicos' : 'Supervisão'));
@@ -6953,11 +6959,58 @@ window.chatsTrocarCanal = function(canal) {
     window.chatsCarregarMensagens();
 };
 
-// 🆕 Esconde a linha de envio quando o ADM está só lendo o canal "Entre
-// Técnicos" — ele acompanha, mas não participa dessa conversa.
+// 🆕 Escolhe COM QUAL área conversar no canal "tecnicos" (agora
+// área-a-área) — chamado ao clicar numa área no seletor renderizado
+// por chatsRenderSeletorAreaTecnicos, ou automaticamente por
+// abrirConversaAtividade quando dá pra deduzir a área certa.
+window.chatsEscolherAreaTecnicos = async function(areaDestino) {
+    CHAT_AREA_ADM_CTX.areaDestinoTecnicos = areaDestino;
+    window.chatsAtualizarVisibilidadeEnvio();
+    await window.chatsCarregarMensagens();
+    try {
+        const apiBase = await resolverApiBase();
+        await fetch(`${apiBase}/api/mensagens_area/marcar_lida`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ area: CHAT_AREA_ADM_CTX.area, de_adm: !!CHAT_AREA_ADM_CTX.deAdm, canal: 'tecnicos', area_destino: areaDestino, matricula: OPERADOR_LOGADO ? OPERADOR_LOGADO.matricula : null })
+        });
+    } catch (e) { /* não bloqueia a leitura por isso */ }
+};
+
+// 🆕 Volta pro seletor de área dentro do canal "tecnicos" (link "Trocar
+// área" no topo da thread).
+window.chatsTrocarAreaTecnicos = function() {
+    CHAT_AREA_ADM_CTX.areaDestinoTecnicos = null;
+    window.chatsAtualizarVisibilidadeEnvio();
+    window.chatsCarregarMensagens();
+};
+
+function chatsRenderSeletorAreaTecnicos() {
+    const cont = document.getElementById('chat-thread-mensagens');
+    if (!cont) return;
+    const outrasAreas = (typeof AREAS_OFICINA !== 'undefined' ? AREAS_OFICINA : [])
+        .filter(a => a.chave !== CHAT_AREA_ADM_CTX.area && a.chave !== 'adm');
+    cont.innerHTML = `
+        <div style="padding:8px 4px;">
+            <p class="text-muted" style="font-size:12.5px; margin-bottom:10px;">Com qual área você quer falar?</p>
+            ${outrasAreas.map(a => `
+                <div class="chat-conversa-item" onclick="window.chatsEscolherAreaTecnicos('${a.chave}')">
+                    <div class="chat-conversa-avatar">${(a.nome || a.chave).slice(0, 1).toUpperCase()}</div>
+                    <div class="chat-conversa-corpo"><strong>${a.nome || a.chave}</strong></div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+// 🆕 Esconde a linha de envio quando: o ADM está só lendo o canal
+// "Entre Técnicos" (ele acompanha, mas não participa de nenhuma
+// conversa área-a-área); ou quando ainda não foi escolhida COM QUAL
+// área conversar nesse canal (sem alvo, não tem pra onde mandar).
 window.chatsAtualizarVisibilidadeEnvio = function() {
     const linhaEnvio = document.querySelector('#chat-thread-painel .chat-thread-input-row');
-    const somenteLeitura = CHAT_AREA_ADM_CTX.deAdm && CHAT_AREA_ADM_CTX.canal === 'tecnicos';
+    const noCanalTecnicos = CHAT_AREA_ADM_CTX.canal === 'tecnicos';
+    const somenteLeitura = (CHAT_AREA_ADM_CTX.deAdm && noCanalTecnicos) || (noCanalTecnicos && !CHAT_AREA_ADM_CTX.areaDestinoTecnicos);
     if (linhaEnvio) linhaEnvio.classList.toggle('hidden', somenteLeitura);
 };
 
@@ -6965,11 +7018,33 @@ window.chatsCarregarMensagens = async function() {
     const cont = document.getElementById('chat-thread-mensagens');
     if (!cont || !CHAT_AREA_ADM_CTX.area) return;
     const canal = CHAT_AREA_ADM_CTX.canal || 'supervisao';
+
+    // 🆕 Canal "tecnicos" agora é área-a-área — sem uma área destino
+    // escolhida, mostra o seletor em vez de tentar buscar mensagens.
+    if (canal === 'tecnicos' && !CHAT_AREA_ADM_CTX.areaDestinoTecnicos) {
+        chatsRenderSeletorAreaTecnicos();
+        return;
+    }
+
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/mensagens_area?area=${encodeURIComponent(CHAT_AREA_ADM_CTX.area)}&canal=${canal}`, { cache: 'no-store' });
+        const qs = new URLSearchParams({ area: CHAT_AREA_ADM_CTX.area, canal });
+        if (canal === 'tecnicos') qs.set('area_destino', CHAT_AREA_ADM_CTX.areaDestinoTecnicos);
+        const resp = await fetch(`${apiBase}/api/mensagens_area?${qs.toString()}`, { cache: 'no-store' });
         const lista = resp.ok ? await resp.json() : [];
-        cont.innerHTML = lista.length ? lista.map(m => {
+        // 🆕 Cabeçalho "Falando com: X · Trocar área" — só no canal
+        // 'tecnicos' (área-a-área), pra sempre deixar claro com quem é a
+        // conversa e dar um jeito fácil de trocar sem sair da aba.
+        const cabecalhoAreaDestino = canal === 'tecnicos'
+            ? (() => {
+                const infoDestino = AREAS_OFICINA.find(a => a.chave === CHAT_AREA_ADM_CTX.areaDestinoTecnicos);
+                return `<div class="chat-thread-area-destino-cabecalho">
+                    <span><i class="fas fa-people-arrows"></i> Falando com: <strong>${infoDestino ? infoDestino.nome : CHAT_AREA_ADM_CTX.areaDestinoTecnicos}</strong></span>
+                    ${!CHAT_AREA_ADM_CTX.deAdm ? `<button type="button" onclick="window.chatsTrocarAreaTecnicos()">Trocar área</button>` : ''}
+                </div>`;
+            })()
+            : '';
+        cont.innerHTML = cabecalhoAreaDestino + (lista.length ? lista.map(m => {
             // "Minha" mensagem: no canal "supervisao", é quem partiu do
             // MESMO lado de quem está vendo (área vendo área, ADM vendo
             // ADM). No canal "tecnicos" não existe "lado" (de_adm é
@@ -6987,7 +7062,7 @@ window.chatsCarregarMensagens = async function() {
                     <div class="chat-bolha-hora">${hora}</div>
                 </div>
             `;
-        }).join('') : `<div class="chat-vazio">${canal === 'tecnicos' ? 'Nenhuma mensagem entre técnicos ainda.' : 'Nenhuma mensagem ainda — mande a primeira 👋'}</div>`;
+        }).join('') : `<div class="chat-vazio">${canal === 'tecnicos' ? 'Nenhuma mensagem com essa área ainda.' : 'Nenhuma mensagem ainda — mande a primeira 👋'}</div>`);
         cont.scrollTop = cont.scrollHeight;
     } catch (e) {
         cont.innerHTML = '<div class="chat-vazio">Não consegui carregar a conversa.</div>';
@@ -7052,6 +7127,11 @@ window.chatsEnviarMensagem = async function() {
     // sem legenda nenhuma.
     if ((!texto && !foto) || !CHAT_AREA_ADM_CTX.area) return;
     const canal = CHAT_AREA_ADM_CTX.canal || 'supervisao';
+    // 🆕 Canal 'tecnicos' é área-a-área agora — sem área escolhida, não
+    // tem pra onde mandar (a linha de envio já fica escondida nesse
+    // caso, ver chatsAtualizarVisibilidadeEnvio, mas a checagem aqui
+    // evita mandar mesmo se algo chamar essa função por fora).
+    if (canal === 'tecnicos' && !CHAT_AREA_ADM_CTX.areaDestinoTecnicos) return;
     // 🆕 Canal "tecnicos" não tem "lado ADM" (o ADM só lê, nunca escreve
     // ali — a linha de envio fica escondida pra ele, ver
     // chatsAtualizarVisibilidadeEnvio). de_adm sempre falso nesse canal.
@@ -7071,6 +7151,7 @@ window.chatsEnviarMensagem = async function() {
                 mensagem: texto,
                 foto_base64: foto,
                 canal: canal,
+                area_destino: canal === 'tecnicos' ? CHAT_AREA_ADM_CTX.areaDestinoTecnicos : null,
                 atividade_referencia: CHAT_ATIVIDADE_PENDENTE_REFERENCIA || null
             })
         });
@@ -8347,6 +8428,13 @@ window.abrirConversaAtividade = async function(atividadeId) {
 
     await window.chatsSelecionarConversa(atividade.area, isAdm);
     window.chatsTrocarCanal('tecnicos');
+    // 🆕 Canal 'tecnicos' agora é área-a-área — se a atividade tem uma
+    // área SOLICITANTE diferente da área executante, já escolhe ela
+    // como destino (é quase certo que a conversa é com quem pediu);
+    // senão deixa o seletor de área aparecer normalmente.
+    if (atividade.solicitante_area && atividade.solicitante_area !== atividade.area) {
+        await window.chatsEscolherAreaTecnicos(atividade.solicitante_area);
+    }
     // 🔧 Setada só AQUI, depois de trocar conversa/canal — os dois passos
     // acima limpam CHAT_ATIVIDADE_PENDENTE_REFERENCIA de propósito (evita
     // ficar "grudada" se a pessoa trocar de conversa manualmente depois).
