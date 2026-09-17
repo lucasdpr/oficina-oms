@@ -11101,12 +11101,52 @@ window.filtrarFeedNotificacoesFlat = function(filtro) {
 window.limparFiltrosNotificacoesFlat = function() {
     NOTIF_FLAT_FILTRO = 'todas';
     NOTIF_FLAT_BUSCA = '';
-    NOTIF_FLAT_ORDEM = 'recentes';
+    NOTIF_FLAT_ORDEM = 'area';
     const busca = document.getElementById('notificacoes-busca-flat');
     if (busca) busca.value = '';
     const ordenar = document.getElementById('notificacoes-ordenar');
-    if (ordenar) ordenar.value = 'recentes';
+    if (ordenar) ordenar.value = 'area';
     renderizarNotificacoesFlat(NOTIF_FEED_CACHE);
+};
+
+// 🆕 "Limpar" na Central de Notificações: o usuário esperava que isso
+// LIMPASSE as notificações (marcasse tudo como visto), não só resetasse
+// o filtro/busca — antes o botão só fazia a segunda coisa, então na
+// prática parecia "não funcionar" (a lista continuava do mesmo jeito).
+// Agora marca todas como lidas (mesmo endpoint usado item a item) e
+// também reseta o filtro/busca, num botão só.
+window.limparTudoNotificacoesFlat = async function(event) {
+    if (!OPERADOR_LOGADO || !OPERADOR_LOGADO.matricula) {
+        window.limparFiltrosNotificacoesFlat();
+        return;
+    }
+
+    const restritoAPropriaArea = operadorTecnicoComArea();
+    const base = restritoAPropriaArea
+        ? NOTIF_FEED_CACHE.filter(item => item.area === OPERADOR_LOGADO.area)
+        : NOTIF_FEED_CACHE;
+    const naoLidas = base.filter(item => !item.lida);
+
+    const botao = event ? event.currentTarget : null;
+    const htmlOriginal = botao ? botao.innerHTML : null;
+    if (botao) { botao.disabled = true; botao.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Limpando...'; }
+
+    try {
+        if (naoLidas.length > 0) {
+            const apiBase = await resolverApiBase();
+            await Promise.all(naoLidas.map(item => fetch(`${apiBase}/api/notificacoes/marcar_lido`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tipo: item.tipo, evento_id: String(item.evento_id), matricula: OPERADOR_LOGADO.matricula })
+            })));
+        }
+    } catch (e) {
+        console.error('⚠️ Erro ao limpar notificações:', e);
+    } finally {
+        if (botao) { botao.disabled = false; botao.innerHTML = htmlOriginal; }
+        window.limparFiltrosNotificacoesFlat();
+        if (typeof window.carregarCentralNotificacoes === 'function') window.carregarCentralNotificacoes();
+    }
 };
 
 function renderizarNotificacoesFlat(feedBruto) {

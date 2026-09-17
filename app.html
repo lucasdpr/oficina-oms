@@ -1500,7 +1500,7 @@
                                     <input type="text" id="notificacoes-busca-flat" placeholder="Buscar por área, referência, descrição..." oninput="window.buscarFeedNotificacoesFlat(this.value)" style="height:38px; border-radius:6px; padding-left:38px; width:100%;">
                                     <i class="fas fa-search login-input-icon" style="top:10px; font-size:13px;"></i>
                                 </div>
-                                <button class="btn-outline-neutral" onclick="window.limparFiltrosNotificacoesFlat()"><i class="fas fa-xmark"></i> Limpar</button>
+                                <button class="btn-outline-neutral" onclick="window.limparTudoNotificacoesFlat(event)" title="Marca tudo como visto e reseta filtro/busca"><i class="fas fa-check-double"></i> Limpar</button>
                             </div>
                             <div id="notificacoes-feed-flat" style="margin-top:14px;">
                                 <div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>
@@ -3227,7 +3227,7 @@
     <!-- SCRIPTS (consolidados)                   -->
     <!-- ========================================= -->
     <script type="module">
-        import './JS/script.js?v=31';
+        import './JS/script.js?v=32';
         import './JS/Oficina/procedimentosOficina.js?v=1';
         import './JS/ui.js?v=13';
         import './JS/painelGeralExtra.js?v=1';
