@@ -1760,13 +1760,29 @@
             <!-- 🆕 REGISTRO DE OS (Ordem de Serviço) — foto da OS em papel +
                  acompanhamento de status (Em Andamento / Concluído). -->
             <section id="aba-ordens-servico" class="tab-content">
-                <div class="glass-panel" style="padding:24px; margin-bottom:24px;">
-                    <h2><i class="fas fa-file-invoice"></i> Registro de OS</h2>
-                    <p class="text-muted" style="font-size:13px; margin-bottom:20px;">
-                        Tire foto de cada página da OS em papel (pode escolher várias de uma vez) pra deixar ela
-                        registrada digitalmente. Acompanhe o status até marcar como concluída.
-                    </p>
+                <!-- 🆕 Hero com foto de fundo — mesmo padrão visual já aplicado
+                     nas outras telas desta sessão (reaproveita .painel-hero*).
+                     Badges mostram contagem real por status (mesmo dado que
+                     window.carregarListaOrdensServico já busca). -->
+                <div class="painel-hero" style="margin-bottom:24px;">
+                    <div class="painel-hero-fundo"></div>
+                    <div class="painel-hero-conteudo">
+                        <div class="painel-hero-titulo">
+                            <div class="painel-hero-icone"><i class="fas fa-file-invoice"></i></div>
+                            <div>
+                                <h1>Registro de OS</h1>
+                                <p>Tire foto de cada página da OS em papel pra deixar ela registrada digitalmente.</p>
+                            </div>
+                        </div>
+                        <div class="painel-hero-badges">
+                            <div class="painel-hero-badge"><i class="fas fa-list" style="color:var(--text-accent);"></i> <strong id="os-badge-total">0</strong><span>Total</span></div>
+                            <div class="painel-hero-badge"><i class="fas fa-wrench" style="color:var(--warning);"></i> <strong id="os-badge-andamento">0</strong><span>Em Andamento</span></div>
+                            <div class="painel-hero-badge"><i class="fas fa-check" style="color:var(--success);"></i> <strong id="os-badge-concluido">0</strong><span>Concluído</span></div>
+                        </div>
+                    </div>
+                </div>
 
+                <div class="glass-panel" style="padding:24px; margin-bottom:24px;">
                     <div class="form-grid-4" style="margin-bottom:16px;">
                         <div class="input-group">
                             <label>Número da OS (opcional)</label>
