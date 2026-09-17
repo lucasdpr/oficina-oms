@@ -1217,6 +1217,140 @@ h1, h2, h3, h4, h5, h6 {
    altura de card — o donut usa o espaço sobrando ao redor do círculo
    pra uma legenda com os números, em vez de ficar vazio).
    -------------------------------------------------------------- */
+/* --------------------------------------------------------------
+   HEADER SUPERIOR DO PAINEL GERAL (referência "John Hardward") —
+   proposta em avaliação, só nesta tela por enquanto. Reaproveita
+   glass-panel (mesmo fundo/blur dos outros cards) em vez de criar um
+   estilo de superfície novo.
+   -------------------------------------------------------------- */
+.header-topo-painel {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 14px 20px;
+  margin-bottom: 20px;
+}
+
+.header-topo-saudacao {
+  flex-shrink: 0;
+  font-size: 0.95rem;
+  color: var(--text-heading);
+  white-space: nowrap;
+}
+
+.header-topo-saudacao-label {
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-right: 4px;
+}
+
+.header-topo-busca {
+  flex: 1;
+  max-width: 420px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-th);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  color: var(--text-muted);
+}
+
+.header-topo-busca input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-heading);
+  font-size: 0.85rem;
+  font-family: var(--font-family);
+}
+
+.header-topo-busca input::placeholder {
+  color: var(--text-muted);
+}
+
+.header-topo-acoes {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-topo-sino,
+.header-topo-avatar {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background: var(--bg-th);
+  color: var(--text-heading);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.header-topo-sino:hover,
+.header-topo-avatar:hover {
+  background: var(--bg-hover);
+  transform: translateY(-1px);
+}
+
+.header-topo-avatar {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--text-on-primary);
+}
+
+#header-topo-sino-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Item do menu escondido pela busca do header (Tarefa "header superior") */
+.header-busca-oculto {
+  display: none !important;
+}
+
+@media (max-width: 900px) {
+  .header-topo-painel {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px 16px;
+  }
+  .header-topo-saudacao {
+    order: 1;
+    font-size: 0.85rem;
+  }
+  .header-topo-acoes {
+    order: 2;
+    margin-left: auto;
+  }
+  .header-topo-busca {
+    order: 3;
+    max-width: none;
+    width: 100%;
+  }
+}
+
 .painel-graficos-linha2 {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
