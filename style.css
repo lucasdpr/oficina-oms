@@ -4640,6 +4640,20 @@ h1, h2, h3, h4, h5, h6 {
     gap: 20px;
     align-items: start;
 }
+/* 🔧 CORREÇÃO ("central de notificação bugada" — coluna lateral
+   Resumo/Filtros Rápidos/Dica cortada fora da tela, print real do
+   usuário): itens de CSS Grid têm min-width:auto por padrão, ou seja,
+   nunca encolhem além do conteúdo mínimo dos filhos. A coluna
+   principal tem uma busca com min-width:200px + botão "Limpar" + abas
+   de filtro numa linha só — combinados, esse mínimo intrínseco podia
+   passar do espaço disponível e "empurrar" a coluna lateral (280px)
+   pra fora da tela, sem scroll horizontal aparente pro usuário notar
+   por que ela sumiu. min-width:0 permite a coluna encolher/quebrar
+   linha normalmente em vez de forçar a grid inteira a alargar.
+   -------------------------------------------------------------- */
+.notif-layout-grid > * {
+    min-width: 0;
+}
 @media (max-width: 900px) {
     .notif-layout-grid {
         grid-template-columns: 1fr;

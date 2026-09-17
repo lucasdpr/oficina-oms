@@ -9219,61 +9219,92 @@ window.abrirAba = function(event, idAba) {
     const abaDestino = document.getElementById(idAba);
     if (abaDestino) abaDestino.classList.add("active");
 
-    if (idAba === "aba-mcc2" && typeof renderizarGraficosMCC === 'function') renderizarGraficosMCC(2);
-    if (idAba === "aba-mcc3" && typeof renderizarGraficosMCC === 'function') renderizarGraficosMCC(3);
-    if (idAba === "aba-mcc4" && typeof renderizarGraficosMCC === 'function') renderizarGraficosMCC(4);
-    if (idAba === "aba-reparos" && typeof renderReparos === 'function') renderReparos();
-    if (idAba === "aba-reparos" && typeof window.atualizarRascunhosAtivos === 'function') window.atualizarRascunhosAtivos();
-    if (idAba === "aba-reparos" && typeof window.trocarAbaReparo === 'function') window.trocarAbaReparo(null, "reparo-sub-iniciar");
-    if (idAba === "aba-reservas" && typeof renderReservas === 'function') renderReservas();
-    if (idAba === "aba-rolos" && typeof renderRolos === 'function') renderRolos();
-    if (idAba === "aba-hidraulica" && typeof renderHidraulica === 'function') renderHidraulica();
-    if (idAba === "aba-almoxarifado" && typeof carregarMateriaisDoBackend === 'function') carregarMateriaisDoBackend();
-    if (idAba === "aba-historico" && typeof renderHistorico === 'function') renderHistorico();
-    // 🔧 CORREÇÃO CRÍTICA ("Registro Recente e Administração não
-    // abriam/carregavam nada"): existiam DUAS funções abrirAba() no
-    // arquivo — uma delas (mais antiga, sem "window." na declaração)
-    // nunca chegava a rodar de verdade, porque a segunda (esta aqui,
-    // definida depois) sobrescrevia window.abrirAba primeiro. Toda vez
-    // que eu editava a função errada (a de cima), a mudança nunca tinha
-    // efeito nenhum na tela — por isso as abas novas pareciam "mortas"
-    // mesmo com o código certo escrito. A duplicada foi removida, e os
-    // gatilhos que faltavam (Registro Recente e Administração) foram
-    // trazidos pra cá, na função que realmente executa.
-    if (idAba === "aba-admin-colaboradores" && typeof window.carregarAdminColaboradores === 'function') window.carregarAdminColaboradores();
-    if (idAba === "aba-painel" && typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
-    if (idAba === "aba-ativos" && typeof renderAtivos === 'function') renderAtivos();
-    if (idAba === "aba-fluxo" && typeof renderPainelVeios === 'function') renderPainelVeios();
-    if (idAba === "aba-tecnico" && typeof renderPainelTecnico === 'function') renderPainelTecnico();
-    if (idAba === "aba-oficina" && typeof carregarOficina === 'function') {
-        carregarOficina();
-        if (typeof carregarCatalogoMateriaisOficina === 'function') carregarCatalogoMateriaisOficina();
+    // 🔧 CORREÇÃO ("mobile não troca de aba" — bug relatado várias vezes,
+    // nunca reproduzido em teste automatizado com clique simulado):
+    // fechar o menu mobile morava só no FINAL desta função, depois de
+    // todas as chamadas de renderização de cada aba (renderPainelSupervisor,
+    // carregarOficina, etc.). Se qualquer uma delas lançasse um erro no
+    // meio do caminho (ex: uma chamada de rede falhando de um jeito não
+    // prontamente capturado), a troca de aba já tinha acontecido (o link
+    // já ficava com destaque ativo) mas o "return" antecipado pelo erro
+    // nunca deixava o código chegar até o trecho que fecha o drawer —
+    // sintoma exatamente igual ao relatado: item marcado como ativo, tela
+    // por trás sem atualizar, menu continua aberto. Fechar o menu logo
+    // aqui, ANTES de qualquer render específico de aba, garante que a
+    // navegação visual sempre se completa mesmo que a função de uma aba
+    // específica falhe depois.
+    if (window.innerWidth <= 992) {
+        const sidebarMobile = document.getElementById('sidebar-menu');
+        if (sidebarMobile) sidebarMobile.classList.remove('open');
     }
-    if (idAba === "aba-ordens-servico" && typeof window.carregarListaOrdensServico === 'function') {
-        popularSelectAreaOficina("os-area");
-        window.carregarListaOrdensServico();
-    }
-    if (idAba === "aba-painel-supervisor" && typeof window.renderPainelSupervisor === 'function') window.renderPainelSupervisor();
-    if (idAba === "aba-notificacoes" && typeof window.carregarCentralNotificacoes === 'function') {
-        // Sempre entra pela grade — não deixa "preso" no detalhe de uma
-        // área de uma visita anterior.
-        if (typeof window.fecharDetalheAreaNotificacao === 'function') window.fecharDetalheAreaNotificacao();
-        window.carregarCentralNotificacoes();
-    } else if (typeof window.pararPollingCentralNotificacoes === 'function') {
-        // Saiu da Central de Notificações pra outra aba — para o
-        // polling na hora, não espera o próximo tick de 30s pra notar.
-        window.pararPollingCentralNotificacoes();
-    }
-    if (idAba === "aba-qualidade" && typeof window.renderAbaQualidade === 'function') window.renderAbaQualidade();
-    if (idAba === "aba-painel-adm" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('adm');
-    if (idAba === "aba-painel-almoxarifado" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('almoxarifado');
-    if (idAba === "aba-painel-ponte-rolante" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('ponte-rolante');
-    if (idAba === "aba-painel-logistica" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('logistica');
-    if (idAba === "aba-chats" && typeof window.renderAbaChats === 'function') window.renderAbaChats();
 
-    if (idAba === "aba-producao") {
-        if (typeof window.carregarHistoricoApontamentoGeral === 'function') window.carregarHistoricoApontamentoGeral();
-        if (typeof window.carregarHistoricoApontamentoMoldes === 'function') window.carregarHistoricoApontamentoMoldes();
+    // 🔧 CORREÇÃO: todo o bloco de renderização específica de cada aba
+    // agora roda dentro de um try/catch. Antes, um erro no meio (ex: uma
+    // das funções de render lançando exceção) interrompia a função
+    // inteira ali mesmo — o resto do bloco (inclusive o registro no
+    // histórico do navegador, usado pelo gesto "voltar") nunca rodava.
+    // A troca visual da aba (classes active) e o fechamento do menu
+    // mobile já aconteceram ANTES deste bloco (ver acima), então já
+    // ficam garantidos independente do que acontecer aqui dentro.
+    try {
+        if (idAba === "aba-mcc2" && typeof renderizarGraficosMCC === 'function') renderizarGraficosMCC(2);
+        if (idAba === "aba-mcc3" && typeof renderizarGraficosMCC === 'function') renderizarGraficosMCC(3);
+        if (idAba === "aba-mcc4" && typeof renderizarGraficosMCC === 'function') renderizarGraficosMCC(4);
+        if (idAba === "aba-reparos" && typeof renderReparos === 'function') renderReparos();
+        if (idAba === "aba-reparos" && typeof window.atualizarRascunhosAtivos === 'function') window.atualizarRascunhosAtivos();
+        if (idAba === "aba-reparos" && typeof window.trocarAbaReparo === 'function') window.trocarAbaReparo(null, "reparo-sub-iniciar");
+        if (idAba === "aba-reservas" && typeof renderReservas === 'function') renderReservas();
+        if (idAba === "aba-rolos" && typeof renderRolos === 'function') renderRolos();
+        if (idAba === "aba-hidraulica" && typeof renderHidraulica === 'function') renderHidraulica();
+        if (idAba === "aba-almoxarifado" && typeof carregarMateriaisDoBackend === 'function') carregarMateriaisDoBackend();
+        if (idAba === "aba-historico" && typeof renderHistorico === 'function') renderHistorico();
+        // 🔧 CORREÇÃO CRÍTICA ("Registro Recente e Administração não
+        // abriam/carregavam nada"): existiam DUAS funções abrirAba() no
+        // arquivo — uma delas (mais antiga, sem "window." na declaração)
+        // nunca chegava a rodar de verdade, porque a segunda (esta aqui,
+        // definida depois) sobrescrevia window.abrirAba primeiro. Toda vez
+        // que eu editava a função errada (a de cima), a mudança nunca tinha
+        // efeito nenhum na tela — por isso as abas novas pareciam "mortas"
+        // mesmo com o código certo escrito. A duplicada foi removida, e os
+        // gatilhos que faltavam (Registro Recente e Administração) foram
+        // trazidos pra cá, na função que realmente executa.
+        if (idAba === "aba-admin-colaboradores" && typeof window.carregarAdminColaboradores === 'function') window.carregarAdminColaboradores();
+        if (idAba === "aba-painel" && typeof atualizarPainelCompleto === 'function') atualizarPainelCompleto();
+        if (idAba === "aba-ativos" && typeof renderAtivos === 'function') renderAtivos();
+        if (idAba === "aba-fluxo" && typeof renderPainelVeios === 'function') renderPainelVeios();
+        if (idAba === "aba-tecnico" && typeof renderPainelTecnico === 'function') renderPainelTecnico();
+        if (idAba === "aba-oficina" && typeof carregarOficina === 'function') {
+            carregarOficina();
+            if (typeof carregarCatalogoMateriaisOficina === 'function') carregarCatalogoMateriaisOficina();
+        }
+        if (idAba === "aba-ordens-servico" && typeof window.carregarListaOrdensServico === 'function') {
+            popularSelectAreaOficina("os-area");
+            window.carregarListaOrdensServico();
+        }
+        if (idAba === "aba-painel-supervisor" && typeof window.renderPainelSupervisor === 'function') window.renderPainelSupervisor();
+        if (idAba === "aba-notificacoes" && typeof window.carregarCentralNotificacoes === 'function') {
+            // Sempre entra pela grade — não deixa "preso" no detalhe de uma
+            // área de uma visita anterior.
+            if (typeof window.fecharDetalheAreaNotificacao === 'function') window.fecharDetalheAreaNotificacao();
+            window.carregarCentralNotificacoes();
+        } else if (typeof window.pararPollingCentralNotificacoes === 'function') {
+            // Saiu da Central de Notificações pra outra aba — para o
+            // polling na hora, não espera o próximo tick de 30s pra notar.
+            window.pararPollingCentralNotificacoes();
+        }
+        if (idAba === "aba-qualidade" && typeof window.renderAbaQualidade === 'function') window.renderAbaQualidade();
+        if (idAba === "aba-painel-adm" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('adm');
+        if (idAba === "aba-painel-almoxarifado" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('almoxarifado');
+        if (idAba === "aba-painel-ponte-rolante" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('ponte-rolante');
+        if (idAba === "aba-painel-logistica" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('logistica');
+        if (idAba === "aba-chats" && typeof window.renderAbaChats === 'function') window.renderAbaChats();
+
+        if (idAba === "aba-producao") {
+            if (typeof window.carregarHistoricoApontamentoGeral === 'function') window.carregarHistoricoApontamentoGeral();
+            if (typeof window.carregarHistoricoApontamentoMoldes === 'function') window.carregarHistoricoApontamentoMoldes();
+        }
+    } catch (erroRenderAba) {
+        console.error(`⚠️ Erro ao renderizar conteúdo da aba "${idAba}" (a troca de aba em si já aconteceu):`, erroRenderAba);
     }
 
     const selVeios = document.getElementById("seletor-veios-container");
