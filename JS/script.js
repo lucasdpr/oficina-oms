@@ -3542,6 +3542,23 @@ window.trocarAbaReparo = function(evento, idAlvo) {
     }
 };
 
+// 🆕 Alterna Tonelagem/Moldes na auditoria do Lançamento de Produção —
+// mesmo padrão simples de window.trocarAbaReparo acima, só que sem
+// nenhum carregamento extra (as duas tabelas já são preenchidas juntas
+// por atualizarHistoricoApontamentos, ambas continuam sempre com dado
+// atualizado por baixo, só a visibilidade muda).
+window.trocarAbaAuditoriaProducao = function(evento, idAlvo) {
+    ["auditoria-producao-geral", "auditoria-producao-moldes"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = (id === idAlvo) ? "block" : "none";
+    });
+    if (evento && evento.currentTarget) {
+        const container = evento.currentTarget.closest(".folhao-tabs");
+        if (container) container.querySelectorAll(".folhao-tab").forEach(btn => btn.classList.remove("active"));
+        evento.currentTarget.classList.add("active");
+    }
+};
+
 // Navega direto pra aba de Reparo, já abrindo a sub-aba certa
 // ("iniciar" ou "andamento") — usado pelos atalhos do Painel do Técnico.
 window.abrirAbaReparo = function(subaba) {
@@ -9313,6 +9330,16 @@ window.abrirAba = function(event, idAba) {
         if (idAba === "aba-producao") {
             if (typeof window.carregarHistoricoApontamentoGeral === 'function') window.carregarHistoricoApontamentoGeral();
             if (typeof window.carregarHistoricoApontamentoMoldes === 'function') window.carregarHistoricoApontamentoMoldes();
+            // 🆕 Badges do hero — mesma fonte de dado já usada no Painel
+            // Geral/Supervisor (buscarDadosApontamentos7dias), sem cálculo novo.
+            if (typeof buscarDadosApontamentos7dias === 'function') {
+                buscarDadosApontamentos7dias().then(dados => {
+                    const badgeHoje = document.getElementById('producao-badge-hoje');
+                    if (badgeHoje) badgeHoje.textContent = dados.totalHoje;
+                    const badgeSemana = document.getElementById('producao-badge-semana');
+                    if (badgeSemana) badgeSemana.textContent = Object.values(dados.totalPorDia).reduce((s, v) => s + v, 0);
+                }).catch(() => {});
+            }
         }
     } catch (erroRenderAba) {
         console.error(`⚠️ Erro ao renderizar conteúdo da aba "${idAba}" (a troca de aba em si já aconteceu):`, erroRenderAba);

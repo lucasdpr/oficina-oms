@@ -1129,12 +1129,32 @@
             </section>
 
             <section id="aba-producao" class="tab-content">
-                <div class="glass-panel" style="padding:24px; margin-bottom: 24px;">
-                    <h1 style="color: var(--text-heading); margin-bottom: 8px;"><i class="fas fa-calculator" style="color:#3b82f6;"></i> Central de Apontamento Diário</h1>
-                    <p class="text-muted" style="margin-bottom: 24px;">Lançamentos de produção para cálculo de desgaste e vida útil da máquina.</p>
+                <!-- 🆕 Hero com foto de fundo — mesmo padrão visual já aplicado
+                     no Painel Geral/Supervisor/Técnico (reaproveita
+                     .painel-hero*). Badges mostram o total já lançado hoje
+                     e nos últimos 7 dias, reaproveitando
+                     buscarDadosApontamentos7dias() (mesma fonte de dado já
+                     usada no Painel Geral/Supervisor — sem cálculo novo). -->
+                <div class="painel-hero">
+                    <div class="painel-hero-fundo"></div>
+                    <div class="painel-hero-conteudo">
+                        <div class="painel-hero-titulo">
+                            <div class="painel-hero-icone"><i class="fas fa-calculator"></i></div>
+                            <div>
+                                <h1>Lançamento de Produção</h1>
+                                <p>Apontamentos diários pra cálculo de desgaste e vida útil da máquina.</p>
+                            </div>
+                        </div>
+                        <div class="painel-hero-badges">
+                            <div class="painel-hero-badge"><i class="fas fa-industry" style="color:var(--info);"></i> <strong id="producao-badge-hoje">0</strong><span>Lançado hoje</span></div>
+                            <div class="painel-hero-badge"><i class="fas fa-calendar-week" style="color:var(--brand);"></i> <strong id="producao-badge-semana">0</strong><span>Últimos 7 dias</span></div>
+                        </div>
+                    </div>
+                </div>
 
+                <div class="glass-panel" style="padding:24px; margin-bottom: 24px; margin-top:24px;">
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-                        
+
                         <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
                             <h3 style="color: var(--text-heading); margin-bottom: 15px;"><i class="fas fa-industry"></i> Tonelagem (Equipamentos Gerais)</h3>
                             <p style="color: var(--text-muted); font-size: 11px; margin-bottom: 15px;">Atualiza o desgaste de Bows, Horizontais, Benders, etc.</p>
@@ -1174,27 +1194,35 @@
                     </div>
                 </div>
 
-                <div class="glass-panel" style="padding:24px; margin-bottom: 24px;">
-                    <h3 style="color:var(--text-heading); font-size: 16px; margin-bottom: 16px;"><i class="fas fa-history"></i> Auditoria de Lançamento de Tonelagem</h3>
-                    <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
-                        <table class="premium-table" style="font-size: 12px; text-align:center;">
-                            <thead>
-                                <tr><th>Data / Hora</th><th>Responsável</th><th>MCC 2</th><th>MCC 3</th><th>MCC 4</th><th>Desfazer</th></tr>
-                            </thead>
-                            <tbody id="tabela-historico-geral"></tbody>
-                        </table>
-                    </div>
-                </div>
-
+                <!-- 🆕 Painel de auditoria com abas (Tonelagem/Moldes) em vez de
+                     2 tabelas empilhadas soltas — mesma informação, só que
+                     sem precisar rolar a tela toda pra ver as duas de uma
+                     vez (elas nunca eram olhadas juntas mesmo). -->
                 <div class="glass-panel" style="padding:24px;">
-                    <h3 style="color:var(--text-heading); font-size: 16px; margin-bottom: 16px;"><i class="fas fa-history"></i> Auditoria de Lançamento de Moldes</h3>
-                    <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
-                        <table class="premium-table" style="font-size: 12px; text-align:center;">
-                            <thead>
-                                <tr><th>Data / Hora</th><th>Responsável</th><th>MCC 2</th><th>MCC 3</th><th>MCC 4</th><th>Desfazer</th></tr>
-                            </thead>
-                            <tbody id="tabela-historico-moldes"></tbody>
-                        </table>
+                    <h3 style="color:var(--text-heading); font-size: 16px; margin-bottom: 16px;"><i class="fas fa-history"></i> Auditoria de Lançamentos</h3>
+                    <div class="folhao-tabs">
+                        <button class="folhao-tab active" onclick="window.trocarAbaAuditoriaProducao(event, 'auditoria-producao-geral')">Tonelagem</button>
+                        <button class="folhao-tab" onclick="window.trocarAbaAuditoriaProducao(event, 'auditoria-producao-moldes')">Moldes</button>
+                    </div>
+                    <div id="auditoria-producao-geral" class="folhao-content">
+                        <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
+                            <table class="premium-table" style="font-size: 12px; text-align:center;">
+                                <thead>
+                                    <tr><th>Data / Hora</th><th>Responsável</th><th>MCC 2</th><th>MCC 3</th><th>MCC 4</th><th>Desfazer</th></tr>
+                                </thead>
+                                <tbody id="tabela-historico-geral"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="auditoria-producao-moldes" class="folhao-content" style="display:none;">
+                        <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
+                            <table class="premium-table" style="font-size: 12px; text-align:center;">
+                                <thead>
+                                    <tr><th>Data / Hora</th><th>Responsável</th><th>MCC 2</th><th>MCC 3</th><th>MCC 4</th><th>Desfazer</th></tr>
+                                </thead>
+                                <tbody id="tabela-historico-moldes"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </section>
