@@ -507,6 +507,18 @@
         <button type="button" onclick="window.forcarAtualizacaoOMS()" style="background:var(--brand); color:var(--text-on-primary); border:none; padding:6px 14px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12.5px;">Atualizar agora</button>
     </div>
 
+    <!-- 🆕 Aviso "Conectando ao servidor..." — pedido do usuário depois de
+         investigarmos os erros de CORS que apareciam no console: o
+         backend gratuito do Render "dorme" por inatividade e demora até
+         ~50s pra acordar na primeira chamada. fetchComRetry (script.js)
+         já tentava de novo sozinho nesse caso; só faltava avisar quem
+         está usando em vez de deixar a tela muda com erro cru no
+         console. Mesmo padrão visual do aviso-nova-versao acima. -->
+    <div id="aviso-conectando-servidor" class="hidden" style="position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:99999; background:var(--panel-2, #1e293b); color:#fff; padding:12px 16px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,0.4); border:1px solid var(--border-color); display:flex; align-items:center; gap:10px;">
+        <i class="fas fa-circle-notch fa-spin" style="color:var(--text-accent, #38bdf8);"></i>
+        <span>Conectando ao servidor... pode levar até 1 minuto na primeira vez.</span>
+    </div>
+
     <!-- TELA DE LOGIN AVANÇADA -->
 <div id="tela-login-home" class="login-home-container no-print">
     

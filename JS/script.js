@@ -355,35 +355,64 @@ window.alternarVisibilidadeSenha = function() {
 // 2) tentativas: se abortar por timeout (ou cair a conexão), tenta de
 //    novo automaticamente antes de desistir de vez — dando tempo do
 //    banco terminar de acordar.
+// 🆕 Aviso visual de "Conectando ao servidor..." (pedido do usuário
+// depois de confirmarmos que os erros de CORS no console eram, na
+// real, o backend gratuito do Render "dormindo" por inatividade —
+// ver RESUMO-NOTURNO/discussão da sessão: sem upgrade de plano por
+// enquanto, então a solução é só não assustar com erro cru). Conta
+// quantas chamadas estão "na segunda tentativa em diante" ao mesmo
+// tempo — várias abas/seções costumam disparar fetch juntas, então um
+// contador evita o aviso pisca-pisca (aparece/some) toda hora.
+let _fetchRetryAtivos = 0;
+function mostrarAvisoConectandoServidor() {
+    _fetchRetryAtivos++;
+    const el = document.getElementById('aviso-conectando-servidor');
+    if (el) el.classList.remove('hidden');
+}
+function esconderAvisoConectandoServidor() {
+    _fetchRetryAtivos = Math.max(0, _fetchRetryAtivos - 1);
+    if (_fetchRetryAtivos === 0) {
+        const el = document.getElementById('aviso-conectando-servidor');
+        if (el) el.classList.add('hidden');
+    }
+}
+
 async function fetchComRetry(url, opcoes = {}, tentativas = 4, esperaMs = 4000, timeoutMs = 30000) {
     let ultimaResposta = null;
-    for (let i = 0; i <= tentativas; i++) {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), timeoutMs);
-        try {
-            const resp = await fetch(url, { ...opcoes, signal: controller.signal });
-            clearTimeout(timer);
-            // 🔧 CORREÇÃO: um erro 500 (ex: conexão "zumbi" no pool do
-            // Python logo após o Neon suspender sozinho, mesmo com o
-            // Render já acordado — outro celular tinha acabado de
-            // acessar) chegava aqui como resposta válida e NUNCA era
-            // tentado de novo. Era por isso que às vezes o login ou um
-            // apontamento falhava na primeira tentativa e só funcionava
-            // se o usuário fechasse e abrisse o app de novo. Agora 5xx
-            // também entra no retry, igual timeout/erro de rede.
-            if (resp.status >= 500 && i < tentativas) {
-                ultimaResposta = resp;
-                console.warn(`⚠️ Servidor respondeu ${resp.status} (tentativa ${i + 1}/${tentativas + 1}). Tentando de novo em ${esperaMs / 1000}s...`);
+    let avisoAtivo = false;
+    try {
+        for (let i = 0; i <= tentativas; i++) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                const resp = await fetch(url, { ...opcoes, signal: controller.signal });
+                clearTimeout(timer);
+                // 🔧 CORREÇÃO: um erro 500 (ex: conexão "zumbi" no pool do
+                // Python logo após o Neon suspender sozinho, mesmo com o
+                // Render já acordado — outro celular tinha acabado de
+                // acessar) chegava aqui como resposta válida e NUNCA era
+                // tentado de novo. Era por isso que às vezes o login ou um
+                // apontamento falhava na primeira tentativa e só funcionava
+                // se o usuário fechasse e abrisse o app de novo. Agora 5xx
+                // também entra no retry, igual timeout/erro de rede.
+                if (resp.status >= 500 && i < tentativas) {
+                    ultimaResposta = resp;
+                    console.warn(`⚠️ Servidor respondeu ${resp.status} (tentativa ${i + 1}/${tentativas + 1}). Tentando de novo em ${esperaMs / 1000}s...`);
+                    if (!avisoAtivo) { avisoAtivo = true; mostrarAvisoConectandoServidor(); }
+                    await new Promise(resolve => setTimeout(resolve, esperaMs));
+                    continue;
+                }
+                return resp;
+            } catch (e) {
+                clearTimeout(timer);
+                if (i === tentativas) throw e; // acabaram as tentativas, propaga o erro
+                console.warn(`⚠️ Falha/timeout de conexão (tentativa ${i + 1}/${tentativas + 1}). Tentando de novo em ${esperaMs / 1000}s...`);
+                if (!avisoAtivo) { avisoAtivo = true; mostrarAvisoConectandoServidor(); }
                 await new Promise(resolve => setTimeout(resolve, esperaMs));
-                continue;
             }
-            return resp;
-        } catch (e) {
-            clearTimeout(timer);
-            if (i === tentativas) throw e; // acabaram as tentativas, propaga o erro
-            console.warn(`⚠️ Falha/timeout de conexão (tentativa ${i + 1}/${tentativas + 1}). Tentando de novo em ${esperaMs / 1000}s...`);
-            await new Promise(resolve => setTimeout(resolve, esperaMs));
         }
+    } finally {
+        if (avisoAtivo) esconderAvisoConectandoServidor();
     }
     return ultimaResposta;
 }
