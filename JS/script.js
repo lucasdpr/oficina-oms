@@ -9197,6 +9197,19 @@ window.abrirAba = function(event, idAba) {
     const abaDestino = document.getElementById(idAba);
     if (abaDestino) abaDestino.classList.add("active");
 
+    // 🔧 CORREÇÃO ("mobile não troca de aba, acontece com QUALQUER item"
+    // — usuário confirmou que não é lógica de uma aba específica):
+    // nada aqui resetava a posição de rolagem ao trocar de aba. .main-
+    // content não tem overflow-y próprio — quem rola é a JANELA inteira.
+    // Se a pessoa estivesse rolada pra baixo na aba anterior (bem
+    // provável no celular, onde as telas são compridas) e tocasse num
+    // item do menu, a troca de verdade acontecia (classe "active" some
+    // da aba antiga e aparece na nova), só que a rolagem continuava
+    // exatamente onde estava — mostrando um pedaço do MEIO da aba nova
+    // em vez do topo dela. Passava a impressão de "nada mudou", quando
+    // na real tinha mudado, só que fora da área visível da tela.
+    window.scrollTo(0, 0);
+
     // 🔧 CORREÇÃO ("mobile não troca de aba" — bug relatado várias vezes,
     // nunca reproduzido em teste automatizado com clique simulado):
     // fechar o menu mobile morava só no FINAL desta função, depois de
