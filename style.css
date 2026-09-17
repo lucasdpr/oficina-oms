@@ -585,6 +585,23 @@ h1, h2, h3, h4, h5, h6 {
   transform: translateY(0);
 }
 
+/* 🆕 "Sair" (antes "Encerrar Turno") — mesmo padrão semântico já usado
+   em .btn-danger pra qualquer ação de saída/encerramento: fundo
+   tingido de vermelho + texto vermelho em repouso, vermelho sólido no
+   hover. Precisa vir DEPOIS de .btn-auth (mesma especificidade —
+   classe única — quem carrega por último ganha o empate), senão o
+   background neutro de .btn-auth ganhava. Antes era só o cinza neutro
+   de qualquer botão do rodapé — sem destaque, meio perdido ali. */
+.btn-auth-sair {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.btn-auth-sair:hover {
+  background: var(--danger);
+  color: var(--text-on-primary);
+  box-shadow: var(--btn-glow-shape) rgba(239, 68, 68, 0.35);
+}
+
 /* ==========================================
    LAYOUT PRINCIPAL
 ========================================== */
