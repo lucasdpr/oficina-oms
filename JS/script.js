@@ -6584,7 +6584,7 @@ window.excluirAvisoAdm = async function(id) {
 // como qualquer app de mensagens. O contexto (qual área, de qual lado
 // da conversa quem está logado enxerga) fica em CHAT_AREA_ADM_CTX.
 // ==========================================================================
-let CHAT_AREA_ADM_CTX = { area: null, deAdm: false };
+let CHAT_AREA_ADM_CTX = { area: null, deAdm: false, canal: 'supervisao' };
 
 window.renderAbaChats = async function() {
     const isAdm = !!(OPERADOR_LOGADO && OPERADOR_LOGADO.isAdm);
@@ -6672,7 +6672,10 @@ window.chatsCarregarListaConversas = async function() {
 // deAdm=true quando é o ADM abrindo a conversa de uma área; false
 // quando é a própria área abrindo a conversa dela com o ADM.
 window.chatsSelecionarConversa = async function(area, deAdm) {
-    CHAT_AREA_ADM_CTX = { area, deAdm: !!deAdm };
+    // 🆕 canal sempre reseta pra 'supervisao' ao trocar de conversa —
+    // evita ficar preso na aba "Entre Técnicos" de uma área ao abrir
+    // outra sem perceber.
+    CHAT_AREA_ADM_CTX = { area, deAdm: !!deAdm, canal: 'supervisao' };
     const areaInfo = AREAS_OFICINA.find(a => a.chave === area);
     const tituloEl = document.getElementById('chat-thread-titulo');
     if (tituloEl) tituloEl.textContent = deAdm ? (areaInfo ? areaInfo.nome : area) : 'ADM';
@@ -6680,6 +6683,12 @@ window.chatsSelecionarConversa = async function(area, deAdm) {
     const voltar = document.getElementById('chat-thread-voltar');
     if (voltar) voltar.classList.toggle('hidden', !deAdm);
     document.getElementById('chat-thread-painel')?.classList.toggle('chat-thread-mobile-ativo', deAdm);
+
+    // 🆕 Mostra as abas de canal e garante que "Com a Supervisão" volta a
+    // ficar marcada como ativa (visual) toda vez que abre uma conversa.
+    document.getElementById('chat-thread-canais')?.classList.remove('hidden');
+    document.querySelectorAll('#chat-thread-canais .chat-thread-canal-btn').forEach((btn, i) => btn.classList.toggle('active', i === 0));
+    window.chatsAtualizarVisibilidadeEnvio();
 
     document.querySelectorAll('#chat-lista-conversas .chat-conversa-item').forEach(el => el.classList.remove('ativa'));
 
@@ -6704,8 +6713,9 @@ window.chatsSelecionarConversa = async function(area, deAdm) {
 
 // ---- Mobile: sai da thread e volta pra lista (só existe quando é ADM) ----
 window.chatsVoltarParaLista = function() {
-    CHAT_AREA_ADM_CTX = { area: null, deAdm: false };
+    CHAT_AREA_ADM_CTX = { area: null, deAdm: false, canal: 'supervisao' };
     document.getElementById('chat-thread-painel')?.classList.remove('chat-thread-mobile-ativo');
+    document.getElementById('chat-thread-canais')?.classList.add('hidden');
     const tituloEl = document.getElementById('chat-thread-titulo');
     if (tituloEl) tituloEl.textContent = 'Selecione uma conversa';
     const msgsEl = document.getElementById('chat-thread-mensagens');
@@ -6713,27 +6723,55 @@ window.chatsVoltarParaLista = function() {
     document.getElementById('chat-thread-voltar')?.classList.add('hidden');
 };
 
+// 🆕 Alterna entre os canais "Com a Supervisão" e "Entre Técnicos" da
+// MESMA conversa (pedido do usuário — ver comentário grande acima, na
+// definição de #chat-thread-canais). O ADM só LÊ o canal "tecnicos"
+// (sem campo de envio); quem é da própria área pode escrever nos dois.
+window.chatsTrocarCanal = function(canal) {
+    if (!CHAT_AREA_ADM_CTX.area) return;
+    CHAT_AREA_ADM_CTX.canal = canal;
+    document.querySelectorAll('#chat-thread-canais .chat-thread-canal-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.trim().includes(canal === 'tecnicos' ? 'Técnicos' : 'Supervisão'));
+    });
+    window.chatsAtualizarVisibilidadeEnvio();
+    window.chatsCarregarMensagens();
+};
+
+// 🆕 Esconde a linha de envio quando o ADM está só lendo o canal "Entre
+// Técnicos" — ele acompanha, mas não participa dessa conversa.
+window.chatsAtualizarVisibilidadeEnvio = function() {
+    const linhaEnvio = document.querySelector('#chat-thread-painel .chat-thread-input-row');
+    const somenteLeitura = CHAT_AREA_ADM_CTX.deAdm && CHAT_AREA_ADM_CTX.canal === 'tecnicos';
+    if (linhaEnvio) linhaEnvio.classList.toggle('hidden', somenteLeitura);
+};
+
 window.chatsCarregarMensagens = async function() {
     const cont = document.getElementById('chat-thread-mensagens');
     if (!cont || !CHAT_AREA_ADM_CTX.area) return;
+    const canal = CHAT_AREA_ADM_CTX.canal || 'supervisao';
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/mensagens_area?area=${encodeURIComponent(CHAT_AREA_ADM_CTX.area)}`, { cache: 'no-store' });
+        const resp = await fetch(`${apiBase}/api/mensagens_area?area=${encodeURIComponent(CHAT_AREA_ADM_CTX.area)}&canal=${canal}`, { cache: 'no-store' });
         const lista = resp.ok ? await resp.json() : [];
         cont.innerHTML = lista.length ? lista.map(m => {
-            // "Minha" mensagem é a que partiu do MESMO lado de quem está
-            // vendo agora (área vendo área, ou ADM vendo ADM).
-            const minha = m.de_adm === CHAT_AREA_ADM_CTX.deAdm;
+            // "Minha" mensagem: no canal "supervisao", é quem partiu do
+            // MESMO lado de quem está vendo (área vendo área, ADM vendo
+            // ADM). No canal "tecnicos" não existe "lado" (de_adm é
+            // sempre falso pra todo mundo ali) — compara por matrícula.
+            const minha = canal === 'tecnicos'
+                ? (OPERADOR_LOGADO && m.remetente_matricula && m.remetente_matricula === OPERADOR_LOGADO.matricula)
+                : m.de_adm === CHAT_AREA_ADM_CTX.deAdm;
             const hora = m.criado_em ? new Date(m.criado_em.replace(' ', 'T')).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
             return `
                 <div class="chat-bolha ${minha ? 'chat-bolha-minha' : 'chat-bolha-outro'}">
                     <div class="chat-bolha-remetente">${m.de_adm ? 'ADM' : (m.remetente || 'Técnico')}</div>
+                    ${m.atividade_referencia ? `<div class="chat-bolha-atividade-tag"><i class="fas fa-link"></i> Respondendo: ${escapeHtmlNotif(m.atividade_referencia)}</div>` : ''}
                     ${m.foto_base64 ? `<img class="chat-bolha-foto" src="${m.foto_base64}" alt="Foto enviada" onclick="window.abrirFotoAmpliada('${m.foto_base64}', '${escapeAtributoNotif(hora)}')">` : ''}
                     ${m.mensagem ? `<div class="chat-bolha-texto">${m.mensagem}</div>` : ''}
                     <div class="chat-bolha-hora">${hora}</div>
                 </div>
             `;
-        }).join('') : '<div class="chat-vazio">Nenhuma mensagem ainda — mande a primeira 👋</div>';
+        }).join('') : `<div class="chat-vazio">${canal === 'tecnicos' ? 'Nenhuma mensagem entre técnicos ainda.' : 'Nenhuma mensagem ainda — mande a primeira 👋'}</div>`;
         cont.scrollTop = cont.scrollHeight;
     } catch (e) {
         cont.innerHTML = '<div class="chat-vazio">Não consegui carregar a conversa.</div>';
@@ -6782,6 +6820,11 @@ window.chatsEnviarMensagem = async function() {
     // do usuário: "posso anexar uma foto ou tirar uma foto", inclusive
     // sem legenda nenhuma.
     if ((!texto && !foto) || !CHAT_AREA_ADM_CTX.area) return;
+    const canal = CHAT_AREA_ADM_CTX.canal || 'supervisao';
+    // 🆕 Canal "tecnicos" não tem "lado ADM" (o ADM só lê, nunca escreve
+    // ali — a linha de envio fica escondida pra ele, ver
+    // chatsAtualizarVisibilidadeEnvio). de_adm sempre falso nesse canal.
+    const deAdmEfetivo = canal === 'tecnicos' ? false : CHAT_AREA_ADM_CTX.deAdm;
     const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
     const matricula = OPERADOR_LOGADO ? OPERADOR_LOGADO.matricula : null;
     try {
@@ -6791,11 +6834,12 @@ window.chatsEnviarMensagem = async function() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 area: CHAT_AREA_ADM_CTX.area,
-                de_adm: CHAT_AREA_ADM_CTX.deAdm,
-                remetente: CHAT_AREA_ADM_CTX.deAdm ? 'ADM' : operador,
+                de_adm: deAdmEfetivo,
+                remetente: deAdmEfetivo ? 'ADM' : operador,
                 remetente_matricula: matricula,
                 mensagem: texto,
-                foto_base64: foto
+                foto_base64: foto,
+                canal: canal
             })
         });
         if (!resp.ok) throw new Error('Falha ao enviar');
@@ -8147,6 +8191,43 @@ window.enviarMensagemConversaAtividade = async function() {
     }
     input.value = '';
     await window.carregarMensagensConversaAtividade();
+
+    // 🆕 Espelha a resposta no canal "Entre Técnicos" do chat da área
+    // dessa atividade, marcada com a referência (pedido do usuário:
+    // "quando tiver uma atividade extra criada a caldeiraria responder
+    // tem que aparecer nesse chat e marcado tipo respondendo atividade
+    // tal e a mensagem que ele mandou"). Best-effort: se falhar, não
+    // atrapalha o envio da Conversa da Atividade em si (que já
+    // aconteceu com sucesso acima).
+    try {
+        const atividade = (typeof OFICINA_ATIVIDADES_CACHE !== 'undefined')
+            ? OFICINA_ATIVIDADES_CACHE.find(a => a.id === CONVERSA_ATIVIDADE_ID_ATUAL)
+            : null;
+        if (atividade && atividade.area) {
+            const referencia = [atividade.equipamento_id, atividade.descricao].filter(Boolean).join(' — ').slice(0, 80);
+            const apiBase = await resolverApiBase();
+            await fetch(`${apiBase}/api/mensagens_area`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    area: atividade.area,
+                    de_adm: false,
+                    remetente: tecnico.nome || tecnico.matricula || 'Sistema',
+                    remetente_matricula: tecnico.matricula || null,
+                    mensagem,
+                    canal: 'tecnicos',
+                    atividade_referencia: referencia || `Atividade #${CONVERSA_ATIVIDADE_ID_ATUAL}`
+                })
+            });
+            // Se o chat da área dessa atividade estiver aberto agora
+            // (mesma área + canal tecnicos), atualiza na hora.
+            if (CHAT_AREA_ADM_CTX.area === atividade.area && CHAT_AREA_ADM_CTX.canal === 'tecnicos') {
+                window.chatsCarregarMensagens();
+            }
+        }
+    } catch (e) {
+        console.error('⚠️ Não consegui espelhar a resposta no chat da área (a Conversa da Atividade já foi enviada normalmente):', e);
+    }
 };
 
 // --------------------------------------------------------------

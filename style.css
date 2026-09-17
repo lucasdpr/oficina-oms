@@ -1345,7 +1345,7 @@ h1, h2, h3, h4, h5, h6 {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: 16px;
-  min-width: 200px;
+  min-width: 260px;
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
@@ -1377,6 +1377,15 @@ h1, h2, h3, h4, h5, h6 {
   padding: 4px 10px;
   border-radius: 999px;
   display: inline-block;
+}
+/* 🆕 Selo dentro de cada linha MCC 2/3/4 (pedido do usuário: "faltou a
+   MCC 3,4") — em vez de ficar solto abaixo do card inteiro, cada linha
+   agora tem o próprio selo, alinhado à direita. */
+.painel-hero-status-widget .painel-hero-status-selo {
+  margin-top: 0;
+  margin-left: auto;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 @media (max-width: 768px) {
   .painel-hero {
@@ -6350,6 +6359,47 @@ textarea,
     justify-content: center;
     flex-shrink: 0;
 }
+/* 🆕 Abas "Com a Supervisão" / "Entre Técnicos" dentro da mesma
+   conversa (pedido do usuário). */
+.chat-thread-canais {
+    display: flex;
+    gap: 6px;
+    padding: 10px 16px 0;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-card);
+}
+.chat-thread-canal-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+}
+.chat-thread-canal-btn.active {
+    color: var(--brand);
+    border-bottom-color: var(--brand);
+}
+
+/* 🆕 Tag "Respondendo: <atividade>" na bolha, quando a mensagem veio
+   espelhada da Conversa da Atividade. */
+.chat-bolha-atividade-tag {
+    font-size: 10.5px;
+    font-weight: 600;
+    opacity: 0.85;
+    margin-bottom: 4px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(0,0,0,0.15);
+    display: inline-block;
+}
+
 .chat-thread-titulo {
     font-weight: 700;
     font-size: 14.5px;
