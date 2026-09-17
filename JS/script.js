@@ -4015,6 +4015,10 @@ function atualizarNovosKPIs() {
 }
 
 function atualizarPainelCompleto() {
+    // 🆕 Hora do card de status do hero (referência mandada pelo usuário).
+    const horaHero = document.getElementById('painel-hero-hora-atualizacao');
+    if (horaHero) horaHero.textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
     // 🔧 Cada pedaço do Painel Geral roda isolado — se um card específico
     // falhar, os outros continuam aparecendo normalmente.
     if (typeof calcularKpisGlobais === 'function') {
@@ -4023,6 +4027,217 @@ function atualizarPainelCompleto() {
     executarSeguro(() => atualizarNovosKPIs(), 'atualizarNovosKPIs');
     executarSeguro(() => atualizarKPIsAvancados(), 'atualizarKPIsAvancados');
     executarSeguro(() => renderizarTopCriticos(), 'renderizarTopCriticos');
+    executarSeguro(() => renderizarGraficosPainelGeral(), 'renderizarGraficosPainelGeral');
+}
+
+// 🆕 Peças reutilizáveis dos "gráficos padrão" do sistema (donut de
+// risco dos ativos, donut de status das atividades, ranking de
+// desgaste por veio) — usadas tanto no Painel Geral quanto no Painel
+// do Supervisor, pra não duplicar a mesma conta de duas formas
+// diferentes (o mesmo erro que já causou bug de severidade divergente
+// entre Central de Áreas e Central de Notificações antes).
+function construirHtmlDonutRisco(ativos) {
+    const instalados = ativos.filter(a => a.local && a.local.includes('Veio') && !a.local.includes('Oficina'));
+    const comPct = instalados.map(a => ({ ...a, pct: a.meta > 0 ? (a.ton / a.meta) * 100 : 0 }));
+    const critico = comPct.filter(a => a.pct >= 80).length;
+    const atencao = comPct.filter(a => a.pct >= 50 && a.pct < 80).length;
+    const normal = comPct.length - critico - atencao;
+    const total = comPct.length || 1;
+    const pctCritico = (critico / total) * 100;
+    const pctAtencao = (atencao / total) * 100;
+    return `
+        <div class="painel-donut-corpo">
+            <div class="painel-donut-anel" style="background:conic-gradient(var(--danger) 0% ${pctCritico}%, var(--warning) ${pctCritico}% ${pctCritico + pctAtencao}%, var(--success) ${pctCritico + pctAtencao}% 100%);">
+                <div class="painel-donut-centro"><strong>${comPct.length}</strong><span>Ativos</span></div>
+            </div>
+            <div class="painel-donut-legenda">
+                <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--danger);"></span>Crítico</span><strong>${critico} (${pctCritico.toFixed(0)}%)</strong></div>
+                <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--warning);"></span>Atenção</span><strong>${atencao} (${pctAtencao.toFixed(0)}%)</strong></div>
+                <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--success);"></span>Normal</span><strong>${normal} (${(100 - pctCritico - pctAtencao).toFixed(0)}%)</strong></div>
+            </div>
+        </div>`;
+}
+
+function construirHtmlDonutStatus(atividades) {
+    const pendente = atividades.filter(x => x.status === 'Pendente').length;
+    const andamento = atividades.filter(x => x.status === 'Em Andamento').length;
+    const concluido = atividades.filter(x => x.status === 'Concluído').length;
+    const total = (pendente + andamento + concluido) || 1;
+    const pctPendente = (pendente / total) * 100;
+    const pctAndamento = (andamento / total) * 100;
+    return `
+        <div class="painel-donut-corpo">
+            <div class="painel-donut-anel" style="background:conic-gradient(var(--warning) 0% ${pctPendente}%, var(--info) ${pctPendente}% ${pctPendente + pctAndamento}%, var(--success) ${pctPendente + pctAndamento}% 100%);">
+                <div class="painel-donut-centro"><strong>${pendente + andamento + concluido}</strong><span>Atividades</span></div>
+            </div>
+            <div class="painel-donut-legenda">
+                <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--warning);"></span>Pendente</span><strong>${pendente} (${pctPendente.toFixed(0)}%)</strong></div>
+                <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--info);"></span>Em Andamento</span><strong>${andamento} (${pctAndamento.toFixed(0)}%)</strong></div>
+                <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--success);"></span>Concluído</span><strong>${concluido} (${(100 - pctPendente - pctAndamento).toFixed(0)}%)</strong></div>
+            </div>
+        </div>`;
+}
+
+function construirHtmlRankingVeios(ativos) {
+    const instalados = ativos.filter(a => a.local && a.local.includes('Veio') && !a.local.includes('Oficina'));
+    const porVeio = {};
+    instalados.forEach(a => {
+        const match = (a.local || '').match(/Veio\s*([A-Z])/i);
+        const veio = match ? match[1].toUpperCase() : '—';
+        const pct = a.meta > 0 ? (a.ton / a.meta) * 100 : 0;
+        if (!porVeio[veio]) porVeio[veio] = { soma: 0, qtd: 0 };
+        porVeio[veio].soma += pct;
+        porVeio[veio].qtd += 1;
+    });
+    const ranking = Object.entries(porVeio)
+        .map(([veio, v]) => ({ veio, media: v.soma / v.qtd, qtd: v.qtd }))
+        .sort((a, b) => b.media - a.media)
+        .slice(0, 6);
+    return ranking.length
+        ? ranking.map(r => {
+            const cor = r.media >= 80 ? 'var(--danger)' : (r.media >= 50 ? 'var(--warning)' : 'var(--success)');
+            return `
+            <div style="margin-bottom:12px;">
+                <div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:4px;">
+                    <span style="color:var(--text-body);">Veio ${r.veio}</span>
+                    <span style="color:${cor}; font-weight:700;">${r.media.toFixed(1)}% méd.</span>
+                </div>
+                <div style="height:6px; background:var(--bg-input); border-radius:4px; overflow:hidden;">
+                    <div style="height:100%; width:${Math.min(100, r.media).toFixed(1)}%; background:${cor}; border-radius:4px;"></div>
+                </div>
+            </div>`;
+        }).join('')
+        : `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhum equipamento instalado no veio.</div>`;
+}
+
+// 🆕 Preenche os 6 blocos do Painel Geral que ficavam presos em
+// "Carregando..." pra sempre (referência mandada pelo usuário): a
+// linha de gráficos (Tonelagem/Risco dos Ativos/Status das
+// Atividades) e a linha de Risco por Veio/Atividades Atrasadas/
+// Produção Lançada. O HTML e CSS desses cards já existiam — só
+// nunca tinha sido escrito o JS que os alimenta.
+async function renderizarGraficosPainelGeral() {
+    const elTonelagem = document.getElementById('painel-linha-tonelagem');
+    const elDonutRisco = document.getElementById('painel-donut-risco');
+    const elDonutStatus = document.getElementById('painel-donut-status');
+    const elRankingVeios = document.getElementById('painel-ranking-veios');
+    const elAtrasadasGlobais = document.getElementById('painel-atrasadas-globais');
+    const elProducaoLancada = document.getElementById('painel-producao-lancada');
+    if (!elDonutRisco && !elDonutStatus && !elRankingVeios) return; // aba nem existe (HTML antigo em cache)
+
+    const ativos = Array.isArray(window.BANCO_ATIVOS) ? window.BANCO_ATIVOS : [];
+    const atividades = Array.isArray(window.OFICINA_ATIVIDADES_CACHE) ? window.OFICINA_ATIVIDADES_CACHE : [];
+
+    if (elDonutRisco) elDonutRisco.innerHTML = construirHtmlDonutRisco(ativos);
+    if (elDonutStatus) elDonutStatus.innerHTML = construirHtmlDonutStatus(atividades);
+    if (elRankingVeios) elRankingVeios.innerHTML = construirHtmlRankingVeios(ativos);
+
+    // ---------------------------------------------------------
+    // ATIVIDADES ATRASADAS — ranking por área, igual ao Painel do Supervisor
+    // ---------------------------------------------------------
+    if (elAtrasadasGlobais) {
+        const atrasadas = atividades.filter(x =>
+            !atividadeAindaNaoComecou(x) && x.status !== 'Concluído' && x.status !== 'Recusado' && atividadeEstaAtrasada(x)
+        );
+        const porArea = {};
+        atrasadas.forEach(x => {
+            const area = x.area || x.solicitante_area || '—';
+            porArea[area] = (porArea[area] || 0) + 1;
+        });
+        const ranking = Object.entries(porArea).sort((a, b) => b[1] - a[1]).slice(0, 6);
+        const max = Math.max(1, ...ranking.map(([, v]) => v));
+        elAtrasadasGlobais.innerHTML = ranking.length
+            ? ranking.map(([area, v]) => `
+                <div style="margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:4px;">
+                        <span style="color:var(--text-body); text-transform:capitalize;">${area}</span>
+                        <span style="color:var(--danger); font-weight:700;">${v}</span>
+                    </div>
+                    <div style="height:6px; background:var(--bg-input); border-radius:4px; overflow:hidden;">
+                        <div style="height:100%; width:${(v / max * 100).toFixed(1)}%; background:var(--danger); border-radius:4px;"></div>
+                    </div>
+                </div>`).join('')
+            : `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhuma atividade atrasada agora 👍</div>`;
+    }
+
+    // ---------------------------------------------------------
+    // TONELAGEM POR DIA (7 dias) + PRODUÇÃO LANÇADA
+    // ---------------------------------------------------------
+    if (elTonelagem || elProducaoLancada) {
+        try {
+            const dados = await buscarDadosApontamentos7dias();
+            if (elTonelagem) elTonelagem.innerHTML = construirHtmlTonelagemSvg(dados);
+            if (elProducaoLancada) elProducaoLancada.innerHTML = construirHtmlProducaoLancada(dados);
+        } catch (e) {
+            if (elTonelagem) elTonelagem.innerHTML = `<div class="text-muted" style="text-align:center; margin:auto;">Não foi possível carregar.</div>`;
+            if (elProducaoLancada) elProducaoLancada.innerHTML = `<div class="text-muted" style="text-align:center;">Não foi possível carregar.</div>`;
+        }
+    }
+}
+
+// 🆕 Busca + agrega os apontamentos reais (geral + moldes) dos últimos
+// 7 dias — extraído do Painel Geral pra ser reaproveitado também no
+// Painel do Supervisor (mesmo dado, uma só fonte de verdade).
+async function buscarDadosApontamentos7dias() {
+    const apiBase = await resolverApiBase();
+    const [resGeral, resMoldes] = await Promise.all([
+        fetchComRetry(`${apiBase}/api/historico_apontamentos_geral`),
+        fetchComRetry(`${apiBase}/api/historico_apontamentos_moldes`)
+    ]);
+    const logsGeral = resGeral.ok ? await resGeral.json() : [];
+    const logsMoldes = resMoldes.ok ? await resMoldes.json() : [];
+    const logs = [...(Array.isArray(logsGeral) ? logsGeral : []), ...(Array.isArray(logsMoldes) ? logsMoldes : [])]
+        .filter(l => l.desfeito !== 1);
+
+    const dias = [];
+    for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); dias.push(d.toISOString().slice(0, 10)); }
+    const totalPorDia = {};
+    dias.forEach(d => totalPorDia[d] = 0);
+    const totalPorMcc = { mcc2: 0, mcc3: 0, mcc4: 0 };
+    const hoje = new Date().toISOString().slice(0, 10);
+    let totalHoje = 0;
+    logs.forEach(l => {
+        const dataChave = (l.data_hora || '').slice(0, 10);
+        const soma = (Number(l.qtd_mcc2) || 0) + (Number(l.qtd_mcc3) || 0) + (Number(l.qtd_mcc4) || 0);
+        if (dataChave in totalPorDia) totalPorDia[dataChave] += soma;
+        if (dataChave === hoje) totalHoje += soma;
+        totalPorMcc.mcc2 += Number(l.qtd_mcc2) || 0;
+        totalPorMcc.mcc3 += Number(l.qtd_mcc3) || 0;
+        totalPorMcc.mcc4 += Number(l.qtd_mcc4) || 0;
+    });
+    return { dias, totalPorDia, totalPorMcc, totalHoje };
+}
+
+function construirHtmlTonelagemSvg(dados) {
+    const { dias, totalPorDia } = dados;
+    const valores = dias.map(d => totalPorDia[d]);
+    const max = Math.max(1, ...valores);
+    const largura = 600, altura = 160, passo = largura / (dias.length - 1);
+    const pontos = valores.map((v, i) => `${(i * passo).toFixed(1)},${(altura - (v / max) * (altura - 20) - 4).toFixed(1)}`).join(' ');
+    const labels = dias.map(d => new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', ''));
+    return `
+        <svg viewBox="0 0 ${largura} ${altura}" style="width:100%; height:140px; overflow:visible;">
+            <polyline points="${pontos}" fill="none" stroke="var(--info)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></polyline>
+            ${valores.map((v, i) => `<circle cx="${(i * passo).toFixed(1)}" cy="${(altura - (v / max) * (altura - 20) - 4).toFixed(1)}" r="3.5" fill="var(--info)"></circle>`).join('')}
+        </svg>
+        <div style="display:flex; justify-content:space-between; margin-top:6px;">
+            ${labels.map(l => `<span style="font-size:0.65rem; color:var(--text-muted); text-transform:capitalize;">${l}</span>`).join('')}
+        </div>`;
+}
+
+function construirHtmlProducaoLancada(dados) {
+    const { totalPorDia, totalPorMcc, totalHoje } = dados;
+    const totalSemana = Object.values(totalPorDia).reduce((s, v) => s + v, 0);
+    return `
+        <div style="display:flex; justify-content:space-between; margin-bottom:14px;">
+            <div><div style="font-size:1.4rem; font-weight:800; color:var(--text-heading); font-family:var(--font-mono);">${totalHoje}</div><div style="font-size:0.7rem; color:var(--text-muted);">Hoje</div></div>
+            <div style="text-align:right;"><div style="font-size:1.4rem; font-weight:800; color:var(--text-heading); font-family:var(--font-mono);">${totalSemana}</div><div style="font-size:0.7rem; color:var(--text-muted);">Últimos 7 dias</div></div>
+        </div>
+        ${['mcc2', 'mcc3', 'mcc4'].map(m => `
+            <div style="display:flex; justify-content:space-between; font-size:0.78rem; padding:4px 0; border-top:1px solid var(--border-color);">
+                <span style="color:var(--text-body); text-transform:uppercase;">${m}</span>
+                <strong style="color:var(--text-heading); font-family:var(--font-mono);">${totalPorMcc[m]}</strong>
+            </div>`).join('')}`;
 }
 
 // 🗑️ Removida a aba "Registro Recente" (e as funções
@@ -4285,6 +4500,7 @@ function calcularStatusArea(chave) {
 
 let CENTRAL_AREAS_FILTRO_STATUS = '';
 let CENTRAL_AREAS_BUSCA = '';
+let CENTRAL_AREAS_ORDEM = 'prioridade'; // 🆕 'prioridade' (padrão, já existia) | 'nome'
 
 window.filtrarCentralAreas = function(statusLabel, botao) {
     CENTRAL_AREAS_FILTRO_STATUS = statusLabel;
@@ -4298,6 +4514,43 @@ window.buscarCentralAreas = function(valor) {
     renderizarGridCentralAreas();
 };
 
+window.ordenarCentralAreas = function(valor) {
+    CENTRAL_AREAS_ORDEM = valor;
+    renderizarGridCentralAreas();
+};
+
+// 🆕 "Prioridades agora" (referência mandada pelo usuário) — ranking
+// das áreas mais urgentes, sem precisar escanear a grade inteira. Não
+// é dado novo: mesma severidade/pendências que já colorem os cards,
+// só ordenado e resumido numa lista curta. Só entra quem tem pelo
+// menos 1 pendência em aberto (Normal com 0 não é "prioridade").
+function renderizarPrioridadesAgora(todasComStatus) {
+    const container = document.getElementById('oficina-prioridades-lista');
+    if (!container) return;
+
+    const ORDEM_SEVERIDADE = { 'Crítico': 0, 'Atenção': 1, 'Normal': 2 };
+    const prioridades = todasComStatus
+        .filter(v => v.status.emAberto > 0)
+        .sort((a, b) => {
+            const diff = ORDEM_SEVERIDADE[a.status.label] - ORDEM_SEVERIDADE[b.status.label];
+            return diff !== 0 ? diff : b.status.emAberto - a.status.emAberto;
+        })
+        .slice(0, 5);
+
+    if (prioridades.length === 0) {
+        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:16px 0; font-size:13px;"><i class="fas fa-circle-check" style="color:var(--success);"></i> Nenhuma pendência em aberto agora.</div>`;
+        return;
+    }
+
+    container.innerHTML = prioridades.map((v, i) => `
+        <div class="oficina-prioridade-item" onclick="window.abrirAreaOficina('${v.area.chave}')">
+            <span class="oficina-prioridade-num" style="background:${v.status.cor};">${i + 1}</span>
+            <span class="oficina-prioridade-nome">${v.area.nome}</span>
+            <span class="oficina-prioridade-qtd" style="color:${v.status.cor};">${v.status.emAberto} pendênc${v.status.emAberto > 1 ? 'ias' : 'ia'}</span>
+        </div>
+    `).join('');
+}
+
 function renderizarGridCentralAreas() {
     const grid = document.getElementById('oficina-grade-areas');
     if (!grid) return;
@@ -4305,8 +4558,31 @@ function renderizarGridCentralAreas() {
     const areasOficina = AREAS_OFICINA.filter(a => a.tipo === 'oficina');
     const areasAdmin = AREAS_OFICINA.filter(a => a.tipo === 'administrativo');
 
-    let visiveis = areasOficina.map(a => ({ area: a, status: calcularStatusArea(a.chave) }));
+    // 🔧 CORREÇÃO (referência mandada pelo usuário): a referência só tem
+    // 3 níveis de severidade (Crítica/Atenção/Normal), não 4 — o cálculo
+    // em calcularStatusArea() continua com a granularidade original
+    // (Restrição = 5+ itens em aberto, mais grave que Atenção = 1-4) pra
+    // não perder informação nos outros lugares que usam essa função
+    // (quadro da própria área, etc.); só AQUI, na Central de Áreas, o
+    // rótulo exibido funde Restrição dentro de Atenção — mesmo balde
+    // visual da referência.
+    const todasComStatus = areasOficina.map(a => {
+        const status = calcularStatusArea(a.chave);
+        if (status.label === 'Restrição') {
+            status.label = 'Atenção';
+            status.cor = 'var(--warning)';
+            status.emoji = '🟡';
+        }
+        return { area: a, status };
+    });
 
+    // 🆕 "Prioridades agora" sempre reflete TODAS as áreas, mesmo com
+    // busca/filtro ativos na grade — mesmo princípio já usado no resumo
+    // da Central de Notificações (ver atualizarResumoNotificacoes):
+    // filtrar pra focar não devia esconder o que é urgente lá fora.
+    renderizarPrioridadesAgora(todasComStatus);
+
+    let visiveis = todasComStatus;
     if (CENTRAL_AREAS_BUSCA) {
         visiveis = visiveis.filter(v => v.area.nome.toLowerCase().includes(CENTRAL_AREAS_BUSCA));
     }
@@ -4319,11 +4595,18 @@ function renderizarGridCentralAreas() {
     // de atenção primeiro. Ordena por severidade (Crítico > Restrição >
     // Atenção > Normal, empate por mais itens em aberto) — não muda o
     // formato de grid, só a hierarquia de leitura.
-    const ORDEM_SEVERIDADE = { 'Crítico': 0, 'Restrição': 1, 'Atenção': 2, 'Normal': 3 };
-    visiveis.sort((a, b) => {
-        const diff = ORDEM_SEVERIDADE[a.status.label] - ORDEM_SEVERIDADE[b.status.label];
-        return diff !== 0 ? diff : b.status.emAberto - a.status.emAberto;
-    });
+    // 🆕 "Ordenar por" (referência mandada pelo usuário): "Prioridade" é
+    // a ordenação por severidade que já existia (agora com opção pra
+    // trocar, antes era fixa); "Nome" é nova, alfabética simples.
+    if (CENTRAL_AREAS_ORDEM === 'nome') {
+        visiveis.sort((a, b) => a.area.nome.localeCompare(b.area.nome, 'pt-BR'));
+    } else {
+        const ORDEM_SEVERIDADE = { 'Crítico': 0, 'Atenção': 1, 'Normal': 2 };
+        visiveis.sort((a, b) => {
+            const diff = ORDEM_SEVERIDADE[a.status.label] - ORDEM_SEVERIDADE[b.status.label];
+            return diff !== 0 ? diff : b.status.emAberto - a.status.emAberto;
+        });
+    }
 
     // 🆕 Peso visual real pro card crítico (não só a cor da faixa de
     // topo): elevação/sombra mais forte + fundo levemente saturado na
@@ -4333,7 +4616,14 @@ function renderizarGridCentralAreas() {
     // certo por aqui". Só Crítico ganha o destaque; Restrição/Atenção
     // continuam só com a faixa de cor (já é hierarquia suficiente pra
     // eles, o crítico é o que precisa saltar aos olhos).
-    const cardsOficina = visiveis.map(({ area: a, status: s }) => `
+    // 🆕 Barra de progresso por card (referência mandada pelo usuário):
+    // % do trabalho em aberto que já está em andamento (não só parado
+    // pendente) — sem nada em aberto, conta como 100% (nada travado).
+    // Não é um dado novo, só uma leitura visual do que a.status já
+    // calcula (pendentes/andamento/emAberto).
+    const cardsOficina = visiveis.map(({ area: a, status: s }) => {
+        const progresso = s.emAberto > 0 ? Math.round((s.andamento / s.emAberto) * 100) : 100;
+        return `
         <div class="oficina-area-card ${s.label === 'Crítico' ? 'oficina-area-card-critico' : ''}" style="--area-severidade-cor:${s.cor};" onclick="window.abrirAreaOficina('${a.chave}')">
             <div class="oficina-area-topo">
                 <div class="oficina-area-icone"><i class="fas ${a.icone}"></i></div>
@@ -4345,9 +4635,16 @@ function renderizarGridCentralAreas() {
                 <span title="Em andamento"><i class="fas fa-person-running"></i> ${s.andamento} em andamento</span>
                 ${s.atrasadas > 0 ? `<span title="Atrasadas" style="color:var(--danger);"><i class="fas fa-triangle-exclamation"></i> ${s.atrasadas} atrasada${s.atrasadas === 1 ? '' : 's'}</span>` : ''}
             </div>
+            <div class="oficina-area-progresso" title="${progresso}% do trabalho em aberto já em andamento">
+                <div class="oficina-area-progresso-trilha">
+                    <div class="oficina-area-progresso-barra" style="width:${progresso}%; background:${s.cor};"></div>
+                </div>
+                <span class="oficina-area-progresso-texto">${progresso}%</span>
+            </div>
             <button class="oficina-area-acessar">Acessar Área <i class="fas fa-arrow-right"></i></button>
         </div>
-    `).join('');
+    `;
+    }).join('');
 
     let cardsAdmin = '';
     if (!CENTRAL_AREAS_FILTRO_STATUS) {
@@ -4394,17 +4691,43 @@ window.carregarOficina = async function() {
             </div>
             <div class="mcc-filter-group" id="central-areas-filtros">
                 <button class="btn-filter-mcc active" onclick="window.filtrarCentralAreas('', this)">Todas</button>
-                <button class="btn-filter-mcc" onclick="window.filtrarCentralAreas('Crítico', this)">🔴 Crítico</button>
-                <button class="btn-filter-mcc" onclick="window.filtrarCentralAreas('Restrição', this)">🟠 Restrição</button>
+                <button class="btn-filter-mcc" onclick="window.filtrarCentralAreas('Crítico', this)">🔴 Crítica</button>
                 <button class="btn-filter-mcc" onclick="window.filtrarCentralAreas('Atenção', this)">🟡 Atenção</button>
+                <button class="btn-filter-mcc" onclick="window.filtrarCentralAreas('Normal', this)">🟢 Normal</button>
             </div>
+            <!-- 🆕 Ordenar por (referência mandada pelo usuário): "Prioridade"
+                 é a ordenação por severidade que já existia (sem opção antes
+                 de mudar); "Nome (A-Z)" é nova. -->
+            <select id="central-areas-ordenar" class="premium-select" style="height:38px; width:auto;" onchange="window.ordenarCentralAreas(this.value)">
+                <option value="prioridade">Ordenar por: Prioridade</option>
+                <option value="nome">Ordenar por: Nome (A-Z)</option>
+            </select>
             ${OPERADOR_LOGADO && OPERADOR_LOGADO.isAdm ? `
                 <button class="btn-outline-neutral" onclick="window.abrirModalAtividadeMassa()">
                     <i class="fas fa-layer-group"></i> Atividade em Massa
                 </button>
             ` : ''}
         </div>
-        <div id="oficina-grade-areas" class="oficina-grade"></div>
+        <div class="oficina-areas-layout">
+            <!-- 🔧 wrapper próprio (não o grid de 2 colunas direto): o JS
+                 troca #oficina-grade-areas por "grade + Painéis
+                 Administrativos" junto (outerHTML com 2 nós de uma vez) —
+                 sem esse wrapper, o segundo nó (Painéis Administrativos)
+                 vira irmão direto dentro do grid de 2 colunas da direita,
+                 empurrando o painel de prioridades pra linha de baixo. -->
+            <div class="oficina-areas-principal">
+                <div id="oficina-grade-areas" class="oficina-grade"></div>
+            </div>
+            <!-- 🆕 "Prioridades agora" (referência mandada pelo usuário):
+                 ranking das áreas mais urgentes, pra não precisar escanear
+                 a grade inteira procurando o que precisa de atenção
+                 primeiro. Não é dado novo — mesmo cálculo de severidade/
+                 pendências que já colore os cards, só resumido em lista. -->
+            <div class="oficina-prioridades-painel">
+                <h3><i class="fas fa-list-ol" style="color:var(--danger);"></i> Prioridades agora</h3>
+                <div id="oficina-prioridades-lista"></div>
+            </div>
+        </div>
     `;
 
     try {
@@ -4547,29 +4870,31 @@ function atividadeAindaNaoComecou(x) {
 // --------------------------------------------------------------
 // KPIs GLOBAIS DA OFICINA (topo da aba, acima da grade de áreas)
 // --------------------------------------------------------------
+// 🔧 CORREÇÃO (referência mandada pelo usuário): resumo virou por ÁREA
+// (quantas estão Crítico/Restrição+Atenção/Normal), não mais por
+// atividade solta — mesma classificação que já colore a faixa de topo
+// de cada card (calcularStatusArea), só somada aqui. "Em Andamento"
+// continua sendo atividade (não faz sentido contar área "em andamento").
 function atualizarKpisOficina() {
-    const hoje = new Date().toISOString().slice(0, 10);
-    const dataLimite7dias = (() => {
-        const d = new Date();
-        d.setDate(d.getDate() - 7);
-        return d.toISOString().slice(0, 10);
-    })();
-
-    const pendentes = OFICINA_ATIVIDADES_CACHE.filter(x => x.status === 'Pendente').length;
     const emAndamento = OFICINA_ATIVIDADES_CACHE.filter(x => x.status === 'Em Andamento').length;
-    const atrasadas = OFICINA_ATIVIDADES_CACHE.filter(atividadeEstaAtrasada).length;
-    const concluidasRecentes = OFICINA_ATIVIDADES_CACHE.filter(x =>
-        x.status === 'Concluído' && x.concluido_em && x.concluido_em.slice(0, 10) >= dataLimite7dias
-    ).length;
+
+    const areas = AREAS_OFICINA.filter(a => a.tipo === 'oficina');
+    let criticas = 0, atencao = 0, normais = 0;
+    areas.forEach(a => {
+        const s = calcularStatusArea(a.chave);
+        if (s.label === 'Crítico') criticas++;
+        else if (s.label === 'Restrição' || s.label === 'Atenção') atencao++;
+        else normais++;
+    });
 
     const definirTexto = (id, valor) => {
         const el = document.getElementById(id);
         if (el) el.textContent = valor;
     };
-    definirTexto('oficina-kpi-pendentes', pendentes);
+    definirTexto('oficina-kpi-criticas', criticas);
+    definirTexto('oficina-kpi-atencao', atencao);
+    definirTexto('oficina-kpi-normais', normais);
     definirTexto('oficina-kpi-andamento', emAndamento);
-    definirTexto('oficina-kpi-atrasadas', atrasadas);
-    definirTexto('oficina-kpi-concluidas', concluidasRecentes);
 }
 
 // Estado local do módulo de Oficina.
@@ -5284,6 +5609,161 @@ window.renderPainelSupervisor = async function() {
     });
 
     // ---------------------------------------------------------
+    // 🆕 FAIXA DE KPIS (referência) — Áreas Críticas/Em Atenção (mesma
+    // conta de calcularStatusArea usada na Central de Áreas) + Não
+    // Vistas (mesmo NOTIF_FEED_CACHE usado na Central de Notificações).
+    // ---------------------------------------------------------
+    const badgesEl = document.getElementById('painel-supervisor-kpi-badges');
+    const chavesArea = (typeof AREAS_OFICINA !== 'undefined' ? AREAS_OFICINA : []).map(a => a.chave);
+    let areasCriticas = 0, areasAtencao = 0;
+    chavesArea.forEach(chave => {
+        const st = calcularStatusArea(chave);
+        if (st.label === 'Crítico') areasCriticas++;
+        else if (st.label === 'Restrição' || st.label === 'Atenção') areasAtencao++;
+    });
+    const naoVistas = (typeof NOTIF_FEED_CACHE !== 'undefined' ? NOTIF_FEED_CACHE : []).filter(item => !item.lida).length;
+    if (badgesEl) {
+        badgesEl.innerHTML = `
+            <div class="sup-kpi-badge" style="--sup-cor:#ef4444;" onclick="window.abrirAba(null,'aba-oficina')"><i class="fas fa-triangle-exclamation"></i> ${areasCriticas} Áreas Críticas</div>
+            <div class="sup-kpi-badge" style="--sup-cor:#eab308;" onclick="window.abrirAba(null,'aba-oficina')"><i class="fas fa-circle-exclamation"></i> ${areasAtencao} Em Atenção</div>
+            <div class="sup-kpi-badge" style="--sup-cor:#3b82f6;" onclick="window.abrirAba(null,'aba-notificacoes')"><i class="fas fa-bell"></i> ${naoVistas} Não Vistas</div>
+        `;
+    }
+
+    // ---------------------------------------------------------
+    // 🆕 Tendência (7 dias) + donuts (reaproveita as mesmas peças do
+    // Painel Geral — mesma função, mesmo dado, nenhum cálculo novo).
+    // ---------------------------------------------------------
+    const elSupDonutRisco = document.getElementById('painel-supervisor-donut-risco');
+    const elSupDonutStatus = document.getElementById('painel-supervisor-donut-status');
+    const elSupRankingVeios = document.getElementById('painel-supervisor-ranking-veios');
+    if (elSupDonutRisco) elSupDonutRisco.innerHTML = construirHtmlDonutRisco(ativos);
+    if (elSupDonutStatus) elSupDonutStatus.innerHTML = construirHtmlDonutStatus(atividades);
+    if (elSupRankingVeios) elSupRankingVeios.innerHTML = construirHtmlRankingVeios(ativos);
+
+    const elSupTonelagem = document.getElementById('painel-supervisor-tonelagem');
+    if (elSupTonelagem) {
+        (async () => {
+            try {
+                const apiBase = await resolverApiBase();
+                const [resGeral, resMoldes] = await Promise.all([
+                    fetchComRetry(`${apiBase}/api/historico_apontamentos_geral`),
+                    fetchComRetry(`${apiBase}/api/historico_apontamentos_moldes`)
+                ]);
+                const logsGeral = resGeral.ok ? await resGeral.json() : [];
+                const logsMoldes = resMoldes.ok ? await resMoldes.json() : [];
+                const logs = [...(Array.isArray(logsGeral) ? logsGeral : []), ...(Array.isArray(logsMoldes) ? logsMoldes : [])]
+                    .filter(l => l.desfeito !== 1);
+                const dias = [];
+                for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); dias.push(d.toISOString().slice(0, 10)); }
+                const totalPorDia = {};
+                dias.forEach(d => totalPorDia[d] = 0);
+                logs.forEach(l => {
+                    const dataChave = (l.data_hora || '').slice(0, 10);
+                    const soma = (Number(l.qtd_mcc2) || 0) + (Number(l.qtd_mcc3) || 0) + (Number(l.qtd_mcc4) || 0);
+                    if (dataChave in totalPorDia) totalPorDia[dataChave] += soma;
+                });
+                const valores = dias.map(d => totalPorDia[d]);
+                const max = Math.max(1, ...valores);
+                const largura = 600, altura = 160, passo = largura / (dias.length - 1);
+                const pontos = valores.map((v, i) => `${(i * passo).toFixed(1)},${(altura - (v / max) * (altura - 20) - 4).toFixed(1)}`).join(' ');
+                const labels = dias.map(d => new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', ''));
+                elSupTonelagem.innerHTML = `
+                    <svg viewBox="0 0 ${largura} ${altura}" style="width:100%; height:140px; overflow:visible;">
+                        <polyline points="${pontos}" fill="none" stroke="var(--info)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></polyline>
+                        ${valores.map((v, i) => `<circle cx="${(i * passo).toFixed(1)}" cy="${(altura - (v / max) * (altura - 20) - 4).toFixed(1)}" r="3.5" fill="var(--info)"></circle>`).join('')}
+                    </svg>
+                    <div style="display:flex; justify-content:space-between; margin-top:6px;">
+                        ${labels.map(l => `<span style="font-size:0.65rem; color:var(--text-muted); text-transform:capitalize;">${l}</span>`).join('')}
+                    </div>`;
+            } catch (e) {
+                elSupTonelagem.innerHTML = `<div class="text-muted" style="text-align:center; margin:auto;">Não foi possível carregar.</div>`;
+            }
+        })();
+    }
+
+    // ---------------------------------------------------------
+    // 🆕 Fila de Inspeção Prioritária (tabela) — mesmo critério de
+    // ordenação por desgaste já usado em renderizarTopCriticos().
+    // ---------------------------------------------------------
+    const elSupFila = document.getElementById('painel-supervisor-fila-inspecao');
+    if (elSupFila) {
+        const instaladosFila = ativos.filter(a => a.local && a.local.includes('Veio') && !a.local.includes('Oficina'));
+        const filaOrdenada = instaladosFila
+            .map(a => ({ ...a, pct: a.meta > 0 ? (a.ton / a.meta) * 100 : 0 }))
+            .sort((a, b) => b.pct - a.pct)
+            .slice(0, 8);
+        elSupFila.innerHTML = filaOrdenada.length
+            ? filaOrdenada.map(a => {
+                const cor = a.pct >= 80 ? 'var(--danger)' : (a.pct >= 50 ? 'var(--warning)' : 'var(--success)');
+                const statusLabel = a.pct >= 80 ? 'Crítico' : (a.pct >= 50 ? 'Atenção' : 'Normal');
+                const match = (a.local || '').match(/Veio\s*([A-Z])/i);
+                return `<tr>
+                    <td style="text-align:left;"><strong>${a.id}</strong><br><span class="text-muted" style="font-size:0.72rem;">${a.tipo || ''}</span></td>
+                    <td>${a.mcc_compat ? 'MCC ' + a.mcc_compat : '—'}</td>
+                    <td><span style="color:${cor}; font-weight:700;">${statusLabel}</span></td>
+                    <td style="color:${cor}; font-weight:700;">${a.pct.toFixed(1)}%</td>
+                </tr>`;
+            }).join('')
+            : `<tr><td colspan="4" class="text-center text-muted">Nenhum equipamento instalado no veio.</td></tr>`;
+    }
+
+    // ---------------------------------------------------------
+    // 🆕 RESUMO DA SUPERVISÃO — reaproveita as mesmas contagens da
+    // faixa de KPIs + concluídas (7 dias), sem calcular nada de novo.
+    // ---------------------------------------------------------
+    const elSupResumo = document.getElementById('painel-supervisor-resumo');
+    if (elSupResumo) {
+        const linha = (label, valor, cor) => `
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; padding:6px 0; border-top:1px solid var(--border-color);">
+                <span style="color:var(--text-body);"><i class="fas fa-circle" style="color:${cor}; font-size:6px; margin-right:8px;"></i>${label}</span>
+                <strong style="color:var(--text-heading); font-family:var(--font-mono);">${valor}</strong>
+            </div>`;
+        elSupResumo.innerHTML =
+            linha('Críticas', areasCriticas, 'var(--danger)') +
+            linha('Atenção', areasAtencao, 'var(--warning)') +
+            linha('Não vistas', naoVistas, 'var(--info)') +
+            linha('Concluídas (7d)', concluidas7dias.length, 'var(--success)');
+    }
+
+    // ---------------------------------------------------------
+    // 🆕 PRODUÇÃO LANÇADA — mesmo dado real do Painel Geral.
+    // ---------------------------------------------------------
+    const elSupProducao = document.getElementById('painel-supervisor-producao-lancada');
+    if (elSupProducao) {
+        buscarDadosApontamentos7dias()
+            .then(dados => { elSupProducao.innerHTML = construirHtmlProducaoLancada(dados); })
+            .catch(() => { elSupProducao.innerHTML = `<div class="text-muted" style="text-align:center;">Não foi possível carregar.</div>`; });
+    }
+
+    // ---------------------------------------------------------
+    // 🆕 ATIVIDADES RECENTES — últimos eventos globais do sistema
+    // (mesma fonte da Auditoria, /api/historico_eventos).
+    // ---------------------------------------------------------
+    const elSupRecentes = document.getElementById('painel-supervisor-atividades-recentes');
+    if (elSupRecentes) {
+        (async () => {
+            try {
+                const apiBase = await resolverApiBase();
+                const resp = await fetchComRetry(`${apiBase}/api/historico_eventos?limite=6`);
+                const eventos = resp.ok ? await resp.json() : [];
+                elSupRecentes.innerHTML = Array.isArray(eventos) && eventos.length
+                    ? eventos.slice(0, 6).map(e => {
+                        const hora = e.data_hora ? new Date(e.data_hora.replace(' ', 'T') + 'Z').toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }) : '--:--';
+                        return `
+                        <div style="display:flex; gap:10px; padding:8px 0; border-top:1px solid var(--border-color);">
+                            <span class="text-muted" style="font-size:0.72rem; font-family:var(--font-mono); flex-shrink:0;">${hora}</span>
+                            <span style="font-size:0.8rem; color:var(--text-body);">${e.acao || e.peca_id || 'Evento registrado'}</span>
+                        </div>`;
+                    }).join('')
+                    : `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhum evento recente.</div>`;
+            } catch (e) {
+                elSupRecentes.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">Não foi possível carregar.</div>`;
+            }
+        })();
+    }
+
+    // ---------------------------------------------------------
     // SEÇÃO 1 — SAÚDE
     // ---------------------------------------------------------
     if (saudeEl) {
@@ -5979,7 +6459,13 @@ window.renderPainelSupervisor = async function() {
     }
 
     const tsEl = document.getElementById('painel-supervisor-ultima-atualizacao');
-    if (tsEl) tsEl.textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    if (tsEl) tsEl.textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    const saudacaoEl = document.getElementById('painel-supervisor-saudacao');
+    if (saudacaoEl) {
+        const nomeSup = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || '').replace(/\s*\[.+?\]/, '').trim() : '';
+        saudacaoEl.textContent = nomeSup ? `Olá, ${nomeSup}!` : 'Olá!';
+    }
 };
 
 // --------------------------------------------------------------
@@ -10245,8 +10731,21 @@ window.carregarCentralNotificacoes = async function() {
         // de apagar com uma falha.
         if (Array.isArray(feed)) NOTIF_FEED_CACHE = feed;
         NOTIF_ATIVIDADES_CACHE = Array.isArray(atividades) ? atividades : [];
+        // 🐛 CORREÇÃO (severidade saindo sempre "Normal"/"Novo" na lista de
+        // notificações): severidadeNotificacaoItem() reaproveita
+        // calcularStatusArea(), que lê de OFICINA_ATIVIDADES_CACHE — uma
+        // variável de módulo DIFERENTE, preenchida só pela Central de
+        // Áreas (window.carregarOficina). Quem entra direto na Central de
+        // Notificações sem nunca ter aberto a Central de Áreas nessa
+        // sessão via essa variável vazia, e toda área calculava "Normal"
+        // mesmo tendo pendência/atrasada de verdade. Os dois caches vêm
+        // do MESMO endpoint (/api/oficina/atividades) — sincroniza aqui
+        // também, só quando a busca deu certo (não sobrescreve o cache
+        // bom da Central de Áreas com [] numa falha de rede só desta
+        // busca).
+        if (Array.isArray(atividades)) OFICINA_ATIVIDADES_CACHE = atividades;
         NOTIF_ULTIMO_FETCH_FALHOU = !Array.isArray(atividades) || !Array.isArray(feed);
-        renderizarGradeNotificacoes(Array.isArray(atividades) ? atividades : null, Array.isArray(feed) ? feed : null);
+        renderizarNotificacoesFlat(Array.isArray(feed) ? feed : null);
         // 🐛 CORREÇÃO: mantém o sino da barra lateral em dia sempre que a
         // Central busca o feed (reaproveita o que já veio, sem outro
         // fetch) — antes só o timer global de 2 min mexia nele, então
@@ -10349,12 +10848,198 @@ window.irParaAchadoEspecifico = async function(pecaId) {
     if (typeof window.buscarQualidade === 'function') window.buscarQualidade(pecaId || '');
 };
 
+// ==============================================================
+// 🆕 LISTA ÚNICA DE NOTIFICAÇÕES (referência mandada pelo usuário) —
+// substitui o modelo "grade de área -> clica -> detalhe" por um feed
+// só, com todas as notificações de todas as áreas juntas, abas de
+// filtro por contagem, busca, ordenação e uma coluna lateral de
+// contexto (resumo, atalhos, dica). As funções antigas de
+// grade/detalhe por área continuam no arquivo (não removidas), só não
+// são mais chamadas — os ids de elemento delas não existem mais no
+// HTML, então ficam inertes.
+// ==============================================================
+let NOTIF_FLAT_FILTRO = 'todas'; // 'todas' | 'criticas' | 'atencao' | 'nao-vistas'
+let NOTIF_FLAT_BUSCA = '';
+let NOTIF_FLAT_ORDEM = 'recentes'; // 'recentes' | 'nao-lidas' | 'severidade'
+
+// Severidade de UM item de notificação: reaproveita o status calculado
+// da ÁREA dele (mesmo cálculo que já colore os cards da Central de
+// Áreas) — não é um dado novo por notificação, é herdado da área.
+// "Novo" (azul) só aparece quando a área está Normal mas o item ainda
+// não foi visto; áreas Crítico/Atenção mantêm a cor delas mesmo lidas,
+// porque a urgência é da área, não de ter sido vista ou não.
+function severidadeNotificacaoItem(item) {
+    const areaStatus = item.area ? calcularStatusArea(item.area) : null;
+    if (areaStatus && areaStatus.label === 'Crítico') return { label: 'Crítico', cor: 'var(--danger)', emoji: '🔴' };
+    if (areaStatus && (areaStatus.label === 'Restrição' || areaStatus.label === 'Atenção')) return { label: 'Atenção', cor: 'var(--warning)', emoji: '🟡' };
+    if (!item.lida) return { label: 'Novo', cor: 'var(--text-accent)', emoji: '🔵' };
+    return { label: 'Normal', cor: 'var(--success)', emoji: '🟢' };
+}
+
+window.buscarFeedNotificacoesFlat = function(valor) {
+    NOTIF_FLAT_BUSCA = (valor || '').toLowerCase().trim();
+    renderizarNotificacoesFlat(NOTIF_FEED_CACHE);
+};
+
+window.ordenarFeedNotificacoesFlat = function(valor) {
+    NOTIF_FLAT_ORDEM = valor;
+    renderizarNotificacoesFlat(NOTIF_FEED_CACHE);
+};
+
+window.filtrarFeedNotificacoesFlat = function(filtro) {
+    NOTIF_FLAT_FILTRO = filtro;
+    renderizarNotificacoesFlat(NOTIF_FEED_CACHE);
+};
+
+window.limparFiltrosNotificacoesFlat = function() {
+    NOTIF_FLAT_FILTRO = 'todas';
+    NOTIF_FLAT_BUSCA = '';
+    NOTIF_FLAT_ORDEM = 'recentes';
+    const busca = document.getElementById('notificacoes-busca-flat');
+    if (busca) busca.value = '';
+    const ordenar = document.getElementById('notificacoes-ordenar');
+    if (ordenar) ordenar.value = 'recentes';
+    renderizarNotificacoesFlat(NOTIF_FEED_CACHE);
+};
+
+function renderizarNotificacoesFlat(feedBruto) {
+    const container = document.getElementById('notificacoes-feed-flat');
+    if (!container) return;
+
+    if (feedBruto === null) {
+        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0; color:var(--warning);">⚠️ Não foi possível verificar as notificações agora. Toque em "Atualizar" pra tentar de novo.</div>`;
+        return;
+    }
+
+    const restritoAPropriaArea = operadorTecnicoComArea();
+    let itens = (restritoAPropriaArea
+        ? feedBruto.filter(item => item.area === OPERADOR_LOGADO.area)
+        : feedBruto
+    ).map(item => ({ item, sev: severidadeNotificacaoItem(item) }));
+
+    // Pills do topo + abas de filtro sempre refletem TODAS as
+    // notificações (antes do filtro de busca/aba atual) — mesmo
+    // princípio já usado no resumo da Central de Áreas: filtrar pra
+    // focar não devia esconder a contagem real lá em cima.
+    const totalGeral = itens.length;
+    const criticasGeral = itens.filter(x => x.sev.label === 'Crítico').length;
+    const atencaoGeral = itens.filter(x => x.sev.label === 'Atenção').length;
+    const naoVistasGeral = itens.filter(x => !x.item.lida).length;
+
+    const resumoTopo = document.getElementById('notificacoes-resumo-topo');
+    if (resumoTopo) {
+        resumoTopo.innerHTML = `
+            <div class="notif-pill-resumo" style="--pill-cor:var(--danger);"><i class="fas fa-triangle-exclamation"></i><div><strong>${criticasGeral}</strong><span>Crítica${criticasGeral === 1 ? '' : 's'}</span></div></div>
+            <div class="notif-pill-resumo" style="--pill-cor:var(--warning);"><i class="fas fa-circle-exclamation"></i><div><strong>${atencaoGeral}</strong><span>Atenção</span></div></div>
+            <div class="notif-pill-resumo" style="--pill-cor:var(--text-accent);"><i class="fas fa-bell"></i><div><strong>${naoVistasGeral}</strong><span>Não vistas</span></div></div>
+        `;
+    }
+
+    const abas = document.getElementById('notificacoes-abas-filtro');
+    if (abas) {
+        const btn = (valor, label, qtd) => `<button class="btn-filter-mcc ${NOTIF_FLAT_FILTRO === valor ? 'active' : ''}" onclick="window.filtrarFeedNotificacoesFlat('${valor}')">${label} (${qtd})</button>`;
+        abas.innerHTML = btn('todas', 'Todas', totalGeral) + btn('criticas', '🔴 Críticas', criticasGeral) + btn('atencao', '🟡 Atenção', atencaoGeral) + btn('nao-vistas', '🔵 Não vistas', naoVistasGeral);
+    }
+
+    // Donut de resumo (mesmo padrão conic-gradient já usado em outros
+    // donuts do sistema, ex: painel-donut-anel no Painel Geral).
+    const donut = document.getElementById('notificacoes-resumo-donut');
+    if (donut) {
+        const normaisGeral = Math.max(0, totalGeral - criticasGeral - atencaoGeral);
+        if (totalGeral === 0) {
+            donut.innerHTML = `<div class="text-muted" style="text-align:center; padding:10px 0; font-size:12px;">Sem notificações.</div>`;
+        } else {
+            const pctCrit = (criticasGeral / totalGeral) * 100;
+            const pctAtn = (atencaoGeral / totalGeral) * 100;
+            donut.innerHTML = `
+                <div style="display:flex; align-items:center; gap:16px;">
+                    <div class="painel-donut-anel" style="background:conic-gradient(var(--danger) 0% ${pctCrit}%, var(--warning) ${pctCrit}% ${pctCrit + pctAtn}%, var(--success) ${pctCrit + pctAtn}% 100%); width:84px; height:84px; flex-shrink:0;">
+                        <div class="painel-donut-centro" style="inset:12px;"><strong style="font-size:1rem;">${totalGeral}</strong><span>Total</span></div>
+                    </div>
+                    <div class="painel-donut-legenda" style="flex:1;">
+                        <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--danger);"></span>Críticas</span><strong>${criticasGeral} (${Math.round(pctCrit)}%)</strong></div>
+                        <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--warning);"></span>Atenção</span><strong>${atencaoGeral} (${Math.round(pctAtn)}%)</strong></div>
+                        <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--text-accent);"></span>Não vistas</span><strong>${naoVistasGeral}</strong></div>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    const rapidos = document.getElementById('notificacoes-filtros-rapidos');
+    if (rapidos && !restritoAPropriaArea) {
+        rapidos.innerHTML = `
+            <button class="notif-filtro-rapido" onclick="window.filtrarFeedNotificacoesFlat('criticas')"><i class="fas fa-triangle-exclamation" style="color:var(--danger);"></i> Apenas críticas <i class="fas fa-chevron-right"></i></button>
+            <button class="notif-filtro-rapido" onclick="window.filtrarFeedNotificacoesFlat('nao-vistas')"><i class="fas fa-bell" style="color:var(--text-accent);"></i> Apenas não vistas <i class="fas fa-chevron-right"></i></button>
+        `;
+    } else if (rapidos) {
+        rapidos.innerHTML = `<button class="notif-filtro-rapido" onclick="window.filtrarFeedNotificacoesFlat('nao-vistas')"><i class="fas fa-bell" style="color:var(--text-accent);"></i> Apenas não vistas <i class="fas fa-chevron-right"></i></button>`;
+    }
+
+    // Filtro de aba + busca (área, referência, descrição).
+    if (NOTIF_FLAT_FILTRO === 'criticas') itens = itens.filter(x => x.sev.label === 'Crítico');
+    else if (NOTIF_FLAT_FILTRO === 'atencao') itens = itens.filter(x => x.sev.label === 'Atenção');
+    else if (NOTIF_FLAT_FILTRO === 'nao-vistas') itens = itens.filter(x => !x.item.lida);
+
+    if (NOTIF_FLAT_BUSCA) {
+        itens = itens.filter(({ item }) => {
+            const alvo = `${nomeAreaOficina(item.area) || ''} ${item.referencia || ''} ${item.descricao || ''}`.toLowerCase();
+            return alvo.includes(NOTIF_FLAT_BUSCA);
+        });
+    }
+
+    if (NOTIF_FLAT_ORDEM === 'nao-lidas') {
+        itens.sort((a, b) => (a.item.lida === b.item.lida) ? 0 : (a.item.lida ? 1 : -1));
+    } else if (NOTIF_FLAT_ORDEM === 'severidade') {
+        const ORDEM = { 'Crítico': 0, 'Atenção': 1, 'Novo': 2, 'Normal': 3 };
+        itens.sort((a, b) => ORDEM[a.sev.label] - ORDEM[b.sev.label]);
+    }
+    // 'recentes' é a ordem que o feed já vem do backend (mais novo primeiro).
+
+    if (itens.length === 0) {
+        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:30px 0;"><i class="fas fa-magnifying-glass"></i> Nenhuma notificação encontrada com esse filtro/busca.</div>`;
+        return;
+    }
+
+    container.innerHTML = itens.map(({ item, sev }) => {
+        const referencia = item.referencia;
+        return `
+        <div class="notificacoes-item" style="--item-cor:${sev.cor}; ${!item.lida ? 'background:color-mix(in srgb, var(--text-accent) 5%, var(--bg-card));' : ''}"
+             onclick="window.abrirItemNotificacao('${escapeAtributoNotif(item.tipo)}', '${escapeAtributoNotif(item.evento_id)}', '${escapeAtributoNotif(referencia)}', '${escapeAtributoNotif(item.area)}', ${item.atividade_id != null ? Number(item.atividade_id) : 'null'}, '${escapeAtributoNotif(item.tipo_evento || 'status')}')">
+            <span class="notificacoes-item-dot ${!item.lida ? 'nao-lida' : ''}" title="${!item.lida ? 'Não vista' : 'Vista'}"></span>
+            <div class="notificacoes-item-icone" style="color:${sev.cor}; background:color-mix(in srgb, ${sev.cor} 15%, transparent);">${ICONE_POR_TIPO_NOTIFICACAO[item.tipo] || '📋'}</div>
+            <div class="notificacoes-item-corpo">
+                <div class="notificacoes-item-topo">
+                    <span class="font-code" style="font-weight:700; color:var(--text-heading);">${escapeHtmlNotif(referencia) || '-'}</span>
+                    <span class="notif-linha-status" style="color:${sev.cor}; background:color-mix(in srgb, ${sev.cor} 15%, transparent);">${sev.emoji} ${sev.label}</span>
+                </div>
+                <div class="notificacoes-item-linha">${escapeHtmlNotif(limparMarcadorTecnicoDescricao(item.descricao))}</div>
+                <div class="notif-item-meta">
+                    ${item.area ? `<span>Área: ${escapeHtmlNotif(nomeAreaOficina(item.area))}</span>` : ''}
+                    <span>${escapeHtmlNotif(item.data_hora)}</span>
+                </div>
+            </div>
+            ${!item.lida ? `
+            <button type="button" class="notificacoes-item-marcar-lida" title="Marcar como vista"
+                    onclick="window.marcarNotificacaoLidaRapido(event, '${escapeAtributoNotif(item.tipo)}', '${escapeAtributoNotif(item.evento_id)}')">
+                <i class="fas fa-check"></i>
+            </button>
+            ` : ''}
+        </div>
+        `;
+    }).join('');
+}
+
 // 🆕 Grade única com TODAS as áreas (oficina + administrativo + estoque
 // de Rolos/Hidráulica) — mesmo modelo de navegação da Central de Áreas.
 // Cada card mostra status (quando é área de reparo, com atividades) e
 // quantas notificações tem (total/não lidas); clicar abre o detalhe só
 // daquela área (ver abrirDetalheAreaNotificacao). Substitui a antiga
 // lista "Atividade Recente" com tudo misturado.
+// 🗑️ NÃO É MAIS CHAMADA (ver renderizarNotificacoesFlat acima) — os ids
+// de elemento que ela procura não existem mais no HTML, então fica
+// inerte. Mantida sem remover pra não perder a lógica de agrupamento
+// por área caso precise voltar a esse modelo.
 function renderizarGradeNotificacoes(atividades, feed) {
     const container = document.getElementById('notificacoes-grade-container');
     if (!container) return;
@@ -10477,9 +11162,21 @@ function renderizarGradeNotificacoes(atividades, feed) {
     // Restrição/Atenção) — chegou notificação, a área sobe. O status
     // continua visível, só que como etiqueta discreta na linha, não como
     // divisor que reordena tudo de novo.
+    // 🔧 CORREÇÃO ("muito simples", print real): o quadrado do ícone era
+    // cinza apagado (var(--text-muted), 14px) sobre um fundo quase
+    // idêntico ao card — na prática ilegível/invisível numa tela real,
+    // por isso toda a lista parecia "vazia"/genérica. Cada área já tem
+    // sua PRÓPRIA cor cadastrada (a.cor, usada em Central de Áreas) que
+    // não estava sendo aproveitada aqui — virou o fundo/ícone do chip,
+    // igual ao padrão de ícone colorido já usado nos KPIs. Isso NÃO é a
+    // mesma coisa que "cor de identidade fixa por item" (a regra que
+    // proíbe amarelo repetido): aqui são cores DIFERENTES por área
+    // (várias cores, não uma só reaproveitada em todo item), só pra dar
+    // variedade visual de lista — a gravidade real continua exclusivamente
+    // na etiqueta de status (s.cor), sem mudar.
     const linhasHtml = visiveis.map(({ area: a, status: s, contagem }) => `
         <div class="notif-linha" style="--sev-color:${s.cor};" onclick="window.abrirDetalheAreaNotificacao('${a.chave}')">
-            <div class="notif-linha-icone"><i class="fas ${a.icone}"></i></div>
+            <div class="notif-linha-icone" style="background:color-mix(in srgb, ${a.cor || 'var(--text-muted)'} 18%, transparent); color:${a.cor || 'var(--text-muted)'};"><i class="fas ${a.icone}"></i></div>
             <div class="notif-linha-corpo">
                 <div class="notif-linha-titulo">
                     ${a.nome}

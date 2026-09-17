@@ -402,9 +402,19 @@
            "isolation: isolate" sozinho não resolve isso — cria um
            contexto de empilhamento (z-index), não um bloco de
            contenção pra elemento posicionado; só "position" faz isso. */
+        /* 🐛 CORREÇÃO (o "efeito de luz" que aparece vazando de vários
+           botões, ex: "ATUALIZAR"): não é o box-shadow (isso já foi
+           corrigido em rodadas anteriores) — é ESTE brilho diagonal
+           (::before, skewX) varrendo o botão no hover. position:relative
+           sozinho só define a partir de onde o ::before absolute conta
+           sua posição — não corta visualmente o que passa da borda. Sem
+           overflow:hidden aqui, a faixa de luz (35% de largura, torta em
+           -20°) ultrapassava o botão e "vazava" pro fundo escuro ao
+           redor, principalmente em botões estreitos. */
         .btn-premium {
             position: relative;
             isolation: isolate;
+            overflow: hidden;
         }
         .btn-premium::before {
             content: '';
@@ -417,7 +427,9 @@
             z-index: -1;
             pointer-events: none;
         }
-        .btn-premium:hover::before { left: 130%; }
+        @media (hover: hover) and (pointer: fine) {
+            .btn-premium:hover::before { left: 130%; }
+        }
 
         /* ===== transição mais macia na troca de aba dos folhões e no menu ===== */
         .folhao-tab {
@@ -809,14 +821,41 @@
         </div>
     </div>
 
-    <!-- 1. HEADER & STATUS DA PLANTA -->
-    <div class="welcome-box">
-        <div>
-            <h1>Plataforma OMS - Gestão Avançada de Aciaria</h1>
-            <p>Visão computacional e desgaste preditivo de componentes do lingotamento.</p>
-            <div class="plant-status-badge">
-                <i class="fas fa-circle"></i> Sistema Online & Monitorando
+    <!-- 1. HERO — referência mandada pelo usuário: banner com foto de
+         fundo (reaproveitada a mesma imagem já usada na tela de login,
+         JS/assets/Placa.jpeg — sem asset novo), badges de destaque do
+         sistema, e um card flutuante de status à direita. Substitui o
+         .welcome-box anterior (texto solto sem imagem). -->
+    <div class="painel-hero">
+        <div class="painel-hero-fundo"></div>
+        <div class="painel-hero-conteudo">
+            <div class="painel-hero-titulo">
+                <div class="painel-hero-icone"><i class="fas fa-gear"></i></div>
+                <div>
+                    <h1>OMS <span class="text-muted" style="font-weight:400; font-size:0.6em;">Gestão Inteligente da Manutenção</span></h1>
+                    <p>Mais controle, rastreabilidade e performance para os ativos da CSN.</p>
+                </div>
             </div>
+            <div class="painel-hero-badges">
+                <div class="painel-hero-badge"><i class="fas fa-layer-group"></i> 15+ <span>Módulos</span></div>
+                <div class="painel-hero-badge"><i class="fas fa-server"></i> MCC 2/3/4 <span>Áreas de atuação</span></div>
+                <div class="painel-hero-badge"><i class="fas fa-shield-halved"></i> 100% <span>Digital</span></div>
+                <div class="painel-hero-badge"><i class="fas fa-wifi"></i> PWA <span>Funciona offline</span></div>
+            </div>
+        </div>
+        <div class="painel-hero-status-card">
+            <div class="plant-status-badge">
+                <i class="fas fa-circle"></i> Sistema Online
+            </div>
+            <div class="text-muted" style="font-size:11px; margin-top:4px;">Última atualização: <span id="painel-hero-hora-atualizacao">--:--</span></div>
+            <div class="painel-hero-status-widget">
+                <div class="painel-hero-status-icone"><i class="fas fa-industry"></i></div>
+                <div>
+                    <strong>Aciaria</strong>
+                    <span class="text-muted" style="display:block; font-size:11px;">MCC 2</span>
+                </div>
+            </div>
+            <div class="painel-hero-status-selo">Operação Normal</div>
         </div>
     </div>
 
@@ -892,38 +931,49 @@
         </div>
     </div>
 
-    <!-- 3. LINHA 3 — Fila de Inspeção (2fr) + coluna lateral de contexto
-         (1fr, empilhada: Risco por Veio / Atividades Atrasadas / Produção
-         Lançada). Antes eram 2 grids separados, cada bloco full-width —
-         passo 5 da reestruturação, junta tudo numa companhia só. -->
-    <div class="painel-geral-linha3">
-
-        <!-- COLUNA ESQUERDA: Fila de Críticos e Gargalos -->
-        <div class="glass-panel painel-fila-inspecao" style="padding: 24px; display: flex; flex-direction: column; height:auto;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
-                <div>
-                    <h3 style="color:var(--text-heading); font-size:1.1rem;">
-                        <i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i> Fila de Inspeção Prioritária
-                    </h3>
-                    <p class="text-muted" style="font-size: 0.8rem;">Ativos com maior índice de desgaste registrado.</p>
-                </div>
-                <button class="btn-outline-neutral" onclick="window.abrirCriticos()" style="padding: 8px 12px;">
-                    Ver Relatório Completo <i class="fas fa-arrow-right"></i>
-                </button>
+    <!-- 3. FILA DE INSPEÇÃO — full width, sozinha.
+         🔧 CORREÇÃO ("espaço vazio enorme do lado", print real do
+         usuário): antes ficava numa grid de 2 colunas lado a lado com
+         a coluna dos 3 cards abaixo (Risco por Veio/Atrasadas/
+         Produção). Como esta aqui tem altura LIMITADA (max-height:400px
+         + scroll, corrigido numa rodada anterior) e a coluna vizinha
+         cresce sem limite com dado real (6 veios, várias áreas
+         atrasadas...), a diferença de altura entre as duas colunas
+         deixava um vazio enorme do lado da mais curta — comportamento
+         normal de grid/flex com align-items:start, não dá pra "colar"
+         uma na altura da outra sem ou esticar a curta (largando espaço
+         vazio DENTRO dela, o problema que já foi corrigido antes) ou
+         aceitar o vazio do LADO dela (o que apareceu agora). Solução:
+         não ficam mais lado a lado — cada uma agora é sua própria linha
+         full-width, então a altura de uma nunca deixa vazio ao lado da
+         outra. -->
+    <div class="glass-panel painel-fila-inspecao" style="padding: 24px; display: flex; flex-direction: column; height:auto; margin-top: 24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+            <div>
+                <h3 style="color:var(--text-heading); font-size:1.1rem;">
+                    <i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i> Fila de Inspeção Prioritária
+                </h3>
+                <p class="text-muted" style="font-size: 0.8rem;">Ativos com maior índice de desgaste registrado.</p>
             </div>
-
-            <!-- O Container original que o JS popula -->
-            <div id="top-criticos-container" style="max-height: 400px; overflow-y: auto; padding-right: 8px;">
-                <!-- Fallback enquanto o JS não carrega -->
-                <div class="text-muted" style="text-align:center; padding: 40px 0; border: 1px dashed var(--border-color); border-radius: var(--radius);">
-                    <i class="fas fa-satellite-dish fa-spin" style="font-size: 2rem; margin-bottom: 10px; color: var(--brand);"></i>
-                    <p>Coletando telemetria dos veios...</p>
-                </div>
-            </div>
+            <button class="btn-outline-neutral" onclick="window.abrirCriticos()" style="padding: 8px 12px;">
+                Ver Relatório Completo <i class="fas fa-arrow-right"></i>
+            </button>
         </div>
 
-        <!-- COLUNA LATERAL: contexto complementar, empilhado -->
-        <div class="painel-geral-linha3-lateral">
+        <!-- O Container original que o JS popula -->
+        <div id="top-criticos-container" style="max-height: 400px; overflow-y: auto; padding-right: 8px;">
+            <!-- Fallback enquanto o JS não carrega -->
+            <div class="text-muted" style="text-align:center; padding: 40px 0; border: 1px dashed var(--border-color); border-radius: var(--radius);">
+                <i class="fas fa-satellite-dish fa-spin" style="font-size: 2rem; margin-bottom: 10px; color: var(--brand);"></i>
+                <p>Coletando telemetria dos veios...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Risco por Veio / Atividades Atrasadas / Produção Lançada —
+         3 colunas lado a lado (não mais empilhadas numa coluna lateral
+         estreita), cada uma com altura independente entre si. -->
+    <div class="painel-geral-linha3-lateral">
             <div class="glass-panel" style="padding: 20px;">
                 <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom: 4px;">
                     <i class="fas fa-ranking-star" style="color:#f59e0b;"></i> Risco por Veio
@@ -952,6 +1002,43 @@
                 <div id="painel-producao-lancada">
                     <div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>
                 </div>
+            </div>
+        </div>
+
+    <!-- 5. Acesso Rápido + Precisa de ajuda? — referência mandada pelo
+         usuário. Reaproveita .tecnico-atalho-btn (mesmo padrão ícone
+         em cima + label embaixo já usado no Painel do Técnico). -->
+    <div class="painel-geral-linha4">
+        <div class="glass-panel painel-acesso-rapido-card">
+            <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:2px;">Acesso Rápido</h3>
+            <p class="text-muted" style="font-size:0.75rem; margin-bottom:16px;">Principais rotinas do sistema.</p>
+            <div class="tecnico-atalhos-grid">
+                <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-ordens-servico')">
+                    <i class="fas fa-file-invoice"></i>
+                    <span>Lançar OS</span>
+                </button>
+                <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-fluxo')">
+                    <i class="fas fa-magnifying-glass"></i>
+                    <span>Consultar Ativos</span>
+                </button>
+                <button class="tecnico-atalho-btn" onclick="window.abrirCriticos()">
+                    <i class="fas fa-chart-column"></i>
+                    <span>Relatórios</span>
+                </button>
+                <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-reservas')">
+                    <i class="fas fa-boxes"></i>
+                    <span>Estoque</span>
+                </button>
+            </div>
+        </div>
+        <div class="glass-panel painel-ajuda-card">
+            <div class="painel-ajuda-icone"><i class="fas fa-circle-question"></i></div>
+            <div>
+                <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:2px;">Precisa de ajuda?</h3>
+                <p class="text-muted" style="font-size:0.8rem; margin-bottom:12px;">Acesse o suporte do sistema.</p>
+                <button class="btn-outline-neutral" style="width:100%;" onclick="alert('Suporte: fale com o administrador do sistema ou o setor de TI da CSN.')">
+                    Falar com suporte <i class="fas fa-arrow-right"></i>
+                </button>
             </div>
         </div>
     </div>
@@ -1254,33 +1341,41 @@
             </section>
 
             <section id="aba-oficina" class="tab-content">
+                <!-- 🔧 CORREÇÃO (referência mandada pelo usuário): eram 4 KPIs de
+                     ATIVIDADE (Pendentes/Andamento/Atrasadas/Concluídas) — a
+                     referência resume por ÁREA (quantas áreas estão em cada
+                     severidade), que é a pergunta que essa tela de verdade
+                     responde ("quais áreas precisam de atenção"), não quantas
+                     atividades soltas existem no total. Pendentes/Atrasadas
+                     continuam visíveis em cada card individual, só não
+                     repetidas aqui em duplicidade. -->
                 <div class="kpi-container" id="oficina-kpi-container" style="margin-bottom:20px;">
-                    <div class="kpi-card warning">
-                        <div class="kpi-icon glow-warning"><i class="fas fa-hourglass-half"></i></div>
+                    <div class="kpi-card danger">
+                        <div class="kpi-icon glow-danger"><i class="fas fa-triangle-exclamation"></i></div>
                         <div class="kpi-data">
-                            <h4 id="oficina-kpi-pendentes">0</h4>
-                            <p>Pendentes</p>
+                            <h4 id="oficina-kpi-criticas">0</h4>
+                            <p>Críticas</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card warning">
+                        <div class="kpi-icon glow-warning"><i class="fas fa-circle-exclamation"></i></div>
+                        <div class="kpi-data">
+                            <h4 id="oficina-kpi-atencao">0</h4>
+                            <p>Atenção</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card success">
+                        <div class="kpi-icon glow-success"><i class="fas fa-circle-check"></i></div>
+                        <div class="kpi-data">
+                            <h4 id="oficina-kpi-normais">0</h4>
+                            <p>Normais</p>
                         </div>
                     </div>
                     <div class="kpi-card">
                         <div class="kpi-icon glow-brand"><i class="fas fa-person-running"></i></div>
                         <div class="kpi-data">
                             <h4 id="oficina-kpi-andamento">0</h4>
-                            <p>Em Andamento</p>
-                        </div>
-                    </div>
-                    <div class="kpi-card danger">
-                        <div class="kpi-icon glow-danger"><i class="fas fa-triangle-exclamation"></i></div>
-                        <div class="kpi-data">
-                            <h4 id="oficina-kpi-atrasadas">0</h4>
-                            <p>Atrasadas</p>
-                        </div>
-                    </div>
-                    <div class="kpi-card success">
-                        <div class="kpi-icon glow-success"><i class="fas fa-check-double"></i></div>
-                        <div class="kpi-data">
-                            <h4 id="oficina-kpi-concluidas">0</h4>
-                            <p>Concluídas (últimos 7 dias)</p>
+                            <p>Atividades em Andamento</p>
                         </div>
                     </div>
                 </div>
@@ -1294,7 +1389,14 @@
                      "Atividades da Oficina" estava ERRADO: não lista atividades
                      nenhuma, é a própria Central de Áreas. Corrigido o título
                      e movido pra cima do Catálogo de Materiais. -->
-                <div class="glass-panel" style="padding:24px; margin-bottom:24px;"><h2><i class="fas fa-industry"></i> Central de Áreas</h2><div id="oficina-container" style="margin-top:20px;">
+                <!-- 🆕 Título + subtítulo (referência mandada pelo usuário): faltava
+                     completamente aqui, diferente de outras telas (Central de
+                     Notificações, Painel do Supervisor) que já têm esse padrão —
+                     um dos motivos concretos do "muito simples". -->
+                <div class="glass-panel" style="padding:24px; margin-bottom:24px;">
+                    <h2 style="margin-bottom:4px;"><i class="fas fa-industry"></i> Central de Áreas</h2>
+                    <p class="text-muted" style="font-size:0.85rem; margin-bottom:16px;">Visão geral do status das áreas de manutenção e oficina.</p>
+                    <div id="oficina-container" style="margin-top:20px;">
                     <div class="skeleton-row"><div class="skeleton skeleton-circle"></div><div style="flex:1;"><div class="skeleton skeleton-line" style="width:60%;"></div><div class="skeleton skeleton-line"></div></div></div>
                     <div class="skeleton-row"><div class="skeleton skeleton-circle"></div><div style="flex:1;"><div class="skeleton skeleton-line" style="width:45%;"></div><div class="skeleton skeleton-line"></div></div></div>
                     <div class="skeleton-row"><div class="skeleton skeleton-circle"></div><div style="flex:1;"><div class="skeleton skeleton-line" style="width:70%;"></div><div class="skeleton skeleton-line"></div></div></div>
@@ -1337,67 +1439,62 @@
                             <div id="notificacoes-ultima-atualizacao" class="text-muted" style="font-size:11px; margin-top:6px;"></div>
                         </div>
                     </div>
-                    <!-- 🆕 Resumo pra quem só bate o olho (supervisor/ADM):
-                         quantas áreas estão em Crítico/Restrição/Atenção
-                         agora e quantas notificações ainda não foram
-                         vistas, sem precisar contar card por card. -->
-                    <div id="notificacoes-resumo" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;"></div>
+                    <!-- 🔧 CORREÇÃO (referência mandada pelo usuário): eram pills de
+                         ÁREA (quantas áreas em Crítico/Restrição/Atenção) — a
+                         referência resume por NOTIFICAÇÃO (quantas críticas,
+                         quantas em atenção, quantas não vistas), que é o que os
+                         cards coloridos do topo mostram. -->
+                    <div id="notificacoes-resumo-topo" class="notif-resumo-topo"></div>
                 </div>
 
-                <!-- 🆕 Mesmo modelo de navegação da Central de Áreas: uma
-                     grade com TODAS as áreas (oficina, administrativo e
-                     estoque de Rolos/Hidráulica) — clicar numa entra num
-                     modo "detalhe" que mostra só as notificações
-                     daquela área, com botão de voltar pra grade. -->
-                <div id="notificacoes-grade-painel" class="glass-panel" style="padding:24px;">
-                    <div class="flex-between" style="flex-wrap:wrap; gap:10px; margin-bottom:14px;">
-                        <h3 id="notificacoes-grade-titulo" style="font-size:1rem; margin:0;"><i class="fas fa-industry"></i> Áreas</h3>
-                    </div>
-                    <!-- 🆕 Busca + filtro por status, igual à Central de Áreas —
-                         com quase 20 áreas na grade, o gerente precisa achar
-                         "só o que tá crítico" sem rolar tudo. Some pro técnico
-                         restrito à própria área — não faz sentido filtrar uma
-                         lista de 1 item (ver renderizarGradeNotificacoes). -->
-                    <div id="notificacoes-grade-toolbar" class="central-areas-toolbar" style="margin-bottom:16px;">
-                        <div class="login-input-wrapper" style="position:relative; flex:1; min-width:200px;">
-                            <input type="text" id="notificacoes-grade-busca" placeholder="Buscar área..." oninput="window.buscarGradeNotificacoes(this.value)" style="height:38px; border-radius:6px; padding-left:38px; width:100%;">
-                            <i class="fas fa-search login-input-icon" style="top:10px; font-size:13px;"></i>
-                        </div>
-                        <div class="mcc-filter-group" id="notificacoes-grade-filtros">
-                            <button class="btn-filter-mcc active" onclick="window.filtrarGradeNotificacoes('', this)">Todas</button>
-                            <button class="btn-filter-mcc" onclick="window.filtrarGradeNotificacoes('Crítico', this)">🔴 Crítico</button>
-                            <button class="btn-filter-mcc" onclick="window.filtrarGradeNotificacoes('Restrição', this)">🟠 Restrição</button>
-                            <button class="btn-filter-mcc" onclick="window.filtrarGradeNotificacoes('Atenção', this)">🟡 Atenção</button>
-                            <button class="btn-filter-mcc" onclick="window.filtrarGradeNotificacoes('Novo', this)">🔵 Novo</button>
+                <!-- 🆕 Lista única com TODAS as notificações (não mais grade de
+                     área -> clica -> detalhe): reference mandada pelo usuário
+                     mostra o feed direto na tela principal, com abas de filtro
+                     por contagem, busca, e uma coluna lateral de contexto
+                     (ordenar, resumo, atalhos, dica). Os campos "Equipamento"/
+                     "ID" numéricos da referência não existem nos dados reais
+                     do sistema — usa Área (que já existe) e a referência do
+                     item (código, ex: "OS-123") no lugar, sem inventar campo
+                     que não existe. -->
+                <div class="notif-layout-grid">
+                    <div class="notif-coluna-principal">
+                        <div class="glass-panel" style="padding:18px;">
+                            <div id="notificacoes-abas-filtro" class="notif-abas-filtro"></div>
+                            <div class="notif-busca-linha">
+                                <div class="login-input-wrapper" style="position:relative; flex:1; min-width:200px;">
+                                    <input type="text" id="notificacoes-busca-flat" placeholder="Buscar por área, referência, descrição..." oninput="window.buscarFeedNotificacoesFlat(this.value)" style="height:38px; border-radius:6px; padding-left:38px; width:100%;">
+                                    <i class="fas fa-search login-input-icon" style="top:10px; font-size:13px;"></i>
+                                </div>
+                                <button class="btn-outline-neutral" onclick="window.limparFiltrosNotificacoesFlat()"><i class="fas fa-xmark"></i> Limpar</button>
+                            </div>
+                            <div id="notificacoes-feed-flat" style="margin-top:14px;">
+                                <div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>
+                            </div>
                         </div>
                     </div>
-                    <div id="notificacoes-grade-container">
-                        <div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>
-                    </div>
-                </div>
-
-                <div id="notificacoes-detalhe-painel" class="glass-panel hidden" style="padding:24px;">
-                    <div class="flex-between" style="margin-bottom:14px; flex-wrap:wrap; gap:10px;">
-                        <button class="btn-premium" onclick="window.fecharDetalheAreaNotificacao()">
-                            <i class="fas fa-arrow-left"></i> Voltar
-                        </button>
-                        <h3 id="notificacoes-detalhe-titulo" style="font-size:1rem; margin:0;"></h3>
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <button id="notificacoes-detalhe-acessar" class="btn-premium hidden" onclick="window.irParaTelaDaAreaNotificacao()">
-                                Acessar Área <i class="fas fa-arrow-right"></i>
-                            </button>
-                            <!-- 🆕 Marca de uma vez tudo que essa matrícula ainda não
-                                 viu nessa área — sem isso, ter que abrir item por item
-                                 só pra "limpar" a área é chato quando tem muita coisa. -->
-                            <button id="notificacoes-detalhe-marcar-todas" class="btn-premium hidden" onclick="window.marcarTodasLidasDaArea()" style="font-size:12px; padding:6px 12px;">
-                                <i class="fas fa-check-double"></i> Marcar todas como lidas
-                            </button>
-                            <span id="notificacoes-contagem-nao-lidas" class="text-muted" style="font-size:12px;"></span>
+                    <aside class="notif-coluna-lateral">
+                        <div class="glass-panel" style="padding:16px;">
+                            <select id="notificacoes-ordenar" class="premium-select" style="width:100%;" onchange="window.ordenarFeedNotificacoesFlat(this.value)">
+                                <option value="recentes">Ordenar por: Mais recentes</option>
+                                <option value="nao-lidas">Ordenar por: Não vistas primeiro</option>
+                                <option value="severidade">Ordenar por: Severidade</option>
+                            </select>
                         </div>
-                    </div>
-                    <div id="notificacoes-feed-container">
-                        <div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>
-                    </div>
+                        <div class="glass-panel" style="padding:16px;">
+                            <div class="flex-between" style="margin-bottom:10px;">
+                                <h3 style="font-size:0.9rem; margin:0;"><i class="fas fa-chart-pie"></i> Resumo</h3>
+                            </div>
+                            <div id="notificacoes-resumo-donut"></div>
+                        </div>
+                        <div class="glass-panel" style="padding:16px;">
+                            <h3 style="font-size:0.9rem; margin-bottom:10px;"><i class="fas fa-bolt" style="color:var(--brand);"></i> Filtros Rápidos</h3>
+                            <div id="notificacoes-filtros-rapidos"></div>
+                        </div>
+                        <div class="glass-panel notif-dica-box" style="padding:16px;">
+                            <h3 style="font-size:0.9rem; margin-bottom:6px;"><i class="fas fa-circle-info"></i> Dica</h3>
+                            <p class="text-muted" style="font-size:12px; margin:0;">Marque uma notificação como vista pra tirar ela da contagem de "não vistas". Dá pra filtrar por área, severidade ou buscar por texto.</p>
+                        </div>
+                    </aside>
                 </div>
             </section>
 
@@ -1419,25 +1516,129 @@
                      um glass-panel igual às outras 40 telas do sistema.
                      (Repaginado pra sério/fino/minimalista a pedido do
                      usuário — ver comentário grande em style.css.) -->
-                <div class="sup-header">
-                    <div class="sup-header-linha">
-                        <div class="sup-header-titulo-bloco">
-                            <div class="sup-header-selo"><span class="sup-pulso"></span> AO VIVO</div>
-                            <h2><i class="fas fa-binoculars"></i> Painel do Supervisor</h2>
-                            <p>O olhar de cima da oficina inteira — o que precisa de atenção agora, quem está fazendo o quê,
-                                como está o estoque e se a tendência é melhorar ou piorar.</p>
+                <!-- 🆕 Hero com foto de fundo (mesma referência/mesmo padrão já
+                     usado no Painel Geral — reaproveita .painel-hero* sem
+                     criar classe nova) + selo "AO VIVO" e botão Atualizar
+                     mantidos, só que agora dentro do hero. -->
+                <div class="painel-hero">
+                    <div class="painel-hero-fundo"></div>
+                    <div class="painel-hero-conteudo">
+                        <div class="sup-header-selo" style="margin-bottom:10px;"><span class="sup-pulso"></span> PAINEL DO SUPERVISOR</div>
+                        <div class="painel-hero-titulo">
+                            <div class="painel-hero-icone"><i class="fas fa-binoculars"></i></div>
+                            <div>
+                                <h1 id="painel-supervisor-saudacao">Olá!</h1>
+                                <p>Aqui você acompanha o desempenho das áreas, ativos e indicadores da manutenção em tempo real.</p>
+                            </div>
                         </div>
-                        <div class="sup-header-acao">
-                            <button class="btn-premium" onclick="window.renderPainelSupervisor()">
-                                <i class="fas fa-rotate"></i> Atualizar
-                            </button>
-                            <div id="painel-supervisor-ultima-atualizacao" class="sup-header-timestamp"></div>
+                        <div class="painel-hero-badges">
+                            <button class="painel-hero-badge" style="cursor:pointer; font-family:inherit;" onclick="window.renderPainelSupervisor()"><i class="fas fa-rotate"></i> Atualizar<span>dados</span></button>
+                            <div class="painel-hero-badge"><i class="fas fa-server"></i> MCC 2/3/4 <span>Áreas de atuação</span></div>
+                        </div>
+                    </div>
+                    <div class="painel-hero-status-card">
+                        <div class="plant-status-badge"><i class="fas fa-circle"></i> Sistema Online</div>
+                        <div class="text-muted" style="font-size:11px; margin-top:4px;">Última atualização: <span id="painel-supervisor-ultima-atualizacao"></span></div>
+                    </div>
+                </div>
+
+                <!-- 🆕 Faixa de KPIs rápidos (referência mandada pelo usuário):
+                     áreas críticas/em atenção (Central de Áreas) + não vistas
+                     (Central de Notificações) — clicáveis, levam pra tela cheia. -->
+                <div class="sup-kpi-badges-linha" id="painel-supervisor-kpi-badges"></div>
+
+                <!-- HERO — os números mais críticos, grandes, com cor por severidade -->
+                <div id="painel-supervisor-hero" class="painel-sup-hero"></div>
+
+                <!-- 🆕 Tendência + donuts + resumo lateral (referência mandada
+                     pelo usuário) — mesmas peças já usadas no Painel Geral
+                     (construirHtmlDonutRisco/Status/RankingVeios), alimentadas
+                     com o mesmo BANCO_ATIVOS/OFICINA_ATIVIDADES_CACHE. -->
+                <div class="painel-graficos-linha2 painel-sup-graficos">
+                    <div class="glass-panel painel-linha-card">
+                        <h3 class="painel-donut-titulo"><i class="fas fa-chart-line" style="color:var(--info);"></i> Tendência de Manutenções (7 dias)</h3>
+                        <div id="painel-supervisor-tonelagem" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+                            <div class="text-muted" style="text-align:center; margin:auto;">Carregando...</div>
+                        </div>
+                    </div>
+                    <div class="glass-panel painel-donut-card">
+                        <h3 class="painel-donut-titulo"><i class="fas fa-chart-pie" style="color:var(--danger);"></i> Risco dos Ativos</h3>
+                        <div id="painel-supervisor-donut-risco"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
+                    </div>
+                    <div class="glass-panel painel-donut-card">
+                        <h3 class="painel-donut-titulo"><i class="fas fa-chart-pie" style="color:var(--info);"></i> Status das Atividades</h3>
+                        <div id="painel-supervisor-donut-status"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
+                    </div>
+                </div>
+
+                <!-- 🆕 Fila de Inspeção (tabela) + Risco por Veio (referência) -->
+                <div class="glass-panel painel-fila-inspecao" style="padding: 24px; margin-top: 24px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                        <div>
+                            <h3 style="color:var(--text-heading); font-size:1.1rem;"><i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i> Fila de Inspeção Prioritária</h3>
+                            <p class="text-muted" style="font-size:0.8rem;">Ativos com maior índice de desgaste registrado.</p>
+                        </div>
+                        <button class="btn-outline-neutral" onclick="window.abrirCriticos()" style="padding:8px 12px;">Ver Relatório Completo <i class="fas fa-arrow-right"></i></button>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="premium-table" style="width:100%;">
+                            <thead><tr><th>Código / Equipamento</th><th>Área</th><th>Status</th><th>% Vida Útil</th></tr></thead>
+                            <tbody id="painel-supervisor-fila-inspecao"><tr><td colspan="4" class="text-center text-muted">Carregando...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="painel-geral-linha3-lateral" style="grid-template-columns: 1fr;">
+                    <div class="glass-panel" style="padding:20px;">
+                        <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:4px;"><i class="fas fa-ranking-star" style="color:#f59e0b;"></i> Risco por Veio</h3>
+                        <p class="text-muted" style="font-size:0.75rem; margin-bottom:14px;">Desgaste médio, dos veios mais críticos aos mais tranquilos.</p>
+                        <div id="painel-supervisor-ranking-veios"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
+                    </div>
+                </div>
+
+                <!-- 🆕 Acesso Rápido + Precisa de ajuda? (referência) -->
+                <div class="painel-geral-linha4">
+                    <div class="glass-panel painel-acesso-rapido-card">
+                        <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:2px;">Acesso Rápido</h3>
+                        <p class="text-muted" style="font-size:0.75rem; margin-bottom:16px;">Principais rotinas do sistema.</p>
+                        <div class="tecnico-atalhos-grid">
+                            <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-ordens-servico')"><i class="fas fa-file-invoice"></i><span>Lançar OS</span></button>
+                            <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-oficina')"><i class="fas fa-industry"></i><span>Central de Áreas</span></button>
+                            <button class="tecnico-atalho-btn" onclick="window.abrirCriticos()"><i class="fas fa-chart-column"></i><span>Relatórios</span></button>
+                            <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-reservas')"><i class="fas fa-boxes"></i><span>Estoque</span></button>
+                        </div>
+                    </div>
+                    <div class="glass-panel painel-ajuda-card">
+                        <div class="painel-ajuda-icone"><i class="fas fa-circle-question"></i></div>
+                        <div>
+                            <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:2px;">Precisa de ajuda?</h3>
+                            <p class="text-muted" style="font-size:0.8rem; margin-bottom:12px;">Acesse o suporte do sistema.</p>
+                            <button class="btn-outline-neutral" style="width:100%;" onclick="alert('Suporte: fale com o administrador do sistema ou o setor de TI da CSN.')">Falar com suporte <i class="fas fa-arrow-right"></i></button>
                         </div>
                     </div>
                 </div>
 
-                <!-- HERO — os números mais críticos, grandes, com cor por severidade -->
-                <div id="painel-supervisor-hero" class="painel-sup-hero"></div>
+                <!-- 🆕 Atividades Recentes / Produção Lançada / Resumo da
+                     Supervisão (referência) — 3 colunas iguais. Produção
+                     Lançada reaproveita o mesmo dado real dos apontamentos
+                     já usado no Painel Geral. -->
+                <div class="painel-geral-linha3-lateral">
+                    <div class="glass-panel" style="padding:20px;">
+                        <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:4px;"><i class="fas fa-clock-rotate-left" style="color:var(--warning);"></i> Atividades Recentes</h3>
+                        <p class="text-muted" style="font-size:0.75rem; margin-bottom:14px;">Últimos eventos registrados no sistema.</p>
+                        <div id="painel-supervisor-atividades-recentes"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
+                    </div>
+                    <div class="glass-panel" style="padding:20px;">
+                        <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:4px;"><i class="fas fa-industry" style="color:#3b82f6;"></i> Produção Lançada</h3>
+                        <p class="text-muted" style="font-size:0.75rem; margin-bottom:14px;">Toneladas apontadas por MCC, hoje e nos últimos 7 dias.</p>
+                        <div id="painel-supervisor-producao-lancada"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
+                    </div>
+                    <div class="glass-panel" style="padding:20px;">
+                        <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:4px;"><i class="fas fa-clipboard-list" style="color:var(--brand);"></i> Resumo da Supervisão</h3>
+                        <p class="text-muted" style="font-size:0.75rem; margin-bottom:14px;">Panorama geral das áreas e atividades.</p>
+                        <div id="painel-supervisor-resumo"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
+                    </div>
+                </div>
 
                 <!-- SEÇÃO 1 — Saúde da oficina agora (vermelho/laranja) -->
                 <div class="painel-sup-secao painel-sup-secao-saude">
