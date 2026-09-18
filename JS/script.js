@@ -7094,12 +7094,27 @@ window.renderAbaChats = async function() {
             if (tituloEl) tituloEl.textContent = 'Selecione uma conversa';
         }
     } else {
-        if (!OFICINA_AREA_ATUAL) {
+        // 🔧 CORREÇÃO ("todos os técnicos tão assim no chat" — Chats
+        // travava em "Abra uma área primeiro"): OFICINA_AREA_ATUAL só
+        // fica preenchida depois que a pessoa abre a própria área pela
+        // Central de Áreas NESSA sessão — quem foi direto pra Chats
+        // (ex: acabou de logar, ou clicou "Chats" no menu antes de
+        // qualquer outra coisa) nunca tinha isso setado, mesmo a área
+        // dele já estando cadastrada no login (OPERADOR_LOGADO.area).
+        // Agora cai pra área do próprio operador quando ainda não abriu
+        // nenhuma — só mostra o aviso se realmente não tiver área
+        // nenhuma associada (ex: visitante).
+        const areaChat = OFICINA_AREA_ATUAL || (OPERADOR_LOGADO && OPERADOR_LOGADO.area);
+        if (!areaChat) {
             const tituloEl = document.getElementById('chat-thread-titulo');
-            if (tituloEl) tituloEl.textContent = 'Abra uma área primeiro';
+            if (tituloEl) tituloEl.textContent = 'Sem área associada ao seu usuário';
             return;
         }
-        await window.chatsSelecionarConversa(OFICINA_AREA_ATUAL, false);
+        // Outras partes do app (badge de chat, quadro de atividades) já
+        // assumem OFICINA_AREA_ATUAL como fonte da verdade — resolvendo
+        // aqui pela 1ª vez, propaga pra elas também funcionarem.
+        if (!OFICINA_AREA_ATUAL) OFICINA_AREA_ATUAL = areaChat;
+        await window.chatsSelecionarConversa(areaChat, false);
 
         // 🔧 CORREÇÃO ("mandei mensagem no Entre Técnicos e não chegou
         // nem notificação pro outro lado"): a aba Chats sempre abria no
@@ -7110,7 +7125,7 @@ window.renderAbaChats = async function() {
         // no Entre Técnicos, já entra direto nela.
         try {
             const apiBase = await resolverApiBase();
-            const resp = await fetch(`${apiBase}/api/mensagens_area/resumo_tecnicos?area=${encodeURIComponent(OFICINA_AREA_ATUAL)}`, { cache: 'no-store' });
+            const resp = await fetch(`${apiBase}/api/mensagens_area/resumo_tecnicos?area=${encodeURIComponent(areaChat)}`, { cache: 'no-store' });
             const linhas = resp.ok ? await resp.json() : [];
             const pendente = Array.isArray(linhas) ? linhas.find(l => (l.nao_lidas || 0) > 0) : null;
             if (pendente) {
