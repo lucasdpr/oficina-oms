@@ -2630,9 +2630,21 @@
                         Gerencie quem tem acesso ao sistema. "Resetar Senha" faz a pessoa voltar ao estado de
                         primeiro acesso (a senha temporária volta a ser a própria matrícula).
                     </p>
-                    <div class="login-input-wrapper" style="position:relative; max-width:340px; margin-bottom:16px;">
-                        <input type="text" id="admin-colab-busca" placeholder="Buscar por nome, matrícula ou cargo..." oninput="window.filtrarAdminColaboradores()" style="height:40px; border-radius:6px; padding-left:40px; width:100%;">
-                        <i class="fas fa-search login-input-icon" style="top:11px; font-size:14px;"></i>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px;">
+                        <div class="login-input-wrapper" style="position:relative; max-width:340px; flex:1; min-width:220px;">
+                            <input type="text" id="admin-colab-busca" placeholder="Buscar por nome, matrícula ou cargo..." oninput="window.filtrarAdminColaboradores()" style="height:40px; border-radius:6px; padding-left:40px; width:100%;">
+                            <i class="fas fa-search login-input-icon" style="top:11px; font-size:14px;"></i>
+                        </div>
+                        <select id="admin-colab-filtro-presenca" class="premium-select" style="height:40px;" onchange="window.filtrarAdminColaboradores()">
+                            <option value="">Todos</option>
+                            <option value="online">🟢 Online agora</option>
+                            <option value="offline_7d">⚪ Offline há mais de 7 dias</option>
+                            <option value="nunca">Nunca acessou</option>
+                            <option value="primeiro_acesso">Primeiro acesso pendente</option>
+                            <option value="bloqueado">🔴 Bloqueado</option>
+                        </select>
+                        <button class="btn-premium btn-success" onclick="window.abrirModalNovoColaborador()"><i class="fas fa-user-plus"></i> Novo Colaborador</button>
+                        <button class="btn-outline-neutral" onclick="window.exportarColaboradoresCsv()"><i class="fas fa-file-csv"></i> Exportar CSV</button>
                     </div>
                     <div class="table-responsive">
                         <table class="premium-table">
@@ -2642,6 +2654,54 @@
                     </div>
                 </div>
             </section>
+
+            <!-- 🆕 Cadastro de colaborador novo direto pela tela (antes só
+                 dava rodando script no servidor) -->
+            <div id="modal-novo-colaborador" class="modal-overlay hidden">
+                <div class="modal-content" style="max-width:440px;">
+                    <div class="modal-header">
+                        <h2><i class="fas fa-user-plus"></i> Novo Colaborador</h2>
+                        <button class="btn-close-modal" onclick="document.getElementById('modal-novo-colaborador').classList.add('hidden')"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="input-group" style="margin-bottom:12px;">
+                            <label>Matrícula</label>
+                            <input type="text" id="novo-colab-matricula" class="premium-input" style="width:100%;" placeholder="Ex: 12345">
+                        </div>
+                        <div class="input-group" style="margin-bottom:12px;">
+                            <label>Nome</label>
+                            <input type="text" id="novo-colab-nome" class="premium-input" style="width:100%;" placeholder="Nome completo">
+                        </div>
+                        <div class="input-group" style="margin-bottom:12px;">
+                            <label>Cargo</label>
+                            <input type="text" id="novo-colab-cargo" class="premium-input" style="width:100%;" placeholder="Ex: Técnico Mecânico">
+                        </div>
+                        <div class="input-group" style="margin-bottom:16px;">
+                            <label>Área</label>
+                            <select id="novo-colab-area" class="premium-select" style="width:100%;">
+                                <option value="">Não informar</option>
+                            </select>
+                        </div>
+                        <p class="text-muted" style="font-size:12px; margin-bottom:16px;">A senha temporária é a própria matrícula — a pessoa cria uma senha nova no primeiro login.</p>
+                        <button class="btn-premium btn-success" style="width:100%;" onclick="window.confirmarNovoColaborador()"><i class="fas fa-check"></i> Cadastrar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🆕 Eventos de cada funcionário separado — mesma
+                 infraestrutura do Prontuário das peças (log_eventos),
+                 filtrado pela matrícula do colaborador. -->
+            <div id="modal-eventos-colaborador" class="modal-overlay hidden">
+                <div class="modal-content" style="max-width:520px; max-height:80vh; display:flex; flex-direction:column;">
+                    <div class="modal-header">
+                        <h2><i class="fas fa-list-check"></i> Eventos — <span id="eventos-colab-titulo">-</span></h2>
+                        <button class="btn-close-modal" onclick="document.getElementById('modal-eventos-colaborador').classList.add('hidden')"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="modal-body" style="overflow-y:auto;">
+                        <div id="eventos-colab-lista"></div>
+                    </div>
+                </div>
+            </div>
 
             <section id="aba-dev-teste" class="tab-content">
                 <div class="glass-panel" style="padding:24px;">

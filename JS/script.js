@@ -4386,6 +4386,7 @@ window.filtrarAdminColaboradores = function() {
     if (!tbody) return;
 
     const termo = (document.getElementById('admin-colab-busca')?.value || '').toLowerCase().trim();
+    const filtroPresenca = document.getElementById('admin-colab-filtro-presenca')?.value || '';
     let lista = ADMIN_COLABORADORES_CACHE;
     if (termo) {
         lista = lista.filter(c =>
@@ -4393,6 +4394,23 @@ window.filtrarAdminColaboradores = function() {
             (c.nome || '').toLowerCase().includes(termo) ||
             (c.cargo || '').toLowerCase().includes(termo)
         );
+    }
+
+    // 🆕 Filtro de presença/status (pedido do usuário: achar quem nunca
+    // logou ou tá offline há dias, sem precisar rolar a lista inteira).
+    if (filtroPresenca) {
+        const agora = Date.now();
+        lista = lista.filter(c => {
+            const diffMs = c.ultimo_acesso ? (agora - new Date(c.ultimo_acesso.replace(' ', 'T')).getTime()) : null;
+            switch (filtroPresenca) {
+                case 'online': return diffMs !== null && diffMs <= ONLINE_JANELA_MS;
+                case 'offline_7d': return diffMs !== null && diffMs > 7 * 24 * 60 * 60 * 1000;
+                case 'nunca': return !c.ultimo_acesso;
+                case 'primeiro_acesso': return !!c.primeiro_acesso;
+                case 'bloqueado': return !c.ativo;
+                default: return true;
+            }
+        });
     }
 
     if (lista.length === 0) {
@@ -4413,6 +4431,12 @@ window.filtrarAdminColaboradores = function() {
             </td>
             <td>${window.formatarPresencaColaborador(c.ultimo_acesso)}</td>
             <td style="white-space:nowrap;">
+                <button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.abrirEventosColaborador('${c.matricula}', '${c.nome.replace(/'/g, "\\'")}')" title="Ver eventos">
+                    <i class="fas fa-book-open"></i>
+                </button>
+                <button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.editarDadosColaborador('${c.matricula}', '${c.nome.replace(/'/g, "\\'")}', '${(c.area || '').replace(/'/g, "\\'")}')" title="Editar nome/área">
+                    <i class="fas fa-pen"></i>
+                </button>
                 <button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.mudarCargoColaborador('${c.matricula}', '${(c.cargo || '').replace(/'/g, "\\'")}')" title="Trocar cargo">
                     <i class="fas fa-id-badge"></i>
                 </button>
@@ -4509,15 +4533,26 @@ window.resetarSenhaColaborador = async function(matricula, nome) {
 
 window.alternarAtivoColaborador = async function(matricula, novoAtivo, nome) {
     if (!verificarAcesso()) return;
-    const acao = novoAtivo ? 'reativar o acesso de' : 'desativar o acesso de';
-    if (!confirm(`Tem certeza que quer ${acao} ${nome} (${matricula})?`)) return;
+
+    // 🆕 Motivo obrigatório só ao BLOQUEAR (pedido do usuário: "daqui 3
+    // meses ninguém lembra por que fulano foi bloqueado" sem isso
+    // registrado) — o backend também exige, isto aqui só evita a ida e
+    // volta com erro.
+    let motivo = null;
+    if (!novoAtivo) {
+        motivo = prompt(`Por que está bloqueando o acesso de ${nome} (${matricula})?`);
+        if (motivo === null) return; // cancelou
+        if (!motivo.trim()) return alert('É preciso informar o motivo do bloqueio.');
+    } else {
+        if (!confirm(`Tem certeza que quer reativar o acesso de ${nome} (${matricula})?`)) return;
+    }
 
     try {
         const apiBase = await resolverApiBase();
         const resp = await fetch(`${apiBase}/api/colaboradores/alternar_ativo`, {
             method: 'POST',
             headers: headersAdmin(),
-            body: JSON.stringify({ matricula, ativo: novoAtivo })
+            body: JSON.stringify({ matricula, ativo: novoAtivo, motivo: motivo ? motivo.trim() : null })
         });
         if (!resp.ok) {
             const erro = await resp.json().catch(() => ({}));
@@ -4529,6 +4564,132 @@ window.alternarAtivoColaborador = async function(matricula, novoAtivo, nome) {
         console.error('⚠️ Erro ao atualizar acesso:', e);
         alert('Não foi possível conectar ao servidor.');
     }
+};
+
+// 🆕 Editar nome/área de um colaborador (cargo já tem botão dedicado —
+// window.mudarCargoColaborador). Cancelar qualquer um dos dois prompts
+// não perde o outro: cada campo só entra no PATCH se de fato mudou.
+window.editarDadosColaborador = async function(matricula, nomeAtual, areaAtual) {
+    if (!verificarAcesso()) return;
+    const novoNome = prompt(`Nome de ${matricula}:`, nomeAtual || '');
+    if (novoNome === null) return; // cancelou tudo
+
+    const areasValidas = (typeof AREAS_OFICINA !== 'undefined' ? AREAS_OFICINA : []).map(a => a.chave).join(', ');
+    const novaArea = prompt(`Área de ${matricula} (chaves válidas: ${areasValidas} — ou deixe em branco):`, areaAtual || '');
+    if (novaArea === null) return; // cancelou
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/colaboradores/editar`, {
+            method: 'POST',
+            headers: headersAdmin(),
+            body: JSON.stringify({ matricula, nome: novoNome.trim() || null, area: novaArea.trim() || null })
+        });
+        if (!resp.ok) {
+            const erro = await resp.json().catch(() => ({}));
+            alert(erro.detail || 'Não foi possível editar os dados.');
+            return;
+        }
+        await window.carregarAdminColaboradores();
+    } catch (e) {
+        console.error('⚠️ Erro ao editar colaborador:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+};
+
+// 🆕 Cadastro de colaborador novo direto pela tela (ver modal
+// #modal-novo-colaborador em app.html) — antes só dava rodando script
+// no servidor (importar_colaboradores.py).
+window.abrirModalNovoColaborador = function() {
+    if (!verificarAcesso()) return;
+    document.getElementById('novo-colab-matricula').value = '';
+    document.getElementById('novo-colab-nome').value = '';
+    document.getElementById('novo-colab-cargo').value = '';
+    if (typeof popularSelectAreaOficina === 'function') popularSelectAreaOficina('novo-colab-area');
+    document.getElementById('modal-novo-colaborador')?.classList.remove('hidden');
+};
+
+window.confirmarNovoColaborador = async function() {
+    const matricula = document.getElementById('novo-colab-matricula')?.value.trim();
+    const nome = document.getElementById('novo-colab-nome')?.value.trim();
+    const cargo = document.getElementById('novo-colab-cargo')?.value.trim();
+    const area = document.getElementById('novo-colab-area')?.value || null;
+
+    if (!matricula || !nome) return alert('Matrícula e nome são obrigatórios.');
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/colaboradores/criar`, {
+            method: 'POST',
+            headers: headersAdmin(),
+            body: JSON.stringify({ matricula, nome, cargo: cargo || null, area })
+        });
+        if (!resp.ok) {
+            const erro = await resp.json().catch(() => ({}));
+            alert(erro.detail || 'Não foi possível cadastrar o colaborador.');
+            return;
+        }
+        document.getElementById('modal-novo-colaborador')?.classList.add('hidden');
+        alert(`✅ ${nome} cadastrado(a). Senha temporária: a própria matrícula.`);
+        await window.carregarAdminColaboradores();
+    } catch (e) {
+        console.error('⚠️ Erro ao cadastrar colaborador:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+};
+
+// 🆕 "Eventos de cada funcionário separado" — reaproveita a mesma rota
+// do Prontuário das peças (GET /api/historico_eventos?peca_id=X),
+// passando a MATRÍCULA como peca_id (ver _registrar_evento_colaborador
+// no backend, que grava toda ação admin com esse mesmo peca_id).
+window.abrirEventosColaborador = async function(matricula, nome) {
+    const titulo = document.getElementById('eventos-colab-titulo');
+    const lista = document.getElementById('eventos-colab-lista');
+    if (titulo) titulo.textContent = `${nome} (${matricula})`;
+    if (lista) lista.innerHTML = '<div class="text-muted" style="padding:12px 0;">Carregando...</div>';
+    document.getElementById('modal-eventos-colaborador')?.classList.remove('hidden');
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/historico_eventos?peca_id=${encodeURIComponent(matricula)}&limite=200`, { cache: 'no-store' });
+        const eventos = resp.ok ? await resp.json() : [];
+        if (!lista) return;
+        lista.innerHTML = eventos.length
+            ? eventos.map(e => `
+                <div style="padding:8px 0; border-bottom:1px solid var(--border);">
+                    <div class="text-muted font-code" style="font-size:11px;">${e.data_hora || '—'} · ${e.operador || 'Sistema'}</div>
+                    <div style="margin-top:2px; font-size:13px;">${e.acao || ''}</div>
+                </div>`).join('')
+            : '<div class="text-muted" style="padding:12px 0;">Nenhum evento registrado ainda pra este colaborador.</div>';
+    } catch (e) {
+        console.error('⚠️ Erro ao carregar eventos do colaborador:', e);
+        if (lista) lista.innerHTML = '<div class="text-muted" style="padding:12px 0;">Não consegui carregar os eventos.</div>';
+    }
+};
+
+// 🆕 Exporta a lista atual (já filtrada/buscada na tela) como CSV — pra
+// RH/gestão cobrar quem não usa o sistema, sem precisar pedir query
+// direto no banco.
+window.exportarColaboradoresCsv = function() {
+    if (!ADMIN_COLABORADORES_CACHE.length) return alert('Nada pra exportar ainda — carregue a lista primeiro.');
+    const linhas = [['Matricula', 'Nome', 'Cargo', 'Conta', 'Primeiro Acesso Pendente', 'Ultimo Acesso'].join(';')];
+    ADMIN_COLABORADORES_CACHE.forEach(c => {
+        linhas.push([
+            c.matricula,
+            (c.nome || '').replace(/;/g, ','),
+            (c.cargo || '').replace(/;/g, ','),
+            c.ativo ? 'Habilitada' : 'Bloqueado',
+            c.primeiro_acesso ? 'Sim' : 'Não',
+            c.ultimo_acesso || 'Nunca acessou'
+        ].join(';'));
+    });
+    const blob = new Blob([linhas.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `colaboradores_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
 };
 
 // ==========================================
