@@ -545,9 +545,9 @@ async function preencherFolhaoR1ComChecklistExecucao(id) {
             'r1-tipo-execucao', 'r1-data-inicio', 'r1-data-fim', 'r1-veio'
         ]);
 
-        const { preenchidos, naoEncontrados } = preencherCamposFolhao(ponte.valores, camposProtegidos);
+        const { preenchidos, naoEncontrados, camposNaoEncontrados } = preencherCamposFolhao(ponte.valores, camposProtegidos);
         if (preenchidos > 0 || naoEncontrados > 0) {
-            mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados);
+            mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados, camposNaoEncontrados);
         }
     } catch (e) {
         console.error('⚠️ Não consegui puxar os valores do Checklist de Execução pro folhão (Straightener R1):', e);
