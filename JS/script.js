@@ -7658,6 +7658,21 @@ window.mostrarAvisoNotificacaoGenerica = function(item) {
     setTimeout(() => toast.remove(), 5000);
 };
 
+// 🆕 Aviso-resumo pra quem loga (ou volta) com notificação represada —
+// clicar leva direto pra Central de Notificações, em vez de detalhar
+// item por item (isso o badge + a própria Central já fazem).
+window.mostrarAvisoResumoNotificacoesPendentes = function(quantidade) {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'padding:12px 14px; border-radius:10px; font-size:13px; background:var(--bg-card, #1a1a1a); color:var(--text-heading); border:1px solid var(--text-accent); box-shadow:0 10px 30px rgba(0,0,0,0.4); animation:fadeInModal 0.25s ease-out; pointer-events:auto; cursor:pointer;';
+    toast.innerHTML = `<i class="fas fa-bell"></i> Você tem <strong>${quantidade}</strong> notificaç${quantidade === 1 ? 'ão' : 'ões'} não vista${quantidade === 1 ? '' : 's'} — toque pra ver`;
+    toast.onclick = () => {
+        toast.remove();
+        document.getElementById('nav-notificacoes')?.click();
+    };
+    obterContainerToastsAvisos().appendChild(toast);
+    setTimeout(() => toast.remove(), 5000);
+};
+
 // 🆕 Poller GLOBAL da Central de Notificações (mesmo espírito do
 // iniciarNotificacaoGlobalChat) — roda em qualquer aba, iniciado no
 // login. Compara os ids do feed a cada ciclo com os já vistos NESTA
@@ -7687,6 +7702,18 @@ window.iniciarNotificacaoGlobalFeed = function() {
 
             if (NOTIF_GLOBAL_FEED_IDS_CONHECIDOS === null) {
                 NOTIF_GLOBAL_FEED_IDS_CONHECIDOS = idsAtuais;
+                // 🔧 CORREÇÃO ("só foi conferir depois" — o toast normal só
+                // avisa de eventos que chegam DEPOIS do login, de propósito,
+                // pra não enfiar uma enxurrada de toast de coisa velha na
+                // cara de quem loga depois de um tempo fora. Mas isso
+                // deixava quem chegou atrasado sem NENHUM sinal, mesmo
+                // tendo coisa esperando — mostra 1 aviso-resumo (não um por
+                // item) na 1ª checagem, se tiver algo não lido.
+                const naoLidasNaPrimeiraChecagem = feedDoOperador.filter(i => !i.lida).length;
+                const dentroDaCentralAgora = document.getElementById('aba-notificacoes')?.classList.contains('active');
+                if (naoLidasNaPrimeiraChecagem > 0 && !dentroDaCentralAgora) {
+                    window.mostrarAvisoResumoNotificacoesPendentes(naoLidasNaPrimeiraChecagem);
+                }
             } else {
                 const novos = feedDoOperador.filter(i => !NOTIF_GLOBAL_FEED_IDS_CONHECIDOS.has(`${i.tipo}:${i.evento_id}`));
                 NOTIF_GLOBAL_FEED_IDS_CONHECIDOS = idsAtuais;
