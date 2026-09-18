@@ -4446,6 +4446,10 @@ window.filtrarAdminColaboradores = function() {
                 <button class="${c.ativo ? 'btn-outline-danger' : 'btn-premium btn-success'}" style="padding:4px 10px; font-size:11px;" onclick="window.alternarAtivoColaborador('${c.matricula}', ${!c.ativo}, '${c.nome.replace(/'/g, "\\'")}')" title="${c.ativo ? 'Desativar acesso' : 'Reativar acesso'}">
                     <i class="fas ${c.ativo ? 'fa-user-slash' : 'fa-user-check'}"></i>
                 </button>
+                ${c.ativo ? `
+                <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.forcarLogoutColaborador('${c.matricula}', '${c.nome.replace(/'/g, "\\'")}')" title="Forçar logout (sem bloquear a conta)">
+                    <i class="fas fa-right-from-bracket"></i>
+                </button>` : ''}
             </td>
         </tr>
     `).join('');
@@ -4527,6 +4531,35 @@ window.resetarSenhaColaborador = async function(matricula, nome) {
         await window.carregarAdminColaboradores();
     } catch (e) {
         console.error('⚠️ Erro ao resetar senha:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+};
+
+// 🆕 Forçar logout remoto SEM bloquear a conta — pra token suspeito de
+// vazado, celular perdido/roubado, ou garantir que um dispositivo
+// antigo caiu depois de trocar de aparelho. Diferente de bloquear
+// (que já mata a sessão E impede logar de novo), aqui a pessoa
+// consegue logar de novo na mesma hora.
+window.forcarLogoutColaborador = async function(matricula, nome) {
+    if (!verificarAcesso()) return;
+    if (!confirm(`Forçar logout de ${nome} (${matricula})?\n\nQualquer sessão aberta dela em qualquer dispositivo é encerrada agora. A conta continua habilitada — ela pode logar de novo na hora.`)) return;
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/colaboradores/forcar_logout`, {
+            method: 'POST',
+            headers: headersAdmin(),
+            body: JSON.stringify({ matricula })
+        });
+        if (!resp.ok) {
+            const erro = await resp.json().catch(() => ({}));
+            alert(erro.detail || 'Não foi possível forçar o logout.');
+            return;
+        }
+        alert(`✅ Sessão de ${nome} encerrada.`);
+        await window.carregarAdminColaboradores();
+    } catch (e) {
+        console.error('⚠️ Erro ao forçar logout:', e);
         alert('Não foi possível conectar ao servidor.');
     }
 };
