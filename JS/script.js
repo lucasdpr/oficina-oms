@@ -753,6 +753,12 @@ async function entrarComoVisitante(nomeDigitado) {
     if (typeof renderRolos === 'function') executarSeguro(() => renderRolos(), 'renderRolos');
     if (typeof carregarMateriaisDoBackend === 'function') executarSeguro(() => carregarMateriaisDoBackend(), 'carregarMateriaisDoBackend');
     if (typeof atualizarPainelCompleto === 'function') executarSeguro(() => atualizarPainelCompleto(), 'atualizarPainelCompleto');
+
+    // 🆕 Login cai direto na aba "Painel Geral" (classe "active" já vem
+    // assim no HTML) sem passar por window.abrirAba — sem isto aqui, o
+    // auto-refresh só ligaria na primeira troca de aba manual.
+    const abaAtiva = document.querySelector('.tab-content.active');
+    if (abaAtiva && typeof window.iniciarAutoRefreshAba === 'function') window.iniciarAutoRefreshAba(abaAtiva.id);
 }
 
 export function verificarAcesso() {
@@ -9588,6 +9594,10 @@ window.abrirAba = function(event, idAba) {
         abaDestino.style.display = "block";
     }
 
+    // 🆕 Auto-refresh da aba (ver REFRESH_POR_ABA acima) — desarma o
+    // timer da aba anterior e liga o da nova, se ela tiver um mapeado.
+    if (typeof window.iniciarAutoRefreshAba === 'function') window.iniciarAutoRefreshAba(idAba);
+
     // 🔧 CORREÇÃO ("mobile não troca de aba, acontece com QUALQUER item"
     // — usuário confirmou que não é lógica de uma aba específica):
     // nada aqui resetava a posição de rolagem ao trocar de aba. .main-
@@ -11061,6 +11071,54 @@ window.pararPollingCentralNotificacoes = function() {
         clearInterval(TIMER_POLLING_NOTIFICACOES);
         TIMER_POLLING_NOTIFICACOES = null;
     }
+};
+
+// 🆕 CORREÇÃO ("mando mensagem e fico na tela, só chega se eu sair e
+// voltar" — depois confirmado pelo usuário que o mesmo problema vale
+// pra qualquer aba, não só o Chat): até aqui, cada aba só recarregava
+// os dados dela quando a pessoa clicava pra abri-la — sair e voltar era
+// o único "refresh" que existia. Registro único de auto-refresh por
+// aba, plugado em window.abrirAba (o trocador de aba central do app):
+// ao entrar numa aba com refresh conhecido, dispara um setInterval que
+// chama a MESMA função que já roda ao abrir a aba; ao sair da aba (ou
+// abrir outra), o timer da aba anterior é desarmado. Só cobre abas cuja
+// função de recarregar é uma lista/painel somente-leitura (idempotente
+// re-renderizar) — abas de formulário (cadastro, lançamento) não têm
+// entrada aqui de propósito, pra não apagar o que a pessoa tá digitando
+// no meio de um polling.
+const INTERVALO_AUTO_REFRESH_ABA_MS = 15000;
+const REFRESH_POR_ABA = {
+    'aba-painel': () => atualizarPainelCompleto(),
+    'aba-painel-supervisor': () => atualizarPainelCompleto(),
+    'aba-tecnico': () => window.carregarAtividadesPainelTecnico(),
+    'aba-oficina': () => window.carregarOficina(),
+    'aba-reparos': () => window.carregarReparosAndamento(),
+    'aba-ordens-servico': () => window.carregarListaOrdensServico(),
+    'aba-qualidade': () => window.carregarListaQualidade(),
+    'aba-notificacoes': () => window.carregarCentralNotificacoes(),
+    'aba-chats': () => window.chatsCarregarMensagens(), // no-op sozinho se nenhuma conversa estiver aberta
+};
+let TIMER_AUTO_REFRESH_ABA = null;
+
+window.pararAutoRefreshAba = function() {
+    if (TIMER_AUTO_REFRESH_ABA) {
+        clearInterval(TIMER_AUTO_REFRESH_ABA);
+        TIMER_AUTO_REFRESH_ABA = null;
+    }
+};
+
+window.iniciarAutoRefreshAba = function(idAba) {
+    window.pararAutoRefreshAba();
+    const refresh = REFRESH_POR_ABA[idAba];
+    if (!refresh) return; // aba sem refresh automático mapeado
+    TIMER_AUTO_REFRESH_ABA = setInterval(() => {
+        const aba = document.getElementById(idAba);
+        if (!aba || !aba.classList.contains('active')) {
+            window.pararAutoRefreshAba();
+            return;
+        }
+        executarSeguro(refresh, `auto-refresh ${idAba}`);
+    }, INTERVALO_AUTO_REFRESH_ABA_MS);
 };
 
 // 🆕 Feed unificado (evento de Auditoria + OS em aberto + achado de
