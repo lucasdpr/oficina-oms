@@ -5715,7 +5715,7 @@ window.abrirDetalheSupervisorPorIndice = function(idx) {
                     <strong style="color:var(--text-heading);">${os.numero_os ? `OS ${os.numero_os}` : `#${os.id}`}</strong>
                     <span class="text-muted">${os.status || '—'}</span>
                 </div>
-                <div class="text-muted" style="font-size:11.5px;">${os.criado_por || 'Sistema'} · ${os.criado_em || ''}${os.area ? ` · ${os.area}` : ''}</div>
+                <div class="text-muted" style="font-size:11.5px;">${os.criado_por || 'Sistema'} · ${os.criado_em || ''}${(os.areas && os.areas.length) ? ` · ${os.areas.join(', ')}` : (os.area ? ` · ${os.area}` : '')}</div>
                 ${os.descricao ? `<div style="font-size:12.5px; margin-top:4px; color:var(--text-body);">${os.descricao}</div>` : ''}
             </div>
         `).join('');
@@ -7618,6 +7618,7 @@ window.abrirAreaOficina = async function(chave, abaInicial) {
     if (textoBtn) textoBtn.textContent = 'Nova Atividade';
 
     OFICINA_AREA_ATUAL = chave;
+    if (typeof window.carregarOsDaArea === 'function') window.carregarOsDaArea();
     if (typeof window.atualizarBadgeChatAreaAdm === 'function') window.atualizarBadgeChatAreaAdm();
     OFICINA_FILTRO_STATUS_ATUAL = '';
     OFICINA_TIPO_ATIVIDADE_ATUAL = 'equipamento';
@@ -7732,6 +7733,52 @@ window.filtrarAtividadesArea = function(status, botaoClicado) {
 // --------------------------------------------------------------
 // RENDERIZA A LISTA DE ATIVIDADES DA ÁREA ABERTA (usa o cache local)
 // --------------------------------------------------------------
+// 🆕 OS marcadas com a área atual (pedido do usuário: uma OS pode
+// envolver várias áreas, e cada uma marcada deve VER a OS no próprio
+// quadro de trabalho — a peça continua fisicamente na máquina, isto
+// aqui só dá visibilidade de que existe uma OS em aberto envolvendo
+// esta área). Só traz "Em Andamento" — Concluída/Não Executada some
+// do quadro sozinha, igual atividade concluída some da lista "ativas"
+// em renderizarAtividadesArea.
+let OS_DA_AREA_CACHE = [];
+
+window.carregarOsDaArea = async function() {
+    if (!OFICINA_AREA_ATUAL) return;
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/ordens_servico?area=${encodeURIComponent(OFICINA_AREA_ATUAL)}&status=${encodeURIComponent('Em Andamento')}&limite=50`, { cache: 'no-store' });
+        OS_DA_AREA_CACHE = resp.ok ? await resp.json() : [];
+    } catch (e) {
+        console.error('⚠️ Erro ao carregar OS da área:', e);
+        OS_DA_AREA_CACHE = [];
+    }
+    renderizarOsDaArea();
+};
+
+function renderizarOsDaArea() {
+    const container = document.getElementById('area-oficina-os-container');
+    if (!container) return;
+    if (!OS_DA_AREA_CACHE.length) { container.innerHTML = ''; return; }
+
+    container.innerHTML = `
+        <h4 style="font-size:12px; color:var(--text-accent); text-transform:uppercase; letter-spacing:0.5px; margin:0 0 8px;">
+            <i class="fas fa-file-invoice"></i> OS envolvendo esta área (${OS_DA_AREA_CACHE.length})
+        </h4>
+        ${OS_DA_AREA_CACHE.map(os => `
+            <div class="atividade-card" style="--card-accent:var(--warning, #f59e0b); cursor:pointer;" onclick="window.irParaOsEspecifica('${os.numero_os || ('#' + os.id)}')">
+                <div style="flex:1; min-width:0;">
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
+                        <span class="font-code" style="font-weight:700; color:var(--text-heading);">${os.numero_os ? `OS ${os.numero_os}` : `OS #${os.id}`}</span>
+                        ${os.maquina ? `<span class="ind-card-tag bg-tag">${os.maquina}</span>` : ''}
+                    </div>
+                    <div style="font-size:13px; color:var(--text-body);">${os.descricao || '(sem descrição)'}</div>
+                    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">${os.criado_por ? `${os.criado_por} · ` : ''}${os.criado_em || ''}</div>
+                </div>
+            </div>
+        `).join('')}
+    `;
+}
+
 function renderizarAtividadesArea() {
     const container = document.getElementById('area-oficina-lista');
     if (!container || !OFICINA_AREA_ATUAL) return;
@@ -9912,7 +9959,7 @@ window.abrirAba = function(event, idAba) {
             if (typeof carregarCatalogoMateriaisOficina === 'function') carregarCatalogoMateriaisOficina();
         }
         if (idAba === "aba-ordens-servico" && typeof window.carregarListaOrdensServico === 'function') {
-            popularSelectAreaOficina("os-area");
+            window.popularCheckboxAreasOs();
             window.carregarListaOrdensServico();
         }
         if (idAba === "aba-painel-supervisor" && typeof window.renderPainelSupervisor === 'function') window.renderPainelSupervisor();
@@ -11011,12 +11058,34 @@ window.atualizarStatusMaquinas = async function() {
     }
 };
 
+// 🆕 Checkboxes de área da OS (mesmo padrão de "Programar Atividade em
+// Massa") — uma OS pode envolver várias áreas ao mesmo tempo, e cada
+// uma marcada faz a OS aparecer no quadro de trabalho DAQUELA área
+// (ver renderizarAtividadesArea).
+window.popularCheckboxAreasOs = function() {
+    const areasOficina = (typeof AREAS_OFICINA !== 'undefined' ? AREAS_OFICINA : []).filter(a => a.tipo === 'oficina');
+    const lista = document.getElementById('os-lista-areas');
+    if (!lista) return;
+    lista.innerHTML = areasOficina.map(a => `
+        <label style="display:flex; align-items:center; gap:8px; padding:6px 2px; cursor:pointer;">
+            <input type="checkbox" class="os-area-checkbox" value="${a.chave}">
+            <span>${a.nome}</span>
+        </label>
+    `).join('');
+    const todasEl = document.getElementById('os-todas-areas');
+    if (todasEl) todasEl.checked = false;
+};
+
+window.alternarTodasAreasOs = function(marcado) {
+    document.querySelectorAll('.os-area-checkbox').forEach(cb => { cb.checked = marcado; });
+};
+
 window.confirmarOrdemServico = async function() {
     if (!verificarAcesso()) return;
 
     const numero = document.getElementById('os-numero')?.value.trim();
     const descricao = document.getElementById('os-descricao')?.value.trim();
-    const area = document.getElementById('os-area')?.value || null;
+    const areas = Array.from(document.querySelectorAll('.os-area-checkbox:checked')).map(cb => cb.value);
     const maquina = document.getElementById('os-maquina')?.value || null;
 
     if (FOTOS_OS_BASE64.length === 0) return alert('Tire ou anexe pelo menos 1 foto da OS antes de registrar.');
@@ -11033,7 +11102,7 @@ window.confirmarOrdemServico = async function() {
                 descricao: descricao || null,
                 fotos_base64: FOTOS_OS_BASE64,
                 operador,
-                area,
+                areas,
                 maquina
             })
         }, `OS ${numero || '(sem número)'}`);
@@ -11042,6 +11111,7 @@ window.confirmarOrdemServico = async function() {
             document.getElementById('os-numero').value = '';
             document.getElementById('os-descricao').value = '';
             window.removerFotoOs();
+            window.popularCheckboxAreasOs();
             alert('📴 Sem internet agora — a OS foi guardada e será enviada sozinha assim que a conexão voltar.');
             return;
         }
@@ -11055,6 +11125,7 @@ window.confirmarOrdemServico = async function() {
         document.getElementById('os-numero').value = '';
         document.getElementById('os-descricao').value = '';
         window.removerFotoOs();
+        window.popularCheckboxAreasOs();
         alert('✅ OS registrada com sucesso.');
         await window.carregarListaOrdensServico();
         executarSeguro(() => window.atualizarStatusMaquinas(), 'atualizarStatusMaquinas');
@@ -11157,7 +11228,7 @@ window.renderizarListaOrdensServico = function() {
                     </div>
                 ` : ''}
                 <div style="font-size:11px; color:var(--text-accent);">
-                    ${os.criado_por || 'Sistema'} · ${os.criado_em || ''}${os.area ? ` · ${nomeAreaOficina(os.area)}` : ''}
+                    ${os.criado_por || 'Sistema'} · ${os.criado_em || ''}${(os.areas && os.areas.length) ? ` · ${os.areas.map(nomeAreaOficina).join(', ')}` : (os.area ? ` · ${nomeAreaOficina(os.area)}` : '')}
                     ${concluida && os.concluido_por ? `<br>Concluída por ${os.concluido_por} · ${os.concluido_em || ''}` : ''}
                     ${naoExecutada && os.encerrado_por ? `<br>Encerrada por ${os.encerrado_por} · ${os.encerrado_em || ''}` : ''}
                 </div>
@@ -11385,6 +11456,7 @@ const REFRESH_POR_ABA = {
     'aba-notificacoes': () => window.carregarCentralNotificacoes(),
     'aba-chats': () => window.chatsCarregarMensagens(), // no-op sozinho se nenhuma conversa estiver aberta
     'aba-admin-colaboradores': () => window.carregarAdminColaboradores(), // mantém "Online agora"/"Offline há Xh" atualizando sozinho
+    'aba-area-oficina': () => { window.carregarOficina(); window.carregarOsDaArea(); }, // quadro da área (atividades + OS envolvendo ela)
 };
 let TIMER_AUTO_REFRESH_ABA = null;
 
@@ -11627,7 +11699,7 @@ window.irParaOsEspecifica = async function(termoBusca) {
     window.abrirAba(null, 'aba-ordens-servico');
     document.getElementById('nav-ordens-servico')?.classList.add('active');
     document.getElementById('nav-notificacoes')?.classList.remove('active');
-    popularSelectAreaOficina('os-area');
+    window.popularCheckboxAreasOs();
     await window.carregarListaOrdensServico();
     const input = document.getElementById('os-busca');
     if (input) input.value = termoBusca || '';

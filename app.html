@@ -1833,14 +1833,6 @@
                             <input type="text" id="os-numero" class="premium-input" placeholder="Ex: 12345" style="width:100%;">
                         </div>
                         <div class="input-group">
-                            <!-- 🆕 Opcional — dá contexto de área pra Central de
-                                 Notificações conseguir agrupar por área de verdade. -->
-                            <label>Área (opcional)</label>
-                            <select id="os-area" class="premium-select" style="width:100%;">
-                                <option value="">Não informar</option>
-                            </select>
-                        </div>
-                        <div class="input-group">
                             <!-- 🆕 Enquanto essa OS estiver "Em Andamento", a MCC
                                  selecionada aparece como "Manutenção" no card
                                  "Sistema Online" do Painel Geral (ela para de
@@ -1857,6 +1849,24 @@
                             <label>Descrição (opcional)</label>
                             <textarea id="os-descricao" class="premium-textarea" rows="1" placeholder="Ex: Troca de rolamento no Bender..."></textarea>
                         </div>
+                    </div>
+
+                    <div class="input-group" style="margin-bottom:16px;">
+                        <!-- 🆕 Uma OS pode envolver várias áreas ao mesmo tempo
+                             (pedido do usuário) — cada área marcada aqui faz a
+                             OS aparecer no quadro de trabalho DAQUELA área
+                             (Central de Áreas → área do técnico), sem "ficar"
+                             presa só na Oficina genérica (ver
+                             renderizarAtividadesArea, que mescla OS junto com
+                             as atividades normais). Mesmo padrão de checkbox
+                             já usado em "Programar Atividade em Massa". -->
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <label style="margin:0;">Áreas envolvidas (opcional)</label>
+                            <label style="font-size:12px; font-weight:400; color:var(--text-accent); cursor:pointer; display:flex; align-items:center; gap:6px;">
+                                <input type="checkbox" id="os-todas-areas" onchange="window.alternarTodasAreasOs(this.checked)"> Selecionar todas
+                            </label>
+                        </div>
+                        <div id="os-lista-areas" style="max-height:180px; overflow-y:auto; border:1px solid var(--border-color); border-radius:var(--radius-sm,8px); padding:10px;"></div>
                     </div>
 
                     <div class="input-group" style="margin-bottom:16px;">
@@ -2032,6 +2042,14 @@
             <div style="padding:14px 18px 18px;">
 
             <div id="area-oficina-secao-atividades" class="folhao-content">
+                <!-- 🆕 OS marcadas com esta área (pedido do usuário: uma OS
+                     pode envolver várias áreas, e cada uma deve VER a OS
+                     no próprio quadro — a peça continua na máquina, não
+                     "na Oficina", só a OS aparece aqui pra dar visibilidade
+                     de que tem trabalho envolvendo esta área). Ver
+                     window.carregarOsDaArea / renderizarOsDaArea. -->
+                <div id="area-oficina-os-container" style="margin-bottom:16px;"></div>
+
                 <div class="mcc-filter-group" id="area-oficina-filtros" style="margin-bottom:16px;">
                     <button class="btn-filter-mcc active" data-status="" onclick="window.filtrarAtividadesArea('', this)">Todas</button>
                     <button class="btn-filter-mcc" data-status="Pendente" onclick="window.filtrarAtividadesArea('Pendente', this)">⏳ Pendente</button>
