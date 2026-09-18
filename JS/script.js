@@ -10054,7 +10054,16 @@ window.processarProducaoDiaria = async function() {
     let pecasAtualizadas = 0;
     for (let i = 0; i < BANCO_ATIVOS.length; i++) {
         let p = BANCO_ATIVOS[i];
-        if (p.status === "Instalado" && p.tipo && !p.tipo.toUpperCase().includes("MOLDE")) {
+        // 🔧 CORREÇÃO ("osciladores contabilizando tonelagem"): Oscilador e
+        // Mesa Osciladora reaproveitam o campo `ton` pra guardar DIAS de
+        // vida (não toneladas — ver rotuloDesgaste, comentário mais acima
+        // neste arquivo), então precisam ficar de fora do incremento de
+        // produção igual Molde já fica. Sem este filtro, cada lançamento
+        // somava tonelagem lingotada em cima do que devia ser uma
+        // contagem de dias, inflando o desgaste desses itens à toa — a
+        // contagem de dias de verdade já é calculada à parte, a partir de
+        // dataEntradaVeio (calcularDias), e não é afetada por isto aqui.
+        if (p.status === "Instalado" && p.tipo && !p.tipo.toUpperCase().includes("MOLDE") && p.tipo !== "Oscilador" && p.tipo !== "Mesa Osciladora") {
             let sofreuDesgaste = false;
             if ((p.local.includes("Veio C") || p.local.includes("Veio D")) && prodMcc2 > 0) { p.ton = (p.ton || 0) + prodMcc2; sofreuDesgaste = true; }
             else if ((p.local.includes("Veio E") || p.local.includes("Veio F")) && prodMcc3 > 0) { p.ton = (p.ton || 0) + prodMcc3; sofreuDesgaste = true; }
