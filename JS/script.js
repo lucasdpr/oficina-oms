@@ -639,6 +639,7 @@ async function finalizarLogin(nome, cargo, matricula, area, isAdm, token) {
     };
     localStorage.setItem("oms_operador_v32_local", JSON.stringify(OPERADOR_LOGADO));
     setOperadorBanco(OPERADOR_LOGADO); // 🔧 mantém a cópia do banco.js sincronizada (ver comentário em window.setOperadorLogado)
+    if (typeof window.iniciarHeartbeatColaborador === 'function') window.iniciarHeartbeatColaborador();
 
     document.getElementById("tela-login-home").style.display = "none";
     document.getElementById("container-sistema-oms").style.display = "flex";
@@ -4357,11 +4358,11 @@ window.carregarAdminColaboradores = async function() {
     const matricula = (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula || "").toUpperCase();
     console.log('🔎 [DIAGNÓSTICO] matrícula logada:', matricula, '| autorizada?', MATRICULAS_TESTE_FOLHOES.includes(matricula));
     if (!MATRICULAS_TESTE_FOLHOES.includes(matricula)) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Acesso restrito.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Acesso restrito.</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Carregando...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Carregando...</td></tr>`;
 
     try {
         const apiBase = await resolverApiBase();
@@ -4373,7 +4374,7 @@ window.carregarAdminColaboradores = async function() {
     } catch (e) {
         console.error('🔎 [DIAGNÓSTICO] ERRO ao carregar a lista de colaboradores:', e);
         ADMIN_COLABORADORES_CACHE = [];
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Não foi possível carregar. Verifique sua internet.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Não foi possível carregar. Verifique sua internet.</td></tr>`;
         return;
     }
 
@@ -4395,7 +4396,7 @@ window.filtrarAdminColaboradores = function() {
     }
 
     if (lista.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nenhum colaborador encontrado.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Nenhum colaborador encontrado.</td></tr>`;
         return;
     }
 
@@ -4406,10 +4407,11 @@ window.filtrarAdminColaboradores = function() {
             <td>${c.cargo || '-'}</td>
             <td>
                 ${c.ativo
-                    ? '<span style="color:var(--success); font-weight:700;">🟢 Ativo</span>'
-                    : '<span style="color:var(--danger); font-weight:700;">🔴 Inativo</span>'}
+                    ? '<span style="color:var(--success); font-weight:700;">🟢 Conta habilitada</span>'
+                    : '<span style="color:var(--danger); font-weight:700;">🔴 Bloqueado</span>'}
                 ${c.primeiro_acesso ? '<br><small class="text-muted">Primeiro acesso pendente</small>' : ''}
             </td>
+            <td>${window.formatarPresencaColaborador(c.ultimo_acesso)}</td>
             <td style="white-space:nowrap;">
                 <button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.mudarCargoColaborador('${c.matricula}', '${(c.cargo || '').replace(/'/g, "\\'")}')" title="Trocar cargo">
                     <i class="fas fa-id-badge"></i>
@@ -4423,6 +4425,37 @@ window.filtrarAdminColaboradores = function() {
             </td>
         </tr>
     `).join('');
+};
+
+// 🆕 Presença real (pedido do usuário: "Ativo" hoje é só a conta estar
+// habilitada — não diz se a pessoa está DE VERDADE dentro do app agora).
+// ultimo_acesso é atualizado no login e a cada heartbeat (ver
+// iniciarHeartbeatColaborador) — dentro da janela = Online; fora,
+// mostra há quanto tempo ficou offline. Sem heartbeat vivo há mais de
+// ONLINE_JANELA_MS, mesmo com a aba aberta, cai pra "offline" sozinho
+// (ex: perdeu internet, fechou o app sem logout).
+const ONLINE_JANELA_MS = 2 * 60 * 1000; // 2x o intervalo do heartbeat (60s)
+
+window.formatarPresencaColaborador = function(ultimoAcessoStr) {
+    if (!ultimoAcessoStr) return '<span class="text-muted">Nunca acessou</span>';
+    const ultimoAcesso = new Date(ultimoAcessoStr.replace(' ', 'T'));
+    if (isNaN(ultimoAcesso.getTime())) return '<span class="text-muted">—</span>';
+
+    const diffMs = Date.now() - ultimoAcesso.getTime();
+    if (diffMs <= ONLINE_JANELA_MS) {
+        return '<span style="color:var(--success); font-weight:700;">🟢 Online agora</span>';
+    }
+
+    const diffMin = Math.floor(diffMs / 60000);
+    const dias = Math.floor(diffMin / 1440);
+    const horas = Math.floor((diffMin % 1440) / 60);
+    const minutos = diffMin % 60;
+    let tempo;
+    if (dias > 0) tempo = `${dias}d ${horas}h`;
+    else if (horas > 0) tempo = `${horas}h ${minutos}min`;
+    else tempo = `${minutos}min`;
+
+    return `<span class="text-muted">⚪ Offline há ${tempo}</span>`;
 };
 
 window.mudarCargoColaborador = async function(matricula, cargoAtual) {
@@ -11100,6 +11133,39 @@ window.pararPollingCentralNotificacoes = function() {
     }
 };
 
+// 🆕 PRESENÇA REAL DO COLABORADOR — heartbeat periódico enquanto o app
+// está aberto e logado (com matrícula real, visitante fica de fora).
+// Mesmo padrão de polling autodesarmável já usado no resto do arquivo:
+// se OPERADOR_LOGADO sumir (logout recarrega a página, então isso é
+// mais defensivo que necessário), o próprio timer se desliga.
+const INTERVALO_HEARTBEAT_COLABORADOR_MS = 60000;
+let TIMER_HEARTBEAT_COLABORADOR = null;
+
+window.iniciarHeartbeatColaborador = function() {
+    if (!OPERADOR_LOGADO || !OPERADOR_LOGADO.matricula) return; // visitante não tem matrícula pra reportar
+    window.pararHeartbeatColaborador();
+
+    const enviarHeartbeat = () => executarSeguroAsync(async () => {
+        if (!OPERADOR_LOGADO || !OPERADOR_LOGADO.matricula) { window.pararHeartbeatColaborador(); return; }
+        const apiBase = await resolverApiBase();
+        await fetch(`${apiBase}/api/colaboradores/heartbeat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ matricula: OPERADOR_LOGADO.matricula })
+        });
+    }, 'heartbeatColaborador');
+
+    enviarHeartbeat(); // primeiro sinal na hora, sem esperar o 1º intervalo
+    TIMER_HEARTBEAT_COLABORADOR = setInterval(enviarHeartbeat, INTERVALO_HEARTBEAT_COLABORADOR_MS);
+};
+
+window.pararHeartbeatColaborador = function() {
+    if (TIMER_HEARTBEAT_COLABORADOR) {
+        clearInterval(TIMER_HEARTBEAT_COLABORADOR);
+        TIMER_HEARTBEAT_COLABORADOR = null;
+    }
+};
+
 // 🆕 CORREÇÃO ("mando mensagem e fico na tela, só chega se eu sair e
 // voltar" — depois confirmado pelo usuário que o mesmo problema vale
 // pra qualquer aba, não só o Chat): até aqui, cada aba só recarregava
@@ -11124,6 +11190,7 @@ const REFRESH_POR_ABA = {
     'aba-qualidade': () => window.carregarListaQualidade(),
     'aba-notificacoes': () => window.carregarCentralNotificacoes(),
     'aba-chats': () => window.chatsCarregarMensagens(), // no-op sozinho se nenhuma conversa estiver aberta
+    'aba-admin-colaboradores': () => window.carregarAdminColaboradores(), // mantém "Online agora"/"Offline há Xh" atualizando sozinho
 };
 let TIMER_AUTO_REFRESH_ABA = null;
 
