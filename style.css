@@ -1387,6 +1387,12 @@ h1, h2, h3, h4, h5, h6 {
   flex-shrink: 0;
   white-space: nowrap;
 }
+/* 🆕 Selo "Manutenção" — máquina com uma OS "Em Andamento" vinculada
+   (ver window.atualizarStatusMaquinas em JS/script.js). */
+.painel-hero-status-selo.status-manutencao {
+  color: var(--warning);
+  background: var(--warning-bg, rgba(245, 158, 11, 0.15));
+}
 @media (max-width: 768px) {
   .painel-hero {
     padding: 20px;

@@ -639,6 +639,7 @@ async function finalizarLogin(nome, cargo, matricula, area, isAdm, token) {
     };
     localStorage.setItem("oms_operador_v32_local", JSON.stringify(OPERADOR_LOGADO));
     setOperadorBanco(OPERADOR_LOGADO); // 🔧 mantém a cópia do banco.js sincronizada (ver comentário em window.setOperadorLogado)
+    if (typeof window.iniciarHeartbeatColaborador === 'function') window.iniciarHeartbeatColaborador();
 
     document.getElementById("tela-login-home").style.display = "none";
     document.getElementById("container-sistema-oms").style.display = "flex";
@@ -753,6 +754,12 @@ async function entrarComoVisitante(nomeDigitado) {
     if (typeof renderRolos === 'function') executarSeguro(() => renderRolos(), 'renderRolos');
     if (typeof carregarMateriaisDoBackend === 'function') executarSeguro(() => carregarMateriaisDoBackend(), 'carregarMateriaisDoBackend');
     if (typeof atualizarPainelCompleto === 'function') executarSeguro(() => atualizarPainelCompleto(), 'atualizarPainelCompleto');
+
+    // 🆕 Login cai direto na aba "Painel Geral" (classe "active" já vem
+    // assim no HTML) sem passar por window.abrirAba — sem isto aqui, o
+    // auto-refresh só ligaria na primeira troca de aba manual.
+    const abaAtiva = document.querySelector('.tab-content.active');
+    if (abaAtiva && typeof window.iniciarAutoRefreshAba === 'function') window.iniciarAutoRefreshAba(abaAtiva.id);
 }
 
 export function verificarAcesso() {
@@ -4161,6 +4168,7 @@ function atualizarPainelCompleto() {
     executarSeguro(() => atualizarNovosKPIs(), 'atualizarNovosKPIs');
     executarSeguro(() => atualizarKPIsAvancados(), 'atualizarKPIsAvancados');
     executarSeguro(() => renderizarTopCriticos(), 'renderizarTopCriticos');
+    executarSeguro(() => window.atualizarStatusMaquinas(), 'atualizarStatusMaquinas');
     // 🔧 CORREÇÃO ("várias coisas bugando" — vários fetches duplicados,
     // console cheio de erro de rede, cards de gráfico piscando):
     // JS/painelGeralExtra.js JÁ preenche estes mesmos cards (donuts,
@@ -4350,11 +4358,11 @@ window.carregarAdminColaboradores = async function() {
     const matricula = (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula || "").toUpperCase();
     console.log('🔎 [DIAGNÓSTICO] matrícula logada:', matricula, '| autorizada?', MATRICULAS_TESTE_FOLHOES.includes(matricula));
     if (!MATRICULAS_TESTE_FOLHOES.includes(matricula)) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Acesso restrito.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Acesso restrito.</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Carregando...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Carregando...</td></tr>`;
 
     try {
         const apiBase = await resolverApiBase();
@@ -4366,7 +4374,7 @@ window.carregarAdminColaboradores = async function() {
     } catch (e) {
         console.error('🔎 [DIAGNÓSTICO] ERRO ao carregar a lista de colaboradores:', e);
         ADMIN_COLABORADORES_CACHE = [];
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Não foi possível carregar. Verifique sua internet.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Não foi possível carregar. Verifique sua internet.</td></tr>`;
         return;
     }
 
@@ -4378,6 +4386,7 @@ window.filtrarAdminColaboradores = function() {
     if (!tbody) return;
 
     const termo = (document.getElementById('admin-colab-busca')?.value || '').toLowerCase().trim();
+    const filtroPresenca = document.getElementById('admin-colab-filtro-presenca')?.value || '';
     let lista = ADMIN_COLABORADORES_CACHE;
     if (termo) {
         lista = lista.filter(c =>
@@ -4387,8 +4396,25 @@ window.filtrarAdminColaboradores = function() {
         );
     }
 
+    // 🆕 Filtro de presença/status (pedido do usuário: achar quem nunca
+    // logou ou tá offline há dias, sem precisar rolar a lista inteira).
+    if (filtroPresenca) {
+        const agora = Date.now();
+        lista = lista.filter(c => {
+            const diffMs = c.ultimo_acesso ? (agora - new Date(c.ultimo_acesso.replace(' ', 'T')).getTime()) : null;
+            switch (filtroPresenca) {
+                case 'online': return diffMs !== null && diffMs <= ONLINE_JANELA_MS;
+                case 'offline_7d': return diffMs !== null && diffMs > 7 * 24 * 60 * 60 * 1000;
+                case 'nunca': return !c.ultimo_acesso;
+                case 'primeiro_acesso': return !!c.primeiro_acesso;
+                case 'bloqueado': return !c.ativo;
+                default: return true;
+            }
+        });
+    }
+
     if (lista.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nenhum colaborador encontrado.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Nenhum colaborador encontrado.</td></tr>`;
         return;
     }
 
@@ -4399,11 +4425,18 @@ window.filtrarAdminColaboradores = function() {
             <td>${c.cargo || '-'}</td>
             <td>
                 ${c.ativo
-                    ? '<span style="color:var(--success); font-weight:700;">🟢 Ativo</span>'
-                    : '<span style="color:var(--danger); font-weight:700;">🔴 Inativo</span>'}
+                    ? '<span style="color:var(--success); font-weight:700;">🟢 Conta habilitada</span>'
+                    : '<span style="color:var(--danger); font-weight:700;">🔴 Bloqueado</span>'}
                 ${c.primeiro_acesso ? '<br><small class="text-muted">Primeiro acesso pendente</small>' : ''}
             </td>
+            <td>${window.formatarPresencaColaborador(c.ultimo_acesso)}</td>
             <td style="white-space:nowrap;">
+                <button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.abrirEventosColaborador('${c.matricula}', '${c.nome.replace(/'/g, "\\'")}')" title="Ver eventos">
+                    <i class="fas fa-book-open"></i>
+                </button>
+                <button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.editarDadosColaborador('${c.matricula}', '${c.nome.replace(/'/g, "\\'")}', '${(c.area || '').replace(/'/g, "\\'")}')" title="Editar nome/área">
+                    <i class="fas fa-pen"></i>
+                </button>
                 <button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.mudarCargoColaborador('${c.matricula}', '${(c.cargo || '').replace(/'/g, "\\'")}')" title="Trocar cargo">
                     <i class="fas fa-id-badge"></i>
                 </button>
@@ -4413,9 +4446,44 @@ window.filtrarAdminColaboradores = function() {
                 <button class="${c.ativo ? 'btn-outline-danger' : 'btn-premium btn-success'}" style="padding:4px 10px; font-size:11px;" onclick="window.alternarAtivoColaborador('${c.matricula}', ${!c.ativo}, '${c.nome.replace(/'/g, "\\'")}')" title="${c.ativo ? 'Desativar acesso' : 'Reativar acesso'}">
                     <i class="fas ${c.ativo ? 'fa-user-slash' : 'fa-user-check'}"></i>
                 </button>
+                ${c.ativo ? `
+                <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.forcarLogoutColaborador('${c.matricula}', '${c.nome.replace(/'/g, "\\'")}')" title="Forçar logout (sem bloquear a conta)">
+                    <i class="fas fa-right-from-bracket"></i>
+                </button>` : ''}
             </td>
         </tr>
     `).join('');
+};
+
+// 🆕 Presença real (pedido do usuário: "Ativo" hoje é só a conta estar
+// habilitada — não diz se a pessoa está DE VERDADE dentro do app agora).
+// ultimo_acesso é atualizado no login e a cada heartbeat (ver
+// iniciarHeartbeatColaborador) — dentro da janela = Online; fora,
+// mostra há quanto tempo ficou offline. Sem heartbeat vivo há mais de
+// ONLINE_JANELA_MS, mesmo com a aba aberta, cai pra "offline" sozinho
+// (ex: perdeu internet, fechou o app sem logout).
+const ONLINE_JANELA_MS = 2 * 60 * 1000; // 2x o intervalo do heartbeat (60s)
+
+window.formatarPresencaColaborador = function(ultimoAcessoStr) {
+    if (!ultimoAcessoStr) return '<span class="text-muted">Nunca acessou</span>';
+    const ultimoAcesso = new Date(ultimoAcessoStr.replace(' ', 'T'));
+    if (isNaN(ultimoAcesso.getTime())) return '<span class="text-muted">—</span>';
+
+    const diffMs = Date.now() - ultimoAcesso.getTime();
+    if (diffMs <= ONLINE_JANELA_MS) {
+        return '<span style="color:var(--success); font-weight:700;">🟢 Online agora</span>';
+    }
+
+    const diffMin = Math.floor(diffMs / 60000);
+    const dias = Math.floor(diffMin / 1440);
+    const horas = Math.floor((diffMin % 1440) / 60);
+    const minutos = diffMin % 60;
+    let tempo;
+    if (dias > 0) tempo = `${dias}d ${horas}h`;
+    else if (horas > 0) tempo = `${horas}h ${minutos}min`;
+    else tempo = `${minutos}min`;
+
+    return `<span class="text-muted">⚪ Offline há ${tempo}</span>`;
 };
 
 window.mudarCargoColaborador = async function(matricula, cargoAtual) {
@@ -4467,17 +4535,57 @@ window.resetarSenhaColaborador = async function(matricula, nome) {
     }
 };
 
+// 🆕 Forçar logout remoto SEM bloquear a conta — pra token suspeito de
+// vazado, celular perdido/roubado, ou garantir que um dispositivo
+// antigo caiu depois de trocar de aparelho. Diferente de bloquear
+// (que já mata a sessão E impede logar de novo), aqui a pessoa
+// consegue logar de novo na mesma hora.
+window.forcarLogoutColaborador = async function(matricula, nome) {
+    if (!verificarAcesso()) return;
+    if (!confirm(`Forçar logout de ${nome} (${matricula})?\n\nQualquer sessão aberta dela em qualquer dispositivo é encerrada agora. A conta continua habilitada — ela pode logar de novo na hora.`)) return;
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/colaboradores/forcar_logout`, {
+            method: 'POST',
+            headers: headersAdmin(),
+            body: JSON.stringify({ matricula })
+        });
+        if (!resp.ok) {
+            const erro = await resp.json().catch(() => ({}));
+            alert(erro.detail || 'Não foi possível forçar o logout.');
+            return;
+        }
+        alert(`✅ Sessão de ${nome} encerrada.`);
+        await window.carregarAdminColaboradores();
+    } catch (e) {
+        console.error('⚠️ Erro ao forçar logout:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+};
+
 window.alternarAtivoColaborador = async function(matricula, novoAtivo, nome) {
     if (!verificarAcesso()) return;
-    const acao = novoAtivo ? 'reativar o acesso de' : 'desativar o acesso de';
-    if (!confirm(`Tem certeza que quer ${acao} ${nome} (${matricula})?`)) return;
+
+    // 🆕 Motivo obrigatório só ao BLOQUEAR (pedido do usuário: "daqui 3
+    // meses ninguém lembra por que fulano foi bloqueado" sem isso
+    // registrado) — o backend também exige, isto aqui só evita a ida e
+    // volta com erro.
+    let motivo = null;
+    if (!novoAtivo) {
+        motivo = prompt(`Por que está bloqueando o acesso de ${nome} (${matricula})?`);
+        if (motivo === null) return; // cancelou
+        if (!motivo.trim()) return alert('É preciso informar o motivo do bloqueio.');
+    } else {
+        if (!confirm(`Tem certeza que quer reativar o acesso de ${nome} (${matricula})?`)) return;
+    }
 
     try {
         const apiBase = await resolverApiBase();
         const resp = await fetch(`${apiBase}/api/colaboradores/alternar_ativo`, {
             method: 'POST',
             headers: headersAdmin(),
-            body: JSON.stringify({ matricula, ativo: novoAtivo })
+            body: JSON.stringify({ matricula, ativo: novoAtivo, motivo: motivo ? motivo.trim() : null })
         });
         if (!resp.ok) {
             const erro = await resp.json().catch(() => ({}));
@@ -4489,6 +4597,132 @@ window.alternarAtivoColaborador = async function(matricula, novoAtivo, nome) {
         console.error('⚠️ Erro ao atualizar acesso:', e);
         alert('Não foi possível conectar ao servidor.');
     }
+};
+
+// 🆕 Editar nome/área de um colaborador (cargo já tem botão dedicado —
+// window.mudarCargoColaborador). Cancelar qualquer um dos dois prompts
+// não perde o outro: cada campo só entra no PATCH se de fato mudou.
+window.editarDadosColaborador = async function(matricula, nomeAtual, areaAtual) {
+    if (!verificarAcesso()) return;
+    const novoNome = prompt(`Nome de ${matricula}:`, nomeAtual || '');
+    if (novoNome === null) return; // cancelou tudo
+
+    const areasValidas = (typeof AREAS_OFICINA !== 'undefined' ? AREAS_OFICINA : []).map(a => a.chave).join(', ');
+    const novaArea = prompt(`Área de ${matricula} (chaves válidas: ${areasValidas} — ou deixe em branco):`, areaAtual || '');
+    if (novaArea === null) return; // cancelou
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/colaboradores/editar`, {
+            method: 'POST',
+            headers: headersAdmin(),
+            body: JSON.stringify({ matricula, nome: novoNome.trim() || null, area: novaArea.trim() || null })
+        });
+        if (!resp.ok) {
+            const erro = await resp.json().catch(() => ({}));
+            alert(erro.detail || 'Não foi possível editar os dados.');
+            return;
+        }
+        await window.carregarAdminColaboradores();
+    } catch (e) {
+        console.error('⚠️ Erro ao editar colaborador:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+};
+
+// 🆕 Cadastro de colaborador novo direto pela tela (ver modal
+// #modal-novo-colaborador em app.html) — antes só dava rodando script
+// no servidor (importar_colaboradores.py).
+window.abrirModalNovoColaborador = function() {
+    if (!verificarAcesso()) return;
+    document.getElementById('novo-colab-matricula').value = '';
+    document.getElementById('novo-colab-nome').value = '';
+    document.getElementById('novo-colab-cargo').value = '';
+    if (typeof popularSelectAreaOficina === 'function') popularSelectAreaOficina('novo-colab-area');
+    document.getElementById('modal-novo-colaborador')?.classList.remove('hidden');
+};
+
+window.confirmarNovoColaborador = async function() {
+    const matricula = document.getElementById('novo-colab-matricula')?.value.trim();
+    const nome = document.getElementById('novo-colab-nome')?.value.trim();
+    const cargo = document.getElementById('novo-colab-cargo')?.value.trim();
+    const area = document.getElementById('novo-colab-area')?.value || null;
+
+    if (!matricula || !nome) return alert('Matrícula e nome são obrigatórios.');
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/colaboradores/criar`, {
+            method: 'POST',
+            headers: headersAdmin(),
+            body: JSON.stringify({ matricula, nome, cargo: cargo || null, area })
+        });
+        if (!resp.ok) {
+            const erro = await resp.json().catch(() => ({}));
+            alert(erro.detail || 'Não foi possível cadastrar o colaborador.');
+            return;
+        }
+        document.getElementById('modal-novo-colaborador')?.classList.add('hidden');
+        alert(`✅ ${nome} cadastrado(a). Senha temporária: a própria matrícula.`);
+        await window.carregarAdminColaboradores();
+    } catch (e) {
+        console.error('⚠️ Erro ao cadastrar colaborador:', e);
+        alert('Não foi possível conectar ao servidor.');
+    }
+};
+
+// 🆕 "Eventos de cada funcionário separado" — reaproveita a mesma rota
+// do Prontuário das peças (GET /api/historico_eventos?peca_id=X),
+// passando a MATRÍCULA como peca_id (ver _registrar_evento_colaborador
+// no backend, que grava toda ação admin com esse mesmo peca_id).
+window.abrirEventosColaborador = async function(matricula, nome) {
+    const titulo = document.getElementById('eventos-colab-titulo');
+    const lista = document.getElementById('eventos-colab-lista');
+    if (titulo) titulo.textContent = `${nome} (${matricula})`;
+    if (lista) lista.innerHTML = '<div class="text-muted" style="padding:12px 0;">Carregando...</div>';
+    document.getElementById('modal-eventos-colaborador')?.classList.remove('hidden');
+
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/historico_eventos?peca_id=${encodeURIComponent(matricula)}&limite=200`, { cache: 'no-store' });
+        const eventos = resp.ok ? await resp.json() : [];
+        if (!lista) return;
+        lista.innerHTML = eventos.length
+            ? eventos.map(e => `
+                <div style="padding:8px 0; border-bottom:1px solid var(--border);">
+                    <div class="text-muted font-code" style="font-size:11px;">${e.data_hora || '—'} · ${e.operador || 'Sistema'}</div>
+                    <div style="margin-top:2px; font-size:13px;">${e.acao || ''}</div>
+                </div>`).join('')
+            : '<div class="text-muted" style="padding:12px 0;">Nenhum evento registrado ainda pra este colaborador.</div>';
+    } catch (e) {
+        console.error('⚠️ Erro ao carregar eventos do colaborador:', e);
+        if (lista) lista.innerHTML = '<div class="text-muted" style="padding:12px 0;">Não consegui carregar os eventos.</div>';
+    }
+};
+
+// 🆕 Exporta a lista atual (já filtrada/buscada na tela) como CSV — pra
+// RH/gestão cobrar quem não usa o sistema, sem precisar pedir query
+// direto no banco.
+window.exportarColaboradoresCsv = function() {
+    if (!ADMIN_COLABORADORES_CACHE.length) return alert('Nada pra exportar ainda — carregue a lista primeiro.');
+    const linhas = [['Matricula', 'Nome', 'Cargo', 'Conta', 'Primeiro Acesso Pendente', 'Ultimo Acesso'].join(';')];
+    ADMIN_COLABORADORES_CACHE.forEach(c => {
+        linhas.push([
+            c.matricula,
+            (c.nome || '').replace(/;/g, ','),
+            (c.cargo || '').replace(/;/g, ','),
+            c.ativo ? 'Habilitada' : 'Bloqueado',
+            c.primeiro_acesso ? 'Sim' : 'Não',
+            c.ultimo_acesso || 'Nunca acessou'
+        ].join(';'));
+    });
+    const blob = new Blob([linhas.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `colaboradores_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
 };
 
 // ==========================================
@@ -8276,6 +8510,21 @@ window.processarMarcadorAtividadeConcluida = async function(descricao) {
                 if (typeof renderAtivos === 'function') renderAtivos();
             }
         }
+
+        // 🆕 Fecha o loop de QUALQUER transporte genérico da Logística
+        // (marcador [TRANSPORTE:<id>:<destino>], ver notificarLogisticaTransporte)
+        // — sem isso, a peça não tinha nenhum registro de "chegou de
+        // verdade" no Prontuário, só o pedido inicial. Diferente do
+        // REABASTECER_RESERVA acima, esse marcador não muda status/local
+        // (a peça já foi movida na hora do swap) — só confirma no
+        // histórico que a entrega física aconteceu, e pra onde.
+        const matchTransporte = descricao.match(/\[TRANSPORTE:([^:\]]+):([^\]]+)\]/);
+        if (matchTransporte) {
+            const [, idPeca, destino] = matchTransporte;
+            if (window.registrarHistorico) {
+                await window.registrarHistorico(idPeca, `🚚 Logística finalizada — ${idPeca} entregue em ${destino}.`);
+            }
+        }
     } catch (e) {
         // Nunca deixa isso travar a conclusão normal da atividade.
         console.error('⚠️ Erro ao processar marcador de atividade concluída:', e);
@@ -9587,6 +9836,10 @@ window.abrirAba = function(event, idAba) {
         abaDestino.style.display = "block";
     }
 
+    // 🆕 Auto-refresh da aba (ver REFRESH_POR_ABA acima) — desarma o
+    // timer da aba anterior e liga o da nova, se ela tiver um mapeado.
+    if (typeof window.iniciarAutoRefreshAba === 'function') window.iniciarAutoRefreshAba(idAba);
+
     // 🔧 CORREÇÃO ("mobile não troca de aba, acontece com QUALQUER item"
     // — usuário confirmou que não é lógica de uma aba específica):
     // nada aqui resetava a posição de rolagem ao trocar de aba. .main-
@@ -10005,7 +10258,18 @@ window.visualizarLaudo = async function(id) {
 // própria fila de Atividades Pendentes, anexa foto do documento de
 // retirada ao editar (já suportado) e marca Concluído quando entregar
 // de verdade — sem criar nenhum sistema novo.
-async function notificarLogisticaTransporte(descricao, equipamentoId) {
+async function notificarLogisticaTransporte(descricao, equipamentoId, destino) {
+    // 🔧 CORREÇÃO ("prontuário deve mostrar toda logística finalizada e
+    // pra onde"): até aqui, essa atividade só existia na fila da
+    // Logística — quando ela marcava "Concluído", nada era escrito no
+    // Prontuário da peça (só o fluxo de reabastecimento, marcador
+    // [REABASTECER_RESERVA:<id>], fechava esse loop). Mesmo padrão de
+    // marcador em texto na descrição (sem mudar schema do backend), pra
+    // processarMarcadorAtividadeConcluida saber qual peça e destino
+    // registrar no histórico quando a entrega de verdade for confirmada.
+    const descricaoComMarcador = (equipamentoId && destino)
+        ? `[TRANSPORTE:${equipamentoId}:${destino}] ${descricao}`
+        : descricao;
     try {
         const apiBase = await resolverApiBase();
         await fetch(`${apiBase}/api/oficina/atividade`, {
@@ -10014,7 +10278,7 @@ async function notificarLogisticaTransporte(descricao, equipamentoId) {
             body: JSON.stringify({
                 area: 'logistica',
                 equipamento_id: equipamentoId || null,
-                descricao,
+                descricao: descricaoComMarcador,
                 responsavel: null,
                 prioridade: 'Alta',
                 operador: OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Sistema') : 'Sistema',
@@ -10207,7 +10471,8 @@ window.iniciarSwapAlocacao = async function(idReserva) {
             if (typeof renderAtivos === 'function') renderAtivos(); if (typeof renderPainelVeios === 'function') renderPainelVeios();
             notificarLogisticaTransporte(
                 `Transportar: retirar ${pecaAntiga.id} do Veio ${veio} (slot ${slotChassi}) e levar pra Oficina`,
-                pecaAntiga.id
+                pecaAntiga.id,
+                'Oficina'
             );
             alert(`✅ Swap realizado! ${pecaReserva.id} instalado.`);
         }
@@ -10725,12 +10990,34 @@ window.removerFotoOs = function(indice) {
     renderPreviewFotosOs();
 };
 
+// 🆕 Status por MCC (card "Sistema Online" do Painel Geral) — deriva de
+// GET /api/maquinas/status: enquanto houver uma OS "Em Andamento" com
+// aquela máquina marcada, ela aparece como "Manutenção".
+window.atualizarStatusMaquinas = async function() {
+    const idPorMaquina = { 'MCC 2': 'status-maquina-mcc2', 'MCC 3': 'status-maquina-mcc3', 'MCC 4': 'status-maquina-mcc4' };
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/maquinas/status`, { cache: 'no-store' });
+        if (!resp.ok) return;
+        const lista = await resp.json();
+        (lista || []).forEach(item => {
+            const el = document.getElementById(idPorMaquina[item.maquina]);
+            if (!el) return;
+            el.textContent = item.status;
+            el.classList.toggle('status-manutencao', item.status === 'Manutenção');
+        });
+    } catch (e) {
+        console.error('⚠️ Erro ao atualizar status das máquinas:', e);
+    }
+};
+
 window.confirmarOrdemServico = async function() {
     if (!verificarAcesso()) return;
 
     const numero = document.getElementById('os-numero')?.value.trim();
     const descricao = document.getElementById('os-descricao')?.value.trim();
     const area = document.getElementById('os-area')?.value || null;
+    const maquina = document.getElementById('os-maquina')?.value || null;
 
     if (FOTOS_OS_BASE64.length === 0) return alert('Tire ou anexe pelo menos 1 foto da OS antes de registrar.');
 
@@ -10746,7 +11033,8 @@ window.confirmarOrdemServico = async function() {
                 descricao: descricao || null,
                 fotos_base64: FOTOS_OS_BASE64,
                 operador,
-                area
+                area,
+                maquina
             })
         }, `OS ${numero || '(sem número)'}`);
 
@@ -10769,6 +11057,7 @@ window.confirmarOrdemServico = async function() {
         window.removerFotoOs();
         alert('✅ OS registrada com sucesso.');
         await window.carregarListaOrdensServico();
+        executarSeguro(() => window.atualizarStatusMaquinas(), 'atualizarStatusMaquinas');
     } catch (e) {
         console.error('⚠️ Erro ao registrar OS:', e);
         alert('Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.');
@@ -10958,6 +11247,7 @@ window.mudarStatusOrdemServico = async function(id, novoStatus, motivo) {
             return;
         }
         await window.carregarListaOrdensServico();
+        executarSeguro(() => window.atualizarStatusMaquinas(), 'atualizarStatusMaquinas');
     } catch (e) {
         console.error('⚠️ Erro ao atualizar status da OS:', e);
         alert('Não foi possível conectar ao servidor.');
@@ -10992,6 +11282,7 @@ window.excluirOrdemServico = async function(id) {
             return;
         }
         await window.carregarListaOrdensServico();
+        executarSeguro(() => window.atualizarStatusMaquinas(), 'atualizarStatusMaquinas');
     } catch (e) {
         console.error('⚠️ Erro ao excluir OS:', e);
         alert('Não foi possível conectar ao servidor.');
@@ -11034,6 +11325,88 @@ window.pararPollingCentralNotificacoes = function() {
         clearInterval(TIMER_POLLING_NOTIFICACOES);
         TIMER_POLLING_NOTIFICACOES = null;
     }
+};
+
+// 🆕 PRESENÇA REAL DO COLABORADOR — heartbeat periódico enquanto o app
+// está aberto e logado (com matrícula real, visitante fica de fora).
+// Mesmo padrão de polling autodesarmável já usado no resto do arquivo:
+// se OPERADOR_LOGADO sumir (logout recarrega a página, então isso é
+// mais defensivo que necessário), o próprio timer se desliga.
+const INTERVALO_HEARTBEAT_COLABORADOR_MS = 60000;
+let TIMER_HEARTBEAT_COLABORADOR = null;
+
+window.iniciarHeartbeatColaborador = function() {
+    if (!OPERADOR_LOGADO || !OPERADOR_LOGADO.matricula) return; // visitante não tem matrícula pra reportar
+    window.pararHeartbeatColaborador();
+
+    const enviarHeartbeat = () => executarSeguroAsync(async () => {
+        if (!OPERADOR_LOGADO || !OPERADOR_LOGADO.matricula) { window.pararHeartbeatColaborador(); return; }
+        const apiBase = await resolverApiBase();
+        await fetch(`${apiBase}/api/colaboradores/heartbeat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ matricula: OPERADOR_LOGADO.matricula })
+        });
+    }, 'heartbeatColaborador');
+
+    enviarHeartbeat(); // primeiro sinal na hora, sem esperar o 1º intervalo
+    TIMER_HEARTBEAT_COLABORADOR = setInterval(enviarHeartbeat, INTERVALO_HEARTBEAT_COLABORADOR_MS);
+};
+
+window.pararHeartbeatColaborador = function() {
+    if (TIMER_HEARTBEAT_COLABORADOR) {
+        clearInterval(TIMER_HEARTBEAT_COLABORADOR);
+        TIMER_HEARTBEAT_COLABORADOR = null;
+    }
+};
+
+// 🆕 CORREÇÃO ("mando mensagem e fico na tela, só chega se eu sair e
+// voltar" — depois confirmado pelo usuário que o mesmo problema vale
+// pra qualquer aba, não só o Chat): até aqui, cada aba só recarregava
+// os dados dela quando a pessoa clicava pra abri-la — sair e voltar era
+// o único "refresh" que existia. Registro único de auto-refresh por
+// aba, plugado em window.abrirAba (o trocador de aba central do app):
+// ao entrar numa aba com refresh conhecido, dispara um setInterval que
+// chama a MESMA função que já roda ao abrir a aba; ao sair da aba (ou
+// abrir outra), o timer da aba anterior é desarmado. Só cobre abas cuja
+// função de recarregar é uma lista/painel somente-leitura (idempotente
+// re-renderizar) — abas de formulário (cadastro, lançamento) não têm
+// entrada aqui de propósito, pra não apagar o que a pessoa tá digitando
+// no meio de um polling.
+const INTERVALO_AUTO_REFRESH_ABA_MS = 15000;
+const REFRESH_POR_ABA = {
+    'aba-painel': () => atualizarPainelCompleto(),
+    'aba-painel-supervisor': () => atualizarPainelCompleto(),
+    'aba-tecnico': () => window.carregarAtividadesPainelTecnico(),
+    'aba-oficina': () => window.carregarOficina(),
+    'aba-reparos': () => window.carregarReparosAndamento(),
+    'aba-ordens-servico': () => window.carregarListaOrdensServico(),
+    'aba-qualidade': () => window.carregarListaQualidade(),
+    'aba-notificacoes': () => window.carregarCentralNotificacoes(),
+    'aba-chats': () => window.chatsCarregarMensagens(), // no-op sozinho se nenhuma conversa estiver aberta
+    'aba-admin-colaboradores': () => window.carregarAdminColaboradores(), // mantém "Online agora"/"Offline há Xh" atualizando sozinho
+};
+let TIMER_AUTO_REFRESH_ABA = null;
+
+window.pararAutoRefreshAba = function() {
+    if (TIMER_AUTO_REFRESH_ABA) {
+        clearInterval(TIMER_AUTO_REFRESH_ABA);
+        TIMER_AUTO_REFRESH_ABA = null;
+    }
+};
+
+window.iniciarAutoRefreshAba = function(idAba) {
+    window.pararAutoRefreshAba();
+    const refresh = REFRESH_POR_ABA[idAba];
+    if (!refresh) return; // aba sem refresh automático mapeado
+    TIMER_AUTO_REFRESH_ABA = setInterval(() => {
+        const aba = document.getElementById(idAba);
+        if (!aba || !aba.classList.contains('active')) {
+            window.pararAutoRefreshAba();
+            return;
+        }
+        executarSeguro(refresh, `auto-refresh ${idAba}`);
+    }, INTERVALO_AUTO_REFRESH_ABA_MS);
 };
 
 // 🆕 Feed unificado (evento de Auditoria + OS em aberto + achado de
@@ -12085,7 +12458,7 @@ function limparMarcadorTecnicoDescricao(descricao) {
     // resto..." (backend monta "<ação>: <descrição original>") — o
     // marcador não fica sempre no início da string, por isso sem "^" no
     // regex.
-    return (descricao || '').replace(/\[(REABASTECER_RESERVA|FINALIZAR_INSTALACAO):[^\]]*\]\s*/, '');
+    return (descricao || '').replace(/\[(REABASTECER_RESERVA|FINALIZAR_INSTALACAO|TRANSPORTE):[^\]]*\]\s*/, '');
 }
 
 // Mesmo cartão visual do feed, mas pra uma atividade em aberto (não tem
