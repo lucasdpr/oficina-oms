@@ -4362,7 +4362,13 @@ window.carregarAdminColaboradores = async function() {
         return;
     }
 
-    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Carregando...</td></tr>`;
+    // 🔧 CORREÇÃO ("tela piscando"): só mostra "Carregando..." na
+    // primeira vez (tabela ainda vazia) — no auto-refresh de 15s, a
+    // tabela antiga fica na tela até os dados novos chegarem, em vez de
+    // piscar "Carregando..." e sumir a cada ciclo mesmo sem mudar nada.
+    if (!ADMIN_COLABORADORES_CACHE.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Carregando...</td></tr>`;
+    }
 
     try {
         const apiBase = await resolverApiBase();
@@ -5062,6 +5068,36 @@ window.carregarOficina = async function() {
     renderizarGridCentralAreas();
     atualizarKpisOficina();
 
+    if (OFICINA_AREA_ATUAL) renderizarAtividadesArea();
+};
+
+// 🔧 CORREÇÃO ("tela fica piscando, parece que tá recarregando sozinha"):
+// o auto-refresh de 15s (REFRESH_POR_ABA) chamava window.carregarOficina()
+// direto, que reconstrói a toolbar inteira do zero (innerHTML) e ZERA
+// CENTRAL_AREAS_BUSCA/FILTRO_STATUS a cada chamada — na prática, a cada
+// 15s o campo de busca esvaziava, o filtro voltava pra "Todas" e a
+// ordenação voltava pra "Prioridade", mesmo que a pessoa tivesse acabado
+// de mexer neles um segundo antes. Esta versão só busca dado novo e
+// redesenha a GRADE (preservando busca/filtro/ordenação já escolhidos),
+// sem tocar na toolbar — é o que o auto-refresh deveria ter chamado
+// desde o início.
+window.atualizarOficinaSilencioso = async function() {
+    if (!document.getElementById('oficina-grade-areas')) {
+        // Toolbar ainda nem foi montada (1ª vez nesta sessão) — só a
+        // versão completa constrói o HTML da tela.
+        return window.carregarOficina();
+    }
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/oficina/atividades`, { cache: 'no-store' });
+        const todas = resp.ok ? await resp.json() : [];
+        OFICINA_ATIVIDADES_CACHE = Array.isArray(todas) ? todas : [];
+    } catch (e) {
+        console.error('⚠️ Não consegui atualizar as atividades da oficina (mantendo a lista anterior):', e);
+        return;
+    }
+    renderizarGridCentralAreas();
+    atualizarKpisOficina();
     if (OFICINA_AREA_ATUAL) renderizarAtividadesArea();
 };
 
@@ -7260,6 +7296,15 @@ window.chatsCarregarMensagens = async function() {
         return;
     }
 
+    // 🔧 CORREÇÃO ("tela piscando"): o auto-refresh de 15s chamava isto e
+    // sempre forçava scrollTop = scrollHeight — se a pessoa tivesse
+    // rolado pra cima pra ler mensagens antigas, o chat pulava pro fim
+    // sozinho a cada ciclo. Agora só reaplica o auto-scroll se ela já
+    // estava perto do fim (ou é a primeira renderização, sem scroll
+    // ainda) — rolando pra cima, o refresh atualiza o conteúdo mas
+    // respeita a posição.
+    const permaneceEmbaixo = cont.scrollHeight === 0 || (cont.scrollHeight - cont.scrollTop - cont.clientHeight) < 80;
+
     try {
         const apiBase = await resolverApiBase();
         const qs = new URLSearchParams({ area: CHAT_AREA_ADM_CTX.area, canal });
@@ -7297,7 +7342,7 @@ window.chatsCarregarMensagens = async function() {
                 </div>
             `;
         }).join('') : `<div class="chat-vazio">${canal === 'tecnicos' ? 'Nenhuma mensagem com essa área ainda.' : 'Nenhuma mensagem ainda — mande a primeira 👋'}</div>`);
-        cont.scrollTop = cont.scrollHeight;
+        if (permaneceEmbaixo) cont.scrollTop = cont.scrollHeight;
     } catch (e) {
         cont.innerHTML = '<div class="chat-vazio">Não consegui carregar a conversa.</div>';
     }
@@ -11454,18 +11499,24 @@ window.pararHeartbeatColaborador = function() {
 // entrada aqui de propósito, pra não apagar o que a pessoa tá digitando
 // no meio de um polling.
 const INTERVALO_AUTO_REFRESH_ABA_MS = 15000;
+// 🔧 Todas as entradas também chamam atualizarBadgeChatAreaAdm — antes o
+// badge de "mensagens não lidas" (nav Chats / Central de Áreas) só
+// atualizava em raras ações pontuais (login, enviar mensagem); ficar
+// em qualquer outra aba não avisava que uma mensagem nova chegou no
+// canal Entre Técnicos (ver correção em GET /api/mensagens_area/
+// nao_lidas, que também deixou de ignorar esse canal).
 const REFRESH_POR_ABA = {
-    'aba-painel': () => atualizarPainelCompleto(),
-    'aba-painel-supervisor': () => atualizarPainelCompleto(),
-    'aba-tecnico': () => window.carregarAtividadesPainelTecnico(),
-    'aba-oficina': () => window.carregarOficina(),
+    'aba-painel': () => { atualizarPainelCompleto(); window.atualizarBadgeChatAreaAdm?.(); },
+    'aba-painel-supervisor': () => { atualizarPainelCompleto(); window.atualizarBadgeChatAreaAdm?.(); },
+    'aba-tecnico': () => { window.carregarAtividadesPainelTecnico(); window.atualizarBadgeChatAreaAdm?.(); },
+    'aba-oficina': () => { window.atualizarOficinaSilencioso(); window.atualizarBadgeChatAreaAdm?.(); },
     'aba-reparos': () => window.carregarReparosAndamento(),
     'aba-ordens-servico': () => window.carregarListaOrdensServico(),
     'aba-qualidade': () => window.carregarListaQualidade(),
     'aba-notificacoes': () => window.carregarCentralNotificacoes(),
-    'aba-chats': () => window.chatsCarregarMensagens(), // no-op sozinho se nenhuma conversa estiver aberta
+    'aba-chats': () => { window.chatsCarregarMensagens(); window.atualizarBadgeChatAreaAdm?.(); }, // no-op sozinho se nenhuma conversa estiver aberta
     'aba-admin-colaboradores': () => window.carregarAdminColaboradores(), // mantém "Online agora"/"Offline há Xh" atualizando sozinho
-    'aba-area-oficina': () => { window.carregarOficina(); window.carregarOsDaArea(); }, // quadro da área (atividades + OS envolvendo ela)
+    'aba-area-oficina': () => { window.atualizarOficinaSilencioso(); window.carregarOsDaArea(); window.atualizarBadgeChatAreaAdm?.(); }, // quadro da área (atividades + OS envolvendo ela)
 };
 let TIMER_AUTO_REFRESH_ABA = null;
 
