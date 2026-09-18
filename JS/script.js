@@ -11187,6 +11187,12 @@ window.confirmarOrdemServico = async function() {
     const areas = Array.from(document.querySelectorAll('.os-area-checkbox:checked')).map(cb => cb.value);
     const maquina = document.getElementById('os-maquina')?.value || null;
 
+    // 🔧 CORREÇÃO (pedido do usuário: "tire o opcional de tudo pq todos
+    // os campos são obrigatório") — antes só a foto era exigida.
+    if (!numero) return alert('Informe o número da OS.');
+    if (!maquina) return alert('Selecione a máquina afetada.');
+    if (!descricao) return alert('Informe a descrição.');
+    if (areas.length === 0) return alert('Selecione pelo menos uma área envolvida.');
     if (FOTOS_OS_BASE64.length === 0) return alert('Tire ou anexe pelo menos 1 foto da OS antes de registrar.');
 
     const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Técnico') : 'Sistema';
