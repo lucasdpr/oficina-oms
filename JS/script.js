@@ -5083,6 +5083,43 @@ window.carregarOficina = async function() {
 // redesenha a GRADE (preservando busca/filtro/ordenação já escolhidos),
 // sem tocar na toolbar — é o que o auto-refresh deveria ter chamado
 // desde o início.
+// 🆕 CORREÇÃO ("se um técnico atualizar algo tem que atualizar todos
+// envolvidos na atividade"): o auto-refresh geral (REFRESH_POR_ABA) já
+// cobria a tela de área, mas só a cada 15s — rápido demais pra sentir
+// "sincronizado igual chat" quando duas pessoas de áreas diferentes
+// (ex: Molde pedindo, Caldeiraria executando) estão olhando a MESMA
+// atividade ao mesmo tempo e uma delas muda o status. Mesmo espírito
+// do polling rápido do chat: um timer À PARTE, só enquanto a tela de
+// uma área está de fato aberta, que se autodesarma sozinho ao sair.
+const INTERVALO_POLLING_RAPIDO_AREA_MS = 4000;
+let TIMER_POLLING_RAPIDO_AREA = null;
+
+window.iniciarPollingRapidoArea = function() {
+    window.pararPollingRapidoArea();
+    TIMER_POLLING_RAPIDO_AREA = setInterval(() => {
+        const aba = document.getElementById('aba-area-oficina');
+        if (!aba || !aba.classList.contains('active') || !OFICINA_AREA_ATUAL) {
+            window.pararPollingRapidoArea();
+            return;
+        }
+        executarSeguroAsync(async () => {
+            const apiBase = await resolverApiBase();
+            const resp = await fetch(`${apiBase}/api/oficina/atividades`, { cache: 'no-store' });
+            const todas = resp.ok ? await resp.json() : [];
+            OFICINA_ATIVIDADES_CACHE = Array.isArray(todas) ? todas : [];
+            renderizarAtividadesArea();
+            if (typeof window.carregarOsDaArea === 'function') await window.carregarOsDaArea();
+        }, 'pollingRapidoArea');
+    }, INTERVALO_POLLING_RAPIDO_AREA_MS);
+};
+
+window.pararPollingRapidoArea = function() {
+    if (TIMER_POLLING_RAPIDO_AREA) {
+        clearInterval(TIMER_POLLING_RAPIDO_AREA);
+        TIMER_POLLING_RAPIDO_AREA = null;
+    }
+};
+
 window.atualizarOficinaSilencioso = async function() {
     if (!document.getElementById('oficina-grade-areas')) {
         // Toolbar ainda nem foi montada (1ª vez nesta sessão) — só a
@@ -8012,6 +8049,7 @@ window.abrirAreaOficina = async function(chave, abaInicial) {
     OFICINA_AREA_ATUAL = chave;
     if (typeof window.carregarOsDaArea === 'function') window.carregarOsDaArea();
     if (typeof window.atualizarBadgeChatAreaAdm === 'function') window.atualizarBadgeChatAreaAdm();
+    if (typeof window.iniciarPollingRapidoArea === 'function') window.iniciarPollingRapidoArea();
     OFICINA_FILTRO_STATUS_ATUAL = '';
     OFICINA_TIPO_ATIVIDADE_ATUAL = 'equipamento';
     OFICINA_EQUIPE_ATUAL = [];
@@ -11869,7 +11907,7 @@ const REFRESH_POR_ABA = {
     'aba-notificacoes': () => window.carregarCentralNotificacoes(),
     'aba-chats': () => { window.chatsCarregarMensagens(); window.atualizarBadgeChatAreaAdm?.(); }, // no-op sozinho se nenhuma conversa estiver aberta
     'aba-admin-colaboradores': () => window.carregarAdminColaboradores(), // mantém "Online agora"/"Offline há Xh" atualizando sozinho
-    'aba-area-oficina': () => { window.atualizarOficinaSilencioso(); window.carregarOsDaArea(); window.atualizarBadgeChatAreaAdm?.(); }, // quadro da área (atividades + OS envolvendo ela)
+    'aba-area-oficina': () => window.atualizarBadgeChatAreaAdm?.(), // atividades/OS da área já ficam cobertas pelo polling rápido de 4s (window.iniciarPollingRapidoArea)
 };
 let TIMER_AUTO_REFRESH_ABA = null;
 
