@@ -640,6 +640,7 @@ async function finalizarLogin(nome, cargo, matricula, area, isAdm, token) {
     localStorage.setItem("oms_operador_v32_local", JSON.stringify(OPERADOR_LOGADO));
     setOperadorBanco(OPERADOR_LOGADO); // 🔧 mantém a cópia do banco.js sincronizada (ver comentário em window.setOperadorLogado)
     if (typeof window.iniciarHeartbeatColaborador === 'function') window.iniciarHeartbeatColaborador();
+    if (typeof window.iniciarNotificacaoGlobalChat === 'function') window.iniciarNotificacaoGlobalChat();
 
     document.getElementById("tela-login-home").style.display = "none";
     document.getElementById("container-sistema-oms").style.display = "flex";
@@ -7490,6 +7491,76 @@ window.pararPollingRapidoChat = function() {
         TIMER_POLLING_RAPIDO_CHAT = null;
     }
     CHAT_TECNICOS_ULTIMA_EM_CONHECIDA = null;
+};
+
+// 🆕 CORREÇÃO ("se eu tiver em qualquer aba, tem que aparecer a
+// notificação" / "se eu tiver na aba do técnico e chegar [mensagem] no
+// supervisor tem que sinalizar"): o polling rápido de 3s (digitando/
+// presença/mensagem nova) só rodava DENTRO da aba Chats, com uma
+// conversa Entre Técnicos aberta — em qualquer outra tela (Painel do
+// Técnico, Central de Áreas, etc.) nada avisava que chegou mensagem
+// nova, nem no canal Supervisão nem no Entre Técnicos. Este poller é
+// GLOBAL: começa no login, roda em QUALQUER aba (não é
+// desarmado/religado por window.abrirAba como o REFRESH_POR_ABA), e
+// cobre os dois canais de uma vez via /api/mensagens_area/nao_lidas
+// (que já soma supervisao + tecnicos, ver correção anterior).
+const INTERVALO_NOTIFICACAO_GLOBAL_CHAT_MS = 6000;
+let TIMER_NOTIFICACAO_GLOBAL_CHAT = null;
+let NOTIF_GLOBAL_CHAT_ULTIMO_TOTAL = null;
+
+window.iniciarNotificacaoGlobalChat = function() {
+    if (!OPERADOR_LOGADO || !OPERADOR_LOGADO.matricula) return; // visitante não tem chat de verdade
+    window.pararNotificacaoGlobalChat();
+    TIMER_NOTIFICACAO_GLOBAL_CHAT = setInterval(() => {
+        if (!OPERADOR_LOGADO || !OPERADOR_LOGADO.matricula) { window.pararNotificacaoGlobalChat(); return; }
+        executarSeguroAsync(async () => {
+            const isAdm = !!OPERADOR_LOGADO.isAdm;
+            const apiBase = await resolverApiBase();
+            let total = 0;
+            let nomeProvavel = 'uma conversa';
+
+            if (isAdm) {
+                const resp = await fetch(`${apiBase}/api/mensagens_area/resumo`, { cache: 'no-store' });
+                const linhas = resp.ok ? await resp.json() : [];
+                if (Array.isArray(linhas)) {
+                    total = linhas.reduce((s, l) => s + (Number(l.nao_lidas) || 0), 0);
+                    const maisNaoLidas = linhas.filter(l => l.nao_lidas > 0).sort((a, b) => b.nao_lidas - a.nao_lidas)[0];
+                    if (maisNaoLidas) nomeProvavel = maisNaoLidas.nome_area || maisNaoLidas.area;
+                }
+            } else {
+                const area = OFICINA_AREA_ATUAL || OPERADOR_LOGADO.area;
+                if (!area) return;
+                const resp = await fetch(`${apiBase}/api/mensagens_area/nao_lidas?area=${encodeURIComponent(area)}`, { cache: 'no-store' });
+                const dados = resp.ok ? await resp.json() : { nao_lidas: 0 };
+                total = dados.nao_lidas || 0;
+                nomeProvavel = 'ADM ou outra área';
+            }
+
+            const navBadge = document.getElementById('nav-chats-badge');
+            if (navBadge) aplicarBadgeElemento(navBadge, total);
+
+            // Só avisa se o total SUBIU desde a última checagem (chegou
+            // mensagem nova de verdade — não dispara ao simplesmente ler
+            // e o número cair). Não duplica aviso se a pessoa já está
+            // dentro do Chat vendo a conversa certa ao vivo (o polling
+            // rápido de 3s de lá já cuida desse caso com o nome certo).
+            const dentroDoChatCerto = document.getElementById('aba-chats')?.classList.contains('active') && CHAT_AREA_ADM_CTX.area;
+            if (NOTIF_GLOBAL_CHAT_ULTIMO_TOTAL !== null && total > NOTIF_GLOBAL_CHAT_ULTIMO_TOTAL && !dentroDoChatCerto) {
+                window.mostrarAvisoNovaMensagemChat(nomeProvavel);
+                navBadge?.classList.add('badge-piscando');
+                setTimeout(() => navBadge?.classList.remove('badge-piscando'), 4000);
+            }
+            NOTIF_GLOBAL_CHAT_ULTIMO_TOTAL = total;
+        }, 'notificacaoGlobalChat');
+    }, INTERVALO_NOTIFICACAO_GLOBAL_CHAT_MS);
+};
+
+window.pararNotificacaoGlobalChat = function() {
+    if (TIMER_NOTIFICACAO_GLOBAL_CHAT) {
+        clearInterval(TIMER_NOTIFICACAO_GLOBAL_CHAT);
+        TIMER_NOTIFICACAO_GLOBAL_CHAT = null;
+    }
+    NOTIF_GLOBAL_CHAT_ULTIMO_TOTAL = null;
 };
 
 // 🆕 Aviso no topo da tela quando chega mensagem nova no Entre Técnicos
