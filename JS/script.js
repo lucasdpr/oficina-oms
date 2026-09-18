@@ -8283,6 +8283,21 @@ window.processarMarcadorAtividadeConcluida = async function(descricao) {
                 if (typeof renderAtivos === 'function') renderAtivos();
             }
         }
+
+        // 🆕 Fecha o loop de QUALQUER transporte genérico da Logística
+        // (marcador [TRANSPORTE:<id>:<destino>], ver notificarLogisticaTransporte)
+        // — sem isso, a peça não tinha nenhum registro de "chegou de
+        // verdade" no Prontuário, só o pedido inicial. Diferente do
+        // REABASTECER_RESERVA acima, esse marcador não muda status/local
+        // (a peça já foi movida na hora do swap) — só confirma no
+        // histórico que a entrega física aconteceu, e pra onde.
+        const matchTransporte = descricao.match(/\[TRANSPORTE:([^:\]]+):([^\]]+)\]/);
+        if (matchTransporte) {
+            const [, idPeca, destino] = matchTransporte;
+            if (window.registrarHistorico) {
+                await window.registrarHistorico(idPeca, `🚚 Logística finalizada — ${idPeca} entregue em ${destino}.`);
+            }
+        }
     } catch (e) {
         // Nunca deixa isso travar a conclusão normal da atividade.
         console.error('⚠️ Erro ao processar marcador de atividade concluída:', e);
@@ -10016,7 +10031,18 @@ window.visualizarLaudo = async function(id) {
 // própria fila de Atividades Pendentes, anexa foto do documento de
 // retirada ao editar (já suportado) e marca Concluído quando entregar
 // de verdade — sem criar nenhum sistema novo.
-async function notificarLogisticaTransporte(descricao, equipamentoId) {
+async function notificarLogisticaTransporte(descricao, equipamentoId, destino) {
+    // 🔧 CORREÇÃO ("prontuário deve mostrar toda logística finalizada e
+    // pra onde"): até aqui, essa atividade só existia na fila da
+    // Logística — quando ela marcava "Concluído", nada era escrito no
+    // Prontuário da peça (só o fluxo de reabastecimento, marcador
+    // [REABASTECER_RESERVA:<id>], fechava esse loop). Mesmo padrão de
+    // marcador em texto na descrição (sem mudar schema do backend), pra
+    // processarMarcadorAtividadeConcluida saber qual peça e destino
+    // registrar no histórico quando a entrega de verdade for confirmada.
+    const descricaoComMarcador = (equipamentoId && destino)
+        ? `[TRANSPORTE:${equipamentoId}:${destino}] ${descricao}`
+        : descricao;
     try {
         const apiBase = await resolverApiBase();
         await fetch(`${apiBase}/api/oficina/atividade`, {
@@ -10025,7 +10051,7 @@ async function notificarLogisticaTransporte(descricao, equipamentoId) {
             body: JSON.stringify({
                 area: 'logistica',
                 equipamento_id: equipamentoId || null,
-                descricao,
+                descricao: descricaoComMarcador,
                 responsavel: null,
                 prioridade: 'Alta',
                 operador: OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Sistema') : 'Sistema',
@@ -10218,7 +10244,8 @@ window.iniciarSwapAlocacao = async function(idReserva) {
             if (typeof renderAtivos === 'function') renderAtivos(); if (typeof renderPainelVeios === 'function') renderPainelVeios();
             notificarLogisticaTransporte(
                 `Transportar: retirar ${pecaAntiga.id} do Veio ${veio} (slot ${slotChassi}) e levar pra Oficina`,
-                pecaAntiga.id
+                pecaAntiga.id,
+                'Oficina'
             );
             alert(`✅ Swap realizado! ${pecaReserva.id} instalado.`);
         }
@@ -12170,7 +12197,7 @@ function limparMarcadorTecnicoDescricao(descricao) {
     // resto..." (backend monta "<ação>: <descrição original>") — o
     // marcador não fica sempre no início da string, por isso sem "^" no
     // regex.
-    return (descricao || '').replace(/\[(REABASTECER_RESERVA|FINALIZAR_INSTALACAO):[^\]]*\]\s*/, '');
+    return (descricao || '').replace(/\[(REABASTECER_RESERVA|FINALIZAR_INSTALACAO|TRANSPORTE):[^\]]*\]\s*/, '');
 }
 
 // Mesmo cartão visual do feed, mas pra uma atividade em aberto (não tem
