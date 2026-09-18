@@ -641,6 +641,7 @@ async function finalizarLogin(nome, cargo, matricula, area, isAdm, token) {
     setOperadorBanco(OPERADOR_LOGADO); // 🔧 mantém a cópia do banco.js sincronizada (ver comentário em window.setOperadorLogado)
     if (typeof window.iniciarHeartbeatColaborador === 'function') window.iniciarHeartbeatColaborador();
     if (typeof window.iniciarNotificacaoGlobalChat === 'function') window.iniciarNotificacaoGlobalChat();
+    if (typeof window.iniciarNotificacaoGlobalFeed === 'function') window.iniciarNotificacaoGlobalFeed();
 
     document.getElementById("tela-login-home").style.display = "none";
     document.getElementById("container-sistema-oms").style.display = "flex";
@@ -7566,16 +7567,110 @@ window.pararNotificacaoGlobalChat = function() {
 // 🆕 Aviso no topo da tela quando chega mensagem nova no Entre Técnicos
 // (além de atualizar o badge, que já acontecia) — mesmo padrão visual
 // de toast já usado em mostrarAvisoPreenchimentoChecklist.
-window.mostrarAvisoNovaMensagemChat = function(nomeArea) {
-    const existente = document.getElementById('toast-nova-mensagem-chat');
-    if (existente) existente.remove();
+// 🆕 Empilha os toasts de aviso (chat + notificações gerais) num
+// container só, um embaixo do outro — sem isso, dois avisos chegando
+// perto um do outro ficavam um exatamente por cima do outro (mesma
+// posição fixa), e o de baixo nunca aparecia.
+function obterContainerToastsAvisos() {
+    let cont = document.getElementById('toasts-avisos-container');
+    if (!cont) {
+        cont = document.createElement('div');
+        cont.id = 'toasts-avisos-container';
+        cont.style.cssText = 'position:fixed; top:16px; right:16px; z-index:10500; display:flex; flex-direction:column; gap:8px; max-width:320px; pointer-events:none;';
+        document.body.appendChild(cont);
+    }
+    return cont;
+}
 
+window.mostrarAvisoNovaMensagemChat = function(nomeArea) {
     const toast = document.createElement('div');
-    toast.id = 'toast-nova-mensagem-chat';
-    toast.style.cssText = 'position:fixed; top:16px; right:16px; z-index:10500; max-width:320px; padding:12px 16px; border-radius:10px; font-size:13px; background:var(--brand, #f59e0b); color:#1a1a1a; box-shadow:0 10px 30px rgba(0,0,0,0.4); animation:fadeInModal 0.25s ease-out;';
+    toast.style.cssText = 'padding:12px 16px; border-radius:10px; font-size:13px; background:var(--brand, #f59e0b); color:#1a1a1a; box-shadow:0 10px 30px rgba(0,0,0,0.4); animation:fadeInModal 0.25s ease-out; pointer-events:auto; cursor:pointer;';
     toast.innerHTML = `<i class="fas fa-comment-dots"></i> Nova mensagem de <strong>${nomeArea}</strong>`;
-    document.body.appendChild(toast);
+    toast.onclick = () => {
+        toast.remove();
+        document.getElementById('nav-chats')?.click();
+    };
+    obterContainerToastsAvisos().appendChild(toast);
     setTimeout(() => toast.remove(), 5000);
+};
+
+// 🆕 Aviso genérico pra QUALQUER notificação da Central (OS, atividade,
+// achado de Qualidade, estoque, sinótico...) — pedido do usuário: "isso
+// pode ser pra todas as notificações aparecer ali por 5 segundos e
+// sumir, aí pra mim ver ou eu clico na notificação ou vou na área de
+// notificações". Clicar já leva direto pro destino (mesma função que o
+// clique dentro da Central usa) e marca como lida.
+window.mostrarAvisoNotificacaoGenerica = function(item) {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'padding:12px 14px; border-radius:10px; font-size:13px; background:var(--bg-card, #1a1a1a); color:var(--text-heading); border:1px solid var(--border-color); box-shadow:0 10px 30px rgba(0,0,0,0.4); animation:fadeInModal 0.25s ease-out; pointer-events:auto; cursor:pointer;';
+    const icone = (typeof ICONE_POR_TIPO_NOTIFICACAO !== 'undefined' && ICONE_POR_TIPO_NOTIFICACAO[item.tipo]) || '📋';
+    toast.innerHTML = `
+        <div style="display:flex; gap:8px; align-items:flex-start;">
+            <span style="font-size:18px; flex-shrink:0;">${icone}</span>
+            <div style="flex:1; min-width:0;">
+                <div style="font-weight:700; color:var(--text-heading);">${escapeHtmlNotif(item.referencia) || 'Notificação'}</div>
+                ${item.descricao ? `<div class="text-muted" style="font-size:12px; margin-top:2px; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${escapeHtmlNotif(limparMarcadorTecnicoDescricao(item.descricao))}</div>` : ''}
+            </div>
+        </div>
+    `;
+    toast.onclick = () => {
+        toast.remove();
+        window.abrirItemNotificacao(item.tipo, item.evento_id, item.referencia, item.area, item.atividade_id != null ? Number(item.atividade_id) : null, item.tipo_evento || 'status');
+    };
+    obterContainerToastsAvisos().appendChild(toast);
+    setTimeout(() => toast.remove(), 5000);
+};
+
+// 🆕 Poller GLOBAL da Central de Notificações (mesmo espírito do
+// iniciarNotificacaoGlobalChat) — roda em qualquer aba, iniciado no
+// login. Compara os ids do feed a cada ciclo com os já vistos NESTA
+// sessão; só avisa dos itens que apareceram DEPOIS da 1ª checagem (não
+// dispara um toast pra cada notificação não lida antiga assim que a
+// pessoa loga).
+const INTERVALO_NOTIFICACAO_GLOBAL_FEED_MS = 15000;
+let TIMER_NOTIFICACAO_GLOBAL_FEED = null;
+let NOTIF_GLOBAL_FEED_IDS_CONHECIDOS = null;
+
+window.iniciarNotificacaoGlobalFeed = function() {
+    if (!OPERADOR_LOGADO || !OPERADOR_LOGADO.matricula) return;
+    window.pararNotificacaoGlobalFeed();
+    TIMER_NOTIFICACAO_GLOBAL_FEED = setInterval(() => {
+        if (!OPERADOR_LOGADO || !OPERADOR_LOGADO.matricula || typeof operadorPodeVerNotificacoes !== 'function' || !operadorPodeVerNotificacoes()) {
+            window.pararNotificacaoGlobalFeed();
+            return;
+        }
+        executarSeguroAsync(async () => {
+            const feed = await window.carregarFeedNotificacoes();
+            if (feed === null) return;
+
+            const feedDoOperador = (typeof operadorTecnicoComArea === 'function' && operadorTecnicoComArea())
+                ? feed.filter(item => item.area === OPERADOR_LOGADO.area)
+                : feed;
+            const idsAtuais = new Set(feedDoOperador.map(i => `${i.tipo}:${i.evento_id}`));
+
+            if (NOTIF_GLOBAL_FEED_IDS_CONHECIDOS === null) {
+                NOTIF_GLOBAL_FEED_IDS_CONHECIDOS = idsAtuais;
+            } else {
+                const novos = feedDoOperador.filter(i => !NOTIF_GLOBAL_FEED_IDS_CONHECIDOS.has(`${i.tipo}:${i.evento_id}`));
+                NOTIF_GLOBAL_FEED_IDS_CONHECIDOS = idsAtuais;
+                // Não duplica aviso se a pessoa já está DENTRO da Central
+                // vendo isso ao vivo.
+                const dentroDaCentral = document.getElementById('aba-notificacoes')?.classList.contains('active');
+                if (!dentroDaCentral) {
+                    novos.slice(0, 3).forEach(item => window.mostrarAvisoNotificacaoGenerica(item));
+                }
+            }
+            if (typeof window.atualizarBadgeNotificacoesNaoLidas === 'function') window.atualizarBadgeNotificacoesNaoLidas(feed);
+        }, 'notificacaoGlobalFeed');
+    }, INTERVALO_NOTIFICACAO_GLOBAL_FEED_MS);
+};
+
+window.pararNotificacaoGlobalFeed = function() {
+    if (TIMER_NOTIFICACAO_GLOBAL_FEED) {
+        clearInterval(TIMER_NOTIFICACAO_GLOBAL_FEED);
+        TIMER_NOTIFICACAO_GLOBAL_FEED = null;
+    }
+    NOTIF_GLOBAL_FEED_IDS_CONHECIDOS = null;
 };
 
 // 🆕 "Estou digitando" — ping throttled (no máx. 1x a cada 1.5s) pro
