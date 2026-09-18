@@ -7074,6 +7074,11 @@ window.excluirAvisoAdm = async function(id) {
 // da própria área" e virou área-a-área). null = ainda não escolheu com
 // qual área conversar (mostra o seletor em vez da thread).
 let CHAT_AREA_ADM_CTX = { area: null, deAdm: false, canal: 'supervisao', areaDestinoTecnicos: null };
+// 🆕 Lembra a última área escolhida no canal "Entre Técnicos" nesta
+// sessão — sem isso, trocar de canal (Supervisão <-> Entre Técnicos) e
+// voltar forçava escolher a área nesse par de novo toda vez, mesmo
+// tendo acabado de escolher (ver window.chatsTrocarCanal).
+let CHAT_ULTIMA_AREA_DESTINO_TECNICOS = null;
 
 window.renderAbaChats = async function() {
     const isAdm = !!(OPERADOR_LOGADO && OPERADOR_LOGADO.isAdm);
@@ -7095,6 +7100,24 @@ window.renderAbaChats = async function() {
             return;
         }
         await window.chatsSelecionarConversa(OFICINA_AREA_ATUAL, false);
+
+        // 🔧 CORREÇÃO ("mandei mensagem no Entre Técnicos e não chegou
+        // nem notificação pro outro lado"): a aba Chats sempre abria no
+        // canal "Com a Supervisão" — quem recebeu uma mensagem no canal
+        // "Entre Técnicos" precisava DESCOBRIR sozinho que existe uma
+        // 2ª aba de canal e escolher a área certa nela pra ver a
+        // conversa. Agora, se tiver alguma mensagem não lida esperando
+        // no Entre Técnicos, já entra direto nela.
+        try {
+            const apiBase = await resolverApiBase();
+            const resp = await fetch(`${apiBase}/api/mensagens_area/resumo_tecnicos?area=${encodeURIComponent(OFICINA_AREA_ATUAL)}`, { cache: 'no-store' });
+            const linhas = resp.ok ? await resp.json() : [];
+            const pendente = Array.isArray(linhas) ? linhas.find(l => (l.nao_lidas || 0) > 0) : null;
+            if (pendente) {
+                window.chatsTrocarCanal('tecnicos');
+                await window.chatsEscolherAreaTecnicos(pendente.outra_area);
+            }
+        } catch (e) { /* não bloqueia a abertura normal do chat por causa disso */ }
     }
 };
 
@@ -7172,7 +7195,19 @@ window.chatsSelecionarConversa = async function(area, deAdm) {
 
     const voltar = document.getElementById('chat-thread-voltar');
     if (voltar) voltar.classList.toggle('hidden', !deAdm);
-    document.getElementById('chat-thread-painel')?.classList.toggle('chat-thread-mobile-ativo', deAdm);
+    // 🔧 CORREÇÃO ("no mobile a aba Chats abre vazia pra técnico"): esta
+    // classe é o que faz o CSS mobile mostrar a thread (ver style.css,
+    // regra ".chat-thread-painel:not(.chat-thread-mobile-ativo){display:
+    // none}") — antes só era ligada quando deAdm=true, ou seja, só
+    // quando o ADM clicava numa conversa da lista. Técnico nunca tem
+    // lista (#chat-lista-painel já fica sempre "hidden" pra ele, ver
+    // renderAbaChats) — sem essa classe, a thread dele também ficava
+    // escondida, e a aba inteira aparecia em branco no celular (o
+    // desktop não tem essa media query, por isso lá não dava pra notar).
+    // Agora liga sempre que uma conversa é selecionada — o ADM ainda
+    // volta pra lista normalmente pelo botão "voltar" (chatsVoltarParaLista,
+    // que remove a classe de novo).
+    document.getElementById('chat-thread-painel')?.classList.add('chat-thread-mobile-ativo');
 
     // 🆕 Mostra as abas de canal e garante que "Com a Supervisão" volta a
     // ficar marcada como ativa (visual) toda vez que abre uma conversa.
@@ -7220,7 +7255,16 @@ window.chatsVoltarParaLista = function() {
 window.chatsTrocarCanal = function(canal) {
     if (!CHAT_AREA_ADM_CTX.area) return;
     CHAT_AREA_ADM_CTX.canal = canal;
-    CHAT_AREA_ADM_CTX.areaDestinoTecnicos = null;
+    // 🔧 CORREÇÃO ("mandei mensagem e sumiu, tenho que ficar escolhendo
+    // a área de novo toda vez"): antes zerava areaDestinoTecnicos
+    // incondicionalmente — trocar pra "Entre Técnicos" sempre caía no
+    // seletor de área, mesmo logo depois de já ter escolhido uma nesta
+    // sessão. Agora, se já tinha uma área escolhida antes (e não é a
+    // própria área da pessoa), reabre direto nela.
+    CHAT_AREA_ADM_CTX.areaDestinoTecnicos =
+        (canal === 'tecnicos' && CHAT_ULTIMA_AREA_DESTINO_TECNICOS && CHAT_ULTIMA_AREA_DESTINO_TECNICOS !== CHAT_AREA_ADM_CTX.area)
+            ? CHAT_ULTIMA_AREA_DESTINO_TECNICOS
+            : null;
     window.chatsCancelarRespostaAtividade();
     document.querySelectorAll('#chat-thread-canais .chat-thread-canal-btn').forEach(btn => {
         btn.classList.toggle('active', btn.textContent.trim().includes(canal === 'tecnicos' ? 'Técnicos' : 'Supervisão'));
@@ -7235,6 +7279,7 @@ window.chatsTrocarCanal = function(canal) {
 // abrirConversaAtividade quando dá pra deduzir a área certa.
 window.chatsEscolherAreaTecnicos = async function(areaDestino) {
     CHAT_AREA_ADM_CTX.areaDestinoTecnicos = areaDestino;
+    CHAT_ULTIMA_AREA_DESTINO_TECNICOS = areaDestino;
     window.chatsAtualizarVisibilidadeEnvio();
     await window.chatsCarregarMensagens();
     try {
