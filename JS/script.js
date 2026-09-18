@@ -4161,6 +4161,7 @@ function atualizarPainelCompleto() {
     executarSeguro(() => atualizarNovosKPIs(), 'atualizarNovosKPIs');
     executarSeguro(() => atualizarKPIsAvancados(), 'atualizarKPIsAvancados');
     executarSeguro(() => renderizarTopCriticos(), 'renderizarTopCriticos');
+    executarSeguro(() => window.atualizarStatusMaquinas(), 'atualizarStatusMaquinas');
     // 🔧 CORREÇÃO ("várias coisas bugando" — vários fetches duplicados,
     // console cheio de erro de rede, cards de gráfico piscando):
     // JS/painelGeralExtra.js JÁ preenche estes mesmos cards (donuts,
@@ -10725,12 +10726,34 @@ window.removerFotoOs = function(indice) {
     renderPreviewFotosOs();
 };
 
+// 🆕 Status por MCC (card "Sistema Online" do Painel Geral) — deriva de
+// GET /api/maquinas/status: enquanto houver uma OS "Em Andamento" com
+// aquela máquina marcada, ela aparece como "Manutenção".
+window.atualizarStatusMaquinas = async function() {
+    const idPorMaquina = { 'MCC 2': 'status-maquina-mcc2', 'MCC 3': 'status-maquina-mcc3', 'MCC 4': 'status-maquina-mcc4' };
+    try {
+        const apiBase = await resolverApiBase();
+        const resp = await fetch(`${apiBase}/api/maquinas/status`, { cache: 'no-store' });
+        if (!resp.ok) return;
+        const lista = await resp.json();
+        (lista || []).forEach(item => {
+            const el = document.getElementById(idPorMaquina[item.maquina]);
+            if (!el) return;
+            el.textContent = item.status;
+            el.classList.toggle('status-manutencao', item.status === 'Manutenção');
+        });
+    } catch (e) {
+        console.error('⚠️ Erro ao atualizar status das máquinas:', e);
+    }
+};
+
 window.confirmarOrdemServico = async function() {
     if (!verificarAcesso()) return;
 
     const numero = document.getElementById('os-numero')?.value.trim();
     const descricao = document.getElementById('os-descricao')?.value.trim();
     const area = document.getElementById('os-area')?.value || null;
+    const maquina = document.getElementById('os-maquina')?.value || null;
 
     if (FOTOS_OS_BASE64.length === 0) return alert('Tire ou anexe pelo menos 1 foto da OS antes de registrar.');
 
@@ -10746,7 +10769,8 @@ window.confirmarOrdemServico = async function() {
                 descricao: descricao || null,
                 fotos_base64: FOTOS_OS_BASE64,
                 operador,
-                area
+                area,
+                maquina
             })
         }, `OS ${numero || '(sem número)'}`);
 
@@ -10769,6 +10793,7 @@ window.confirmarOrdemServico = async function() {
         window.removerFotoOs();
         alert('✅ OS registrada com sucesso.');
         await window.carregarListaOrdensServico();
+        executarSeguro(() => window.atualizarStatusMaquinas(), 'atualizarStatusMaquinas');
     } catch (e) {
         console.error('⚠️ Erro ao registrar OS:', e);
         alert('Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.');
@@ -10958,6 +10983,7 @@ window.mudarStatusOrdemServico = async function(id, novoStatus, motivo) {
             return;
         }
         await window.carregarListaOrdensServico();
+        executarSeguro(() => window.atualizarStatusMaquinas(), 'atualizarStatusMaquinas');
     } catch (e) {
         console.error('⚠️ Erro ao atualizar status da OS:', e);
         alert('Não foi possível conectar ao servidor.');
@@ -10992,6 +11018,7 @@ window.excluirOrdemServico = async function(id) {
             return;
         }
         await window.carregarListaOrdensServico();
+        executarSeguro(() => window.atualizarStatusMaquinas(), 'atualizarStatusMaquinas');
     } catch (e) {
         console.error('⚠️ Erro ao excluir OS:', e);
         alert('Não foi possível conectar ao servidor.');

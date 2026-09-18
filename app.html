@@ -872,36 +872,35 @@
                 <i class="fas fa-circle"></i> Sistema Online
             </div>
             <div class="text-muted" style="font-size:11px; margin-top:4px;">Última atualização: <span id="painel-hero-hora-atualizacao">--:--</span></div>
-            <!-- 🆕 Pedido do usuário: "faltou a MCC3,4" — o card só mostrava
-                 MCC 2. Agora lista as 3 áreas de atuação do sistema, cada
-                 uma com seu próprio selo de status (mesmo texto estático
-                 "Operação Normal" de antes — não existe hoje uma fonte de
-                 dado real de "operação normal/anormal" por MCC pra
-                 calcular isso de verdade; ver nota se quiser que isso vire
-                 dinâmico depois). -->
-            <div class="painel-hero-status-widget">
+            <!-- 🆕 Status por MCC agora é dinâmico (window.atualizarStatusMaquinas,
+                 em JS/script.js): enquanto houver uma OS "Em Andamento"
+                 marcada com essa MCC (campo "Máquina afetada" no Registro
+                 de OS), o selo vira "Manutenção"; ao concluir/excluir/
+                 reabrir a OS ele volta sozinho pra "Operação Normal". O
+                 texto abaixo é só o valor inicial antes do primeiro fetch. -->
+            <div class="painel-hero-status-widget" data-maquina="MCC 2">
                 <div class="painel-hero-status-icone"><i class="fas fa-industry"></i></div>
                 <div>
                     <strong>Aciaria</strong>
                     <span class="text-muted" style="display:block; font-size:11px;">MCC 2</span>
                 </div>
-                <div class="painel-hero-status-selo">Operação Normal</div>
+                <div class="painel-hero-status-selo" id="status-maquina-mcc2">Operação Normal</div>
             </div>
-            <div class="painel-hero-status-widget">
+            <div class="painel-hero-status-widget" data-maquina="MCC 3">
                 <div class="painel-hero-status-icone"><i class="fas fa-industry"></i></div>
                 <div>
                     <strong>Aciaria</strong>
                     <span class="text-muted" style="display:block; font-size:11px;">MCC 3</span>
                 </div>
-                <div class="painel-hero-status-selo">Operação Normal</div>
+                <div class="painel-hero-status-selo" id="status-maquina-mcc3">Operação Normal</div>
             </div>
-            <div class="painel-hero-status-widget">
+            <div class="painel-hero-status-widget" data-maquina="MCC 4">
                 <div class="painel-hero-status-icone"><i class="fas fa-industry"></i></div>
                 <div>
                     <strong>Aciaria</strong>
                     <span class="text-muted" style="display:block; font-size:11px;">MCC 4</span>
                 </div>
-                <div class="painel-hero-status-selo">Operação Normal</div>
+                <div class="painel-hero-status-selo" id="status-maquina-mcc4">Operação Normal</div>
             </div>
         </div>
     </div>
@@ -1839,6 +1838,19 @@
                             <label>Área (opcional)</label>
                             <select id="os-area" class="premium-select" style="width:100%;">
                                 <option value="">Não informar</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <!-- 🆕 Enquanto essa OS estiver "Em Andamento", a MCC
+                                 selecionada aparece como "Manutenção" no card
+                                 "Sistema Online" do Painel Geral (ela para de
+                                 lingotar) — ver window.atualizarStatusMaquinas. -->
+                            <label>Máquina afetada (opcional)</label>
+                            <select id="os-maquina" class="premium-select" style="width:100%;">
+                                <option value="">Não informar</option>
+                                <option value="MCC 2">MCC 2</option>
+                                <option value="MCC 3">MCC 3</option>
+                                <option value="MCC 4">MCC 4</option>
                             </select>
                         </div>
                         <div class="input-group" style="grid-column: span 2;">
