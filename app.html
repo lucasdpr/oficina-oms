@@ -1829,7 +1829,7 @@
                 <div class="glass-panel" style="padding:24px; margin-bottom:24px;">
                     <div class="form-grid-4" style="margin-bottom:16px;">
                         <div class="input-group">
-                            <label>Número da OS (opcional)</label>
+                            <label>Número da OS <span style="color:var(--danger);">*</span></label>
                             <input type="text" id="os-numero" class="premium-input" placeholder="Ex: 12345" style="width:100%;">
                         </div>
                         <div class="input-group">
@@ -1837,16 +1837,16 @@
                                  selecionada aparece como "Manutenção" no card
                                  "Sistema Online" do Painel Geral (ela para de
                                  lingotar) — ver window.atualizarStatusMaquinas. -->
-                            <label>Máquina afetada (opcional)</label>
+                            <label>Máquina afetada <span style="color:var(--danger);">*</span></label>
                             <select id="os-maquina" class="premium-select" style="width:100%;">
-                                <option value="">Não informar</option>
+                                <option value="">Selecione...</option>
                                 <option value="MCC 2">MCC 2</option>
                                 <option value="MCC 3">MCC 3</option>
                                 <option value="MCC 4">MCC 4</option>
                             </select>
                         </div>
                         <div class="input-group" style="grid-column: span 2;">
-                            <label>Descrição (opcional)</label>
+                            <label>Descrição <span style="color:var(--danger);">*</span></label>
                             <textarea id="os-descricao" class="premium-textarea" rows="1" placeholder="Ex: Troca de rolamento no Bender..."></textarea>
                         </div>
                     </div>
@@ -1861,7 +1861,7 @@
                              as atividades normais). Mesmo padrão de checkbox
                              já usado em "Programar Atividade em Massa". -->
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                            <label style="margin:0;">Áreas envolvidas (opcional)</label>
+                            <label style="margin:0;">Áreas envolvidas <span style="color:var(--danger);">*</span></label>
                             <label style="font-size:12px; font-weight:400; color:var(--text-accent); cursor:pointer; display:flex; align-items:center; gap:6px;">
                                 <input type="checkbox" id="os-todas-areas" onchange="window.alternarTodasAreasOs(this.checked)"> Selecionar todas
                             </label>
