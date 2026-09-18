@@ -352,6 +352,17 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
+/* 🆕 Chama atenção pro badge de "mensagem não lida" do nav (Chats) por
+   uns segundos quando chega mensagem nova, mesmo fora da aba de Chats
+   — ver window.iniciarNotificacaoGlobalChat, em JS/script.js. */
+@keyframes badgePiscando {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+  50% { transform: scale(1.25); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
+.badge-piscando {
+  animation: badgePiscando 0.6s ease-in-out 4;
+}
+
 @keyframes fadeInModal {
   from {
     opacity: 0;
