@@ -321,9 +321,9 @@ async function preencherFolhaoSegGrupoComChecklistExecucao(id) {
             'segg-motivo', 'segg-tipo-execucao', 'segg-data-inicio', 'segg-data-fim'
         ]);
 
-        const { preenchidos, naoEncontrados } = preencherCamposFolhao(ponte.valores, camposProtegidos);
+        const { preenchidos, naoEncontrados, camposNaoEncontrados } = preencherCamposFolhao(ponte.valores, camposProtegidos);
         if (preenchidos > 0 || naoEncontrados > 0) {
-            mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados);
+            mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados, camposNaoEncontrados);
         }
     } catch (e) {
         console.error('⚠️ Não consegui puxar os valores do Checklist de Execução pro folhão (Segmento Grupo):', e);

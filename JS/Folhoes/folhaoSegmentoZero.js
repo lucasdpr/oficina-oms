@@ -436,9 +436,9 @@ async function preencherFolhaoSegZeroComChecklistExecucao(id) {
             'segzero-motivo', 'segzero-tipo-execucao', 'segzero-data-inicio', 'segzero-data-fim'
         ]);
 
-        const { preenchidos, naoEncontrados } = preencherCamposFolhao(ponte.valores, camposProtegidos);
+        const { preenchidos, naoEncontrados, camposNaoEncontrados } = preencherCamposFolhao(ponte.valores, camposProtegidos);
         if (preenchidos > 0 || naoEncontrados > 0) {
-            mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados);
+            mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados, camposNaoEncontrados);
         }
     } catch (e) {
         console.error('⚠️ Não consegui puxar os valores do Checklist de Execução pro folhão (Segmento Zero):', e);

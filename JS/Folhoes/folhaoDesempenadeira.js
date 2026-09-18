@@ -291,9 +291,9 @@ async function preencherFolhaoDesempComChecklistExecucao(id) {
             'desemp-motivo', 'desemp-tipo-exec', 'desemp-data-montagem', 'desemp-data-troca'
         ]);
 
-        const { preenchidos, naoEncontrados } = preencherCamposFolhao(ponte.valores, camposProtegidos);
+        const { preenchidos, naoEncontrados, camposNaoEncontrados } = preencherCamposFolhao(ponte.valores, camposProtegidos);
         if (preenchidos > 0 || naoEncontrados > 0) {
-            mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados);
+            mostrarAvisoPreenchimentoChecklist(preenchidos, naoEncontrados, camposNaoEncontrados);
         }
     } catch (e) {
         console.error('⚠️ Não consegui puxar os valores do Checklist de Execução pro folhão (Desempenadeira):', e);
