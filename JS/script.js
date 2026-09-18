@@ -7378,9 +7378,12 @@ window.chatsCarregarMensagens = async function() {
             ? (() => {
                 const infoDestino = AREAS_OFICINA.find(a => a.chave === CHAT_AREA_ADM_CTX.areaDestinoTecnicos);
                 return `<div class="chat-thread-area-destino-cabecalho">
-                    <span><i class="fas fa-people-arrows"></i> Falando com: <strong>${infoDestino ? infoDestino.nome : CHAT_AREA_ADM_CTX.areaDestinoTecnicos}</strong></span>
+                    <span><i class="fas fa-people-arrows"></i> Falando com: <strong>${infoDestino ? infoDestino.nome : CHAT_AREA_ADM_CTX.areaDestinoTecnicos}</strong>
+                        · <span id="chat-thread-presenca" class="text-muted" style="font-size:11px;">...</span>
+                    </span>
                     ${!CHAT_AREA_ADM_CTX.deAdm ? `<button type="button" onclick="window.chatsTrocarAreaTecnicos()">Trocar área</button>` : ''}
-                </div>`;
+                </div>
+                <div id="chat-thread-digitando" class="hidden" style="font-size:11px; color:var(--text-accent); font-style:italic; padding:2px 4px 6px;"></div>`;
             })()
             : '';
         cont.innerHTML = cabecalhoAreaDestino + (lista.length ? lista.map(m => {
@@ -7403,9 +7406,127 @@ window.chatsCarregarMensagens = async function() {
             `;
         }).join('') : `<div class="chat-vazio">${canal === 'tecnicos' ? 'Nenhuma mensagem com essa área ainda.' : 'Nenhuma mensagem ainda — mande a primeira 👋'}</div>`);
         if (permaneceEmbaixo) cont.scrollTop = cont.scrollHeight;
+
+        // 🆕 Enquanto essa conversa Entre Técnicos estiver aberta, liga o
+        // polling rápido (digitando/presença/mensagem nova) — ver
+        // window.iniciarPollingRapidoChatTecnicos.
+        if (canal === 'tecnicos' && CHAT_AREA_ADM_CTX.areaDestinoTecnicos) {
+            const ultimaMsg = lista.length ? lista[lista.length - 1] : null;
+            if (CHAT_TECNICOS_ULTIMA_EM_CONHECIDA === null && ultimaMsg) {
+                CHAT_TECNICOS_ULTIMA_EM_CONHECIDA = ultimaMsg.criado_em;
+            }
+            window.iniciarPollingRapidoChatTecnicos();
+        }
     } catch (e) {
         cont.innerHTML = '<div class="chat-vazio">Não consegui carregar a conversa.</div>';
     }
+};
+
+// 🆕 "Está digitando...", presença (online/offline + último acesso) e
+// aviso de mensagem nova no canal Entre Técnicos — pedido do usuário,
+// igual WhatsApp. O auto-refresh geral (REFRESH_POR_ABA) já cobria essa
+// aba a cada 15s, rápido demais pra virar chat de verdade mas devagar
+// demais pra "digitando"; este é um timer À PARTE, só enquanto uma
+// conversa Entre Técnicos está de fato aberta na tela, e se autodesarma
+// sozinho quando a pessoa sai dela (mesmo padrão de polling
+// autodesarmável já usado no resto do arquivo).
+const INTERVALO_POLLING_RAPIDO_CHAT_MS = 3000;
+let TIMER_POLLING_RAPIDO_CHAT = null;
+let CHAT_TECNICOS_ULTIMA_EM_CONHECIDA = null;
+
+window.iniciarPollingRapidoChatTecnicos = function() {
+    window.pararPollingRapidoChat();
+    TIMER_POLLING_RAPIDO_CHAT = setInterval(async () => {
+        const aba = document.getElementById('aba-chats');
+        const emConversaTecnicos = aba && aba.classList.contains('active')
+            && CHAT_AREA_ADM_CTX.canal === 'tecnicos' && CHAT_AREA_ADM_CTX.areaDestinoTecnicos;
+        if (!emConversaTecnicos) { window.pararPollingRapidoChat(); return; }
+
+        const minhaArea = CHAT_AREA_ADM_CTX.area;
+        const outraArea = CHAT_AREA_ADM_CTX.areaDestinoTecnicos;
+
+        executarSeguroAsync(async () => {
+            const apiBase = await resolverApiBase();
+
+            // "Está digitando..."
+            const respDig = await fetch(`${apiBase}/api/mensagens_area/digitando?area=${encodeURIComponent(minhaArea)}&area_destino=${encodeURIComponent(outraArea)}`, { cache: 'no-store' });
+            const dadosDig = respDig.ok ? await respDig.json() : { digitando: false };
+            const elDig = document.getElementById('chat-thread-digitando');
+            if (elDig) {
+                const infoDestino = AREAS_OFICINA.find(a => a.chave === outraArea);
+                elDig.textContent = dadosDig.digitando ? `${infoDestino ? infoDestino.nome : outraArea} está digitando...` : '';
+                elDig.classList.toggle('hidden', !dadosDig.digitando);
+            }
+
+            // Presença (online agora / offline há Xh) da área com quem fala.
+            const respPresenca = await fetch(`${apiBase}/api/colaboradores/presenca_area?area=${encodeURIComponent(outraArea)}`, { cache: 'no-store' });
+            const dadosPresenca = respPresenca.ok ? await respPresenca.json() : { ultimo_acesso: null };
+            const elPresenca = document.getElementById('chat-thread-presenca');
+            if (elPresenca && typeof window.formatarPresencaColaborador === 'function') {
+                elPresenca.innerHTML = window.formatarPresencaColaborador(dadosPresenca.ultimo_acesso);
+            }
+
+            // Mensagem nova chegou? (resumo_tecnicos é uma query bem mais
+            // leve que buscar a conversa inteira de novo a cada 3s).
+            const respResumo = await fetch(`${apiBase}/api/mensagens_area/resumo_tecnicos?area=${encodeURIComponent(minhaArea)}`, { cache: 'no-store' });
+            const linhasResumo = respResumo.ok ? await respResumo.json() : [];
+            const par = Array.isArray(linhasResumo) ? linhasResumo.find(l => l.outra_area === outraArea) : null;
+            if (par && par.ultima_em && par.ultima_em !== CHAT_TECNICOS_ULTIMA_EM_CONHECIDA) {
+                const eraPrimeiraChecagem = CHAT_TECNICOS_ULTIMA_EM_CONHECIDA === null;
+                CHAT_TECNICOS_ULTIMA_EM_CONHECIDA = par.ultima_em;
+                await window.chatsCarregarMensagens();
+                if (!eraPrimeiraChecagem) {
+                    window.mostrarAvisoNovaMensagemChat(par.nome_area || outraArea);
+                    executarSeguro(() => window.atualizarBadgeChatAreaAdm(), 'atualizarBadgeChatAreaAdm');
+                }
+            }
+        }, 'pollingRapidoChatTecnicos');
+    }, INTERVALO_POLLING_RAPIDO_CHAT_MS);
+};
+
+window.pararPollingRapidoChat = function() {
+    if (TIMER_POLLING_RAPIDO_CHAT) {
+        clearInterval(TIMER_POLLING_RAPIDO_CHAT);
+        TIMER_POLLING_RAPIDO_CHAT = null;
+    }
+    CHAT_TECNICOS_ULTIMA_EM_CONHECIDA = null;
+};
+
+// 🆕 Aviso no topo da tela quando chega mensagem nova no Entre Técnicos
+// (além de atualizar o badge, que já acontecia) — mesmo padrão visual
+// de toast já usado em mostrarAvisoPreenchimentoChecklist.
+window.mostrarAvisoNovaMensagemChat = function(nomeArea) {
+    const existente = document.getElementById('toast-nova-mensagem-chat');
+    if (existente) existente.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'toast-nova-mensagem-chat';
+    toast.style.cssText = 'position:fixed; top:16px; right:16px; z-index:10500; max-width:320px; padding:12px 16px; border-radius:10px; font-size:13px; background:var(--brand, #f59e0b); color:#1a1a1a; box-shadow:0 10px 30px rgba(0,0,0,0.4); animation:fadeInModal 0.25s ease-out;';
+    toast.innerHTML = `<i class="fas fa-comment-dots"></i> Nova mensagem de <strong>${nomeArea}</strong>`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 5000);
+};
+
+// 🆕 "Estou digitando" — ping throttled (no máx. 1x a cada 1.5s) pro
+// outro lado saber, só quando o campo tem texto de verdade. O TTL no
+// backend (DIGITANDO_TTL_SEGUNDOS) cuida de "parar de mostrar" sozinho
+// se a pessoa parar de digitar sem mandar nem apagar o texto.
+let CHAT_ULTIMO_PING_DIGITANDO = 0;
+window.chatsAvisarDigitando = function() {
+    if (CHAT_AREA_ADM_CTX.canal !== 'tecnicos' || !CHAT_AREA_ADM_CTX.areaDestinoTecnicos) return;
+    const input = document.getElementById('chat-thread-input');
+    if (!input || !input.value.trim()) return;
+    const agora = Date.now();
+    if (agora - CHAT_ULTIMO_PING_DIGITANDO < 1500) return;
+    CHAT_ULTIMO_PING_DIGITANDO = agora;
+    executarSeguroAsync(async () => {
+        const apiBase = await resolverApiBase();
+        await fetch(`${apiBase}/api/mensagens_area/digitando`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ area: CHAT_AREA_ADM_CTX.area, area_destino: CHAT_AREA_ADM_CTX.areaDestinoTecnicos })
+        });
+    }, 'chatsAvisarDigitando');
 };
 
 // 🆕 Foto escolhida (câmera ou galeria) aguardando envio — guardada já
