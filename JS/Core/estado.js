@@ -119,3 +119,32 @@ export const MATRICULAS_AUDITORIA = ["CBK3574", "CSP1869"];
 let OFICINA_AREA_ATUAL = null;
 export { OFICINA_AREA_ATUAL };
 export function setOficinaAreaAtual(novaChave) { OFICINA_AREA_ATUAL = novaChave; }
+
+// 🆕 Cache de atividades da Oficina e o "estado do formulário" de Nova
+// Atividade — lidos/escritos pela Central de Áreas, pela própria Área
+// da Oficina, pela Ponte Rolante e pelo Painel do Supervisor (leitura).
+// Todos ainda moram fisicamente em script.js hoje, mas como 4 áreas
+// diferentes mexem nisso, o estado precisa ser único de verdade.
+let OFICINA_ATIVIDADES_CACHE = [];
+export { OFICINA_ATIVIDADES_CACHE };
+export function setOficinaAtividadesCache(novaLista) { OFICINA_ATIVIDADES_CACHE = novaLista; }
+
+let OFICINA_FILTRO_STATUS_ATUAL = '';
+export { OFICINA_FILTRO_STATUS_ATUAL };
+export function setOficinaFiltroStatusAtual(novoStatus) { OFICINA_FILTRO_STATUS_ATUAL = novoStatus; }
+
+let OFICINA_TIPO_ATIVIDADE_ATUAL = 'equipamento'; // 'equipamento' | 'avulsa'
+export { OFICINA_TIPO_ATIVIDADE_ATUAL };
+export function setOficinaTipoAtividadeAtual(novoTipo) { OFICINA_TIPO_ATIVIDADE_ATUAL = novoTipo; }
+
+let OFICINA_FOTO_BASE64 = null;
+export { OFICINA_FOTO_BASE64 };
+export function setOficinaFotoBase64(novaFoto) { OFICINA_FOTO_BASE64 = novaFoto; }
+
+let OFICINA_EDITANDO_ID = null; // null = criando atividade nova; número = editando essa atividade
+export { OFICINA_EDITANDO_ID };
+export function setOficinaEditandoId(novoId) { OFICINA_EDITANDO_ID = novoId; }
+
+let OFICINA_EQUIPE_ATUAL = []; // equipe da área aberta no momento (usada no seletor de Responsável)
+export { OFICINA_EQUIPE_ATUAL };
+export function setOficinaEquipeAtual(novaEquipe) { OFICINA_EQUIPE_ATUAL = novaEquipe; }

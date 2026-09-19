@@ -506,3 +506,18 @@ export function mostrarToastDesfazer(mensagem, aoConfirmar, aoDesfazer) {
         if (typeof aoDesfazer === 'function') aoDesfazer();
     };
 }
+
+// 🆕 Usadas por Central de Áreas, Área da Oficina e Painel do Supervisor
+// pra saber se uma atividade está atrasada (prazo passou) ou ainda não
+// começou (tem Data de Início cadastrada e ela é futura).
+export function atividadeEstaAtrasada(x) {
+    if (x.status === 'Concluído' || !x.prazo) return false;
+    const hoje = new Date().toISOString().slice(0, 10);
+    return x.prazo < hoje;
+}
+
+export function atividadeAindaNaoComecou(x) {
+    if (!x.data_inicio) return false;
+    const hoje = new Date().toISOString().slice(0, 10);
+    return x.data_inicio > hoje;
+}

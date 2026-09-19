@@ -42,7 +42,19 @@ import {
     MATRICULAS_TESTE_FOLHOES,
     MATRICULAS_AUDITORIA,
     OFICINA_AREA_ATUAL,
-    setOficinaAreaAtual
+    setOficinaAreaAtual,
+    OFICINA_ATIVIDADES_CACHE,
+    setOficinaAtividadesCache,
+    OFICINA_FILTRO_STATUS_ATUAL,
+    setOficinaFiltroStatusAtual,
+    OFICINA_TIPO_ATIVIDADE_ATUAL,
+    setOficinaTipoAtividadeAtual,
+    OFICINA_FOTO_BASE64,
+    setOficinaFotoBase64,
+    OFICINA_EDITANDO_ID,
+    setOficinaEditandoId,
+    OFICINA_EQUIPE_ATUAL,
+    setOficinaEquipeAtual
 } from './Core/estado.js';
 
 import {
@@ -56,7 +68,9 @@ import {
     fetchComRetry,
     animarNumero,
     enviarComFilaOffline,
-    mostrarToastDesfazer
+    mostrarToastDesfazer,
+    atividadeEstaAtrasada,
+    atividadeAindaNaoComecou
 } from './Core/utils.js';
 
 import {
@@ -3639,10 +3653,10 @@ window.carregarOficina = async function() {
         const apiBase = await resolverApiBase();
         const resp = await fetch(`${apiBase}/api/oficina/atividades`, { cache: 'no-store' });
         const todas = resp.ok ? await resp.json() : [];
-        OFICINA_ATIVIDADES_CACHE = Array.isArray(todas) ? todas : [];
+        setOficinaAtividadesCache(Array.isArray(todas) ? todas : []);
     } catch (e) {
         console.error('⚠️ Não consegui carregar as atividades da oficina:', e);
-        OFICINA_ATIVIDADES_CACHE = [];
+        setOficinaAtividadesCache([]);
     }
 
     CENTRAL_AREAS_FILTRO_STATUS = '';
@@ -3686,7 +3700,7 @@ window.iniciarPollingRapidoArea = function() {
             const apiBase = await resolverApiBase();
             const resp = await fetch(`${apiBase}/api/oficina/atividades`, { cache: 'no-store' });
             const todas = resp.ok ? await resp.json() : [];
-            OFICINA_ATIVIDADES_CACHE = Array.isArray(todas) ? todas : [];
+            setOficinaAtividadesCache(Array.isArray(todas) ? todas : []);
             renderizarAtividadesArea();
             if (typeof window.carregarOsDaArea === 'function') await window.carregarOsDaArea();
         }, 'pollingRapidoArea');
@@ -3710,7 +3724,7 @@ window.atualizarOficinaSilencioso = async function() {
         const apiBase = await resolverApiBase();
         const resp = await fetch(`${apiBase}/api/oficina/atividades`, { cache: 'no-store' });
         const todas = resp.ok ? await resp.json() : [];
-        OFICINA_ATIVIDADES_CACHE = Array.isArray(todas) ? todas : [];
+        setOficinaAtividadesCache(Array.isArray(todas) ? todas : []);
     } catch (e) {
         console.error('⚠️ Não consegui atualizar as atividades da oficina (mantendo a lista anterior):', e);
         return;
@@ -3818,26 +3832,7 @@ window.confirmarAtividadeMassa = async function() {
     if (typeof window.carregarOficina === 'function') window.carregarOficina();
 };
 
-// Uma atividade está "atrasada" quando ainda não foi concluída, TEM um
-// prazo definido, e esse prazo já passou. Sem prazo definido, nunca
-// conta como atrasada (não dá pra saber isso sem uma data de referência).
-function atividadeEstaAtrasada(x) {
-    if (x.status === 'Concluído' || !x.prazo) return false;
-    const hoje = new Date().toISOString().slice(0, 10);
-    return x.prazo < hoje;
-}
-
-// 🆕 Uma atividade "ainda não começou" quando tem uma Data de Início
-// cadastrada e essa data é futura (depois de hoje). Ela existe no
-// sistema (dá pra editar/excluir), mas não entra nas contagens de
-// Pendente/Em Andamento nem na lista principal — só aparece como
-// "pra fazer" no dia marcado. Sem data de início, é considerada já
-// disponível pra começar (comportamento de antes, sem quebrar nada).
-function atividadeAindaNaoComecou(x) {
-    if (!x.data_inicio) return false;
-    const hoje = new Date().toISOString().slice(0, 10);
-    return x.data_inicio > hoje;
-}
+// (atividadeEstaAtrasada e atividadeAindaNaoComecou agora vêm de Core/utils.js)
 
 // --------------------------------------------------------------
 // KPIs GLOBAIS DA OFICINA (topo da aba, acima da grade de áreas)
@@ -3869,14 +3864,11 @@ function atualizarKpisOficina() {
     definirTexto('oficina-kpi-andamento', emAndamento);
 }
 
-// Estado local do módulo de Oficina.
-// (OFICINA_AREA_ATUAL agora vem de Core/estado.js — compartilhada com Chats)
-let OFICINA_ATIVIDADES_CACHE = [];
-let OFICINA_FILTRO_STATUS_ATUAL = '';
-let OFICINA_TIPO_ATIVIDADE_ATUAL = 'equipamento'; // 'equipamento' | 'avulsa'
-let OFICINA_FOTO_BASE64 = null;
-export let OFICINA_EQUIPE_ATUAL = []; // equipe da área aberta no momento (usada no seletor de Responsável)
-let OFICINA_EDITANDO_ID = null; // null = criando atividade nova; número = editando essa atividade
+// (OFICINA_ATIVIDADES_CACHE, OFICINA_AREA_ATUAL, OFICINA_FILTRO_STATUS_ATUAL,
+// OFICINA_TIPO_ATIVIDADE_ATUAL, OFICINA_FOTO_BASE64, OFICINA_EDITANDO_ID e
+// OFICINA_EQUIPE_ATUAL agora vêm de Core/estado.js — lidas/escritas por
+// mais de uma área: Central de Áreas, Área da Oficina, Ponte Rolante e
+// Painel do Supervisor.)
 
 // ==========================================
 // PAINÉIS ADMINISTRATIVOS (ADM, Almoxarifado, Ponte Rolante, Logística)
@@ -5529,9 +5521,9 @@ window.abrirAreaOficina = async function(chave, abaInicial) {
     if (typeof window.carregarOsDaArea === 'function') window.carregarOsDaArea();
     if (typeof window.atualizarBadgeChatAreaAdm === 'function') window.atualizarBadgeChatAreaAdm();
     if (typeof window.iniciarPollingRapidoArea === 'function') window.iniciarPollingRapidoArea();
-    OFICINA_FILTRO_STATUS_ATUAL = '';
-    OFICINA_TIPO_ATIVIDADE_ATUAL = 'equipamento';
-    OFICINA_EQUIPE_ATUAL = [];
+    setOficinaFiltroStatusAtual('');
+    setOficinaTipoAtividadeAtual('equipamento');
+    setOficinaEquipeAtual([]);
     window.cancelarEdicaoAtividadeOficina(); // garante que não fica "preso" numa edição de outra área
 
     document.getElementById('area-oficina-nome').textContent = area.nome;
@@ -5589,7 +5581,7 @@ window.abrirAreaOficina = async function(chave, abaInicial) {
         const apiBase = await resolverApiBase();
         const resp = await fetch(`${apiBase}/api/oficina/atividades`, { cache: 'no-store' });
         const todas = resp.ok ? await resp.json() : [];
-        OFICINA_ATIVIDADES_CACHE = Array.isArray(todas) ? todas : [];
+        setOficinaAtividadesCache(Array.isArray(todas) ? todas : []);
     } catch (e) {
         console.error('⚠️ Não consegui atualizar as atividades da oficina:', e);
     }
@@ -5622,7 +5614,7 @@ window.fecharAreaOficina = function() {
 // TOGGLE: atividade vinculada a equipamento x tarefa avulsa
 // --------------------------------------------------------------
 window.alternarTipoAtividadeOficina = function(tipo) {
-    OFICINA_TIPO_ATIVIDADE_ATUAL = tipo;
+    setOficinaTipoAtividadeAtual(tipo);
     document.getElementById('area-oficina-tipo-equip').classList.toggle('active', tipo === 'equipamento');
     document.getElementById('area-oficina-tipo-avulsa').classList.toggle('active', tipo === 'avulsa');
     const wrap = document.getElementById('area-oficina-select-equip-wrap');
@@ -5633,7 +5625,7 @@ window.alternarTipoAtividadeOficina = function(tipo) {
 // FILTRO DE STATUS (dentro do modal da área)
 // --------------------------------------------------------------
 window.filtrarAtividadesArea = function(status, botaoClicado) {
-    OFICINA_FILTRO_STATUS_ATUAL = status;
+    setOficinaFiltroStatusAtual(status);
     document.querySelectorAll('#area-oficina-filtros .btn-filter-mcc').forEach(b => b.classList.remove('active'));
     if (botaoClicado) botaoClicado.classList.add('active');
     renderizarAtividadesArea();
@@ -6687,7 +6679,7 @@ window.processarFotoAtividadeOficina = function(event) {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, largura, altura);
 
-            OFICINA_FOTO_BASE64 = canvas.toDataURL('image/jpeg', 0.7);
+            setOficinaFotoBase64(canvas.toDataURL('image/jpeg', 0.7));
 
             const preview = document.getElementById('area-oficina-foto-preview');
             const container = document.getElementById('area-oficina-foto-preview-container');
@@ -6701,7 +6693,7 @@ window.processarFotoAtividadeOficina = function(event) {
 };
 
 window.removerFotoAtividadeOficina = function() {
-    OFICINA_FOTO_BASE64 = null;
+    setOficinaFotoBase64(null);
     const preview = document.getElementById('area-oficina-foto-preview');
     const container = document.getElementById('area-oficina-foto-preview-container');
     if (preview) preview.src = '';
@@ -6747,7 +6739,7 @@ async function carregarEquipeAreaOficina(chave) {
         const apiBase = await resolverApiBase();
         const resp = await fetch(`${apiBase}/api/oficina/equipe/${encodeURIComponent(chave)}`, { cache: 'no-store' });
         const equipe = resp.ok ? await resp.json() : [];
-        OFICINA_EQUIPE_ATUAL = Array.isArray(equipe) ? equipe : [];
+        setOficinaEquipeAtual(Array.isArray(equipe) ? equipe : []);
 
         // 🔧 CORREÇÃO ("técnico da área ser o líder da equipe" — vale
         // pra TODAS as áreas, não só uma): antes o "responsável" mostrado
@@ -7191,7 +7183,7 @@ window.editarAtividadeOficina = function(id) {
     const atividade = OFICINA_ATIVIDADES_CACHE.find(x => x.id === id);
     if (!atividade) return;
 
-    OFICINA_EDITANDO_ID = id;
+    setOficinaEditandoId(id);
 
     // Tipo (equipamento x avulsa) + equipamento selecionado
     window.alternarTipoAtividadeOficina(atividade.equipamento_id ? 'equipamento' : 'avulsa');
@@ -7227,7 +7219,7 @@ window.editarAtividadeOficina = function(id) {
     // TODA atividade só pra montar a grade). Se essa atividade tem foto
     // (`tem_foto`), busca sob demanda agora, só porque alguém abriu
     // pra editar. Sem tem_foto, nem tenta.
-    OFICINA_FOTO_BASE64 = null;
+    setOficinaFotoBase64(null);
     const preview = document.getElementById('area-oficina-foto-preview');
     const previewContainer = document.getElementById('area-oficina-foto-preview-container');
     if (preview) preview.src = '';
@@ -7239,7 +7231,7 @@ window.editarAtividadeOficina = function(id) {
                 const resp = await fetch(`${apiBase}/api/oficina/atividades/${id}/foto`);
                 const dados = resp.ok ? await resp.json() : null;
                 if (dados && dados.foto_base64 && OFICINA_EDITANDO_ID === id) {
-                    OFICINA_FOTO_BASE64 = dados.foto_base64;
+                    setOficinaFotoBase64(dados.foto_base64);
                     if (preview) preview.src = OFICINA_FOTO_BASE64;
                     if (previewContainer) previewContainer.classList.remove('hidden');
                 }
@@ -7260,7 +7252,7 @@ window.editarAtividadeOficina = function(id) {
 };
 
 window.cancelarEdicaoAtividadeOficina = function() {
-    OFICINA_EDITANDO_ID = null;
+    setOficinaEditandoId(null);
     document.getElementById('area-oficina-form-titulo').textContent = 'Nova Atividade';
     document.getElementById('area-oficina-form-icone').className = 'fas fa-plus';
     document.getElementById('area-oficina-btn-texto').textContent = 'Lançar Atividade';
