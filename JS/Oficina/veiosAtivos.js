@@ -10,7 +10,8 @@
 
 import { resolverApiBase, salvarPecaNoPython, salvarHistoricoNoPython, BANCO_ATIVOS } from '../Core/banco.js?v=5';
 import { OPERADOR_LOGADO, HISTORICO_ACOES, RASCUNHOS_IDS_ATIVOS, MATRICULAS_ADM, setFiltroCategoriaAuditoria } from '../Core/estado.js';
-import { verificarAcesso, filtrarPorAreaTecnico } from '../Core/permissoes.js';
+import { verificarAcesso } from '../Core/permissoes.js';
+import { filtrarPorAreaTecnico } from '../Core/utils.js';
 import { calcularDias, rotuloDesgaste } from '../Core/utils.js';
 import { AREAS_OFICINA } from '../Core/dados.js';
 
