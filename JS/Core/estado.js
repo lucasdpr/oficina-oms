@@ -111,3 +111,11 @@ export const MATRICULAS_TESTE_FOLHOES = ["CBK3574", "CSP1869"];
 // a montar a tabela pra quem não está na lista — ninguém não autorizado
 // vê os dados de auditoria, nem forçando a aba pelo console do navegador.
 export const MATRICULAS_AUDITORIA = ["CBK3574", "CSP1869"];
+
+// 🆕 Chave da área da Oficina que a pessoa está olhando agora — usada
+// tanto por quem abre a tela da área (Área da Oficina) quanto por quem
+// abre um chat de uma área específica (Chats), pra saber "de qual área
+// estamos falando" sem precisar passar isso de módulo em módulo.
+let OFICINA_AREA_ATUAL = null;
+export { OFICINA_AREA_ATUAL };
+export function setOficinaAreaAtual(novaChave) { OFICINA_AREA_ATUAL = novaChave; }
