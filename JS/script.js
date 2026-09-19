@@ -27,6 +27,22 @@ import {
     setOperador as setOperadorBanco
 } from './Core/banco.js?v=5';
 
+import {
+    HISTORICO_ACOES,
+    BANCO_ROLOS,
+    BANCO_HIDRAULICA,
+    BANCO_MATERIAIS,
+    setBancoMateriais,
+    OPERADOR_LOGADO,
+    setOperadorLogado,
+    RASCUNHOS_IDS_ATIVOS,
+    setRascunhosIdsAtivos,
+    recarregarRolosEHidraulicaLocal,
+    MATRICULAS_ADM,
+    MATRICULAS_TESTE_FOLHOES,
+    MATRICULAS_AUDITORIA
+} from './Core/estado.js';
+
 // ==========================================
 // 🔧 CORREÇÃO ("depois do login a tela fica em branco, só o cabeçalho
 // aparece"): finalizarLogin() e entrarComoVisitante() chamam várias
@@ -124,15 +140,6 @@ window.ativarPushNotification = async function () {
 };
 
 
-// ==========================================================================
-// BANCO DE DADOS CORE - SISTEMA OMS
-// ==========================================================================
-let HISTORICO_ACOES = JSON.parse(localStorage.getItem("oms_historico_v32_local")) || [];
-let BANCO_ROLOS = JSON.parse(localStorage.getItem("oms_rolos_v32_local"));
-let BANCO_MATERIAIS = []; // carregado do Neon via carregarMateriaisDoBackend() — não é mais localStorage
-
-let OPERADOR_LOGADO = JSON.parse(localStorage.getItem("oms_operador_v32_local")) || null;
-
 // 🆕 Headers pras rotas ADMIN (mudar cargo, resetar senha, ativar/
 // desativar colaborador, desfazer apontamento) — agora exigem um token
 // de sessão de verdade no servidor (ver app_core.py/exigir_admin no
@@ -146,11 +153,6 @@ function headersAdmin() {
 }
 let VEIO_SELECIONADO_PAINEL = "C";
 let FILTRO_CRITICOS = false;
-
-// Matrículas com acesso total a todas as áreas da Oficina (mesma lista
-// do backend, em main.py). Usado no front pra decidir se o Painel do
-// Técnico mostra tudo (ADM) ou só a área da pessoa.
-export const MATRICULAS_ADM = ["CBK3574", "CSP1869", "CSP6632"];
 
 // ==========================================
 // 🆕 RESTRIÇÃO POR ÁREA — função única, reaproveitada em toda tela que
@@ -180,12 +182,6 @@ function filtrarPorAreaTecnico(lista) {
 let MODO_MODAL_RELATORIO = {};
 let ID_HISTORICO_ATUAL = null;
 
-// 🆕 IDs de equipamentos com rascunho salvo (reparo já iniciado, ainda
-// não concluído). Usado por renderReparos() pra tirar da lista
-// "Iniciar Reparo" quem já está "em andamento". Populado por
-// atualizarRascunhosAtivos() e reaproveitado por carregarReparosAndamento().
-let RASCUNHOS_IDS_ATIVOS = new Set();
-
 // Busca a lista de rascunhos ativos no back-end, atualiza o cache
 // local (RASCUNHOS_IDS_ATIVOS) e re-renderiza "Iniciar Reparo" pra
 // esconder quem já foi iniciado. Chamada toda vez que a aba de Reparo
@@ -196,7 +192,7 @@ async function atualizarRascunhosAtivos() {
         const resp = await fetch(`${apiBase}/api/folhao/rascunhos/todos`, { cache: 'no-store' });
         if (!resp.ok) throw new Error("Falha ao buscar rascunhos.");
         const rascunhos = await resp.json();
-        RASCUNHOS_IDS_ATIVOS = new Set(rascunhos.map(r => r.equipamento_id));
+        setRascunhosIdsAtivos(new Set(rascunhos.map(r => r.equipamento_id)));
     } catch (e) {
         console.error('⚠️ Não consegui atualizar rascunhos ativos (lista "Iniciar Reparo" pode mostrar item já em andamento):', e);
     }
@@ -262,67 +258,6 @@ window.calcularDias = function(item) {
     }
     return item.dias || 0;
 };
-
-// ==========================================================================
-// INICIALIZAÇÃO DOS BANCOS (se não existirem)
-// ==========================================================================
-if (!BANCO_ROLOS) {
-    BANCO_ROLOS = [
-        { id: "R-S5", nome: "Rolo de Cadeira 450", conjunto: "Cadeira", mcc_compat: "2/3", qtd: 14 },
-        { id: "R-S5P", nome: "Rolo de Cadeira 450 Puxador", conjunto: "Cadeira", mcc_compat: "2/3", qtd: 8 },
-        { id: "R-S4", nome: "Rolo de Cadeira 400", conjunto: "Cadeira", mcc_compat: "2/3", qtd: 12 },
-        { id: "R-S4P", nome: "Rolo de Cadeira 400 Puxador", conjunto: "Cadeira", mcc_compat: "2/3", qtd: 6 },
-        { id: "R-H300A", nome: "Rolo Horizontal de 300 Acionado", conjunto: "Segmento", mcc_compat: "4", qtd: 6 },
-        { id: "R-200", nome: "Rolo 200", conjunto: "Segmento Zero", mcc_compat: "2/3/4", qtd: 8 },
-        { id: "R-FR23", nome: "Foot Roll", conjunto: "Molde", mcc_compat: "2/3", qtd: 4 }
-    ];
-    localStorage.setItem("oms_rolos_v32_local", JSON.stringify(BANCO_ROLOS));
-}
-
-// ==========================================================================
-// ESTOQUE HIDRÁULICO (fica logo abaixo de Estoque de Rolos no menu)
-// ==========================================================================
-let BANCO_HIDRAULICA = JSON.parse(localStorage.getItem("oms_hidraulica_v32_local"));
-if (!BANCO_HIDRAULICA) {
-    BANCO_HIDRAULICA = [
-        // ---- MCC 2/3 ----
-        { id: "H-PGH12", nome: "Porca Hidráulica Grupo 1,2", conjunto: "Grupo 1,2", mcc_compat: "2/3", qtd: 0 },
-        { id: "H-PGH3", nome: "Porca Hidráulica Grupo 3", conjunto: "Grupo 3", mcc_compat: "2/3", qtd: 0 },
-        { id: "H-CIL-G1", nome: "Cilindro de Grupo 1", conjunto: "Grupo 1", mcc_compat: "2/3", qtd: 0 },
-        { id: "H-CIL-G2", nome: "Cilindro de Grupo 2", conjunto: "Grupo 2", mcc_compat: "2/3", qtd: 0 },
-        { id: "H-CIL-G3", nome: "Cilindro de Grupo 3", conjunto: "Grupo 3", mcc_compat: "2/3", qtd: 0 },
-        { id: "H-DESEMP", nome: "Desempenadeira Cadeira", conjunto: "Cadeira", mcc_compat: "2/3", qtd: 0 },
-        // ---- MCC 4 ----
-        { id: "H-CIL-ELEV4", nome: "Cilindro de Elevação de Estrutura", conjunto: "Estrutura", mcc_compat: "4", qtd: 0 },
-        { id: "H-CIL-PUX4", nome: "Cilindro Puxador", conjunto: "Puxador", mcc_compat: "4", qtd: 0 },
-        { id: "H-PH-BOW", nome: "Porca Hidráulica Bow", conjunto: "Bow", mcc_compat: "4", qtd: 0 },
-        { id: "H-PH-HOR", nome: "Porca Hidráulica Horizontal", conjunto: "Horizontal", mcc_compat: "4", qtd: 0 }
-    ];
-    localStorage.setItem("oms_hidraulica_v32_local", JSON.stringify(BANCO_HIDRAULICA));
-}
-
-// 🔧 CORREÇÃO (dessincronia silenciosa de Rolos/Hidráulica): sincronizarRolosReais()/
-// sincronizarHidraulicaReal() (em banco.js) buscam do Neon e gravam tanto no array
-// interno daquele módulo quanto no localStorage — mas este arquivo mantém sua PRÓPRIA
-// cópia local (BANCO_ROLOS/BANCO_HIDRAULICA acima), lida do localStorage só uma vez no
-// carregamento. Sem isso, a sincronização "funcionava" (log de sucesso, localStorage
-// atualizado) mas a tela continuava mostrando os dados antigos até um F5 completo.
-// Chamar isto logo depois de cada sincronizarRolosReais()/sincronizarHidraulicaReal()
-// recarrega a cópia local a partir do que acabou de ser gravado no localStorage.
-function recarregarRolosEHidraulicaLocal() {
-    try {
-        const rolos = JSON.parse(localStorage.getItem("oms_rolos_v32_local"));
-        if (Array.isArray(rolos)) { BANCO_ROLOS.length = 0; BANCO_ROLOS.push(...rolos); }
-    } catch (erro) {
-        console.error("❌ Falha ao recarregar BANCO_ROLOS local:", erro);
-    }
-    try {
-        const hidraulica = JSON.parse(localStorage.getItem("oms_hidraulica_v32_local"));
-        if (Array.isArray(hidraulica)) { BANCO_HIDRAULICA.length = 0; BANCO_HIDRAULICA.push(...hidraulica); }
-    } catch (erro) {
-        console.error("❌ Falha ao recarregar BANCO_HIDRAULICA local:", erro);
-    }
-}
 
 // (Tema claro/escuro removido do sistema — o botão de troca de tema
 // foi retirado da interface e toda a lógica associada [carregarTema,
@@ -630,13 +565,13 @@ async function finalizarLogin(nome, cargo, matricula, area, isAdm, token) {
     // true só pra mostrar os botões na tela, mas o servidor vai
     // recusar (401) qualquer ação admin de verdade sem um token válido,
     // como deve ser.
-    OPERADOR_LOGADO = {
+    setOperadorLogado({
         matricula: matricula,
         nome: `${nome} [${cargo}]`,
         area: area || null,
         isAdm: !!isAdm || MATRICULAS_ADM.includes(matricula),
         token: token || null
-    };
+    });
     localStorage.setItem("oms_operador_v32_local", JSON.stringify(OPERADOR_LOGADO));
     setOperadorBanco(OPERADOR_LOGADO); // 🔧 mantém a cópia do banco.js sincronizada (ver comentário em window.setOperadorLogado)
     if (typeof window.iniciarHeartbeatColaborador === 'function') window.iniciarHeartbeatColaborador();
@@ -728,7 +663,7 @@ window.confirmarAcessoVisitante = function() {
 // de "Colaborador" no menu lateral.
 async function entrarComoVisitante(nomeDigitado) {
     const nome = (nomeDigitado || "Visitante").trim();
-    OPERADOR_LOGADO = { matricula: null, nome: nome, visitante: true };
+    setOperadorLogado({ matricula: null, nome: nome, visitante: true });
     localStorage.setItem("oms_operador_v32_local", JSON.stringify(OPERADOR_LOGADO));
     setOperadorBanco(OPERADOR_LOGADO); // 🔧 mantém a cópia do banco.js sincronizada (ver comentário em window.setOperadorLogado)
 
@@ -1143,17 +1078,7 @@ async function atualizarHistoricoGlobalComServidor(filtroData) {
 // logada bater com uma das autorizadas. Pra qualquer outro colaborador,
 // o link do menu nem aparece e a aba fica vazia mesmo se a pessoa tentar
 // abrir na unha pelo console.
-const MATRICULAS_TESTE_FOLHOES = ["CBK3574", "CSP1869"];
-
-// ==========================================
-// AUDITORIA — só CBK3574 e CSP1869 podem ver
-// ==========================================
-// 🔒 Mesmo princípio do painel de teste acima: a restrição não é só
-// visual (esconder o link do menu). renderHistorico() abaixo também
-// se recusa a montar a tabela pra quem não está na lista — ninguém
-// não autorizado vê os dados de auditoria, nem forçando a aba pelo
-// console do navegador.
-const MATRICULAS_AUDITORIA = ["CBK3574", "CSP1869"];
+// (MATRICULAS_TESTE_FOLHOES e MATRICULAS_AUDITORIA agora vêm de Core/estado.js)
 
 function ativarAuditoriaSeAutorizado() {
     const link = document.getElementById("nav-historico");
@@ -2881,7 +2806,7 @@ async function carregarMateriaisDoBackend() {
         const apiBase = await resolverApiBase();
         const resp = await fetchComRetry(`${apiBase}/api/materiais`);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        BANCO_MATERIAIS = await resp.json();
+        setBancoMateriais(await resp.json());
         renderMateriais();
     } catch (e) {
         console.error('❌ Não foi possível carregar o almoxarifado do Neon:', e);
@@ -11075,15 +11000,15 @@ window.getOficinaEquipeAtual = function() { return OFICINA_EQUIPE_ATUAL; };
 if (typeof entrarComoVisitante !== 'undefined') window.entrarComoVisitante = entrarComoVisitante;
 if (typeof processarAutenticacaoHome !== 'undefined') window.processarAutenticacaoHome = processarAutenticacaoHome;
 window.setOperadorLogado = function(op) {
-    OPERADOR_LOGADO = op;
     // 🔧 CORREÇÃO: banco.js tem sua PRÓPRIA cópia de OPERADOR_LOGADO,
-    // separada dessa aqui — checklist-execucao.js, folhaoMolde4.js e a
-    // ponte com o Folhão importam a cópia de lá, não essa. Sem essa
-    // linha, um login feito NESSA sessão (sem recarregar a página)
-    // nunca chegava na cópia do banco.js, e por isso, por exemplo,
-    // ehAdminChecklistExecucao() sempre via a pessoa como "não ADM"
-    // (matrícula vazia/null), escondendo os botões de mover/editar/
+    // separada dessa aqui (Core/estado.js) — checklist-execucao.js,
+    // folhaoMolde4.js e a ponte com o Folhão importam a cópia de lá, não
+    // essa. Sem essa linha, um login feito NESSA sessão (sem recarregar
+    // a página) nunca chegava na cópia do banco.js, e por isso, por
+    // exemplo, ehAdminChecklistExecucao() sempre via a pessoa como "não
+    // ADM" (matrícula vazia/null), escondendo os botões de mover/editar/
     // excluir etapa mesmo pra quem realmente é ADM.
+    setOperadorLogado(op);
     setOperadorBanco(op);
 };
 window.getOperadorLogado = function() { return OPERADOR_LOGADO; };
