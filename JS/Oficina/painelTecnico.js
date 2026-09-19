@@ -9,7 +9,8 @@
 
 import { resolverApiBase, BANCO_ATIVOS } from '../Core/banco.js?v=5';
 import { OPERADOR_LOGADO, HISTORICO_ACOES, RASCUNHOS_IDS_ATIVOS } from '../Core/estado.js';
-import { verificarAcesso, filtrarPorAreaTecnico } from '../Core/permissoes.js';
+import { verificarAcesso } from '../Core/permissoes.js';
+import { filtrarPorAreaTecnico } from '../Core/utils.js';
 import { executarSeguro, fetchComRetry } from '../Core/utils.js';
 
 // ==========================================

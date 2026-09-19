@@ -262,7 +262,7 @@ window.confirmarAcessoVisitante = function() {
 // "Visitante" genérico, sem dar pra saber quem realmente acessou). O
 // nome fica registrado no histórico de autenticação e aparece no lugar
 // de "Colaborador" no menu lateral.
-async function entrarComoVisitante(nomeDigitado) {
+export async function entrarComoVisitante(nomeDigitado) {
     const nome = (nomeDigitado || "Visitante").trim();
     setOperadorLogado({ matricula: null, nome: nome, visitante: true });
     localStorage.setItem("oms_operador_v32_local", JSON.stringify(OPERADOR_LOGADO));
