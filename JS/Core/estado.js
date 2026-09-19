@@ -148,3 +148,10 @@ export function setOficinaEditandoId(novoId) { OFICINA_EDITANDO_ID = novoId; }
 let OFICINA_EQUIPE_ATUAL = []; // equipe da área aberta no momento (usada no seletor de Responsável)
 export { OFICINA_EQUIPE_ATUAL };
 export function setOficinaEquipeAtual(novaEquipe) { OFICINA_EQUIPE_ATUAL = novaEquipe; }
+
+// 🆕 Filtro de categoria ativo na Auditoria Global — escrito pelo botão
+// de filtro (janela de Veios/Ativos) e lido por quem monta a tabela do
+// Histórico/Auditoria.
+let FILTRO_CATEGORIA_AUDITORIA = '';
+export { FILTRO_CATEGORIA_AUDITORIA };
+export function setFiltroCategoriaAuditoria(novaCategoria) { FILTRO_CATEGORIA_AUDITORIA = novaCategoria; }
