@@ -5650,6 +5650,7 @@ function popularSelectAreaOficina(idSelect) {
         }</optgroup>`).join("");
     select.dataset.preenchido = "1";
 }
+window.popularSelectAreaOficina = popularSelectAreaOficina;
 
 // (🗑️ Removida a aba "Registro de Ocorrência" inteira — junto com
 // renderAbaOcorrencia/processarFotoOcorrencia/removerFotoOcorrencia/
