@@ -11,7 +11,7 @@
 // usando a copia antiga guardada em cache.
 // ==============================================================
 
-const CACHE_VERSION = "oms-v96";
+const CACHE_VERSION = "oms-v97";
 
 // 🔧 CORREÇÃO: essa lista estava com os caminhos de uma estrutura de
 // pastas antiga (tudo direto na raiz) — o projeto hoje guarda os JS
@@ -40,6 +40,7 @@ const ARQUIVOS_PARA_CACHE = [
     "./JS/Core/auth.js",
     "./JS/Oficina/qualidade.js",
     "./JS/Oficina/ordemServico.js",
+    "./JS/Paineis/colaboradores.js",
     "./JS/Core/checklistFolhaoPonte.js",
     "./JS/Oficina/procedimentosOficina.js",
     "./JS/Oficina/checklist-execucao.js",
