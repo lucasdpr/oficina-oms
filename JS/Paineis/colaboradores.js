@@ -6,7 +6,7 @@
 // protegido no servidor por token (ver headersAdmin em Core/utils.js).
 
 import { resolverApiBase } from '../Core/banco.js?v=5';
-import { OPERADOR_LOGADO } from '../Core/estado.js';
+import { OPERADOR_LOGADO, MATRICULAS_TESTE_FOLHOES } from '../Core/estado.js';
 import { verificarAcesso } from '../Core/permissoes.js';
 import { headersAdmin } from '../Core/utils.js';
 import { AREAS_OFICINA } from '../Core/dados.js';

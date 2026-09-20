@@ -8,7 +8,7 @@
 // Painel do Supervisor via window.X.
 
 import { resolverApiBase, BANCO_ATIVOS } from '../Core/banco.js?v=5';
-import { OPERADOR_LOGADO, HISTORICO_ACOES, RASCUNHOS_IDS_ATIVOS } from '../Core/estado.js';
+import { OPERADOR_LOGADO, HISTORICO_ACOES, BANCO_ROLOS, RASCUNHOS_IDS_ATIVOS, setRascunhosIdsAtivos } from '../Core/estado.js';
 import { verificarAcesso } from '../Core/permissoes.js';
 import { filtrarPorAreaTecnico } from '../Core/utils.js';
 import { executarSeguro, fetchComRetry } from '../Core/utils.js';
@@ -339,7 +339,7 @@ window.carregarReparosAndamento = async function() {
         // Reaproveita esses fetches pra manter RASCUNHOS_IDS_ATIVOS e
         // EXECUCOES_CHECKLIST_IDS_ATIVAS em dia (usados por renderReparos()
         // na sub-aba "Iniciar Reparo").
-        RASCUNHOS_IDS_ATIVOS = new Set(rascunhos.map(r => r.equipamento_id));
+        setRascunhosIdsAtivos(new Set(rascunhos.map(r => r.equipamento_id)));
         window.EXECUCOES_CHECKLIST_IDS_ATIVAS = new Set(execucoes.map(e => e.equipamento_id));
         if (typeof renderReparos === 'function') renderReparos();
 
@@ -806,7 +806,7 @@ function atualizarPainelCompleto() {
     }
     executarSeguro(() => atualizarNovosKPIs(), 'atualizarNovosKPIs');
     executarSeguro(() => atualizarKPIsAvancados(), 'atualizarKPIsAvancados');
-    executarSeguro(() => renderizarTopCriticos(), 'renderizarTopCriticos');
+    if (typeof window.renderizarTopCriticos === 'function') executarSeguro(() => window.renderizarTopCriticos(), 'renderizarTopCriticos');
     executarSeguro(() => window.atualizarStatusMaquinas(), 'atualizarStatusMaquinas');
     // 🔧 CORREÇÃO ("várias coisas bugando" — vários fetches duplicados,
     // console cheio de erro de rede, cards de gráfico piscando):
