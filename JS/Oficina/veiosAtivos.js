@@ -13,7 +13,7 @@ import { OPERADOR_LOGADO, HISTORICO_ACOES, RASCUNHOS_IDS_ATIVOS, MATRICULAS_ADM,
 import { verificarAcesso } from '../Core/permissoes.js';
 import { filtrarPorAreaTecnico } from '../Core/utils.js';
 import { calcularDias, rotuloDesgaste } from '../Core/utils.js';
-import { AREAS_OFICINA } from '../Core/dados.js';
+import { AREAS_OFICINA, MOTIVOS_RETIRO } from '../Core/dados.js';
 
 // Estado só usado dentro deste módulo (Veio ativo no Sequenciamento,
 // filtro de críticos, e o modal de relatório/prontuário).
@@ -598,7 +598,7 @@ window.filtrarHistoricoCategoria = function(chaveCategoria, botaoClicado) {
     document.querySelectorAll('#historico-filtro-acessos .btn-filter-mcc').forEach(b => b.classList.remove('active'));
     if (botaoClicado) botaoClicado.classList.add('active');
     const filtroData = document.getElementById("filtro-data-historico")?.value || '';
-    atualizarHistoricoGlobalComServidor(filtroData);
+    if (typeof window.atualizarHistoricoGlobalComServidor === 'function') window.atualizarHistoricoGlobalComServidor(filtroData);
 };
 
 // ==========================================
@@ -1005,9 +1005,9 @@ async function executarSaqueFinal(id, laudo) {
 
         renderAtivos();
         renderPainelVeios();
-        calcularKpisGlobais();
+        if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
         renderReparos();
-        renderReservas();
+        if (typeof window.renderReservas === 'function') window.renderReservas();
         window.atualizarPainelCompleto();
     }
 }

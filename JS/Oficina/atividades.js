@@ -20,7 +20,7 @@ import {
 } from '../Core/estado.js';
 import { verificarAcesso } from '../Core/permissoes.js';
 import { executarSeguro, executarSeguroAsync, enviarComFilaOffline, atividadeEstaAtrasada, atividadeAindaNaoComecou } from '../Core/utils.js';
-import { AREAS_OFICINA } from '../Core/dados.js';
+import { AREAS_OFICINA, ABAS_PADRAO_OFICINA } from '../Core/dados.js';
 
 // ÁREA DA OFICINA — NAVEGAÇÃO POR ABAS (Atividades/Materiais/Equipe/
 // Procedimentos/Notas) — antes tudo ficava num scroll único gigante.
@@ -323,7 +323,7 @@ function renderizarAtividadesArea() {
                                 : `<span class="ind-card-tag bg-tag">Tarefa avulsa</span>`}
                             <span style="font-size:10px; background:var(--text-accent, #3b82f6); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">COMEÇA ${inicioFormatado}</span>
                         </div>
-                        <div style="font-size:13px; color:var(--text-body);">${limparMarcadorTecnicoDescricao(x.descricao)}</div>
+                        <div style="font-size:13px; color:var(--text-body);">${window.limparMarcadorTecnicoDescricao(x.descricao)}</div>
                         <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">${x.responsavel ? `${x.responsavel} · ` : ''}${x.criado_em || ''}</div>
                     </div>
                     <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
@@ -412,7 +412,7 @@ function renderizarAtividadesArea() {
                     ${atrasada ? `<span style="font-size:10px; background:var(--danger); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">ATRASADA</span>` : ''}
                     ${x.reaberturas_count > 0 ? `<span style="font-size:10px; background:#f97316; color:#fff; padding:2px 6px; border-radius:4px; font-weight:700; cursor:pointer;" onclick="window.verHistoricoReaberturasAtividade(${x.id})" title="Ver histórico de reaberturas"><i class="fas fa-rotate-left"></i> Reaberta ${x.reaberturas_count}x</span>` : ''}
                 </div>
-                <div style="font-size:13px; color:var(--text-body);">${limparMarcadorTecnicoDescricao(x.descricao)}</div>
+                <div style="font-size:13px; color:var(--text-body);">${window.limparMarcadorTecnicoDescricao(x.descricao)}</div>
                 ${x.motivo_status ? `<div style="font-size:11.5px; color:${corStatus[x.status]}; margin-top:4px;"><i class="fas fa-circle-info"></i> ${x.motivo_status}</div>` : ''}
                 <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
                     ${
@@ -464,6 +464,7 @@ function renderizarAtividadesArea() {
     `;
     }).join('') + futurasHtml;
 }
+window.renderizarAtividadesArea = renderizarAtividadesArea;
 
 // --------------------------------------------------------------
 // CRIAR ATIVIDADE (vinculada a equipamento OU avulsa)

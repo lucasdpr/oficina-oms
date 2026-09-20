@@ -314,7 +314,7 @@ window.renderizarListaOrdensServico = function() {
                     </div>
                 ` : ''}
                 <div style="font-size:11px; color:var(--text-accent);">
-                    ${os.criado_por || 'Sistema'} · ${os.criado_em || ''}${(os.areas && os.areas.length) ? ` · ${os.areas.map(nomeAreaOficina).join(', ')}` : (os.area ? ` · ${nomeAreaOficina(os.area)}` : '')}
+                    ${os.criado_por || 'Sistema'} · ${os.criado_em || ''}${(os.areas && os.areas.length) ? ` · ${os.areas.map(window.nomeAreaOficina).join(', ')}` : (os.area ? ` · ${window.nomeAreaOficina(os.area)}` : '')}
                     ${concluida && os.concluido_por ? `<br>Concluída por ${os.concluido_por} · ${os.concluido_em || ''}` : ''}
                     ${naoExecutada && os.encerrado_por ? `<br>Encerrada por ${os.encerrado_por} · ${os.encerrado_em || ''}` : ''}
                 </div>

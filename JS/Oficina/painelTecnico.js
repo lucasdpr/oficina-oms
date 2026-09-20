@@ -11,7 +11,7 @@ import { resolverApiBase, BANCO_ATIVOS } from '../Core/banco.js?v=5';
 import { OPERADOR_LOGADO, HISTORICO_ACOES, BANCO_ROLOS, RASCUNHOS_IDS_ATIVOS, setRascunhosIdsAtivos } from '../Core/estado.js';
 import { verificarAcesso } from '../Core/permissoes.js';
 import { filtrarPorAreaTecnico } from '../Core/utils.js';
-import { executarSeguro, fetchComRetry } from '../Core/utils.js';
+import { executarSeguro, fetchComRetry, atividadeAindaNaoComecou, atividadeEstaAtrasada } from '../Core/utils.js';
 
 // ==========================================
 // PAINEL DO TÉCNICO — visão simplificada e direta ao ponto
@@ -805,7 +805,7 @@ function atualizarPainelCompleto() {
         executarSeguro(() => calcularKpisGlobais(), 'calcularKpisGlobais (painel)');
     }
     executarSeguro(() => atualizarNovosKPIs(), 'atualizarNovosKPIs');
-    executarSeguro(() => atualizarKPIsAvancados(), 'atualizarKPIsAvancados');
+    if (typeof window.atualizarKPIsAvancados === 'function') executarSeguro(() => window.atualizarKPIsAvancados(), 'atualizarKPIsAvancados');
     if (typeof window.renderizarTopCriticos === 'function') executarSeguro(() => window.renderizarTopCriticos(), 'renderizarTopCriticos');
     executarSeguro(() => window.atualizarStatusMaquinas(), 'atualizarStatusMaquinas');
     // 🔧 CORREÇÃO ("várias coisas bugando" — vários fetches duplicados,

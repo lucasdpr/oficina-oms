@@ -9,7 +9,7 @@
 import { resolverApiBase, sincronizarAtivosReaisMCC4, salvarPecaNoPython, BANCO_ATIVOS } from '../Core/banco.js?v=5';
 import { OPERADOR_LOGADO } from '../Core/estado.js';
 import { verificarAcesso } from '../Core/permissoes.js';
-import { fetchComRetry, calcularDias, rotuloDesgaste } from '../Core/utils.js';
+import { fetchComRetry, calcularDias, rotuloDesgaste, headersAdmin } from '../Core/utils.js';
 
 window.abrirModalProducao = function() {
     document.getElementById("prod-mcc2").value = "";

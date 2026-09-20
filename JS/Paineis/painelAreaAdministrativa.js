@@ -8,6 +8,7 @@
 
 import { resolverApiBase } from '../Core/banco.js?v=5';
 import { AREAS_OFICINA } from '../Core/dados.js';
+import { atividadeEstaAtrasada } from '../Core/utils.js';
 
 // ==========================================
 // PAINÉIS ADMINISTRATIVOS (ADM, Almoxarifado, Ponte Rolante, Logística)
