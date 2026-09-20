@@ -6,7 +6,7 @@
 // notificações (grade por área + feed "flat" com filtro/busca/ordem).
 
 import { resolverApiBase, BANCO_ATIVOS } from '../Core/banco.js?v=5';
-import { OPERADOR_LOGADO, OFICINA_ATIVIDADES_CACHE } from '../Core/estado.js';
+import { OPERADOR_LOGADO, OFICINA_ATIVIDADES_CACHE, setOficinaAtividadesCache } from '../Core/estado.js';
 import { operadorPodeVerNotificacoes, operadorTecnicoComArea } from '../Core/permissoes.js';
 import { executarSeguro, executarSeguroAsync, atividadeEstaAtrasada } from '../Core/utils.js';
 import { AREAS_OFICINA } from '../Core/dados.js';
@@ -265,7 +265,7 @@ window.carregarCentralNotificacoes = async function() {
         // também, só quando a busca deu certo (não sobrescreve o cache
         // bom da Central de Áreas com [] numa falha de rede só desta
         // busca).
-        if (Array.isArray(atividades)) OFICINA_ATIVIDADES_CACHE = atividades;
+        if (Array.isArray(atividades)) setOficinaAtividadesCache(atividades);
         NOTIF_ULTIMO_FETCH_FALHOU = !Array.isArray(atividades) || !Array.isArray(feed);
         renderizarNotificacoesFlat(Array.isArray(feed) ? feed : null);
         // 🐛 CORREÇÃO: mantém o sino da barra lateral em dia sempre que a

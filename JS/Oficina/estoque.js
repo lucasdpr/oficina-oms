@@ -794,6 +794,7 @@ function renderizarTopCriticos() {
         `;
     }).join('');
 }
+window.renderizarTopCriticos = renderizarTopCriticos;
 
 function atualizarKPIsAvancados() {
     const total = BANCO_ATIVOS.length;
