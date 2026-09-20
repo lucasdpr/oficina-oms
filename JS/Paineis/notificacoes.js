@@ -8,7 +8,7 @@
 import { resolverApiBase, BANCO_ATIVOS } from '../Core/banco.js?v=5';
 import { OPERADOR_LOGADO, OFICINA_ATIVIDADES_CACHE, setOficinaAtividadesCache } from '../Core/estado.js';
 import { operadorPodeVerNotificacoes, operadorTecnicoComArea } from '../Core/permissoes.js';
-import { executarSeguro, executarSeguroAsync, atividadeEstaAtrasada } from '../Core/utils.js';
+import { executarSeguro, executarSeguroAsync, atividadeEstaAtrasada, atividadeAindaNaoComecou } from '../Core/utils.js';
 import { AREAS_OFICINA } from '../Core/dados.js';
 
 // ==========================================

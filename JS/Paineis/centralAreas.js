@@ -291,7 +291,7 @@ window.carregarOficina = async function() {
     renderizarGridCentralAreas();
     atualizarKpisOficina();
 
-    if (OFICINA_AREA_ATUAL) renderizarAtividadesArea();
+    if (OFICINA_AREA_ATUAL) window.renderizarAtividadesArea();
 };
 
 // 🔧 CORREÇÃO ("tela fica piscando, parece que tá recarregando sozinha"):
@@ -328,7 +328,7 @@ window.iniciarPollingRapidoArea = function() {
             const resp = await fetch(`${apiBase}/api/oficina/atividades`, { cache: 'no-store' });
             const todas = resp.ok ? await resp.json() : [];
             setOficinaAtividadesCache(Array.isArray(todas) ? todas : []);
-            renderizarAtividadesArea();
+            window.renderizarAtividadesArea();
             if (typeof window.carregarOsDaArea === 'function') await window.carregarOsDaArea();
         }, 'pollingRapidoArea');
     }, INTERVALO_POLLING_RAPIDO_AREA_MS);
@@ -358,7 +358,7 @@ window.atualizarOficinaSilencioso = async function() {
     }
     renderizarGridCentralAreas();
     atualizarKpisOficina();
-    if (OFICINA_AREA_ATUAL) renderizarAtividadesArea();
+    if (OFICINA_AREA_ATUAL) window.renderizarAtividadesArea();
 };
 
 // ==========================================

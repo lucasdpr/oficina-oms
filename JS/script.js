@@ -479,6 +479,7 @@ async function atualizarHistoricoGlobalComServidor(filtroData) {
         console.error('⚠️ Não consegui buscar a Auditoria completa do servidor (mantendo só o que tinha local):', e);
     }
 }
+window.atualizarHistoricoGlobalComServidor = atualizarHistoricoGlobalComServidor;
 
 
 // ==========================================
