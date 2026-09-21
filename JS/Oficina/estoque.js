@@ -6,7 +6,7 @@
 // Materiais Gerais, edição inline de células da tabela de Ativos, abas
 // do Segmento Zero e o processamento de cadastro de nova peça.
 
-import { resolverApiBase, salvarAjusteRoloNoPython, salvarAjusteHidraulicaNoPython, sincronizarRolosReais, sincronizarHidraulicaReal, BANCO_ATIVOS } from '../Core/banco.js?v=5';
+import { resolverApiBase, salvarAjusteRoloNoPython, salvarAjusteHidraulicaNoPython, sincronizarRolosReais, sincronizarHidraulicaReal, sincronizarAtivosReaisMCC4, BANCO_ATIVOS } from '../Core/banco.js?v=5';
 import { OPERADOR_LOGADO, BANCO_ROLOS, BANCO_HIDRAULICA, BANCO_MATERIAIS, setBancoMateriais, recarregarRolosEHidraulicaLocal } from '../Core/estado.js';
 import { verificarAcesso } from '../Core/permissoes.js';
 import { fetchComRetry, calcularDias, rotuloDesgaste, getOrdemPadrao } from '../Core/utils.js';
@@ -193,8 +193,19 @@ async function alterarSaldoRolo(id, fator) {
 
         // Persiste no Neon — sem isso, o ajuste sumia assim que a página
         // sincronizasse de novo com o servidor.
+        // 🔧 CORREÇÃO: essa chamada não checava o retorno — se o servidor
+        // recusasse (ex: outro ajuste concorrente já tinha zerado o
+        // saldo), a tela continuava mostrando o novo valor como se
+        // tivesse dado certo, e o operador só descobria a divergência
+        // muito depois. Se falhar, desfaz o ajuste na tela e avisa.
         if (typeof salvarAjusteRoloNoPython === 'function') {
-            await salvarAjusteRoloNoPython(id, fator);
+            const resultado = await salvarAjusteRoloNoPython(id, fator);
+            if (!resultado) {
+                rolo.qtd -= fator;
+                localStorage.setItem("oms_rolos_v32_local", JSON.stringify(BANCO_ROLOS));
+                renderRolos();
+                alert('Não foi possível salvar esse ajuste de estoque no servidor. O ajuste foi desfeito — tente novamente.');
+            }
         }
     }
 }
@@ -268,8 +279,17 @@ async function alterarSaldoHidraulica(id, local, fator) {
 
     // Persiste no Neon — sem isso, o ajuste sumia assim que a página
     // sincronizasse de novo com o servidor.
+    // 🔧 CORREÇÃO: mesmo problema de alterarSaldoRolo — retorno da
+    // gravação não era checado, então uma falha do servidor ficava
+    // invisível pro operador. Se falhar, desfaz na tela e avisa.
     if (typeof salvarAjusteHidraulicaNoPython === 'function') {
-        await salvarAjusteHidraulicaNoPython(id, local, fator);
+        const resultado = await salvarAjusteHidraulicaNoPython(id, local, fator);
+        if (!resultado) {
+            peca[campo] = (peca[campo] || 0) - fator;
+            localStorage.setItem("oms_hidraulica_v32_local", JSON.stringify(BANCO_HIDRAULICA));
+            renderHidraulica();
+            alert('Não foi possível salvar esse ajuste de estoque no servidor. O ajuste foi desfeito — tente novamente.');
+        }
     }
 }
 window.alterarSaldoHidraulica = alterarSaldoHidraulica;
@@ -454,10 +474,13 @@ function fazerCelulaEditavel(elemento, id, campo) {
     input.focus();
     input.select();
     
-    const salvarEdicao = () => {
+    const salvarEdicao = async () => {
         const novoValor = input.value.trim();
         const item = BANCO_ATIVOS.find(a => a.id === id);
         if (item && novoValor) {
+            // guarda os valores anteriores pra poder desfazer se o servidor recusar
+            const anterior = { id: item.id, dias: item.dias, dataReparo: item.dataReparo, dataEntradaVeio: item.dataEntradaVeio, ton: item.ton };
+
             if (campo === 'id') {
                 const existe = BANCO_ATIVOS.some(a => a.id === novoValor && a.id !== id);
                 if (existe) {
@@ -478,16 +501,32 @@ function fazerCelulaEditavel(elemento, id, campo) {
             } else if (campo === 'ton') {
                 item.ton = parseFloat(novoValor) || 0;
             }
-            
+
             localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
-            window.registrarHistorico(id, `Campo "${campo}" alterado para: ${novoValor}`);
-            
+
             if (campo === 'dias' || campo === 'ton') {
                 elemento.innerText = parseFloat(novoValor).toLocaleString() || '0';
             } else {
                 elemento.innerText = novoValor;
             }
             window.atualizarPainelCompleto();
+
+            // 🔧 CORREÇÃO: antes essa edição só ia pro localStorage — nunca
+            // chamava o backend. No próximo sincronizarAtivosReaisMCC4()
+            // (todo login/refresh reconstrói BANCO_ATIVOS a partir do
+            // servidor) a edição desaparecia silenciosamente, mesmo com o
+            // histórico já registrando como se tivesse dado certo.
+            const ok = await window.salvarPecaNoPython(item);
+            if (!ok) {
+                Object.assign(item, anterior);
+                localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+                elemento.innerText = valorAtual;
+                window.atualizarPainelCompleto();
+                alert('Não foi possível salvar essa alteração no servidor. A edição foi desfeita — tente novamente.');
+                return;
+            }
+
+            window.registrarHistorico(id, `Campo "${campo}" alterado para: ${novoValor}`);
         } else {
             elemento.innerText = valorAtual;
         }
@@ -599,7 +638,14 @@ window.processarCadastroPeca = async function() {
         mcc_compat = partes[1];
     }
 
-    // Valida se a TAG já existe
+    // 🔧 CORREÇÃO ("dois operadores cadastram a mesma TAG ao mesmo tempo,
+    // um sobrescreve o outro"): antes essa checagem só olhava o
+    // BANCO_ATIVOS em memória, que podia estar desatualizado há minutos.
+    // Busca o estado mais recente do servidor antes de checar — não
+    // elimina 100% a corrida (dois cliques no exato mesmo instante ainda
+    // são possíveis), mas reduz a janela de minutos pra frações de
+    // segundo.
+    await sincronizarAtivosReaisMCC4();
     if (typeof BANCO_ATIVOS !== 'undefined') {
         const existente = BANCO_ATIVOS.find(a => a.id === id);
         if (existente) {

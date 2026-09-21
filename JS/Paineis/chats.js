@@ -348,10 +348,10 @@ window.chatsCarregarMensagens = async function() {
             const hora = m.criado_em ? new Date(m.criado_em.replace(' ', 'T')).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
             return `
                 <div class="chat-bolha ${minha ? 'chat-bolha-minha' : 'chat-bolha-outro'}">
-                    <div class="chat-bolha-remetente">${m.de_adm ? 'ADM' : (m.remetente || 'Técnico')}</div>
+                    <div class="chat-bolha-remetente">${m.de_adm ? 'ADM' : window.escapeHtmlNotif(m.remetente || 'Técnico')}</div>
                     ${m.atividade_referencia ? `<div class="chat-bolha-atividade-tag"><i class="fas fa-link"></i> Respondendo: ${window.escapeHtmlNotif(m.atividade_referencia)}</div>` : ''}
                     ${m.foto_base64 ? `<img class="chat-bolha-foto" src="${m.foto_base64}" alt="Foto enviada" onclick="window.abrirFotoAmpliada('${m.foto_base64}', '${window.escapeAtributoNotif(hora)}')">` : ''}
-                    ${m.mensagem ? `<div class="chat-bolha-texto">${m.mensagem}</div>` : ''}
+                    ${m.mensagem ? `<div class="chat-bolha-texto">${window.escapeHtmlNotif(m.mensagem)}</div>` : ''}
                     <div class="chat-bolha-hora">${hora}</div>
                 </div>
             `;

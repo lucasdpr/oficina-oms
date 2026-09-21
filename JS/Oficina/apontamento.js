@@ -452,6 +452,21 @@ window.iniciarSwapAlocacao = async function(idReserva) {
 
     if (!slotChassi || slotChassi === "") return alert('Selecione a Posição de destino para este equipamento.');
 
+    // 🔧 CORREÇÃO ("dois técnicos fazem swap pro mesmo slot ao mesmo
+    // tempo e os dois equipamentos ficam marcados como instalados no
+    // mesmo lugar"): antes, a busca por quem já ocupa o slot usava só o
+    // BANCO_ATIVOS em cache local (até ~20s desatualizado, ou mais se
+    // ninguém mais tiver sincronizado). Busca o estado mais recente do
+    // servidor antes de decidir quem ocupa o slot — reduz a janela de
+    // corrida de "minutos" pra "frações de segundo entre este fetch e o
+    // salvarPecaNoPython() logo abaixo".
+    await sincronizarAtivosReaisMCC4();
+    pecaReserva = BANCO_ATIVOS.find(a => a.id === idReserva);
+    if (!pecaReserva) return alert('Peça reserva não encontrada (o cadastro pode ter mudado — recarregue a tela e tente de novo).');
+    if (pecaReserva.local !== "Máquina / Reserva") {
+        return alert('Essa peça não está mais em "Máquina / Reserva" — outra pessoa pode já ter mexido nela. Recarregue a tela.');
+    }
+
     // 🔧 CORREÇÃO CRÍTICA ("coloquei o Bow e ele expulsou o Molde que
     // tinha acabado de instalar"): a busca pela peça que já ocupa o
     // slot usava DOIS critérios — `p.posicaoFixa === slotChassi` OU

@@ -1023,11 +1023,9 @@ window.concluirEImprimirFolhaoMolde4 = async function(tag) {
     // (mais seguro que zerar por engano).
     const tipoExecucaoM4 = (getV('molde4-tipo-exec') || 'GERAL').toUpperCase();
     const tonEntradaParcial = getV('molde4-ton-entrada');
+    const anteriorItem = item ? { local: item.local, ton: item.ton, dias: item.dias } : null;
     if (item) {
         item.local = "Oficina / Reserva";
-        // 🆕 Pede pra Logística reabastecer a Reserva na Máquina com essa
-        // peça recém-reparada (fire-and-forget, ver notificarLogisticaReabastecimento).
-        if (typeof window.notificarLogisticaReabastecimento === 'function') window.notificarLogisticaReabastecimento(item);
         if (tipoExecucaoM4 === 'PARCIAL') {
             if (tonEntradaParcial !== '' && !isNaN(parseFloat(tonEntradaParcial))) {
                 item.ton = parseFloat(tonEntradaParcial);
@@ -1039,9 +1037,17 @@ window.concluirEImprimirFolhaoMolde4 = async function(tag) {
         item.dias = 0;
         localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
     }
+    // 🔧 CORREÇÃO ("printa 'concluído' mas o banco continua com a peça em
+    // reparo"): antes essa chamada não checava resp.ok nem o corpo da
+    // resposta — um erro de validação/DB no servidor não lança exceção
+    // no fetch, então o catch nunca disparava e o fluxo seguia pra
+    // finalizar o Checklist e imprimir como se tivesse dado certo. Se o
+    // servidor recusar, desfaz a mudança local, avisa e para aqui — sem
+    // finalizar o Checklist nem imprimir um Folhão que não reflete o
+    // estado real do banco.
     try {
         const apiBase = await resolverApiBase();
-        await fetch(`${apiBase}/api/atualizar_peca`, {
+        const respPeca = await fetch(`${apiBase}/api/atualizar_peca`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -1054,9 +1060,25 @@ window.concluirEImprimirFolhaoMolde4 = async function(tag) {
                 status: "Reserva"
             })
         });
+        const resultadoPeca = await respPeca.json().catch(() => ({}));
+        if (!respPeca.ok || resultadoPeca.sucesso === false) {
+            throw new Error(resultadoPeca.detail || `HTTP ${respPeca.status}`);
+        }
     } catch (e) {
         console.error("Erro ao atualizar peça na nuvem:", e);
+        if (item && anteriorItem) {
+            Object.assign(item, anteriorItem);
+            localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
+        }
+        alert(`❌ Não consegui confirmar no servidor que ${tag} voltou pra Oficina / Reserva.\n\nMotivo: ${e.message}\n\nO reparo NÃO foi concluído — tente novamente antes de considerar essa peça pronta.`);
+        return;
     }
+
+    // 🆕 Pede pra Logística reabastecer a Reserva na Máquina com essa peça
+    // recém-reparada (fire-and-forget) — só depois de confirmar que o
+    // servidor aceitou a mudança de local, senão a Logística seria
+    // avisada de uma peça que o banco ainda mostra em reparo.
+    if (item && typeof window.notificarLogisticaReabastecimento === 'function') window.notificarLogisticaReabastecimento(item);
 
     // 🆕 Fecha a execução do Checklist de Execução de verdade — sem isso
     // "concluida_em" nunca era gravada no servidor, e a DATA FIM travada
