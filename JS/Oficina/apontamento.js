@@ -165,7 +165,7 @@ window.carregarHistoricoApontamentoGeral = async function() {
                 return `<tr><td>${dataHoraLocal}</td><td style="text-align:left;">${log.operador}</td><td style="color:#3b82f6; font-weight:bold;">${log.qtd_mcc2 > 0 ? '+'+log.qtd_mcc2 : '-'}</td><td style="color:#3b82f6; font-weight:bold;">${log.qtd_mcc3 > 0 ? '+'+log.qtd_mcc3 : '-'}</td><td style="color:#3b82f6; font-weight:bold;">${log.qtd_mcc4 > 0 ? '+'+log.qtd_mcc4 : '-'}</td><td>${btnAcao}</td></tr>`;
             }).join("");
         } else { tbody.innerHTML = "<tr><td colspan='6'>Nenhum lançamento.</td></tr>"; }
-    } catch (e) { console.log(e); }
+    } catch (e) { console.error(e); }
 };
 
 
@@ -188,7 +188,7 @@ window.carregarHistoricoApontamentoMoldes = async function() {
                 return `<tr><td>${dataHoraLocal}</td><td style="text-align:left;">${log.operador}</td><td style="color:var(--warning); font-weight:bold;">${log.qtd_mcc2 > 0 ? '+'+log.qtd_mcc2 : '-'}</td><td style="color:var(--warning); font-weight:bold;">${log.qtd_mcc3 > 0 ? '+'+log.qtd_mcc3 : '-'}</td><td style="color:var(--warning); font-weight:bold;">${log.qtd_mcc4 > 0 ? '+'+log.qtd_mcc4 : '-'}</td><td>${btnAcao}</td></tr>`;
             }).join("");
         } else { tbody.innerHTML = "<tr><td colspan='6'>Nenhum lançamento.</td></tr>"; }
-    } catch (e) { console.log(e); }
+    } catch (e) { console.error(e); }
 };
 
 // 🔧 "AÇÃO RESTRITA: senha master dev123" removido — era decoração
@@ -249,14 +249,19 @@ window.desfazerApontamentoMolde = async function(id_log) {
 // sumia se limpasse os dados, e nunca aparecia pra outro técnico em
 // outro aparelho, nem pra outro moderador na Auditoria. Agora persiste
 // no Neon (tabela "laudos"), igual todo o resto do histórico.
-window.salvarLaudoNoHistorico = async function(tag, tipo, htmlPDF) {
+// 🔧 CORREÇÃO ("cada clique em Salvar cria uma linha nova no banco em
+// vez de atualizar o rascunho"): execucaoId (opcional) amarra o laudo à
+// execução (reparo) em andamento — o backend faz UPSERT por
+// execucao_id, então salvar de novo durante o mesmo reparo atualiza a
+// mesma linha em vez de acumular uma nova a cada clique.
+window.salvarLaudoNoHistorico = async function(tag, tipo, htmlPDF, execucaoId = null) {
     const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Sistema') : 'Sistema';
     try {
         const apiBase = await resolverApiBase();
         const resp = await fetch(`${apiBase}/api/laudos`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ peca_id: tag, tipo, html: htmlPDF, operador })
+            body: JSON.stringify({ peca_id: tag, tipo, html: htmlPDF, operador, execucao_id: execucaoId })
         });
         if (!resp.ok) throw new Error('A API não confirmou o salvamento do laudo.');
         const resultado = await resp.json();
@@ -451,6 +456,21 @@ window.iniciarSwapAlocacao = async function(idReserva) {
     }
 
     if (!slotChassi || slotChassi === "") return alert('Selecione a Posição de destino para este equipamento.');
+
+    // 🔧 CORREÇÃO ("dois técnicos fazem swap pro mesmo slot ao mesmo
+    // tempo e os dois equipamentos ficam marcados como instalados no
+    // mesmo lugar"): antes, a busca por quem já ocupa o slot usava só o
+    // BANCO_ATIVOS em cache local (até ~20s desatualizado, ou mais se
+    // ninguém mais tiver sincronizado). Busca o estado mais recente do
+    // servidor antes de decidir quem ocupa o slot — reduz a janela de
+    // corrida de "minutos" pra "frações de segundo entre este fetch e o
+    // salvarPecaNoPython() logo abaixo".
+    await sincronizarAtivosReaisMCC4();
+    pecaReserva = BANCO_ATIVOS.find(a => a.id === idReserva);
+    if (!pecaReserva) return alert('Peça reserva não encontrada (o cadastro pode ter mudado — recarregue a tela e tente de novo).');
+    if (pecaReserva.local !== "Máquina / Reserva") {
+        return alert('Essa peça não está mais em "Máquina / Reserva" — outra pessoa pode já ter mexido nela. Recarregue a tela.');
+    }
 
     // 🔧 CORREÇÃO CRÍTICA ("coloquei o Bow e ele expulsou o Molde que
     // tinha acabado de instalar"): a busca pela peça que já ocupa o

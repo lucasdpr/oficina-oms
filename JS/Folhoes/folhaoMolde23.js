@@ -1053,7 +1053,8 @@ window.salvarFolhaoMolde23 = async function() {
                 peca_id: tag,
                 tipo: "Molde MCC2/3",
                 html: htmlPDF,
-                operador: lider || "Sistema"
+                operador: lider || "Sistema",
+                execucao_id: PONTE_CHECKLIST_M23?.execucaoId ?? null
             })
         });
         if (!resp.ok) throw new Error("A API não confirmou o salvamento do laudo.");

@@ -137,7 +137,12 @@ window.EXECUCOES_CHECKLIST_IDS_ATIVAS = window.EXECUCOES_CHECKLIST_IDS_ATIVAS ||
 window.carregarExecucoesChecklistAtivas = async function() {
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/checklist-execucao/execucoes/todas`, { cache: 'no-store' });
+        // 🔧 CORREÇÃO: fetchComRetry (window.*, já usado em outros
+        // módulos) tenta de novo sozinho antes de desistir em falha de
+        // rede, em vez de fetch() puro só logando erro no console — sem
+        // isso, uma falha aqui fazia "Iniciar Reparo"/"Reparo em
+        // Andamento" mostrarem a lista desatualizada sem nenhum aviso.
+        const resp = await window.fetchComRetry(`${apiBase}/api/checklist-execucao/execucoes/todas`, { cache: 'no-store' });
         const execucoes = resp.ok ? await resp.json() : [];
         window.EXECUCOES_CHECKLIST_IDS_ATIVAS = new Set(execucoes.map(e => e.equipamento_id));
     } catch (e) {
@@ -731,12 +736,16 @@ window.renderizarChecklistExecucao = function() {
 // --------------------------------------------------------------
 function renderizarLinhaEtapaChecklistExecucao(e, secao, isAdmin) {
     const tipoResposta = e.tipo_resposta || 'sim_nao';
+    // 🔧 CORREÇÃO (achado de auditoria: "botões de admin do checklist
+    // são pequenos demais pra toque em campo, ~23px de altura real,
+    // colados um no outro — risco real de tocar Excluir em vez de
+    // Mover"): min-width/min-height 40px + mais gap entre eles.
     const botoesAdmin = isAdmin ? `
-        <div style="display:flex; flex-wrap:wrap; gap:4px; flex-shrink:0;">
-            <button class="btn-premium" style="padding:6px 8px; font-size:11px;" title="Editar (texto e mapeamento com o Folhão)" onclick='window.editarEtapaChecklistExecucao(${e.id})'><i class="fas fa-pen"></i></button>
-            <button class="btn-premium" style="padding:6px 8px; font-size:11px;" title="Mover pra cima" onclick="window.moverEtapaChecklistExecucao(${e.id}, '${secao.chave}', -1)"><i class="fas fa-arrow-up"></i></button>
-            <button class="btn-premium" style="padding:6px 8px; font-size:11px;" title="Mover pra baixo" onclick="window.moverEtapaChecklistExecucao(${e.id}, '${secao.chave}', 1)"><i class="fas fa-arrow-down"></i></button>
-            <button class="btn-outline-danger" style="padding:6px 8px; font-size:11px;" title="Excluir etapa" onclick="window.excluirEtapaChecklistExecucao(${e.id})"><i class="fas fa-trash"></i></button>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; flex-shrink:0;">
+            <button class="btn-premium" style="min-width:40px; min-height:40px; padding:8px; font-size:12px;" title="Editar (texto e mapeamento com o Folhão)" onclick='window.editarEtapaChecklistExecucao(${e.id})'><i class="fas fa-pen"></i></button>
+            <button class="btn-premium" style="min-width:40px; min-height:40px; padding:8px; font-size:12px;" title="Mover pra cima" onclick="window.moverEtapaChecklistExecucao(${e.id}, '${secao.chave}', -1)"><i class="fas fa-arrow-up"></i></button>
+            <button class="btn-premium" style="min-width:40px; min-height:40px; padding:8px; font-size:12px;" title="Mover pra baixo" onclick="window.moverEtapaChecklistExecucao(${e.id}, '${secao.chave}', 1)"><i class="fas fa-arrow-down"></i></button>
+            <button class="btn-outline-danger" style="min-width:40px; min-height:40px; padding:8px; font-size:12px;" title="Excluir etapa" onclick="window.excluirEtapaChecklistExecucao(${e.id})"><i class="fas fa-trash"></i></button>
         </div>
     ` : '';
 
@@ -822,22 +831,40 @@ async function enviarMarcacaoChecklistExecucao(etapaId, { marcado, valor = null,
     const tecnico = OPERADOR_LOGADO || {};
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/checklist-execucao/marcar`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                etapa_id: etapaId,
-                execucao_id: CHECKLIST_EXECUCAO_EXECUCAO_ATUAL,
-                equipamento_id: CHECKLIST_EXECUCAO_EQUIPAMENTO_ATUAL,
-                marcado,
-                colaborador,
-                valor,
-                trocado,
-                tecnico_matricula: tecnico.matricula || null,
-                tecnico_nome: tecnico.nome || 'Técnico'
-            })
-        });
-        if (!resp.ok) alert('Não foi possível salvar essa resposta.');
+        // 🔧 CORREÇÃO (achado de auditoria: "marcar etapa sem internet
+        // perde a marcação, sem fila, sem retry"): antes um fetch()
+        // puro — se caísse a rede bem na hora de marcar uma etapa, só
+        // mostrava alert() e o técnico precisava lembrar de marcar de
+        // novo depois. Usa a mesma fila offline que Ocorrência/OS/
+        // Qualidade já usam (window.enviarComFilaOffline) — só entra na
+        // fila em falha de REDE de verdade (sem internet), não em erro
+        // do servidor. É seguro reenfileirar esta ação especificamente
+        // porque /marcar faz UPSERT por (execucao_id, etapa_id) — mandar
+        // de novo só regrava o mesmo estado final, sem duplicar nada.
+        const { resp, enfileirado } = await window.enviarComFilaOffline(
+            `${apiBase}/api/checklist-execucao/marcar`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    etapa_id: etapaId,
+                    execucao_id: CHECKLIST_EXECUCAO_EXECUCAO_ATUAL,
+                    equipamento_id: CHECKLIST_EXECUCAO_EQUIPAMENTO_ATUAL,
+                    marcado,
+                    colaborador,
+                    valor,
+                    trocado,
+                    tecnico_matricula: tecnico.matricula || null,
+                    tecnico_nome: tecnico.nome || 'Técnico'
+                })
+            },
+            `Checklist de Execução — etapa ${etapaId} (${CHECKLIST_EXECUCAO_EQUIPAMENTO_ATUAL || '?'})`
+        );
+        if (enfileirado) {
+            console.warn('📦 Sem conexão — marcação da etapa guardada pra reenviar quando a rede voltar.');
+        } else if (!resp.ok) {
+            alert('Não foi possível salvar essa resposta.');
+        }
     } catch (e) {
         console.error('⚠️ Erro ao salvar resposta do Checklist de Execução:', e);
         alert('Não foi possível conectar ao servidor.');

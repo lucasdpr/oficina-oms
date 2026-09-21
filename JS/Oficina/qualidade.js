@@ -9,7 +9,7 @@
 import { resolverApiBase, BANCO_ATIVOS } from '../Core/banco.js?v=5';
 import { OPERADOR_LOGADO } from '../Core/estado.js';
 import { verificarAcesso } from '../Core/permissoes.js';
-import { enviarComFilaOffline, mostrarToastDesfazer } from '../Core/utils.js';
+import { enviarComFilaOffline, fetchComRetry, mostrarToastDesfazer } from '../Core/utils.js';
 import { CATEGORIAS_ACHADO_QUALIDADE } from '../Core/dados.js';
 
 // ==========================================
@@ -241,7 +241,11 @@ window.carregarListaQualidade = async function() {
     try {
         const apiBase = await resolverApiBase();
         const query = FILTRO_QUALIDADE_ATUAL ? `?status=${encodeURIComponent(FILTRO_QUALIDADE_ATUAL)}` : '';
-        const resp = await fetch(`${apiBase}/api/qualidade${query}`, { cache: 'no-store' });
+        // 🔧 CORREÇÃO: fetchComRetry tenta de novo sozinho antes de
+        // desistir, e cai no cache salvo (com aviso visível de "dado
+        // desatualizado") em falha real de rede — antes de mostrar de
+        // vez a tela de erro genérica logo na primeira falha.
+        const resp = await fetchComRetry(`${apiBase}/api/qualidade${query}`, { cache: 'no-store' });
         if (!resp.ok) throw new Error('Falha ao buscar');
         QUALIDADE_CACHE = await resp.json();
         window.renderizarListaQualidade();
@@ -253,7 +257,7 @@ window.carregarListaQualidade = async function() {
         if (!FILTRO_QUALIDADE_ATUAL) {
             window.renderizarKpisQualidade(QUALIDADE_CACHE);
         } else {
-            const respTudo = await fetch(`${apiBase}/api/qualidade`, { cache: 'no-store' });
+            const respTudo = await fetchComRetry(`${apiBase}/api/qualidade`, { cache: 'no-store' });
             if (respTudo.ok) window.renderizarKpisQualidade(await respTudo.json());
         }
 
@@ -732,7 +736,7 @@ window.excluirAchadoQualidade = function(achadoId, registroId, pecaId) {
             await fetch(`${apiBase}/api/qualidade/achados/excluir`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: achadoId })
+                body: JSON.stringify({ id: achadoId, operador: OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Sistema') : 'Sistema' })
             });
             await window.carregarListaQualidade();
         } catch (e) {
@@ -895,7 +899,7 @@ window.excluirQualidade = async function(id) {
             await fetch(`${apiBase}/api/qualidade/excluir`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id })
+                body: JSON.stringify({ id, operador: OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Sistema') : 'Sistema' })
             });
         } catch (e) {
             console.error('⚠️ Erro ao excluir registro de qualidade:', e);

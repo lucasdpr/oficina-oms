@@ -1,6 +1,7 @@
 // ui.js - Versão final corrigida (R1/R2, botão excluir, sem duplicatas)
 
 import { BANCO_ATIVOS, resolverApiBase } from './Core/banco.js?v=5';
+import { OPERADOR_LOGADO } from './Core/estado.js';
 
 // ==============================================================
 // FUNÇÃO AUXILIAR PARA CALCULAR DIAS EM REPARO
@@ -357,7 +358,7 @@ window.excluirEquipamento = async function(id) {
         const resposta = await fetch(`${apiBase}/api/excluir_peca`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id })
+            body: JSON.stringify({ id, operador: OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Sistema') : 'Sistema' })
         });
         const resultado = await resposta.json();
         if (!resposta.ok || !resultado.sucesso) {

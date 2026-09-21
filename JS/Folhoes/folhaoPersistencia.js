@@ -118,16 +118,31 @@ export async function salvarRascunhoFolhao(equipamentoId, tipoFolhao, dados, eta
     if (!equipamentoId) return false;
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/folhao/salvar`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                equipamento_id: equipamentoId,
-                tipo_folhao: tipoFolhao,
-                dados: JSON.stringify(dados),
-                etapa
-            })
-        });
+        // 🔧 CORREÇÃO (achado de auditoria: "salvar Folhão sem internet
+        // perde o progresso preenchido se o técnico fechar o modal sem
+        // reparar no alerta de erro"): usa a fila offline em vez de
+        // fetch() puro — só entra na fila em falha de REDE de verdade,
+        // não em erro do servidor. Seguro reenfileirar porque
+        // /api/folhao/salvar é um UPSERT por equipamento_id (ON CONFLICT
+        // DO UPDATE) — reenviar só regrava o mesmo rascunho, não duplica.
+        const { resp, enfileirado } = await window.enviarComFilaOffline(
+            `${apiBase}/api/folhao/salvar`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    equipamento_id: equipamentoId,
+                    tipo_folhao: tipoFolhao,
+                    dados: JSON.stringify(dados),
+                    etapa
+                })
+            },
+            `Rascunho do Folhão (${tipoFolhao || '?'}) — ${equipamentoId}`
+        );
+        if (enfileirado) {
+            console.warn('📦 Sem conexão — progresso do Folhão guardado pra reenviar quando a rede voltar.');
+            return true; // não é uma falha pro chamador: o dado não foi perdido, só está na fila
+        }
         // 🐛 CORRIGIDO: antes essa função nunca contava pra quem chamou
         // se o salvamento deu certo ou não — mesmo com a API retornando
         // erro (500, offline, etc.), o "catch" só fazia console.error e
@@ -172,11 +187,20 @@ export async function finalizarRascunhoFolhao(equipamentoId, tipoFolhao = null) 
 
     try {
         const apiBase = await resolverApiBase();
-        await fetch(`${apiBase}/api/folhao/finalizar`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ equipamento_id: equipamentoId })
-        });
+        // 🔧 CORREÇÃO: era fetch() puro, falha 100% silenciosa em rede
+        // ruim. Baixo impacto (o laudo já foi salvo antes disso), mas
+        // fica na fila offline em vez de simplesmente sumir — /finalizar
+        // é um DELETE por equipamento_id, idempotente, seguro reenviar.
+        const { enfileirado } = await window.enviarComFilaOffline(
+            `${apiBase}/api/folhao/finalizar`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ equipamento_id: equipamentoId })
+            },
+            `Limpar rascunho do Folhão — ${equipamentoId}`
+        );
+        if (enfileirado) console.warn('📦 Sem conexão — limpeza do rascunho do Folhão guardada pra reenviar quando a rede voltar.');
     } catch (e) {
         console.error('⚠️ Não foi possível limpar o rascunho do folhão finalizado:', e);
     }
@@ -269,6 +293,24 @@ window.salvarRascunhoFolhao = salvarRascunhoFolhao;
 window.carregarRascunhoFolhao = carregarRascunhoFolhao;
 window.finalizarRascunhoFolhao = finalizarRascunhoFolhao;
 window.restaurarRascunhoNoModal = restaurarRascunhoNoModal;
+
+// --------------------------------------------------------------
+// 🔧 CORREÇÃO (achado de auditoria: "nenhum aviso ao fechar o Folhão
+// sem salvar"): o progresso já é salvo automaticamente 800ms depois de
+// qualquer campo editado (ativarAutoSalvamentoFolhao acima), então na
+// prática o risco real de perda é bem menor do que "o formulário
+// inteiro some" — só existe uma janela estreita (fechar a ABA/navegador
+// de verdade a menos de 800ms do último toque, antes do autosave
+// disparar). Ainda assim, vale um aviso nativo do navegador nesse caso
+// específico (fechar/recarregar a aba), que é o único que o JS consegue
+// interceptar de verdade — fechar o modal pelo X interno já é coberto
+// pelo autosave, não precisa de confirmação extra ali.
+window.addEventListener('beforeunload', (event) => {
+    const folhaoAberto = document.querySelector('[id^="modal-folhao-"]:not(.hidden)');
+    if (!folhaoAberto) return;
+    event.preventDefault();
+    event.returnValue = '';
+});
 window.ativarAutoSalvamentoFolhao = ativarAutoSalvamentoFolhao;
 
 console.log("✅ folhaoPersistencia.js carregado – progresso de folhão agora persiste no banco.");

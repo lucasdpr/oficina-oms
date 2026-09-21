@@ -19,7 +19,7 @@ import {
     OFICINA_EQUIPE_ATUAL, setOficinaEquipeAtual
 } from '../Core/estado.js';
 import { verificarAcesso } from '../Core/permissoes.js';
-import { executarSeguro, executarSeguroAsync, enviarComFilaOffline, atividadeEstaAtrasada, atividadeAindaNaoComecou } from '../Core/utils.js';
+import { executarSeguro, executarSeguroAsync, enviarComFilaOffline, fetchComRetry, atividadeEstaAtrasada, atividadeAindaNaoComecou } from '../Core/utils.js';
 import { AREAS_OFICINA, ABAS_PADRAO_OFICINA } from '../Core/dados.js';
 
 // ÁREA DA OFICINA — NAVEGAÇÃO POR ABAS (Atividades/Materiais/Equipe/
@@ -167,7 +167,13 @@ window.abrirAreaOficina = async function(chave, abaInicial) {
     // (que normalmente é quem carrega esse cache).
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/oficina/atividades`, { cache: 'no-store' });
+        // 🔧 CORREÇÃO (achado de auditoria: "rede cai, lista não atualiza
+        // e nada avisa o técnico"): fetchComRetry tenta de novo sozinho
+        // e, se mesmo assim falhar, cai no cache salvo da última vez que
+        // deu certo e mostra um aviso visível de "dado desatualizado" —
+        // em vez de só logar no console e seguir mostrando a lista velha
+        // como se estivesse atual.
+        const resp = await fetchComRetry(`${apiBase}/api/oficina/atividades`, { cache: 'no-store' });
         const todas = resp.ok ? await resp.json() : [];
         setOficinaAtividadesCache(Array.isArray(todas) ? todas : []);
     } catch (e) {

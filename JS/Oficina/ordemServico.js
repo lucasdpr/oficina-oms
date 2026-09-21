@@ -10,7 +10,7 @@
 import { resolverApiBase } from '../Core/banco.js?v=5';
 import { OPERADOR_LOGADO } from '../Core/estado.js';
 import { verificarAcesso } from '../Core/permissoes.js';
-import { executarSeguro, enviarComFilaOffline } from '../Core/utils.js';
+import { executarSeguro, enviarComFilaOffline, fetchComRetry } from '../Core/utils.js';
 import { AREAS_OFICINA } from '../Core/dados.js';
 
 // ==========================================
@@ -237,7 +237,10 @@ window.carregarListaOrdensServico = async function() {
     try {
         const apiBase = await resolverApiBase();
         const query = FILTRO_OS_ATUAL ? `?status=${encodeURIComponent(FILTRO_OS_ATUAL)}` : '';
-        const resp = await fetch(`${apiBase}/api/ordens_servico${query}`, { cache: 'no-store' });
+        // 🔧 CORREÇÃO: fetchComRetry tenta de novo sozinho e cai no cache
+        // salvo (com aviso de "dado desatualizado") em falha real de
+        // rede, em vez de ir direto pra tela de erro na primeira falha.
+        const resp = await fetchComRetry(`${apiBase}/api/ordens_servico${query}`, { cache: 'no-store' });
         if (!resp.ok) throw new Error('Falha ao buscar');
         OS_CACHE = await resp.json();
         window.renderizarListaOrdensServico();
@@ -432,7 +435,7 @@ window.excluirOrdemServico = async function(id) {
         const resp = await fetch(`${apiBase}/api/ordens_servico/excluir`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id })
+            body: JSON.stringify({ id, operador: OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Sistema') : 'Sistema' })
         });
         if (!resp.ok) {
             alert('Não foi possível excluir a OS.');

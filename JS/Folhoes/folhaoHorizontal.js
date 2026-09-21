@@ -1062,7 +1062,7 @@ window.salvarFolhaoHorizontal = async function() {
         const resp = await fetch(`${apiBase}/api/laudos`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ peca_id: tag, tipo: "Horizontal", html: htmlPDF, operador: "Sistema" })
+            body: JSON.stringify({ peca_id: tag, tipo: "Horizontal", html: htmlPDF, operador: "Sistema", execucao_id: PONTE_CHECKLIST_HORIZ?.execucaoId ?? null })
         });
         if (!resp.ok) throw new Error("A API não confirmou o salvamento do laudo.");
     } catch (e) {
