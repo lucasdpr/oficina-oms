@@ -5625,8 +5625,14 @@ textarea,
    folha cheia (sem cantos arredondados, sem margem), como um app nativo
    — sem mudar nada de navegação/JS, só o tamanho da caixa. */
 @media (max-width: 600px) {
+  /* 🔧 app.html tem um <style> inline que carrega DEPOIS deste arquivo
+     e redefine .modal-overlay com padding:20px sem !important — em
+     empate de especificidade, quem carrega por último vence. Por isso
+     o !important aqui é obrigatório, senão essa regra perde silenciosamente
+     bem no lugar (app.html) onde o Checklist de Execução e os Folhões
+     realmente abrem. */
   .modal-overlay {
-    padding: 0;
+    padding: 0 !important;
   }
 
   .modal-content,
