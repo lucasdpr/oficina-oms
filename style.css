@@ -5614,7 +5614,35 @@ textarea,
   .table-responsive {
     -webkit-overflow-scrolling: touch;
   }
+}
 
+/* 🆕 Modais em tela cheia no celular (Checklist de Execução, Folhões,
+   Atividades, Procedimentos, etc — todo modal que usa .modal-content ou
+   .folhao-modal-content). Reclamação: no celular esses modais ficavam
+   "flutuando" com margem/padding de sobra dos dois lados (do
+   .modal-overlay E do .modal-content ao mesmo tempo), sobrando pouco
+   espaço útil de tela pra ler/marcar as etapas. Abaixo de 600px vira
+   folha cheia (sem cantos arredondados, sem margem), como um app nativo
+   — sem mudar nada de navegação/JS, só o tamanho da caixa. */
+@media (max-width: 600px) {
+  .modal-overlay {
+    padding: 0;
+  }
+
+  .modal-content,
+  .folhao-modal-content {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+}
+
+@media (max-width: 768px) {
   .kpi-container,
   .kpi-container-familia {
     grid-template-columns: repeat(2, 1fr) !important;
