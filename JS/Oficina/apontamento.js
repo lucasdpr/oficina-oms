@@ -249,14 +249,19 @@ window.desfazerApontamentoMolde = async function(id_log) {
 // sumia se limpasse os dados, e nunca aparecia pra outro técnico em
 // outro aparelho, nem pra outro moderador na Auditoria. Agora persiste
 // no Neon (tabela "laudos"), igual todo o resto do histórico.
-window.salvarLaudoNoHistorico = async function(tag, tipo, htmlPDF) {
+// 🔧 CORREÇÃO ("cada clique em Salvar cria uma linha nova no banco em
+// vez de atualizar o rascunho"): execucaoId (opcional) amarra o laudo à
+// execução (reparo) em andamento — o backend faz UPSERT por
+// execucao_id, então salvar de novo durante o mesmo reparo atualiza a
+// mesma linha em vez de acumular uma nova a cada clique.
+window.salvarLaudoNoHistorico = async function(tag, tipo, htmlPDF, execucaoId = null) {
     const operador = OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Sistema') : 'Sistema';
     try {
         const apiBase = await resolverApiBase();
         const resp = await fetch(`${apiBase}/api/laudos`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ peca_id: tag, tipo, html: htmlPDF, operador })
+            body: JSON.stringify({ peca_id: tag, tipo, html: htmlPDF, operador, execucao_id: execucaoId })
         });
         if (!resp.ok) throw new Error('A API não confirmou o salvamento do laudo.');
         const resultado = await resp.json();

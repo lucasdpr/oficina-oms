@@ -1018,7 +1018,7 @@ window.salvarFolhaoR1 = async function() {
 
     let laudoId = null;
     if (typeof window.salvarLaudoNoHistorico === 'function') {
-        laudoId = await window.salvarLaudoNoHistorico(tag, "Straightener R1 MCC 4", htmlPDF);
+        laudoId = await window.salvarLaudoNoHistorico(tag, "Straightener R1 MCC 4", htmlPDF, PONTE_CHECKLIST_R1?.execucaoId ?? null);
     }
     if (!laudoId) {
         alert("❌ Não consegui salvar o Folhão no banco. Tente novamente ou confira sua conexão.");

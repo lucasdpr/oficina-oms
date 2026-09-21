@@ -759,7 +759,7 @@ window.salvarFolhaoSegmentoZero = async function() {
 
     let laudoId = null;
     if (typeof window.salvarLaudoNoHistorico === 'function') {
-        laudoId = await window.salvarLaudoNoHistorico(tag, "Segmento Zero MCC 2/3", htmlPDF);
+        laudoId = await window.salvarLaudoNoHistorico(tag, "Segmento Zero MCC 2/3", htmlPDF, PONTE_CHECKLIST_SEGZERO?.execucaoId ?? null);
     }
     if (!laudoId) {
         alert("❌ Não consegui salvar o Folhão no banco. Tente novamente ou confira sua conexão.");

@@ -760,7 +760,7 @@ window.salvarFolhaoR2 = async function() {
         const resp = await fetch(`${apiBase}/api/laudos`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ peca_id: tag, tipo: "Straightener R2", html: html, operador: "Sistema" })
+            body: JSON.stringify({ peca_id: tag, tipo: "Straightener R2", html: html, operador: "Sistema", execucao_id: PONTE_CHECKLIST_R2?.execucaoId ?? null })
         });
         if (!resp.ok) throw new Error("A API não confirmou o salvamento do laudo.");
     } catch (e) {

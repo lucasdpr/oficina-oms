@@ -938,6 +938,14 @@ export async function salvarFolhaoMolde4() {
 
     try {
         const apiBase = await resolverApiBase();
+        // 🔧 CORREÇÃO ("cada clique em Salvar cria uma linha nova no
+        // banco em vez de atualizar o rascunho"): manda o execucao_id da
+        // ponte com o Checklist de Execução (PONTE_CHECKLIST_M4, já
+        // buscado quando o Folhão abriu) — o backend faz UPSERT por
+        // execucao_id, então salvar de novo durante o mesmo reparo
+        // atualiza a mesma linha em vez de acumular uma nova a cada
+        // clique. Sem ponte (Folhão aberto sem Checklist em andamento),
+        // vai null e o backend cai de volta no INSERT de sempre.
         const resp = await fetch(`${apiBase}/api/laudos`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -945,7 +953,8 @@ export async function salvarFolhaoMolde4() {
                 peca_id: tag,
                 tipo: "Molde MCC4",
                 html: htmlPDF,
-                operador: lider || "Sistema"
+                operador: lider || "Sistema",
+                execucao_id: PONTE_CHECKLIST_M4?.execucaoId ?? null
             })
         });
         if (!resp.ok) throw new Error("A API não confirmou o salvamento do laudo.");
@@ -1637,7 +1646,7 @@ export async function salvarFolhaoBender() {
         const resp = await fetch(`${apiBase}/api/laudos`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ peca_id: tag, tipo: "Bender", html: htmlPDF, operador: "Sistema" })
+            body: JSON.stringify({ peca_id: tag, tipo: "Bender", html: htmlPDF, operador: "Sistema", execucao_id: PONTE_CHECKLIST_BENDER?.execucaoId ?? null })
         });
         if (!resp.ok) throw new Error("A API não confirmou o salvamento do laudo.");
     } catch (e) {
