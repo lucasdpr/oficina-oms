@@ -435,7 +435,7 @@ window.excluirOrdemServico = async function(id) {
         const resp = await fetch(`${apiBase}/api/ordens_servico/excluir`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id })
+            body: JSON.stringify({ id, operador: OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Sistema') : 'Sistema' })
         });
         if (!resp.ok) {
             alert('Não foi possível excluir a OS.');

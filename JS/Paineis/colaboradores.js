@@ -21,12 +21,10 @@ import { AREAS_OFICINA } from '../Core/dados.js';
 let ADMIN_COLABORADORES_CACHE = [];
 
 window.carregarAdminColaboradores = async function() {
-    console.log('🔎 [DIAGNÓSTICO] carregarAdminColaboradores() foi chamada.');
     const tbody = document.getElementById('admin-colaboradores-table-body');
-    if (!tbody) { console.log('🔎 [DIAGNÓSTICO] tbody NÃO encontrado no HTML — abortando.'); return; }
+    if (!tbody) return;
 
     const matricula = (OPERADOR_LOGADO && OPERADOR_LOGADO.matricula || "").toUpperCase();
-    console.log('🔎 [DIAGNÓSTICO] matrícula logada:', matricula, '| autorizada?', MATRICULAS_TESTE_FOLHOES.includes(matricula));
     if (!MATRICULAS_TESTE_FOLHOES.includes(matricula)) {
         tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Acesso restrito.</td></tr>`;
         return;
@@ -42,13 +40,10 @@ window.carregarAdminColaboradores = async function() {
 
     try {
         const apiBase = await resolverApiBase();
-        console.log('🔎 [DIAGNÓSTICO] apiBase resolvida:', apiBase);
         const resp = await fetch(`${apiBase}/api/colaboradores/todos`, { cache: 'no-store' });
-        console.log('🔎 [DIAGNÓSTICO] status da resposta:', resp.status, resp.ok);
         ADMIN_COLABORADORES_CACHE = resp.ok ? await resp.json() : [];
-        console.log('🔎 [DIAGNÓSTICO] colaboradores recebidos:', ADMIN_COLABORADORES_CACHE.length);
     } catch (e) {
-        console.error('🔎 [DIAGNÓSTICO] ERRO ao carregar a lista de colaboradores:', e);
+        console.error('⚠️ Erro ao carregar a lista de colaboradores:', e);
         ADMIN_COLABORADORES_CACHE = [];
         tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Não foi possível carregar. Verifique sua internet.</td></tr>`;
         return;

@@ -168,7 +168,7 @@ function renderRolos() {
                     <td><span class="ind-card-tag bg-tag">${r.conjunto}</span></td>
                     <td><code>MCC ${r.mcc_compat}</code></td>
                     <td><span class="font-code bold" id="saldo-rolo-${r.id}" style="font-size:16px; color:var(--text-accent); margin-right:15px;">${r.qtd} Pçs</span></td>
-                    <td><div style="display:inline-flex; gap:5px;"><button class="btn-premium btn-success" style="padding:4px 10px;" onclick="alterarSaldoRolo('${r.id}', 1)"><i class="fas fa-plus"></i></button><button class="btn-premium btn-warning" style="padding:4px 10px;" onclick="alterarSaldoRolo('${r.id}', -1)"><i class="fas fa-minus"></i></button></div></td>
+                    <td><div style="display:inline-flex; gap:8px;"><button class="btn-premium btn-success" style="min-width:40px; min-height:40px; padding:8px;" onclick="alterarSaldoRolo('${r.id}', 1)"><i class="fas fa-plus"></i></button><button class="btn-premium btn-warning" style="min-width:40px; min-height:40px; padding:8px;" onclick="alterarSaldoRolo('${r.id}', -1)"><i class="fas fa-minus"></i></button></div></td>
                 </tr>
             `;
         });
@@ -238,18 +238,18 @@ function renderHidraulica() {
                     <td>
                         <div style="display:flex; align-items:center; gap:8px;">
                             <span class="font-code bold" id="saldo-hidraulica-aplicado-${h.id}" style="font-size:15px; color:#22c55e;"><i class="fas fa-industry" style="font-size:11px;"></i> ${aplicado}</span>
-                            <div style="display:inline-flex; gap:4px;">
-                                <button class="btn-premium btn-success" style="padding:3px 8px;" onclick="alterarSaldoHidraulica('${h.id}', 'aplicado', 1)"><i class="fas fa-plus"></i></button>
-                                <button class="btn-premium btn-warning" style="padding:3px 8px;" onclick="alterarSaldoHidraulica('${h.id}', 'aplicado', -1)"><i class="fas fa-minus"></i></button>
+                            <div style="display:inline-flex; gap:8px;">
+                                <button class="btn-premium btn-success" style="min-width:36px; min-height:36px; padding:6px;" onclick="alterarSaldoHidraulica('${h.id}', 'aplicado', 1)"><i class="fas fa-plus"></i></button>
+                                <button class="btn-premium btn-warning" style="min-width:36px; min-height:36px; padding:6px;" onclick="alterarSaldoHidraulica('${h.id}', 'aplicado', -1)"><i class="fas fa-minus"></i></button>
                             </div>
                         </div>
                     </td>
                     <td>
                         <div style="display:flex; align-items:center; gap:8px;">
                             <span class="font-code bold" id="saldo-hidraulica-reserva-${h.id}" style="font-size:15px; color:var(--text-accent);"><i class="fas fa-warehouse" style="font-size:11px;"></i> ${reserva}</span>
-                            <div style="display:inline-flex; gap:4px;">
-                                <button class="btn-premium btn-success" style="padding:3px 8px;" onclick="alterarSaldoHidraulica('${h.id}', 'reserva', 1)"><i class="fas fa-plus"></i></button>
-                                <button class="btn-premium btn-warning" style="padding:3px 8px;" onclick="alterarSaldoHidraulica('${h.id}', 'reserva', -1)"><i class="fas fa-minus"></i></button>
+                            <div style="display:inline-flex; gap:8px;">
+                                <button class="btn-premium btn-success" style="min-width:36px; min-height:36px; padding:6px;" onclick="alterarSaldoHidraulica('${h.id}', 'reserva', 1)"><i class="fas fa-plus"></i></button>
+                                <button class="btn-premium btn-warning" style="min-width:36px; min-height:36px; padding:6px;" onclick="alterarSaldoHidraulica('${h.id}', 'reserva', -1)"><i class="fas fa-minus"></i></button>
                             </div>
                         </div>
                     </td>
@@ -325,10 +325,10 @@ function renderMateriais() {
                 <td><span class="font-code bold" style="font-size:16px; color: #a855f7;">${m.qtd.toLocaleString()} UN</span></td>
                 <td>${statusHtml}</td>
                 <td>
-                    <div style="display:inline-flex; gap:5px;">
-                        <button class="btn-premium btn-success" style="padding:4px 10px;" onclick="ajustarSaldoMaterial('${m.codigo}', 1)" title="Adicionar"><i class="fas fa-plus"></i></button>
-                        <button class="btn-premium btn-warning" style="padding:4px 10px;" onclick="ajustarSaldoMaterial('${m.codigo}', -1)" title="Baixar"><i class="fas fa-minus"></i></button>
-                        <button class="btn-outline-danger" style="padding:4px 10px;" onclick="removerMaterial('${m.codigo}')" title="Excluir"><i class="fas fa-trash"></i></button>
+                    <div style="display:inline-flex; gap:8px;">
+                        <button class="btn-premium btn-success" style="min-width:40px; min-height:40px; padding:8px;" onclick="ajustarSaldoMaterial('${m.codigo}', 1)" title="Adicionar"><i class="fas fa-plus"></i></button>
+                        <button class="btn-premium btn-warning" style="min-width:40px; min-height:40px; padding:8px;" onclick="ajustarSaldoMaterial('${m.codigo}', -1)" title="Baixar"><i class="fas fa-minus"></i></button>
+                        <button class="btn-outline-danger" style="min-width:40px; min-height:40px; padding:8px;" onclick="removerMaterial('${m.codigo}')" title="Excluir"><i class="fas fa-trash"></i></button>
                     </div>
                 </td>
             </tr>
@@ -374,7 +374,7 @@ async function salvarEntradaMaterial() {
         const resp = await fetchComRetry(`${apiBase}/api/materiais/cadastrar`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ codigo, descricao, qtd })
+            body: JSON.stringify({ codigo, descricao, qtd, operador: OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Sistema') : 'Sistema' })
         });
         const resultado = await resp.json().catch(() => ({}));
         if (!resp.ok) {
@@ -409,7 +409,7 @@ async function ajustarSaldoMaterial(codigo, fator) {
         const resp = await fetchComRetry(`${apiBase}/api/materiais/ajustar`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ codigo, fator })
+            body: JSON.stringify({ codigo, fator, operador: OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Sistema') : 'Sistema' })
         });
         const resultado = await resp.json().catch(() => ({}));
         if (!resp.ok) {
@@ -435,7 +435,7 @@ async function removerMaterial(codigo) {
         const resp = await fetchComRetry(`${apiBase}/api/materiais/remover`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ codigo })
+            body: JSON.stringify({ codigo, operador: OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Sistema') : 'Sistema' })
         });
         const resultado = await resp.json().catch(() => ({}));
         if (!resp.ok) {

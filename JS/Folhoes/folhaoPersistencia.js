@@ -293,6 +293,24 @@ window.salvarRascunhoFolhao = salvarRascunhoFolhao;
 window.carregarRascunhoFolhao = carregarRascunhoFolhao;
 window.finalizarRascunhoFolhao = finalizarRascunhoFolhao;
 window.restaurarRascunhoNoModal = restaurarRascunhoNoModal;
+
+// --------------------------------------------------------------
+// 🔧 CORREÇÃO (achado de auditoria: "nenhum aviso ao fechar o Folhão
+// sem salvar"): o progresso já é salvo automaticamente 800ms depois de
+// qualquer campo editado (ativarAutoSalvamentoFolhao acima), então na
+// prática o risco real de perda é bem menor do que "o formulário
+// inteiro some" — só existe uma janela estreita (fechar a ABA/navegador
+// de verdade a menos de 800ms do último toque, antes do autosave
+// disparar). Ainda assim, vale um aviso nativo do navegador nesse caso
+// específico (fechar/recarregar a aba), que é o único que o JS consegue
+// interceptar de verdade — fechar o modal pelo X interno já é coberto
+// pelo autosave, não precisa de confirmação extra ali.
+window.addEventListener('beforeunload', (event) => {
+    const folhaoAberto = document.querySelector('[id^="modal-folhao-"]:not(.hidden)');
+    if (!folhaoAberto) return;
+    event.preventDefault();
+    event.returnValue = '';
+});
 window.ativarAutoSalvamentoFolhao = ativarAutoSalvamentoFolhao;
 
 console.log("✅ folhaoPersistencia.js carregado – progresso de folhão agora persiste no banco.");

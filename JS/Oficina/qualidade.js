@@ -736,7 +736,7 @@ window.excluirAchadoQualidade = function(achadoId, registroId, pecaId) {
             await fetch(`${apiBase}/api/qualidade/achados/excluir`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: achadoId })
+                body: JSON.stringify({ id: achadoId, operador: OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Sistema') : 'Sistema' })
             });
             await window.carregarListaQualidade();
         } catch (e) {
@@ -899,7 +899,7 @@ window.excluirQualidade = async function(id) {
             await fetch(`${apiBase}/api/qualidade/excluir`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id })
+                body: JSON.stringify({ id, operador: OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Sistema') : 'Sistema' })
             });
         } catch (e) {
             console.error('⚠️ Erro ao excluir registro de qualidade:', e);

@@ -736,12 +736,16 @@ window.renderizarChecklistExecucao = function() {
 // --------------------------------------------------------------
 function renderizarLinhaEtapaChecklistExecucao(e, secao, isAdmin) {
     const tipoResposta = e.tipo_resposta || 'sim_nao';
+    // 🔧 CORREÇÃO (achado de auditoria: "botões de admin do checklist
+    // são pequenos demais pra toque em campo, ~23px de altura real,
+    // colados um no outro — risco real de tocar Excluir em vez de
+    // Mover"): min-width/min-height 40px + mais gap entre eles.
     const botoesAdmin = isAdmin ? `
-        <div style="display:flex; flex-wrap:wrap; gap:4px; flex-shrink:0;">
-            <button class="btn-premium" style="padding:6px 8px; font-size:11px;" title="Editar (texto e mapeamento com o Folhão)" onclick='window.editarEtapaChecklistExecucao(${e.id})'><i class="fas fa-pen"></i></button>
-            <button class="btn-premium" style="padding:6px 8px; font-size:11px;" title="Mover pra cima" onclick="window.moverEtapaChecklistExecucao(${e.id}, '${secao.chave}', -1)"><i class="fas fa-arrow-up"></i></button>
-            <button class="btn-premium" style="padding:6px 8px; font-size:11px;" title="Mover pra baixo" onclick="window.moverEtapaChecklistExecucao(${e.id}, '${secao.chave}', 1)"><i class="fas fa-arrow-down"></i></button>
-            <button class="btn-outline-danger" style="padding:6px 8px; font-size:11px;" title="Excluir etapa" onclick="window.excluirEtapaChecklistExecucao(${e.id})"><i class="fas fa-trash"></i></button>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; flex-shrink:0;">
+            <button class="btn-premium" style="min-width:40px; min-height:40px; padding:8px; font-size:12px;" title="Editar (texto e mapeamento com o Folhão)" onclick='window.editarEtapaChecklistExecucao(${e.id})'><i class="fas fa-pen"></i></button>
+            <button class="btn-premium" style="min-width:40px; min-height:40px; padding:8px; font-size:12px;" title="Mover pra cima" onclick="window.moverEtapaChecklistExecucao(${e.id}, '${secao.chave}', -1)"><i class="fas fa-arrow-up"></i></button>
+            <button class="btn-premium" style="min-width:40px; min-height:40px; padding:8px; font-size:12px;" title="Mover pra baixo" onclick="window.moverEtapaChecklistExecucao(${e.id}, '${secao.chave}', 1)"><i class="fas fa-arrow-down"></i></button>
+            <button class="btn-outline-danger" style="min-width:40px; min-height:40px; padding:8px; font-size:12px;" title="Excluir etapa" onclick="window.excluirEtapaChecklistExecucao(${e.id})"><i class="fas fa-trash"></i></button>
         </div>
     ` : '';
 
