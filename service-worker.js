@@ -11,7 +11,7 @@
 // usando a copia antiga guardada em cache.
 // ==============================================================
 
-const CACHE_VERSION = "oms-v114";
+const CACHE_VERSION = "oms-v115";
 
 // 🔧 CORREÇÃO: essa lista estava com os caminhos de uma estrutura de
 // pastas antiga (tudo direto na raiz) — o projeto hoje guarda os JS
@@ -152,31 +152,39 @@ self.addEventListener("fetch", (event) => {
         return;
     }
 
+    // 🔧 CORREÇÃO (achado de auditoria de performance): antes, TODO
+    // arquivo estático (2,2MB de JS/CSS ao todo) era buscado com
+    // `{ cache: "no-store" }` — isso ignora completamente o cache HTTP
+    // normal do navegador, forçando o RE-DOWNLOAD COMPLETO de tudo a
+    // cada abertura do app, mesmo online e mesmo sem nenhum deploy
+    // novo. Numa rede de fábrica ruim, isso significava dezenas de
+    // segundos de espera todo dia, à toa.
+    //
+    // Agora é stale-while-revalidate: responde IMEDIATAMENTE com o que
+    // já está no cache da versão atual (rápido, sem esperar rede
+    // nenhuma), e só then atualiza esse cache em segundo plano com uma
+    // busca de rede normal (sem no-store — o navegador pode inclusive
+    // usar 304 Not Modified e nem baixar de novo o corpo). Isso é
+    // seguro porque a atualização "de verdade" já é garantida por
+    // outro mecanismo: um deploy novo troca CACHE_VERSION, o que faz
+    // o install() (acima) pré-cachear tudo de novo antes do activate()
+    // apagar a versão antiga — o usuário só continua vendo arquivo
+    // velho aqui se ninguém tiver incrementado CACHE_VERSION.
     event.respondWith(
-        fetch(event.request, { cache: "no-store" })
-            .then((resposta) => {
-                // Atualiza o cache com a versão mais nova sempre que
-                // conseguir buscar na rede.
-                const copia = resposta.clone();
-                caches.open(CACHE_VERSION).then((cache) => {
-                    cache.put(event.request, copia);
-                });
-                return resposta;
-            })
-            .catch(() => {
-                // Sem internet: usa o que tiver salvo em cache.
-                // 🔧 CORREÇÃO: os módulos JS são importados no app.html com
-                // "?v=13" etc (ex: script.js?v=13), mas o precache do install
-                // guarda a URL "pelada" (./script.js, sem query). Sem
-                // ignoreSearch, essas duas URLs contam como chaves de cache
-                // DIFERENTES — o fallback offline não encontrava o arquivo
-                // certo na primeira vez que o app abria sem internet (só
-                // "curava" sozinho depois de pelo menos 1 visita online, que
-                // é quando o handler acima salva a URL com query de verdade).
-                // ignoreSearch faz o match ignorar a query string, então o
-                // arquivo pré-cacheado já serve de primeira, mesmo offline.
-                return caches.match(event.request, { ignoreSearch: true });
-            })
+        caches.match(event.request, { ignoreSearch: true }).then((respostaCache) => {
+            const buscaRede = fetch(event.request)
+                .then((resposta) => {
+                    const copia = resposta.clone();
+                    caches.open(CACHE_VERSION).then((cache) => {
+                        cache.put(event.request, copia);
+                    });
+                    return resposta;
+                })
+                .catch(() => respostaCache);
+            // Tem cache? Devolve na hora e atualiza por trás. Sem cache
+            // (primeira visita, arquivo novo): espera a rede mesmo.
+            return respostaCache || buscaRede;
+        })
     );
 });
 
