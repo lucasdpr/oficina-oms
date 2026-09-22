@@ -40,7 +40,7 @@ window.carregarAdminColaboradores = async function() {
 
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/colaboradores/todos`, { cache: 'no-store' });
+        const resp = await fetch(`${apiBase}/api/colaboradores/todos`, { cache: 'no-store', headers: headersAdmin() });
         ADMIN_COLABORADORES_CACHE = resp.ok ? await resp.json() : [];
     } catch (e) {
         console.error('⚠️ Erro ao carregar a lista de colaboradores:', e);
