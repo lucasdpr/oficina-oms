@@ -433,36 +433,64 @@ export async function enviarComFilaOffline(url, options, descricao) {
 }
 window.enviarComFilaOffline = (...args) => enviarComFilaOffline(...args);
 
+// 🔧 CORREÇÃO CRÍTICA (achado de auditoria de Go-Live, confirmado por
+// duas revisões independentes): esta função é chamada por 3 gatilhos
+// diferentes (evento 'online', setInterval de 30s, clique manual no
+// indicador) SEM nenhuma trava — se um item demorar mais que 30s pra
+// responder (ex: OS com fotos grandes em rede ruim), o timer seguinte
+// pode disparar uma segunda execução concorrente que vê o MESMO item
+// ainda na fila e reenvia — e como OS/Ocorrência/Qualidade/Atividade
+// NÃO são upsert (diferente de Folhão/Checklist), isso duplica o
+// registro de verdade no banco. `_reenviandoFilaOffline` garante que só
+// uma execução roda por vez.
+let _reenviandoFilaOffline = false;
+
 window.tentarReenviarFilaOffline = async function() {
-    let fila = lerFilaOffline();
-    if (fila.length === 0) return;
+    if (_reenviandoFilaOffline) return;
+    _reenviandoFilaOffline = true;
+    try {
+        let fila = lerFilaOffline();
+        if (fila.length === 0) return;
 
-    const restantes = [];
-    let algumEnviado = false;
+        const restantes = [];
+        let algumEnviado = false;
 
-    for (const item of fila) {
-        try {
-            const resp = await fetch(item.url, item.options);
-            if (resp.ok) {
-                algumEnviado = true;
-            } else {
-                // Servidor respondeu mas recusou (ex: algo mudou nesse
-                // meio tempo) — não adianta insistir sozinho, descarta
-                // pra não travar o resto da fila esperando pra sempre.
-                console.warn('⚠️ Ação da fila offline foi recusada pelo servidor:', item.descricao);
+        for (const item of fila) {
+            try {
+                const resp = await fetch(item.url, item.options);
+                if (resp.ok) {
+                    algumEnviado = true;
+                } else if (resp.status === 401) {
+                    // 🔧 CORREÇÃO: sessão expirada (token de 12h) não
+                    // significa "servidor recusou os dados" — antes isso
+                    // caía no mesmo caminho de descarte silencioso de
+                    // qualquer outro erro, perdendo o registro pra
+                    // sempre assim que o token vencesse. Mantém na fila
+                    // pra tentar de novo depois de um novo login.
+                    console.warn('⚠️ Sessão expirada — mantendo na fila até novo login:', item.descricao);
+                    restantes.push(item);
+                } else {
+                    // Servidor respondeu e recusou por outro motivo (ex:
+                    // validação, algo mudou nesse meio tempo) — não
+                    // adianta insistir sozinho, descarta pra não travar
+                    // o resto da fila esperando pra sempre.
+                    console.warn('⚠️ Ação da fila offline foi recusada pelo servidor:', item.descricao);
+                }
+            } catch (e) {
+                // Ainda sem internet — mantém na fila pra tentar de novo.
+                restantes.push(item);
             }
-        } catch (e) {
-            // Ainda sem internet — mantém na fila pra tentar de novo.
-            restantes.push(item);
         }
-    }
 
-    salvarFilaOffline(restantes);
+        salvarFilaOffline(restantes);
 
-    if (algumEnviado) {
-        if (typeof window.carregarListaOrdensServico === 'function') window.carregarListaOrdensServico();
-        if (typeof window.carregarListaQualidade === 'function') window.carregarListaQualidade();
-        if (typeof window.carregarOficina === 'function') window.carregarOficina();
+        if (algumEnviado) {
+            if (typeof window.carregarListaOrdensServico === 'function') window.carregarListaOrdensServico();
+            if (typeof window.carregarListaQualidade === 'function') window.carregarListaQualidade();
+            if (typeof window.carregarOficina === 'function') window.carregarOficina();
+        }
+    } finally {
+        _reenviandoFilaOffline = false;
     }
 };
 

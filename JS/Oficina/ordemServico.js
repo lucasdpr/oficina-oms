@@ -296,7 +296,7 @@ window.renderizarListaOrdensServico = function() {
         return `
         <div style="display:flex; gap:14px; padding:14px 0; border-bottom:1px solid var(--border); align-items:flex-start;">
             ${os.foto_capa ? `
-                <div style="position:relative; flex-shrink:0; cursor:pointer;" onclick="window.abrirGaleriaOs(${os.id}, '${os.numero_os ? `OS ${os.numero_os}` : `OS #${os.id}`}')">
+                <div style="position:relative; flex-shrink:0; cursor:pointer;" onclick="window.abrirGaleriaOs(${os.id}, '${window.escapeAtributoNotif(os.numero_os ? `OS ${os.numero_os}` : `OS #${os.id}`)}')">
                     <img src="${os.foto_capa}" style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border);">
                     ${totalFotos > 1 ? `<span style="position:absolute; bottom:2px; right:2px; background:rgba(0,0,0,0.75); color:#fff; font-size:10px; padding:1px 6px; border-radius:10px;"><i class="fas fa-images"></i> ${totalFotos}</span>` : ''}
                 </div>
@@ -307,19 +307,19 @@ window.renderizarListaOrdensServico = function() {
             `}
             <div style="flex:1; min-width:0;">
                 <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
-                    <span class="font-code" style="font-weight:700; color:var(--text-heading);">${os.numero_os ? `OS ${os.numero_os}` : `#${os.id}`}</span>
+                    <span class="font-code" style="font-weight:700; color:var(--text-heading);">${os.numero_os ? `OS ${window.escapeHtmlNotif(os.numero_os)}` : `#${os.id}`}</span>
                     <span class="status-text-pill" style="--sev-color:${corStatus};">${iconeStatus} ${os.status}</span>
                 </div>
-                ${os.descricao ? `<div style="font-size:13px; color:var(--text-body); margin-bottom:4px;">${os.descricao}</div>` : ''}
+                ${os.descricao ? `<div style="font-size:13px; color:var(--text-body); margin-bottom:4px;">${window.escapeHtmlNotif(os.descricao)}</div>` : ''}
                 ${naoExecutada && os.motivo_nao_executada ? `
                     <div style="font-size:12px; color:var(--danger); background:rgba(239,68,68,0.08); border-left:3px solid var(--danger); padding:5px 8px; border-radius:4px; margin-bottom:4px;">
-                        <strong>Motivo:</strong> ${os.motivo_nao_executada}
+                        <strong>Motivo:</strong> ${window.escapeHtmlNotif(os.motivo_nao_executada)}
                     </div>
                 ` : ''}
                 <div style="font-size:11px; color:var(--text-accent);">
-                    ${os.criado_por || 'Sistema'} · ${os.criado_em || ''}${(os.areas && os.areas.length) ? ` · ${os.areas.map(window.nomeAreaOficina).join(', ')}` : (os.area ? ` · ${window.nomeAreaOficina(os.area)}` : '')}
-                    ${concluida && os.concluido_por ? `<br>Concluída por ${os.concluido_por} · ${os.concluido_em || ''}` : ''}
-                    ${naoExecutada && os.encerrado_por ? `<br>Encerrada por ${os.encerrado_por} · ${os.encerrado_em || ''}` : ''}
+                    ${window.escapeHtmlNotif(os.criado_por || 'Sistema')} · ${os.criado_em || ''}${(os.areas && os.areas.length) ? ` · ${os.areas.map(window.nomeAreaOficina).join(', ')}` : (os.area ? ` · ${window.nomeAreaOficina(os.area)}` : '')}
+                    ${concluida && os.concluido_por ? `<br>Concluída por ${window.escapeHtmlNotif(os.concluido_por)} · ${os.concluido_em || ''}` : ''}
+                    ${naoExecutada && os.encerrado_por ? `<br>Encerrada por ${window.escapeHtmlNotif(os.encerrado_por)} · ${os.encerrado_em || ''}` : ''}
                 </div>
             </div>
             <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">

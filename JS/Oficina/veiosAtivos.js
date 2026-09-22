@@ -775,8 +775,8 @@ function renderizarTabelaHistoricoIndividual(id) {
         return `
         <tr>
             <td style="font-size: 11px; white-space: nowrap; color: var(--text-muted);">${h.data}</td>
-            <td style="font-size: 13px; color: var(--text-body);"><i class="fas ${icone}" style="color:${cor}; margin-right:8px;"></i>${h.acao}</td>
-            <td style="font-size: 11px; color: var(--text-accent);">${h.responsavel || 'Sistema'}</td>
+            <td style="font-size: 13px; color: var(--text-body);"><i class="fas ${icone}" style="color:${cor}; margin-right:8px;"></i>${window.escapeHtmlNotif(h.acao)}</td>
+            <td style="font-size: 11px; color: var(--text-accent);">${window.escapeHtmlNotif(h.responsavel || 'Sistema')}</td>
         </tr>`;
     }).join("");
 }

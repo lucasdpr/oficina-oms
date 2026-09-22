@@ -17,6 +17,7 @@
 import { resolverApiBase, OPERADOR_LOGADO, BANCO_ATIVOS } from '../Core/banco.js?v=5';
 import { CHECKLIST_EXECUCAO_SECOES, obterSecoesChecklistExecucao, usaSubagrupamentoEspecialidade, obterEspecialidade } from '../Core/dados.js';
 import { resolverTipoEquipamento } from '../Core/checklistFolhaoPonte.js';
+import { headersAdmin } from '../Core/utils.js';
 // 🔧 CORREÇÃO CRÍTICA: NÃO importar MATRICULAS_ADM/OFICINA_EQUIPE_ATUAL/
 // verificarAcesso/renderReparos de '../script.js' aqui. O app.html
 // carrega o script.js como './JS/script.js?v=27' — uma URL diferente
@@ -450,10 +451,20 @@ window.recarregarChecklistExecucao = async function() {
         const apiBase = await resolverApiBase();
         const qs = CHECKLIST_EXECUCAO_EXECUCAO_ATUAL ? `?execucao_id=${CHECKLIST_EXECUCAO_EXECUCAO_ATUAL}` : '';
         const resp = await fetch(`${apiBase}/api/checklist-execucao/etapas/${encodeURIComponent(CHECKLIST_EXECUCAO_TIPO_ATUAL)}${qs}`, { cache: 'no-store' });
-        CHECKLIST_EXECUCAO_ETAPAS_ATUAIS = resp.ok ? await resp.json() : [];
+        // 🔧 CORREÇÃO CRÍTICA (achado de auditoria de Go-Live): marcar uma
+        // etapa offline já enfileira certo (ver enviarMarcacaoChecklistExecucao),
+        // mas essa função SEMPRE roda depois — e antes, se o GET falhasse
+        // (mesma falta de rede), zerava CHECKLIST_EXECUCAO_ETAPAS_ATUAIS,
+        // fazendo o checklist inteiro sumir da tela com uma mensagem de
+        // "nenhuma etapa cadastrada" que parecia problema de cadastro, não
+        // de rede. Agora, se falhar, mantém o que já estava na tela.
+        if (resp.ok) {
+            CHECKLIST_EXECUCAO_ETAPAS_ATUAIS = await resp.json();
+        } else {
+            console.warn('⚠️ Não consegui atualizar as etapas do servidor — mantendo o que já estava na tela.');
+        }
     } catch (e) {
-        console.error('⚠️ Erro ao carregar etapas do Checklist de Execução:', e);
-        CHECKLIST_EXECUCAO_ETAPAS_ATUAIS = [];
+        console.error('⚠️ Erro ao carregar etapas do Checklist de Execução (sem rede) — mantendo o que já estava na tela:', e);
     }
     window.renderizarChecklistExecucao();
     window.renderizarAtividadesExtraChecklist();
@@ -1211,9 +1222,13 @@ window.formNovaEtapaChecklistExecucao = async function(areaChave) {
     const tecnico = OPERADOR_LOGADO || {};
     try {
         const apiBase = await resolverApiBase();
+        // 🔧 CORREÇÃO CRÍTICA (achado de auditoria de Go-Live): o backend
+        // agora exige token de admin de verdade (Depends(exigir_admin))
+        // em vez de confiar no campo "operador" do corpo — precisa
+        // mandar o Authorization: Bearer aqui, senão vira 401.
         const resp = await fetch(`${apiBase}/api/checklist-execucao/etapas`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headersAdmin(),
             body: JSON.stringify({
                 equipamento_id: CHECKLIST_EXECUCAO_TIPO_ATUAL, // 🆕 tipo, não a tag
                 area: areaChave,
@@ -1390,7 +1405,7 @@ window.editarEtapaChecklistExecucao = function(etapaId) {
             const apiBase = await resolverApiBase();
             const resp = await fetch(`${apiBase}/api/checklist-execucao/etapas/editar`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: headersAdmin(),
                 body: JSON.stringify({
                     id: etapaId,
                     texto,
@@ -1426,7 +1441,7 @@ window.excluirEtapaChecklistExecucao = async function(etapaId) {
         const apiBase = await resolverApiBase();
         const resp = await fetch(`${apiBase}/api/checklist-execucao/etapas/excluir`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headersAdmin(),
             body: JSON.stringify({ id: etapaId, operador: tecnico.matricula || '' })
         });
         if (!resp.ok) alert('Não foi possível excluir a etapa.');
@@ -1459,7 +1474,7 @@ window.moverEtapaChecklistExecucao = async function(etapaId, areaChave, direcao)
         const apiBase = await resolverApiBase();
         const resp = await fetch(`${apiBase}/api/checklist-execucao/etapas/reordenar`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headersAdmin(),
             body: JSON.stringify({ itens, operador: tecnico.matricula || '' })
         });
         if (!resp.ok) alert('Não foi possível reordenar as etapas.');
