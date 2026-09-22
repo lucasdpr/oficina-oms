@@ -386,7 +386,33 @@ function lerFilaOffline() {
 }
 
 function salvarFilaOffline(fila) {
-    localStorage.setItem(FILA_OFFLINE_KEY, JSON.stringify(fila));
+    // 🔧 CORREÇÃO (achado de auditoria de Go-Live): faltava try/catch —
+    // se o localStorage estourar a cota (comum com fotos base64 na
+    // fila), o `setItem` lançava e a exceção subia pra quem chamou
+    // (`enviarComFilaOffline`), que então reportava "não foi possível
+    // conectar ao servidor" — mensagem enganosa — e a ação NEM ENTRAVA
+    // na fila, perdida de verdade. Agora, se estourar, descarta os itens
+    // mais antigos (o rascunho mais recente importa mais) até caber, e
+    // avisa visivelmente em vez de falhar em silêncio.
+    try {
+        localStorage.setItem(FILA_OFFLINE_KEY, JSON.stringify(fila));
+    } catch (e) {
+        let restante = fila.slice();
+        let salvou = false;
+        while (restante.length > 0) {
+            restante = restante.slice(1); // descarta o mais antigo primeiro
+            try {
+                localStorage.setItem(FILA_OFFLINE_KEY, JSON.stringify(restante));
+                salvou = true;
+                break;
+            } catch (e2) { /* continua descartando */ }
+        }
+        if (!salvou) {
+            try { localStorage.removeItem(FILA_OFFLINE_KEY); } catch (e3) { /* nada mais a fazer */ }
+        }
+        console.error('⚠️ Fila offline estourou a cota do localStorage — itens mais antigos foram descartados pra caber os mais recentes.', e);
+        alert('⚠️ Muita coisa acumulada esperando conexão — alguns itens mais antigos da fila foram descartados pra caber os mais recentes. Assim que der, confira se tudo que você fez foi salvo.');
+    }
     atualizarIndicadorFilaOffline();
 }
 
@@ -416,15 +442,29 @@ function atualizarIndicadorFilaOffline() {
 // SERVIDOR (400, 500...) não cai aqui — isso o código que chama trata
 // normal, olhando "resp.ok", porque não adianta reenviar sozinho algo
 // que o servidor já recusou.
-export async function enviarComFilaOffline(url, options, descricao) {
+export async function enviarComFilaOffline(url, options, descricao, chaveDedup) {
     try {
         const resp = await fetch(url, options);
         return { resp, enfileirado: false };
     } catch (e) {
-        const fila = lerFilaOffline();
+        // 🔧 CORREÇÃO (achado de auditoria de Go-Live): autosave (ex.:
+        // rascunho de Folhão a cada 800ms) chamava isso repetidamente
+        // enquanto offline, empilhando um item novo na fila a cada
+        // tentativa — dezenas de rascunhos antigos duplicados disputando
+        // espaço com ações reais. Quando o chamador passa `chaveDedup`,
+        // removemos qualquer item pendente com a mesma chave antes de
+        // empilhar o novo (só o rascunho mais recente importa). Sem
+        // `chaveDedup`, o comportamento é o de sempre — nada é descartado,
+        // porque criações distintas (OS, ocorrência, qualidade...) podem
+        // legitimamente compartilhar a mesma URL e não podem ser tratadas
+        // como duplicatas.
+        let fila = lerFilaOffline();
+        if (chaveDedup) {
+            fila = fila.filter((item) => item.chaveDedup !== chaveDedup);
+        }
         fila.push({
             id: Date.now() + Math.random(),
-            url, options, descricao,
+            url, options, descricao, chaveDedup,
             criado_em: new Date().toLocaleString('pt-BR')
         });
         salvarFilaOffline(fila);

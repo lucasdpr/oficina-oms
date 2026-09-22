@@ -137,7 +137,8 @@ export async function salvarRascunhoFolhao(equipamentoId, tipoFolhao, dados, eta
                     etapa
                 })
             },
-            `Rascunho do Folhão (${tipoFolhao || '?'}) — ${equipamentoId}`
+            `Rascunho do Folhão (${tipoFolhao || '?'}) — ${equipamentoId}`,
+            `folhao-rascunho-${equipamentoId}`
         );
         if (enfileirado) {
             console.warn('📦 Sem conexão — progresso do Folhão guardado pra reenviar quando a rede voltar.');
