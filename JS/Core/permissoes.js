@@ -170,29 +170,6 @@ export function ativarPainelAdmSeAutorizado() {
 }
 window.ativarPainelAdmSeAutorizado = ativarPainelAdmSeAutorizado;
 
-// 🆕 Molde MCC4 3D — visualização temporária pra apresentação do
-// supervisor. Mesma regra de acesso do Painel ADM (só admin de sistema
-// de verdade). Remover essa função + a seção/link correspondentes
-// depois que a apresentação acontecer.
-export function ativarMolde3DSeAutorizado() {
-    const link = document.getElementById("nav-molde-mcc4-3d");
-    if (!link) return;
-
-    const autorizado = operadorEhAdmDeSistema();
-
-    if (autorizado) {
-        link.classList.remove("hidden");
-    } else {
-        link.classList.add("hidden");
-        const aba = document.getElementById("aba-molde-mcc4-3d");
-        if (aba && aba.classList.contains("active") && typeof window.abrirAba === 'function') {
-            const navPainel = document.getElementById("nav-painel");
-            if (navPainel) window.abrirAba({ preventDefault(){}, currentTarget: navPainel }, "aba-painel");
-        }
-    }
-}
-window.ativarMolde3DSeAutorizado = ativarMolde3DSeAutorizado;
-
 export function ativarPainelDevSeAutorizado() {
     const link = document.getElementById("nav-dev-teste");
     const divisor = document.getElementById("nav-divider-dev");
