@@ -2,19 +2,19 @@
 // supervisor. Exterior modelado a partir da foto frontal real do molde
 // (corpo central com "OMS", 3 janelas, asas laterais escalonadas, olhais,
 // pés, grade de refrigeração, canos em U, mangueiras com fita amarela,
-// cabos vermelhos, "06"). O botão "Ver interior" abre o molde ao meio
-// (metade da frente vai pra frente, metade de trás vai pra trás) e mostra
-// as 4 placas de cobre: frente lisa bicolor (cobre em cima, cinza
-// embaixo) e traseira com a grade de furos de refrigeração (tampas
-// vermelhas, furos abertos, chicote de fio amarelo) — tudo copiado das
-// fotos reais das placas.
+// "06"). O botão "Ver interior" abre o molde ao meio (metade da frente
+// vai pra frente, metade de trás vai pra trás) e mostra as 4 placas de
+// cobre, cada uma se afastando das outras: frente lisa bicolor (cobre em
+// cima, cinza embaixo) e traseira com a grade de furos de refrigeração
+// (tampas vermelhas, furos abertos, chicote de fio amarelo) — tudo
+// copiado das fotos reais das placas.
 //
 // Dimensões são ESTIMADAS a partir das proporções das fotos — não são as
 // medidas reais/confidenciais da MCC4 da CSN.
 //
-// Admin-only (ver ativarMolde3DSeAutorizado em permissoes.js). Esse
-// arquivo, a seção no app.html e o link do menu são pra ser removidos
-// depois da apresentação.
+// Página pública (Molde3d.html), sem gate de admin — pedido do usuário,
+// mesmo padrão do Sinótico 3D. Esse arquivo, Molde3d.html e o link do
+// menu (app.html) são pra ser removidos depois da apresentação.
 
 let cena3dIniciada = false;
 
