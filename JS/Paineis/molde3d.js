@@ -244,7 +244,6 @@ async function iniciarCena() {
     const canoInoxMat = new THREE.MeshStandardMaterial({ color: 0x9a9da3, roughness: 0.3, metalness: 0.9 });
     const fitaAmarelaMat = new THREE.MeshStandardMaterial({ color: 0xd9a830, roughness: 0.7 });
     const tampaPretaMat = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.6 });
-    const caboVermelhoMat = new THREE.MeshStandardMaterial({ color: 0xa8412e, roughness: 0.65 });
 
     const texFrente = criarTexturaPlacaFrente(THREE);
     const texTras = criarTexturaPlacaTras(THREE);
@@ -399,13 +398,6 @@ async function iniciarCena() {
     const pDir = mDir.getPoint(1);
     cilindro(frente, 0.03, 0.08, pDir.x, pDir.y, pDir.z, fitaAmarelaMat, 'x').rotation.y = -0.6;
     cilindro(frente, 0.034, 0.04, pDir.x + 0.05, pDir.y, pDir.z + 0.03, tampaPretaMat, 'x').rotation.y = -0.6;
-    // cabos vermelhos enrolados na asa direita
-    [[1.02, 0.66, 0.08], [1.1, 0.62, -0.3]].forEach(([x, y, rz]) => {
-        const aro = new THREE.Mesh(new THREE.TorusGeometry(0.065, 0.011, 8, 32), caboVermelhoMat);
-        aro.position.set(x, y, (D / 2 - 0.004) * 0.86 + 0.02);
-        aro.rotation.set(0.2, 0, rz);
-        frente.add(aro);
-    });
 
     // ---- placas de cobre (dentro do corpo) ----
     const PLACA_LARGA_W = 1.22;
@@ -434,12 +426,23 @@ async function iniciarCena() {
         grupoCobre.add(m);
         return m;
     }
+    // 🆕 Cada placa guarda o eixo/sinal em que ela se afasta das outras no
+    // "Ver interior" — pedido do usuário pra dar uma abertura entre as
+    // largas e as estreitas (senão formam um bloco só, difícil de
+    // distinguir uma peça da outra).
+    function comAfastamento(mesh, eixo, sinal) {
+        mesh.userData.eixoAfastamento = eixo;
+        mesh.userData.sinalAfastamento = sinal;
+        mesh.userData.baseAfastamento = eixo === 'z' ? mesh.position.z : mesh.position.x;
+        return mesh;
+    }
     const placas = [
-        placa(PLACA_LARGA_W, COBRE_E, 0, zPlacaLarga, 'z', 1, 'Placa larga'),
-        placa(PLACA_LARGA_W, COBRE_E, 0, -zPlacaLarga, 'z', -1, 'Placa larga'),
-        placa(COBRE_E, PLACA_ESTREITA_W, xPlacaEstreita, 0, 'x', 1, 'Placa estreita'),
-        placa(COBRE_E, PLACA_ESTREITA_W, -xPlacaEstreita, 0, 'x', -1, 'Placa estreita'),
+        comAfastamento(placa(PLACA_LARGA_W, COBRE_E, 0, zPlacaLarga, 'z', 1, 'Placa larga'), 'z', 1),
+        comAfastamento(placa(PLACA_LARGA_W, COBRE_E, 0, -zPlacaLarga, 'z', -1, 'Placa larga'), 'z', -1),
+        comAfastamento(placa(COBRE_E, PLACA_ESTREITA_W, xPlacaEstreita, 0, 'x', 1, 'Placa estreita'), 'x', 1),
+        comAfastamento(placa(COBRE_E, PLACA_ESTREITA_W, -xPlacaEstreita, 0, 'x', -1, 'Placa estreita'), 'x', -1),
     ];
+    const ABERTURA_PLACAS = 0.22;
 
     // ---- clique numa placa: destaca ----
     const raycaster = new THREE.Raycaster();
@@ -521,6 +524,11 @@ async function iniciarCena() {
             frente.position.z = ABERTURA * k;
             tras.position.z = -ABERTURA * k;
             grupoCobre.position.y = 0.6 * k;
+            placas.forEach((p) => {
+                const { eixoAfastamento, sinalAfastamento, baseAfastamento } = p.userData;
+                const valor = baseAfastamento + ABERTURA_PLACAS * k * sinalAfastamento;
+                if (eixoAfastamento === 'z') p.position.z = valor; else p.position.x = valor;
+            });
         }
 
         controls.update();
