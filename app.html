@@ -773,11 +773,6 @@
                      em script.js): começa escondido, JS decide quem vê. -->
                 <a href="#" id="nav-painel-supervisor" class="nav-link hidden" onclick="window.abrirAba(event,'aba-painel-supervisor')"><i class="fas fa-binoculars"></i> Painel do Supervisor</a>
                 <a href="#" id="nav-painel-adm" class="nav-link hidden" onclick="window.abrirAba(event,'aba-painel-adm')"><i class="fas fa-user-shield"></i> Painel ADM</a>
-                <!-- 🆕 Molde MCC4 3D — visualização temporária pra apresentação do
-                     supervisor. Só admin de sistema vê (mesma regra do Painel ADM,
-                     ver ativarMolde3DSeAutorizado em permissoes.js). Remover depois
-                     da apresentação. -->
-                <a href="#" id="nav-molde-mcc4-3d" class="nav-link hidden" onclick="window.abrirAba(event,'aba-molde-mcc4-3d')"><i class="fas fa-cube"></i> Molde MCC4 3D</a>
 
                 <div class="nav-divider">Monitoramento de Máquinas</div>
                 <a href="#" id="nav-fluxo" class="nav-link" onclick="window.abrirAba(event,'aba-fluxo')"><i class="fas fa-stream"></i> Sequenciamento Veios</a>
@@ -797,6 +792,12 @@
                 <a href="#" id="nav-historico" class="nav-link hidden" onclick="window.abrirAba(event,'aba-historico')"><i class="fas fa-history"></i> Auditoria</a>
                 <a href="#" id="nav-admin-colaboradores" class="nav-link nav-link-dev hidden" onclick="window.abrirAba(event,'aba-admin-colaboradores')"><i class="fas fa-user-gear"></i> Administração</a>
                 <a href="#" id="nav-dev-teste" class="nav-link nav-link-dev hidden" onclick="window.abrirAba(event,'aba-dev-teste')"><i class="fas fa-flask"></i> Teste de Folhões</a>
+                <!-- 🆕 Molde MCC4 3D — visualização temporária pra apresentação do
+                     supervisor. Continua admin-only (ver ativarMolde3DSeAutorizado
+                     em permissoes.js), só mudou de lugar no menu — pedido do
+                     usuário pra ficar junto da Área Restrita. Remover depois
+                     da apresentação. -->
+                <a href="#" id="nav-molde-mcc4-3d" class="nav-link hidden" onclick="window.abrirAba(event,'aba-molde-mcc4-3d')"><i class="fas fa-cube"></i> Molde MCC4 3D</a>
             </nav>
             <div class="sidebar-footer">
                 <!-- 🆕 Botão manual de ativar notificações — some sozinho quando
@@ -2503,6 +2504,7 @@
                     </div>
                     <div id="molde3d-controls" style="position:absolute; right:16px; bottom:16px; z-index:4; display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
                         <button type="button" id="molde3d-btn-rotate" class="btn-outline-neutral" style="padding:8px 14px; font-size:12px;"><i class="fas fa-sync"></i> Câmera girando</button>
+                        <button type="button" id="molde3d-btn-interior" class="btn-outline-neutral" style="padding:8px 14px; font-size:12px;"><i class="fas fa-layer-group"></i> Ver interior</button>
                     </div>
                     <div id="molde3d-hint" style="position:absolute; left:50%; bottom:16px; transform:translateX(-50%); z-index:4; font-family:'IBM Plex Mono', monospace; font-size:.65rem; color:#8b96ab; background:rgba(17,24,38,.7); border:1px solid #233047; padding:5px 12px; border-radius:20px; white-space:nowrap;">arraste para girar · scroll para zoom</div>
                 </div>
