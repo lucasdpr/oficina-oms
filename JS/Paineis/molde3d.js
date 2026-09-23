@@ -493,6 +493,61 @@ function adicionarFootRoll(placaLarga, sinal) {
     adicionarGuia(placas[2], 1);
     adicionarGuia(placas[3], -1);
 
+    // ---- Molde MCC2/3 (fotos reais: corpo cinza c/ grade de parafusos,
+    // "OMS 52", mangueira e flange vermelhas, placa de cobre bicolor à
+    // mostra, apoiado numa base AZUL — a cor azul é só da base/suporte,
+    // não do corpo do molde) — pedido do usuário, colocado embaixo do
+    // MCC4 na mesma cena. ----
+    const mcc23 = new THREE.Group();
+    mcc23.position.set(0, 0, 2.35);
+    scene.add(mcc23);
+
+    const grafMat = new THREE.MeshStandardMaterial({ map: texAco, color: 0x9a9d9f, roughness: 0.7, metalness: 0.55 });
+    const baseAzulMat = new THREE.MeshStandardMaterial({ color: 0x2f5fa8, roughness: 0.55, metalness: 0.35 });
+    const flangeVermelhaMat = new THREE.MeshStandardMaterial({ color: 0xb23a2f, roughness: 0.45, metalness: 0.3 });
+
+    const M23_W = 1.0, M23_H = 0.34, M23_D = 0.5;
+    box(mcc23, M23_W, M23_H, M23_D, 0, 0.42, 0, grafMat);
+
+    // grade de parafusos na face de cima
+    for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 3; j++) {
+            cilindro(mcc23, 0.012, 0.02, -0.42 + i * 0.12, 0.59 + 0.001, -0.15 + j * 0.15, parafusoMat, 'y', 8);
+        }
+    }
+    // flanges vermelhas (parafusos grandes, foto real)
+    [-0.3, 0.32].forEach((x) => cilindro(mcc23, 0.028, 0.022, x, 0.6, 0.05, flangeVermelhaMat, 'y', 16));
+
+    texto(mcc23, criarTexturaTexto(THREE, 'OMS 52', '#e7ecf5'), 0.24, 0.09, 0.32, 0.6, -0.16, -Math.PI / 2);
+
+    // placa de cobre bicolor à mostra (foto real: sem jaqueta cobrindo)
+    box(mcc23, M23_W - 0.06, M23_H - 0.05, 0.03, 0, 0.42, M23_D / 2 - 0.01, cobreFrenteMat);
+
+    // mangueira vermelha enrolada + cano até a caixa de comando
+    const aroMangueira = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.011, 8, 28), flangeVermelhaMat);
+    aroMangueira.position.set(0.44, 0.5, -0.18);
+    aroMangueira.rotation.x = Math.PI / 2;
+    mcc23.add(aroMangueira);
+    box(mcc23, 0.09, 0.07, 0.07, 0.5, 0.42, -0.02, grafMat);
+
+    // base/suporte AZUL — só a estrutura embaixo, não o corpo
+    [-0.42, 0.42].forEach((x) => {
+        box(mcc23, 0.05, 0.4, 0.05, x, 0.2, -0.19, baseAzulMat);
+        box(mcc23, 0.05, 0.4, 0.05, x, 0.2, 0.19, baseAzulMat);
+    });
+    box(mcc23, 0.9, 0.04, 0.05, 0, 0.02, -0.19, baseAzulMat);
+    box(mcc23, 0.9, 0.04, 0.05, 0, 0.02, 0.19, baseAzulMat);
+
+    // foot roll único (essa peça, diferente da MCC4, tem só 1 rolo)
+    const frM23 = new THREE.Group();
+    frM23.position.set(0, 0.24, 0);
+    mcc23.add(frM23);
+    cilindro(frM23, 0.026, M23_W - 0.1, 0, 0, 0, canoInoxMat, 'x', 20);
+    [-0.38, -0.13, 0.13, 0.38].forEach((x) => {
+        box(frM23, 0.045, 0.05, 0.06, x, 0, 0, mancalMat);
+        cilindro(frM23, 0.028, 0.024, x + 0.035, 0, 0, faixaVermelhaMat, 'x', 20);
+    });
+
     // ---- clique numa placa: destaca ----
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
