@@ -233,22 +233,60 @@ async function iniciarCenaMCC23() {
     faixaPiso.position.set(0, 0.002, 1.05);
     scene.add(faixaPiso);
 
-    // ---- materiais ----
-    const texAco = criarTexturaAcoGasto(THREE);
-    const acoMat = new THREE.MeshStandardMaterial({ map: texAco, color: 0x8e9296, roughness: 0.75, metalness: 0.55 });
-    const acoEscuroMat = new THREE.MeshStandardMaterial({ map: texAco, color: 0x6b6e72, roughness: 0.8, metalness: 0.5 });
-    const ferrugemMat = new THREE.MeshStandardMaterial({ color: 0xb23a2f, roughness: 0.5, metalness: 0.35 });
-    const buracoMat = new THREE.MeshStandardMaterial({ color: 0x0c0b0a, roughness: 1, metalness: 0 });
-    const parafusoMat = new THREE.MeshStandardMaterial({ color: 0x3a3632, roughness: 0.6, metalness: 0.7 });
-    const canoMat = new THREE.MeshStandardMaterial({ color: 0x3b3d42, roughness: 0.5, metalness: 0.6 });
+    // ---- materiais (MCC2/3: aço pintado de cinza claro, detalhes vermelhos, base azul) ----
+    function texturaPintura() {
+        const [c, ctx] = novoCanvas(512, 512);
+        ctx.fillStyle = '#9fa3a7';
+        ctx.fillRect(0, 0, 512, 512);
+        for (let i = 0; i < 900; i++) {
+            ctx.fillStyle = i % 3 ? 'rgba(90,95,100,0.08)' : 'rgba(255,255,255,0.10)';
+            const r = 1 + Math.random() * 10;
+            ctx.beginPath();
+            ctx.arc(Math.random() * 512, Math.random() * 512, r, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        const t = texturaDeCanvas(THREE, c);
+        t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        return t;
+    }
+    // traseira da placa larga da MCC2/3: grade de cabeças de parafuso cinza (foto)
+    function texturaPlacaTras23() {
+        const [c, ctx] = novoCanvas(1024, 512);
+        ctx.fillStyle = '#b9bcbf';
+        ctx.fillRect(0, 0, 1024, 512);
+        for (let col = 0; col < 12; col++) {
+            for (let lin = 0; lin < 5; lin++) {
+                const x = 60 + col * 82, y = 60 + lin * 98;
+                ctx.fillStyle = '#8d9195'; ctx.beginPath(); ctx.arc(x, y, 22, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#5e6266'; ctx.beginPath(); ctx.arc(x, y, 11, 0, Math.PI * 2); ctx.fill();
+            }
+        }
+        [[300, 300], [760, 250]].forEach(([x, y]) => {
+            ctx.strokeStyle = '#7d8185'; ctx.lineWidth = 6;
+            ctx.beginPath(); ctx.arc(x, y, 60, 0, Math.PI * 2); ctx.stroke();
+        });
+        ctx.strokeStyle = '#b34a2e'; ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.moveTo(560, 470);
+        ctx.bezierCurveTo(700, 200, 1000, 150, 950, 420); ctx.stroke();
+        return texturaDeCanvas(THREE, c);
+    }
+    const texPint = texturaPintura();
+    const acoMat = new THREE.MeshStandardMaterial({ map: texPint, roughness: 0.6, metalness: 0.3 });
+    const acoEscuroMat = new THREE.MeshStandardMaterial({ map: texPint, color: 0xa9adb1, roughness: 0.65, metalness: 0.3 });
+    const ferrugemMat = new THREE.MeshStandardMaterial({ color: 0x6e4a33, roughness: 0.9, metalness: 0.3 });
+    const vermelhoMat = new THREE.MeshStandardMaterial({ color: 0xc8253a, roughness: 0.45, metalness: 0.2 });
+    const laranjaMat = new THREE.MeshStandardMaterial({ color: 0xc0532f, roughness: 0.5, metalness: 0.3 });
+    const azulMat = new THREE.MeshStandardMaterial({ color: 0x2c5aa8, roughness: 0.55, metalness: 0.35 });
+    const buracoMat = new THREE.MeshStandardMaterial({ color: 0x1a1b1d, roughness: 1, metalness: 0 });
+    const parafusoMat = new THREE.MeshStandardMaterial({ color: 0x2b2d30, roughness: 0.5, metalness: 0.7 });
+    const canoMat = new THREE.MeshStandardMaterial({ color: 0xb4b8bc, roughness: 0.45, metalness: 0.45 });
     const canoInoxMat = new THREE.MeshStandardMaterial({ color: 0x9a9da3, roughness: 0.3, metalness: 0.9 });
-    const fitaAmarelaMat = new THREE.MeshStandardMaterial({ color: 0xd9a830, roughness: 0.7 });
-    const tampaPretaMat = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.6 });
+    const conduiteMat = new THREE.MeshStandardMaterial({ color: 0xa6aaae, roughness: 0.55, metalness: 0.4 });
 
     const texFrente = criarTexturaPlacaFrente(THREE);
-    const texTras = criarTexturaPlacaTras(THREE);
+    const texTras = texturaPlacaTras23();
     const cobreFrenteMat = new THREE.MeshPhysicalMaterial({ map: texFrente, roughness: 0.38, metalness: 0.85, clearcoat: 0.2, clearcoatRoughness: 0.4 });
-    const cobreTrasMat = new THREE.MeshStandardMaterial({ map: texTras, roughness: 0.75, metalness: 0.4 });
+    const cobreTrasMat = new THREE.MeshStandardMaterial({ map: texTras, roughness: 0.7, metalness: 0.4 });
     const cobreBordaMat = new THREE.MeshStandardMaterial({ color: 0xa8674a, roughness: 0.5, metalness: 0.7 });
 
     // ---- helpers ----
@@ -287,88 +325,63 @@ async function iniciarCenaMCC23() {
         m.rotation.y = rotY;
         pai.add(m);
     }
-    function olhal(pai, x, y, z) {
-        box(pai, 0.11, 0.11, 0.07, x, y, z, ferrugemMat);
-        const aro = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.012, 10, 24), ferrugemMat);
-        aro.position.set(x, y + 0.02, z + 0.036);
-        pai.add(aro);
-        cilindro(pai, 0.022, 0.075, x, y + 0.02, z, buracoMat, 'z');
-    }
 
-    // ---- dimensões (tiradas das proporções da foto frontal) ----
-    const D = 0.9;           // profundidade total do molde (frente → trás)
-    const CORPO_W = 1.45;
-    const CORPO_Y0 = 0.36;   // base do corpo (em cima dos pés)
-    const CORPO_H = 0.56;
+    // ---- dimensões (proporções das fotos da MCC2/3) ----
+    const D = 0.9;
+    const CORPO_W = 1.9;
+    const CORPO_Y0 = 0.39;   // em cima da plataforma cinza da base
+    const CORPO_H = 0.48;
     const CORPO_TOPO = CORPO_Y0 + CORPO_H;
     const CORPO_CY = CORPO_Y0 + CORPO_H / 2;
 
-    // O molde é montado em duas metades (frente/trás) — fechadas elas
-    // formam o bloco inteiro; no "Ver interior" cada uma desliza pro seu
-    // lado e revela as placas de cobre no meio.
+    // ---- base: vigas AZUIS + plataforma cinza (fica parada ao abrir) ----
+    const base = new THREE.Group();
+    scene.add(base);
+    [-1.2, 1.2].forEach((x) => {
+        [-1, 1].forEach((sz) => box(base, 0.14, 0.34, 0.1, x, 0.17, sz * 0.36, azulMat));
+        box(base, 0.2, 0.02, D * 0.95, x, 0.01, 0, azulMat);
+    });
+    [-1, 1].forEach((sz) => {
+        box(base, 2.3, 0.07, 0.05, 0, 0.23, sz * 0.43, azulMat);
+        box(base, 2.3, 0.05, 0.04, 0, 0.1, sz * 0.43, azulMat);
+    });
+    box(base, 2.9, 0.035, D + 0.12, 0, 0.372, 0, acoEscuroMat);
+    // tanques/coletores escuros embaixo do corpo
+    [-0.45, 0.45].forEach((x) => cilindro(base, 0.06, 0.8, x, 0.3, 0, parafusoMat, 'x', 20));
+
     function construirMetade(sinal) {
         const g = new THREE.Group();
         const d = D / 2 - 0.004;
         const zc = sinal * (D / 4);
-        const face = sinal * (D / 2);    // z da face externa dessa metade
+        const face = sinal * (D / 2);
         const fz = (off) => face + sinal * off;
 
         // corpo central
         box(g, CORPO_W, CORPO_H, d, 0, CORPO_CY, zc, acoMat);
-        // aba fina no topo, no centro
-        box(g, 0.035, 0.06, 0.03, 0, CORPO_TOPO + 0.03, fz(-0.05), acoEscuroMat);
-        // abertura do canal do molde no topo (cavidade entre as placas)
-        box(g, 1.22, 0.006, 0.09, 0, CORPO_TOPO + 0.002, sinal * 0.045, buracoMat, false);
+        // tampo do topo, levemente mais largo
+        box(g, CORPO_W + 0.06, 0.03, d, 0, CORPO_TOPO + 0.015, zc, acoEscuroMat);
+        // abertura do canal no topo
+        box(g, 1.3, 0.006, 0.09, 0, CORPO_TOPO + 0.033, sinal * 0.045, buracoMat, false);
 
-        // asas laterais escalonadas (esquerda e direita)
+        // asas das pontas (blocos cinza com canto chanfrado, faixa vermelha e fenda)
         [-1, 1].forEach((lado) => {
-            // parte interna, mais alta, colada no corpo
-            box(g, 0.46, 0.43, d * 0.86, lado * 0.95, 0.635, sinal * (d * 0.86) / 2, acoMat);
-            // rampa entre a parte interna e a externa
-            const rampa = box(g, 0.2, 0.06, d * 0.8, lado * 1.07, 0.745, sinal * (d * 0.8) / 2, acoMat);
-            rampa.rotation.z = lado * 0.55;
-            // parte externa, mais baixa
-            box(g, 0.49, 0.29, d * 0.8, lado * 1.265, 0.555, sinal * (d * 0.8) / 2, acoMat);
-            // aba de apoio embaixo da asa externa
-            box(g, 0.5, 0.05, d * 0.7, lado * 1.25, 0.385, sinal * (d * 0.7) / 2, acoEscuroMat);
-            // olhal de içamento em cima da asa externa
-            olhal(g, lado * 1.38, 0.755, sinal * (d * 0.8 - 0.06));
-            // bloco de trás em cima da asa interna
-            box(g, 0.18, 0.08, 0.12, lado * 1.02, 0.89, sinal * 0.1, ferrugemMat);
+            const x = lado * (CORPO_W / 2 + 0.17);
+            box(g, 0.34, 0.3, d * 0.9, x, CORPO_Y0 + 0.15, sinal * (d * 0.9) / 2, acoMat);
+            const chanfro = box(g, 0.2, 0.2, d * 0.9, x + lado * 0.05, CORPO_Y0 + 0.3, sinal * (d * 0.9) / 2, acoMat);
+            chanfro.rotation.z = lado * -0.7;
+            box(g, 0.022, 0.13, 0.005, x + lado * 0.06, CORPO_Y0 + 0.2, sinal * (d * 0.9) + sinal * 0.003, vermelhoMat, false);
+            box(g, 0.14, 0.04, 0.01, x + lado * 0.04, CORPO_Y0 + 0.03, sinal * (d * 0.9) + sinal * 0.004, buracoMat, false);
+            // parafuso de ajuste em pé, perto da asa
+            cilindro(g, 0.014, 0.1, lado * (CORPO_W / 2 - 0.12), CORPO_Y0 + 0.07, fz(0.04), parafusoMat, 'y', 8);
+            box(g, 0.06, 0.02, 0.06, lado * (CORPO_W / 2 - 0.12), CORPO_Y0 + 0.02, fz(0.04), acoEscuroMat);
         });
 
-        // furos redondos nos cantos de cima, na junção corpo/asa
-        [-0.79, 0.79].forEach((x) => cilindro(g, 0.028, 0.03, x, 0.76, fz(-0.005), buracoMat, 'z'));
-
-        // 3 janelas retangulares (grande, pequena, grande) — rebaixo escuro
-        // + soleira clara embaixo, igual à foto
-        [[-0.40, 0.42], [-0.01, 0.22], [0.375, 0.43]].forEach(([x, w]) => {
-            box(g, w, 0.14, 0.012, x, 0.61, fz(0.0), buracoMat, false);
-            box(g, w, 0.022, 0.05, x, 0.54, fz(0.01), acoEscuroMat);
-            box(g, w + 0.04, 0.018, 0.02, x, 0.69, fz(0.005), acoEscuroMat);
-            box(g, 0.018, 0.16, 0.02, x - w / 2 - 0.009, 0.61, fz(0.005), acoEscuroMat);
-            box(g, 0.018, 0.16, 0.02, x + w / 2 + 0.009, 0.61, fz(0.005), acoEscuroMat);
+        // cotovelos grandes nos cantos de cima, com flange
+        [-1, 1].forEach((lado) => {
+            const x0 = lado * (CORPO_W / 2 - 0.05);
+            tubo(g, [[x0, CORPO_TOPO - 0.05, sinal * 0.3], [x0 + lado * 0.1, CORPO_TOPO + 0.08, sinal * 0.3], [x0 + lado * 0.28, CORPO_TOPO + 0.06, sinal * 0.3], [x0 + lado * 0.36, CORPO_TOPO - 0.08, sinal * 0.3], [x0 + lado * 0.36, CORPO_Y0 + 0.2, sinal * 0.3]], 0.055, canoMat);
+            cilindro(g, 0.085, 0.025, x0 + lado * 0.02, CORPO_TOPO + 0.02, sinal * 0.3, canoMat, 'x', 20).rotation.z = Math.PI / 2 + lado * 0.6;
         });
-
-        // parafusos espalhados na face
-        [[-0.66, 0.84], [-0.66, 0.47], [0.66, 0.84], [0.66, 0.47], [-0.25, 0.86], [0.2, 0.86], [-0.84, 0.52], [0.84, 0.52], [-0.88, 0.8], [0.88, 0.8]]
-            .forEach(([x, y]) => cilindro(g, 0.012, 0.02, x, y, fz(0.008), parafusoMat, 'z', 6));
-
-        // ressalto horizontal (base do corpo) e grade de refrigeração embaixo
-        box(g, 1.63, 0.03, d + 0.02, 0, 0.355, sinal * (d + 0.02) / 2, acoEscuroMat);
-        box(g, 1.37, 0.14, d * 0.9, 0.015, 0.27, sinal * (d * 0.9) / 2, acoEscuroMat);
-        for (let i = 0; i < 22; i++) {
-            const x = -0.64 + i * (1.3 / 21);
-            box(g, 0.012, 0.12, 0.02, x, 0.27, sinal * (d * 0.9 + 0.01), ferrugemMat, false);
-        }
-
-        // pés (grossos, com consolo em cima)
-        [-0.67, 0.69].forEach((x) => {
-            box(g, 0.11, 0.3, 0.1, x, 0.15, fz(-0.1), acoEscuroMat);
-            box(g, 0.17, 0.05, 0.14, x, 0.315, fz(-0.1), acoEscuroMat);
-            box(g, 0.14, 0.02, 0.13, x, 0.01, fz(-0.1), acoEscuroMat);
-        });
-
         return g;
     }
 
@@ -376,33 +389,63 @@ async function iniciarCenaMCC23() {
     const tras = construirMetade(-1);
     scene.add(frente, tras);
 
-    // ---- detalhes só da face da frente (foto) ----
     const zF = D / 2;
-    texto(frente, criarTexturaTexto(THREE, 'OMS 52', '#cfc8bd'), 0.3, 0.1, -0.42, 0.85, zF + 0.003);
-    
-    // tampa pequena parafusada na asa esquerda
-    box(frente, 0.08, 0.13, 0.015, -0.92, 0.59, (D / 2 - 0.004) * 0.86 + 0.008, ferrugemMat);
-    // cano em U da esquerda
-    tubo(frente, [[-1.5, 0.52, 0.34], [-1.2, 0.52, 0.36], [-1.08, 0.5, 0.38], [-1.05, 0.42, 0.38], [-1.05, 0.33, 0.36]], 0.028, canoMat);
-    // mangueira da esquerda com ponta de fita amarela
-    const mEsq = tubo(frente, [[-0.95, 0.36, 0.3], [-1.15, 0.37, 0.55], [-1.35, 0.38, 0.72]], 0.018, canoMat);
-    const pEsq = mEsq.getPoint(1);
-    cilindro(frente, 0.03, 0.08, pEsq.x, pEsq.y, pEsq.z, fitaAmarelaMat, 'x').rotation.y = 0.6;
-    cilindro(frente, 0.034, 0.04, pEsq.x - 0.05, pEsq.y, pEsq.z + 0.03, tampaPretaMat, 'x').rotation.y = 0.6;
-    // cano em U grande da direita (sobe, vai pra direita, desce)
-    tubo(frente, [[0.9, 0.22, 0.34], [0.95, 0.4, 0.36], [0.98, 0.52, 0.38], [1.15, 0.54, 0.38], [1.5, 0.55, 0.36], [1.56, 0.5, 0.36], [1.56, 0.44, 0.36]], 0.03, canoMat);
-    // cano inox horizontal passando embaixo do corpo
-    tubo(frente, [[-0.4, 0.22, 0.42], [0.1, 0.22, 0.43], [0.5, 0.23, 0.43], [0.9, 0.22, 0.4]], 0.02, canoInoxMat);
-    // mangueira da direita com ponta de fita amarela
-    const mDir = tubo(frente, [[1.02, 0.4, 0.32], [1.2, 0.33, 0.55], [1.45, 0.24, 0.75]], 0.018, canoMat);
-    const pDir = mDir.getPoint(1);
-    cilindro(frente, 0.03, 0.08, pDir.x, pDir.y, pDir.z, fitaAmarelaMat, 'x').rotation.y = -0.6;
-    cilindro(frente, 0.034, 0.04, pDir.x + 0.05, pDir.y, pDir.z + 0.03, tampaPretaMat, 'x').rotation.y = -0.6;
+
+    // ---- FRENTE (foto do "15") ----
+    texto(frente, criarTexturaTexto(THREE, '15', '#c8253a'), 0.24, 0.13, -0.1, 0.71, zF + 0.003);
+    // caixa de comando
+    box(frente, 0.3, 0.26, 0.05, 0.38, 0.69, zF + 0.025, acoEscuroMat);
+    box(frente, 0.03, 0.06, 0.02, 0.54, 0.69, zF + 0.04, laranjaMat);
+    // parafusos grandes do painel
+    [[-0.5, 0.78], [-0.5, 0.5], [0.72, 0.78], [0.72, 0.5]].forEach(([x, y]) => cilindro(frente, 0.028, 0.025, x, y, zF + 0.012, parafusoMat, 'z', 6));
+    // curvas em U na parte de baixo da frente
+    [-0.3, -0.05, 0.22, 0.48].forEach((x) => {
+        tubo(frente, [[x, 0.55, zF], [x, 0.47, zF + 0.06], [x + 0.05, 0.43, zF + 0.07], [x + 0.1, 0.47, zF + 0.06], [x + 0.1, 0.55, zF]], 0.03, canoMat);
+    });
+    // válvulas/parafusos em pé na borda de baixo
+    [-0.72, 0.05, 0.12, 0.8].forEach((x) => {
+        cilindro(frente, 0.012, 0.12, x, 0.47, zF + 0.05, parafusoMat, 'y', 8);
+        box(frente, 0.06, 0.03, 0.05, x, 0.41, zF + 0.05, acoEscuroMat);
+    });
+    // conduítes verticais dos lados (esquerda e direita)
+    [-0.85, -0.75, -0.66, 0.86, 0.94, 1.02].forEach((x, i) => {
+        tubo(frente, [[x, CORPO_TOPO + 0.02, zF + 0.02], [x + (i % 2 ? 0.03 : -0.02), 0.7, zF + 0.04], [x, 0.45, zF + 0.03], [x, 0.41, zF + 0.01]], 0.018, conduiteMat);
+    });
+    // conduítes trançados passando por cima
+    tubo(frente, [[-0.9, CORPO_TOPO + 0.03, zF - 0.02], [-0.4, CORPO_TOPO + 0.07, zF - 0.05], [0.1, CORPO_TOPO + 0.03, zF - 0.02], [0.6, CORPO_TOPO + 0.08, zF - 0.06], [0.95, CORPO_TOPO + 0.03, zF - 0.02]], 0.02, conduiteMat);
+    tubo(frente, [[-0.8, CORPO_TOPO + 0.02, zF - 0.1], [-0.2, CORPO_TOPO + 0.05, zF - 0.12], [0.4, CORPO_TOPO + 0.02, zF - 0.1], [0.9, CORPO_TOPO + 0.05, zF - 0.12]], 0.016, conduiteMat);
+    // tampas vermelhas meio escondidas atrás dos conduítes
+    [-0.72, 0.9].forEach((x) => cilindro(frente, 0.04, 0.012, x, 0.66, zF + 0.006, vermelhoMat, 'z', 18));
+
+    // ---- TRASEIRA (foto das tampas redondas vermelhas) ----
+    const zT = -D / 2;
+    [[-0.62, 0.74, 0.045], [-0.35, 0.66, 0.06], [-0.62, 0.5, 0.04], [-0.95, 0.62, 0.04], [0.42, 0.66, 0.06], [0.6, 0.76, 0.045], [0.6, 0.5, 0.04], [0.95, 0.62, 0.04]].forEach(([x, y, r]) => {
+        cilindro(tras, r, 0.02, x, y, zT - 0.01, vermelhoMat, 'z', 20);
+        for (let k = 0; k < 6; k++) {
+            const a = (k / 6) * Math.PI * 2;
+            cilindro(tras, 0.006, 0.01, x + Math.cos(a) * r * 0.7, y + Math.sin(a) * r * 0.7, zT - 0.022, parafusoMat, 'z', 6);
+        }
+    });
+    box(tras, 0.3, 0.17, 0.04, 0.02, 0.74, zT - 0.02, acoEscuroMat);
+    cilindro(tras, 0.018, 0.06, -0.22, 0.83, zT - 0.03, vermelhoMat, 'y', 10);
+    // linhas hidráulicas finas (horizontais e verticais)
+    [0.44, 0.47, 0.83].forEach((y) => tubo(tras, [[-0.88, y, zT - 0.012], [0, y + 0.01, zT - 0.015], [0.88, y, zT - 0.012]], 0.008, conduiteMat));
+    [-0.8, -0.2, 0.25, 0.8].forEach((x) => tubo(tras, [[x, 0.44, zT - 0.012], [x, 0.65, zT - 0.015], [x + 0.05, 0.83, zT - 0.012]], 0.008, conduiteMat));
+    // mangueira laranja no canto
+    tubo(tras, [[-0.95, 0.5, zT - 0.02], [-0.85, 0.72, zT - 0.06], [-0.55, 0.8, zT - 0.05], [-0.3, 0.72, zT - 0.03]], 0.014, laranjaMat);
+
+    // ---- PONTA (foto de lado: moldura com 2 caixas + junta laranja no cano) ----
+    const xP = -(CORPO_W / 2 + 0.34);
+    [[0.22, 0.36], [-0.22, 0.36]].forEach(([z, h]) => box(frente, 0.03, h, 0.025, xP - 0.02, CORPO_Y0 + h / 2, z * 0.5, acoEscuroMat));
+    box(frente, 0.03, 0.025, 0.25, xP - 0.02, CORPO_Y0 + 0.36, 0.0, acoEscuroMat);
+    box(frente, 0.05, 0.1, 0.13, xP - 0.04, CORPO_Y0 + 0.27, 0.0, acoMat);
+    box(frente, 0.05, 0.09, 0.13, xP - 0.04, CORPO_Y0 + 0.08, 0.0, acoMat);
+    cilindro(frente, 0.06, 0.06, -(CORPO_W / 2 + 0.2), CORPO_TOPO + 0.05, 0.3, laranjaMat, 'x', 20);
 
     // ---- placas de cobre (dentro do corpo) ----
-    const PLACA_LARGA_W = 1.22;
+    const PLACA_LARGA_W = 1.6;
     const PLACA_ESTREITA_W = 0.14; // = espessura do veio
-    const PLACA_H = 0.5;
+    const PLACA_H = 0.42;
     const COBRE_E = 0.045;
     const PLACA_CY = CORPO_Y0 + 0.03 + PLACA_H / 2;
     const zPlacaLarga = PLACA_ESTREITA_W / 2 + COBRE_E / 2;
@@ -479,7 +522,7 @@ function adicionarFootRoll(placaLarga, sinal) {
         placaEstreita.add(g);
         box(g, 0.05, 0.22, 0.13, sinal * 0.01, 0, 0, ferrugemMat);
         box(g, 0.07, 0.03, 0.15, sinal * 0.005, -0.12, 0, ferrugemMat);
-        [0.075, 0.025, -0.025, -0.075].forEach((y) => {
+        [0.06, 0.0, -0.06].forEach((y) => {
             const xr = -sinal * 0.035;
             cilindro(g, 0.021, 0.09, xr, y, 0, rolinhoMat, 'z', 20);
             box(g, 0.04, 0.042, 0.012, xr + sinal * 0.01, y, 0.051, mancalMat);
