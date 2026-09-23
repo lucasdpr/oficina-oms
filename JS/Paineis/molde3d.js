@@ -15,6 +15,32 @@
 
 let cena3dIniciada = false;
 
+// Faixa de risco (amarelo/preto), mesmo padrão visual já usado pro Molde
+// no Sinótico 3D (ver criarTexturaFaixaRisco em Sinotico3d.html).
+function criarTexturaFaixaRisco(THREE) {
+    const tam = 128;
+    const canvas = document.createElement('canvas');
+    canvas.width = tam;
+    canvas.height = tam;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#e8b923';
+    ctx.fillRect(0, 0, tam, tam);
+    ctx.fillStyle = '#14151a';
+    const larguraListra = 24;
+    for (let x = -tam; x < tam * 2; x += larguraListra * 2) {
+        ctx.save();
+        ctx.translate(x, 0);
+        ctx.rotate(Math.PI / 4);
+        ctx.fillRect(0, -tam, larguraListra, tam * 3);
+        ctx.restore();
+    }
+    const textura = new THREE.CanvasTexture(canvas);
+    textura.wrapS = THREE.RepeatWrapping;
+    textura.wrapT = THREE.RepeatWrapping;
+    textura.repeat.set(2.6, 1);
+    return textura;
+}
+
 export function renderMolde3D() {
     if (cena3dIniciada) return;
     cena3dIniciada = true;
@@ -42,7 +68,7 @@ async function iniciarCena() {
     scene.fog = new THREE.FogExp2(0x0a0e15, 0.028);
 
     const camera = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 200);
-    const startPos = new THREE.Vector3(2.5, 1.3, 2.6);
+    const startPos = new THREE.Vector3(2.8, 1.6, 2.9);
     camera.position.copy(startPos);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -64,11 +90,11 @@ async function iniciarCena() {
     renderer.domElement.style.inset = '0';
 
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 0.45, 0);
+    controls.target.set(0, 0.28, 0);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
-    controls.minDistance = 1.6;
-    controls.maxDistance = 9;
+    controls.minDistance = 0.7;
+    controls.maxDistance = 7;
     controls.maxPolarAngle = Math.PI * 0.49;
     controls.update();
 
@@ -136,10 +162,10 @@ async function iniciarCena() {
     // ---- dimensões estimadas (metros) ----
     // Placa larga: ~1.5m largura x 0.9m altura x 0.05m espessura de cobre.
     // Placa estreita: ~0.25m largura (= espessura do slab) x 0.9m altura x 0.05m espessura de cobre.
-    const ALTURA = 0.8;
-    const ESPESSURA_COBRE = 0.05;
-    const LARGURA_PLACA_LARGA = 1.1;
-    const LARGURA_PLACA_ESTREITA = 0.25;
+    const ALTURA = 0.5;
+    const ESPESSURA_COBRE = 0.035;
+    const LARGURA_PLACA_LARGA = 0.7;
+    const LARGURA_PLACA_ESTREITA = 0.16;
     const VAO_INTERNO = LARGURA_PLACA_ESTREITA + 0.02; // distância entre as duas placas largas
 
     // Placas largas: faces frente/trás do molde (eixo Z).
@@ -167,7 +193,10 @@ async function iniciarCena() {
     const placaEstreita1 = criarPlaca(ESPESSURA_COBRE, ALTURA, VAO_INTERNO, 'Placa estreita', 'Largura (espessura do veio)', LARGURA_PLACA_LARGA / 2, 0);
     const placaEstreita2 = criarPlaca(ESPESSURA_COBRE, ALTURA, VAO_INTERNO, 'Placa estreita', 'Largura (espessura do veio)', -LARGURA_PLACA_LARGA / 2, 0);
 
-    [placaLarga1, placaLarga2, placaEstreita1, placaEstreita2].forEach((m) => molde.add(m));
+    [placaLarga1, placaLarga2, placaEstreita1, placaEstreita2].forEach((m) => {
+        contornar(m, m.geometry);
+        molde.add(m);
+    });
 
     // 🔧 REDESENHO ("não tá nada parecido com o molde", "tire essa casinha"):
     // a estrutura antiga tinha 4 pernas soltas nos cantos + moldura no topo
@@ -177,16 +206,27 @@ async function iniciarCena() {
     // sem vão nem pernas, tudo apoiado numa base rasa. Isso também é
     // fisicamente mais correto (ver referência do usuário: "steel water
     // jacket" encosta direto no "copper mould").
+    // 🆕 Contorno escuro em toda peça — mesmo truque do Sinótico 3D
+    // (EdgesGeometry + LineSegments) pra dar acabamento de "peça de
+    // verdade" em vez de bloco liso sem detalhe nenhum.
+    function contornar(mesh, geo) {
+        const edges = new THREE.EdgesGeometry(geo, 20);
+        const linha = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x0a0e14, transparent: true, opacity: 0.6 }));
+        mesh.add(linha);
+    }
+
     function addBloco(w, h, d, x, y, z, mat) {
-        const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+        const geo = new THREE.BoxGeometry(w, h, d);
+        const m = new THREE.Mesh(geo, mat);
         m.position.set(x, y, z);
         m.castShadow = true;
         m.receiveShadow = true;
+        contornar(m, geo);
         molde.add(m);
         return m;
     }
 
-    const ESPESSURA_JAQUETA = 0.12;
+    const ESPESSURA_JAQUETA = 0.07;
 
     // jaquetas de aço atrás das placas largas (frente/trás)
     addBloco(LARGURA_PLACA_LARGA, ALTURA, ESPESSURA_JAQUETA, 0, ALTURA / 2, zPlacaLarga + ESPESSURA_COBRE / 2 + ESPESSURA_JAQUETA / 2, estruturaMat);
@@ -203,6 +243,14 @@ async function iniciarCena() {
     const larguraTotal = LARGURA_PLACA_LARGA + (ESPESSURA_COBRE + ESPESSURA_JAQUETA) * 2;
     const profTotal = VAO_INTERNO + (ESPESSURA_COBRE + ESPESSURA_JAQUETA) * 2;
     addBloco(larguraTotal + 0.08, 0.06, profTotal + 0.08, 0, -0.03, 0, estruturaEscuraMat);
+
+    // faixa de risco (amarelo/preto), colada na base, acima dos parafusos —
+    // mesmo detalhe visual do Molde no Sinótico 3D (bate com a foto de
+    // referência do mural "M4-2" que o usuário mandou)
+    const alturaFaixa = ALTURA * 0.16;
+    const faixaMat = new THREE.MeshStandardMaterial({ map: criarTexturaFaixaRisco(THREE), roughness: 0.55, metalness: 0.1 });
+    addBloco(LARGURA_PLACA_LARGA + 0.01, alturaFaixa, 0.01, 0, alturaFaixa / 2 + 0.03, zPlacaLarga + ESPESSURA_COBRE / 2 + ESPESSURA_JAQUETA + 0.006, faixaMat);
+    addBloco(LARGURA_PLACA_LARGA + 0.01, alturaFaixa, 0.01, 0, alturaFaixa / 2 + 0.03, -(zPlacaLarga + ESPESSURA_COBRE / 2 + ESPESSURA_JAQUETA + 0.006), faixaMat);
 
     // parafusos no topo, nos 4 cantos do bloco (como na referência real)
     const parafusoGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.03, 12);
