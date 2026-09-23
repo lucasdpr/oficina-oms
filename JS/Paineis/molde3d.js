@@ -42,7 +42,7 @@ async function iniciarCena() {
     scene.fog = new THREE.FogExp2(0x0a0e15, 0.028);
 
     const camera = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 200);
-    const startPos = new THREE.Vector3(2.7, 1.15, 2.4);
+    const startPos = new THREE.Vector3(2.5, 1.3, 2.6);
     camera.position.copy(startPos);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -64,7 +64,7 @@ async function iniciarCena() {
     renderer.domElement.style.inset = '0';
 
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 0.55, 0);
+    controls.target.set(0, 0.45, 0);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
     controls.minDistance = 1.6;
@@ -136,9 +136,9 @@ async function iniciarCena() {
     // ---- dimensões estimadas (metros) ----
     // Placa larga: ~1.5m largura x 0.9m altura x 0.05m espessura de cobre.
     // Placa estreita: ~0.25m largura (= espessura do slab) x 0.9m altura x 0.05m espessura de cobre.
-    const ALTURA = 0.9;
+    const ALTURA = 0.8;
     const ESPESSURA_COBRE = 0.05;
-    const LARGURA_PLACA_LARGA = 1.5;
+    const LARGURA_PLACA_LARGA = 1.1;
     const LARGURA_PLACA_ESTREITA = 0.25;
     const VAO_INTERNO = LARGURA_PLACA_ESTREITA + 0.02; // distância entre as duas placas largas
 
@@ -169,8 +169,15 @@ async function iniciarCena() {
 
     [placaLarga1, placaLarga2, placaEstreita1, placaEstreita2].forEach((m) => molde.add(m));
 
-    // ---- estrutura de suporte (cinza), atrás das placas ----
-    function addViga(w, h, d, x, y, z, mat) {
+    // 🔧 REDESENHO ("não tá nada parecido com o molde", "tire essa casinha"):
+    // a estrutura antiga tinha 4 pernas soltas nos cantos + moldura no topo
+    // — de longe parecia mesa/gazebo, não um molde de verdade. Um molde de
+    // lingotamento contínuo é um BLOCO compacto: o aço (jaqueta de
+    // refrigeração) fica encostado direto atrás de cada placa de cobre,
+    // sem vão nem pernas, tudo apoiado numa base rasa. Isso também é
+    // fisicamente mais correto (ver referência do usuário: "steel water
+    // jacket" encosta direto no "copper mould").
+    function addBloco(w, h, d, x, y, z, mat) {
         const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
         m.position.set(x, y, z);
         m.castShadow = true;
@@ -179,28 +186,30 @@ async function iniciarCena() {
         return m;
     }
 
-    const larguraTotal = LARGURA_PLACA_LARGA + ESPESSURA_COBRE * 2;
-    const profTotal = VAO_INTERNO + ESPESSURA_COBRE * 2;
+    const ESPESSURA_JAQUETA = 0.12;
 
-    addViga(larguraTotal + 0.3, 0.12, profTotal + 0.3, 0, -0.06, 0, estruturaEscuraMat); // base
-    addViga(0.1, ALTURA + 0.15, 0.1, -larguraTotal / 2 - 0.05, ALTURA / 2, -profTotal / 2 - 0.05, estruturaMat);
-    addViga(0.1, ALTURA + 0.15, 0.1, larguraTotal / 2 + 0.05, ALTURA / 2, -profTotal / 2 - 0.05, estruturaMat);
-    addViga(0.1, ALTURA + 0.15, 0.1, -larguraTotal / 2 - 0.05, ALTURA / 2, profTotal / 2 + 0.05, estruturaMat);
-    addViga(0.1, ALTURA + 0.15, 0.1, larguraTotal / 2 + 0.05, ALTURA / 2, profTotal / 2 + 0.05, estruturaMat);
-    // 🔧 topo era uma placa sólida cobrindo o vão inteiro — de cima ficava
-    // parecendo tampo de mesa e escondia o canal do molde. Vira uma moldura
-    // (4 vigas curtas nos cantos), deixando o vão aberto de verdade.
-    const topoY = ALTURA + 0.12;
-    addViga(larguraTotal + 0.3, 0.1, 0.16, 0, topoY, -profTotal / 2 - 0.05, estruturaEscuraMat);
-    addViga(larguraTotal + 0.3, 0.1, 0.16, 0, topoY, profTotal / 2 + 0.05, estruturaEscuraMat);
-    addViga(0.16, 0.1, profTotal + 0.3, -larguraTotal / 2 - 0.05, topoY, 0, estruturaEscuraMat);
-    addViga(0.16, 0.1, profTotal + 0.3, larguraTotal / 2 + 0.05, topoY, 0, estruturaEscuraMat);
+    // jaquetas de aço atrás das placas largas (frente/trás)
+    addBloco(LARGURA_PLACA_LARGA, ALTURA, ESPESSURA_JAQUETA, 0, ALTURA / 2, zPlacaLarga + ESPESSURA_COBRE / 2 + ESPESSURA_JAQUETA / 2, estruturaMat);
+    addBloco(LARGURA_PLACA_LARGA, ALTURA, ESPESSURA_JAQUETA, 0, ALTURA / 2, -(zPlacaLarga + ESPESSURA_COBRE / 2 + ESPESSURA_JAQUETA / 2), estruturaMat);
 
-    const parafusoGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.02, 10);
+    // jaquetas de aço atrás das placas estreitas (laterais) — preenchem o
+    // canto até a borda das jaquetas largas, formando um bloco fechado
+    const xJaquetaLateral = LARGURA_PLACA_LARGA / 2 + ESPESSURA_COBRE / 2 + ESPESSURA_JAQUETA / 2;
+    const profJaquetaLateral = VAO_INTERNO + ESPESSURA_JAQUETA * 2;
+    addBloco(ESPESSURA_JAQUETA, ALTURA, profJaquetaLateral, xJaquetaLateral, ALTURA / 2, 0, estruturaMat);
+    addBloco(ESPESSURA_JAQUETA, ALTURA, profJaquetaLateral, -xJaquetaLateral, ALTURA / 2, 0, estruturaMat);
+
+    // base rasa, flush com o contorno do bloco — sem vão, sem pernas
+    const larguraTotal = LARGURA_PLACA_LARGA + (ESPESSURA_COBRE + ESPESSURA_JAQUETA) * 2;
+    const profTotal = VAO_INTERNO + (ESPESSURA_COBRE + ESPESSURA_JAQUETA) * 2;
+    addBloco(larguraTotal + 0.08, 0.06, profTotal + 0.08, 0, -0.03, 0, estruturaEscuraMat);
+
+    // parafusos no topo, nos 4 cantos do bloco (como na referência real)
+    const parafusoGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.03, 12);
     for (let i = -1; i <= 1; i += 2) {
         for (let j = -1; j <= 1; j += 2) {
             const parafuso = new THREE.Mesh(parafusoGeo, parafusoMat);
-            parafuso.position.set(i * (larguraTotal / 2 + 0.05), 0.005, j * (profTotal / 2 + 0.05));
+            parafuso.position.set(i * (larguraTotal / 2 - 0.06), ALTURA + 0.015, j * (profTotal / 2 - 0.06));
             parafuso.castShadow = true;
             molde.add(parafuso);
         }
