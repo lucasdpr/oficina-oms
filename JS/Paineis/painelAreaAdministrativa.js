@@ -8,7 +8,7 @@
 
 import { resolverApiBase } from '../Core/banco.js?v=5';
 import { AREAS_OFICINA } from '../Core/dados.js';
-import { atividadeEstaAtrasada } from '../Core/utils.js';
+import { atividadeEstaAtrasada, headersAdmin } from '../Core/utils.js';
 
 // ==========================================
 // PAINÉIS ADMINISTRATIVOS (ADM, Almoxarifado, Ponte Rolante, Logística)
@@ -404,7 +404,7 @@ window.renderPainelExecutivoAdm = async function(container) {
         const apiBase = await resolverApiBase();
 
         try {
-            const resp = await fetch(`${apiBase}/api/colaboradores/todos`, { cache: 'no-store' });
+            const resp = await fetch(`${apiBase}/api/colaboradores/todos`, { cache: 'no-store', headers: headersAdmin() });
             const colaboradores = resp.ok ? await resp.json() : [];
             const ativos = colaboradores.filter(c => c.ativo);
             definir('adm-exec-kpi-colaboradores', ativos.length);

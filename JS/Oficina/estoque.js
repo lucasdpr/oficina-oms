@@ -320,8 +320,8 @@ function renderMateriais() {
         
         return `
             <tr>
-                <td class="font-code" style="color: var(--text-heading); font-size: 15px;">${m.codigo}</td>
-                <td style="color: var(--text-main); font-weight: 500; font-size: 13px; max-width: 350px; overflow: hidden; text-overflow: ellipsis;">${m.descricao}</td>
+                <td class="font-code" style="color: var(--text-heading); font-size: 15px;">${window.escapeHtmlNotif(m.codigo)}</td>
+                <td style="color: var(--text-main); font-weight: 500; font-size: 13px; max-width: 350px; overflow: hidden; text-overflow: ellipsis;">${window.escapeHtmlNotif(m.descricao)}</td>
                 <td><span class="font-code bold" style="font-size:16px; color: #a855f7;">${m.qtd.toLocaleString()} UN</span></td>
                 <td>${statusHtml}</td>
                 <td>
@@ -371,7 +371,11 @@ async function salvarEntradaMaterial() {
 
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetchComRetry(`${apiBase}/api/materiais/cadastrar`, {
+        // 🔧 CORREÇÃO CRÍTICA (achado de auditoria de Go-Live): esse
+        // endpoint SOMA no saldo existente (não é idempotente) — retry
+        // automático em timeout/5xx pode contar a mesma entrada de
+        // material 2x. Sem retry aqui.
+        const resp = await fetch(`${apiBase}/api/materiais/cadastrar`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ codigo, descricao, qtd, operador: OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Sistema') : 'Sistema' })
@@ -406,7 +410,10 @@ async function ajustarSaldoMaterial(codigo, fator) {
     if (!verificarAcesso()) return;
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetchComRetry(`${apiBase}/api/materiais/ajustar`, {
+        // 🔧 CORREÇÃO CRÍTICA (achado de auditoria de Go-Live): esse
+        // endpoint SOMA/SUBTRAI do saldo (não é idempotente) — sem
+        // retry automático aqui, mesmo motivo de materiais/cadastrar.
+        const resp = await fetch(`${apiBase}/api/materiais/ajustar`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ codigo, fator, operador: OPERADOR_LOGADO ? (OPERADOR_LOGADO.nome || 'Sistema') : 'Sistema' })

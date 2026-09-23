@@ -8,7 +8,7 @@
 
 import { resolverApiBase } from '../Core/banco.js?v=5';
 import { OPERADOR_LOGADO, OFICINA_AREA_ATUAL, setOficinaAreaAtual } from '../Core/estado.js';
-import { executarSeguro, executarSeguroAsync } from '../Core/utils.js';
+import { executarSeguro, executarSeguroAsync, headersAdmin } from '../Core/utils.js';
 import { AREAS_OFICINA } from '../Core/dados.js';
 
 // ==========================================================================
@@ -76,7 +76,7 @@ window.renderAbaChats = async function() {
         // no Entre Técnicos, já entra direto nela.
         try {
             const apiBase = await resolverApiBase();
-            const resp = await fetch(`${apiBase}/api/mensagens_area/resumo_tecnicos?area=${encodeURIComponent(areaChat)}`, { cache: 'no-store' });
+            const resp = await fetch(`${apiBase}/api/mensagens_area/resumo_tecnicos?area=${encodeURIComponent(areaChat)}`, { cache: 'no-store', headers: headersAdmin() });
             const linhas = resp.ok ? await resp.json() : [];
             const pendente = Array.isArray(linhas) ? linhas.find(l => (l.nao_lidas || 0) > 0) : null;
             if (pendente) {
@@ -93,7 +93,7 @@ window.chatsCarregarListaConversas = async function() {
     if (!cont) return;
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/mensagens_area/resumo`, { cache: 'no-store' });
+        const resp = await fetch(`${apiBase}/api/mensagens_area/resumo`, { cache: 'no-store', headers: headersAdmin() });
         const linhas = resp.ok ? await resp.json() : [];
         const porArea = new Map(linhas.map(l => [l.area, l]));
 
@@ -189,7 +189,7 @@ window.chatsSelecionarConversa = async function(area, deAdm) {
         const apiBase = await resolverApiBase();
         await fetch(`${apiBase}/api/mensagens_area/marcar_lida`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headersAdmin(),
             body: JSON.stringify({ area, de_adm: !!deAdm, matricula: OPERADOR_LOGADO ? OPERADOR_LOGADO.matricula : null })
         });
     } catch (e) { /* não bloqueia a leitura por isso */ }
@@ -252,7 +252,7 @@ window.chatsEscolherAreaTecnicos = async function(areaDestino) {
         const apiBase = await resolverApiBase();
         await fetch(`${apiBase}/api/mensagens_area/marcar_lida`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headersAdmin(),
             body: JSON.stringify({ area: CHAT_AREA_ADM_CTX.area, de_adm: !!CHAT_AREA_ADM_CTX.deAdm, canal: 'tecnicos', area_destino: areaDestino, matricula: OPERADOR_LOGADO ? OPERADOR_LOGADO.matricula : null })
         });
     } catch (e) { /* não bloqueia a leitura por isso */ }
@@ -320,7 +320,7 @@ window.chatsCarregarMensagens = async function() {
         const apiBase = await resolverApiBase();
         const qs = new URLSearchParams({ area: CHAT_AREA_ADM_CTX.area, canal });
         if (canal === 'tecnicos') qs.set('area_destino', CHAT_AREA_ADM_CTX.areaDestinoTecnicos);
-        const resp = await fetch(`${apiBase}/api/mensagens_area?${qs.toString()}`, { cache: 'no-store' });
+        const resp = await fetch(`${apiBase}/api/mensagens_area?${qs.toString()}`, { cache: 'no-store', headers: headersAdmin() });
         const lista = resp.ok ? await resp.json() : [];
         // 🆕 Cabeçalho "Falando com: X · Trocar área" — só no canal
         // 'tecnicos' (área-a-área), pra sempre deixar claro com quem é a
@@ -400,7 +400,7 @@ window.iniciarPollingRapidoChatTecnicos = function() {
             const apiBase = await resolverApiBase();
 
             // "Está digitando..."
-            const respDig = await fetch(`${apiBase}/api/mensagens_area/digitando?area=${encodeURIComponent(minhaArea)}&area_destino=${encodeURIComponent(outraArea)}`, { cache: 'no-store' });
+            const respDig = await fetch(`${apiBase}/api/mensagens_area/digitando?area=${encodeURIComponent(minhaArea)}&area_destino=${encodeURIComponent(outraArea)}`, { cache: 'no-store', headers: headersAdmin() });
             const dadosDig = respDig.ok ? await respDig.json() : { digitando: false };
             const elDig = document.getElementById('chat-thread-digitando');
             if (elDig) {
@@ -419,7 +419,7 @@ window.iniciarPollingRapidoChatTecnicos = function() {
 
             // Mensagem nova chegou? (resumo_tecnicos é uma query bem mais
             // leve que buscar a conversa inteira de novo a cada 3s).
-            const respResumo = await fetch(`${apiBase}/api/mensagens_area/resumo_tecnicos?area=${encodeURIComponent(minhaArea)}`, { cache: 'no-store' });
+            const respResumo = await fetch(`${apiBase}/api/mensagens_area/resumo_tecnicos?area=${encodeURIComponent(minhaArea)}`, { cache: 'no-store', headers: headersAdmin() });
             const linhasResumo = respResumo.ok ? await respResumo.json() : [];
             const par = Array.isArray(linhasResumo) ? linhasResumo.find(l => l.outra_area === outraArea) : null;
             if (par && par.ultima_em && par.ultima_em !== CHAT_TECNICOS_ULTIMA_EM_CONHECIDA) {
@@ -470,7 +470,7 @@ window.iniciarNotificacaoGlobalChat = function() {
             let nomeProvavel = 'uma conversa';
 
             if (isAdm) {
-                const resp = await fetch(`${apiBase}/api/mensagens_area/resumo`, { cache: 'no-store' });
+                const resp = await fetch(`${apiBase}/api/mensagens_area/resumo`, { cache: 'no-store', headers: headersAdmin() });
                 const linhas = resp.ok ? await resp.json() : [];
                 if (Array.isArray(linhas)) {
                     total = linhas.reduce((s, l) => s + (Number(l.nao_lidas) || 0), 0);
@@ -480,7 +480,7 @@ window.iniciarNotificacaoGlobalChat = function() {
             } else {
                 const area = OFICINA_AREA_ATUAL || OPERADOR_LOGADO.area;
                 if (!area) return;
-                const resp = await fetch(`${apiBase}/api/mensagens_area/nao_lidas?area=${encodeURIComponent(area)}`, { cache: 'no-store' });
+                const resp = await fetch(`${apiBase}/api/mensagens_area/nao_lidas?area=${encodeURIComponent(area)}`, { cache: 'no-store', headers: headersAdmin() });
                 const dados = resp.ok ? await resp.json() : { nao_lidas: 0 };
                 total = dados.nao_lidas || 0;
                 nomeProvavel = 'ADM ou outra área';
@@ -665,7 +665,7 @@ window.chatsAvisarDigitando = function() {
         const apiBase = await resolverApiBase();
         await fetch(`${apiBase}/api/mensagens_area/digitando`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headersAdmin(),
             body: JSON.stringify({ area: CHAT_AREA_ADM_CTX.area, area_destino: CHAT_AREA_ADM_CTX.areaDestinoTecnicos })
         });
     }, 'chatsAvisarDigitando');
@@ -749,7 +749,7 @@ window.chatsEnviarMensagem = async function() {
         const apiBase = await resolverApiBase();
         const resp = await fetch(`${apiBase}/api/mensagens_area`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headersAdmin(),
             body: JSON.stringify({
                 area: CHAT_AREA_ADM_CTX.area,
                 de_adm: deAdmEfetivo,
@@ -808,7 +808,7 @@ window.atualizarBadgeChatAreaAdm = async function() {
         // ADM: badge do nav soma as não lidas de todas as áreas.
         try {
             const apiBase = await resolverApiBase();
-            const resp = await fetch(`${apiBase}/api/mensagens_area/resumo`, { cache: 'no-store' });
+            const resp = await fetch(`${apiBase}/api/mensagens_area/resumo`, { cache: 'no-store', headers: headersAdmin() });
             const linhas = resp.ok ? await resp.json() : [];
             const total = Array.isArray(linhas) ? linhas.reduce((s, l) => s + (Number(l.nao_lidas) || 0), 0) : 0;
             aplicarBadgeElemento(navBadge, total);
@@ -819,7 +819,7 @@ window.atualizarBadgeChatAreaAdm = async function() {
     if (!OFICINA_AREA_ATUAL) return;
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/mensagens_area/nao_lidas?area=${encodeURIComponent(OFICINA_AREA_ATUAL)}`);
+        const resp = await fetch(`${apiBase}/api/mensagens_area/nao_lidas?area=${encodeURIComponent(OFICINA_AREA_ATUAL)}`, { headers: headersAdmin() });
         const dados = resp.ok ? await resp.json() : { nao_lidas: 0 };
         aplicarBadgeElemento(badgeArea, dados.nao_lidas || 0);
         aplicarBadgeElemento(navBadge, dados.nao_lidas || 0);

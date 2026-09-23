@@ -78,7 +78,14 @@ window.processarProducaoDiaria = async function() {
 
     try {
         const apiBase = await resolverApiBase();
-        const resposta = await fetchComRetry(`${apiBase}/api/apontar_producao_geral`, {
+        // 🔧 CORREÇÃO CRÍTICA (achado de auditoria de Go-Live): esse
+        // endpoint SOMA tonelagem em todos os equipamentos instalados —
+        // não é idempotente. fetchComRetry reenvia sozinho em timeout/5xx
+        // mesmo quando o servidor já processou a primeira tentativa
+        // (só a resposta que não voltou), o que soma a tonelagem da
+        // fábrica inteira 2x. Usa fetch puro aqui — sem retry automático
+        // nessa chamada específica.
+        const resposta = await fetch(`${apiBase}/api/apontar_producao_geral`, {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ qtd_mcc2: prodMcc2, qtd_mcc3: prodMcc3, qtd_mcc4: prodMcc4, operador: OPERADOR_LOGADO ? OPERADOR_LOGADO.nome : "Sistema" })
         });
@@ -126,7 +133,10 @@ window.salvarApontamentoMoldes = async function(event) {
 
     try {
         const apiBase = await resolverApiBase();
-        const resposta = await fetchComRetry(`${apiBase}/api/apontar_moldes`, {
+        // 🔧 CORREÇÃO CRÍTICA (mesmo achado de auditoria — ver
+        // apontar_producao_geral acima): endpoint acumulativo, não
+        // idempotente. Sem retry automático aqui.
+        const resposta = await fetch(`${apiBase}/api/apontar_moldes`, {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ qtd_mcc2: m2, qtd_mcc3: m3, qtd_mcc4: m4, operador: OPERADOR_LOGADO ? OPERADOR_LOGADO.nome : "Desconhecido" })
         });

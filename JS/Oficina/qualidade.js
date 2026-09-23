@@ -107,7 +107,7 @@ function renderAchadosPendentesLista() {
     container.innerHTML = QUALIDADE_ACHADOS_LISTA.map((a, i) => `
         <div style="display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid var(--border);">
             ${a.fotos_base64 && a.fotos_base64[0] ? `<img src="${a.fotos_base64[0]}" style="width:36px; height:36px; object-fit:cover; border-radius:6px; flex-shrink:0;">` : `<div style="width:36px; height:36px; flex-shrink:0;"></div>`}
-            <span style="flex:1; font-size:12px; color:var(--text-body);">${a.categoria ? `<span style="color:var(--brand); font-weight:700;">[${a.categoria}]</span> ` : ''}${a.descricao}${a.fotos_base64 && a.fotos_base64.length > 1 ? ` <span style="color:var(--text-muted);">(${a.fotos_base64.length} fotos)</span>` : ''}</span>
+            <span style="flex:1; font-size:12px; color:var(--text-body);">${a.categoria ? `<span style="color:var(--brand); font-weight:700;">[${window.escapeHtmlNotif(a.categoria)}]</span> ` : ''}${window.escapeHtmlNotif(a.descricao)}${a.fotos_base64 && a.fotos_base64.length > 1 ? ` <span style="color:var(--text-muted);">(${a.fotos_base64.length} fotos)</span>` : ''}</span>
             <button type="button" onclick="window.removerAchadoDaLista(${i})" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:12px;"><i class="fas fa-trash"></i></button>
         </div>
     `).join('');
@@ -398,8 +398,8 @@ window.renderizarListaQualidade = function() {
                     <span class="font-code" style="font-weight:700; color:var(--text-heading);">${r.peca_id}</span>
                     <span class="status-text-pill" style="--sev-color:${corStatus};">${iconeStatus} ${r.status}</span>
                 </div>
-                ${r.observacao_entrada ? `<div style="font-size:12px; color:var(--text-body); margin-bottom:2px;"><strong style="color:var(--info);">Entrada:</strong> ${r.observacao_entrada}</div>` : ''}
-                ${r.observacao_saida ? `<div style="font-size:12px; color:var(--text-body); margin-bottom:2px;"><strong style="color:var(--brand);">Saída:</strong> ${r.observacao_saida}</div>` : ''}
+                ${r.observacao_entrada ? `<div style="font-size:12px; color:var(--text-body); margin-bottom:2px;"><strong style="color:var(--info);">Entrada:</strong> ${window.escapeHtmlNotif(r.observacao_entrada)}</div>` : ''}
+                ${r.observacao_saida ? `<div style="font-size:12px; color:var(--text-body); margin-bottom:2px;"><strong style="color:var(--brand);">Saída:</strong> ${window.escapeHtmlNotif(r.observacao_saida)}</div>` : ''}
                 ${Number(r.achados_total) > 0 ? `
                     <div style="margin:6px 0;">
                         <button type="button" onclick="window.abrirModalAchadosQualidade(${r.id}, '${r.peca_id}', ${!concluido})" style="background:${Number(r.achados_pendentes) > 0 ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.12)'}; color:${Number(r.achados_pendentes) > 0 ? 'var(--danger)' : 'var(--success)'}; border:1px solid currentColor; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:700; cursor:pointer;">
@@ -762,7 +762,7 @@ window.recarregarAchadosModal = async function(registroId, pecaId, podeEditar) {
         corpo.innerHTML = achados.map(a => {
             const resolvido = a.status === 'Resolvido';
             const totalFotos = Number(a.total_fotos) || 0;
-            const descricaoEscapada = (a.descricao || '').replace(/'/g, "\\'");
+            const descricaoEscapada = window.escapeAtributoNotif(a.descricao || '');
             return `
             <div id="achado-linha-${a.id}" style="display:flex; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); align-items:flex-start;">
                 ${a.foto_capa ? `
@@ -772,10 +772,10 @@ window.recarregarAchadosModal = async function(registroId, pecaId, podeEditar) {
                     </div>
                 ` : `<div style="width:50px; height:50px; flex-shrink:0;"></div>`}
                 <div style="flex:1; min-width:0;">
-                    <div style="font-size:12px; color:var(--text-body); ${resolvido ? 'text-decoration:line-through; opacity:0.6;' : ''}">${a.descricao}</div>
+                    <div style="font-size:12px; color:var(--text-body); ${resolvido ? 'text-decoration:line-through; opacity:0.6;' : ''}">${window.escapeHtmlNotif(a.descricao)}</div>
                     <div style="font-size:10px; color:var(--text-accent);">
-                        ${a.criado_por || 'Sistema'} · ${a.criado_em || ''}
-                        ${resolvido ? `<br>✅ Resolvido por ${a.resolvido_por || ''} · ${a.resolvido_em || ''}` : ''}
+                        ${window.escapeHtmlNotif(a.criado_por || 'Sistema')} · ${a.criado_em || ''}
+                        ${resolvido ? `<br>✅ Resolvido por ${window.escapeHtmlNotif(a.resolvido_por || '')} · ${a.resolvido_em || ''}` : ''}
                     </div>
                 </div>
                 <div style="display:flex; flex-direction:column; gap:4px; flex-shrink:0; align-items:flex-end;">

@@ -9,7 +9,7 @@
 
 import { resolverApiBase } from '../Core/banco.js?v=5';
 import { OPERADOR_LOGADO } from '../Core/estado.js';
-import { fetchComRetry } from '../Core/utils.js';
+import { fetchComRetry, headersAdmin } from '../Core/utils.js';
 
 
 // --------------------------------------------------------------
@@ -71,7 +71,7 @@ window.renderPainelAdmExecutivo = async function() {
         const container = document.getElementById('painel-adm-colaboradores-resumo');
         const badge = document.getElementById('painel-adm-badge-colaboradores');
         try {
-            const resp = await fetch(`${apiBase}/api/colaboradores/todos`, { cache: 'no-store' });
+            const resp = await fetch(`${apiBase}/api/colaboradores/todos`, { cache: 'no-store', headers: headersAdmin() });
             const colaboradores = resp.ok ? await resp.json() : [];
             const ativos = Array.isArray(colaboradores) ? colaboradores.filter(c => c.ativo) : [];
             if (badge) badge.innerHTML = `<i class="fas fa-users"></i> ${ativos.length} <span>Colaboradores ativos</span>`;

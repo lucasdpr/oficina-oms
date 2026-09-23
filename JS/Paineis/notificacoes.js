@@ -8,7 +8,7 @@
 import { resolverApiBase, BANCO_ATIVOS } from '../Core/banco.js?v=5';
 import { OPERADOR_LOGADO, OFICINA_ATIVIDADES_CACHE, setOficinaAtividadesCache } from '../Core/estado.js';
 import { operadorPodeVerNotificacoes, operadorTecnicoComArea } from '../Core/permissoes.js';
-import { executarSeguro, executarSeguroAsync, atividadeEstaAtrasada, atividadeAindaNaoComecou } from '../Core/utils.js';
+import { executarSeguro, executarSeguroAsync, atividadeEstaAtrasada, atividadeAindaNaoComecou, headersAdmin } from '../Core/utils.js';
 import { AREAS_OFICINA } from '../Core/dados.js';
 
 // ==========================================
@@ -58,9 +58,14 @@ window.iniciarHeartbeatColaborador = function() {
     const enviarHeartbeat = () => executarSeguroAsync(async () => {
         if (!OPERADOR_LOGADO || !OPERADOR_LOGADO.matricula) { window.pararHeartbeatColaborador(); return; }
         const apiBase = await resolverApiBase();
+        // 🔧 CORREÇÃO (achado de auditoria de Go-Live): faltava o header
+        // Authorization — o middleware global já exige login em todo
+        // POST, então esse heartbeat provavelmente já vinha falhando com
+        // 401 silencioso (sem alert, o catch de executarSeguroAsync só
+        // loga) antes mesmo de qualquer mudança de backend.
         await fetch(`${apiBase}/api/colaboradores/heartbeat`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headersAdmin(),
             body: JSON.stringify({ matricula: OPERADOR_LOGADO.matricula })
         });
     }, 'heartbeatColaborador');

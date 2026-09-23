@@ -418,8 +418,8 @@ function renderizarAtividadesArea() {
                     ${atrasada ? `<span style="font-size:10px; background:var(--danger); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">ATRASADA</span>` : ''}
                     ${x.reaberturas_count > 0 ? `<span style="font-size:10px; background:#f97316; color:#fff; padding:2px 6px; border-radius:4px; font-weight:700; cursor:pointer;" onclick="window.verHistoricoReaberturasAtividade(${x.id})" title="Ver histórico de reaberturas"><i class="fas fa-rotate-left"></i> Reaberta ${x.reaberturas_count}x</span>` : ''}
                 </div>
-                <div style="font-size:13px; color:var(--text-body);">${window.limparMarcadorTecnicoDescricao(x.descricao)}</div>
-                ${x.motivo_status ? `<div style="font-size:11.5px; color:${corStatus[x.status]}; margin-top:4px;"><i class="fas fa-circle-info"></i> ${x.motivo_status}</div>` : ''}
+                <div style="font-size:13px; color:var(--text-body);">${window.escapeHtmlNotif(window.limparMarcadorTecnicoDescricao(x.descricao))}</div>
+                ${x.motivo_status ? `<div style="font-size:11.5px; color:${corStatus[x.status]}; margin-top:4px;"><i class="fas fa-circle-info"></i> ${window.escapeHtmlNotif(x.motivo_status)}</div>` : ''}
                 <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
                     ${
                         // 🔧 CORREÇÃO ("iniciei, selecionei quem está fazendo, mas
@@ -434,9 +434,9 @@ function renderizarAtividadesArea() {
                         // Prioriza executado_por (mais recente/real) e cai pra
                         // responsavel só se não tiver execução ainda.
                         x.executado_por
-                            ? `<i class="fas fa-user-gear"></i> ${x.executado_por} · `
-                            : (x.responsavel ? `${x.responsavel} · ` : '')
-                    }${x.criado_por ? `Criado por ${x.criado_por} · ` : ''}${x.criado_em || ''}
+                            ? `<i class="fas fa-user-gear"></i> ${window.escapeHtmlNotif(x.executado_por)} · `
+                            : (x.responsavel ? `${window.escapeHtmlNotif(x.responsavel)} · ` : '')
+                    }${x.criado_por ? `Criado por ${window.escapeHtmlNotif(x.criado_por)} · ` : ''}${x.criado_em || ''}
                     ${x.data_inicio ? ` · <span style="color:var(--text-accent, #3b82f6);">Início salvo: ${x.data_inicio.split('-').reverse().join('/')}</span>` : ''}
                     ${prazoFormatado ? ` · Prazo: <span style="color:${atrasada ? 'var(--danger)' : 'var(--text-muted)'}; font-weight:${atrasada ? '700' : '400'};">${prazoFormatado}</span>` : ''}
                 </div>
@@ -450,7 +450,7 @@ function renderizarAtividadesArea() {
                     if (x.area === OFICINA_AREA_ATUAL) return '';
                     const areaExecInfo = (typeof AREAS_OFICINA !== 'undefined' ? AREAS_OFICINA : (window.AREAS_OFICINA || [])).find(a => a.chave === x.area);
                     const nomeAreaExec = (areaExecInfo && areaExecInfo.nome) || x.area;
-                    const quem = x.executado_por ? ` — <strong>${x.executado_por}</strong>` : '';
+                    const quem = x.executado_por ? ` — <strong>${window.escapeHtmlNotif(x.executado_por)}</strong>` : '';
                     return `<div style="font-size:11px; color:var(--text-accent, #3b82f6); margin-top:4px;"><i class="fas fa-people-arrows"></i> Pedido por esta área, executando em ${nomeAreaExec}${quem}</div>`;
                 })()}
             </div>

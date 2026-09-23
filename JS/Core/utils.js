@@ -386,7 +386,33 @@ function lerFilaOffline() {
 }
 
 function salvarFilaOffline(fila) {
-    localStorage.setItem(FILA_OFFLINE_KEY, JSON.stringify(fila));
+    // 🔧 CORREÇÃO (achado de auditoria de Go-Live): faltava try/catch —
+    // se o localStorage estourar a cota (comum com fotos base64 na
+    // fila), o `setItem` lançava e a exceção subia pra quem chamou
+    // (`enviarComFilaOffline`), que então reportava "não foi possível
+    // conectar ao servidor" — mensagem enganosa — e a ação NEM ENTRAVA
+    // na fila, perdida de verdade. Agora, se estourar, descarta os itens
+    // mais antigos (o rascunho mais recente importa mais) até caber, e
+    // avisa visivelmente em vez de falhar em silêncio.
+    try {
+        localStorage.setItem(FILA_OFFLINE_KEY, JSON.stringify(fila));
+    } catch (e) {
+        let restante = fila.slice();
+        let salvou = false;
+        while (restante.length > 0) {
+            restante = restante.slice(1); // descarta o mais antigo primeiro
+            try {
+                localStorage.setItem(FILA_OFFLINE_KEY, JSON.stringify(restante));
+                salvou = true;
+                break;
+            } catch (e2) { /* continua descartando */ }
+        }
+        if (!salvou) {
+            try { localStorage.removeItem(FILA_OFFLINE_KEY); } catch (e3) { /* nada mais a fazer */ }
+        }
+        console.error('⚠️ Fila offline estourou a cota do localStorage — itens mais antigos foram descartados pra caber os mais recentes.', e);
+        alert('⚠️ Muita coisa acumulada esperando conexão — alguns itens mais antigos da fila foram descartados pra caber os mais recentes. Assim que der, confira se tudo que você fez foi salvo.');
+    }
     atualizarIndicadorFilaOffline();
 }
 
@@ -416,15 +442,29 @@ function atualizarIndicadorFilaOffline() {
 // SERVIDOR (400, 500...) não cai aqui — isso o código que chama trata
 // normal, olhando "resp.ok", porque não adianta reenviar sozinho algo
 // que o servidor já recusou.
-export async function enviarComFilaOffline(url, options, descricao) {
+export async function enviarComFilaOffline(url, options, descricao, chaveDedup) {
     try {
         const resp = await fetch(url, options);
         return { resp, enfileirado: false };
     } catch (e) {
-        const fila = lerFilaOffline();
+        // 🔧 CORREÇÃO (achado de auditoria de Go-Live): autosave (ex.:
+        // rascunho de Folhão a cada 800ms) chamava isso repetidamente
+        // enquanto offline, empilhando um item novo na fila a cada
+        // tentativa — dezenas de rascunhos antigos duplicados disputando
+        // espaço com ações reais. Quando o chamador passa `chaveDedup`,
+        // removemos qualquer item pendente com a mesma chave antes de
+        // empilhar o novo (só o rascunho mais recente importa). Sem
+        // `chaveDedup`, o comportamento é o de sempre — nada é descartado,
+        // porque criações distintas (OS, ocorrência, qualidade...) podem
+        // legitimamente compartilhar a mesma URL e não podem ser tratadas
+        // como duplicatas.
+        let fila = lerFilaOffline();
+        if (chaveDedup) {
+            fila = fila.filter((item) => item.chaveDedup !== chaveDedup);
+        }
         fila.push({
             id: Date.now() + Math.random(),
-            url, options, descricao,
+            url, options, descricao, chaveDedup,
             criado_em: new Date().toLocaleString('pt-BR')
         });
         salvarFilaOffline(fila);
@@ -433,36 +473,64 @@ export async function enviarComFilaOffline(url, options, descricao) {
 }
 window.enviarComFilaOffline = (...args) => enviarComFilaOffline(...args);
 
+// 🔧 CORREÇÃO CRÍTICA (achado de auditoria de Go-Live, confirmado por
+// duas revisões independentes): esta função é chamada por 3 gatilhos
+// diferentes (evento 'online', setInterval de 30s, clique manual no
+// indicador) SEM nenhuma trava — se um item demorar mais que 30s pra
+// responder (ex: OS com fotos grandes em rede ruim), o timer seguinte
+// pode disparar uma segunda execução concorrente que vê o MESMO item
+// ainda na fila e reenvia — e como OS/Ocorrência/Qualidade/Atividade
+// NÃO são upsert (diferente de Folhão/Checklist), isso duplica o
+// registro de verdade no banco. `_reenviandoFilaOffline` garante que só
+// uma execução roda por vez.
+let _reenviandoFilaOffline = false;
+
 window.tentarReenviarFilaOffline = async function() {
-    let fila = lerFilaOffline();
-    if (fila.length === 0) return;
+    if (_reenviandoFilaOffline) return;
+    _reenviandoFilaOffline = true;
+    try {
+        let fila = lerFilaOffline();
+        if (fila.length === 0) return;
 
-    const restantes = [];
-    let algumEnviado = false;
+        const restantes = [];
+        let algumEnviado = false;
 
-    for (const item of fila) {
-        try {
-            const resp = await fetch(item.url, item.options);
-            if (resp.ok) {
-                algumEnviado = true;
-            } else {
-                // Servidor respondeu mas recusou (ex: algo mudou nesse
-                // meio tempo) — não adianta insistir sozinho, descarta
-                // pra não travar o resto da fila esperando pra sempre.
-                console.warn('⚠️ Ação da fila offline foi recusada pelo servidor:', item.descricao);
+        for (const item of fila) {
+            try {
+                const resp = await fetch(item.url, item.options);
+                if (resp.ok) {
+                    algumEnviado = true;
+                } else if (resp.status === 401) {
+                    // 🔧 CORREÇÃO: sessão expirada (token de 12h) não
+                    // significa "servidor recusou os dados" — antes isso
+                    // caía no mesmo caminho de descarte silencioso de
+                    // qualquer outro erro, perdendo o registro pra
+                    // sempre assim que o token vencesse. Mantém na fila
+                    // pra tentar de novo depois de um novo login.
+                    console.warn('⚠️ Sessão expirada — mantendo na fila até novo login:', item.descricao);
+                    restantes.push(item);
+                } else {
+                    // Servidor respondeu e recusou por outro motivo (ex:
+                    // validação, algo mudou nesse meio tempo) — não
+                    // adianta insistir sozinho, descarta pra não travar
+                    // o resto da fila esperando pra sempre.
+                    console.warn('⚠️ Ação da fila offline foi recusada pelo servidor:', item.descricao);
+                }
+            } catch (e) {
+                // Ainda sem internet — mantém na fila pra tentar de novo.
+                restantes.push(item);
             }
-        } catch (e) {
-            // Ainda sem internet — mantém na fila pra tentar de novo.
-            restantes.push(item);
         }
-    }
 
-    salvarFilaOffline(restantes);
+        salvarFilaOffline(restantes);
 
-    if (algumEnviado) {
-        if (typeof window.carregarListaOrdensServico === 'function') window.carregarListaOrdensServico();
-        if (typeof window.carregarListaQualidade === 'function') window.carregarListaQualidade();
-        if (typeof window.carregarOficina === 'function') window.carregarOficina();
+        if (algumEnviado) {
+            if (typeof window.carregarListaOrdensServico === 'function') window.carregarListaOrdensServico();
+            if (typeof window.carregarListaQualidade === 'function') window.carregarListaQualidade();
+            if (typeof window.carregarOficina === 'function') window.carregarOficina();
+        }
+    } finally {
+        _reenviandoFilaOffline = false;
     }
 };
 
