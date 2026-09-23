@@ -452,21 +452,24 @@ async function iniciarCena() {
     const tampaRoloMat = new THREE.MeshStandardMaterial({ color: 0x2a2826, roughness: 0.6, metalness: 0.5 });
 
     // Foot roll: eixo inox comprido embaixo da placa larga, virado pro
-    // interior, apoiado em 4 mancais de ferro fundido com faixa vermelha.
-    function adicionarFootRoll(placaLarga, sinal) {
-        const g = new THREE.Group();
-        g.position.set(0, -PLACA_H / 2 - 0.035, -sinal * 0.025);
-        placaLarga.add(g);
-        // 3 rolos empilhados (foto real), cada um com seus 4 mancais
-        [0, -0.068, -0.136].forEach((y) => {
-            cilindro(g, 0.028, PLACA_LARGA_W - 0.06, 0, y, 0, canoInoxMat, 'x', 24);
-            [-0.46, -0.15, 0.15, 0.46].forEach((x) => {
-                box(g, 0.05, 0.062, 0.075, x, y, 0, mancalMat);
-                cilindro(g, 0.0295, 0.028, x + 0.042, y, 0, faixaVermelhaMat, 'x', 24);
-            });
+// interior, apoiado em 4 mancais de ferro fundido com faixa vermelha.
+function adicionarFootRoll(placaLarga, sinal) {
+    const g = new THREE.Group();
+    g.position.set(0, -PLACA_H / 2 - 0.035, -sinal * 0.025);
+    placaLarga.add(g);
+
+    // 3 rolos empilhados (foto real), cada um com seus 4 mancais
+    [0, -0.068, -0.136].forEach((y) => {
+        cilindro(g, 0.028, PLACA_LARGA_W - 0.06, 0, y, 0, canoInoxMat, 'x', 24);
+        
+        [-0.46, -0.15, 0.15, 0.46].forEach((x) => {
+            box(g, 0.05, 0.062, 0.075, x, y, 0, mancalMat);
+            cilindro(g, 0.0295, 0.028, x + 0.042, y, 0, faixaVermelhaMat, 'x', 24);
         });
-        [-0.46, -0.15, 0.15, 0.46].forEach((x) => box(g, 0.03, 0.05, 0.03, x, -0.19, sinal * 0.02, mancalMat));
-    }
+    });
+
+    [-0.46, -0.15, 0.15, 0.46].forEach((x) => box(g, 0.03, 0.05, 0.03, x, -0.19, sinal * 0.02, mancalMat));
+}
 
     // Guia: bloco de ferro enferrujado embaixo da placa estreita, com os
     // rolinhos empilhados virados pro lado de dentro do molde.
