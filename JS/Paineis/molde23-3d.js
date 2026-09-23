@@ -236,7 +236,7 @@ async function iniciarCenaMCC23() {
     // ---- materiais (MCC2/3: aço pintado de cinza claro, detalhes vermelhos, base azul) ----
     function texturaPintura() {
         const [c, ctx] = novoCanvas(512, 512);
-        ctx.fillStyle = '#878b8f';
+        ctx.fillStyle = '#6f7377';
         ctx.fillRect(0, 0, 512, 512);
         for (let i = 0; i < 900; i++) {
             ctx.fillStyle = i % 3 ? 'rgba(90,95,100,0.08)' : 'rgba(255,255,255,0.10)';
@@ -279,9 +279,9 @@ async function iniciarCenaMCC23() {
     const azulMat = new THREE.MeshStandardMaterial({ color: 0x2c5aa8, roughness: 0.55, metalness: 0.35 });
     const buracoMat = new THREE.MeshStandardMaterial({ color: 0x1a1b1d, roughness: 1, metalness: 0 });
     const parafusoMat = new THREE.MeshStandardMaterial({ color: 0x2b2d30, roughness: 0.5, metalness: 0.7 });
-    const canoMat = new THREE.MeshStandardMaterial({ color: 0x979ba0, roughness: 0.45, metalness: 0.45 });
+    const canoMat = new THREE.MeshStandardMaterial({ color: 0x7e8287, roughness: 0.45, metalness: 0.45 });
     const canoInoxMat = new THREE.MeshStandardMaterial({ color: 0x9a9da3, roughness: 0.3, metalness: 0.9 });
-    const conduiteMat = new THREE.MeshStandardMaterial({ color: 0x8c9095, roughness: 0.55, metalness: 0.4 });
+    const conduiteMat = new THREE.MeshStandardMaterial({ color: 0x74787d, roughness: 0.55, metalness: 0.4 });
 
     const texFrente = criarTexturaPlacaFrente(THREE);
     const texTras = texturaPlacaTras23();
