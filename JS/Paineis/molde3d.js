@@ -144,10 +144,31 @@ async function iniciarCena() {
     const estruturaEscuraMat = new THREE.MeshStandardMaterial({ color: 0x333e52, roughness: 0.5, metalness: 0.7 });
     const parafusoMat = new THREE.MeshStandardMaterial({ color: 0x1a2029, roughness: 0.5, metalness: 0.7 });
 
+    // 🆕 Bicolor (foto de referência do usuário: face lisa da placa tem uns
+    // 2/3 de cima em cobre e o terço de baixo em cinza/aço) — uma textura
+    // canvas com duas faixas sólidas, reaproveitada em todas as placas.
+    function criarTexturaCobreBicolor(THREE) {
+        const tam = 128;
+        const canvas = document.createElement('canvas');
+        canvas.width = tam;
+        canvas.height = tam;
+        const ctx = canvas.getContext('2d');
+        const corteY = Math.round(tam * 0.34);
+        ctx.fillStyle = '#c57c3f';
+        ctx.fillRect(0, 0, tam, corteY);
+        ctx.fillStyle = '#8a94a3';
+        ctx.fillRect(0, corteY, tam, tam - corteY);
+        const textura = new THREE.CanvasTexture(canvas);
+        if ('colorSpace' in textura) textura.colorSpace = THREE.SRGBColorSpace;
+        return textura;
+    }
+    const texturaCobreBicolor = criarTexturaCobreBicolor(THREE);
+
     // cobre: cor quente, bem metálico, pouca rugosidade pra brilhar
     function materialCobre() {
         return new THREE.MeshPhysicalMaterial({
-            color: 0xc57c3f,
+            map: texturaCobreBicolor,
+            color: 0xffffff,
             roughness: 0.35,
             metalness: 0.9,
             clearcoat: 0.25,
@@ -215,42 +236,59 @@ async function iniciarCena() {
         mesh.add(linha);
     }
 
-    function addBloco(w, h, d, x, y, z, mat) {
+    function addBloco(w, h, d, x, y, z, mat, pai) {
         const geo = new THREE.BoxGeometry(w, h, d);
         const m = new THREE.Mesh(geo, mat);
         m.position.set(x, y, z);
         m.castShadow = true;
         m.receiveShadow = true;
         contornar(m, geo);
-        molde.add(m);
+        (pai || molde).add(m);
         return m;
     }
 
     const ESPESSURA_JAQUETA = 0.07;
 
-    // jaquetas de aço atrás das placas largas (frente/trás)
-    addBloco(LARGURA_PLACA_LARGA, ALTURA, ESPESSURA_JAQUETA, 0, ALTURA / 2, zPlacaLarga + ESPESSURA_COBRE / 2 + ESPESSURA_JAQUETA / 2, estruturaMat);
-    addBloco(LARGURA_PLACA_LARGA, ALTURA, ESPESSURA_JAQUETA, 0, ALTURA / 2, -(zPlacaLarga + ESPESSURA_COBRE / 2 + ESPESSURA_JAQUETA / 2), estruturaMat);
+    // jaquetas de aço atrás das placas largas (frente/trás) — guardadas à
+    // parte (não só adicionadas à cena) porque o botão "Ver interior"
+    // precisa animar cada uma pra fora, na própria direção, pra revelar
+    // as placas de cobre por trás (pedido do usuário: manter o molde
+    // fechado/realista, mas com uma transição pra ver o interior).
+    const jaquetaFrente = addBloco(LARGURA_PLACA_LARGA, ALTURA, ESPESSURA_JAQUETA, 0, ALTURA / 2, zPlacaLarga + ESPESSURA_COBRE / 2 + ESPESSURA_JAQUETA / 2, estruturaMat);
+    const jaquetaTras = addBloco(LARGURA_PLACA_LARGA, ALTURA, ESPESSURA_JAQUETA, 0, ALTURA / 2, -(zPlacaLarga + ESPESSURA_COBRE / 2 + ESPESSURA_JAQUETA / 2), estruturaMat);
 
     // jaquetas de aço atrás das placas estreitas (laterais) — preenchem o
     // canto até a borda das jaquetas largas, formando um bloco fechado
     const xJaquetaLateral = LARGURA_PLACA_LARGA / 2 + ESPESSURA_COBRE / 2 + ESPESSURA_JAQUETA / 2;
     const profJaquetaLateral = VAO_INTERNO + ESPESSURA_JAQUETA * 2;
-    addBloco(ESPESSURA_JAQUETA, ALTURA, profJaquetaLateral, xJaquetaLateral, ALTURA / 2, 0, estruturaMat);
-    addBloco(ESPESSURA_JAQUETA, ALTURA, profJaquetaLateral, -xJaquetaLateral, ALTURA / 2, 0, estruturaMat);
+    const jaquetaDireita = addBloco(ESPESSURA_JAQUETA, ALTURA, profJaquetaLateral, xJaquetaLateral, ALTURA / 2, 0, estruturaMat);
+    const jaquetaEsquerda = addBloco(ESPESSURA_JAQUETA, ALTURA, profJaquetaLateral, -xJaquetaLateral, ALTURA / 2, 0, estruturaMat);
 
     // base rasa, flush com o contorno do bloco — sem vão, sem pernas
     const larguraTotal = LARGURA_PLACA_LARGA + (ESPESSURA_COBRE + ESPESSURA_JAQUETA) * 2;
     const profTotal = VAO_INTERNO + (ESPESSURA_COBRE + ESPESSURA_JAQUETA) * 2;
     addBloco(larguraTotal + 0.08, 0.06, profTotal + 0.08, 0, -0.03, 0, estruturaEscuraMat);
 
-    // faixa de risco (amarelo/preto), colada na base, acima dos parafusos —
-    // mesmo detalhe visual do Molde no Sinótico 3D (bate com a foto de
-    // referência do mural "M4-2" que o usuário mandou)
+    // faixa de risco (amarelo/preto) — filha da própria jaqueta (não da
+    // cena), pra viajar junto quando a jaqueta desliza no "Ver interior"
     const alturaFaixa = ALTURA * 0.16;
     const faixaMat = new THREE.MeshStandardMaterial({ map: criarTexturaFaixaRisco(THREE), roughness: 0.55, metalness: 0.1 });
-    addBloco(LARGURA_PLACA_LARGA + 0.01, alturaFaixa, 0.01, 0, alturaFaixa / 2 + 0.03, zPlacaLarga + ESPESSURA_COBRE / 2 + ESPESSURA_JAQUETA + 0.006, faixaMat);
-    addBloco(LARGURA_PLACA_LARGA + 0.01, alturaFaixa, 0.01, 0, alturaFaixa / 2 + 0.03, -(zPlacaLarga + ESPESSURA_COBRE / 2 + ESPESSURA_JAQUETA + 0.006), faixaMat);
+    addBloco(LARGURA_PLACA_LARGA + 0.01, alturaFaixa, 0.01, 0, alturaFaixa / 2 + 0.03 - ALTURA / 2, ESPESSURA_JAQUETA / 2 + 0.006, faixaMat, jaquetaFrente);
+    addBloco(LARGURA_PLACA_LARGA + 0.01, alturaFaixa, 0.01, 0, alturaFaixa / 2 + 0.03 - ALTURA / 2, -(ESPESSURA_JAQUETA / 2 + 0.006), faixaMat, jaquetaTras);
+
+    // direção pra fora de cada jaqueta (eixo que ela desliza no "Ver
+    // interior") e o quanto ela se afasta
+    const DISTANCIA_EXPLODIDO = Math.max(LARGURA_PLACA_LARGA, ALTURA) * 0.55;
+    const jaquetas = [
+        { mesh: jaquetaFrente, dir: new THREE.Vector3(0, 0, 1) },
+        { mesh: jaquetaTras, dir: new THREE.Vector3(0, 0, -1) },
+        { mesh: jaquetaDireita, dir: new THREE.Vector3(1, 0, 0) },
+        { mesh: jaquetaEsquerda, dir: new THREE.Vector3(-1, 0, 0) },
+    ];
+    jaquetas.forEach((j) => {
+        j.posFechado = j.mesh.position.clone();
+        j.posAberto = j.mesh.position.clone().addScaledVector(j.dir, DISTANCIA_EXPLODIDO);
+    });
 
     // parafusos no topo, nos 4 cantos do bloco (como na referência real)
     const parafusoGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.03, 12);
@@ -301,6 +339,23 @@ async function iniciarCena() {
     renderer.domElement.addEventListener('pointerdown', () => { arrastando = true; });
     window.addEventListener('pointerup', () => { arrastando = false; });
 
+    // ---- "Ver interior": desliza as jaquetas de aço pra fora, revelando
+    // as 4 placas de cobre por trás (o molde continua fechado/realista por
+    // padrão — isso é só uma transição visual sob demanda) ----
+    let interiorAberto = false;
+    let transicaoT = 1; // 1 = animação concluída, chegou no alvo atual
+    const DURACAO_TRANSICAO = 0.7; // segundos
+    const btnInterior = document.getElementById('molde3d-btn-interior');
+    if (btnInterior) {
+        btnInterior.addEventListener('click', () => {
+            interiorAberto = !interiorAberto;
+            transicaoT = 0;
+            btnInterior.innerHTML = interiorAberto
+                ? '<i class="fas fa-layer-group"></i> Fechar molde'
+                : '<i class="fas fa-layer-group"></i> Ver interior';
+        });
+    }
+
     function aoRedimensionar() {
         if (!container.clientWidth || !container.clientHeight) return;
         camera.aspect = container.clientWidth / container.clientHeight;
@@ -327,6 +382,16 @@ async function iniciarCena() {
             const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
             offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), rotateSpeed * dt);
             camera.position.copy(controls.target).add(offset);
+        }
+
+        if (transicaoT < 1) {
+            transicaoT = Math.min(1, transicaoT + dt / DURACAO_TRANSICAO);
+            const ease = 1 - Math.pow(1 - transicaoT, 3);
+            jaquetas.forEach((j) => {
+                const de = interiorAberto ? j.posFechado : j.posAberto;
+                const para = interiorAberto ? j.posAberto : j.posFechado;
+                j.mesh.position.lerpVectors(de, para, ease);
+            });
         }
 
         controls.update();
