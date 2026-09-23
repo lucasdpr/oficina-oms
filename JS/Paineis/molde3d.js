@@ -444,6 +444,52 @@ async function iniciarCena() {
     ];
     const ABERTURA_PLACAS = 0.22;
 
+    // ---- foot rolls e guias (fotos reais) ----
+    // Presos como filhos das placas, pra acompanharem a placa na abertura.
+    const mancalMat = new THREE.MeshStandardMaterial({ color: 0x8e8b85, roughness: 0.85, metalness: 0.4 });
+    const faixaVermelhaMat = new THREE.MeshStandardMaterial({ color: 0xc2343a, roughness: 0.6 });
+    const rolinhoMat = new THREE.MeshStandardMaterial({ color: 0xa3a6ab, roughness: 0.35, metalness: 0.85 });
+    const tampaRoloMat = new THREE.MeshStandardMaterial({ color: 0x2a2826, roughness: 0.6, metalness: 0.5 });
+
+    // Foot roll: eixo inox comprido embaixo da placa larga, virado pro
+    // interior, apoiado em 4 mancais de ferro fundido com faixa vermelha.
+    function adicionarFootRoll(placaLarga, sinal) {
+        const g = new THREE.Group();
+        g.position.set(0, -PLACA_H / 2 - 0.035, -sinal * 0.025);
+        placaLarga.add(g);
+        // 3 rolos empilhados (foto real), cada um com seus 4 mancais
+        [0, -0.068, -0.136].forEach((y) => {
+            cilindro(g, 0.028, PLACA_LARGA_W - 0.06, 0, y, 0, canoInoxMat, 'x', 24);
+            [-0.46, -0.15, 0.15, 0.46].forEach((x) => {
+                box(g, 0.05, 0.062, 0.075, x, y, 0, mancalMat);
+                cilindro(g, 0.0295, 0.028, x + 0.042, y, 0, faixaVermelhaMat, 'x', 24);
+            });
+        });
+        [-0.46, -0.15, 0.15, 0.46].forEach((x) => box(g, 0.03, 0.05, 0.03, x, -0.19, sinal * 0.02, mancalMat));
+    }
+
+    // Guia: bloco de ferro enferrujado embaixo da placa estreita, com os
+    // rolinhos empilhados virados pro lado de dentro do molde.
+    function adicionarGuia(placaEstreita, sinal) {
+        const g = new THREE.Group();
+        g.position.set(0, -PLACA_H / 2 - 0.12, 0);
+        placaEstreita.add(g);
+        box(g, 0.05, 0.22, 0.13, sinal * 0.01, 0, 0, ferrugemMat);
+        box(g, 0.07, 0.03, 0.15, sinal * 0.005, -0.12, 0, ferrugemMat);
+        [0.075, 0.025, -0.025, -0.075].forEach((y) => {
+            const xr = -sinal * 0.035;
+            cilindro(g, 0.021, 0.09, xr, y, 0, rolinhoMat, 'z', 20);
+            box(g, 0.04, 0.042, 0.012, xr + sinal * 0.01, y, 0.051, mancalMat);
+            box(g, 0.04, 0.042, 0.012, xr + sinal * 0.01, y, -0.051, mancalMat);
+            cilindro(g, 0.011, 0.004, xr, y, 0.058, tampaRoloMat, 'z', 12);
+        });
+    }
+
+    adicionarFootRoll(placas[0], 1);
+    adicionarFootRoll(placas[1], -1);
+    adicionarGuia(placas[2], 1);
+    adicionarGuia(placas[3], -1);
+
     // ---- clique numa placa: destaca ----
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
