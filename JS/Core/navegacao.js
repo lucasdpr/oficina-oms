@@ -14,6 +14,7 @@ import {
     ativarCentralNotificacoesSeAutorizado,
     ativarPainelSupervisorSeAutorizado,
     ativarPainelAdmSeAutorizado,
+    ativarMolde3DSeAutorizado,
     aplicarRestricaoNavTecnico
 } from './permissoes.js';
 
@@ -36,6 +37,7 @@ export function atualizarInterfaceUsuario() {
         ativarCentralNotificacoesSeAutorizado();
         ativarPainelSupervisorSeAutorizado();
         ativarPainelAdmSeAutorizado();
+        ativarMolde3DSeAutorizado();
         if (typeof window.atualizarBotaoAtivarNotificacoes === 'function') window.atualizarBotaoAtivarNotificacoes();
         return;
     }
@@ -61,6 +63,7 @@ export function atualizarInterfaceUsuario() {
         ativarCentralNotificacoesSeAutorizado();
         ativarPainelSupervisorSeAutorizado();
         ativarPainelAdmSeAutorizado();
+        ativarMolde3DSeAutorizado();
         if (typeof window.atualizarBotaoAtivarNotificacoes === 'function') window.atualizarBotaoAtivarNotificacoes();
         return;
     }
@@ -95,6 +98,7 @@ export function atualizarInterfaceUsuario() {
     ativarCentralNotificacoesSeAutorizado();
     ativarPainelSupervisorSeAutorizado();
     ativarPainelAdmSeAutorizado();
+    ativarMolde3DSeAutorizado();
     if (typeof window.atualizarBotaoAtivarNotificacoes === 'function') window.atualizarBotaoAtivarNotificacoes();
     aplicarRestricaoNavTecnico();
 }
@@ -242,6 +246,7 @@ export const abrirAba = function(event, idAba) {
         if (idAba === "aba-qualidade" && typeof window.renderAbaQualidade === 'function') window.renderAbaQualidade();
         if (idAba === "aba-painel-adm" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('adm');
         if (idAba === "aba-painel-adm" && typeof window.renderPainelAdmExecutivo === 'function') window.renderPainelAdmExecutivo();
+        if (idAba === "aba-molde-mcc4-3d" && typeof window.renderMolde3D === 'function') window.renderMolde3D();
         if (idAba === "aba-painel-almoxarifado" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('almoxarifado');
         if (idAba === "aba-painel-ponte-rolante" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('ponte-rolante');
         if (idAba === "aba-painel-logistica" && typeof window.renderPainelAreaAdministrativa === 'function') window.renderPainelAreaAdministrativa('logistica');
