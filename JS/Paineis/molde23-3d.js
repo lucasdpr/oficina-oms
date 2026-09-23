@@ -18,10 +18,10 @@
 
 let cena3dIniciada = false;
 
-export function renderMolde3D() {
+export function renderMolde23_3D() {
     if (cena3dIniciada) return;
     cena3dIniciada = true;
-    iniciarCena().catch((erro) => {
+    iniciarCenaMCC23().catch((erro) => {
         console.error('[Molde3D] Falha ao carregar visualização 3D:', erro);
         const loading = document.getElementById('molde3d-loading');
         if (loading) loading.textContent = 'Não foi possível carregar o modelo 3D.';
@@ -163,7 +163,7 @@ function criarTexturaTexto(THREE, texto, cor) {
     return texturaDeCanvas(THREE, c);
 }
 
-async function iniciarCena() {
+async function iniciarCenaMCC23() {
     const [THREE, { OrbitControls }] = await Promise.all([
         import('three'),
         import('three/addons/controls/OrbitControls.js'),
@@ -235,9 +235,9 @@ async function iniciarCena() {
 
     // ---- materiais ----
     const texAco = criarTexturaAcoGasto(THREE);
-    const acoMat = new THREE.MeshStandardMaterial({ map: texAco, roughness: 0.82, metalness: 0.45 });
-    const acoEscuroMat = new THREE.MeshStandardMaterial({ map: texAco, color: 0x9a948c, roughness: 0.85, metalness: 0.45 });
-    const ferrugemMat = new THREE.MeshStandardMaterial({ color: 0x6e4a33, roughness: 0.9, metalness: 0.3 });
+    const acoMat = new THREE.MeshStandardMaterial({ map: texAco, color: 0x8e9296, roughness: 0.75, metalness: 0.55 });
+    const acoEscuroMat = new THREE.MeshStandardMaterial({ map: texAco, color: 0x6b6e72, roughness: 0.8, metalness: 0.5 });
+    const ferrugemMat = new THREE.MeshStandardMaterial({ color: 0xb23a2f, roughness: 0.5, metalness: 0.35 });
     const buracoMat = new THREE.MeshStandardMaterial({ color: 0x0c0b0a, roughness: 1, metalness: 0 });
     const parafusoMat = new THREE.MeshStandardMaterial({ color: 0x3a3632, roughness: 0.6, metalness: 0.7 });
     const canoMat = new THREE.MeshStandardMaterial({ color: 0x3b3d42, roughness: 0.5, metalness: 0.6 });
@@ -378,8 +378,8 @@ async function iniciarCena() {
 
     // ---- detalhes só da face da frente (foto) ----
     const zF = D / 2;
-    texto(frente, criarTexturaTexto(THREE, 'OMS', '#cfc8bd'), 0.22, 0.11, -0.48, 0.85, zF + 0.003);
-    texto(frente, criarTexturaTexto(THREE, '06', '#e2d6c6'), 0.16, 0.08, 1.4, 0.66, (D / 2 - 0.004) * 0.8 + 0.003);
+    texto(frente, criarTexturaTexto(THREE, 'OMS 52', '#cfc8bd'), 0.3, 0.1, -0.42, 0.85, zF + 0.003);
+    
     // tampa pequena parafusada na asa esquerda
     box(frente, 0.08, 0.13, 0.015, -0.92, 0.59, (D / 2 - 0.004) * 0.86 + 0.008, ferrugemMat);
     // cano em U da esquerda
@@ -459,7 +459,7 @@ function adicionarFootRoll(placaLarga, sinal) {
     placaLarga.add(g);
 
     // 3 rolos empilhados (foto real), cada um com seus 4 mancais
-    [0, -0.068, -0.136].forEach((y) => {
+    [0].forEach((y) => {
         cilindro(g, 0.028, PLACA_LARGA_W - 0.06, 0, y, 0, canoInoxMat, 'x', 24);
         
         [-0.46, -0.15, 0.15, 0.46].forEach((x) => {
@@ -586,4 +586,4 @@ function adicionarFootRoll(placaLarga, sinal) {
     animar();
 }
 
-window.renderMolde3D = renderMolde3D;
+window.renderMolde23_3D = renderMolde23_3D;
