@@ -51,8 +51,14 @@ async function iniciarCena() {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     if (renderer.outputColorSpace !== undefined) renderer.outputColorSpace = THREE.SRGBColorSpace;
+    // 🐛 CORREÇÃO ("tá muito escuro"): a partir da r155 o Three.js passou a
+    // usar iluminação fisicamente correta por padrão (intensidades em
+    // lux/candela) — os números de intensidade abaixo (1.6, 0.9 etc.) foram
+    // calibrados pro sistema antigo e ficam quase invisíveis nesse modo.
+    // Liga o modo legado em vez de recalcular tudo em unidades físicas.
+    if ('useLegacyLights' in renderer) renderer.useLegacyLights = true;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
+    renderer.toneMappingExposure = 1.4;
     container.appendChild(renderer.domElement);
     renderer.domElement.style.position = 'absolute';
     renderer.domElement.style.inset = '0';
@@ -67,9 +73,10 @@ async function iniciarCena() {
     controls.update();
 
     // ---- iluminação de estúdio ----
-    scene.add(new THREE.AmbientLight(0x8fa3bf, 0.55));
+    scene.add(new THREE.AmbientLight(0xaab4c8, 1.4));
+    scene.add(new THREE.HemisphereLight(0xbdd0ff, 0x1a1610, 1.1));
 
-    const key = new THREE.DirectionalLight(0xfff3e0, 1.6);
+    const key = new THREE.DirectionalLight(0xfff3e0, 3.2);
     key.position.set(3, 4.5, 2.2);
     key.castShadow = true;
     key.shadow.mapSize.set(2048, 2048);
@@ -79,13 +86,17 @@ async function iniciarCena() {
     key.shadow.bias = -0.0005;
     scene.add(key);
 
-    const rim = new THREE.DirectionalLight(0x4d7fc9, 0.9);
+    const rim = new THREE.DirectionalLight(0x8fb4ff, 2.2);
     rim.position.set(-3.5, 2, -3);
     scene.add(rim);
 
-    const cobreFill = new THREE.PointLight(0xff9d52, 0.65, 8, 2);
+    const cobreFill = new THREE.PointLight(0xff9d52, 3, 10, 2);
     cobreFill.position.set(-1, 1.2, 1.8);
     scene.add(cobreFill);
+
+    const frontFill = new THREE.PointLight(0xffe4c4, 2, 10, 2);
+    frontFill.position.set(1.5, 1.8, 3);
+    scene.add(frontFill);
 
     // ---- piso ----
     const floor = new THREE.Mesh(
@@ -110,12 +121,12 @@ async function iniciarCena() {
     // cobre: cor quente, bem metálico, pouca rugosidade pra brilhar
     function materialCobre() {
         return new THREE.MeshPhysicalMaterial({
-            color: 0xb5651d,
-            roughness: 0.28,
-            metalness: 0.95,
-            clearcoat: 0.35,
-            clearcoatRoughness: 0.25,
-            reflectivity: 0.9,
+            color: 0xc57c3f,
+            roughness: 0.35,
+            metalness: 0.9,
+            clearcoat: 0.25,
+            clearcoatRoughness: 0.3,
+            reflectivity: 0.6,
         });
     }
 
