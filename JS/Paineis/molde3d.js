@@ -42,7 +42,7 @@ async function iniciarCena() {
     scene.fog = new THREE.FogExp2(0x0a0e15, 0.028);
 
     const camera = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 200);
-    const startPos = new THREE.Vector3(3.2, 2.4, 3.6);
+    const startPos = new THREE.Vector3(2.7, 1.15, 2.4);
     camera.position.copy(startPos);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -58,7 +58,7 @@ async function iniciarCena() {
     // Liga o modo legado em vez de recalcular tudo em unidades físicas.
     if ('useLegacyLights' in renderer) renderer.useLegacyLights = true;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.4;
+    renderer.toneMappingExposure = 1.05;
     container.appendChild(renderer.domElement);
     renderer.domElement.style.position = 'absolute';
     renderer.domElement.style.inset = '0';
@@ -73,10 +73,10 @@ async function iniciarCena() {
     controls.update();
 
     // ---- iluminação de estúdio ----
-    scene.add(new THREE.AmbientLight(0xaab4c8, 1.4));
-    scene.add(new THREE.HemisphereLight(0xbdd0ff, 0x1a1610, 1.1));
+    scene.add(new THREE.AmbientLight(0xaab4c8, 0.6));
+    scene.add(new THREE.HemisphereLight(0xbdd0ff, 0x1a1610, 0.5));
 
-    const key = new THREE.DirectionalLight(0xfff3e0, 3.2);
+    const key = new THREE.DirectionalLight(0xfff3e0, 1.8);
     key.position.set(3, 4.5, 2.2);
     key.castShadow = true;
     key.shadow.mapSize.set(2048, 2048);
@@ -86,28 +86,28 @@ async function iniciarCena() {
     key.shadow.bias = -0.0005;
     scene.add(key);
 
-    const rim = new THREE.DirectionalLight(0x8fb4ff, 2.2);
+    const rim = new THREE.DirectionalLight(0x8fb4ff, 0.9);
     rim.position.set(-3.5, 2, -3);
     scene.add(rim);
 
-    const cobreFill = new THREE.PointLight(0xff9d52, 3, 10, 2);
+    const cobreFill = new THREE.PointLight(0xff9d52, 1.1, 10, 2);
     cobreFill.position.set(-1, 1.2, 1.8);
     scene.add(cobreFill);
 
-    const frontFill = new THREE.PointLight(0xffe4c4, 2, 10, 2);
+    const frontFill = new THREE.PointLight(0xffe4c4, 0.7, 10, 2);
     frontFill.position.set(1.5, 1.8, 3);
     scene.add(frontFill);
 
     // ---- piso ----
     const floor = new THREE.Mesh(
-        new THREE.CircleGeometry(6, 64),
+        new THREE.CircleGeometry(3, 64),
         new THREE.MeshStandardMaterial({ color: 0x0d131e, roughness: 0.85, metalness: 0.15 })
     );
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     scene.add(floor);
 
-    const grid = new THREE.GridHelper(12, 24, 0x233047, 0x162032);
+    const grid = new THREE.GridHelper(6, 12, 0x233047, 0x162032);
     grid.position.y = 0.001;
     grid.material.transparent = true;
     grid.material.opacity = 0.45;
@@ -187,7 +187,14 @@ async function iniciarCena() {
     addViga(0.1, ALTURA + 0.15, 0.1, larguraTotal / 2 + 0.05, ALTURA / 2, -profTotal / 2 - 0.05, estruturaMat);
     addViga(0.1, ALTURA + 0.15, 0.1, -larguraTotal / 2 - 0.05, ALTURA / 2, profTotal / 2 + 0.05, estruturaMat);
     addViga(0.1, ALTURA + 0.15, 0.1, larguraTotal / 2 + 0.05, ALTURA / 2, profTotal / 2 + 0.05, estruturaMat);
-    addViga(larguraTotal + 0.3, 0.1, profTotal + 0.3, 0, ALTURA + 0.12, 0, estruturaEscuraMat); // topo (grampo)
+    // 🔧 topo era uma placa sólida cobrindo o vão inteiro — de cima ficava
+    // parecendo tampo de mesa e escondia o canal do molde. Vira uma moldura
+    // (4 vigas curtas nos cantos), deixando o vão aberto de verdade.
+    const topoY = ALTURA + 0.12;
+    addViga(larguraTotal + 0.3, 0.1, 0.16, 0, topoY, -profTotal / 2 - 0.05, estruturaEscuraMat);
+    addViga(larguraTotal + 0.3, 0.1, 0.16, 0, topoY, profTotal / 2 + 0.05, estruturaEscuraMat);
+    addViga(0.16, 0.1, profTotal + 0.3, -larguraTotal / 2 - 0.05, topoY, 0, estruturaEscuraMat);
+    addViga(0.16, 0.1, profTotal + 0.3, larguraTotal / 2 + 0.05, topoY, 0, estruturaEscuraMat);
 
     const parafusoGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.02, 10);
     for (let i = -1; i <= 1; i += 2) {
