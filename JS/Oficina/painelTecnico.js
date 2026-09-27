@@ -11,7 +11,7 @@ import { resolverApiBase, BANCO_ATIVOS } from '../Core/banco.js?v=5';
 import { OPERADOR_LOGADO, HISTORICO_ACOES, BANCO_ROLOS, RASCUNHOS_IDS_ATIVOS, setRascunhosIdsAtivos } from '../Core/estado.js';
 import { verificarAcesso } from '../Core/permissoes.js';
 import { filtrarPorAreaTecnico } from '../Core/utils.js';
-import { executarSeguro, fetchComRetry, atividadeAindaNaoComecou, atividadeEstaAtrasada } from '../Core/utils.js';
+import { executarSeguro, fetchComRetry, atividadeAindaNaoComecou, atividadeEstaAtrasada, headersAdmin } from '../Core/utils.js';
 
 // ==========================================
 // PAINEL DO TÉCNICO — visão simplificada e direta ao ponto
@@ -329,7 +329,7 @@ window.carregarReparosAndamento = async function() {
         // (checklist_execucao_execucoes) — um técnico pode ter começado
         // só por um dos dois lados, e os dois contam como "em andamento".
         const [respRascunhos, respExecucoes] = await Promise.all([
-            fetch(`${apiBase}/api/folhao/rascunhos/todos`),
+            fetch(`${apiBase}/api/folhao/rascunhos/todos`, { headers: headersAdmin() }),
             fetch(`${apiBase}/api/checklist-execucao/execucoes/todas`)
         ]);
         if (!respRascunhos.ok) throw new Error("Falha ao buscar rascunhos.");

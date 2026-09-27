@@ -108,7 +108,7 @@ import {
 async function atualizarRascunhosAtivos() {
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/folhao/rascunhos/todos`, { cache: 'no-store' });
+        const resp = await fetch(`${apiBase}/api/folhao/rascunhos/todos`, { cache: 'no-store', headers: headersAdmin() });
         if (!resp.ok) throw new Error("Falha ao buscar rascunhos.");
         const rascunhos = await resp.json();
         setRascunhosIdsAtivos(new Set(rascunhos.map(r => r.equipamento_id)));
