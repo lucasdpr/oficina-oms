@@ -15,6 +15,7 @@
 // ==============================================================
 
 import { resolverApiBase } from '../Core/banco.js?v=5';
+import { headersAdmin } from '../Core/utils.js';
 
 // --------------------------------------------------------------
 // COLETA GENÉRICA DE TODOS OS CAMPOS DENTRO DE UM MODAL
@@ -161,7 +162,7 @@ export async function carregarRascunhoFolhao(equipamentoId) {
     if (!equipamentoId) return null;
     try {
         const apiBase = await resolverApiBase();
-        const resp = await fetch(`${apiBase}/api/folhao/${encodeURIComponent(equipamentoId)}`);
+        const resp = await fetch(`${apiBase}/api/folhao/${encodeURIComponent(equipamentoId)}`, { headers: headersAdmin() });
         if (!resp.ok) return null; // 404 = não tem rascunho ainda, é normal
         const json = await resp.json();
         if (!json || !json.dados) return null;

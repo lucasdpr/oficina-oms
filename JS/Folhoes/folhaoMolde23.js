@@ -724,15 +724,17 @@ async function preencherFolhao23ComChecklistExecucao(id) {
 // momentos diferentes: ao SALVAR (grava o HTML pronto no banco) e ao
 // CONCLUIR (usa o HTML já salvo, sem precisar reabrir o Folhão).
 function montarHtmlLaudoMolde23(tag) {
+    // 🔧 CORREÇÃO (XSS armazenado - auditoria Go-Live): campos de texto livre
+    // escapados antes de entrar no HTML do laudo (ver escapeHtmlNotif em notificacoes.js).
     // COLETA DADOS DO CABEÇALHO
-    const lider = getV('molde23-lider') || '_______________';
-    const dataInicio = getV('molde23-data-inicio') || new Date().toLocaleDateString('pt-BR');
-    const dataFim = getV('molde23-data-fim') || new Date().toLocaleDateString('pt-BR');
-    const numMolde = getV('molde23-num-molde') || '______';
-    const motivo = getV('molde23-motivo') || '_______________';
+    const lider = window.escapeHtmlNotif(getV('molde23-lider')) || '_______________';
+    const dataInicio = window.escapeHtmlNotif(getV('molde23-data-inicio')) || new Date().toLocaleDateString('pt-BR');
+    const dataFim = window.escapeHtmlNotif(getV('molde23-data-fim')) || new Date().toLocaleDateString('pt-BR');
+    const numMolde = window.escapeHtmlNotif(getV('molde23-num-molde')) || '______';
+    const motivo = window.escapeHtmlNotif(getV('molde23-motivo')) || '_______________';
     const tipoExec = document.getElementById('molde23-tipo-exec')?.value || 'GERAL';
-    const desempenho = getV('molde23-desempenho') || '_______________';
-    const novaMeta = getV('molde23-nova-meta') || 'Manter Atual';
+    const desempenho = window.escapeHtmlNotif(getV('molde23-desempenho')) || '_______________';
+    const novaMeta = window.escapeHtmlNotif(getV('molde23-nova-meta')) || 'Manter Atual';
 
     // 🐛 CORRIGIDO: a atualização de item.meta (nova meta de vida útil)
     // precisa acontecer AQUI, enquanto o modal ainda está aberto e
@@ -754,7 +756,7 @@ function montarHtmlLaudoMolde23(tag) {
             const name = `${prefix}-${i}`;
             html += `<tr><td style="text-align:center;">${i+1}</td><td>${desc}</td>`;
             if (isMatricula) {
-                html += `<td>${getV(`${name}-nome`)}</td><td>${getV(`${name}-mat`)}</td>`;
+                html += `<td>${window.escapeHtmlNotif(getV(`${name}-nome`))}</td><td>${window.escapeHtmlNotif(getV(`${name}-mat`))}</td>`;
             } else {
                 const val = getRadioValue(name);
                 html += `<td style="text-align:center;font-weight:bold;">${val === 'SIM' ? 'X' : ''}</td><td style="text-align:center;font-weight:bold;">${val === 'NÃO' ? 'X' : ''}</td>`;
@@ -812,18 +814,18 @@ function montarHtmlLaudoMolde23(tag) {
             <tr><th>PLACAS</th><th>SAÍDA MÁQUINA</th><th>SAÍDA OFICINA</th>
                 <th>REDUTORES</th><th>SAIR MÁQUINA</th><th>SAIR OFICINA</th>
                 <th>CILINDROS</th><th>SAIR MÁQUINA</th><th>SAIR OFICINA</th></tr>
-            <tr><td>FIXA:</td><td style="text-align:center;">${getV('id-placa-fixa-mq')}</td><td style="text-align:center;">${getV('id-placa-fixa-of')}</td>
-                <td>SUP DIREITO</td><td style="text-align:center;">${getV('id-red-sup-dir-mq')}</td><td style="text-align:center;">${getV('id-red-sup-dir-of')}</td>
-                <td>SUP DIR</td><td style="text-align:center;">${getV('id-cil-sup-dir-mq')}</td><td style="text-align:center;">${getV('id-cil-sup-dir-of')}</td></tr>
-            <tr><td>MÓVEL</td><td style="text-align:center;">${getV('id-placa-movel-mq')}</td><td style="text-align:center;">${getV('id-placa-movel-of')}</td>
-                <td>INF. DIREITO</td><td style="text-align:center;">${getV('id-red-inf-dir-mq')}</td><td style="text-align:center;">${getV('id-red-inf-dir-of')}</td>
-                <td>INF. DIR</td><td style="text-align:center;">${getV('id-cil-inf-dir-mq')}</td><td style="text-align:center;">${getV('id-cil-inf-dir-of')}</td></tr>
-            <tr><td>DIREITA:</td><td style="text-align:center;">${getV('id-placa-dir-mq')}</td><td style="text-align:center;">${getV('id-placa-dir-of')}</td>
-                <td>SUP. ESQ</td><td style="text-align:center;">${getV('id-red-sup-esq-mq')}</td><td style="text-align:center;">${getV('id-red-sup-esq-of')}</td>
-                <td>SUP. ESQ</td><td style="text-align:center;">${getV('id-cil-sup-esq-mq')}</td><td style="text-align:center;">${getV('id-cil-sup-esq-of')}</td></tr>
-            <tr><td>ESQUERDA:</td><td style="text-align:center;">${getV('id-placa-esq-mq')}</td><td style="text-align:center;">${getV('id-placa-esq-of')}</td>
-                <td>INF. ESQ</td><td style="text-align:center;">${getV('id-red-inf-esq-mq')}</td><td style="text-align:center;">${getV('id-red-inf-esq-of')}</td>
-                <td>INF. ESQ</td><td style="text-align:center;">${getV('id-cil-inf-esq-mq')}</td><td style="text-align:center;">${getV('id-cil-inf-esq-of')}</td></tr>
+            <tr><td>FIXA:</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-placa-fixa-mq'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-placa-fixa-of'))}</td>
+                <td>SUP DIREITO</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-red-sup-dir-mq'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-red-sup-dir-of'))}</td>
+                <td>SUP DIR</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-cil-sup-dir-mq'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-cil-sup-dir-of'))}</td></tr>
+            <tr><td>MÓVEL</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-placa-movel-mq'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-placa-movel-of'))}</td>
+                <td>INF. DIREITO</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-red-inf-dir-mq'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-red-inf-dir-of'))}</td>
+                <td>INF. DIR</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-cil-inf-dir-mq'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-cil-inf-dir-of'))}</td></tr>
+            <tr><td>DIREITA:</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-placa-dir-mq'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-placa-dir-of'))}</td>
+                <td>SUP. ESQ</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-red-sup-esq-mq'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-red-sup-esq-of'))}</td>
+                <td>SUP. ESQ</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-cil-sup-esq-mq'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-cil-sup-esq-of'))}</td></tr>
+            <tr><td>ESQUERDA:</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-placa-esq-mq'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-placa-esq-of'))}</td>
+                <td>INF. ESQ</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-red-inf-esq-mq'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-red-inf-esq-of'))}</td>
+                <td>INF. ESQ</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-cil-inf-esq-mq'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('id-cil-inf-esq-of'))}</td></tr>
         </table>
 
         <!-- INSPEÇÃO DE RECEBIMENTO -->
@@ -851,18 +853,18 @@ function montarHtmlLaudoMolde23(tag) {
 
         <!-- DIÂMETROS DOS ROLOS (CHEGADA) -->
         <div class="titulo-secao">6. DIÂMETROS DOS ROLOS - CHEGADA</div>
-        <table><tr><th>LADO FIXO</th><td style="text-align:center;">${getV('dia-c-fixo')}</td><th>LADO MÓVEL</th><td style="text-align:center;">${getV('dia-c-movel')}</td></tr>
-            <tr><th>LADO DIREITO</th><td style="text-align:center;">${getV('dia-c-dir')}</td><th>LADO ESQUERDO</th><td style="text-align:center;">${getV('dia-c-esq')}</td></tr>
+        <table><tr><th>LADO FIXO</th><td style="text-align:center;">${window.escapeHtmlNotif(getV('dia-c-fixo'))}</td><th>LADO MÓVEL</th><td style="text-align:center;">${window.escapeHtmlNotif(getV('dia-c-movel'))}</td></tr>
+            <tr><th>LADO DIREITO</th><td style="text-align:center;">${window.escapeHtmlNotif(getV('dia-c-dir'))}</td><th>LADO ESQUERDO</th><td style="text-align:center;">${window.escapeHtmlNotif(getV('dia-c-esq'))}</td></tr>
         </table>
         
         <div class="titulo-secao">6.1 DIÂMETROS DOS ROLOS - SAÍDA</div>
-        <table><tr><th>LADO FIXO</th><td style="text-align:center;">${getV('dia-s-fixo')}</td><th>LADO MÓVEL</th><td style="text-align:center;">${getV('dia-s-movel')}</td></tr>
-            <tr><th>LADO DIREITO</th><td style="text-align:center;">${getV('dia-s-dir')}</td><th>LADO ESQUERDO</th><td style="text-align:center;">${getV('dia-s-esq')}</td></tr>
+        <table><tr><th>LADO FIXO</th><td style="text-align:center;">${window.escapeHtmlNotif(getV('dia-s-fixo'))}</td><th>LADO MÓVEL</th><td style="text-align:center;">${window.escapeHtmlNotif(getV('dia-s-movel'))}</td></tr>
+            <tr><th>LADO DIREITO</th><td style="text-align:center;">${window.escapeHtmlNotif(getV('dia-s-dir'))}</td><th>LADO ESQUERDO</th><td style="text-align:center;">${window.escapeHtmlNotif(getV('dia-s-esq'))}</td></tr>
         </table>
         
         <!-- ALINHAMENTO DOS ROLOS -->
         <div class="titulo-secao">7. ALINHAMENTO DOS ROLOS</div>
-        <table><tr><th>LADO FIXO</th><td style="text-align:center;">${getV('alinh-fixo')}</td><th>LADO MÓVEL</th><td style="text-align:center;">${getV('alinh-movel')}</td></tr></table>
+        <table><tr><th>LADO FIXO</th><td style="text-align:center;">${window.escapeHtmlNotif(getV('alinh-fixo'))}</td><th>LADO MÓVEL</th><td style="text-align:center;">${window.escapeHtmlNotif(getV('alinh-movel'))}</td></tr></table>
 
         <div class="quebra-pagina"></div>
 
@@ -872,13 +874,13 @@ function montarHtmlLaudoMolde23(tag) {
             ${[1,2,3,4,5,6,7].map(i => `<tr><td style="text-align:center;">${i}</td><td>${['VERIFICAR TAMPA DE PROTEÇÃO;','EFETUAR A TROCA DAS GAXETAS DE ISOLAÇÃO DO SENSOR','VERIFICAR PARAFUSO DE FIXAÇÃO DO SUPORTE DO SENSOR, TORQUE 50 NM;','VERIFICAR PARAFUSO DE FIXAÇÃO DA TAMPA DE PROTEÇÃO DO SENSOR, TORQUE 40 NM;','VERIFICAR ESTADO DE CONSERVAÇÃO E LIMPEZA;','TESTE DE ESTANQUIEDADE (5 BAR);','CHECK NA CONEXÕES DE ALIMENTAÇÃO DE ÁGUA;'][i-1]}</td><td style="text-align:center;">${getCheckboxValue(`sn-${i}`)==='OK'?'X':''}</td></tr>`).join('')}
         </table>
         <table><tr><th style="width:5%;">ITEM</th><th>DESCRIÇÃO</th><th>VALOR</th></tr>
-            ${[8,9,10,11,12,13,14,15].map(i => `<tr><td style="text-align:center;">${i}</td><td>${['VERIFICAR RESISTÊNCIA ENTRE OS PINOS 1-2 LIMITES DE Ω (140...300)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 3-4 LIMITES DE Ω (0...2)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 1-5 LIMITES DE Ω (70...150)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 3-5 LIMITES DE Ω (0...1)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 7-8 LIMITES DE Ω (0...1)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 8-9 LIMITES DE Ω (100...140)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 15-16 LIMITES DE Ω (3...10)','VERIFICAR RESISTÊNCIA NO PINO 10 E A CARCAÇA DO SENSOR LIMITE DE Ω (0...1)'][i-8]}</td><td style="text-align:center;">${getV(`sn-${i}`)}</td></tr>`).join('')}
+            ${[8,9,10,11,12,13,14,15].map(i => `<tr><td style="text-align:center;">${i}</td><td>${['VERIFICAR RESISTÊNCIA ENTRE OS PINOS 1-2 LIMITES DE Ω (140...300)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 3-4 LIMITES DE Ω (0...2)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 1-5 LIMITES DE Ω (70...150)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 3-5 LIMITES DE Ω (0...1)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 7-8 LIMITES DE Ω (0...1)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 8-9 LIMITES DE Ω (100...140)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 15-16 LIMITES DE Ω (3...10)','VERIFICAR RESISTÊNCIA NO PINO 10 E A CARCAÇA DO SENSOR LIMITE DE Ω (0...1)'][i-8]}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV(`sn-${i}`))}</td></tr>`).join('')}
         </table>
 
         <!-- ISOLAÇÃO DOS SENSORES -->
         <div class="titulo-secao">9. ISOLAÇÃO DOS SENSORES DE NÍVEL</div>
         <table><tr><th>PINO CONECTOR</th><th>LIMITE</th><th>VALOR</th></tr>
-            ${["5 e 6","5 e 8","5 e 10","5 e 15","6 e 8","6 e 10","6 e 15","8 e 10","8 e 15","10 e 15"].map((p,i) => `<tr><td style="text-align:center;">${p}</td><td style="text-align:center;">>10 MΩ</td><td style="text-align:center;">${getV(`iso-${i}`)}</td></tr>`).join('')}
+            ${["5 e 6","5 e 8","5 e 10","5 e 15","6 e 8","6 e 10","6 e 15","8 e 10","8 e 15","10 e 15"].map((p,i) => `<tr><td style="text-align:center;">${p}</td><td style="text-align:center;">>10 MΩ</td><td style="text-align:center;">${window.escapeHtmlNotif(getV(`iso-${i}`))}</td></tr>`).join('')}
         </table>
 
         <div class="quebra-pagina"></div>
@@ -886,26 +888,26 @@ function montarHtmlLaudoMolde23(tag) {
         <!-- TERMOPARES -->
         <div class="titulo-secao">10. TERMOPARES</div>
         <table><tr><th>DESCRIÇÃO</th><th>CONDIÇÃO</th></tr>
-            <tr><td>VERIFICAR PARAFUSOS DA BASE DAS CAIXAS DOS TERMOPARES</td><td style="text-align:center;">${getV('termo-cond1')}</td></tr>
-            <tr><td>TESTE DE AR (INDICAÇÃO WAMBOY)</td><td style="text-align:center;">${getV('termo-cond2')}</td></tr>
-            <tr><td>ESTADO/LIMPEZA</td><td style="text-align:center;">${getV('termo-cond3')}</td></tr>
-            <tr><td>BORRACHAS E VEDAÇÕES</td><td style="text-align:center;">${getV('termo-cond4')}</td></tr>
-            <tr><td>TRAVAS</td><td style="text-align:center;">${getV('termo-cond5')}</td></tr>
+            <tr><td>VERIFICAR PARAFUSOS DA BASE DAS CAIXAS DOS TERMOPARES</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('termo-cond1'))}</td></tr>
+            <tr><td>TESTE DE AR (INDICAÇÃO WAMBOY)</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('termo-cond2'))}</td></tr>
+            <tr><td>ESTADO/LIMPEZA</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('termo-cond3'))}</td></tr>
+            <tr><td>BORRACHAS E VEDAÇÕES</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('termo-cond4'))}</td></tr>
+            <tr><td>TRAVAS</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('termo-cond5'))}</td></tr>
         </table>
 
         <!-- CHECK JB2 -->
         <div class="titulo-secao">11. CHECK DO JB 2 E VÁLVULAS</div>
         <table><tr><th>DESCRIÇÃO (VÁLVULA PROPORCIONAL)</th><th>STATUS</th><th>OBS</th></tr>
-            <tr><td>SUPERIOR ESQUERDO</td><td style="text-align:center;">${getV('vp-se')}</td><td>${getV('vp-se-obs')}</td></tr>
-            <tr><td>SUPERIOR DIREITO</td><td style="text-align:center;">${getV('vp-sd')}</td><td>${getV('vp-sd-obs')}</td></tr>
-            <tr><td>INFERIOR ESQUERDO</td><td style="text-align:center;">${getV('vp-ie')}</td><td>${getV('vp-ie-obs')}</td></tr>
-            <tr><td>INFERIOR DIREITO</td><td style="text-align:center;">${getV('vp-id')}</td><td>${getV('vp-id-obs')}</td></tr>
+            <tr><td>SUPERIOR ESQUERDO</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('vp-se'))}</td><td>${window.escapeHtmlNotif(getV('vp-se-obs'))}</td></tr>
+            <tr><td>SUPERIOR DIREITO</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('vp-sd'))}</td><td>${window.escapeHtmlNotif(getV('vp-sd-obs'))}</td></tr>
+            <tr><td>INFERIOR ESQUERDO</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('vp-ie'))}</td><td>${window.escapeHtmlNotif(getV('vp-ie-obs'))}</td></tr>
+            <tr><td>INFERIOR DIREITO</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('vp-id'))}</td><td>${window.escapeHtmlNotif(getV('vp-id-obs'))}</td></tr>
         </table>
 
         <!-- RESISTÊNCIA DAS PLACAS -->
         <div class="titulo-secao">12. TESTE DE RESISTÊNCIA DAS PLACAS</div>
         <table><tr><th>PLACA MÓVEL</th><th>PLACA FIXA</th><th>ESTREITA DIR</th><th>ESTREITA ESQ</th></tr>
-            <tr><td style="text-align:center;">${getV('res-placa-movel')}</td><td style="text-align:center;">${getV('res-placa-fixa')}</td><td style="text-align:center;">${getV('res-placa-est-dir')}</td><td style="text-align:center;">${getV('res-placa-est-esq')}</td></tr>
+            <tr><td style="text-align:center;">${window.escapeHtmlNotif(getV('res-placa-movel'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('res-placa-fixa'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('res-placa-est-dir'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('res-placa-est-esq'))}</td></tr>
         </table>
 
         <div class="quebra-pagina"></div>
@@ -913,28 +915,28 @@ function montarHtmlLaudoMolde23(tag) {
         <!-- PERITAGEM LARGAS - ENTRADA -->
         <div class="titulo-secao">13. PERITAGEM PLACAS LARGAS - ENTRADA / SAÍDA</div>
         <table><tr><th colspan="7">FACE NORTE - ENTRADA</th></tr><tr><th>1600</th><th>1300</th><th>1000</th><th>LINHA CENTRO</th><th>1000</th><th>1300</th><th>1600</th></tr>
-            ${[1,2,3].map(l => `<tr>${[1,2,3,4,5,6,7].map(c => `<td style="text-align:center;">${getV(`pl-ent-n${l}-${c}`)}</td>`).join('')}</tr>`).join('')}
+            ${[1,2,3].map(l => `<tr>${[1,2,3,4,5,6,7].map(c => `<td style="text-align:center;">${window.escapeHtmlNotif(getV(`pl-ent-n${l}-${c}`))}</td>`).join('')}</tr>`).join('')}
         </table>
         
         <!-- PERITAGEM ESTREITAS -->
         <div class="titulo-secao">14. PERITAGEM PLACAS ESTREITAS - CHEGADA / SAÍDA</div>
         <div>ESQ AFASTADA: ${getRadioValue('pe-c-esq-af')} | DIR AFASTADA: ${getRadioValue('pe-c-dir-af')}</div>
         <table><tr><th>PONTO</th><th>ESQUERDA</th><th>DIREITA</th></tr>
-            ${[1,2,3].map(i => `<tr><td style="text-align:center;">${i}</td><td style="text-align:center;">${getV(`pe-c-e${i}`)}</td><td style="text-align:center;">${getV(`pe-c-d${i}`)}</td></tr>`).join('')}
+            ${[1,2,3].map(i => `<tr><td style="text-align:center;">${i}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV(`pe-c-e${i}`))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV(`pe-c-d${i}`))}</td></tr>`).join('')}
         </table>
 
         <!-- AJUSTE DE CHAVETAS E RESFRIAMENTO -->
         <div class="titulo-secao">15. AJUSTE DE CHAVETAS</div>
         <table><tr><th>PLACA</th><th>LADO</th><th>A</th><th>B</th><th>NOME</th><th>REG</th></tr>
-            <tr><td rowspan="2" style="text-align:center;font-weight:bold;">ESQUERDA</td><td style="text-align:center;">A</td><td style="text-align:center;">${getV('chav-esq-a-a')}</td><td style="text-align:center;">${getV('chav-esq-a-b')}</td><td style="text-align:center;">${getV('chav-esq-a-nome')}</td><td style="text-align:center;">${getV('chav-esq-a-reg')}</td></tr>
-            <tr><td style="text-align:center;">B</td><td style="text-align:center;">${getV('chav-esq-b-a')}</td><td style="text-align:center;">${getV('chav-esq-b-b')}</td><td style="text-align:center;">${getV('chav-esq-b-nome')}</td><td style="text-align:center;">${getV('chav-esq-b-reg')}</td></tr>
-            <tr><td rowspan="2" style="text-align:center;font-weight:bold;">DIREITA</td><td style="text-align:center;">A</td><td style="text-align:center;">${getV('chav-dir-a-a')}</td><td style="text-align:center;">${getV('chav-dir-a-b')}</td><td style="text-align:center;">${getV('chav-dir-a-nome')}</td><td style="text-align:center;">${getV('chav-dir-a-reg')}</td></tr>
-            <tr><td style="text-align:center;">B</td><td style="text-align:center;">${getV('chav-dir-b-a')}</td><td style="text-align:center;">${getV('chav-dir-b-b')}</td><td style="text-align:center;">${getV('chav-dir-b-nome')}</td><td style="text-align:center;">${getV('chav-dir-b-reg')}</td></tr>
+            <tr><td rowspan="2" style="text-align:center;font-weight:bold;">ESQUERDA</td><td style="text-align:center;">A</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-esq-a-a'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-esq-a-b'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-esq-a-nome'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-esq-a-reg'))}</td></tr>
+            <tr><td style="text-align:center;">B</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-esq-b-a'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-esq-b-b'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-esq-b-nome'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-esq-b-reg'))}</td></tr>
+            <tr><td rowspan="2" style="text-align:center;font-weight:bold;">DIREITA</td><td style="text-align:center;">A</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-dir-a-a'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-dir-a-b'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-dir-a-nome'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-dir-a-reg'))}</td></tr>
+            <tr><td style="text-align:center;">B</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-dir-b-a'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-dir-b-b'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-dir-b-nome'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-dir-b-reg'))}</td></tr>
         </table>
         
         <div class="titulo-secao">16. AVALIAÇÃO DO SISTEMA DE RESFRIAMENTO</div>
-        <div><strong>FACE NORTE / FIXA:</strong> ${getV('ref-norte')}</div>
-        <div><strong>FACE SUL / MÓVEL:</strong> ${getV('ref-sul')}</div>
+        <div><strong>FACE NORTE / FIXA:</strong> ${window.escapeHtmlNotif(getV('ref-norte'))}</div>
+        <div><strong>FACE SUL / MÓVEL:</strong> ${window.escapeHtmlNotif(getV('ref-sul'))}</div>
 
         <!-- ASSINATURAS -->
         <div style="margin-top:40px; display:flex; justify-content:space-around; text-align:center; font-size:10px; font-weight:bold;">

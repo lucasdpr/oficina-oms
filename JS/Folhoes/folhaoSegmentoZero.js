@@ -468,12 +468,14 @@ window.trocarAbaSegZero = function(evt, abaId) {
 // 12. MONTA O HTML DO LAUDO (PDF) - SEGMENTO ZERO
 // ==============================================================
 function montarHtmlLaudoSegZero(tag) {
-    const dtInicio = getV('segzero-data-inicio') || new Date().toLocaleDateString('pt-BR');
-    const dtFim = getV('segzero-data-fim') || new Date().toLocaleDateString('pt-BR');
-    const numSeg = getV('segzero-num-segmento') || '______';
+    // 🔧 CORREÇÃO (XSS armazenado - auditoria Go-Live): campos de texto livre
+    // escapados antes de entrar no HTML do laudo (ver escapeHtmlNotif em notificacoes.js).
+    const dtInicio = window.escapeHtmlNotif(getV('segzero-data-inicio')) || new Date().toLocaleDateString('pt-BR');
+    const dtFim = window.escapeHtmlNotif(getV('segzero-data-fim')) || new Date().toLocaleDateString('pt-BR');
+    const numSeg = window.escapeHtmlNotif(getV('segzero-num-segmento')) || '______';
     const veio = document.getElementById('segzero-veio')?.value || '';
-    const desempenho = getV('segzero-desempenho') || '';
-    const motivo = getV('segzero-motivo') || '_______________';
+    const desempenho = window.escapeHtmlNotif(getV('segzero-desempenho')) || '';
+    const motivo = window.escapeHtmlNotif(getV('segzero-motivo')) || '_______________';
     const tipoExec = document.getElementById('segzero-tipo-execucao')?.value || 'GERAL';
 
     function gerarChecklistPDF(itens, prefixo) {
@@ -504,12 +506,12 @@ function montarHtmlLaudoSegZero(tag) {
     function gerarGapPDF(prefixo) {
         let html = '';
         for (let i = 1; i <= 10; i++) {
-            const pos2 = i >= 5 ? '-' : getV(`${prefixo}-${i}-p2`);
+            const pos2 = i >= 5 ? '-' : window.escapeHtmlNotif(getV(`${prefixo}-${i}-p2`));
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}º Conj. Rolo</td>
                 <td style="text-align:center; border:1px solid #000; padding:3px;">${REF_GAP_SEGZERO}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${prefixo}-${i}-p1`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`${prefixo}-${i}-p1`))}</td>
                 <td style="text-align:center; border:1px solid #000; padding:3px;">${pos2}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${prefixo}-${i}-p3`)}</td></tr>`;
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`${prefixo}-${i}-p3`))}</td></tr>`;
         }
         return html;
     }
@@ -534,11 +536,11 @@ function montarHtmlLaudoSegZero(tag) {
     function gerarPassLinePDF() {
         let html = '';
         for (let i = 1; i <= 10; i++) {
-            const pos2 = i >= 5 ? '-' : getV(`segzero-passline-${i}-p2`);
+            const pos2 = i >= 5 ? '-' : window.escapeHtmlNotif(getV(`segzero-passline-${i}-p2`));
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}°</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`segzero-passline-${i}-p1`)}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`segzero-passline-${i}-p1`))}</td>
                 <td style="text-align:center; border:1px solid #000; padding:3px;">${pos2}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`segzero-passline-${i}-p3`)}</td></tr>`;
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`segzero-passline-${i}-p3`))}</td></tr>`;
         }
         return html;
     }
@@ -561,11 +563,11 @@ function montarHtmlLaudoSegZero(tag) {
         let html = '';
         for (let i = 1; i <= 10; i++) {
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${prefixo}-med-${i}-n1`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${prefixo}-med-${i}-m1`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${prefixo}-med-${i}-n2`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${prefixo}-med-${i}-m2`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${prefixo}-med-${i}-classe`)}</td></tr>`;
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`${prefixo}-med-${i}-n1`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`${prefixo}-med-${i}-m1`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`${prefixo}-med-${i}-n2`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`${prefixo}-med-${i}-m2`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`${prefixo}-med-${i}-classe`))}</td></tr>`;
         }
         return html;
     }
@@ -574,7 +576,7 @@ function montarHtmlLaudoSegZero(tag) {
         return materiaisSegZero.map((m, i) => `
             <tr><td style="border:1px solid #000; padding:3px; font-size:9px;">${m.nome}</td>
                 <td style="text-align:center; border:1px solid #000; padding:3px;">${m.codigo}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`segzero-mat-qtd-${i}`)}</td></tr>`).join('');
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`segzero-mat-qtd-${i}`))}</td></tr>`).join('');
     }
 
     // ==============================================================
@@ -616,7 +618,7 @@ function montarHtmlLaudoSegZero(tag) {
 
         <div class="titulo-secao">1. INSPEÇÃO DE CHEGADA</div>
         <table>${gerarChecklistPDF(itensChegadaSegZero, 'segzero-cheg')}</table>
-        <p style="font-size:9px;"><strong>Observações:</strong> ${getV('segzero-obs-chegada')}</p>
+        <p style="font-size:9px;"><strong>Observações:</strong> ${window.escapeHtmlNotif(getV('segzero-obs-chegada'))}</p>
 
         <div class="quebra-pagina"></div>
 
@@ -643,10 +645,10 @@ function montarHtmlLaudoSegZero(tag) {
             <tr><td><strong>Rolo ø 200mm – 120 F7</strong></td><td>(Mínimo) 120,05mm</td><td>(Máximo) 120,09mm</td></tr>
         </table>
         <table>
-            <tr><td><strong>Base Superior (diâmetro):</strong> ${getV('segzero-obs-diam-sup')}</td></tr>
-            <tr><td><strong>Base Inferior (diâmetro):</strong> ${getV('segzero-obs-diam-inf')}</td></tr>
-            <tr><td><strong>Base Superior (empeno):</strong> ${getV('segzero-obs-empeno-sup')}</td></tr>
-            <tr><td><strong>Base Inferior (empeno):</strong> ${getV('segzero-obs-empeno-inf')}</td></tr>
+            <tr><td><strong>Base Superior (diâmetro):</strong> ${window.escapeHtmlNotif(getV('segzero-obs-diam-sup'))}</td></tr>
+            <tr><td><strong>Base Inferior (diâmetro):</strong> ${window.escapeHtmlNotif(getV('segzero-obs-diam-inf'))}</td></tr>
+            <tr><td><strong>Base Superior (empeno):</strong> ${window.escapeHtmlNotif(getV('segzero-obs-empeno-sup'))}</td></tr>
+            <tr><td><strong>Base Inferior (empeno):</strong> ${window.escapeHtmlNotif(getV('segzero-obs-empeno-inf'))}</td></tr>
         </table>
 
         <div class="quebra-pagina"></div>
@@ -709,7 +711,7 @@ function montarHtmlLaudoSegZero(tag) {
 
         <div class="titulo-secao">8. INSPEÇÃO DE SAÍDA</div>
         <table>${gerarChecklistPDF(itensSaidaSegZero, 'segzero-sai')}</table>
-        <p style="font-size:9px;"><strong>Observações:</strong> ${getV('segzero-obs-saida')}</p>
+        <p style="font-size:9px;"><strong>Observações:</strong> ${window.escapeHtmlNotif(getV('segzero-obs-saida'))}</p>
 
         <div class="quebra-pagina"></div>
 
