@@ -450,11 +450,13 @@ async function preencherFolhaoR2ComChecklistExecucao(id) {
 // 7. MONTA O HTML DO LAUDO (PDF) - STRAIGHTENER R2
 // ==============================================================
 function montarHtmlLaudoR2(tag) {
+    // 🔧 CORREÇÃO (XSS armazenado - auditoria Go-Live): campos de texto livre
+    // escapados antes de entrar no HTML do laudo (ver escapeHtmlNotif em notificacoes.js).
     const hoje = new Date().toLocaleDateString('pt-BR');
-    const dataInicio = document.getElementById('r2-data-inicio')?.value || hoje;
-    const dataFim = document.getElementById('r2-data-fim')?.value || hoje;
-    const motivo = document.getElementById('r2-motivo')?.value || 'Manutenção';
-    const numSegmento = document.getElementById('r2-num-segmento')?.value || '';
+    const dataInicio = window.escapeHtmlNotif(document.getElementById('r2-data-inicio')?.value) || hoje;
+    const dataFim = window.escapeHtmlNotif(document.getElementById('r2-data-fim')?.value) || hoje;
+    const motivo = window.escapeHtmlNotif(document.getElementById('r2-motivo')?.value) || 'Manutenção';
+    const numSegmento = window.escapeHtmlNotif(document.getElementById('r2-num-segmento')?.value) || '';
 
     let html = `
     <style>
@@ -520,9 +522,9 @@ function montarHtmlLaudoR2(tag) {
     for (let i = 1; i <= 7; i++) {
         html += `<tr>
             <td style="text-align:center; font-weight:bold;">${i}</td>
-            <td style="text-align:center;">${document.getElementById(`gap-r2-cheg-a-${i}`)?.value || ''}</td>
-            <td style="text-align:center;">${document.getElementById(`gap-r2-cheg-b-${i}`)?.value || ''}</td>
-            <td style="text-align:center;">${document.getElementById(`gap-r2-cheg-c-${i}`)?.value || ''}</td>
+            <td style="text-align:center;">${window.escapeHtmlNotif(document.getElementById(`gap-r2-cheg-a-${i}`)?.value) || ''}</td>
+            <td style="text-align:center;">${window.escapeHtmlNotif(document.getElementById(`gap-r2-cheg-b-${i}`)?.value) || ''}</td>
+            <td style="text-align:center;">${window.escapeHtmlNotif(document.getElementById(`gap-r2-cheg-c-${i}`)?.value) || ''}</td>
         </tr>`;
     }
     html += `</table>`;
@@ -533,9 +535,9 @@ function montarHtmlLaudoR2(tag) {
     for (let i = 1; i <= 7; i++) {
         html += `<tr>
             <td style="text-align:center; font-weight:bold;">${i}</td>
-            <td style="text-align:center;">${document.getElementById(`gap-r2-sai-a-${i}`)?.value || ''}</td>
-            <td style="text-align:center;">${document.getElementById(`gap-r2-sai-b-${i}`)?.value || ''}</td>
-            <td style="text-align:center;">${document.getElementById(`gap-r2-sai-c-${i}`)?.value || ''}</td>
+            <td style="text-align:center;">${window.escapeHtmlNotif(document.getElementById(`gap-r2-sai-a-${i}`)?.value) || ''}</td>
+            <td style="text-align:center;">${window.escapeHtmlNotif(document.getElementById(`gap-r2-sai-b-${i}`)?.value) || ''}</td>
+            <td style="text-align:center;">${window.escapeHtmlNotif(document.getElementById(`gap-r2-sai-c-${i}`)?.value) || ''}</td>
         </tr>`;
     }
     html += `</table>`;
@@ -547,9 +549,9 @@ function montarHtmlLaudoR2(tag) {
             html += `<tr>
                 <td style="text-align:center; font-weight:bold;">${index + 1}º</td>
                 <td style="text-align:center; font-weight:bold;">${ref}</td>
-                <td style="text-align:center;">${document.getElementById(`pl-r2-${pfx}-a-${index}`)?.value || ''}</td>
-                <td style="text-align:center;">${document.getElementById(`pl-r2-${pfx}-b-${index}`)?.value || ''}</td>
-                <td style="text-align:center;">${document.getElementById(`pl-r2-${pfx}-c-${index}`)?.value || ''}</td>
+                <td style="text-align:center;">${window.escapeHtmlNotif(document.getElementById(`pl-r2-${pfx}-a-${index}`)?.value) || ''}</td>
+                <td style="text-align:center;">${window.escapeHtmlNotif(document.getElementById(`pl-r2-${pfx}-b-${index}`)?.value) || ''}</td>
+                <td style="text-align:center;">${window.escapeHtmlNotif(document.getElementById(`pl-r2-${pfx}-c-${index}`)?.value) || ''}</td>
             </tr>`;
         });
         html += `</table>`;
@@ -571,8 +573,8 @@ function montarHtmlLaudoR2(tag) {
     ['sup', 'inf'].forEach(base => {
         html += `<h4 style="font-size:11px;">Base ${base === 'sup' ? 'Superior' : 'Inferior'}</h4><table><tr><th>Posição</th><th>Bico A</th><th>Bico B</th></tr>`;
         for (let i = 1; i <= 7; i++) {
-            let a = document.getElementById(`cang-r2-${base}-a-${i}`)?.value || '';
-            let b = document.getElementById(`cang-r2-${base}-b-${i}`)?.value || '';
+            let a = window.escapeHtmlNotif(document.getElementById(`cang-r2-${base}-a-${i}`)?.value) || '';
+            let b = window.escapeHtmlNotif(document.getElementById(`cang-r2-${base}-b-${i}`)?.value) || '';
             html += `<tr><td style="text-align:center; font-weight:bold;">${i}ª</td><td style="text-align:center;">${a}</td><td style="text-align:center;">${b}</td></tr>`;
         }
         html += `</table>`;
@@ -589,11 +591,11 @@ function montarHtmlLaudoR2(tag) {
         html += `<h4 style="font-size:11px;">Cilindro ${tipo.label}</h4><table><tr><th>Pos</th><th>Número</th><th>Produção</th><th>OK</th><th>Ñ/OK</th><th>Observação</th></tr>`;
         const posicoes = tipo.id === 'motriz' ? ['A', 'B'] : ['A', 'B', 'C', 'D'];
         posicoes.forEach(pos => {
-            let num = document.getElementById(`cil-r2-${tipo.id}-num-${pos}`)?.value || '';
-            let prod = document.getElementById(`cil-r2-${tipo.id}-prod-${pos}`)?.value || '';
+            let num = window.escapeHtmlNotif(document.getElementById(`cil-r2-${tipo.id}-num-${pos}`)?.value) || '';
+            let prod = window.escapeHtmlNotif(document.getElementById(`cil-r2-${tipo.id}-prod-${pos}`)?.value) || '';
             let ok = document.getElementById(`cil-r2-${tipo.id}-ok-${pos}`)?.checked ? 'X' : '';
             let nok = document.getElementById(`cil-r2-${tipo.id}-nok-${pos}`)?.checked ? 'X' : '';
-            let obs = document.getElementById(`cil-r2-${tipo.id}-obs-${pos}`)?.value || '';
+            let obs = window.escapeHtmlNotif(document.getElementById(`cil-r2-${tipo.id}-obs-${pos}`)?.value) || '';
             html += `<tr><td style="text-align:center; font-weight:bold;">${pos}</td><td style="text-align:center;">${num}</td><td style="text-align:center;">${prod}</td><td style="text-align:center;">${ok}</td><td style="text-align:center;">${nok}</td><td>${obs}</td></tr>`;
         });
         html += `</table>`;
@@ -606,8 +608,8 @@ function montarHtmlLaudoR2(tag) {
     function gerarLubR2PDF(pfx) {
         let html = `<table><tr><th>Rolo</th><th>Status</th><th>Observação</th></tr>`;
         for (let i = 0; i < 7; i++) {
-            let st = document.getElementById(`lub-r2-${pfx}-st-${i}`)?.value || '';
-            let obs = document.getElementById(`lub-r2-${pfx}-obs-${i}`)?.value || '';
+            let st = window.escapeHtmlNotif(document.getElementById(`lub-r2-${pfx}-st-${i}`)?.value) || '';
+            let obs = window.escapeHtmlNotif(document.getElementById(`lub-r2-${pfx}-obs-${i}`)?.value) || '';
             html += `<tr><td style="text-align:center;">${i + 1}º</td><td style="text-align:center;">${st}</td><td>${obs}</td></tr>`;
         }
         html += `</table>`;
@@ -621,10 +623,10 @@ function montarHtmlLaudoR2(tag) {
     function gerarRolR2PDF(pfx) {
         let html = `<table><tr><th>Pos</th><th>1</th><th>2</th><th>3</th><th>4</th></tr>`;
         for (let i = 0; i < 7; i++) {
-            let p1 = document.getElementById(`rol-r2-${pfx}-1-${i}`)?.value || '';
-            let p2 = document.getElementById(`rol-r2-${pfx}-2-${i}`)?.value || '';
-            let p3 = document.getElementById(`rol-r2-${pfx}-3-${i}`)?.value || '';
-            let p4 = document.getElementById(`rol-r2-${pfx}-4-${i}`)?.value || '';
+            let p1 = window.escapeHtmlNotif(document.getElementById(`rol-r2-${pfx}-1-${i}`)?.value) || '';
+            let p2 = window.escapeHtmlNotif(document.getElementById(`rol-r2-${pfx}-2-${i}`)?.value) || '';
+            let p3 = window.escapeHtmlNotif(document.getElementById(`rol-r2-${pfx}-3-${i}`)?.value) || '';
+            let p4 = window.escapeHtmlNotif(document.getElementById(`rol-r2-${pfx}-4-${i}`)?.value) || '';
             html += `<tr><td style="text-align:center; font-weight:bold;">${i + 1}</td>
                 <td style="text-align:center;">${p1}</td><td style="text-align:center;">${p2}</td>
                 <td style="text-align:center;">${p3}</td><td style="text-align:center;">${p4}</td></tr>`;
@@ -645,13 +647,13 @@ function montarHtmlLaudoR2(tag) {
     function gerarMedR2PDF(pfx) {
         let html = `<table><tr><th>R</th><th>N1</th><th>M1</th><th>N2</th><th>M2</th><th>N3</th><th>M3</th><th>Classe</th></tr>`;
         for (let i = 0; i < 7; i++) {
-            let n1 = document.getElementById(`med-r2-${pfx}-n1-${i}`)?.value || '';
-            let m1 = document.getElementById(`med-r2-${pfx}-m1-${i}`)?.value || '';
-            let n2 = document.getElementById(`med-r2-${pfx}-n2-${i}`)?.value || '';
-            let m2 = document.getElementById(`med-r2-${pfx}-m2-${i}`)?.value || '';
-            let n3 = document.getElementById(`med-r2-${pfx}-n3-${i}`)?.value || '';
-            let m3 = document.getElementById(`med-r2-${pfx}-m3-${i}`)?.value || '';
-            let cls = document.getElementById(`med-r2-${pfx}-cls-${i}`)?.value || '';
+            let n1 = window.escapeHtmlNotif(document.getElementById(`med-r2-${pfx}-n1-${i}`)?.value) || '';
+            let m1 = window.escapeHtmlNotif(document.getElementById(`med-r2-${pfx}-m1-${i}`)?.value) || '';
+            let n2 = window.escapeHtmlNotif(document.getElementById(`med-r2-${pfx}-n2-${i}`)?.value) || '';
+            let m2 = window.escapeHtmlNotif(document.getElementById(`med-r2-${pfx}-m2-${i}`)?.value) || '';
+            let n3 = window.escapeHtmlNotif(document.getElementById(`med-r2-${pfx}-n3-${i}`)?.value) || '';
+            let m3 = window.escapeHtmlNotif(document.getElementById(`med-r2-${pfx}-m3-${i}`)?.value) || '';
+            let cls = window.escapeHtmlNotif(document.getElementById(`med-r2-${pfx}-cls-${i}`)?.value) || '';
             html += `<tr><td style="text-align:center; font-weight:bold;">${i + 1}</td>
                 <td style="text-align:center;">${n1}</td><td style="text-align:center;">${m1}</td>
                 <td style="text-align:center;">${n2}</td><td style="text-align:center;">${m2}</td>
@@ -678,9 +680,9 @@ function montarHtmlLaudoR2(tag) {
     manutencaoR2.forEach((tarefa, index) => {
         let p = document.getElementById(`chk-r2-p-${index}`)?.checked ? 'X' : '';
         let g = document.getElementById(`chk-r2-g-${index}`)?.checked ? 'X' : '';
-        let resp = document.getElementById(`resp-r2-${index}`)?.value || '';
-        let mat = document.getElementById(`mat-r2-${index}`)?.value || '';
-        let dat = document.getElementById(`dat-r2-${index}`)?.value || '';
+        let resp = window.escapeHtmlNotif(document.getElementById(`resp-r2-${index}`)?.value) || '';
+        let mat = window.escapeHtmlNotif(document.getElementById(`mat-r2-${index}`)?.value) || '';
+        let dat = window.escapeHtmlNotif(document.getElementById(`dat-r2-${index}`)?.value) || '';
         html += `<tr>
             <td style="text-align:center; font-weight:bold;">${tarefa.item}</td>
             <td style="font-size:10px;">${tarefa.desc}</td>
@@ -697,15 +699,15 @@ function montarHtmlLaudoR2(tag) {
     html += `<div class="titulo-secao">14. MATERIAIS APLICADOS</div>
         <table><tr><th>Material</th><th>Quantidade</th></tr>`;
     for (let i = 0; i < 6; i++) {
-        let mat = document.getElementById(`mat-r2-${i}`)?.value || '';
-        let qtd = document.getElementById(`qtd-r2-${i}`)?.value || '';
+        let mat = window.escapeHtmlNotif(document.getElementById(`mat-r2-${i}`)?.value) || '';
+        let qtd = window.escapeHtmlNotif(document.getElementById(`qtd-r2-${i}`)?.value) || '';
         html += `<tr><td>${mat}</td><td style="text-align:center;">${qtd}</td></tr>`;
     }
     html += `</table><div class="quebra-pagina"></div>`;
 
     // Observações
     html += `<div class="titulo-secao">15. OBSERVAÇÕES</div>
-        <div style="border:1px solid #000; padding:10px; min-height:50px;">${document.getElementById('r2-observacoes')?.value || ''}</div>
+        <div style="border:1px solid #000; padding:10px; min-height:50px;">${window.escapeHtmlNotif(document.getElementById('r2-observacoes')?.value) || ''}</div>
     `;
 
     // Assinaturas

@@ -618,14 +618,16 @@ window.trocarAbaHorizontal = function(evt, abaId) {
 // 15. MONTA O HTML DO LAUDO (PDF) - HORIZONTAL
 // ==============================================================
 function montarHtmlLaudoHorizontal(tag) {
-    const dtInicio = getV('horiz-data-inicio') || new Date().toLocaleDateString('pt-BR');
-    const dtFim = getV('horiz-data-fim') || new Date().toLocaleDateString('pt-BR');
-    const numSeg = getV('horiz-num-segmento') || '______';
+    // 🔧 CORREÇÃO (XSS armazenado - auditoria Go-Live): campos de texto livre
+    // escapados antes de entrar no HTML do laudo (ver escapeHtmlNotif em notificacoes.js).
+    const dtInicio = window.escapeHtmlNotif(getV('horiz-data-inicio')) || new Date().toLocaleDateString('pt-BR');
+    const dtFim = window.escapeHtmlNotif(getV('horiz-data-fim')) || new Date().toLocaleDateString('pt-BR');
+    const numSeg = window.escapeHtmlNotif(getV('horiz-num-segmento')) || '______';
     const veio = document.getElementById('horiz-veio')?.value || '';
-    const motivo = getV('horiz-motivo') || '_______________';
+    const motivo = window.escapeHtmlNotif(getV('horiz-motivo')) || '_______________';
     const tipoExec = document.getElementById('horiz-tipo-execucao')?.value || 'GERAL';
-    const novaMeta = getV('horiz-nova-meta') || 'Manter Atual';
-    const lider = getV('horiz-lider-responsavel') || '_______________';
+    const novaMeta = window.escapeHtmlNotif(getV('horiz-nova-meta')) || 'Manter Atual';
+    const lider = window.escapeHtmlNotif(getV('horiz-lider-responsavel')) || '_______________';
 
     let itemParaMeta = BANCO_ATIVOS.find(a => a.id === tag);
     if (itemParaMeta && novaMeta && !isNaN(parseFloat(novaMeta))) {
@@ -665,9 +667,9 @@ function montarHtmlLaudoHorizontal(tag) {
         let html = '';
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hgap-${i}-a`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hgap-${i}-b`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hgap-${i}-c`)}</td></tr>`;
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`hgap-${i}-a`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`hgap-${i}-b`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`hgap-${i}-c`))}</td></tr>`;
         }
         return html;
     }
@@ -702,9 +704,9 @@ function montarHtmlLaudoHorizontal(tag) {
         refs.forEach((ref, i) => {
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i+1}°</td>
                 <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${ref}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${id}-a-${i}`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${id}-b-${i}`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${id}-c-${i}`)}</td></tr>`;
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`${id}-a-${i}`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`${id}-b-${i}`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`${id}-c-${i}`))}</td></tr>`;
         });
         return html;
     }
@@ -724,11 +726,11 @@ function montarHtmlLaudoHorizontal(tag) {
             t.pos.forEach(p => {
                 const ok = getRadioValue(`hcil-${t.prefix}-${p}`);
                 html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hcil-${t.prefix}-num-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hcil-${t.prefix}-prod-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`hcil-${t.prefix}-num-${p}`))}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`hcil-${t.prefix}-prod-${p}`))}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${ok === 'OK' ? 'X' : ''}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${ok === 'NOK' ? 'X' : ''}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hcil-${t.prefix}-obs-${p}`)}</td></tr>`;
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`hcil-${t.prefix}-obs-${p}`))}</td></tr>`;
             });
         });
         return html;
@@ -749,12 +751,12 @@ function montarHtmlLaudoHorizontal(tag) {
                     <th style="border:1px solid #000; padding:3px;">Obs</th></tr>`;
             t.pos.forEach(p => {
                 html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hcils-${t.prefix}-num-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hcils-${t.prefix}-prod-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`hcils-${t.prefix}-num-${p}`))}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`hcils-${t.prefix}-prod-${p}`))}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`hcils-${t.prefix}-rep-${p}`)}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`hcils-${t.prefix}-reu-${p}`)}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`hcils-${t.prefix}-nov-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hcils-${t.prefix}-obs-${p}`)}</td></tr>`;
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`hcils-${t.prefix}-obs-${p}`))}</td></tr>`;
             });
         });
         return html;
@@ -815,12 +817,12 @@ function montarHtmlLaudoHorizontal(tag) {
                 <th style="border:1px solid #000; padding:3px;">Num</th><th style="border:1px solid #000; padding:3px;">Medida</th></tr>`;
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hmed-${prefix}-${bPrefix}-${i}-n1`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hmed-${prefix}-${bPrefix}-${i}-m1`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hmed-${prefix}-${bPrefix}-${i}-n2`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hmed-${prefix}-${bPrefix}-${i}-m2`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hmed-${prefix}-${bPrefix}-${i}-n3`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`hmed-${prefix}-${bPrefix}-${i}-m3`)}</td></tr>`;
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`hmed-${prefix}-${bPrefix}-${i}-n1`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`hmed-${prefix}-${bPrefix}-${i}-m1`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`hmed-${prefix}-${bPrefix}-${i}-n2`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`hmed-${prefix}-${bPrefix}-${i}-m2`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`hmed-${prefix}-${bPrefix}-${i}-n3`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`hmed-${prefix}-${bPrefix}-${i}-m3`))}</td></tr>`;
         }
         return html;
     }
@@ -851,8 +853,8 @@ function montarHtmlLaudoHorizontal(tag) {
         manutencaoHorizontal.forEach((tarefa, index) => {
             const p = document.getElementById(`hz-p-${index}`)?.checked ? 'X' : '';
             const g = document.getElementById(`hz-g-${index}`)?.checked ? 'X' : '';
-            const mat = getV(`hz-mat-${index}`);
-            const data = getV(`hz-dat-${index}`);
+            const mat = window.escapeHtmlNotif(getV(`hz-mat-${index}`));
+            const data = window.escapeHtmlNotif(getV(`hz-dat-${index}`));
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${tarefa.item}</td>
                 <td style="border:1px solid #000; padding:3px; font-size:9px;">${tarefa.desc}</td>
                 <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
@@ -1013,7 +1015,7 @@ function montarHtmlLaudoHorizontal(tag) {
         <table>
             <tr><th style="width:80%;">MATERIAIS</th><th style="width:20%;">QUANTIDADE</th></tr>
             ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30].map(i => `
-                <tr><td>${getV(`hmat-desc-${i}`)}</td><td>${getV(`hmat-qtd-${i}`)}</td></tr>
+                <tr><td>${window.escapeHtmlNotif(getV(`hmat-desc-${i}`))}</td><td>${window.escapeHtmlNotif(getV(`hmat-qtd-${i}`))}</td></tr>
             `).join('')}
         </table>
 

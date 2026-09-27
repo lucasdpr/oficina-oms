@@ -350,14 +350,16 @@ window.trocarAbaSegGrupo = function (evt, abaId) {
 // 5. MONTA O HTML DO LAUDO (PDF) - SEGMENTO GRUPO 1/2/3
 // ==============================================================
 function montarHtmlLaudoSegGrupo(tag) {
+    // 🔧 CORREÇÃO (XSS armazenado - auditoria Go-Live): campos de texto livre
+    // escapados antes de entrar no HTML do laudo (ver escapeHtmlNotif em notificacoes.js).
     const grupo = GRUPO_ATUAL;
-    const dtIni = getV('segg-data-inicio') || new Date().toLocaleDateString('pt-BR');
-    const dtFim = getV('segg-data-fim') || new Date().toLocaleDateString('pt-BR');
-    const numSeg = getV('segg-num-segmento') || '______';
-    const veio = getV('segg-veio') || '';
-    const desempenho = getV('segg-desempenho') || '';
-    const motivo = getV('segg-motivo') || '_______________';
-    const tipoExec = getV('segg-tipo-execucao') || 'GERAL';
+    const dtIni = window.escapeHtmlNotif(getV('segg-data-inicio')) || new Date().toLocaleDateString('pt-BR');
+    const dtFim = window.escapeHtmlNotif(getV('segg-data-fim')) || new Date().toLocaleDateString('pt-BR');
+    const numSeg = window.escapeHtmlNotif(getV('segg-num-segmento')) || '______';
+    const veio = window.escapeHtmlNotif(getV('segg-veio')) || '';
+    const desempenho = window.escapeHtmlNotif(getV('segg-desempenho')) || '';
+    const motivo = window.escapeHtmlNotif(getV('segg-motivo')) || '_______________';
+    const tipoExec = window.escapeHtmlNotif(getV('segg-tipo-execucao')) || 'GERAL';
 
     // Monta o PDF (padrão visual igual aos demais folhões)
     const gerarTabelaChecklistPDF = (itens, prefix) => {
@@ -376,9 +378,9 @@ function montarHtmlLaudoSegGrupo(tag) {
         let h = `<table><tr><th>CONJ. ROLO</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr>`;
         for (let i = 1; i <= 5; i++) {
             h += `<tr><td style="text-align:center;">${i}</td>
-                <td style="text-align:center;">${getV(`${prefix}-a-${i}`)}</td>
-                <td style="text-align:center;">${getV(`${prefix}-b-${i}`)}</td>
-                <td style="text-align:center;">${getV(`${prefix}-c-${i}`)}</td></tr>`;
+                <td style="text-align:center;">${window.escapeHtmlNotif(getV(`${prefix}-a-${i}`))}</td>
+                <td style="text-align:center;">${window.escapeHtmlNotif(getV(`${prefix}-b-${i}`))}</td>
+                <td style="text-align:center;">${window.escapeHtmlNotif(getV(`${prefix}-c-${i}`))}</td></tr>`;
         }
         return h + `</table>`;
     };
@@ -387,7 +389,7 @@ function montarHtmlLaudoSegGrupo(tag) {
         const baseTable = (label, basePrefix) => {
             let h = `<table><tr><th colspan="2">Base ${label}</th></tr><tr><th>Nº ROLO</th><th>Medida (D)</th></tr>`;
             for (let i = 1; i <= 5; i++) {
-                h += `<tr><td style="text-align:center;">${i}ª</td><td style="text-align:center;">${getV(`${prefix}-${basePrefix}-${i}`)}</td></tr>`;
+                h += `<tr><td style="text-align:center;">${i}ª</td><td style="text-align:center;">${window.escapeHtmlNotif(getV(`${prefix}-${basePrefix}-${i}`))}</td></tr>`;
             }
             return h + `</table>`;
         };
@@ -399,7 +401,7 @@ function montarHtmlLaudoSegGrupo(tag) {
         let h = `<table><tr><th>Código</th><th>Descrição</th><th style="width:12%;">Aplicado</th><th style="width:12%;">Qtd</th></tr>`;
         materiais.forEach((mat, i) => {
             const aplicado = getChecked(`segg-mat-${i}-aplicado`) ? 'X' : '';
-            const qtd = getV(`segg-mat-${i}-qtd`);
+            const qtd = window.escapeHtmlNotif(getV(`segg-mat-${i}-qtd`));
             h += `<tr><td>${mat.codigo}</td><td>${mat.descricao}</td><td style="text-align:center;">${aplicado}</td><td style="text-align:center;">${qtd}</td></tr>`;
         });
         return h + `</table>`;

@@ -615,14 +615,16 @@ window.trocarAbaBow = function(evt, abaId) {
 // aplicada AQUI, não em concluirEImprimirFolhaoBow, porque só agora
 // (com o modal aberto) getV() ainda consegue ler o campo.
 function montarHtmlLaudoBow(tag) {
-    const dtInicio = getV('bow-data-inicio') || new Date().toLocaleDateString('pt-BR');
-    const dtFim = getV('bow-data-fim') || new Date().toLocaleDateString('pt-BR');
-    const numSeg = getV('bow-num-segmento') || '______';
+    // 🔧 CORREÇÃO (XSS armazenado - auditoria Go-Live): campos de texto livre
+    // escapados antes de entrar no HTML do laudo (ver escapeHtmlNotif em notificacoes.js).
+    const dtInicio = window.escapeHtmlNotif(getV('bow-data-inicio')) || new Date().toLocaleDateString('pt-BR');
+    const dtFim = window.escapeHtmlNotif(getV('bow-data-fim')) || new Date().toLocaleDateString('pt-BR');
+    const numSeg = window.escapeHtmlNotif(getV('bow-num-segmento')) || '______';
     const veio = document.getElementById('bow-veio')?.value || '';
-    const motivo = getV('bow-motivo') || '_______________';
+    const motivo = window.escapeHtmlNotif(getV('bow-motivo')) || '_______________';
     const tipoExec = document.getElementById('bow-tipo-execucao')?.value || 'GERAL';
-    const novaMeta = getV('bow-nova-meta') || 'Manter Atual';
-    const lider = getV('bow-lider-responsavel') || '_______________';
+    const novaMeta = window.escapeHtmlNotif(getV('bow-nova-meta')) || 'Manter Atual';
+    const lider = window.escapeHtmlNotif(getV('bow-lider-responsavel')) || '_______________';
 
     let itemParaMeta = BANCO_ATIVOS.find(a => a.id === tag);
     if (itemParaMeta && novaMeta && !isNaN(parseFloat(novaMeta))) {
@@ -659,9 +661,9 @@ function montarHtmlLaudoBow(tag) {
         let html = '';
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`gap-${i}-a`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`gap-${i}-b`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`gap-${i}-c`)}</td></tr>`;
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`gap-${i}-a`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`gap-${i}-b`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`gap-${i}-c`))}</td></tr>`;
         }
         return html;
     }
@@ -696,9 +698,9 @@ function montarHtmlLaudoBow(tag) {
         refs.forEach((ref, i) => {
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i+1}°</td>
                 <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${ref}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${id}-a-${i}`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${id}-b-${i}`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${id}-c-${i}`)}</td></tr>`;
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`${id}-a-${i}`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`${id}-b-${i}`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`${id}-c-${i}`))}</td></tr>`;
         });
         return html;
     }
@@ -718,11 +720,11 @@ function montarHtmlLaudoBow(tag) {
             t.pos.forEach(p => {
                 const ok = getRadioValue(`cil-${t.prefix}-${p}`);
                 html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`cil-${t.prefix}-num-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`cil-${t.prefix}-prod-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`cil-${t.prefix}-num-${p}`))}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`cil-${t.prefix}-prod-${p}`))}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${ok === 'OK' ? 'X' : ''}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${ok === 'NOK' ? 'X' : ''}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`cil-${t.prefix}-obs-${p}`)}</td></tr>`;
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`cil-${t.prefix}-obs-${p}`))}</td></tr>`;
             });
         });
         return html;
@@ -743,12 +745,12 @@ function montarHtmlLaudoBow(tag) {
                     <th style="border:1px solid #000; padding:3px;">Obs</th></tr>`;
             t.pos.forEach(p => {
                 html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`cils-${t.prefix}-num-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`cils-${t.prefix}-prod-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`cils-${t.prefix}-num-${p}`))}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`cils-${t.prefix}-prod-${p}`))}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`cils-${t.prefix}-rep-${p}`)}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`cils-${t.prefix}-reu-${p}`)}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`cils-${t.prefix}-nov-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`cils-${t.prefix}-obs-${p}`)}</td></tr>`;
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`cils-${t.prefix}-obs-${p}`))}</td></tr>`;
             });
         });
         return html;
@@ -809,12 +811,12 @@ function montarHtmlLaudoBow(tag) {
                 <th style="border:1px solid #000; padding:3px;">Num</th><th style="border:1px solid #000; padding:3px;">Medida</th></tr>`;
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`med-${prefix}-${bPrefix}-${i}-n1`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`med-${prefix}-${bPrefix}-${i}-m1`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`med-${prefix}-${bPrefix}-${i}-n2`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`med-${prefix}-${bPrefix}-${i}-m2`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`med-${prefix}-${bPrefix}-${i}-n3`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`med-${prefix}-${bPrefix}-${i}-m3`)}</td></tr>`;
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`med-${prefix}-${bPrefix}-${i}-n1`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`med-${prefix}-${bPrefix}-${i}-m1`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`med-${prefix}-${bPrefix}-${i}-n2`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`med-${prefix}-${bPrefix}-${i}-m2`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`med-${prefix}-${bPrefix}-${i}-n3`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`med-${prefix}-${bPrefix}-${i}-m3`))}</td></tr>`;
         }
         return html;
     }
@@ -845,8 +847,8 @@ function montarHtmlLaudoBow(tag) {
         manutencaoBow.forEach((tarefa, index) => {
             const p = document.getElementById(`bw-p-${index}`)?.checked ? 'X' : '';
             const g = document.getElementById(`bw-g-${index}`)?.checked ? 'X' : '';
-            const mat = getV(`bw-mat-${index}`);
-            const data = getV(`bw-dat-${index}`);
+            const mat = window.escapeHtmlNotif(getV(`bw-mat-${index}`));
+            const data = window.escapeHtmlNotif(getV(`bw-dat-${index}`));
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${tarefa.item}</td>
                 <td style="border:1px solid #000; padding:3px; font-size:9px;">${tarefa.desc}</td>
                 <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
@@ -1007,7 +1009,7 @@ function montarHtmlLaudoBow(tag) {
         <table>
             <tr><th style="width:80%;">MATERIAIS</th><th style="width:20%;">QUANTIDADE</th></tr>
             ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30].map(i => `
-                <tr><td>${getV(`mat-desc-${i}`)}</td><td>${getV(`mat-qtd-${i}`)}</td></tr>
+                <tr><td>${window.escapeHtmlNotif(getV(`mat-desc-${i}`))}</td><td>${window.escapeHtmlNotif(getV(`mat-qtd-${i}`))}</td></tr>
             `).join('')}
         </table>
 

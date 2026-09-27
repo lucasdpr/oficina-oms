@@ -75,9 +75,9 @@ export function tExec(p) {
       ${p
         ? `<td style="text-align:center;">${document.getElementById(`exe-p-${i}`)?.checked ? 'X' : ''}</td>
            <td style="text-align:center;">${document.getElementById(`exe-g-${i}`)?.checked ? 'X' : ''}</td>
-           <td style="text-align:center;">${getV(`exe-resp-${i}`)}</td>
-           <td style="text-align:center;">${getV(`exe-mat-${i}`)}</td>
-           <td style="text-align:center;">${getV(`exe-dat-${i}`)}</td>`
+           <td style="text-align:center;">${window.escapeHtmlNotif(getV(`exe-resp-${i}`))}</td>
+           <td style="text-align:center;">${window.escapeHtmlNotif(getV(`exe-mat-${i}`))}</td>
+           <td style="text-align:center;">${window.escapeHtmlNotif(getV(`exe-dat-${i}`))}</td>`
         : `<td style="text-align:center"><input type="checkbox" id="exe-p-${i}"></td>
            <td style="text-align:center"><input type="checkbox" id="exe-g-${i}"></td>
            <td><input id="exe-resp-${i}" class="w-100"></td>
@@ -96,9 +96,9 @@ export function trPL(pfx, p) {
       <td style="text-align:center">${i+1}º</td>
       <td style="text-align:center">${refs[i]}</td>
       ${p
-        ? `<td style="text-align:center">${getV(`pl-${pfx}-a-${i}`)}</td>
-           <td style="text-align:center">${getV(`pl-${pfx}-b-${i}`)}</td>
-           <td style="text-align:center">${getV(`pl-${pfx}-c-${i}`)}</td>`
+        ? `<td style="text-align:center">${window.escapeHtmlNotif(getV(`pl-${pfx}-a-${i}`))}</td>
+           <td style="text-align:center">${window.escapeHtmlNotif(getV(`pl-${pfx}-b-${i}`))}</td>
+           <td style="text-align:center">${window.escapeHtmlNotif(getV(`pl-${pfx}-c-${i}`))}</td>`
         : `<td><input id="pl-${pfx}-a-${i}" class="w-100"></td>
            <td><input id="pl-${pfx}-b-${i}" class="w-100"></td>
            <td><input id="pl-${pfx}-c-${i}" class="w-100"></td>`
@@ -115,9 +115,9 @@ export function trPLSup(pfx, p) {
       <td style="text-align:center">${i+1}º</td>
       <td style="text-align:center">${refs[i]}</td>
       ${p
-        ? `<td style="text-align:center">${getV(`plsup-${pfx}-a-${i}`)}</td>
-           <td style="text-align:center">${getV(`plsup-${pfx}-b-${i}`)}</td>
-           <td style="text-align:center">${getV(`plsup-${pfx}-c-${i}`)}</td>`
+        ? `<td style="text-align:center">${window.escapeHtmlNotif(getV(`plsup-${pfx}-a-${i}`))}</td>
+           <td style="text-align:center">${window.escapeHtmlNotif(getV(`plsup-${pfx}-b-${i}`))}</td>
+           <td style="text-align:center">${window.escapeHtmlNotif(getV(`plsup-${pfx}-c-${i}`))}</td>`
         : `<td><input id="plsup-${pfx}-a-${i}" class="w-100"></td>
            <td><input id="plsup-${pfx}-b-${i}" class="w-100"></td>
            <td><input id="plsup-${pfx}-c-${i}" class="w-100"></td>`
@@ -132,8 +132,8 @@ export function trLub(pfx, p) {
     `<tr>
       <td style="text-align:center">${i+1}º</td>
       ${p
-        ? `<td style="text-align:center">${getV(`lub-${pfx}-st-${i}`)}</td>
-           <td style="text-align:center">${getV(`lub-${pfx}-obs-${i}`)}</td>`
+        ? `<td style="text-align:center">${window.escapeHtmlNotif(getV(`lub-${pfx}-st-${i}`))}</td>
+           <td style="text-align:center">${window.escapeHtmlNotif(getV(`lub-${pfx}-obs-${i}`))}</td>`
         : `<td><select id="lub-${pfx}-st-${i}"><option></option><option>OK</option><option>NOK</option></select></td>
            <td><input id="lub-${pfx}-obs-${i}" class="w-100"></td>`
       }
@@ -147,10 +147,10 @@ export function trRol(pfx, p) {
     `<tr>
       <td style="text-align:center">${i+1}</td>
       ${p
-        ? `<td style="text-align:center">${getV(`rol-${pfx}-1-${i}`)}</td>
-           <td style="text-align:center">${getV(`rol-${pfx}-2-${i}`)}</td>
-           <td style="text-align:center">${getV(`rol-${pfx}-3-${i}`)}</td>
-           <td style="text-align:center">${getV(`rol-${pfx}-4-${i}`)}</td>`
+        ? `<td style="text-align:center">${window.escapeHtmlNotif(getV(`rol-${pfx}-1-${i}`))}</td>
+           <td style="text-align:center">${window.escapeHtmlNotif(getV(`rol-${pfx}-2-${i}`))}</td>
+           <td style="text-align:center">${window.escapeHtmlNotif(getV(`rol-${pfx}-3-${i}`))}</td>
+           <td style="text-align:center">${window.escapeHtmlNotif(getV(`rol-${pfx}-4-${i}`))}</td>`
         : `<td><select id="rol-${pfx}-1-${i}"><option></option><option>OK</option><option>NOK</option></select></td>
            <td><select id="rol-${pfx}-2-${i}"><option></option><option>OK</option><option>NOK</option></select></td>
            <td><select id="rol-${pfx}-3-${i}"><option></option><option>OK</option><option>NOK</option></select></td>
@@ -166,13 +166,13 @@ export function trMed(pfx, p) {
     `<tr>
       <td style="text-align:center">${i+1}</td>
       ${p
-        ? `<td style="text-align:center">${getV(`med-${pfx}-n1-${i}`)}</td>
-           <td style="text-align:center">${getV(`med-${pfx}-m1-${i}`)}</td>
-           <td style="text-align:center">${getV(`med-${pfx}-n2-${i}`)}</td>
-           <td style="text-align:center">${getV(`med-${pfx}-m2-${i}`)}</td>
-           <td style="text-align:center">${getV(`med-${pfx}-n3-${i}`)}</td>
-           <td style="text-align:center">${getV(`med-${pfx}-m3-${i}`)}</td>
-           <td style="text-align:center">${getV(`med-${pfx}-cls-${i}`)}</td>`
+        ? `<td style="text-align:center">${window.escapeHtmlNotif(getV(`med-${pfx}-n1-${i}`))}</td>
+           <td style="text-align:center">${window.escapeHtmlNotif(getV(`med-${pfx}-m1-${i}`))}</td>
+           <td style="text-align:center">${window.escapeHtmlNotif(getV(`med-${pfx}-n2-${i}`))}</td>
+           <td style="text-align:center">${window.escapeHtmlNotif(getV(`med-${pfx}-m2-${i}`))}</td>
+           <td style="text-align:center">${window.escapeHtmlNotif(getV(`med-${pfx}-n3-${i}`))}</td>
+           <td style="text-align:center">${window.escapeHtmlNotif(getV(`med-${pfx}-m3-${i}`))}</td>
+           <td style="text-align:center">${window.escapeHtmlNotif(getV(`med-${pfx}-cls-${i}`))}</td>`
         : `<td><input id="med-${pfx}-n1-${i}" style="width:30px"></td>
            <td><input id="med-${pfx}-m1-${i}" style="width:30px"></td>
            <td><input id="med-${pfx}-n2-${i}" style="width:30px"></td>
@@ -192,9 +192,9 @@ export function gapTabela(pfx, p) {
     <tbody>
       <tr><td style="text-align:center; font-weight:bold;">1º ao 3º (255,00 ±0,30)</td>
         ${p
-          ? `<td style="text-align:center;">${getV(`gap-${pfx}-a-1`)}</td>
-             <td style="text-align:center;">${getV(`gap-${pfx}-b-1`)}</td>
-             <td style="text-align:center;">${getV(`gap-${pfx}-c-1`)}</td>`
+          ? `<td style="text-align:center;">${window.escapeHtmlNotif(getV(`gap-${pfx}-a-1`))}</td>
+             <td style="text-align:center;">${window.escapeHtmlNotif(getV(`gap-${pfx}-b-1`))}</td>
+             <td style="text-align:center;">${window.escapeHtmlNotif(getV(`gap-${pfx}-c-1`))}</td>`
           : `<td><input id="gap-${pfx}-a-1" class="w-100"></td>
              <td><input id="gap-${pfx}-b-1" class="w-100"></td>
              <td><input id="gap-${pfx}-c-1" class="w-100"></td>`
@@ -202,9 +202,9 @@ export function gapTabela(pfx, p) {
       </tr>
       <tr><td style="text-align:center; font-weight:bold;">4º ao 6º (254,70 ±0,30)</td>
         ${p
-          ? `<td style="text-align:center;">${getV(`gap-${pfx}-a-2`)}</td>
-             <td style="text-align:center;">${getV(`gap-${pfx}-b-2`)}</td>
-             <td style="text-align:center;">${getV(`gap-${pfx}-c-2`)}</td>`
+          ? `<td style="text-align:center;">${window.escapeHtmlNotif(getV(`gap-${pfx}-a-2`))}</td>
+             <td style="text-align:center;">${window.escapeHtmlNotif(getV(`gap-${pfx}-b-2`))}</td>
+             <td style="text-align:center;">${window.escapeHtmlNotif(getV(`gap-${pfx}-c-2`))}</td>`
           : `<td><input id="gap-${pfx}-a-2" class="w-100"></td>
              <td><input id="gap-${pfx}-b-2" class="w-100"></td>
              <td><input id="gap-${pfx}-c-2" class="w-100"></td>`
@@ -222,10 +222,10 @@ export function diametrosApoios(pfx, p) {
       <tr>
         <td style="font-weight:bold;">${pfx === 'inf' ? 'Base Inferior' : 'Base Superior'}</td>
         ${p
-          ? `<td style="text-align:center;">${getV(`diam-${pfx}-a`)}</td>
-             <td style="text-align:center;">${getV(`diam-${pfx}-b`)}</td>
-             <td style="text-align:center;">${getV(`diam-${pfx}-c`)}</td>
-             <td style="text-align:center;">${getV(`diam-${pfx}-d`)}</td>`
+          ? `<td style="text-align:center;">${window.escapeHtmlNotif(getV(`diam-${pfx}-a`))}</td>
+             <td style="text-align:center;">${window.escapeHtmlNotif(getV(`diam-${pfx}-b`))}</td>
+             <td style="text-align:center;">${window.escapeHtmlNotif(getV(`diam-${pfx}-c`))}</td>
+             <td style="text-align:center;">${window.escapeHtmlNotif(getV(`diam-${pfx}-d`))}</td>`
           : `<td><input id="diam-${pfx}-a" class="w-100"></td>
              <td><input id="diam-${pfx}-b" class="w-100"></td>
              <td><input id="diam-${pfx}-c" class="w-100"></td>
@@ -343,6 +343,8 @@ export function gerarTelasBenderHTML() {
 // (grava o HTML pronto no banco) e ao CONCLUIR (usa o HTML já salvo).
 // ==============================================================
 export function montarHtmlLaudoBender(tag, motivo, getVFunc) {
+  // 🔧 CORREÇÃO (XSS armazenado - auditoria Go-Live): campos de texto livre
+  // escapados antes de entrar no HTML do laudo (ver escapeHtmlNotif em notificacoes.js).
   const getV = getVFunc || ((id) => document.getElementById(id)?.value || '');
 
   const cssBase = `
@@ -372,9 +374,9 @@ export function montarHtmlLaudoBender(tag, motivo, getVFunc) {
       </div>
       <div style="width: 25%; font-size: 8px; border-left: 2px solid #000; padding: 8px; line-height: 1.4;">
         <div><strong>TAG:</strong> ${tag}</div>
-        <div><strong>INÍCIO:</strong> ${getV('mcc4-data-inicio')}</div>
-        <div><strong>FIM:</strong> ${getV('mcc4-data-fim')}</div>
-        <div><strong>MOTIVO:</strong> ${motivo}</div>
+        <div><strong>INÍCIO:</strong> ${window.escapeHtmlNotif(getV('mcc4-data-inicio'))}</div>
+        <div><strong>FIM:</strong> ${window.escapeHtmlNotif(getV('mcc4-data-fim'))}</div>
+        <div><strong>MOTIVO:</strong> ${window.escapeHtmlNotif(motivo)}</div>
         <div><strong>VEIO SAÍDA:</strong> ${document.querySelector('input[name="mcc4-veio-saida"]:checked')?.value || ''}</div>
         <div><strong>VEIO ENTRADA:</strong> ${document.querySelector('input[name="mcc4-veio-entrada"]:checked')?.value || ''}</div>
         <div><strong>TIPO:</strong> ${document.querySelector('input[name="mcc4-tipo-exec"]:checked')?.value || ''}</div>
@@ -433,9 +435,9 @@ export function montarHtmlLaudoBender(tag, motivo, getVFunc) {
         <td>${obj.d}</td>
         <td style="text-align:center;">${document.getElementById(`exe-p-${i}`)?.checked ? 'X' : ''}</td>
         <td style="text-align:center;">${document.getElementById(`exe-g-${i}`)?.checked ? 'X' : ''}</td>
-        <td style="text-align:center;">${getV(`exe-resp-${i}`)}</td>
-        <td style="text-align:center;">${getV(`exe-mat-${i}`)}</td>
-        <td style="text-align:center;">${getV(`exe-dat-${i}`)}</td>
+        <td style="text-align:center;">${window.escapeHtmlNotif(getV(`exe-resp-${i}`))}</td>
+        <td style="text-align:center;">${window.escapeHtmlNotif(getV(`exe-mat-${i}`))}</td>
+        <td style="text-align:center;">${window.escapeHtmlNotif(getV(`exe-dat-${i}`))}</td>
       </tr>`
     ).join('');
   }
@@ -445,7 +447,7 @@ export function montarHtmlLaudoBender(tag, motivo, getVFunc) {
     
     <div class="titulo-secao">1. INSPEÇÃO DE CHEGADA</div>
     <table style="font-size:8px;">${gerarChecklistPDF()}</table>
-    <div style="margin:5px 0;"><strong>Observações:</strong> ${getV('bender-observacoes')}</div>
+    <div style="margin:5px 0;"><strong>Observações:</strong> ${window.escapeHtmlNotif(getV('bender-observacoes'))}</div>
     
     <div class="quebra-pagina"></div>
     <div class="titulo-secao">2. AFERIÇÃO DE GAP (CHEGADA)</div>
@@ -512,8 +514,8 @@ export function montarHtmlLaudoBender(tag, motivo, getVFunc) {
     <table>
       <tr><th>Material</th><th>Quantidade</th></tr>
       ${Array.from({length: 20}).map((_, i) => {
-        let desc = getV(`mat-bender-desc-${i}`);
-        let qtd = getV(`mat-bender-qtd-${i}`);
+        let desc = window.escapeHtmlNotif(getV(`mat-bender-desc-${i}`));
+        let qtd = window.escapeHtmlNotif(getV(`mat-bender-qtd-${i}`));
         if (desc || qtd) {
           return `<tr><td>${desc}</td><td style="text-align:center;">${qtd}</td></tr>`;
         }

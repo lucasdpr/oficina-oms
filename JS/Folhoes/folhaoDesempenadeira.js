@@ -311,6 +311,8 @@ window.fecharFolhaoDesempenadeira = function() {
 // MONTA O HTML DO LAUDO (PDF) - DESEMPENADEIRA (CADEIRA SUP/INF)
 // ==============================================================
 function montarHtmlLaudoDesemp(tag) {
+    // 🔧 CORREÇÃO (XSS armazenado - auditoria Go-Live): campos de texto livre
+    // escapados antes de entrar no HTML do laudo (ver escapeHtmlNotif em notificacoes.js).
     const item = window.BANCO_ATIVOS.find(a => a.id === tag);
     if (!item) { alert('Equipamento não encontrado!'); return null; }
 
@@ -393,19 +395,19 @@ function montarHtmlLaudoDesemp(tag) {
                 <span style="font-family: Arial, sans-serif; font-weight: 900; font-size: 34px; color: #002b5e; letter-spacing: -2px;">CSN</span>
             </div>
             <div style="width: 60%; text-align: center; padding: 10px;">
-                <h2 style="margin: 0; font-size: 16px; color: #000; text-decoration: underline;">CHECK LIST GERAL DESEMPENADEIRA - CADEIRA ${tipoCadeira}</h2>
+                <h2 style="margin: 0; font-size: 16px; color: #000; text-decoration: underline;">CHECK LIST GERAL DESEMPENADEIRA - CADEIRA ${window.escapeHtmlNotif(tipoCadeira)}</h2>
                 <p style="margin: 5px 0 0 0; font-size: 10px; color: #333; text-transform: uppercase; font-weight: bold;">Laudo Oficial de Manutenção e Peritagem</p>
             </div>
             <div style="width: 20%; font-size: 10px; border-left: 2px solid #000; padding: 10px; line-height: 1.5; font-weight: bold;">
                 <div style="color: #002b5e;">TAG: <span style="color:#000;">${tag}</span></div>
-                <div>MONTAGEM: <span style="color:#000; font-weight:normal;">${dataMontagem}</span></div>
-                <div>TROCA: <span style="color:#000; font-weight:normal;">${dataTroca}</span></div>
+                <div>MONTAGEM: <span style="color:#000; font-weight:normal;">${window.escapeHtmlNotif(dataMontagem)}</span></div>
+                <div>TROCA: <span style="color:#000; font-weight:normal;">${window.escapeHtmlNotif(dataTroca)}</span></div>
             </div>
         </div>
 
         <table style="margin-top:5px; background: #f9f9f9;">
-            <tr><td><strong>Nº CADEIRA:</strong> ${numCadeira}</td><td><strong>VEIO:</strong> ${veio}</td><td><strong>TIPO:</strong> ${tipoCadeira}</td></tr>
-            <tr><td><strong>Nº ROLO:</strong> ${numRolo}</td><td><strong>MOTIVO:</strong> ${motivo}</td><td><strong>TIPO EXECUÇÃO:</strong> ${tipoExec}</td></tr>
+            <tr><td><strong>Nº CADEIRA:</strong> ${window.escapeHtmlNotif(numCadeira)}</td><td><strong>VEIO:</strong> ${window.escapeHtmlNotif(veio)}</td><td><strong>TIPO:</strong> ${window.escapeHtmlNotif(tipoCadeira)}</td></tr>
+            <tr><td><strong>Nº ROLO:</strong> ${window.escapeHtmlNotif(numRolo)}</td><td><strong>MOTIVO:</strong> ${window.escapeHtmlNotif(motivo)}</td><td><strong>TIPO EXECUÇÃO:</strong> ${window.escapeHtmlNotif(tipoExec)}</td></tr>
         </table>
     `;
 
@@ -441,7 +443,7 @@ function montarHtmlLaudoDesemp(tag) {
             <td style="text-align:center;">${nao}</td></tr>`;
     });
     if (outrosMotivo) {
-        html += `<tr><td style="font-weight:bold;">OUTROS: ${outrosMotivo}</td><td style="text-align:center;">X</td><td style="text-align:center;"></td></tr>`;
+        html += `<tr><td style="font-weight:bold;">OUTROS: ${window.escapeHtmlNotif(outrosMotivo)}</td><td style="text-align:center;">X</td><td style="text-align:center;"></td></tr>`;
     }
     html += `</table>`;
 
@@ -449,12 +451,12 @@ function montarHtmlLaudoDesemp(tag) {
     html += `<div class="titulo-secao">3. INSPEÇÃO DOS MANCAIS</div>
         <table>
             <tr><th>Referência</th><th>Valor (mm)</th></tr>
-            <tr><td><strong>A</strong></td><td>${mancalA}</td></tr>
-            <tr><td><strong>B</strong></td><td>${mancalB}</td></tr>
-            <tr><td><strong>A'</strong></td><td>${mancalAp}</td></tr>
-            <tr><td><strong>B'</strong></td><td>${mancalBp}</td></tr>
-            <tr><td><strong>Fixo</strong></td><td>${mancalFixo}</td></tr>
-            <tr><td><strong>Móvel</strong></td><td>${mancalMovel}</td></tr>
+            <tr><td><strong>A</strong></td><td>${window.escapeHtmlNotif(mancalA)}</td></tr>
+            <tr><td><strong>B</strong></td><td>${window.escapeHtmlNotif(mancalB)}</td></tr>
+            <tr><td><strong>A'</strong></td><td>${window.escapeHtmlNotif(mancalAp)}</td></tr>
+            <tr><td><strong>B'</strong></td><td>${window.escapeHtmlNotif(mancalBp)}</td></tr>
+            <tr><td><strong>Fixo</strong></td><td>${window.escapeHtmlNotif(mancalFixo)}</td></tr>
+            <tr><td><strong>Móvel</strong></td><td>${window.escapeHtmlNotif(mancalMovel)}</td></tr>
         </table>
         <div style="margin-top:5px;"><strong>Máximo:</strong> 240,15 mm | <strong>Mínima:</strong> 240,05 mm</div>`;
 
@@ -472,12 +474,12 @@ function montarHtmlLaudoDesemp(tag) {
     // 5. CILINDROS
     html += `<div class="titulo-secao">5. CILINDROS</div>
         <table><tr><th>Posição</th><th>Faixa Amarela (mm)</th><th>Reparado</th><th>Reutilizado</th></tr>
-        <tr><td><strong>Fixo</strong></td><td>${cilFixo}</td><td style="text-align:center;">${cilFixoRep}</td><td style="text-align:center;">${cilFixoReut}</td></tr>
-        <tr><td><strong>Móvel</strong></td><td>${cilMovel}</td><td style="text-align:center;">${cilMovelRep}</td><td style="text-align:center;">${cilMovelReut}</td></tr>
+        <tr><td><strong>Fixo</strong></td><td>${window.escapeHtmlNotif(cilFixo)}</td><td style="text-align:center;">${cilFixoRep}</td><td style="text-align:center;">${cilFixoReut}</td></tr>
+        <tr><td><strong>Móvel</strong></td><td>${window.escapeHtmlNotif(cilMovel)}</td><td style="text-align:center;">${cilMovelRep}</td><td style="text-align:center;">${cilMovelReut}</td></tr>
     </table><div class="quebra-pagina"></div>`;
 
     // 6. MATERIAIS
-    html += `<div class="titulo-secao">6. MATERIAIS APLICADOS (CADEIRA ${tipoCadeira})</div>
+    html += `<div class="titulo-secao">6. MATERIAIS APLICADOS (CADEIRA ${window.escapeHtmlNotif(tipoCadeira)})</div>
         <table><tr><th>Código</th><th>Descrição</th><th>Quantidade</th></tr>`;
     const tbodyMateriais = document.querySelector('#tabela-desemp-materiais tbody');
     if (tbodyMateriais) {
@@ -488,7 +490,7 @@ function montarHtmlLaudoDesemp(tag) {
                 const codigo = cells[0].textContent.trim() || cells[0].querySelector('input')?.value || '';
                 const descricao = cells[1].textContent.trim() || cells[1].querySelector('input')?.value || '';
                 const qtd = cells[2].querySelector('input')?.value || '';
-                html += `<tr><td>${codigo}</td><td>${descricao}</td><td style="text-align:center;">${qtd}</td></tr>`;
+                html += `<tr><td>${window.escapeHtmlNotif(codigo)}</td><td>${window.escapeHtmlNotif(descricao)}</td><td style="text-align:center;">${window.escapeHtmlNotif(qtd)}</td></tr>`;
             }
         });
     }
@@ -496,7 +498,7 @@ function montarHtmlLaudoDesemp(tag) {
 
     // OBSERVAÇÕES
     html += `<div class="titulo-secao">7. OBSERVAÇÕES</div>
-        <div style="border:1px solid #000; padding:10px; min-height:50px;">${document.getElementById('desemp-observacoes')?.value || ''}</div>`;
+        <div style="border:1px solid #000; padding:10px; min-height:50px;">${window.escapeHtmlNotif(document.getElementById('desemp-observacoes')?.value || '')}</div>`;
 
     // ASSINATURAS
     html += `

@@ -577,12 +577,14 @@ window.trocarAbaR1 = function(evt, abaId) {
 // 15. MONTA O HTML DO LAUDO (PDF) - STRAIGHTENER R1
 // ==============================================================
 function montarHtmlLaudoR1(tag) {
+    // 🔧 CORREÇÃO (XSS armazenado - auditoria Go-Live): campos de texto livre
+    // escapados antes de entrar no HTML do laudo (ver escapeHtmlNotif em notificacoes.js).
     // Coleta dados do cabeçalho
-    const dtInicio = getV('r1-data-inicio') || new Date().toLocaleDateString('pt-BR');
-    const dtFim = getV('r1-data-fim') || new Date().toLocaleDateString('pt-BR');
-    const numSeg = getV('r1-num-segmento') || '______';
+    const dtInicio = window.escapeHtmlNotif(getV('r1-data-inicio')) || new Date().toLocaleDateString('pt-BR');
+    const dtFim = window.escapeHtmlNotif(getV('r1-data-fim')) || new Date().toLocaleDateString('pt-BR');
+    const numSeg = window.escapeHtmlNotif(getV('r1-num-segmento')) || '______';
     const veio = document.getElementById('r1-veio')?.value || '';
-    const motivo = getV('r1-motivo') || '_______________';
+    const motivo = window.escapeHtmlNotif(getV('r1-motivo')) || '_______________';
     const tipoExec = document.getElementById('r1-tipo-execucao')?.value || 'GERAL';
 
     // Função auxiliar para checklist de chegada
@@ -616,9 +618,9 @@ function montarHtmlLaudoR1(tag) {
         let html = '';
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1gap-${i}-a`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1gap-${i}-b`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1gap-${i}-c`)}</td></tr>`;
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`r1gap-${i}-a`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`r1gap-${i}-b`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`r1gap-${i}-c`))}</td></tr>`;
         }
         return html;
     }
@@ -655,9 +657,9 @@ function montarHtmlLaudoR1(tag) {
         refs.forEach((ref, i) => {
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i+1}°</td>
                 <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${ref}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${id}-a-${i}`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${id}-b-${i}`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`${id}-c-${i}`)}</td></tr>`;
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`${id}-a-${i}`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`${id}-b-${i}`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`${id}-c-${i}`))}</td></tr>`;
         });
         return html;
     }
@@ -678,11 +680,11 @@ function montarHtmlLaudoR1(tag) {
             t.pos.forEach(p => {
                 const ok = getRadioValue(`r1cil-${t.prefix}-${p}`);
                 html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cil-${t.prefix}-num-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cil-${t.prefix}-prod-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`r1cil-${t.prefix}-num-${p}`))}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`r1cil-${t.prefix}-prod-${p}`))}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${ok === 'OK' ? 'X' : ''}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${ok === 'NOK' ? 'X' : ''}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cil-${t.prefix}-obs-${p}`)}</td></tr>`;
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`r1cil-${t.prefix}-obs-${p}`))}</td></tr>`;
             });
         });
         return html;
@@ -704,12 +706,12 @@ function montarHtmlLaudoR1(tag) {
                     <th style="border:1px solid #000; padding:3px;">Obs</th></tr>`;
             t.pos.forEach(p => {
                 html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cils-${t.prefix}-num-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cils-${t.prefix}-prod-${p}`)}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`r1cils-${t.prefix}-num-${p}`))}</td>
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`r1cils-${t.prefix}-prod-${p}`))}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`r1cils-${t.prefix}-rep-${p}`)}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`r1cils-${t.prefix}-reu-${p}`)}</td>
                     <td style="text-align:center; border:1px solid #000; padding:3px;">${getCheckboxValue(`r1cils-${t.prefix}-nov-${p}`)}</td>
-                    <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1cils-${t.prefix}-obs-${p}`)}</td></tr>`;
+                    <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`r1cils-${t.prefix}-obs-${p}`))}</td></tr>`;
             });
         });
         return html;
@@ -771,12 +773,12 @@ function montarHtmlLaudoR1(tag) {
                 <th style="border:1px solid #000; padding:3px;">Num</th><th style="border:1px solid #000; padding:3px;">Medida</th></tr>`;
         for (let i = 1; i <= 7; i++) {
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${i}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-n1`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-m1`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-n2`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-m2`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-n3`)}</td>
-                <td style="text-align:center; border:1px solid #000; padding:3px;">${getV(`r1med-${prefix}-${bPrefix}-${i}-m3`)}</td></tr>`;
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`r1med-${prefix}-${bPrefix}-${i}-n1`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`r1med-${prefix}-${bPrefix}-${i}-m1`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`r1med-${prefix}-${bPrefix}-${i}-n2`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`r1med-${prefix}-${bPrefix}-${i}-m2`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`r1med-${prefix}-${bPrefix}-${i}-n3`))}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${window.escapeHtmlNotif(getV(`r1med-${prefix}-${bPrefix}-${i}-m3`))}</td></tr>`;
         }
         return html;
     }
@@ -809,8 +811,8 @@ function montarHtmlLaudoR1(tag) {
         manutencaoR1.forEach((tarefa, index) => {
             const p = document.getElementById(`r1-p-${index}`)?.checked ? 'X' : '';
             const g = document.getElementById(`r1-g-${index}`)?.checked ? 'X' : '';
-            const mat = getV(`r1-mat-${index}`);
-            const data = getV(`r1-dat-${index}`);
+            const mat = window.escapeHtmlNotif(getV(`r1-mat-${index}`));
+            const data = window.escapeHtmlNotif(getV(`r1-dat-${index}`));
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${tarefa.item}</td>
                 <td style="border:1px solid #000; padding:3px; font-size:9px;">${tarefa.desc}</td>
                 <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
@@ -966,7 +968,7 @@ function montarHtmlLaudoR1(tag) {
         <table>
             <tr><th style="width:80%;">MATERIAIS</th><th style="width:20%;">QUANTIDADE</th></tr>
             ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30].map(i => `
-                <tr><td>${getV(`r1mat-desc-${i}`)}</td><td>${getV(`r1mat-qtd-${i}`)}</td></tr>
+                <tr><td>${window.escapeHtmlNotif(getV(`r1mat-desc-${i}`))}</td><td>${window.escapeHtmlNotif(getV(`r1mat-qtd-${i}`))}</td></tr>
             `).join('')}
         </table>
 
