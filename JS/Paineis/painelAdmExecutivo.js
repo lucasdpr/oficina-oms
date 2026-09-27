@@ -46,7 +46,7 @@ window.renderPainelAdmExecutivo = async function() {
         const container = document.getElementById('painel-adm-mensagens-areas');
         const badge = document.getElementById('painel-adm-badge-mensagens');
         try {
-            const resp = await fetch(`${apiBase}/api/mensagens_area/resumo`, { cache: 'no-store' });
+            const resp = await fetch(`${apiBase}/api/mensagens_area/resumo`, { cache: 'no-store', headers: headersAdmin() });
             const resumo = resp.ok ? await resp.json() : [];
             const totalNaoLidas = Array.isArray(resumo) ? resumo.reduce((s, r) => s + (Number(r.nao_lidas) || 0), 0) : 0;
             if (badge) badge.innerHTML = `<i class="fas fa-comments"></i> ${totalNaoLidas} <span>Mensagens não lidas</span>`;

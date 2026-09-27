@@ -1468,7 +1468,7 @@ window.renderPainelSupervisor = async function() {
             const apiBase = await resolverApiBase();
             const [respPadroes, respMensagens, respAvisos, respOcorrencias, respLaudos, respReabertas] = await Promise.all([
                 fetch(`${apiBase}/api/qualidade/achados/padroes`, { cache: 'no-store' }).catch(() => null),
-                fetch(`${apiBase}/api/mensagens_area/resumo`, { cache: 'no-store' }).catch(() => null),
+                fetch(`${apiBase}/api/mensagens_area/resumo`, { cache: 'no-store', headers: headersAdmin() }).catch(() => null),
                 fetch(`${apiBase}/api/avisos/todos`, { cache: 'no-store' }).catch(() => null),
                 fetch(`${apiBase}/api/registros_ocorrencia?limite=6`, { cache: 'no-store' }).catch(() => null),
                 fetch(`${apiBase}/api/laudos?limite=100`, { cache: 'no-store' }).catch(() => null),
