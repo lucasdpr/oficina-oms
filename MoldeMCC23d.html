@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Molde MCC2/3 3D</title>
+<!-- 🆕 Página pública temporária (visualização 3D do Molde MCC4 pra
+     apresentação do supervisor) — pedido do usuário: sem gate de admin,
+     igual ao Sinótico 3D, qualquer um com o link acessa. Remover esse
+     arquivo + o link do menu (app.html) depois da apresentação. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #0a0e15; overflow: hidden; }
+    * { box-sizing: border-box; }
+
+    /* 🐛 CORREÇÃO ("nem dá pra ver o botão direito"): fundo translúcido
+       (rgba com alpha baixo) + texto quase da mesma cor do cenário 3D
+       atrás deixava os botões praticamente invisíveis contra o piso
+       claro da cena. Fundo sólido, texto branco puro, borda mais forte
+       e sombra pra descolar do fundo em qualquer ângulo de câmera. */
+    .molde3d-btn {
+        padding: 10px 16px;
+        font-size: 13px;
+        font-weight: 600;
+        font-family: 'IBM Plex Mono', monospace;
+        letter-spacing: .02em;
+        border-radius: 8px;
+        border: 1px solid #3a4a63;
+        background: #182031;
+        color: #ffffff;
+        cursor: pointer;
+        box-shadow: 0 2px 10px rgba(0,0,0,.5);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: background .15s, border-color .15s;
+    }
+    .molde3d-btn:hover { background: #233047; border-color: #e8a33d; }
+    .molde3d-btn:active { background: #0f1521; }
+</style>
+</head>
+<body>
+    <div id="molde3d-container" style="position:relative; width:100vw; height:100vh; overflow:hidden; background:#0a0e15;">
+        <div id="molde3d-loading" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; z-index:5; color:#8b96ab; font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:.08em; text-transform:uppercase;">
+            <div style="width:30px; height:30px; border-radius:50%; border:2px solid #233047; border-top-color:#e8a33d; animation:molde3d-spin .9s linear infinite;"></div>
+            Carregando modelo 3D
+        </div>
+        <div id="molde3d-hud" style="position:absolute; top:14px; left:16px; right:16px; z-index:4; display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; pointer-events:none;">
+            <div>
+                <h2 style="margin:0; font-family:'Oswald', sans-serif; font-weight:600; font-size:1.05rem; letter-spacing:.05em; text-transform:uppercase; color:#e7ecf5;">Molde <span style="color:#e8a33d;">MCC2/3</span> — 4 placas</h2>
+                <div style="font-family:'IBM Plex Mono', monospace; font-size:.68rem; color:#8b96ab; margin-top:2px;">Molde MCC2/3 · cobre · dimensões estimadas p/ apresentação</div>
+            </div>
+        </div>
+        <div id="molde3d-controls" style="position:absolute; right:16px; bottom:16px; z-index:4; display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+            <button type="button" id="molde3d-btn-rotate" class="molde3d-btn"><i class="fas fa-sync"></i> Câmera girando</button>
+            <button type="button" id="molde3d-btn-interior" class="molde3d-btn"><i class="fas fa-layer-group"></i> Ver interior</button>
+        </div>
+        <div id="molde3d-hint" style="position:absolute; left:50%; bottom:16px; transform:translateX(-50%); z-index:4; font-family:'IBM Plex Mono', monospace; font-size:.65rem; color:#8b96ab; background:rgba(17,24,38,.7); border:1px solid #233047; padding:5px 12px; border-radius:20px; white-space:nowrap;">arraste para girar · scroll para zoom</div>
+    </div>
+
+    <style>
+        @keyframes molde3d-spin { to { transform: rotate(360deg); } }
+    </style>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "./vendor/three/three.module.min.js",
+            "three/addons/": "./vendor/three/addons/"
+        }
+    }
+    </script>
+    <script type="module">
+        import { renderMolde23_3D } from './JS/Paineis/molde23-3d.js';
+        renderMolde23_3D();
+    </script>
+</body>
+</html>

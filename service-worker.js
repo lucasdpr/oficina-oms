@@ -11,7 +11,7 @@
 // usando a copia antiga guardada em cache.
 // ==============================================================
 
-const CACHE_VERSION = "oms-v116";
+const CACHE_VERSION = "oms-v132";
 
 // 🔧 CORREÇÃO: essa lista estava com os caminhos de uma estrutura de
 // pastas antiga (tudo direto na raiz) — o projeto hoje guarda os JS
@@ -43,6 +43,7 @@ const ARQUIVOS_PARA_CACHE = [
     "./JS/Paineis/colaboradores.js",
     "./JS/Paineis/chats.js",
     "./JS/Paineis/painelAdmExecutivo.js",
+    "./JS/Paineis/molde3d.js",
     "./JS/Paineis/centralAreas.js",
     "./JS/Oficina/atividades.js",
     "./JS/Paineis/painelAreaAdministrativa.js",
@@ -69,6 +70,9 @@ const ARQUIVOS_PARA_CACHE = [
     "./JS/Folhoes/folhaoPersistencia.js",
     "./JS/Folhoes/checklistQualidadeSaida.js",
     "./Sinotico3d.html",
+    "./Molde3d.html",
+    "./MoldeMCC23d.html",
+    "./JS/Paineis/molde23-3d.js",
     // 🆕 Three.js vendorizado (era CDN externo, nunca cacheado — ver
     // comentário no <script type="importmap"> do Sinotico3d.html).
     "./vendor/three/three.module.min.js",
