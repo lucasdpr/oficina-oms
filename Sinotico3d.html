@@ -2622,89 +2622,220 @@ scene.add(acoMesh);
 // clique nos equipamentos reais, não importa a posição visual.
 // ==========================================================================
 const AMARELO_PONTE = 0xE8B024;
-const ponteMat = new THREE.MeshPhysicalMaterial({ color: AMARELO_PONTE, metalness: 0.6, roughness: 0.32, clearcoat: 0.3 });
-const estruturaMat = new THREE.MeshPhysicalMaterial({ color: 0x2a2f3a, metalness: 0.7, roughness: 0.28, clearcoat: 0.4 });
-const caboMat = new THREE.MeshStandardMaterial({ color: 0x14161c, metalness: 0.3, roughness: 0.6 });
-const panelaMat = new THREE.MeshPhysicalMaterial({ color: 0x2a2f3a, metalness: 0.85, roughness: 0.22, clearcoat: 0.4 });
+const ponteMat = new THREE.MeshPhysicalMaterial({ color: AMARELO_PONTE, metalness: 0.5, roughness: 0.38, clearcoat: 0.3 });
+const estruturaMat = new THREE.MeshPhysicalMaterial({ color: 0x2a2f3a, metalness: 0.7, roughness: 0.3, clearcoat: 0.3 });
+const caboMat = new THREE.MeshStandardMaterial({ color: 0x1b1d22, metalness: 0.6, roughness: 0.45 });
+const panelaMat = new THREE.MeshStandardMaterial({ color: 0x3a3632, metalness: 0.6, roughness: 0.55 });
+const panelaAnelMat = new THREE.MeshStandardMaterial({ color: 0x24211f, metalness: 0.65, roughness: 0.5 });
+const refratarioMat = new THREE.MeshStandardMaterial({ color: 0x8a5a3c, roughness: 0.9, metalness: 0.05 });
+const trilhoMat = new THREE.MeshStandardMaterial({ color: 0x55595f, metalness: 0.8, roughness: 0.35 });
+const acoLiquidoMat = new THREE.MeshStandardMaterial({ color: 0xffa040, emissive: 0xff5a10, emissiveIntensity: 2.4, roughness: 0.3 });
 
-// -- Estrutura da ponte: viga + duas pernas curtas + trolley --
+function boxP(pai, w, h, d, x, y, z, mat) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    m.position.set(x, y, z);
+    m.castShadow = true;
+    pai.add(m);
+    return m;
+}
+function cilP(pai, r, h, x, y, z, mat, eixo = 'y', seg = 16) {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, seg), mat);
+    if (eixo === 'z') m.rotation.x = Math.PI / 2;
+    if (eixo === 'x') m.rotation.z = Math.PI / 2;
+    m.position.set(x, y, z);
+    m.castShadow = true;
+    pai.add(m);
+    return m;
+}
+
+// -- Ponte: 2 vigas-caixão amarelas (vão em Z), cabeceiras com rodas nos
+// trilhos, carro (trolley) com 2 tambores de cabo, igual à ponte da foto.
 const grupoPonte = new THREE.Group();
-
-const vigaPonte = new THREE.Mesh(new RoundedBoxGeometry(4.6, 0.3, 0.55, 3, 0.05), ponteMat);
-grupoPonte.add(vigaPonte);
-
-[-2.05, 2.05].forEach(x => {
-    const perna = new THREE.Mesh(new RoundedBoxGeometry(0.2, 1.0, 0.5, 3, 0.04), ponteMat);
-    perna.position.set(x, 0.65, 0);
-    grupoPonte.add(perna);
+const VAO = 4.2;
+[-0.42, 0.42].forEach((x) => {
+    boxP(grupoPonte, 0.3, 0.42, VAO, x, 0, 0, ponteMat);
+    boxP(grupoPonte, 0.32, 0.04, VAO, x, -0.21, 0, estruturaMat);
 });
-
-const trolley = new THREE.Mesh(new RoundedBoxGeometry(0.55, 0.2, 0.45, 3, 0.03), estruturaMat);
-trolley.position.set(0, -0.25, 0);
-grupoPonte.add(trolley);
-
+const faixaRiscoPonteMat = new THREE.MeshStandardMaterial({ map: criarTexturaFaixaRiscoPonte(), roughness: 0.55 });
+[-1, 1].forEach((lz) => {
+    boxP(grupoPonte, 1.6, 0.34, 0.36, 0, -0.02, lz * (VAO / 2 + 0.18), ponteMat);
+    boxP(grupoPonte, 1.62, 0.12, 0.38, 0, 0.1, lz * (VAO / 2 + 0.18), faixaRiscoPonteMat);
+    [-0.62, 0.62].forEach((x) => cilP(grupoPonte, 0.13, 0.12, x, -0.24, lz * (VAO / 2 + 0.18), estruturaMat, 'z', 18));
+    // trilho do caminho de rolamento
+    boxP(grupoPonte, 9, 0.08, 0.12, 0, -0.41, lz * (VAO / 2 + 0.18), trilhoMat);
+    boxP(grupoPonte, 9, 0.3, 0.3, 0, -0.6, lz * (VAO / 2 + 0.18), estruturaMat);
+});
+const carro = new THREE.Group();
+grupoPonte.add(carro);
+boxP(carro, 1.15, 0.22, 1.25, 0, 0.32, 0, ponteMat);
+[-0.3, 0.3].forEach((z) => {
+    cilP(carro, 0.17, 0.72, 0, 0.58, z, estruturaMat, 'x', 20);
+    for (let i = 0; i < 6; i++) cilP(carro, 0.175, 0.02, -0.3 + i * 0.12, 0.58, z, caboMat, 'x', 20);
+});
+boxP(carro, 0.3, 0.26, 0.4, 0.45, 0.56, 0, estruturaMat);
+cilP(carro, 0.1, 0.3, 0.45, 0.56, 0.3, estruturaMat, 'z', 14);
 scene.add(grupoPonte);
 
-// -- Cabo que desce da ponte até a panela --
-const cabo = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1, 6), caboMat);
+function criarTexturaFaixaRiscoPonte() {
+    const c = document.createElement('canvas');
+    c.width = 128; c.height = 32;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#e8b923'; ctx.fillRect(0, 0, 128, 32);
+    ctx.fillStyle = '#14151a';
+    for (let x = -32; x < 160; x += 32) {
+        ctx.beginPath(); ctx.moveTo(x, 32); ctx.lineTo(x + 16, 32); ctx.lineTo(x + 32, 0); ctx.lineTo(x + 16, 0); ctx.fill();
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = THREE.RepeatWrapping; t.repeat.set(4, 1);
+    return t;
+}
+
+// -- 4 cabos (2 por tambor) do carro até a viga de içamento --
+const cabo = new THREE.Group();
+const cabosIcamento = [];
+[-0.3, 0.3].forEach((z) => [-0.07, 0.07].forEach((dx) => {
+    const c = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 1, 6), caboMat);
+    c.userData.off = [dx, z];
+    cabo.add(c);
+    cabosIcamento.push(c);
+}));
 scene.add(cabo);
 
-// -- Panela pendurada no cabo, inclinada despejando --
-const grupoPanela = new THREE.Group();
-const corpoPanela = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.36, 0.7, 20, 1, true), panelaMat);
-corpoPanela.material.side = THREE.DoubleSide;
-grupoPanela.add(corpoPanela);
-const fundoPanela = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.06, 20), panelaMat);
-fundoPanela.position.y = -0.35;
-grupoPanela.add(fundoPanela);
-grupoPanela.rotation.z = -0.6; // inclinada, despejando
-scene.add(grupoPanela);
-
-const jatoMat = new THREE.MeshStandardMaterial({
-    color: 0xff5522, emissive: 0xff4400, emissiveIntensity: 2.2,
-    transparent: true, opacity: 0.92, depthTest: false
+// -- Viga de içamento (traversa amarela) com moitão e 2 ganchos laterais --
+const traversa = new THREE.Group();
+boxP(traversa, 0.36, 0.22, 1.5, 0, 0, 0, ponteMat);
+boxP(traversa, 0.42, 0.3, 0.5, 0, 0.2, 0, ponteMat);
+[-0.3, 0.3].forEach((z) => cilP(traversa, 0.1, 0.4, 0, 0.26, z, estruturaMat, 'x', 16));
+[-1, 1].forEach((lz) => {
+    boxP(traversa, 0.12, 0.62, 0.12, 0, -0.38, lz * 0.72, ponteMat);
+    const gancho = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.035, 8, 16, Math.PI * 1.3), estruturaMat);
+    gancho.rotation.y = Math.PI / 2;
+    gancho.position.set(0, -0.72, lz * 0.72);
+    traversa.add(gancho);
 });
-const jatoMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.1, 1, 12), jatoMat);
+scene.add(traversa);
+
+// -- Panela: cônica, anéis de reforço, borda de refratário, munhões nas
+// laterais (onde os ganchos pegam), aço brilhando dentro e bico de vazamento.
+const grupoPanela = new THREE.Group();
+const corpo = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.46, 1.0, 28, 1, true), panelaMat);
+corpo.material.side = THREE.DoubleSide;
+corpo.castShadow = true;
+grupoPanela.add(corpo);
+cilP(grupoPanela, 0.46, 0.06, 0, -0.5, 0, panelaMat, 'y', 28);
+[-0.3, 0.05, 0.38].forEach((y) => {
+    const r = 0.46 + (y + 0.5) * 0.14 + 0.025;
+    const anel = new THREE.Mesh(new THREE.TorusGeometry(r, 0.035, 8, 32), panelaAnelMat);
+    anel.rotation.x = Math.PI / 2;
+    anel.position.y = y;
+    grupoPanela.add(anel);
+});
+const borda = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.05, 8, 32), refratarioMat);
+borda.rotation.x = Math.PI / 2;
+borda.position.y = 0.5;
+grupoPanela.add(borda);
+const superficieAco = new THREE.Mesh(new THREE.CircleGeometry(0.56, 28), acoLiquidoMat);
+superficieAco.rotation.x = -Math.PI / 2;
+superficieAco.position.y = 0.42;
+grupoPanela.add(superficieAco);
+[-1, 1].forEach((lz) => {
+    cilP(grupoPanela, 0.08, 0.2, 0, 0.12, lz * 0.66, panelaAnelMat, 'z', 16);
+    boxP(grupoPanela, 0.28, 0.34, 0.08, 0, 0.12, lz * 0.58, panelaAnelMat);
+});
+const bico = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.22, 12, 1, true), refratarioMat);
+bico.material.side = THREE.DoubleSide;
+bico.rotation.z = Math.PI / 2 - 0.3;
+bico.position.set(-0.62, 0.46, 0);
+grupoPanela.add(bico);
+const luzPanela = new THREE.PointLight(0xff6a20, 1.6, 3, 2);
+luzPanela.position.set(0, 0.8, 0);
+grupoPanela.add(luzPanela);
+scene.add(grupoPanela);
+const INCLINACAO_PANELA = 0.85;
+
+// -- Jato de aço: tubo numa parábola do bico até o molde, com faíscas --
+const jatoMat = new THREE.MeshStandardMaterial({
+    color: 0xffa040, emissive: 0xff5010, emissiveIntensity: 2.4,
+    transparent: true, opacity: 0.95
+});
+const jatoMesh = new THREE.Mesh(new THREE.BufferGeometry(), jatoMat);
 jatoMesh.renderOrder = 997;
-const jatoLuz = new THREE.PointLight(0xff5522, 2, 4, 2);
+const jatoLuz = new THREE.PointLight(0xff5522, 2.4, 4, 2);
 jatoMesh.add(jatoLuz);
 scene.add(jatoMesh);
+let curvaJato = null;
+const N_FAISCAS = 40;
+const faiscas = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 6, 4), new THREE.MeshBasicMaterial({ color: 0xffd27a }), N_FAISCAS);
+faiscas.frustumCulled = false;
+scene.add(faiscas);
+const faiscaDados = Array.from({ length: N_FAISCAS }, () => ({ t: Math.random(), v: new THREE.Vector3() }));
+let origemFaiscas = new THREE.Vector3();
 
 function reposicionarPanela() {
     const moldeSlot = slotsGeometricos.find(s => s.label === 'MOLDE');
-    if (!moldeSlot) {
-        grupoPonte.visible = false; cabo.visible = false;
-        grupoPanela.visible = false; jatoMesh.visible = false;
-        return;
-    }
-    grupoPonte.visible = true; cabo.visible = true;
-    grupoPanela.visible = true; jatoMesh.visible = true;
+    const visivel = !!moldeSlot;
+    [grupoPonte, cabo, traversa, grupoPanela, jatoMesh, faiscas].forEach(o => { o.visible = visivel; });
+    if (!visivel) return;
 
     const p = moldeSlot.pos;
-    const xCentro = p.x - 1.0;
-    const zCentro = p.z + 0.35;
-    const yPonte = p.y + 3.4;   // altura da viga da ponte
-    const yGancho = p.y + 2.15; // altura onde a panela fica pendurada
+    const xCentro = p.x - 1.25;
+    const zCentro = p.z;
+    const yPonte = p.y + 4.2;
+    const yTraversa = p.y + 3.0;
+    const yPanela = p.y + 2.05;
 
     grupoPonte.position.set(xCentro, yPonte, zCentro);
+    traversa.position.set(xCentro, yTraversa, zCentro);
+    cabosIcamento.forEach((c) => {
+        const [dx, z] = c.userData.off;
+        const topo = yPonte + 0.45;
+        const base = yTraversa + 0.3;
+        c.position.set(xCentro + dx, (topo + base) / 2, zCentro + z);
+        c.scale.set(1, topo - base, 1);
+    });
 
-    const topoCabo = yPonte - 0.35;
-    cabo.position.set(xCentro, (topoCabo + yGancho) / 2, zCentro);
-    cabo.scale.set(1, topoCabo - yGancho, 1);
+    grupoPanela.position.set(xCentro, yPanela, zCentro);
+    grupoPanela.rotation.z = INCLINACAO_PANELA; // tomba pro lado do molde (-x local vira pra baixo/pro molde)
+    grupoPanela.rotation.y = Math.PI; // bico virado pro molde
+    grupoPanela.updateMatrixWorld(true);
 
-    grupoPanela.position.set(xCentro, yGancho, zCentro);
-
-    jatoMesh.position.set(p.x - 0.55, p.y + 1.25, p.z + 0.25);
-    jatoMesh.rotation.z = 0.18;
-    jatoMesh.scale.set(1, 1.7, 1);
+    const origem = new THREE.Vector3(-0.72, 0.5, 0).applyMatrix4(grupoPanela.matrixWorld);
+    const destino = new THREE.Vector3(p.x, p.y + 0.45, p.z);
+    const meio = new THREE.Vector3((origem.x + destino.x) / 2 + 0.15, origem.y + 0.05, (origem.z + destino.z) / 2);
+    curvaJato = new THREE.QuadraticBezierCurve3(origem, meio, destino);
+    jatoMesh.geometry.dispose();
+    jatoMesh.geometry = new THREE.TubeGeometry(curvaJato, 32, 0.06, 10, false);
+    jatoLuz.position.copy(destino).sub(jatoMesh.position).add(new THREE.Vector3(0, 0.3, 0));
+    origemFaiscas = destino.clone();
 }
 
 let tempoJato = 0;
+const faiscaDummy = new THREE.Object3D();
 function atualizarJato(delta) {
     tempoJato += delta;
-    const pulso = 0.82 + 0.18 * Math.sin(tempoJato * 9);
-    jatoMat.emissiveIntensity = 2.2 * pulso;
-    jatoLuz.intensity = 2 * pulso;
+    const pulso = 0.85 + 0.15 * Math.sin(tempoJato * 11);
+    jatoMat.emissiveIntensity = 2.4 * pulso;
+    acoLiquidoMat.emissiveIntensity = 2.2 + 0.4 * Math.sin(tempoJato * 5);
+    jatoLuz.intensity = 2.4 * pulso;
+    if (!faiscas.visible) return;
+    faiscaDados.forEach((f, i) => {
+        f.t += delta * (0.8 + (i % 5) * 0.12);
+        if (f.t > 1) {
+            f.t = 0;
+            const a = Math.random() * Math.PI * 2;
+            f.v.set(Math.cos(a) * (0.4 + Math.random() * 0.6), 0.6 + Math.random() * 0.9, Math.sin(a) * (0.4 + Math.random() * 0.6));
+        }
+        const t = f.t;
+        faiscaDummy.position.set(
+            origemFaiscas.x + f.v.x * t,
+            origemFaiscas.y + f.v.y * t - 2.2 * t * t,
+            origemFaiscas.z + f.v.z * t
+        );
+        faiscaDummy.scale.setScalar(0.018 * (1 - t));
+        faiscaDummy.updateMatrix();
+        faiscas.setMatrixAt(i, faiscaDummy.matrix);
+    });
+    faiscas.instanceMatrix.needsUpdate = true;
 }
 
 const DURACAO_LOOP_ACO = 7; // segundos pra percorrer o caminho inteiro
