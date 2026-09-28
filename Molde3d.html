@@ -39,6 +39,8 @@
     }
     .molde3d-btn:hover { background: #233047; border-color: #e8a33d; }
     .molde3d-btn:active { background: #0f1521; }
+    .molde3d-btn-segurar { touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+    .molde3d-btn-segurar:active { background: #3a2a10; border-color: #e8a33d; }
 </style>
 </head>
 <body>
@@ -50,12 +52,21 @@
         <div id="molde3d-hud" style="position:absolute; top:14px; left:16px; right:16px; z-index:4; display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; pointer-events:none;">
             <div>
                 <h2 style="margin:0; font-family:'Oswald', sans-serif; font-weight:600; font-size:1.05rem; letter-spacing:.05em; text-transform:uppercase; color:#e7ecf5;">Molde <span style="color:#e8a33d;">MCC4</span> — 4 placas</h2>
-                <div style="font-family:'IBM Plex Mono', monospace; font-size:.68rem; color:#8b96ab; margin-top:2px;">2 placas largas + 2 placas estreitas · cobre · dimensões estimadas p/ apresentação</div>
+                <div style="font-family:'IBM Plex Mono', monospace; font-size:.68rem; color:#8b96ab; margin-top:2px;">frente = lado móvel · trás = lado fixo · toque numa peça pra isolar ela · dimensões estimadas</div>
+                <div id="molde3d-agua" style="display:none; margin-top:8px; font-family:'IBM Plex Mono', monospace; font-size:.72rem; color:#bfe3ff; background:rgba(21,87,168,.35); border:1px solid #3d9cf0; padding:6px 10px; border-radius:8px; max-width:520px;"></div>
             </div>
         </div>
+        <div id="molde3d-peca" style="display:none; position:absolute; left:16px; bottom:16px; z-index:4; max-width:calc(100vw - 230px); font-family:'IBM Plex Mono', monospace; font-size:.75rem; color:#ffffff; background:#182031; border:1px solid #e8a33d; padding:7px 12px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,.5);"></div>
         <div id="molde3d-controls" style="position:absolute; right:16px; bottom:16px; z-index:4; display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+            <button type="button" id="molde3d-btn-sair-foco" class="molde3d-btn" style="display:none; border-color:#e8a33d;"><i class="fas fa-arrow-left"></i> Voltar ao molde</button>
             <button type="button" id="molde3d-btn-rotate" class="molde3d-btn"><i class="fas fa-sync"></i> Câmera girando</button>
             <button type="button" id="molde3d-btn-interior" class="molde3d-btn"><i class="fas fa-layer-group"></i> Ver interior</button>
+            <button type="button" id="molde3d-btn-agua" class="molde3d-btn"><i class="fas fa-tint"></i> Teste de água</button>
+            <div id="molde3d-largura" style="font-family:'IBM Plex Mono', monospace; font-size:.65rem; color:#8b96ab; margin-top:4px;"></div>
+            <div style="display:flex; gap:8px;">
+                <button type="button" id="molde3d-btn-fechar-estreitas" class="molde3d-btn molde3d-btn-segurar" title="Segure pra fechar as placas estreitas">&#9654;&#9664; Fechar estreitas</button>
+                <button type="button" id="molde3d-btn-abrir-estreitas" class="molde3d-btn molde3d-btn-segurar" title="Segure pra abrir as placas estreitas">&#9664;&#9654; Abrir estreitas</button>
+            </div>
         </div>
         <div id="molde3d-hint" style="position:absolute; left:50%; bottom:16px; transform:translateX(-50%); z-index:4; font-family:'IBM Plex Mono', monospace; font-size:.65rem; color:#8b96ab; background:rgba(17,24,38,.7); border:1px solid #233047; padding:5px 12px; border-radius:20px; white-space:nowrap;">arraste para girar · scroll para zoom</div>
     </div>
