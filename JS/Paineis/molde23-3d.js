@@ -321,7 +321,7 @@ async function iniciarCenaMCC23() {
         aguasColetor.push(agua);
     });
 
-    function construirMetade(sinal) {
+    function construirMetade(sinal, corpoMat = acoMat) {
         const g = new THREE.Group();
         const d = D / 2 - 0.004;
         const zc = sinal * (D / 4);
@@ -329,9 +329,9 @@ async function iniciarCenaMCC23() {
         const fz = (off) => face + sinal * off;
 
         // corpo central
-        box(g, CORPO_W, CORPO_H, d, 0, CORPO_CY, zc, acoMat).userData.label = 'Corpo central da carcaça';
+        box(g, CORPO_W, CORPO_H, d, 0, CORPO_CY, zc, corpoMat).userData.label = 'Corpo central da carcaça';
         // tampo do topo, levemente mais largo
-        box(g, CORPO_W + 0.06, 0.03, d, 0, CORPO_TOPO + 0.015, zc, acoEscuroMat).userData.label = 'Tampo da carcaça';
+        box(g, CORPO_W + 0.06, 0.03, d, 0, CORPO_TOPO + 0.015, zc, corpoMat).userData.label = 'Tampo da carcaça';
         // abertura do canal no topo
         box(g, 1.3, 0.006, 0.09, 0, CORPO_TOPO + 0.033, sinal * 0.045, buracoMat, false);
 
@@ -364,7 +364,10 @@ async function iniciarCenaMCC23() {
         return g;
     }
 
-    const frente = construirMetade(1);
+    // Corpo do lado fixo com material próprio: fica semitransparente no
+    // "Ver interior" pra aparecer o pacote de mola dentro dele.
+    const acoCorpoFixoMat = acoMat.clone();
+    const frente = construirMetade(1, acoCorpoFixoMat);
     frente.userData.label = 'Carcaça — frente';
     const tras = construirMetade(-1);
     tras.userData.label = 'Carcaça — trás';
@@ -383,8 +386,8 @@ async function iniciarCenaMCC23() {
     // bucha de bronze em cima e outra embaixo (flange de 6 furos, corpo,
     // pescoço e sextavado — foto da peça), mola no meio. Os 2 furos da
     // face de cada lado são onde ficam a bucha de cima e a de baixo.
-    // Fechado, fica escondido dentro da carcaça; no "Ver interior" desliza
-    // pra fora da face interna pra aparecer.
+    // Fica sempre no lugar, dentro da carcaça; no "Ver interior" o corpo
+    // da carcaça fica semitransparente pra ele aparecer.
     class Helice extends THREE.Curve {
         constructor(raio, voltas, comp) { super(); this.raio = raio; this.voltas = voltas; this.comp = comp; }
         getPoint(t, alvo = new THREE.Vector3()) {
@@ -412,7 +415,6 @@ async function iniciarCenaMCC23() {
         cilindro(b, 0.023, 0.019, 0, yFlange + dir * 0.0755, 0, bronzeMat, 'y', 6);
         return yFlange + dir * 0.085;
     }
-    const pacotesMola = [];
     [-0.5, 0.72].forEach((x) => {
         [Y_FURO_CIMA, Y_FURO_BAIXO].forEach((y) => {
             cilindro(frente, 0.036, 0.008, x, y, zF + 0.001, buracoMat, 'z', 24).userData.label = 'Furo do pacote de mola';
@@ -431,7 +433,6 @@ async function iniciarCenaMCC23() {
         pm.add(mola);
         const tuboM = cilindro(pm, 0.042, yTopo - yBase - 0.012, 0, (yTopo + yBase) / 2, 0, tuboMolaMat, 'y', 28);
         tuboM.userData.label = 'Tubo do pacote de mola';
-        pacotesMola.push(pm);
     });
     // curvas em U na parte de baixo da frente
     [-0.3, -0.05, 0.22, 0.48].forEach((x) => {
@@ -1106,7 +1107,7 @@ async function iniciarCenaMCC23() {
             tras.position.z = -ABERTURA * kAtual;
             grupoCobre.position.y = 0.6 * kAtual;
             portas.forEach((p) => { p.rotation.y = 1.9 * kAtual; });
-            pacotesMola.forEach((pm) => { pm.position.z = Z_PACOTE - 0.55 * kAtual; });
+            definirOpacidade(acoCorpoFixoMat, 1 - 0.7 * kAtual);
         }
 
         if (direcaoEstreitas !== 0) {
