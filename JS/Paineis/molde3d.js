@@ -351,10 +351,11 @@ async function iniciarCena() {
         pai.add(m);
         return m;
     }
-    function tubo(pai, pontos, r, mat) {
+    function tubo(pai, pontos, r, mat, label) {
         const curva = new THREE.CatmullRomCurve3(pontos.map((p) => new THREE.Vector3(...p)), false, 'catmullrom', 0.2);
         const m = new THREE.Mesh(new THREE.TubeGeometry(curva, 64, r, 12, false), mat);
         m.castShadow = true;
+        if (label) m.userData.label = label;
         pai.add(m);
         return curva;
     }
@@ -365,11 +366,14 @@ async function iniciarCena() {
         pai.add(m);
     }
     function olhal(pai, x, y, z) {
-        box(pai, 0.11, 0.11, 0.07, x, y, z, ferrugemMat);
+        const g = new THREE.Group();
+        g.userData.label = 'Olhal de içamento';
+        pai.add(g);
+        box(g, 0.11, 0.11, 0.07, x, y, z, ferrugemMat);
         const aro = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.012, 10, 24), ferrugemMat);
         aro.position.set(x, y + 0.02, z + 0.036);
-        pai.add(aro);
-        cilindro(pai, 0.022, 0.075, x, y + 0.02, z, buracoMat, 'z');
+        g.add(aro);
+        cilindro(g, 0.022, 0.075, x, y + 0.02, z, buracoMat, 'z');
     }
     function grupo(pai, label) {
         const g = new THREE.Group();
@@ -411,7 +415,7 @@ async function iniciarCena() {
         const fz = (off) => face + sinal * off;
 
         // corpo central
-        box(g, CORPO_W, CORPO_H, d, 0, CORPO_CY, zc, acoMat);
+        box(g, CORPO_W, CORPO_H, d, 0, CORPO_CY, zc, acoMat).userData.label = 'Corpo central da carcaça';
         // aba fina no topo, no centro
         box(g, 0.035, 0.06, 0.03, 0, CORPO_TOPO + 0.03, fz(-0.05), acoEscuroMat);
         // abertura do canal do molde no topo (cavidade entre as placas)
@@ -429,14 +433,15 @@ async function iniciarCena() {
         // asas laterais escalonadas (esquerda e direita)
         [-1, 1].forEach((lado) => {
             // parte interna, mais alta, colada no corpo
-            box(g, 0.46, 0.43, d * 0.86, lado * 0.95, 0.635, sinal * (d * 0.86) / 2, asaMat);
+            box(g, 0.46, 0.43, d * 0.86, lado * 0.95, 0.635, sinal * (d * 0.86) / 2, asaMat).userData.label = 'Asa lateral (parte interna)';
             // rampa entre a parte interna e a externa
             const rampa = box(g, 0.2, 0.06, d * 0.8, lado * 1.07, 0.745, sinal * (d * 0.8) / 2, asaMat);
             rampa.rotation.z = lado * 0.55;
+            rampa.userData.label = 'Asa lateral (rampa)';
             // parte externa, mais baixa
-            box(g, 0.49, 0.29, d * 0.8, lado * 1.265, 0.555, sinal * (d * 0.8) / 2, asaMat);
+            box(g, 0.49, 0.29, d * 0.8, lado * 1.265, 0.555, sinal * (d * 0.8) / 2, asaMat).userData.label = 'Asa lateral (parte externa)';
             // aba de apoio embaixo da asa externa
-            box(g, 0.5, 0.05, d * 0.7, lado * 1.25, 0.385, sinal * (d * 0.7) / 2, acoEscuroMat);
+            box(g, 0.5, 0.05, d * 0.7, lado * 1.25, 0.385, sinal * (d * 0.7) / 2, acoEscuroMat).userData.label = 'Aba de apoio da asa';
             // olhal de içamento em cima da asa externa
             olhal(g, lado * 1.38, 0.755, sinal * (d * 0.8 - 0.06));
             // bloco de trás em cima da asa interna
@@ -462,7 +467,7 @@ async function iniciarCena() {
 
         // ressalto horizontal (base do corpo) e grade de refrigeração embaixo
         box(g, 1.63, 0.03, d + 0.02, 0, 0.355, sinal * (d + 0.02) / 2, acoEscuroMat);
-        box(g, 1.37, 0.14, d * 0.9, 0.015, 0.27, sinal * (d * 0.9) / 2, acoEscuroMat);
+        box(g, 1.37, 0.14, d * 0.9, 0.015, 0.27, sinal * (d * 0.9) / 2, acoEscuroMat).userData.label = 'Base / grade de refrigeração';
         for (let i = 0; i < 22; i++) {
             const x = -0.64 + i * (1.3 / 21);
             box(g, 0.012, 0.12, 0.02, x, 0.27, sinal * (d * 0.9 + 0.01), ferrugemMat, false);
@@ -470,7 +475,7 @@ async function iniciarCena() {
 
         // pés (grossos, com consolo em cima)
         [-0.67, 0.69].forEach((x) => {
-            box(g, 0.11, 0.3, 0.1, x, 0.15, fz(-0.1), acoEscuroMat);
+            box(g, 0.11, 0.3, 0.1, x, 0.15, fz(-0.1), acoEscuroMat).userData.label = 'Pé do molde';
             box(g, 0.17, 0.05, 0.14, x, 0.315, fz(-0.1), acoEscuroMat);
             box(g, 0.14, 0.02, 0.13, x, 0.01, fz(-0.1), acoEscuroMat);
         });
@@ -492,18 +497,18 @@ async function iniciarCena() {
     // tampa pequena parafusada na asa esquerda
     box(frente, 0.08, 0.13, 0.015, -0.92, 0.59, (D / 2 - 0.004) * 0.86 + 0.008, ferrugemMat);
     // cano em U da esquerda
-    tubo(frente, [[-1.5, 0.52, 0.34], [-1.2, 0.52, 0.36], [-1.08, 0.5, 0.38], [-1.05, 0.42, 0.38], [-1.05, 0.33, 0.36]], 0.028, canoMat);
+    tubo(frente, [[-1.5, 0.52, 0.34], [-1.2, 0.52, 0.36], [-1.08, 0.5, 0.38], [-1.05, 0.42, 0.38], [-1.05, 0.33, 0.36]], 0.028, canoMat, 'Cano em U');
     // mangueira da esquerda com ponta de fita amarela
-    const mEsq = tubo(frente, [[-0.95, 0.36, 0.3], [-1.15, 0.37, 0.55], [-1.35, 0.38, 0.72]], 0.018, canoMat);
+    const mEsq = tubo(frente, [[-0.95, 0.36, 0.3], [-1.15, 0.37, 0.55], [-1.35, 0.38, 0.72]], 0.018, canoMat, 'Mangueira de água');
     const pEsq = mEsq.getPoint(1);
     cilindro(frente, 0.03, 0.08, pEsq.x, pEsq.y, pEsq.z, fitaAmarelaMat, 'x').rotation.y = 0.6;
     cilindro(frente, 0.034, 0.04, pEsq.x - 0.05, pEsq.y, pEsq.z + 0.03, tampaPretaMat, 'x').rotation.y = 0.6;
     // cano em U grande da direita (sobe, vai pra direita, desce)
-    tubo(frente, [[0.9, 0.22, 0.34], [0.95, 0.4, 0.36], [0.98, 0.52, 0.38], [1.15, 0.54, 0.38], [1.5, 0.55, 0.36], [1.56, 0.5, 0.36], [1.56, 0.44, 0.36]], 0.03, canoMat);
+    tubo(frente, [[0.9, 0.22, 0.34], [0.95, 0.4, 0.36], [0.98, 0.52, 0.38], [1.15, 0.54, 0.38], [1.5, 0.55, 0.36], [1.56, 0.5, 0.36], [1.56, 0.44, 0.36]], 0.03, canoMat, 'Cano em U');
     // cano inox horizontal passando embaixo do corpo
-    tubo(frente, [[-0.4, 0.22, 0.42], [0.1, 0.22, 0.43], [0.5, 0.23, 0.43], [0.9, 0.22, 0.4]], 0.02, canoInoxMat);
+    tubo(frente, [[-0.4, 0.22, 0.42], [0.1, 0.22, 0.43], [0.5, 0.23, 0.43], [0.9, 0.22, 0.4]], 0.02, canoInoxMat, 'Cano inox');
     // mangueira da direita com ponta de fita amarela
-    const mDir = tubo(frente, [[1.02, 0.4, 0.32], [1.2, 0.33, 0.55], [1.45, 0.24, 0.75]], 0.018, canoMat);
+    const mDir = tubo(frente, [[1.02, 0.4, 0.32], [1.2, 0.33, 0.55], [1.45, 0.24, 0.75]], 0.018, canoMat, 'Mangueira de água');
     const pDir = mDir.getPoint(1);
     cilindro(frente, 0.03, 0.08, pDir.x, pDir.y, pDir.z, fitaAmarelaMat, 'x').rotation.y = -0.6;
     cilindro(frente, 0.034, 0.04, pDir.x + 0.05, pDir.y, pDir.z + 0.03, tampaPretaMat, 'x').rotation.y = -0.6;
@@ -880,11 +885,14 @@ async function iniciarCena() {
         raycaster.setFromCamera(pointer, camera);
         const hit = raycaster.intersectObjects([frente, tras, grupoCobre], true)
             .find((h) => !h.object.isSprite && !h.object.isLine && !h.object.isInstancedMesh && h.object.visible);
-        for (let o = hit && hit.object; o; o = o.parent) {
-            if (o.userData.label) {
-                entrarFoco(o, o.userData.label);
-                return;
-            }
+        if (!hit) return;
+        for (let o = hit.object; o; o = o.parent) {
+            if (!o.userData.label) continue;
+            // Achou só a metade inteira da carcaça: isola a peça clicada
+            // (cano, olhal, parafuso...) em vez da metade toda.
+            if (o === frente || o === tras) entrarFoco(hit.object, `Peça da ${o.userData.label.toLowerCase()}`);
+            else entrarFoco(o, o.userData.label);
+            return;
         }
     });
 
