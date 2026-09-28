@@ -1554,15 +1554,22 @@ const LATERAL_OSCILADOR = 0.7 / 2 + 0.42 / 2;
 // MOLDE_ALTURA_MUNDO por fórmula (são valores fixos), então tiveram que
 // ser escalados manualmente por 0.5 junto com este número.
 const MOLDE_ALTURA_MUNDO = 0.55;      // extensão vertical no mundo = dimensão local X
-const MOLDE_COMPRIMENTO_MUNDO = 1.55; // extensão ao longo da linha no mundo = dimensão local Y
-const MOLDE_LARGURA_Z = 1.55;         // lateral (Z) — não afetada pela rotação em Z, cobre a fileira Oscilador+Bender+Oscilador por baixo
+// Escala do Molde MCC4 3D pro sinótico (3,0 de largura com as asas →
+// ~1,55, a mesma largura lateral que o bloco antigo ocupava).
+const MOLDE_ESC = 0.7;
+const MOLDE_Y0 = -MOLDE_ALTURA_MUNDO / 2; // base dos pés, relativo ao centro do slot
 
 // 🔧 "Tá muito quadrado": 2 segmentos / 0.045 de raio deixava as quinas
 // quase retas (chanfro mal perceptível). Subido pro mesmo padrão do
 // blocoGeoCabeceira (3 segmentos, 0.09 de raio) — dobra o arredondamento
 // e deixa a superfície mais suave, sem mudar a caixa delimitadora (as
 // posições de janela/faixa/placa abaixo não dependem do raio).
-const blocoGeoMolde = new RoundedBoxGeometry(MOLDE_ALTURA_MUNDO, MOLDE_COMPRIMENTO_MUNDO, MOLDE_LARGURA_Z, 3, 0.09);
+// Corpo central do Molde MCC4 3D (1,45 × 0,56 × 0,9), em coordenadas
+// LOCAIS do Molde girado (local_x = -mundo_y, local_y = mundo_x): altura
+// em X, profundidade em Y, largura em Z, deslocado pra altura real do
+// corpo (em cima dos pés).
+const blocoGeoMolde = new RoundedBoxGeometry(0.56 * MOLDE_ESC, 0.9 * MOLDE_ESC, 1.45 * MOLDE_ESC, 3, 0.02);
+blocoGeoMolde.translate(-(MOLDE_Y0 + 0.64 * MOLDE_ESC), 0, 0);
 
 // 🆕 "Gaiola de rolos" aberta — como o equipamento real da MCC4 (curva
 // e mesa horizontal): duas metades separadas por um vão no meio, por
@@ -1653,33 +1660,148 @@ const bolaCentralMatAlerta = new THREE.MeshStandardMaterial({ color: 0xef4444, r
 const tuboHidraulicoMat = new THREE.MeshStandardMaterial({ color: 0xE8B024, roughness: 0.35, metalness: 0.55 });
 const tuboHidraulicoMatAlerta = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.35, metalness: 0.5, emissive: 0x7a0000, emissiveIntensity: 0.4 });
 
-function adicionarRolosDecorativos(mesh, peca, ehGrupo23) {
-    const offsets = [-0.24, 0, 0.24]; // 3 rolos por fileira, igual à foto real
-    const yRolo = VAO_PLACA / 2 - 0.02; // encostados na borda do vão, sem atravessar a metade
+// 🆕 Rolos de verdade, rolo por rolo, a partir do MESMO layout que o
+// modal usa (getLayoutRolos em dados.js — ex.: Horizontal = 7 por base, #4
+// acionado, 4 mancais por rolo). Igual à foto do segmento horizontal: cada
+// rolo comprido com os mancais nas pontas e nas junções internas. Só o
+// rolo (ou a parte do rolo repartido) marcado como travado fica vermelho,
+// e cada mancal fica na cor da ocorrência registrada — antes a fileira
+// inteira ficava vermelha, sem dar pra saber QUAL rolo era.
+const geoRoloCache = new Map();
+function geoRolo(raio, comp) {
+    const chave = `${raio.toFixed(3)}|${comp.toFixed(3)}`;
+    if (!geoRoloCache.has(chave)) {
+        const g = new THREE.CylinderGeometry(raio, raio, comp, 14);
+        g.rotateX(Math.PI / 2);
+        geoRoloCache.set(chave, g);
+    }
+    return geoRoloCache.get(chave);
+}
+const mancalRoloGeo = new THREE.BoxGeometry(0.045, 0.07, 0.04);
+const mancalRoloMat = new THREE.MeshStandardMaterial({ color: 0x6b7280, roughness: 0.6, metalness: 0.5 });
+const mancalRoloMatPorOcorrencia = {
+    rolamento: new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4, metalness: 0.4, emissive: 0x7a0000, emissiveIntensity: 0.5 }),
+    graxa: new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.4, metalness: 0.4, emissive: 0x6b4e00, emissiveIntensity: 0.5 }),
+    agua: new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4, metalness: 0.4, emissive: 0x0b2f7a, emissiveIntensity: 0.5 }),
+};
+const cardanRoloGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.09, 10);
+cardanRoloGeo.rotateX(Math.PI / 2);
+const cardanRoloMat = new THREE.MeshStandardMaterial({ color: 0xc0392b, roughness: 0.5, metalness: 0.35 });
+const marcadorAlertaGeo = new THREE.OctahedronGeometry(0.1, 0);
+const aletaSegGeo = new THREE.BoxGeometry(0.03, 0.12, 1.2);
+const reforcoSegGeo = new THREE.BoxGeometry(1.2, 0.05, 0.04);
+const blocoCantoSegGeo = new THREE.BoxGeometry(0.12, 0.14, 0.06);
+const tuboSegGeo = new THREE.CylinderGeometry(0.018, 0.018, 1.25, 8);
+tuboSegGeo.rotateZ(Math.PI / 2);
+const tuboSegMat = new THREE.MeshStandardMaterial({ color: 0x9aa3ad, roughness: 0.35, metalness: 0.7 });
 
-    // 🆕 Rolos ficam vermelhos SÓ na base que tiver problema: se o
-    // travamento/mancal for da base Superior ("S-..."), só a fileira de
-    // cima fica vermelha; se for da Inferior ("I-..."), só a de baixo;
-    // se tiver dos dois lados, as duas fileiras ficam vermelhas.
+// Frações (0..1 ao longo do rolo) dos mancais internos — mesma regra do
+// grid do modal (renderGridRolos), pra 3D e 2D baterem.
+function juncoesMancaisInternos(layout, partes) {
+    const juncoes = [];
+    let acumulado = 0;
+    for (let i = 0; i < partes.length - 1; i++) {
+        acumulado += partes[i];
+        juncoes.push(acumulado);
+    }
+    if (layout.mancais === 3) return [['C', partes.length > 1 ? partes[0] : 0.5]];
+    if (layout.mancais !== 4) return [];
+    let a, b;
+    if (juncoes.length >= 2) { a = juncoes[0]; b = juncoes[juncoes.length - 1]; }
+    else if (juncoes.length === 1) { a = juncoes[0] - 0.03; b = juncoes[0] + 0.03; }
+    else if (layout.reparticao) { a = 0.47; b = 0.53; }
+    else { a = 1 / 3; b = 2 / 3; }
+    return [['A-int', a], ['B-int', b]];
+}
+
+function adicionarRolosDecorativos(mesh, peca, ehGrupo23) {
+    const yRolo = VAO_PLACA / 2 - 0.02; // encostados na borda do vão, sem atravessar a metade
     const travados = peca ? parseRolosTravados(peca) : new Set();
     const mancais = peca ? parseMancais(peca) : {};
-    const chaves = [...travados, ...Object.keys(mancais)];
-    const temAlertaSuperior = chaves.some(k => k.startsWith('S-'));
-    const temAlertaInferior = chaves.some(k => k.startsWith('I-'));
-    const matRoloCima = temAlertaSuperior ? rolinhoMatAlerta : rolinhoMat;
-    const matRoloBaixo = temAlertaInferior ? rolinhoMatAlerta : rolinhoMat;
+    const layout = peca ? getLayoutRolos(peca.tipo, peca.id) : null;
 
-    offsets.forEach(offX => {
-        const rolinhoCima = new THREE.Mesh(rolinhoGeo, matRoloCima);
-        rolinhoCima.position.set(offX, yRolo, 0);
-        rolinhoCima.castShadow = true;
-        mesh.add(rolinhoCima);
+    const porBase = layout ? layout.porBase : 3;
+    const xMin = -0.52, xMax = 0.52;
+    const passo = porBase > 1 ? (xMax - xMin) / (porBase - 1) : 0;
+    const raio = Math.min(0.11, passo ? passo * 0.5 : 0.11);
+    const COMP = 1.1;
 
-        const rolinhoBaixo = new THREE.Mesh(rolinhoGeo, matRoloBaixo);
-        rolinhoBaixo.position.set(offX, -yRolo, 0);
-        rolinhoBaixo.castShadow = true;
-        mesh.add(rolinhoBaixo);
+    [['S', yRolo], ['I', -yRolo]].forEach(([base, y]) => {
+        const acionados = layout && layout.acionadosPorBase ? (layout.acionadosPorBase[base] || []) : [];
+        for (let pos = 1; pos <= porBase; pos++) {
+            const x = porBase > 1 ? xMin + (pos - 1) * passo : 0;
+            const partes = layout ? getPartesDoRolo(layout, pos) : [1];
+
+            let z = -COMP / 2;
+            partes.forEach((tam, idx) => {
+                const comp = tam * COMP;
+                const chave = partes.length > 1 ? `${base}-${pos}-${idx + 1}` : `${base}-${pos}`;
+                const rolo = new THREE.Mesh(geoRolo(raio, comp - 0.012), travados.has(chave) ? rolinhoMatAlerta : rolinhoMat);
+                rolo.position.set(x, y, z + comp / 2);
+                rolo.castShadow = true;
+                mesh.add(rolo);
+                z += comp;
+            });
+
+            if (layout && layout.mancais) {
+                const posicoes = [['A', 0], ['B', 1], ...juncoesMancaisInternos(layout, partes)];
+                posicoes.forEach(([sufixo, frac]) => {
+                    const estado = mancais[`${base}-${pos}-${sufixo}`] || '';
+                    const mancal = new THREE.Mesh(mancalRoloGeo, mancalRoloMatPorOcorrencia[estado] || mancalRoloMat);
+                    const zExtra = sufixo === 'A' ? -0.025 : sufixo === 'B' ? 0.025 : 0;
+                    mancal.position.set(x, y, -COMP / 2 + frac * COMP + zExtra);
+                    mesh.add(mancal);
+                });
+            }
+
+            if (acionados.includes(pos)) {
+                const cardan = new THREE.Mesh(cardanRoloGeo, cardanRoloMat);
+                cardan.position.set(x, y, COMP / 2 + 0.09);
+                mesh.add(cardan);
+            }
+        }
     });
+
+    // Visual da foto do segmento horizontal: aletas embaixo da base
+    // inferior, barras de reforço na frente/trás das duas bases e
+    // tubulação correndo pelas laterais. Tudo na cor do bloco.
+    const matSeg = mesh.material;
+    const yBaseInf = -ALTURA_TOPO_BLOCO;
+    for (let i = 0; i < 9; i++) {
+        const aleta = new THREE.Mesh(aletaSegGeo, matSeg);
+        aleta.position.set(-0.56 + i * 0.14, yBaseInf - 0.06, 0);
+        mesh.add(aleta);
+    }
+    [VAO_PLACA / 2 + ALTURA_METADE / 2, -(VAO_PLACA / 2 + ALTURA_METADE / 2)].forEach((yb) => {
+        [-1, 1].forEach((lz) => {
+            const reforco = new THREE.Mesh(reforcoSegGeo, matSeg);
+            reforco.position.set(0, yb, lz * 0.69);
+            mesh.add(reforco);
+            [-0.55, 0.55].forEach((xb) => {
+                const bloco = new THREE.Mesh(blocoCantoSegGeo, matSeg);
+                bloco.position.set(xb, yb, lz * 0.7);
+                mesh.add(bloco);
+            });
+        });
+    });
+    [0.08, -0.05].forEach((yt, i) => {
+        [-1, 1].forEach((lz) => {
+            const tubo = new THREE.Mesh(tuboSegGeo, tuboSegMat);
+            tubo.position.set(0, ALTURA_TOPO_BLOCO - 0.04 - i * 0.06 + yt * 0, lz * (0.72 + i * 0.02));
+            mesh.add(tubo);
+        });
+    });
+
+    // Marcador de alerta em cima do segmento: de cima (vista normal do
+    // sinótico) os rolos ficam escondidos dentro do vão, então sem isso
+    // não dava pra ver de longe que tem rolo travado / mancal com problema.
+    const temOcorrenciaMancal = Object.values(mancais).some(Boolean);
+    if (travados.size > 0 || temOcorrenciaMancal) {
+        const marcador = new THREE.Mesh(marcadorAlertaGeo, rolinhoMatAlerta);
+        marcador.position.set(0, ALTURA_TOPO_BLOCO + 0.55, 0);
+        marcador.userData.marcadorAlerta = true;
+        mesh.add(marcador);
+    }
 
     // 🆕 4 pilares saindo da base INFERIOR e atravessando até acima da
     // base superior. Na MCC4 o topo é o Cilindro de Elevação (CIL-1..4);
@@ -1886,59 +2008,12 @@ function adicionarRolosBender(mesh, peca) {
     });
 }
 
-// 🆕 Detalhes decorativos do Molde — mesmo padrão dos rolos acima:
-// filhos do mesh principal (mesh.add), nunca entram em meshesBySlot, o
-// raycaster não-recursivo ignora completamente. TODOS com material
-// METÁLICO PRÓPRIO (nunca a cor de status) — contraste real contra o
-// corpo.
-//
-// 🔧 v5: comparando lado a lado com a foto de referência, o que faz o
-// equipamento real parecer de verdade não é a forma do corpo (que
-// também é uma caixa), é DENSIDADE DE DETALHE COM CONTRASTE FORTE — a
-// caixa de comando sai claramente PARA FORA do corpo (não é um bump em
-// cima), tem faixa de risco preto/amarelo, painéis retangulares e
-// pernas grossas. Investe em tudo isso; a caixa de comando volta a
-// existir, mas agora como uma peça que sai pela LATERAL (eixo mundo_X,
-// ponta da peça) em vez de flutuar em cima.
-// 🔧 Altura (primeiro parâmetro = extensão em mundoY) reduzida junto
-// com o corte pela metade do Molde (MOLDE_ALTURA_MUNDO), senão as
-// janelas ficam desproporcionalmente grandes pro corpo novo.
-const moldeJanelaGeo = new THREE.BoxGeometry(0.08, 0.22, 0.03);
+// Materiais também usados pelo Molde da MCC2/3 (adicionarDetalhesMoldeMCC23).
 const moldeJanelaMat = new THREE.MeshStandardMaterial({ color: 0x090b10, roughness: 0.35, metalness: 0.3 });
-// Aro/moldura clara atrás da janela (um pouco maior, sai um pouco pros
-// lados) — dá o efeito de "painel com moldura", não um retângulo
-// escuro murcho na parede.
-const moldeJanelaAroGeo = new THREE.BoxGeometry(0.11, 0.28, 0.02);
-// 🔧 Cor clara demais (0x6b7890) sumia contra o corpo amarelo/verde no
-// print — subida pra um cinza-claro quase metálico polido, que
-// contrasta contra qualquer cor de status.
 const moldeJanelaAroMat = new THREE.MeshStandardMaterial({ color: 0x9aa6ba, roughness: 0.25, metalness: 0.7 });
-
-// 🔧 Pés e mangueiras precisam ficar "de pé" no MUNDO (eixo mundo_Y),
-// mas o cilindro nasce com o eixo em Y LOCAL — como o Molde gira -90°
-// em Z, local_Y vira mundo_X (deitado!). rotateZ realinha o eixo do
-// cilindro pra local_X, que é o eixo que de fato vira mundo_Y depois da
-// rotação do Molde (ver comentário grande lá em cima, perto de
-// MOLDE_ALTURA_MUNDO). Pernas mais grossas/altas que as versões
-// anteriores — na foto real elas são um elemento bem presente, não um
-// detalhe discreto.
-const moldePeGeo = new THREE.CylinderGeometry(0.075, 0.095, 0.22, 12);
-moldePeGeo.rotateZ(Math.PI / 2);
 const moldePeMat = new THREE.MeshStandardMaterial({ color: 0x2b313e, roughness: 0.4, metalness: 0.6 });
 
-const moldeMangueiraGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.42, 10);
-moldeMangueiraGeo.rotateZ(Math.PI / 2);
-const moldeMangueiraMat = new THREE.MeshStandardMaterial({ color: 0x1c1f26, roughness: 0.55, metalness: 0.15 });
-
-// Placa frontal (tipo a plaquinha "M4-2" da foto de referência).
-// altura reduzida junto com o corte pela metade do Molde.
-const PLACA_FRENTE_MUNDO = { altura: 0.13, comprimento: 0.22, espessuraZ: 0.03 };
-const moldePlacaFrenteGeo = new RoundedBoxGeometry(PLACA_FRENTE_MUNDO.altura, PLACA_FRENTE_MUNDO.comprimento, PLACA_FRENTE_MUNDO.espessuraZ, 2, 0.025);
-const moldePlacaFrenteMat = new THREE.MeshStandardMaterial({ color: 0x161a22, roughness: 0.4, metalness: 0.35 });
-
-// Faixa de risco preto/amarelo (a listra diagonal bem chamativa da
-// foto real) — textura desenhada num canvas, igual ao resto do arquivo
-// já faz pra sprites de texto (criarSpriteTexto).
+// Faixa de risco preto/amarelo (usada no Molde da MCC2/3).
 function criarTexturaFaixaRisco() {
     const tam = 128;
     const canvas = document.createElement('canvas');
@@ -1962,91 +2037,70 @@ function criarTexturaFaixaRisco() {
     textura.repeat.set(2.6, 1);
     return textura;
 }
-// 🔧 0.22 de altura (~20% da altura total do corpo) rendeu como um
-// risco fino quase invisível no print — subida pra 0.42 (~38%), só que
-// aí passou do outro lado: comparado com a foto de referência real
-// (mural "M4-2"), a faixa de risco lá é uma tira fina bem colada na
-// base, acima dos pés — não sobe até quase o meio do corpo. Ajustada
-// pra 0.18 (~16% da altura) e reposicionada mais pra baixo (ver
-// adicionarDetalhesMolde) pra bater com a referência.
-// altura reduzida junto com o corte pela metade do Molde, senão a
-// faixa passa a ocupar quase 1/3 do corpo novo.
-const FAIXA_RISCO_MUNDO = { altura: 0.09, comprimento: 1.3, espessuraZ: 0.03 };
-const moldeFaixaRiscoGeo = new THREE.BoxGeometry(FAIXA_RISCO_MUNDO.altura, FAIXA_RISCO_MUNDO.comprimento, FAIXA_RISCO_MUNDO.espessuraZ);
 const moldeFaixaRiscoMat = new THREE.MeshStandardMaterial({ map: criarTexturaFaixaRisco(), roughness: 0.55, metalness: 0.1 });
 
-// Caixa de comando — sai pela PONTA da peça (eixo mundo_X, ao longo da
-// linha), não flutuando em cima: metade embutida no corpo, metade pra
-// fora, igual ao "bloco anexado" bem visível da foto real.
-// altura reduzida junto com o corte pela metade do Molde — 0.55 seria
-// tão alto quanto o corpo inteiro novo (também 0.55).
-const CAIXA_COMANDO_MUNDO = { altura: 0.275, protrusaoX: 0.42, largura: 0.5 };
-const moldeCaixaComandoGeo = new RoundedBoxGeometry(CAIXA_COMANDO_MUNDO.altura, CAIXA_COMANDO_MUNDO.protrusaoX, CAIXA_COMANDO_MUNDO.largura, 2, 0.03);
-const moldeCaixaComandoMat = new THREE.MeshStandardMaterial({ color: 0x45516f, roughness: 0.32, metalness: 0.55 });
-
-// Conversão mundo → local pra esta peça (Molde gira -90° em Z):
-// local_x = -mundo_y, local_y = mundo_x, local_z = mundo_z.
-function moldeMundoParaLocal(mundoX, mundoY, mundoZ) {
-    return [-mundoY, mundoX, mundoZ];
-}
+// 🆕 Molde (MCC4) igual ao Molde MCC4 3D (Molde3d.html / molde3d.js), em
+// escala: o corpo central é o mesh principal (cor de status — é nele que
+// o clique/hover bate) e em volta vai o exterior real em aço cinza-escuro:
+// asas escalonadas com olhais, 3 janelas nas duas faces, ressalto e
+// grade de refrigeração, pés com consolo e os canos em U. Tudo num grupo
+// que desfaz o giro de -90° em Z do Molde, então as medidas abaixo são as
+// mesmas do molde3d.js (x = largura, y = altura, z = profundidade),
+// convertidas por caixaMolde(): largura → Z (lateral), profundidade → X.
+const moldeAcoMat = new THREE.MeshStandardMaterial({ color: 0x4a4e55, roughness: 0.75, metalness: 0.45 });
+const moldeAcoEscuroMat = new THREE.MeshStandardMaterial({ color: 0x3a3d42, roughness: 0.8, metalness: 0.45 });
+const moldeBuracoMat = new THREE.MeshStandardMaterial({ color: 0x0c0b0a, roughness: 1, metalness: 0 });
+const moldeCanoMat = new THREE.MeshStandardMaterial({ color: 0x2f3237, roughness: 0.5, metalness: 0.6 });
+const moldeCaixaGeo = new THREE.BoxGeometry(1, 1, 1);
 
 function adicionarDetalhesMolde(mesh) {
-    // Caixa de comando: metade embutida na ponta -X do corpo, metade
-    // pra fora — lê como peça anexada, não como bump na superfície.
-    const comandoMundoX = -(MOLDE_COMPRIMENTO_MUNDO / 2 - 0.12 + CAIXA_COMANDO_MUNDO.protrusaoX / 2);
-    const caixaComando = new THREE.Mesh(moldeCaixaComandoGeo, moldeCaixaComandoMat);
-    caixaComando.position.set(...moldeMundoParaLocal(comandoMundoX, 0.05, -0.05));
-    caixaComando.castShadow = true;
-    mesh.add(caixaComando);
-
-    // Faixa de risco, na face frontal, colada na base (acima dos pés) —
-    // mundoY = -0.22 com metade da altura nova (0.045) deixa a faixa
-    // entre -0.265 e -0.175, bem perto da borda de baixo do corpo novo
-    // (-0.275), igual à referência real (posição escalada junto com o
-    // corte pela metade do Molde).
-    const faixa = new THREE.Mesh(moldeFaixaRiscoGeo, moldeFaixaRiscoMat);
-    faixa.position.set(...moldeMundoParaLocal(0, -0.22, MOLDE_LARGURA_Z / 2 + FAIXA_RISCO_MUNDO.espessuraZ / 2 - 0.01));
-    mesh.add(faixa);
-
-    // Placa frontal, acima da faixa de risco, do lado da caixa de comando
-    const placa = new THREE.Mesh(moldePlacaFrenteGeo, moldePlacaFrenteMat);
-    placa.position.set(...moldeMundoParaLocal(-0.5, 0.15, MOLDE_LARGURA_Z / 2 + PLACA_FRENTE_MUNDO.espessuraZ / 2 - 0.01));
-    mesh.add(placa);
-
-    // 3 janelas (com aro) na face frontal, do lado oposto à caixa de
-    // comando — a referência real (mural "M4-2") mostra 3 janelas em
-    // fileira, não 2. 🔧 Antes ficavam a só 0.25 de distância — quase
-    // coladas (aro tem 0.28 de largura, então metade se sobrepunha),
-    // viravam uma barra escura só no print. Espaçamento de 0.41 entre
-    // centros (> 0.28 da largura do aro) mantém as 3 separadas dentro
-    // do espaço disponível nesse lado do corpo.
-    [-0.30, 0.11, 0.52].forEach(mundoX => {
-        const aro = new THREE.Mesh(moldeJanelaAroGeo, moldeJanelaAroMat);
-        aro.position.set(...moldeMundoParaLocal(mundoX, 0.075, MOLDE_LARGURA_Z / 2 - 0.005));
-        mesh.add(aro);
-
-        const janela = new THREE.Mesh(moldeJanelaGeo, moldeJanelaMat);
-        janela.position.set(...moldeMundoParaLocal(mundoX, 0.075, MOLDE_LARGURA_Z / 2 - 0.03));
-        mesh.add(janela);
+    // Tudo na cor de status do molde (mesmo material do corpo), pra ler
+    // como uma peça só.
+    const moldeAcoMat = mesh.material, moldeAcoEscuroMat = mesh.material, moldeCanoMat = mesh.material;
+    const g = new THREE.Group();
+    g.rotation.z = Math.PI / 2; // desfaz o -90° do Molde: eixos de g = eixos do mundo
+    mesh.add(g);
+    const E = MOLDE_ESC;
+    function caixaMolde(w, h, d, x, y, z, mat, inclinacao = 0) {
+        const m = new THREE.Mesh(moldeCaixaGeo, mat);
+        m.scale.set(d * E, h * E, w * E);
+        m.position.set(z * E, MOLDE_Y0 + y * E, x * E);
+        if (inclinacao) m.rotation.x = -inclinacao;
+        m.castShadow = true;
+        g.add(m);
+    }
+    const D = 0.9;
+    [1, -1].forEach((sinal) => {
+        const d = D / 2 - 0.004;
+        const fz = (off) => sinal * (D / 2) + sinal * off;
+        [-1, 1].forEach((lado) => {
+            caixaMolde(0.46, 0.43, d * 0.86, lado * 0.95, 0.635, sinal * (d * 0.86) / 2, moldeAcoMat);
+            caixaMolde(0.2, 0.06, d * 0.8, lado * 1.07, 0.745, sinal * (d * 0.8) / 2, moldeAcoMat, lado * 0.55);
+            caixaMolde(0.49, 0.29, d * 0.8, lado * 1.265, 0.555, sinal * (d * 0.8) / 2, moldeAcoMat);
+            caixaMolde(0.5, 0.05, d * 0.7, lado * 1.25, 0.385, sinal * (d * 0.7) / 2, moldeAcoEscuroMat);
+            caixaMolde(0.11, 0.11, 0.07, lado * 1.38, 0.755, sinal * (d * 0.8 - 0.06), moldeAcoEscuroMat);
+            caixaMolde(0.18, 0.08, 0.12, lado * 1.02, 0.89, sinal * 0.1, moldeAcoEscuroMat);
+        });
+        [[-0.40, 0.42], [-0.01, 0.22], [0.375, 0.43]].forEach(([x, w]) => {
+            caixaMolde(w, 0.14, 0.012, x, 0.61, fz(0.0), moldeBuracoMat);
+            caixaMolde(w, 0.022, 0.05, x, 0.54, fz(0.01), moldeAcoEscuroMat);
+            caixaMolde(w + 0.04, 0.018, 0.02, x, 0.69, fz(0.005), moldeAcoEscuroMat);
+        });
+        caixaMolde(1.63, 0.03, d + 0.02, 0, 0.355, sinal * (d + 0.02) / 2, moldeAcoEscuroMat);
+        caixaMolde(1.37, 0.14, d * 0.9, 0.015, 0.27, sinal * (d * 0.9) / 2, moldeAcoEscuroMat);
+        [-0.67, 0.69].forEach((x) => {
+            caixaMolde(0.11, 0.3, 0.1, x, 0.15, fz(-0.1), moldeAcoEscuroMat);
+            caixaMolde(0.17, 0.05, 0.14, x, 0.315, fz(-0.1), moldeAcoEscuroMat);
+        });
     });
-
-    // 4 pés de apoio nos cantos de baixo (mundo Y bem negativo = embaixo)
-    const mundoYPe = -(MOLDE_ALTURA_MUNDO / 2) - 0.11;
-    [[-0.42, -0.6], [0.42, -0.6], [-0.42, 0.6], [0.42, 0.6]].forEach(([mundoX, mundoZ]) => {
-        const pe = new THREE.Mesh(moldePeGeo, moldePeMat);
-        pe.position.set(...moldeMundoParaLocal(mundoX, mundoYPe, mundoZ));
-        pe.castShadow = true;
-        mesh.add(pe);
-    });
-
-    // 2 mangueiras penduradas embaixo, levemente inclinadas
-    const mundoYMangueira = -(MOLDE_ALTURA_MUNDO / 2) - 0.18;
-    [[-0.15, -0.5], [0.2, -0.35]].forEach(([mundoX, mundoZ], idx) => {
-        const mangueira = new THREE.Mesh(moldeMangueiraGeo, moldeMangueiraMat);
-        mangueira.position.set(...moldeMundoParaLocal(mundoX, mundoYMangueira, mundoZ));
-        mangueira.rotation.z = idx === 0 ? 0.35 : -0.25; // inclinação — tilt dentro do mesmo plano local X/Y, continua parecendo "pendurado torto" depois de girar
-        mangueira.castShadow = true;
-        mesh.add(mangueira);
+    [
+        [[-1.5, 0.52, 0.34], [-1.2, 0.52, 0.36], [-1.08, 0.5, 0.38], [-1.05, 0.42, 0.38], [-1.05, 0.33, 0.36]],
+        [[0.9, 0.22, 0.34], [0.95, 0.4, 0.36], [0.98, 0.52, 0.38], [1.15, 0.54, 0.38], [1.5, 0.55, 0.36], [1.56, 0.5, 0.36], [1.56, 0.44, 0.36]],
+    ].forEach((pontos) => {
+        const curva = new THREE.CatmullRomCurve3(pontos.map(([x, y, z]) => new THREE.Vector3(z * E, MOLDE_Y0 + y * E, x * E)), false, 'catmullrom', 0.2);
+        const cano = new THREE.Mesh(new THREE.TubeGeometry(curva, 32, 0.03 * E, 8, false), moldeCanoMat);
+        cano.castShadow = true;
+        g.add(cano);
     });
 }
 
