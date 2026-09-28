@@ -664,16 +664,23 @@ async function iniciarCena() {
     const mecanismos = [];
     const pecasGiratorias = [];
     function montarMecanismoEstreita(placaEstreita, s) {
+        const fusos = [];
         box(placaEstreita, CX_AGUA_E, PLACA_H * 0.86, 0.1, s * (COBRE_E / 2 + CX_AGUA_E / 2), 0, 0, acoEscuroMat)
             .userData.label = "Caixa d'água da placa estreita";
 
         [FUSO_Y, -FUSO_Y].forEach((y) => {
+            // Comprimento recalculado a cada quadro (ver atualizarTelescopicos):
+            // sempre da porca até passar da caixa Benzer, em qualquer
+            // posição da placa. Os fios de rosca além da ponta ficam ocultos.
             const fuso = grupo(placaEstreita, 'Fuso (haste roscada) — move a placa estreita');
             const x0 = s * faceCaixaAgua;
-            cilindro(fuso, 0.013, 0.45, x0 + s * 0.225, y, 0, canoInoxMat, 'x', 16);
-            for (let i = 0; i < 30; i++) cilindro(fuso, 0.016, 0.004, x0 + s * (0.03 + i * 0.014), y, 0, parafusoMat, 'x', 16);
+            const haste = cilindro(fuso, 0.013, 1, 0, y, 0, canoInoxMat, 'x', 16);
+            const roscas = [];
+            for (let i = 0; i < 70; i++) roscas.push(cilindro(fuso, 0.016, 0.004, x0 + s * (0.03 + i * 0.014), y, 0, parafusoMat, 'x', 16));
             pecasGiratorias.push(cilindro(fuso, 0.03, 0.03, x0 + s * 0.015, y, 0, parafusoMat, 'x', 6));
-            pecasGiratorias.push(cilindro(fuso, 0.02, 0.012, x0 + s * 0.45, y, 0, parafusoMat, 'x', 6));
+            const ponta = cilindro(fuso, 0.02, 0.012, 0, y, 0, parafusoMat, 'x', 6);
+            pecasGiratorias.push(ponta);
+            fusos.push({ haste, ponta, roscas, x0 });
         });
 
         const frameX = s * 0.95;
@@ -719,7 +726,7 @@ async function iniciarCena() {
             const interno = cilindro(tele, 0.018, 1, 0, yt, 0, teleInternoMat, 'x', 20);
             return { luva, interno };
         });
-        mecanismos.push({ s, placa: placaEstreita, frameX, teles, pontaPlaca: () => placaEstreita.position.x + s * faceCaixaAgua });
+        mecanismos.push({ s, placa: placaEstreita, frameX, teles, fusos, pontaPlaca: () => placaEstreita.position.x + s * faceCaixaAgua });
     }
     montarMecanismoEstreita(placas[2], 1);
     montarMecanismoEstreita(placas[3], -1);
@@ -727,7 +734,15 @@ async function iniciarCena() {
     function atualizarTelescopicos() {
         mecanismos.forEach((m) => {
             const pOut = m.pontaPlaca();
-            const L = Math.max(0.01, Math.abs(m.frameX - pOut) * 0.62);
+            const gap = Math.abs(m.frameX - pOut);
+            const L = Math.max(0.01, gap * 0.62);
+            const Lf = gap + 0.18;
+            m.fusos.forEach(({ haste, ponta, roscas, x0 }) => {
+                haste.scale.y = Lf;
+                haste.position.x = x0 + m.s * Lf / 2;
+                ponta.position.x = x0 + m.s * Lf;
+                roscas.forEach((r, i) => { r.visible = 0.03 + i * 0.014 < Lf - 0.01; });
+            });
             m.teles.forEach(({ luva, interno }) => {
                 luva.scale.y = L;
                 luva.position.x = m.frameX - m.s * L / 2;
