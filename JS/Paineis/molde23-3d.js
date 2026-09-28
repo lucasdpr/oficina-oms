@@ -378,8 +378,44 @@ async function iniciarCenaMCC23() {
     const cxCmd = grupo(frente, 'Caixa de comando');
     box(cxCmd, 0.3, 0.26, 0.05, 0.38, 0.69, zF + 0.025, acoEscuroMat);
     box(cxCmd, 0.03, 0.06, 0.02, 0.54, 0.69, zF + 0.04, laranjaMat);
-    // parafusos grandes do painel
-    [[-0.5, 0.78], [-0.5, 0.5], [0.72, 0.78], [0.72, 0.5]].forEach(([x, y]) => cilindro(frente, 0.028, 0.025, x, y, zF + 0.012, parafusoMat, 'z', 6));
+    // ---- pacotes de mola (lado fixo, onde ficam as caixas elétricas) ----
+    // Um em cada um dos 4 furos da face (2 de cada lado, em cima e
+    // embaixo): bucha de bronze (flange de 6 furos, corpo, pescoço e
+    // sextavado — foto da peça) com a mola atrás, entrando no molde.
+    // Fechado, fica escondido dentro da carcaça; no "Ver interior" desliza
+    // pra fora da face interna pra aparecer.
+    class Helice extends THREE.Curve {
+        constructor(raio, voltas, comp) { super(); this.raio = raio; this.voltas = voltas; this.comp = comp; }
+        getPoint(t, alvo = new THREE.Vector3()) {
+            const a = t * this.voltas * Math.PI * 2;
+            return alvo.set(Math.cos(a) * this.raio, Math.sin(a) * this.raio, -t * this.comp);
+        }
+    }
+    const molaMat = new THREE.MeshStandardMaterial({ color: 0x3d4146, roughness: 0.4, metalness: 0.8 });
+    const molaGeo = new THREE.TubeGeometry(new Helice(0.03, 9, 0.18), 360, 0.0055, 8, false);
+    const pacotesMola = [];
+    [[-0.5, 0.78], [-0.5, 0.5], [0.72, 0.78], [0.72, 0.5]].forEach(([x, y]) => {
+        cilindro(frente, 0.036, 0.008, x, y, zF + 0.001, buracoMat, 'z', 24).userData.label = 'Furo do pacote de mola';
+        const pm = grupo(frente, 'Pacote de mola (bucha de bronze + mola)');
+        pm.position.set(x, y, zF - 0.01);
+        const bucha = grupo(pm, 'Bucha de bronze do pacote de mola');
+        cilindro(bucha, 0.04, 0.014, 0, 0, 0, bronzeMat, 'z', 28);
+        cilindro(bucha, 0.016, 0.016, 0, 0, 0.001, buracoMat, 'z', 18);
+        for (let k = 0; k < 6; k++) {
+            const a = (k / 6) * Math.PI * 2;
+            cilindro(bucha, 0.004, 0.016, Math.cos(a) * 0.031, Math.sin(a) * 0.031, 0.001, buracoMat, 'z', 8);
+        }
+        cilindro(bucha, 0.029, 0.05, 0, 0, -0.032, bronzeMat, 'z', 24);
+        cilindro(bucha, 0.02, 0.03, 0, 0, -0.072, bronzeMat, 'z', 20);
+        cilindro(bucha, 0.026, 0.025, 0, 0, -0.1, bronzeMat, 'z', 6);
+        const mola = new THREE.Mesh(molaGeo, molaMat);
+        mola.position.z = -0.115;
+        mola.castShadow = true;
+        mola.userData.label = 'Mola do pacote';
+        pm.add(mola);
+        cilindro(pm, 0.036, 0.01, 0, 0, -0.3, acoEscuroMat, 'z', 24).userData.label = 'Prato de apoio da mola';
+        pacotesMola.push(pm);
+    });
     // curvas em U na parte de baixo da frente
     [-0.3, -0.05, 0.22, 0.48].forEach((x) => {
         tubo(frente, [[x, 0.55, zF], [x, 0.47, zF + 0.06], [x + 0.05, 0.43, zF + 0.07], [x + 0.1, 0.47, zF + 0.06], [x + 0.1, 0.55, zF]], 0.03, canoMat, 'Curva em U de água');
@@ -1053,6 +1089,7 @@ async function iniciarCenaMCC23() {
             tras.position.z = -ABERTURA * kAtual;
             grupoCobre.position.y = 0.6 * kAtual;
             portas.forEach((p) => { p.rotation.y = 1.9 * kAtual; });
+            pacotesMola.forEach((pm) => { pm.position.z = zF - 0.01 - 0.55 * kAtual; });
         }
 
         if (direcaoEstreitas !== 0) {
