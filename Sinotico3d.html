@@ -1556,7 +1556,7 @@ const LATERAL_OSCILADOR = 0.7 / 2 + 0.42 / 2;
 const MOLDE_ALTURA_MUNDO = 0.55;      // extensão vertical no mundo = dimensão local X
 // Escala do Molde MCC4 3D pro sinótico (3,0 de largura com as asas →
 // ~1,55, a mesma largura lateral que o bloco antigo ocupava).
-const MOLDE_ESC = 0.52;
+const MOLDE_ESC = 0.7;
 const MOLDE_Y0 = -MOLDE_ALTURA_MUNDO / 2; // base dos pés, relativo ao centro do slot
 
 // 🔧 "Tá muito quadrado": 2 segmentos / 0.045 de raio deixava as quinas
@@ -1688,6 +1688,12 @@ const cardanRoloGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.09, 10);
 cardanRoloGeo.rotateX(Math.PI / 2);
 const cardanRoloMat = new THREE.MeshStandardMaterial({ color: 0xc0392b, roughness: 0.5, metalness: 0.35 });
 const marcadorAlertaGeo = new THREE.OctahedronGeometry(0.1, 0);
+const aletaSegGeo = new THREE.BoxGeometry(0.03, 0.12, 1.2);
+const reforcoSegGeo = new THREE.BoxGeometry(1.2, 0.05, 0.04);
+const blocoCantoSegGeo = new THREE.BoxGeometry(0.12, 0.14, 0.06);
+const tuboSegGeo = new THREE.CylinderGeometry(0.018, 0.018, 1.25, 8);
+tuboSegGeo.rotateZ(Math.PI / 2);
+const tuboSegMat = new THREE.MeshStandardMaterial({ color: 0x9aa3ad, roughness: 0.35, metalness: 0.7 });
 
 // Frações (0..1 ao longo do rolo) dos mancais internos — mesma regra do
 // grid do modal (renderGridRolos), pra 3D e 2D baterem.
@@ -1717,7 +1723,7 @@ function adicionarRolosDecorativos(mesh, peca, ehGrupo23) {
     const porBase = layout ? layout.porBase : 3;
     const xMin = -0.52, xMax = 0.52;
     const passo = porBase > 1 ? (xMax - xMin) / (porBase - 1) : 0;
-    const raio = Math.min(0.09, passo ? passo * 0.42 : 0.09);
+    const raio = Math.min(0.11, passo ? passo * 0.5 : 0.11);
     const COMP = 1.1;
 
     [['S', yRolo], ['I', -yRolo]].forEach(([base, y]) => {
@@ -1754,6 +1760,36 @@ function adicionarRolosDecorativos(mesh, peca, ehGrupo23) {
                 mesh.add(cardan);
             }
         }
+    });
+
+    // Visual da foto do segmento horizontal: aletas embaixo da base
+    // inferior, barras de reforço na frente/trás das duas bases e
+    // tubulação correndo pelas laterais. Tudo na cor do bloco.
+    const matSeg = mesh.material;
+    const yBaseInf = -ALTURA_TOPO_BLOCO;
+    for (let i = 0; i < 9; i++) {
+        const aleta = new THREE.Mesh(aletaSegGeo, matSeg);
+        aleta.position.set(-0.56 + i * 0.14, yBaseInf - 0.06, 0);
+        mesh.add(aleta);
+    }
+    [VAO_PLACA / 2 + ALTURA_METADE / 2, -(VAO_PLACA / 2 + ALTURA_METADE / 2)].forEach((yb) => {
+        [-1, 1].forEach((lz) => {
+            const reforco = new THREE.Mesh(reforcoSegGeo, matSeg);
+            reforco.position.set(0, yb, lz * 0.69);
+            mesh.add(reforco);
+            [-0.55, 0.55].forEach((xb) => {
+                const bloco = new THREE.Mesh(blocoCantoSegGeo, matSeg);
+                bloco.position.set(xb, yb, lz * 0.7);
+                mesh.add(bloco);
+            });
+        });
+    });
+    [0.08, -0.05].forEach((yt, i) => {
+        [-1, 1].forEach((lz) => {
+            const tubo = new THREE.Mesh(tuboSegGeo, tuboSegMat);
+            tubo.position.set(0, ALTURA_TOPO_BLOCO - 0.04 - i * 0.06 + yt * 0, lz * (0.72 + i * 0.02));
+            mesh.add(tubo);
+        });
     });
 
     // Marcador de alerta em cima do segmento: de cima (vista normal do
@@ -2018,6 +2054,9 @@ const moldeCanoMat = new THREE.MeshStandardMaterial({ color: 0x2f3237, roughness
 const moldeCaixaGeo = new THREE.BoxGeometry(1, 1, 1);
 
 function adicionarDetalhesMolde(mesh) {
+    // Tudo na cor de status do molde (mesmo material do corpo), pra ler
+    // como uma peça só.
+    const moldeAcoMat = mesh.material, moldeAcoEscuroMat = mesh.material, moldeCanoMat = mesh.material;
     const g = new THREE.Group();
     g.rotation.z = Math.PI / 2; // desfaz o -90° do Molde: eixos de g = eixos do mundo
     mesh.add(g);
