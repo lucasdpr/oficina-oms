@@ -92,6 +92,27 @@ function criarTexturaPlacaTras23(THREE, larg, alt, colunas, linhas) {
     return texturaDeCanvas(THREE, c);
 }
 
+// Furos de água na face interna da carcaça (onde a placa larga encosta).
+// Fundo transparente — só os furos, colados na face como um decalque.
+function criarTexturaFurosCarcaca(THREE) {
+    const [c, ctx] = novoCanvas(1024, 420);
+    ctx.clearRect(0, 0, 1024, 420);
+    const passo = 1024 / 22;
+    function furo(x, y, r) {
+        ctx.fillStyle = '#8f8a84';
+        ctx.beginPath(); ctx.arc(x, y, r + 5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#090807';
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    }
+    for (let col = 0; col < 22; col++) {
+        const x = passo / 2 + col * passo;
+        furo(x, 40, 15);
+        furo(x, 380, 15);
+        if (col % 2 === 0) [140, 210, 280].forEach((y) => furo(x + passo / 2, y, 8));
+    }
+    return texturaDeCanvas(THREE, c);
+}
+
 function criarTexturaTexto(THREE, texto, cor) {
     const [c, ctx] = novoCanvas(256, 128);
     ctx.clearRect(0, 0, 256, 128);
@@ -283,6 +304,14 @@ async function iniciarCenaMCC23() {
         pai.add(g);
         return g;
     }
+    // Conjuntos do modo foco: clicar em qualquer peça isola o conjunto
+    // inteiro dela (ex.: placa estreita + fusos + Benzer + telescópicos),
+    // não só a pecinha que o clique pegou.
+    const conjuntos = new Map();
+    function conjunto(nome, ...raizes) {
+        conjuntos.set(nome, raizes);
+        raizes.forEach((r) => { r.userData.conjunto = nome; });
+    }
 
     // ---- dimensões (proporções das fotos da MCC2/3) ----
     const D = 0.9;
@@ -294,6 +323,7 @@ async function iniciarCenaMCC23() {
 
     // ---- base: vigas AZUIS + plataforma cinza (fica parada ao abrir) ----
     const base = grupo(scene, 'Base / suporte azul');
+    conjunto('Base / suporte azul', base);
     [-1.2, 1.2].forEach((x) => {
         [-1, 1].forEach((sz) => box(base, 0.14, 0.34, 0.1, x, 0.17, sz * 0.36, azulMat));
         box(base, 0.2, 0.02, D * 0.95, x, 0.01, 0, azulMat);
@@ -309,6 +339,7 @@ async function iniciarCenaMCC23() {
     const aguasColetor = [];
     [-0.45, 0.45].forEach((x) => {
         const g = grupo(base, 'Coletor de água (embaixo do corpo)');
+        conjunto(`Coletor de água — ${x < 0 ? 'esquerda' : 'direita'}`, g);
         cilindro(g, 0.06, COL_L, x, 0.3, 0, coletorMat, 'x', 24);
         [x - COL_L / 2, x + COL_L / 2].forEach((xf) => cilindro(g, 0.066, 0.012, xf, 0.3, 0, parafusoMat, 'x', 24));
         const geo = new THREE.CylinderGeometry(0.054, 0.054, 1, 24);
@@ -368,9 +399,11 @@ async function iniciarCenaMCC23() {
     // "Ver interior" pra aparecer o pacote de mola dentro dele.
     const acoCorpoFixoMat = acoMat.clone();
     const frente = construirMetade(1, acoCorpoFixoMat);
-    frente.userData.label = 'Carcaça — frente';
+    frente.userData.label = 'Carcaça — lado fixo';
     const tras = construirMetade(-1);
-    tras.userData.label = 'Carcaça — trás';
+    tras.userData.label = 'Carcaça — lado móvel';
+    conjunto('Carcaça — lado fixo', frente);
+    conjunto('Carcaça — lado móvel', tras);
     scene.add(frente, tras);
 
     const zF = D / 2;
@@ -420,6 +453,7 @@ async function iniciarCenaMCC23() {
             cilindro(frente, 0.036, 0.008, x, y, zF + 0.001, buracoMat, 'z', 24).userData.label = 'Furo do pacote de mola';
         });
         const pm = grupo(frente, 'Pacote de mola (lado fixo)');
+        conjunto(`Pacote de mola — ${x < 0 ? 'esquerda' : 'direita'}`, pm);
         pm.position.set(x, 0, Z_PACOTE);
         const yTopo = Y_FURO_CIMA + 0.02;
         const yBase = Y_FURO_BAIXO - 0.02;
@@ -507,6 +541,7 @@ async function iniciarCenaMCC23() {
     // direcionais Rexroth (azuis, com bobina) e 4 sensores indutivos de
     // ponta laranja.
     const cxValv = caixaComPorta('Caixa de válvulas (Rexroth)', xP - 0.07, CORPO_Y0 + 0.3, 0.16, acoEscuroMat);
+    conjunto('Caixa de válvulas (Rexroth)', cxValv);
     box(cxValv, 0.01, 0.13, 0.18, 0.04, 0, 0, pinturaCinzaMat).userData.label = 'Bloco manifold hidráulico';
     [-0.055, 0, 0.055].forEach((z) => {
         const v = grupo(cxValv, 'Válvula direcional Rexroth (solenoide)');
@@ -526,6 +561,7 @@ async function iniciarCenaMCC23() {
     // Caixa de junção inox: placa interna com filme azul, conectores
     // militares (verde-oliva) e prensa-cabos na lateral, fio terra na porta.
     const cxJun = caixaComPorta('Caixa de junção elétrica', xP - 0.07, CORPO_Y0 + 0.09, 0.15, canoInoxMat);
+    conjunto('Caixa de junção elétrica', cxJun);
     box(cxJun, 0.02, 0.12, 0.13, 0.03, 0, -0.02, painelBrancoMat).userData.label = 'Placa de bornes';
     [0.03, -0.03].forEach((y) => box(cxJun, 0.002, 0.004, 0.13, 0.019, y, -0.02, filmeAzulMat, false));
     [0.045, 0.012, -0.022, -0.052].forEach((y, i) => {
@@ -541,6 +577,23 @@ async function iniciarCenaMCC23() {
     const PLACA_H = 0.42;
     const COBRE_E = 0.045;
     const PLACA_CY = CORPO_Y0 + 0.03 + PLACA_H / 2;
+    // Furos de água na face interna das duas metades da carcaça — é por
+    // eles que a água sai pra placa (mesmo esquema do MCC4).
+    const furosCarcacaMat = new THREE.MeshStandardMaterial({ map: criarTexturaFurosCarcaca(THREE), alphaTest: 0.5, roughness: 0.8, metalness: 0.3 });
+    const xColuna = (col) => -PLACA_LARGA_W / 2 + (col + 0.5) * (PLACA_LARGA_W / 22);
+    const FURO_DY = PLACA_H / 2 - PLACA_H * (40 / 420);
+    const furosAmostra = [];
+    [2, 6, 11, 15, 19].forEach((col) => [FURO_DY, -FURO_DY].forEach((dy) => furosAmostra.push([xColuna(col), PLACA_CY + dy])));
+    [[frente, 1], [tras, -1]].forEach(([metade, sinal]) => {
+        const faceInterna = sinal * (D / 4) - sinal * ((D / 2 - 0.004) / 2);
+        metade.userData.faceInterna = faceInterna;
+        const furos = new THREE.Mesh(new THREE.PlaneGeometry(PLACA_LARGA_W, PLACA_H), furosCarcacaMat);
+        furos.position.set(0, PLACA_CY, faceInterna - sinal * 0.0015);
+        furos.rotation.y = sinal > 0 ? Math.PI : 0;
+        furos.userData.label = 'Furos de água da carcaça';
+        metade.add(furos);
+    });
+
     const zPlacaLarga = PLACA_ESTREITA_W / 2 + COBRE_E / 2;
     const xPlacaEstreita = PLACA_LARGA_W / 2 - COBRE_E / 2;
     const grupoCobre = new THREE.Group();
@@ -574,8 +627,8 @@ async function iniciarCenaMCC23() {
     const ABERTURA_LARGA = 0.22;
     const ABERTURA_ESTREITA = 0.2;
     const placas = [
-        comAfastamento(placa(PLACA_LARGA_W, COBRE_E, 0, zPlacaLarga, 'z', 1, 'Placa larga — frente', cobreTrasMat, cobreFrenteMat), 'z', 1, ABERTURA_LARGA),
-        comAfastamento(placa(PLACA_LARGA_W, COBRE_E, 0, -zPlacaLarga, 'z', -1, 'Placa larga — trás', cobreTrasMat, cobreFrenteMat), 'z', -1, ABERTURA_LARGA),
+        comAfastamento(placa(PLACA_LARGA_W, COBRE_E, 0, zPlacaLarga, 'z', 1, 'Placa larga — lado fixo', cobreTrasMat, cobreFrenteMat), 'z', 1, ABERTURA_LARGA),
+        comAfastamento(placa(PLACA_LARGA_W, COBRE_E, 0, -zPlacaLarga, 'z', -1, 'Placa larga — lado móvel', cobreTrasMat, cobreFrenteMat), 'z', -1, ABERTURA_LARGA),
         comAfastamento(placa(COBRE_E, PLACA_ESTREITA_W, xPlacaEstreita, 0, 'x', 1, 'Placa estreita', cobreEstreitaTrasMat, cobreEstreitaFrenteMat), 'x', 1, ABERTURA_ESTREITA),
         comAfastamento(placa(COBRE_E, PLACA_ESTREITA_W, -xPlacaEstreita, 0, 'x', -1, 'Placa estreita', cobreEstreitaTrasMat, cobreEstreitaFrenteMat), 'x', -1, ABERTURA_ESTREITA),
     ];
@@ -673,6 +726,9 @@ async function iniciarCenaMCC23() {
     }
     adicionarCaixaAguaLarga(placas[0], 1);
     adicionarCaixaAguaLarga(placas[1], -1);
+
+    conjunto('Placa larga — lado fixo (com caixa d\'água em T e foot roll)', placas[0]);
+    conjunto('Placa larga — lado móvel (com caixa d\'água em T e foot roll)', placas[1]);
 
     // ---- foot rolls e guias (fotos reais) ----
     const mancalMat = new THREE.MeshStandardMaterial({ color: 0x8e8b85, roughness: 0.85, metalness: 0.4 });
@@ -807,6 +863,7 @@ async function iniciarCenaMCC23() {
             const interno = cilindro(tele, 0.015, 1, 0, yt, 0, teleInternoMat, 'x', 20);
             return { luva, interno };
         });
+        conjunto(`Conjunto da placa estreita — ${s > 0 ? 'direita' : 'esquerda'}`, placaEstreita, quadro);
         mecanismos.push({ s, placa: placaEstreita, frameX, teles, sanfonas, fusos, pontaPlaca: () => placaEstreita.position.x + s * faceCaixaAgua });
     }
     montarMecanismoEstreita(placas[2], 1);
@@ -855,7 +912,14 @@ async function iniciarCenaMCC23() {
             criarFluxo(metade, 20, 0.4, 0.016, (t, out) => curva.getPoint(1 - t, out), { entrada: true });
         });
     });
-    // 2) caixas d'água das placas largas: água subindo pela grade
+    // 2) jatos saindo dos furos da carcaça (os dois lados) em direção à placa
+    [[frente, 1], [tras, -1]].forEach(([metade, sinal]) => {
+        const z0 = metade.userData.faceInterna;
+        furosAmostra.forEach(([hx, hy]) => {
+            criarFluxo(metade, 7, 0.9, 0.011, (t, out) => out.set(hx, hy - 0.07 * t * t, z0 - sinal * 0.3 * t));
+        });
+    });
+    // 2b) caixas d'água das placas largas: água subindo pela grade
     [placas[0], placas[1]].forEach((p, i) => {
         const sp = i === 0 ? 1 : -1;
         const zp = sp * (COBRE_E / 2 + CX_LARGA_E + 0.03);
@@ -905,14 +969,9 @@ async function iniciarCenaMCC23() {
     const btnSairFoco = document.getElementById('molde3d-btn-sair-foco');
     let foco = null;
 
-    function entrarFoco(alvo, label) {
+    function entrarFoco(raizes, label) {
         const objs = new Set();
-        if (alvo.isMesh) {
-            objs.add(alvo);
-            alvo.children.forEach((c) => { if (c.isLine) objs.add(c); });
-        } else {
-            alvo.traverse((o) => objs.add(o));
-        }
+        raizes.forEach((r) => r.traverse((o) => objs.add(o)));
         scene.updateMatrixWorld();
         const caixa = new THREE.Box3();
         const tmp = new THREE.Box3();
@@ -934,7 +993,7 @@ async function iniciarCenaMCC23() {
         const raio = caixa.getSize(new THREE.Vector3()).length() / 2;
         const dir = camera.position.clone().sub(controls.target).normalize();
         controls.target.copy(centro);
-        camera.position.copy(centro).addScaledVector(dir, Math.max(0.25, raio * 2.6));
+        camera.position.copy(centro).addScaledVector(dir, Math.max(0.25, raio * 3.2));
         controls.minDistance = 0.05;
         controls.maxPolarAngle = Math.PI;
         if (btnSairFoco) btnSairFoco.style.display = 'inline-flex';
@@ -974,11 +1033,8 @@ async function iniciarCenaMCC23() {
             .find((h) => !h.object.isSprite && !h.object.isLine && !h.object.isInstancedMesh && h.object.visible);
         if (!hit) return;
         for (let o = hit.object; o; o = o.parent) {
-            if (!o.userData.label) continue;
-            // Achou só a metade inteira da carcaça: isola a peça clicada
-            // em vez da metade toda.
-            if (o === frente || o === tras) entrarFoco(hit.object, `Peça da ${o.userData.label.toLowerCase()}`);
-            else entrarFoco(o, o.userData.label);
+            if (!o.userData.conjunto) continue;
+            entrarFoco(conjuntos.get(o.userData.conjunto), o.userData.conjunto);
             return;
         }
     });

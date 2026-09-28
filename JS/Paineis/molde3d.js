@@ -381,6 +381,14 @@ async function iniciarCena() {
         pai.add(g);
         return g;
     }
+    // Conjuntos do modo foco: clicar em qualquer peça isola o conjunto
+    // inteiro dela (ex.: placa estreita + fusos + Benzer + telescópicos),
+    // não só a pecinha que o clique pegou.
+    const conjuntos = new Map();
+    function conjunto(nome, ...raizes) {
+        conjuntos.set(nome, raizes);
+        raizes.forEach((r) => { r.userData.conjunto = nome; });
+    }
 
     // ---- dimensões (tiradas das proporções da foto frontal) ----
     const D = 0.9;           // profundidade total do molde (frente → trás)
@@ -488,6 +496,8 @@ async function iniciarCena() {
     frente.userData.label = 'Carcaça — lado móvel';
     const tras = construirMetade(-1, acoMat);
     tras.userData.label = 'Carcaça — lado fixo';
+    conjunto('Carcaça — lado móvel', frente);
+    conjunto('Carcaça — lado fixo', tras);
     scene.add(frente, tras);
 
     // ---- detalhes só da face da frente (foto) ----
@@ -521,6 +531,7 @@ async function iniciarCena() {
     const entradasTubulao = [];
     [-1, 1].forEach((lado) => {
         const g = grupo(frente, 'Tubulão de água (lado móvel)');
+        conjunto(`Tubulão de água — ${lado < 0 ? 'esquerda' : 'direita'}`, g);
         const x = lado * 0.95;
         cilindro(g, 0.085, TUB_L, x, TUB_Y, TUB_ZC, tubulaoMat, 'x', 32);
         [x - TUB_L / 2, x + TUB_L / 2].forEach((xf) => cilindro(g, 0.105, 0.02, xf, TUB_Y, TUB_ZC, acoEscuroMat, 'x', 32));
@@ -580,6 +591,9 @@ async function iniciarCena() {
         comAfastamento(placa(COBRE_E, PLACA_ESTREITA_W, xPlacaEstreita, 0, 'x', 1, 'Placa estreita', cobreEstreitaTrasMat, cobreEstreitaFrenteMat), 'x', 1, ABERTURA_ESTREITA),
         comAfastamento(placa(COBRE_E, PLACA_ESTREITA_W, -xPlacaEstreita, 0, 'x', -1, 'Placa estreita', cobreEstreitaTrasMat, cobreEstreitaFrenteMat), 'x', -1, ABERTURA_ESTREITA),
     ];
+
+    conjunto('Placa larga — lado móvel (com foot roll)', placas[0]);
+    conjunto('Placa larga — lado fixo (com cilindros e foot roll)', placas[1]);
 
     // ---- foot rolls e guias (fotos reais) ----
     // Presos como filhos das placas, pra acompanharem a placa na abertura.
@@ -726,6 +740,7 @@ async function iniciarCena() {
             const interno = cilindro(tele, 0.018, 1, 0, yt, 0, teleInternoMat, 'x', 20);
             return { luva, interno };
         });
+        conjunto(`Conjunto da placa estreita — ${s > 0 ? 'direita' : 'esquerda'}`, placaEstreita, quadro);
         mecanismos.push({ s, placa: placaEstreita, frameX, teles, fusos, pontaPlaca: () => placaEstreita.position.x + s * faceCaixaAgua });
     }
     montarMecanismoEstreita(placas[2], 1);
@@ -832,15 +847,9 @@ async function iniciarCena() {
     const btnSairFoco = document.getElementById('molde3d-btn-sair-foco');
     let foco = null;
 
-    function entrarFoco(alvo, label) {
+    function entrarFoco(raizes, label) {
         const objs = new Set();
-        if (alvo.isMesh) {
-            // placa (mesh com acessórios pendurados): só a própria placa
-            objs.add(alvo);
-            alvo.children.forEach((c) => { if (c.isLine) objs.add(c); });
-        } else {
-            alvo.traverse((o) => objs.add(o));
-        }
+        raizes.forEach((r) => r.traverse((o) => objs.add(o)));
         scene.updateMatrixWorld();
         const caixa = new THREE.Box3();
         const tmp = new THREE.Box3();
@@ -862,7 +871,7 @@ async function iniciarCena() {
         const raio = caixa.getSize(new THREE.Vector3()).length() / 2;
         const dir = camera.position.clone().sub(controls.target).normalize();
         controls.target.copy(centro);
-        camera.position.copy(centro).addScaledVector(dir, Math.max(0.25, raio * 2.6));
+        camera.position.copy(centro).addScaledVector(dir, Math.max(0.25, raio * 3.2));
         controls.minDistance = 0.05;
         controls.maxPolarAngle = Math.PI;
         if (btnSairFoco) btnSairFoco.style.display = 'inline-flex';
@@ -902,11 +911,8 @@ async function iniciarCena() {
             .find((h) => !h.object.isSprite && !h.object.isLine && !h.object.isInstancedMesh && h.object.visible);
         if (!hit) return;
         for (let o = hit.object; o; o = o.parent) {
-            if (!o.userData.label) continue;
-            // Achou só a metade inteira da carcaça: isola a peça clicada
-            // (cano, olhal, parafuso...) em vez da metade toda.
-            if (o === frente || o === tras) entrarFoco(hit.object, `Peça da ${o.userData.label.toLowerCase()}`);
-            else entrarFoco(o, o.userData.label);
+            if (!o.userData.conjunto) continue;
+            entrarFoco(conjuntos.get(o.userData.conjunto), o.userData.conjunto);
             return;
         }
     });
