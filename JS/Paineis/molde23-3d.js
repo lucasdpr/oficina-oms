@@ -531,30 +531,92 @@ async function iniciarCenaMCC23() {
     // cima mais larga (formato T) com flange amarelo em cada ponta, e a
     // traseira coberta por uma grade de parafusos com arruela.
     const CX_LARGA_E = 0.06;
+    // Proporções da foto (placa no cavalete azul): a barra de cima do T
+    // atravessa tudo e tem ~45% da altura; a parte de baixo (a "perna" do
+    // T) tem a largura do cobre.
+    const T_ALT = PLACA_H + 0.04;
+    const T_BARRA_ALT = T_ALT * 0.45;
+    const T_BARRA_W = 2.2;
+    const T_PERNA_W = PLACA_LARGA_W + 0.04;
+    const T_TOPO = T_ALT / 2;
+    const T_BARRA_CY = T_TOPO - T_BARRA_ALT / 2;
+    function texturaOMS52() {
+        const [c, ctx] = novoCanvas(512, 128);
+        ctx.clearRect(0, 0, 512, 128);
+        ctx.font = 'bold 84px Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.strokeStyle = 'rgba(70,72,75,0.9)';
+        ctx.lineWidth = 4;
+        ctx.strokeText('OMS 52', 256, 66);
+        return texturaDeCanvas(THREE, c);
+    }
+    const texOMS52 = texturaOMS52();
+    function parafusoArruela(pai, x, y, zFace, sp, r = 0.02) {
+        cilindro(pai, r, 0.006, x, y, zFace + sp * 0.003, canoInoxMat, 'z', 16);
+        cilindro(pai, r * 0.55, 0.016, x, y, zFace + sp * 0.012, parafusoMat, 'z', 6);
+        cilindro(pai, r * 0.3, 0.03, x, y, zFace + sp * 0.02, canoInoxMat, 'z', 8);
+    }
     function adicionarCaixaAguaLarga(p, sp) {
-        const g = grupo(p, "Caixa d'água da placa larga");
+        const g = grupo(p, "Caixa d'água da placa larga (T)");
         const z0 = sp * (COBRE_E / 2 + CX_LARGA_E / 2);
-        box(g, PLACA_LARGA_W - 0.1, PLACA_H * 0.9, CX_LARGA_E, 0, -0.01, z0, acoMat);
-        box(g, PLACA_LARGA_W + 0.3, 0.06, CX_LARGA_E + 0.02, 0, PLACA_H / 2 + 0.03, z0, acoMat);
+        const zFace = z0 + sp * (CX_LARGA_E / 2);
+        // barra de cima do T (atravessa tudo) + perna (largura do cobre)
+        box(g, T_BARRA_W, T_BARRA_ALT, CX_LARGA_E, 0, T_BARRA_CY, z0, acoMat);
+        box(g, T_PERNA_W, T_ALT - T_BARRA_ALT, CX_LARGA_E, 0, (T_BARRA_CY - T_BARRA_ALT / 2 - T_ALT / 2) / 2, z0, acoMat);
+
+        // flanges amarelos nas duas pontas da barra
         [-1, 1].forEach((l) => {
-            const fl = grupo(g, "Flange amarelo (entrada de água da placa)");
-            const xf = l * (PLACA_LARGA_W / 2 + 0.165);
-            cilindro(fl, 0.05, 0.03, xf, PLACA_H / 2 + 0.03, z0, amareloMat, 'x', 24);
-            for (let k = 0; k < 6; k++) {
-                const a = (k / 6) * Math.PI * 2;
-                cilindro(fl, 0.005, 0.036, xf, PLACA_H / 2 + 0.03 + Math.cos(a) * 0.036, z0 + Math.sin(a) * 0.036, parafusoMat, 'x', 6);
+            const fl = grupo(g, 'Flange amarelo (entrada de água da placa)');
+            const xf = l * (T_BARRA_W / 2 + 0.015);
+            cilindro(fl, 0.075, 0.03, xf, T_BARRA_CY, z0, amareloMat, 'x', 28);
+            cilindro(fl, 0.03, 0.032, xf, T_BARRA_CY, z0, buracoMat, 'x', 20);
+            for (let k = 0; k < 8; k++) {
+                const a = (k / 8) * Math.PI * 2;
+                cilindro(fl, 0.006, 0.04, xf, T_BARRA_CY + Math.cos(a) * 0.055, z0 + Math.sin(a) * 0.055, parafusoMat, 'x', 6);
             }
         });
-        const zp = z0 + sp * (CX_LARGA_E / 2);
-        const pf = grupo(g, 'Grade de parafusos da caixa d\'água');
-        for (let c = 0; c < 9; c++) {
+
+        // grade de parafusos com arruela cobrindo o T inteiro
+        const pf = grupo(g, "Grade de parafusos da caixa d'água");
+        for (let c = 0; c < 13; c++) {
+            const x = -0.96 + c * 0.16;
+            [T_BARRA_CY + 0.045, T_BARRA_CY - 0.045].forEach((y) => {
+                if (Math.abs(x) > T_PERNA_W / 2 - 0.02 || y > T_BARRA_CY) parafusoArruela(pf, x, y, zFace, sp);
+            });
+        }
+        const yBaixo = -T_ALT / 2;
+        for (let c = 0; c < 10; c++) {
             for (let r = 0; r < 3; r++) {
-                const x = -0.64 + c * 0.16;
-                const y = -0.13 + r * 0.12;
-                cilindro(pf, 0.017, 0.005, x, y, zp + sp * 0.0025, canoInoxMat, 'z', 14);
-                cilindro(pf, 0.01, 0.018, x, y, zp + sp * 0.012, parafusoMat, 'z', 6);
+                parafusoArruela(pf, -0.72 + c * 0.16, T_BARRA_CY - 0.045 - r * 0.075 - 0.001, zFace, sp);
             }
         }
+        for (let r = 0; r < 2; r++) {
+            for (let c = 0; c < 10; c++) parafusoArruela(pf, -0.72 + c * 0.16, yBaixo + 0.035 + r * 0.06, zFace, sp, 0.017);
+        }
+        // coluna de parafusos na borda esquerda da perna
+        for (let r = 0; r < 5; r++) parafusoArruela(pf, -T_PERNA_W / 2 + 0.03, yBaixo + 0.04 + r * 0.05, zFace, sp, 0.015);
+
+        // 2 flanges redondos de 8 parafusos na parte de baixo
+        [-0.5, 0.35].forEach((x) => {
+            const fr = grupo(g, 'Flange redondo (tampa de inspeção)');
+            const y = yBaixo + 0.09;
+            cilindro(fr, 0.055, 0.01, x, y, zFace + sp * 0.005, acoEscuroMat, 'z', 28);
+            for (let k = 0; k < 8; k++) {
+                const a = (k / 8) * Math.PI * 2;
+                cilindro(fr, 0.007, 0.016, x + Math.cos(a) * 0.042, y + Math.sin(a) * 0.042, zFace + sp * 0.014, parafusoMat, 'z', 6);
+            }
+        });
+
+        // barra quadrada atravessada (canaleta de cabos) e mangueira laranja
+        box(g, 0.9, 0.035, 0.03, -0.1, T_BARRA_CY - T_BARRA_ALT / 2 - 0.02, zFace + sp * 0.04, canoInoxMat).userData.label = 'Canaleta de cabos';
+        tubo(g, [[0.55, T_BARRA_CY - 0.02, zFace + sp * 0.03], [0.75, T_BARRA_CY - 0.05, zFace + sp * 0.06], [0.72, yBaixo + 0.04, zFace + sp * 0.07], [0.1, yBaixo + 0.02, zFace + sp * 0.06], [-0.3, yBaixo + 0.1, zFace + sp * 0.05]], 0.012, laranjaMat, 'Mangueira de termopar');
+
+        // "OMS 52" gravado na ponta da barra
+        const txt = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.085), new THREE.MeshStandardMaterial({ map: texOMS52, transparent: true, roughness: 0.7 }));
+        txt.position.set(sp * 0.9, T_BARRA_CY + 0.02, zFace + sp * 0.002);
+        txt.rotation.y = sp > 0 ? 0 : Math.PI;
+        g.add(txt);
     }
     adicionarCaixaAguaLarga(placas[0], 1);
     adicionarCaixaAguaLarga(placas[1], -1);
@@ -749,7 +811,7 @@ async function iniciarCenaMCC23() {
         });
         // e correndo pela barra do T até os flanges amarelos
         [-1, 1].forEach((l) => {
-            criarFluxo(p, 10, 0.5, 0.011, (t, out) => out.set(l * t * (PLACA_LARGA_W / 2 + 0.16), PLACA_H / 2 + 0.03, sp * (COBRE_E / 2 + CX_LARGA_E + 0.02)));
+            criarFluxo(p, 10, 0.5, 0.011, (t, out) => out.set(l * t * (T_BARRA_W / 2), T_BARRA_CY, sp * (COBRE_E / 2 + CX_LARGA_E + 0.035)));
         });
     });
     // 3) telescópicos → caixa d'água da placa estreita, e subindo/descendo nela
