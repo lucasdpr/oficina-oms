@@ -608,9 +608,8 @@ async function iniciarCenaMCC23() {
             }
         });
 
-        // barra quadrada atravessada (canaleta de cabos) e mangueira laranja
+        // barra quadrada atravessada (canaleta de cabos)
         box(g, 0.9, 0.035, 0.03, -0.1, T_BARRA_CY - T_BARRA_ALT / 2 - 0.02, zFace + sp * 0.04, canoInoxMat).userData.label = 'Canaleta de cabos';
-        tubo(g, [[0.55, T_BARRA_CY - 0.02, zFace + sp * 0.03], [0.75, T_BARRA_CY - 0.05, zFace + sp * 0.06], [0.72, yBaixo + 0.04, zFace + sp * 0.07], [0.1, yBaixo + 0.02, zFace + sp * 0.06], [-0.3, yBaixo + 0.1, zFace + sp * 0.05]], 0.012, laranjaMat, 'Mangueira de termopar');
 
         // "OMS 52" gravado na ponta da barra
         const txt = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.085), new THREE.MeshStandardMaterial({ map: texOMS52, transparent: true, roughness: 0.7 }));
