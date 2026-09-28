@@ -379,41 +379,58 @@ async function iniciarCenaMCC23() {
     box(cxCmd, 0.3, 0.26, 0.05, 0.38, 0.69, zF + 0.025, acoEscuroMat);
     box(cxCmd, 0.03, 0.06, 0.02, 0.54, 0.69, zF + 0.04, laranjaMat);
     // ---- pacotes de mola (lado fixo, onde ficam as caixas elétricas) ----
-    // Um em cada um dos 4 furos da face (2 de cada lado, em cima e
-    // embaixo): bucha de bronze (flange de 6 furos, corpo, pescoço e
-    // sextavado — foto da peça) com a mola atrás, entrando no molde.
+    // Um de cada lado, em pé dentro do molde, tipo um tubulão vertical:
+    // bucha de bronze em cima e outra embaixo (flange de 6 furos, corpo,
+    // pescoço e sextavado — foto da peça), mola no meio. Os 2 furos da
+    // face de cada lado são onde ficam a bucha de cima e a de baixo.
     // Fechado, fica escondido dentro da carcaça; no "Ver interior" desliza
     // pra fora da face interna pra aparecer.
     class Helice extends THREE.Curve {
         constructor(raio, voltas, comp) { super(); this.raio = raio; this.voltas = voltas; this.comp = comp; }
         getPoint(t, alvo = new THREE.Vector3()) {
             const a = t * this.voltas * Math.PI * 2;
-            return alvo.set(Math.cos(a) * this.raio, Math.sin(a) * this.raio, -t * this.comp);
+            return alvo.set(Math.cos(a) * this.raio, t * this.comp, Math.sin(a) * this.raio);
         }
     }
     const molaMat = new THREE.MeshStandardMaterial({ color: 0x3d4146, roughness: 0.4, metalness: 0.8 });
-    const molaGeo = new THREE.TubeGeometry(new Helice(0.03, 9, 0.18), 360, 0.0055, 8, false);
-    const pacotesMola = [];
-    [[-0.5, 0.78], [-0.5, 0.5], [0.72, 0.78], [0.72, 0.5]].forEach(([x, y]) => {
-        cilindro(frente, 0.036, 0.008, x, y, zF + 0.001, buracoMat, 'z', 24).userData.label = 'Furo do pacote de mola';
-        const pm = grupo(frente, 'Pacote de mola (bucha de bronze + mola)');
-        pm.position.set(x, y, zF - 0.01);
-        const bucha = grupo(pm, 'Bucha de bronze do pacote de mola');
-        cilindro(bucha, 0.04, 0.014, 0, 0, 0, bronzeMat, 'z', 28);
-        cilindro(bucha, 0.016, 0.016, 0, 0, 0.001, buracoMat, 'z', 18);
+    const tuboMolaMat = new THREE.MeshStandardMaterial({ color: 0x9a9da3, roughness: 0.35, metalness: 0.8, transparent: true, opacity: 0.3, depthWrite: false });
+    const Y_FURO_CIMA = 0.78;
+    const Y_FURO_BAIXO = 0.5;
+    const Z_PACOTE = zF - 0.07;
+    // Bucha de bronze no eixo vertical: flange na ponta de fora, corpo e
+    // sextavado virados pra mola (dir = -1 desce, +1 sobe).
+    function buchaBronze(pai, yFlange, dir) {
+        const b = grupo(pai, 'Bucha de bronze do pacote de mola');
+        cilindro(b, 0.036, 0.012, 0, yFlange, 0, bronzeMat, 'y', 28);
+        cilindro(b, 0.014, 0.014, 0, yFlange - dir * 0.001, 0, buracoMat, 'y', 18);
         for (let k = 0; k < 6; k++) {
             const a = (k / 6) * Math.PI * 2;
-            cilindro(bucha, 0.004, 0.016, Math.cos(a) * 0.031, Math.sin(a) * 0.031, 0.001, buracoMat, 'z', 8);
+            cilindro(b, 0.0035, 0.014, Math.cos(a) * 0.028, yFlange - dir * 0.001, Math.sin(a) * 0.028, buracoMat, 'y', 8);
         }
-        cilindro(bucha, 0.029, 0.05, 0, 0, -0.032, bronzeMat, 'z', 24);
-        cilindro(bucha, 0.02, 0.03, 0, 0, -0.072, bronzeMat, 'z', 20);
-        cilindro(bucha, 0.026, 0.025, 0, 0, -0.1, bronzeMat, 'z', 6);
-        const mola = new THREE.Mesh(molaGeo, molaMat);
-        mola.position.z = -0.115;
+        cilindro(b, 0.026, 0.038, 0, yFlange + dir * 0.025, 0, bronzeMat, 'y', 24);
+        cilindro(b, 0.018, 0.022, 0, yFlange + dir * 0.055, 0, bronzeMat, 'y', 20);
+        cilindro(b, 0.023, 0.019, 0, yFlange + dir * 0.0755, 0, bronzeMat, 'y', 6);
+        return yFlange + dir * 0.085;
+    }
+    const pacotesMola = [];
+    [-0.5, 0.72].forEach((x) => {
+        [Y_FURO_CIMA, Y_FURO_BAIXO].forEach((y) => {
+            cilindro(frente, 0.036, 0.008, x, y, zF + 0.001, buracoMat, 'z', 24).userData.label = 'Furo do pacote de mola';
+        });
+        const pm = grupo(frente, 'Pacote de mola (lado fixo)');
+        pm.position.set(x, 0, Z_PACOTE);
+        const yTopo = Y_FURO_CIMA + 0.02;
+        const yBase = Y_FURO_BAIXO - 0.02;
+        const yMolaCima = buchaBronze(pm, yTopo, -1);
+        const yMolaBaixo = buchaBronze(pm, yBase, 1);
+        const compMola = yMolaCima - yMolaBaixo;
+        const mola = new THREE.Mesh(new THREE.TubeGeometry(new Helice(0.028, 8, compMola), 320, 0.005, 8, false), molaMat);
+        mola.position.y = yMolaBaixo;
         mola.castShadow = true;
         mola.userData.label = 'Mola do pacote';
         pm.add(mola);
-        cilindro(pm, 0.036, 0.01, 0, 0, -0.3, acoEscuroMat, 'z', 24).userData.label = 'Prato de apoio da mola';
+        const tuboM = cilindro(pm, 0.042, yTopo - yBase - 0.012, 0, (yTopo + yBase) / 2, 0, tuboMolaMat, 'y', 28);
+        tuboM.userData.label = 'Tubo do pacote de mola';
         pacotesMola.push(pm);
     });
     // curvas em U na parte de baixo da frente
@@ -1089,7 +1106,7 @@ async function iniciarCenaMCC23() {
             tras.position.z = -ABERTURA * kAtual;
             grupoCobre.position.y = 0.6 * kAtual;
             portas.forEach((p) => { p.rotation.y = 1.9 * kAtual; });
-            pacotesMola.forEach((pm) => { pm.position.z = zF - 0.01 - 0.55 * kAtual; });
+            pacotesMola.forEach((pm) => { pm.position.z = Z_PACOTE - 0.55 * kAtual; });
         }
 
         if (direcaoEstreitas !== 0) {
