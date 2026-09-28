@@ -652,6 +652,7 @@ async function iniciarCena() {
     // suporte, o fuso avança pela caixa Benzer e o tubo telescópico encolhe,
     // igual acontece de verdade quando o molde abre.
     const FUSO_Y = 0.13;
+    const TELE_Y = [0.05, -0.05];
     const CX_AGUA_E = 0.05;
     const faceCaixaAgua = COBRE_E / 2 + CX_AGUA_E;
     const Y_BASE_CARDAN = 0.12 - PLACA_CY;
@@ -706,10 +707,14 @@ async function iniciarCena() {
 
         // Tubo telescópico de água: luva presa no suporte, tubo interno
         // preso na caixa d'água. Comprimento recalculado a cada quadro.
-        const tele = grupo(quadro, 'Tubo telescópico — água da placa estreita (encolhe ao abrir)');
-        const luva = cilindro(tele, 0.026, 1, 0, 0, 0, teleLuvaMat, 'x', 20);
-        const interno = cilindro(tele, 0.018, 1, 0, 0, 0, teleInternoMat, 'x', 20);
-        mecanismos.push({ s, placa: placaEstreita, frameX, luva, interno, pontaPlaca: () => placaEstreita.position.x + s * faceCaixaAgua });
+        // 2 telescópicos, um em cima do outro, entre os fusos.
+        const teles = TELE_Y.map((yt) => {
+            const tele = grupo(quadro, 'Tubo telescópico — água da placa estreita (encolhe ao abrir)');
+            const luva = cilindro(tele, 0.026, 1, 0, yt, 0, teleLuvaMat, 'x', 20);
+            const interno = cilindro(tele, 0.018, 1, 0, yt, 0, teleInternoMat, 'x', 20);
+            return { luva, interno };
+        });
+        mecanismos.push({ s, placa: placaEstreita, frameX, teles, pontaPlaca: () => placaEstreita.position.x + s * faceCaixaAgua });
     }
     montarMecanismoEstreita(placas[2], 1);
     montarMecanismoEstreita(placas[3], -1);
@@ -718,10 +723,12 @@ async function iniciarCena() {
         mecanismos.forEach((m) => {
             const pOut = m.pontaPlaca();
             const L = Math.max(0.01, Math.abs(m.frameX - pOut) * 0.62);
-            m.luva.scale.y = L;
-            m.luva.position.x = m.frameX - m.s * L / 2;
-            m.interno.scale.y = L;
-            m.interno.position.x = pOut + m.s * L / 2;
+            m.teles.forEach(({ luva, interno }) => {
+                luva.scale.y = L;
+                luva.position.x = m.frameX - m.s * L / 2;
+                interno.scale.y = L;
+                interno.position.x = pOut + m.s * L / 2;
+            });
         });
     }
     atualizarTelescopicos();
@@ -769,7 +776,7 @@ async function iniciarCena() {
     });
     // 5) telescópicos → caixa d'água da placa estreita, e subindo/descendo nela
     mecanismos.forEach((m) => {
-        criarFluxo(grupoCobre, 10, 0.6, 0.012, (t, out) => out.set(m.frameX + (m.pontaPlaca() - m.frameX) * t, PLACA_CY, 0));
+        TELE_Y.forEach((yt) => criarFluxo(grupoCobre, 10, 0.6, 0.012, (t, out) => out.set(m.frameX + (m.pontaPlaca() - m.frameX) * t, PLACA_CY + yt, 0)));
         [1, -1].forEach((dir) => [0.035, -0.035].forEach((zc) => {
             criarFluxo(m.placa, 6, 0.55, 0.009, (t, out) => out.set(m.s * (faceCaixaAgua + 0.008), dir * 0.2 * t, zc));
         }));
@@ -794,29 +801,90 @@ async function iniciarCena() {
         });
     }
 
-    // ---- clique: mostra o nome da peça ----
+    // ---- clique: modo foco ----
+    // Clicou numa peça: some tudo em volta (inclusive o piso), a câmera
+    // centraliza nela e libera girar por todos os ângulos, inclusive por
+    // baixo. "Voltar ao molde" (ou Esc) restaura a cena.
     const raycaster = new THREE.Raycaster();
     raycaster.params.Line.threshold = 0.001;
     const pointer = new THREE.Vector2();
     const hudPeca = document.getElementById('molde3d-peca');
-    let selecionada = null;
+    const btnSairFoco = document.getElementById('molde3d-btn-sair-foco');
+    let foco = null;
+
+    function entrarFoco(alvo, label) {
+        const objs = new Set();
+        if (alvo.isMesh) {
+            // placa (mesh com acessórios pendurados): só a própria placa
+            objs.add(alvo);
+            alvo.children.forEach((c) => { if (c.isLine) objs.add(c); });
+        } else {
+            alvo.traverse((o) => objs.add(o));
+        }
+        scene.updateMatrixWorld();
+        const caixa = new THREE.Box3();
+        const tmp = new THREE.Box3();
+        objs.forEach((o) => {
+            if (!o.isMesh || o.isInstancedMesh || !o.geometry) return;
+            if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+            caixa.union(tmp.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld));
+        });
+        if (caixa.isEmpty()) return;
+        const salvo = foco ? foco.salvo : { pos: camera.position.clone(), alvo: controls.target.clone() };
+        foco = { objs, salvo };
+        // Esconde via camada (não via .visible): a camada não passa pros
+        // filhos, então dá pra isolar um foot roll sem sumir junto com a
+        // placa que é "pai" dele.
+        scene.traverse((o) => {
+            if (o.isMesh || o.isLine || o.isSprite) o.layers.set(objs.has(o) ? 0 : 1);
+        });
+        const centro = caixa.getCenter(new THREE.Vector3());
+        const raio = caixa.getSize(new THREE.Vector3()).length() / 2;
+        const dir = camera.position.clone().sub(controls.target).normalize();
+        controls.target.copy(centro);
+        camera.position.copy(centro).addScaledVector(dir, Math.max(0.25, raio * 2.6));
+        controls.minDistance = 0.05;
+        controls.maxPolarAngle = Math.PI;
+        if (btnSairFoco) btnSairFoco.style.display = 'inline-flex';
+        if (hudPeca) {
+            hudPeca.textContent = label;
+            hudPeca.style.display = 'block';
+        }
+    }
+
+    function sairFoco() {
+        if (!foco) return;
+        scene.traverse((o) => {
+            if (o.isMesh || o.isLine || o.isSprite) o.layers.set(0);
+        });
+        camera.position.copy(foco.salvo.pos);
+        controls.target.copy(foco.salvo.alvo);
+        controls.minDistance = 0.8;
+        controls.maxPolarAngle = Math.PI * 0.49;
+        foco = null;
+        if (btnSairFoco) btnSairFoco.style.display = 'none';
+        if (hudPeca) hudPeca.style.display = 'none';
+    }
+    if (btnSairFoco) btnSairFoco.addEventListener('click', sairFoco);
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') sairFoco(); });
+
+    // Só conta como clique se o dedo/mouse não arrastou (senão girar a
+    // câmera já entrava em foco sem querer).
+    let inicioToque = null;
+    renderer.domElement.addEventListener('pointerdown', (e) => { inicioToque = [e.clientX, e.clientY]; });
     renderer.domElement.addEventListener('click', (e) => {
+        if (inicioToque && Math.hypot(e.clientX - inicioToque[0], e.clientY - inicioToque[1]) > 6) return;
         const rect = renderer.domElement.getBoundingClientRect();
         pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
         pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
         raycaster.setFromCamera(pointer, camera);
         const hit = raycaster.intersectObjects([frente, tras, grupoCobre], true)
             .find((h) => !h.object.isSprite && !h.object.isLine && !h.object.isInstancedMesh && h.object.visible);
-        let label = null;
         for (let o = hit && hit.object; o; o = o.parent) {
-            if (o.userData.label) { label = o.userData.label; break; }
-        }
-        if (selecionada) selecionada.scale.set(1, 1, 1);
-        selecionada = hit && placas.includes(hit.object) ? hit.object : null;
-        if (selecionada) selecionada.scale.set(1.02, 1.04, 1.02);
-        if (hudPeca) {
-            hudPeca.textContent = label || '';
-            hudPeca.style.display = label ? 'block' : 'none';
+            if (o.userData.label) {
+                entrarFoco(o, o.userData.label);
+                return;
+            }
         }
     });
 
@@ -973,6 +1041,10 @@ async function iniciarCena() {
         cobreTrasMat.emissiveIntensity = brilho;
         cobreEstreitaTrasMat.emissiveIntensity = brilho;
         atualizarFluxos(tempo);
+        if (foco) {
+            fluxos.forEach((f) => { f.mesh.visible = false; });
+            aguasTubulao.forEach((ag) => { if (!foco.objs.has(ag)) ag.visible = false; });
+        }
         atualizarHudAgua();
 
         controls.update();
