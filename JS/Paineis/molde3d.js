@@ -330,7 +330,6 @@ async function iniciarCena() {
     const fitaAmarelaMat = new THREE.MeshStandardMaterial({ color: 0xd9a830, roughness: 0.7 });
     const tampaPretaMat = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.6 });
     const pinturaCinzaMat = new THREE.MeshStandardMaterial({ color: 0x8f959b, roughness: 0.7, metalness: 0.3 });
-    const laranjaFeixeMat = new THREE.MeshStandardMaterial({ color: 0xa8432a, roughness: 0.6 });
     const fitaCremeMat = new THREE.MeshStandardMaterial({ color: 0xc8a27a, roughness: 0.85 });
     const cardanMat = new THREE.MeshStandardMaterial({ color: 0xc0392b, roughness: 0.55, metalness: 0.3 });
     const etiquetaMat = new THREE.MeshStandardMaterial({ color: 0xd9822b, roughness: 0.6 });
@@ -486,10 +485,10 @@ async function iniciarCena() {
             box(g, 0.5, 0.05, d * 0.7, lado * 1.25, 0.385, sinal * (d * 0.7) / 2, acoEscuroMat).userData.label = 'Aba de apoio da asa';
             // tampa redonda aparafusada na ponta da asa (foto)
             const tp = grupo(g, 'Tampa redonda da ponta');
-            cilindro(tp, 0.075, 0.02, lado * 1.52, 0.56, zA(d * 0.8), acoEscuroMat, 'x', 28);
+            cilindro(tp, 0.075, 0.02, lado * 1.52, 0.6, zA(d * 0.8), acoEscuroMat, 'x', 28);
             for (let k = 0; k < 8; k++) {
                 const a = (k / 8) * Math.PI * 2;
-                cilindro(tp, 0.007, 0.026, lado * 1.52, 0.56 + Math.cos(a) * 0.058, zA(d * 0.8) + Math.sin(a) * 0.058, parafusoMat, 'x', 6);
+                cilindro(tp, 0.007, 0.026, lado * 1.52, 0.6 + Math.cos(a) * 0.058, zA(d * 0.8) + Math.sin(a) * 0.058, parafusoMat, 'x', 6);
             }
             // olhal de içamento em cima da asa externa
             olhal(g, lado * 1.38, 0.755, sinal * (d * 0.8 - 0.06));
@@ -565,15 +564,15 @@ async function iniciarCena() {
     cilindro(frente, 0.034, 0.04, pDir.x + 0.05, pDir.y, pDir.z + 0.03, tampaPretaMat, 'x').rotation.y = -0.6;
 
     // ---- tubulão de água (só no lado móvel, dentro de cada asa) ----
-    const TUB_Y = 0.63;
+    const TUB_Y = 0.6;
     const TUB_ZC = 0.2;
-    const TUB_L = 0.34;
+    const TUB_L = 0.78; // vai da asa interna até o final da carcaça (ponta da asa externa)
     const aguasTubulao = [];
     const entradasTubulao = [];
     [-1, 1].forEach((lado) => {
         const g = grupo(frente, 'Tubulão de água (lado móvel)');
         conjunto(`Tubulão de água — ${lado < 0 ? 'esquerda' : 'direita'}`, g);
-        const x = lado * 0.95;
+        const x = lado * 1.12;
         cilindro(g, 0.085, TUB_L, x, TUB_Y, TUB_ZC, tubulaoMat, 'x', 32);
         [x - TUB_L / 2, x + TUB_L / 2].forEach((xf) => cilindro(g, 0.105, 0.02, xf, TUB_Y, TUB_ZC, acoEscuroMat, 'x', 32));
         const geo = new THREE.CylinderGeometry(0.078, 0.078, 1, 28);
@@ -678,15 +677,6 @@ async function iniciarCena() {
     adicionarFootRoll(placas[1], -1);
     adicionarGuia(placas[2], 1);
     adicionarGuia(placas[3], -1);
-
-    // ---- feixe de mangueiras hidráulicas correndo pela lateral (foto) ----
-    const feixe = grupo(tras, 'Mangueiras hidráulicas');
-    [[0.02, 0.0], [0.045, 0.02], [0.07, -0.01], [0.095, 0.015]].forEach(([dz, dy], i) => {
-        const z = -D / 2 - 0.03 - dz;
-        const y = CORPO_TOPO - 0.04 + dy;
-        tubo(feixe, [[-1.25, y - 0.1, z + 0.02], [-0.9, y, z], [0, y + 0.01, z], [0.9, y, z], [1.25, y - 0.1, z + 0.02]], 0.012, i % 2 ? canoMat : laranjaFeixeMat);
-        [-0.6, 0.1, 0.7].forEach((x) => cilindro(feixe, 0.018, 0.035, x + i * 0.04, y, z, fitaAmarelaMat, 'x', 10));
-    });
 
     // ---- cilindros de avanço/retorno: dentro da carcaça do lado FIXO ----
     // 4 cilindros (2 em cada asa, em cima e embaixo, nas marcações da foto)
