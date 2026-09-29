@@ -587,8 +587,8 @@ async function iniciarCena() {
         agua.visible = false;
         g.add(agua);
         aguasTubulao.push(agua);
-        // entrada de água por baixo, saindo pela frente do molde
-        const pontos = [[x, 0.2, 0.56], [x, 0.21, 0.36], [x, 0.3, TUB_ZC], [x, TUB_Y - 0.085, TUB_ZC]];
+        // entrada de água por CIMA do tubulão (a água entra por cima e sai por baixo)
+        const pontos = [[x, 1.1, 0.5], [x, 1.02, 0.36], [x, 0.9, TUB_ZC], [x, TUB_Y + 0.085, TUB_ZC]];
         tubo(g, pontos, 0.03, canoMat);
         entradasTubulao.push({ x, pontos });
     });
@@ -648,17 +648,19 @@ async function iniciarCena() {
 
     // Foot roll: 3 eixos inox empilhados embaixo da placa larga, cada um
     // apoiado em 4 mancais de ferro fundido com faixa vermelha.
+    const MANCAIS_FOOT_ROLL = [-(PLACA_LARGA_W - 0.06) / 2 + 0.025, -0.19, 0.19, (PLACA_LARGA_W - 0.06) / 2 - 0.025];
     function adicionarFootRoll(placaLarga, sinal) {
         const g = grupo(placaLarga, 'Foot roll');
         g.position.set(0, -PLACA_H / 2 - 0.035, -sinal * 0.025);
         [0, -0.068, -0.136].forEach((y) => {
             cilindro(g, 0.028, PLACA_LARGA_W - 0.06, 0, y, 0, canoInoxMat, 'x', 24);
-            [-0.46, -0.15, 0.15, 0.46].forEach((x) => {
+            // mancais das pontas no fim do rolo (sem sobra pro lado)
+            MANCAIS_FOOT_ROLL.forEach((x) => {
                 box(g, 0.05, 0.062, 0.075, x, y, 0, mancalMat);
-                cilindro(g, 0.0295, 0.028, x + 0.042, y, 0, faixaVermelhaMat, 'x', 24);
+                cilindro(g, 0.0295, 0.028, x - Math.sign(x) * 0.042, y, 0, faixaVermelhaMat, 'x', 24);
             });
         });
-        [-0.46, -0.15, 0.15, 0.46].forEach((x) => box(g, 0.03, 0.05, 0.03, x, -0.19, sinal * 0.02, mancalMat));
+        MANCAIS_FOOT_ROLL.forEach((x) => box(g, 0.03, 0.05, 0.03, x, -0.19, sinal * 0.02, mancalMat));
     }
 
     // Guia: bloco de ferro enferrujado embaixo da placa estreita, com os
@@ -871,20 +873,25 @@ async function iniciarCena() {
             criarFluxo(metade, 7, 0.9, 0.011, (t, out) => out.set(hx, hy - 0.07 * t * t, z0 - sinal * 0.3 * t), { spray: true });
         });
     });
-    // 4) água subindo pelos canais das placas largas
+    // 4) água DESCENDO pelos canais das placas largas e saindo por baixo
     [placas[0], placas[1]].forEach((p, i) => {
         const sp = i === 0 ? 1 : -1;
         [1, 5, 9, 13, 17, 21].forEach((col) => {
             const xc = xColuna(col);
-            criarFluxo(p, 8, 0.45, 0.009, (t, out) => out.set(xc, -0.22 + 0.44 * t, sp * (COBRE_E / 2 + 0.008)));
+            criarFluxo(p, 8, 0.45, 0.009, (t, out) => out.set(xc, 0.22 - 0.44 * t, sp * (COBRE_E / 2 + 0.008)));
+        });
+        [3, 11, 19].forEach((col) => {
+            const xc = xColuna(col);
+            criarFluxo(p, 6, 0.6, 0.01, (t, out) => out.set(xc, -PLACA_H / 2 - 0.3 * t, sp * (COBRE_E / 2 + 0.03)));
         });
     });
     // 5) telescópicos → caixa d'água da placa estreita, e subindo/descendo nela
     mecanismos.forEach((m) => {
         TELE_Y.forEach((yt) => criarFluxo(grupoCobre, 10, 0.6, 0.012, (t, out) => out.set(m.frameX + (m.pontaPlaca() - m.frameX) * t, PLACA_CY + yt, 0)));
-        [1, -1].forEach((dir) => [0.035, -0.035].forEach((zc) => {
-            criarFluxo(m.placa, 6, 0.55, 0.009, (t, out) => out.set(m.s * (faceCaixaAgua + 0.008), dir * 0.2 * t, zc));
-        }));
+        [0.035, -0.035].forEach((zc) => {
+            criarFluxo(m.placa, 8, 0.55, 0.009, (t, out) => out.set(m.s * (faceCaixaAgua + 0.008), 0.2 - 0.4 * t, zc));
+            criarFluxo(m.placa, 4, 0.7, 0.01, (t, out) => out.set(m.s * (faceCaixaAgua + 0.008), -PLACA_H / 2 - 0.25 * t, zc));
+        });
     });
 
     const testeAgua = { ativo: false, t: 0 };
@@ -1087,9 +1094,9 @@ async function iniciarCena() {
         if (etapa === etapaHud) return;
         etapaHud = etapa;
         hudAgua.textContent = [
-            '1/3 · Enchendo os tubulões do lado móvel…',
-            '2/3 · Circulando: carcaça → placas largas · telescópicos → placas estreitas',
-            '3/3 · Circuito cheio — água chegando em todas as placas ✓ (simulação)',
+            '1/3 · Água entrando por cima e enchendo os tubulões do lado móvel…',
+            '2/3 · Descendo pelas placas: carcaça → placas largas · telescópicos → placas estreitas',
+            '3/3 · Circuito cheio — entra por cima, sai por baixo ✓ (simulação)',
         ][etapa];
     }
 
