@@ -77,6 +77,9 @@ POR_BITOLA = {
     "M6": ("placaEstreita", "Fixação M6"), "M5": ("placaEstreita", "Fixação M5"), "M8": ("carcacaMovel", "Fixação M8"),
 }
 MODELO = {"9531207"}
+# Desligado: itens sem aplicação ficam sem peça até o supervisor preencher
+# a coluna APLICAÇÃO. Pra voltar a usar as sugestões, trocar pra True.
+USAR_SUGESTOES = False
 
 
 def conjunto_de(aplicacao):
@@ -123,7 +126,7 @@ def main():
         bit = bitola_de(texto)
         if cod in MODELO:
             conjunto = "modelo"
-        elif conjunto in (None, "geral"):
+        elif conjunto in (None, "geral") and USAR_SUGESTOES:
             if cod in SUGESTOES:
                 conjunto, apl = SUGESTOES[cod]
             elif "INOX" in texto.upper() and bit == "M10":

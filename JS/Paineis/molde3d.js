@@ -496,16 +496,8 @@ async function iniciarCena() {
             box(g, 0.49, 0.29, d * 0.8 - CANAL_ASA_Z, lado * 1.265, 0.555, zA(d * 0.8), asaMat).userData.label = 'Asa lateral (parte externa)';
             // aba de apoio embaixo da asa externa
             box(g, 0.5, 0.05, d * 0.7, lado * 1.25, 0.385, sinal * (d * 0.7) / 2, acoEscuroMat).userData.label = 'Aba de apoio da asa';
-            // tampa redonda aparafusada na ponta da asa (foto)
-            const tp = grupo(g, 'Tampa redonda da ponta');
-            cilindro(tp, 0.075, 0.02, lado * 1.52, 0.6, zA(d * 0.8), acoEscuroMat, 'x', 28);
-            for (let k = 0; k < 8; k++) {
-                const a = (k / 8) * Math.PI * 2;
-                cilindro(tp, 0.007, 0.026, lado * 1.52, 0.6 + Math.cos(a) * 0.058, zA(d * 0.8) + Math.sin(a) * 0.058, parafusoMat, 'x', 6);
-            }
             // olhal de içamento em cima da asa externa
             olhal(g, lado * 1.38, 0.755, sinal * (d * 0.8 - 0.06));
-            // bloco de trás em cima da asa interna
             // proteção preta em cima da asa — sai no "Ver interior"
             const protecao = box(g, 0.18, 0.08, 0.12, lado * 1.02, 0.89, sinal * (CANAL_ASA_Z + 0.08), ferrugemMat);
             protecao.userData.label = 'Proteção';
@@ -641,10 +633,6 @@ async function iniciarCena() {
                 cilindro(g, 0.007, 0.03, xf, TUB_Y + Math.cos(a) * 0.094, TUB_ZC + Math.sin(a) * 0.094, inoxMat, 'x', 6);
             }
         });
-        // engate rápido de bronze da água principal (entrada por cima)
-        const eng = grupo(g, 'Engate rápido bronze 2.1/2 (água principal)');
-        cilindro(eng, 0.04, 0.05, x, TUB_Y + 0.11, TUB_ZC, bronzeMat, 'y', 6);
-        cilindro(eng, 0.034, 0.06, x, TUB_Y + 0.165, TUB_ZC, bronzeMat, 'y', 20);
         const geo = new THREE.CylinderGeometry(0.078, 0.078, 1, 28);
         geo.translate(0, 0.5, 0);
         const agua = new THREE.Mesh(geo, aguaTubulaoMat);
@@ -926,25 +914,7 @@ async function iniciarCena() {
     [placas[0], placas[1]].forEach((p, i) => {
         const sp = i === 0 ? 1 : -1;
         const zFora = sp * COBRE_E / 2;
-        const bk = grupo(p, 'Back-up da placa larga (BSA3851)');
-        box(bk, PLACA_LARGA_W - 0.06, PLACA_H - 0.06, 0.012, 0, 0, zFora + sp * 0.006, acoEscuroMat);
-        for (let k = 0; k < 8; k++) {
-            [PLACA_H / 2 - 0.05, -PLACA_H / 2 + 0.05].forEach((y) => {
-                cilindro(bk, 0.011, 0.012, -0.5 + k * (1 / 7), y, zFora + sp * 0.018, parafusoMat, 'z', 6);
-            });
-        }
-        const bol = grupo(p, 'Bolacha do clamp (BSA3915)');
-        [-0.45, 0.45].forEach((x) => cilindro(bol, 0.04, 0.02, x, PLACA_H / 2 - 0.1, zFora + sp * 0.022, inoxMat, 'z', 24));
-
-        const cang = grupo(p, 'Cangalha do foot roll + 48 bicos Unijet');
-        const yC = -PLACA_H / 2 - 0.27;
         const zC = -sp * 0.025;
-        cilindro(cang, 0.02, PLACA_LARGA_W - 0.1, 0, yC, zC, inoxMat, 'x', 12);
-        for (let k = 0; k < 24; k++) {
-            [-0.018, 0.018].forEach((dz) => cilindro(cang, 0.005, 0.025, -0.55 + k * (1.1 / 23), yC + 0.02, zC + dz, latãoMat, 'y', 6));
-        }
-        tubo(cang, [[PLACA_LARGA_W / 2 - 0.05, yC, zC], [PLACA_LARGA_W / 2 + 0.08, yC - 0.04, zC], [PLACA_LARGA_W / 2 + 0.15, yC - 0.15, zC + sp * 0.05]], 0.018, inoxMat, 'Flexível da cangalha 2.1/2');
-
         const gx = grupo(p, 'Distribuidor de graxa + válvulas Lincoln');
         const xd = -PLACA_LARGA_W / 2 + 0.12;
         const yd = -PLACA_H / 2 - 0.1;
@@ -952,7 +922,7 @@ async function iniciarCena() {
         box(gx, 0.05, 0.09, 0.03, xd, yd, zd, graxaAzulMat);
         for (let k = 0; k < 6; k++) cilindro(gx, 0.004, 0.02, xd + 0.03, yd - 0.035 + k * 0.014, zd, latãoMat, 'x', 6);
         [0.05, 0.1].forEach((dx) => { box(gx, 0.03, 0.04, 0.03, xd + dx + 0.04, yd, zd, latãoMat); });
-        MANCAIS_FOOT_ROLL.forEach((xm) => tubo(gx, [[xd + 0.035, yd, zd], [xm * 0.6, yd + 0.05, zd], [xm, -PLACA_H / 2 - 0.035, zC - sp * 0.04]], 0.004, borrachaMat, 'Mangueira de graxa 1/4"'));
+        MANCAIS_FOOT_ROLL.forEach((xm) => tubo(gx, [[xd + 0.035, yd, zd], [xm * 0.6, yd + 0.05, zd], [xm, -PLACA_H / 2 - 0.035, zC - sp * 0.04]], 0.0025, borrachaMat, 'Mangueira de graxa 1/4"'));
     });
 
     // Placa estreita: guia lateral com tirantes T e macaco de ajuste,
@@ -987,11 +957,11 @@ async function iniciarCena() {
     [-1, 1].forEach((lado) => {
         const xf = lado * 0.55;
         const zf = -D / 2 - 0.05;
-        cilindro(hid, 0.035, 0.16, xf, 0.5, zf, graxaAzulMat, 'y', 20);
-        cilindro(hid, 0.04, 0.03, xf, 0.595, zf, acoEscuroMat, 'y', 20);
-        cilindro(hid, 0.012, 0.04, xf, 0.63, zf, latãoMat, 'y', 8);
-        tubo(hid, [[xf, 0.63, zf], [xf, 0.7, zf], [lado * 0.84, 0.72, zf], [lado * 0.84, 0.72, -D / 2 + 0.02]], 0.006, inoxMat, 'Tubo hidráulico inox');
-        [0.3, 0.6].forEach((t) => box(hid, 0.025, 0.02, 0.02, xf + (lado * 0.84 - xf) * t, 0.7, zf, graxaAzulMat));
+        cilindro(hid, 0.018, 0.08, xf, 0.55, zf, graxaAzulMat, 'y', 16);
+        cilindro(hid, 0.021, 0.016, xf, 0.598, zf, acoEscuroMat, 'y', 16);
+        cilindro(hid, 0.006, 0.03, xf, 0.62, zf, latãoMat, 'y', 8);
+        tubo(hid, [[xf, 0.63, zf], [xf, 0.7, zf], [lado * 0.84, 0.72, zf], [lado * 0.84, 0.72, -D / 2 + 0.02]], 0.0035, inoxMat, 'Tubo hidráulico inox');
+        [0.3, 0.6].forEach((t) => box(hid, 0.012, 0.01, 0.01, xf + (lado * 0.84 - xf) * t, 0.7, zf, graxaAzulMat));
         [0.74, 0.55].forEach((y) => {
             cilindro(hid, 0.008, 0.02, lado * 0.93, y + 0.05, -CANAL_ASA_Z - 0.002, latãoMat, 'z', 6);
             [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => cilindro(hid, 0.01, 0.012, lado * 0.84 + a * 0.065, y + b * 0.065, -CANAL_ASA_Z - 0.004, parafusoMat, 'z', 6));
