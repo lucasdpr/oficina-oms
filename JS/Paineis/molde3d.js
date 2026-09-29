@@ -566,6 +566,16 @@ async function iniciarCena() {
     const pDir = mDir.getPoint(1);
     cilindro(frente, 0.03, 0.08, pDir.x, pDir.y, pDir.z, fitaAmarelaMat, 'x').rotation.y = -0.6;
     cilindro(frente, 0.034, 0.04, pDir.x + 0.05, pDir.y, pDir.z + 0.03, tampaPretaMat, 'x').rotation.y = -0.6;
+    // as mesmas 2 mangueiras no lado fixo (espelhadas pra trás)
+    [
+        [[[-0.95, 0.36, -0.3], [-1.15, 0.37, -0.55], [-1.35, 0.38, -0.72]], -1],
+        [[[1.02, 0.4, -0.32], [1.2, 0.33, -0.55], [1.45, 0.24, -0.75]], 1],
+    ].forEach(([pts, lado]) => {
+        const m = tubo(tras, pts, 0.018, canoMat, 'Mangueira de água');
+        const pm = m.getPoint(1);
+        cilindro(tras, 0.03, 0.08, pm.x, pm.y, pm.z, fitaAmarelaMat, 'x').rotation.y = lado * 0.6;
+        cilindro(tras, 0.034, 0.04, pm.x + lado * 0.05, pm.y, pm.z - 0.03, tampaPretaMat, 'x').rotation.y = lado * 0.6;
+    });
 
     // ---- tubulão de água (só no lado móvel, dentro de cada asa) ----
     const TUB_Y = 0.6;
