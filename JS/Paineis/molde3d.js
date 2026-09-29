@@ -332,6 +332,8 @@ async function iniciarCena() {
     const fitaAmarelaMat = new THREE.MeshStandardMaterial({ color: 0xd9a830, roughness: 0.7 });
     const tampaPretaMat = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.6 });
     const motorAzulMat = new THREE.MeshStandardMaterial({ color: 0x2f5d9a, roughness: 0.45, metalness: 0.4 });
+    const motorCinzaMat = new THREE.MeshStandardMaterial({ color: 0x9aa0a6, roughness: 0.55, metalness: 0.45 });
+    const motorCinzaEscMat = new THREE.MeshStandardMaterial({ color: 0x6b7178, roughness: 0.5, metalness: 0.5 });
     const pinturaCinzaMat = new THREE.MeshStandardMaterial({ color: 0x8f959b, roughness: 0.7, metalness: 0.3 });
     const bronzeMat = new THREE.MeshStandardMaterial({ color: 0xc19a3a, roughness: 0.3, metalness: 0.85 });
     const latãoMat = new THREE.MeshStandardMaterial({ color: 0xd8b25a, roughness: 0.3, metalness: 0.85 });
@@ -565,15 +567,30 @@ async function iniciarCena() {
     // Motorredutor na ponta de fora de cada um dos 4 cardans (os com
     // fita amarela) — é ele que gira o cardan e abre/fecha a placa estreita.
     function motorredutor(pai, p, lado) {
+        // Motorredutor todo cinza: flange de acoplamento no cardan, caixa
+        // redutora com tampa e parafusos, motor com aletas, tampa do
+        // ventilador, caixa de ligação e base com furos.
         const mr = grupo(pai, 'Motorredutor do cardan');
         mr.position.copy(p);
         mr.rotation.y = lado * 0.6;
-        box(mr, 0.1, 0.09, 0.09, lado * 0.09, 0, 0, pinturaCinzaMat);
-        cilindro(mr, 0.04, 0.13, lado * 0.2, 0, 0, motorAzulMat, 'x', 20);
-        for (let k = 0; k < 6; k++) cilindro(mr, 0.042, 0.006, lado * (0.15 + k * 0.018), 0, 0, motorAzulMat, 'x', 20);
-        cilindro(mr, 0.034, 0.02, lado * 0.275, 0, 0, parafusoMat, 'x', 16);
-        box(mr, 0.035, 0.035, 0.035, lado * 0.2, 0.05, 0, parafusoMat);
-        box(mr, 0.2, 0.012, 0.11, lado * 0.15, -0.052, 0, acoEscuroMat);
+        const M = motorCinzaMat, E = motorCinzaEscMat;
+        const x = (v) => lado * v;
+        cilindro(mr, 0.03, 0.03, x(0.03), 0, 0, E, 'x', 6);
+        cilindro(mr, 0.045, 0.012, x(0.05), 0, 0, M, 'x', 24);
+        for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 + 0.4; cilindro(mr, 0.005, 0.016, x(0.05), Math.cos(a) * 0.034, Math.sin(a) * 0.034, E, 'x', 6); }
+        box(mr, 0.1, 0.11, 0.1, x(0.105), 0.01, 0, M);
+        cilindro(mr, 0.052, 0.012, x(0.105), 0.01, 0.053, E, 'z', 24);
+        [[-0.035, 0.05], [0.035, 0.05], [-0.035, -0.03], [0.035, -0.03]].forEach(([dx, dy]) => cilindro(mr, 0.005, 0.006, x(0.105 + dx), 0.01 + dy, 0.058, E, 'z', 6));
+        cilindro(mr, 0.05, 0.012, x(0.16), 0, 0, E, 'x', 24);
+        cilindro(mr, 0.045, 0.13, x(0.23), 0, 0, M, 'x', 24);
+        for (let k = 0; k < 12; k++) { const a = (k / 12) * Math.PI * 2; box(mr, 0.12, 0.012, 0.006, x(0.23), Math.cos(a) * 0.048, Math.sin(a) * 0.048, E, false).rotation.x = a; }
+        cilindro(mr, 0.048, 0.035, x(0.31), 0, 0, M, 'x', 24);
+        cilindro(mr, 0.042, 0.004, x(0.33), 0, 0, E, 'x', 24);
+        box(mr, 0.05, 0.035, 0.05, x(0.22), 0.06, 0, M);
+        cilindro(mr, 0.008, 0.02, x(0.22), 0.06, 0.03, E, 'z', 8);
+        box(mr, 0.3, 0.014, 0.13, x(0.17), -0.062, 0, E);
+        [[0.05, 0.05], [0.05, -0.05], [0.29, 0.05], [0.29, -0.05]].forEach(([dx, dz]) => cilindro(mr, 0.008, 0.016, x(dx), -0.055, dz, M, 'y', 6));
+        box(mr, 0.02, 0.05, 0.11, x(0.07), -0.035, 0, M);
     }
 
     // mangueira da esquerda com ponta de fita amarela
