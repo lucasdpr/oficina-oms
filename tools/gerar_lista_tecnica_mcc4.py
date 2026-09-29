@@ -29,20 +29,54 @@ REGRAS = [
 # "a confirmar". O que não está aqui fica sem peça até a planilha ser
 # preenchida (a APLICAÇÃO da planilha sempre ganha da sugestão).
 SUGESTOES = {
-    # água principal
+    # --- água principal / tubulão ---
     "1775081": ("tubulao", "Água Principal"), "9442127": ("tubulao", "Água Principal"),
     "1210714": ("tubulao", "Engate Água Principal"), "1625816": ("tubulao", "Flexível água"),
-    # hidráulica dos cilindros
+    "8012766": ("tubulao", "Engate Hidrogênio"),
+    # --- hidráulica dos cilindros (carcaça fixa) ---
     "8012769": ("carcacaFixa", "Engate Hidráulica"), "8012768": ("carcacaFixa", "Engate Hidráulica"),
     "9414084": ("carcacaFixa", "Filtro hidráulico"), "9412817": ("carcacaFixa", "Filtro hidráulico"),
     "9412818": ("carcacaFixa", "Elemento filtro hidráulico"), "9384085": ("carcacaFixa", "Elemento filtro hidráulico"),
     "9245787": ("carcacaFixa", "Elemento filtro hidráulico"), "1756583": ("carcacaFixa", "Tubulação Hidráulica 12mm"),
     "8221482": ("carcacaFixa", "Tubulação Hidráulica 12mm"), "8360095": ("carcacaFixa", "Tubulação Hidráulica 12mm"),
+    "8015014": ("carcacaFixa", "Tubulação Hidráulica 10mm"), "8015074": ("carcacaFixa", "Tubulação Hidráulica 10mm"),
+    "1726158": ("carcacaFixa", "Tubulação Hidráulica 10mm"), "8695074": ("carcacaFixa", "Tubulação Hidráulica 10mm"),
+    "9155560": ("carcacaFixa", "Abraçadeira Stauff (tubulação hidráulica)"),
     "9376806": ("carcacaFixa", "Rótula do cilindro"), "8893209": ("carcacaFixa", "Tomador de Pressão"),
-    # placa estreita / telescópio / régua
+    "8003102": ("carcacaFixa", "Fixação cilindro (BSA3953)"), "8003066": ("carcacaFixa", "Fixação cilindro (BSA3954)"),
+    "8003068": ("carcacaFixa", "Fixação cilindro (BSA3955)"), "8003067": ("carcacaFixa", "Fixação cilindro (BSA3956)"),
+    "8003103": ("carcacaFixa", "Fixação cilindro (BSA3957)"), "8001155": ("carcacaFixa", "Fixação cilindro (BSA3958)"),
+    "9188821": ("carcacaFixa", "Parafuso Primetals"),
+    # --- graxa do foot roll (placa larga) ---
+    "9233741": ("placaLarga", "Distribuidor de Graxa"), "9442806": ("placaLarga", "O'ring distribuidor"),
+    "1223276": ("placaLarga", "Parafuso de Montagem dos Distribuidores"), "8008911": ("placaLarga", "Válvula Lincoln (graxa)"),
+    "8003032": ("placaLarga", "Mangueira de graxa"), "8003033": ("placaLarga", "Mangueira de graxa"),
+    "8006022": ("placaLarga", "Mangueira de graxa"), "1010420": ("placaLarga", "Pino graxeiro"),
+    "8877116": ("placaLarga", "União de Graxa 8mm"), "8009077": ("placaLarga", "Tubulação de graxa 8mm"),
+    "1690728": ("placaLarga", "Tubulação de graxa 8mm"), "8288917": ("placaLarga", "Tubulação de graxa"),
+    "1064445": ("placaLarga", "Tubulação de graxa"), "1064438": ("placaLarga", "Tubulação de graxa"),
+    "8288919": ("placaLarga", "Tubulação de graxa"), "8003514": ("placaLarga", "Tubulação de graxa 10mm"),
+    "8012767": ("placaLarga", "Engate Graxa"), "9271015": ("placaLarga", "Engate Graxa"),
+    "8739838": ("placaLarga", "Calço do foot roll (VAI 2137/2138/2139)"), "8003091": ("placaLarga", "Bolacha do Clamp"),
+    "8524233": ("placaLarga", "Flexível das Cangalhas"), "1755753": ("placaLarga", "Pino (desenho B-354724)"),
+    # --- placa estreita ---
     "8012895": ("placaEstreita", "Gaxeta Telescópio"), "1059438": ("placaEstreita", "Porca de ajuste"),
     "8034239": ("placaEstreita", "Régua"), "8034280": ("placaEstreita", "Régua"),
+    "8766465": ("placaEstreita", "Régua (BSA3919)"), "8031008": ("placaEstreita", "Bucha do pino excêntrico"),
+    "8003096": ("placaEstreita", "Pino Excêntrico"), "8025597": ("placaEstreita", "Bucha do cardan (VAI 2174)"),
+    "8125978": ("placaEstreita", "Arruela da tartaruga"),
+    # --- carcaça móvel ---
+    "8003142": ("carcacaMovel", "Proteção (BSA3835)"),
 }
+# Fixação sem aplicação: vai pela bitola (parafuso, arruela e porca da
+# mesma medida ficam juntos na mesma peça).
+POR_BITOLA = {
+    "M24": ("carcacaFixa", "Fixação M24"), "M27": ("carcacaFixa", "Fixação M27"),
+    "M20": ("placaLarga", "Fixação M20"), "M12": ("placaLarga", "Fixação M12"), "M13": ("placaEstreita", "Arruela da tartaruga"),
+    "M16": ("placaEstreita", "Fixação M16"), "M10": ("placaEstreita", "Fixação M10"),
+    "M6": ("placaEstreita", "Fixação M6"), "M5": ("placaEstreita", "Fixação M5"), "M8": ("carcacaMovel", "Fixação M8"),
+}
+MODELO = {"9531207"}
 
 
 def conjunto_de(aplicacao):
@@ -59,7 +93,7 @@ def bitola_de(texto):
     t = texto.upper()
     if not re.search(r"PARAF|ARRUELA|PORCA", t):
         return None
-    m = re.search(r"\bM\s?(\d{1,2})\b", t)
+    m = re.search(r"\bM\s?(\d{1,2})(?!\d)", t)
     return f"M{m.group(1)}" if m else None
 
 
@@ -83,13 +117,24 @@ def main():
             continue
         texto = str(texto).strip()
         aplicacao = (str(linha[7]).strip() if linha[7] else "")
-        conjunto = conjunto_de(aplicacao)
+        conjunto = conjunto_de(aplicacao) if aplicacao else None
         sugestao = False
-        if not aplicacao and str(codigo).strip() in SUGESTOES:
-            conjunto, aplicacao = SUGESTOES[str(codigo).strip()]
-            sugestao = True
-        elif not aplicacao:
-            conjunto = None
+        cod = str(codigo).strip()
+        bit = bitola_de(texto)
+        if cod in MODELO:
+            conjunto = "modelo"
+        elif conjunto in (None, "geral"):
+            if cod in SUGESTOES:
+                conjunto, apl = SUGESTOES[cod]
+            elif "INOX" in texto.upper() and bit == "M10":
+                conjunto, apl = "tubulao", "Fixação M10 inox"
+            elif bit in POR_BITOLA:
+                conjunto, apl = POR_BITOLA[bit]
+            else:
+                apl = None
+            if apl:
+                aplicacao = aplicacao or apl
+                sugestao = True
         itens.append({
             "codigo": str(codigo).strip(),
             "texto": texto,

@@ -332,6 +332,13 @@ async function iniciarCena() {
     const fitaAmarelaMat = new THREE.MeshStandardMaterial({ color: 0xd9a830, roughness: 0.7 });
     const tampaPretaMat = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.6 });
     const pinturaCinzaMat = new THREE.MeshStandardMaterial({ color: 0x8f959b, roughness: 0.7, metalness: 0.3 });
+    const bronzeMat = new THREE.MeshStandardMaterial({ color: 0xc19a3a, roughness: 0.3, metalness: 0.85 });
+    const latãoMat = new THREE.MeshStandardMaterial({ color: 0xd8b25a, roughness: 0.3, metalness: 0.85 });
+    const inoxMat = new THREE.MeshStandardMaterial({ color: 0xc5c9ce, roughness: 0.25, metalness: 0.9 });
+    const borrachaMat = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.8, metalness: 0 });
+    const cobreTuboMat = new THREE.MeshStandardMaterial({ color: 0xb8733f, roughness: 0.35, metalness: 0.85 });
+    const graxaAzulMat = new THREE.MeshStandardMaterial({ color: 0x2c4f86, roughness: 0.5, metalness: 0.4 });
+    const oringTubulaoGeo = new THREE.TorusGeometry(0.089, 0.007, 8, 32);
     const fitaCremeMat = new THREE.MeshStandardMaterial({ color: 0xc8a27a, roughness: 0.85 });
     const cardanMat = new THREE.MeshStandardMaterial({ color: 0xc0392b, roughness: 0.55, metalness: 0.3 });
     const etiquetaMat = new THREE.MeshStandardMaterial({ color: 0xd9822b, roughness: 0.6 });
@@ -590,7 +597,22 @@ async function iniciarCena() {
         conjunto(`Tubulão de água — ${lado < 0 ? 'esquerda' : 'direita'}`, g);
         const x = lado * 1.12;
         cilindro(g, 0.085, TUB_L, x, TUB_Y, TUB_ZC, tubulaoMat, 'x', 32);
-        [x - TUB_L / 2, x + TUB_L / 2].forEach((xf) => cilindro(g, 0.105, 0.02, xf, TUB_Y, TUB_ZC, acoEscuroMat, 'x', 32));
+        [x - TUB_L / 2, x + TUB_L / 2].forEach((xf, iF) => {
+            cilindro(g, 0.105, 0.02, xf, TUB_Y, TUB_ZC, acoEscuroMat, 'x', 32);
+            const anel = new THREE.Mesh(oringTubulaoGeo, borrachaMat);
+            anel.rotation.y = Math.PI / 2;
+            anel.position.set(xf + (iF ? -0.012 : 0.012), TUB_Y, TUB_ZC);
+            anel.userData.label = "O'ring do tubulão (177,17 x 7)";
+            g.add(anel);
+            for (let k = 0; k < 8; k++) {
+                const a = (k / 8) * Math.PI * 2;
+                cilindro(g, 0.007, 0.03, xf, TUB_Y + Math.cos(a) * 0.094, TUB_ZC + Math.sin(a) * 0.094, inoxMat, 'x', 6);
+            }
+        });
+        // engate rápido de bronze da água principal (entrada por cima)
+        const eng = grupo(g, 'Engate rápido bronze 2.1/2 (água principal)');
+        cilindro(eng, 0.04, 0.05, x, TUB_Y + 0.11, TUB_ZC, bronzeMat, 'y', 6);
+        cilindro(eng, 0.034, 0.06, x, TUB_Y + 0.165, TUB_ZC, bronzeMat, 'y', 20);
         const geo = new THREE.CylinderGeometry(0.078, 0.078, 1, 28);
         geo.translate(0, 0.5, 0);
         const agua = new THREE.Mesh(geo, aguaTubulaoMat);
@@ -688,6 +710,12 @@ async function iniciarCena() {
             box(g, 0.04, 0.042, 0.012, xr + sinal * 0.01, y, -0.051, mancalMat);
             cilindro(g, 0.011, 0.004, xr, y, 0.058, tampaRoloMat, 'z', 12);
         });
+        // cangalha do edge roll com 5 bicos Unijet + tubo de cobre
+        const cg = grupo(g, 'Cangalha do edge roll + bicos Unijet');
+        const xc = -sinal * 0.075;
+        cilindro(cg, 0.008, 0.2, xc, 0, 0.05, cobreTuboMat, 'y', 8);
+        [0.08, 0.04, 0, -0.04, -0.08].forEach((y) => cilindro(cg, 0.006, 0.02, xc + sinal * 0.012, y, 0.05, latãoMat, 'x', 8));
+        g.userData.label = 'Edge roll (rolos + guias)';
     }
 
     adicionarFootRoll(placas[0], 1);
@@ -834,7 +862,7 @@ async function iniciarCena() {
             cilindro(ponta, 0.022, 0.1, xp - s * 0.2, yf, 0, canoInoxMat, 'x', 14);
             return sf;
         });
-        mecanismos.push({ s, placa: placaEstreita, frameX, teles, fusos, sanfonas, pontaPlaca: () => placaEstreita.position.x + s * faceCaixaAgua });
+        mecanismos.push({ s, quadro, placa: placaEstreita, frameX, teles, fusos, sanfonas, pontaPlaca: () => placaEstreita.position.x + s * faceCaixaAgua });
     }
     montarMecanismoEstreita(placas[2], 1);
     montarMecanismoEstreita(placas[3], -1);
@@ -865,6 +893,94 @@ async function iniciarCena() {
         });
     }
     atualizarTelescopicos();
+
+    // ---- materiais da lista técnica que faltavam no 3D ----
+    // Cada peça aqui corresponde a um item da planilha (dados/lista_tecnica_mcc4.xlsx)
+    // e fica pendurada no conjunto certo, pra aparecer junto no foco.
+
+    // Placa larga: back-up, cangalha do foot roll com os bicos Unijet
+    // (96 no molde = 48 por placa), flexível da cangalha, bolachas do
+    // clamp, parafusos M12 da fixação, distribuidor de graxa + válvulas
+    // Lincoln + mangueiras até os mancais do foot roll.
+    [placas[0], placas[1]].forEach((p, i) => {
+        const sp = i === 0 ? 1 : -1;
+        const zFora = sp * COBRE_E / 2;
+        const bk = grupo(p, 'Back-up da placa larga (BSA3851)');
+        box(bk, PLACA_LARGA_W - 0.06, PLACA_H - 0.06, 0.012, 0, 0, zFora + sp * 0.006, acoEscuroMat);
+        for (let k = 0; k < 8; k++) {
+            [PLACA_H / 2 - 0.05, -PLACA_H / 2 + 0.05].forEach((y) => {
+                cilindro(bk, 0.011, 0.012, -0.5 + k * (1 / 7), y, zFora + sp * 0.018, parafusoMat, 'z', 6);
+            });
+        }
+        const bol = grupo(p, 'Bolacha do clamp (BSA3915)');
+        [-0.45, 0.45].forEach((x) => cilindro(bol, 0.04, 0.02, x, PLACA_H / 2 - 0.1, zFora + sp * 0.022, inoxMat, 'z', 24));
+
+        const cang = grupo(p, 'Cangalha do foot roll + 48 bicos Unijet');
+        const yC = -PLACA_H / 2 - 0.27;
+        const zC = -sp * 0.025;
+        cilindro(cang, 0.02, PLACA_LARGA_W - 0.1, 0, yC, zC, inoxMat, 'x', 12);
+        for (let k = 0; k < 24; k++) {
+            [-0.018, 0.018].forEach((dz) => cilindro(cang, 0.005, 0.025, -0.55 + k * (1.1 / 23), yC + 0.02, zC + dz, latãoMat, 'y', 6));
+        }
+        tubo(cang, [[PLACA_LARGA_W / 2 - 0.05, yC, zC], [PLACA_LARGA_W / 2 + 0.08, yC - 0.04, zC], [PLACA_LARGA_W / 2 + 0.15, yC - 0.15, zC + sp * 0.05]], 0.018, inoxMat, 'Flexível da cangalha 2.1/2');
+
+        const gx = grupo(p, 'Distribuidor de graxa + válvulas Lincoln');
+        const xd = -PLACA_LARGA_W / 2 + 0.12;
+        const yd = -PLACA_H / 2 - 0.1;
+        const zd = zC - sp * 0.06;
+        box(gx, 0.05, 0.09, 0.03, xd, yd, zd, graxaAzulMat);
+        for (let k = 0; k < 6; k++) cilindro(gx, 0.004, 0.02, xd + 0.03, yd - 0.035 + k * 0.014, zd, latãoMat, 'x', 6);
+        [0.05, 0.1].forEach((dx) => { box(gx, 0.03, 0.04, 0.03, xd + dx + 0.04, yd, zd, latãoMat); });
+        MANCAIS_FOOT_ROLL.forEach((xm) => tubo(gx, [[xd + 0.035, yd, zd], [xm * 0.6, yd + 0.05, zd], [xm, -PLACA_H / 2 - 0.035, zC - sp * 0.04]], 0.004, borrachaMat, 'Mangueira de graxa 1/4"'));
+    });
+
+    // Placa estreita: guia lateral com tirantes T e macaco de ajuste,
+    // régua com distanciadores, tartaruga de fixação, pino excêntrico,
+    // calço e chaveta.
+    mecanismos.forEach((m) => {
+        const pe = m.placa;
+        const s = m.s;
+        const xF = s * faceCaixaAgua;
+        const gl = grupo(pe, 'Guia lateral + tirantes T + macaco de ajuste');
+        box(gl, 0.02, PLACA_H * 0.8, 0.03, xF + s * 0.01, 0, 0.065, acoEscuroMat);
+        [0.12, -0.12].forEach((y) => cilindro(gl, 0.008, 0.05, xF + s * 0.02, y, 0.065, parafusoMat, 'x', 8));
+        box(gl, 0.04, 0.04, 0.04, xF + s * 0.02, -PLACA_H * 0.4 - 0.03, 0.065, pinturaCinzaMat);
+        cilindro(gl, 0.006, 0.06, xF + s * 0.02, -PLACA_H * 0.4 - 0.08, 0.065, inoxMat, 'y', 8);
+        const rg = grupo(pe, 'Régua guia (VAIS 256/257) + distanciadores');
+        box(rg, 0.03, 0.015, PLACA_ESTREITA_W + 0.08, 0, PLACA_H / 2 + 0.012, 0, inoxMat);
+        [-1, 1].forEach((l) => box(rg, 0.02, 0.02, 0.02, 0, PLACA_H / 2 + 0.03, l * (PLACA_ESTREITA_W / 2 + 0.03), acoEscuroMat));
+        const tt = grupo(pe, 'Tartaruga de fixação (grampo VAI 2073)');
+        box(tt, 0.05, 0.03, 0.06, xF + s * 0.03, PLACA_H / 2 - 0.03, -0.02, ferrugemMat);
+        cilindro(tt, 0.008, 0.04, xF + s * 0.03, PLACA_H / 2, -0.02, parafusoMat, 'y', 6);
+        const pino = grupo(pe, 'Pino excêntrico + bucha');
+        cilindro(pino, 0.015, 0.03, xF - s * 0.02, PLACA_H * 0.43 + 0.02, 0.03, bronzeMat, 'y', 16);
+        const cc = grupo(pe, 'Calço e chaveta da placa estreita');
+        box(cc, COBRE_E + 0.02, 0.008, PLACA_ESTREITA_W, 0, -PLACA_H / 2 - 0.004, 0, inoxMat);
+        box(cc, 0.012, 0.012, 0.06, s * (COBRE_E / 2 + 0.01), -PLACA_H / 2 + 0.03, 0, acoEscuroMat);
+    });
+
+    // Carcaça fixa: 2 filtros hidráulicos com engates de óleo, tubulação
+    // hidráulica inox até os cilindros com abraçadeiras Stauff, tomadores
+    // de pressão e parafusos M24 de fixação dos cilindros.
+    const hid = grupo(tras, 'Hidráulica dos cilindros (filtros, engates, tubulação)');
+    [-1, 1].forEach((lado) => {
+        const xf = lado * 0.55;
+        const zf = -D / 2 - 0.05;
+        cilindro(hid, 0.035, 0.16, xf, 0.5, zf, graxaAzulMat, 'y', 20);
+        cilindro(hid, 0.04, 0.03, xf, 0.595, zf, acoEscuroMat, 'y', 20);
+        cilindro(hid, 0.012, 0.04, xf, 0.63, zf, latãoMat, 'y', 8);
+        tubo(hid, [[xf, 0.63, zf], [xf, 0.7, zf], [lado * 0.84, 0.72, zf], [lado * 0.84, 0.72, -D / 2 + 0.02]], 0.006, inoxMat, 'Tubo hidráulico inox');
+        [0.3, 0.6].forEach((t) => box(hid, 0.025, 0.02, 0.02, xf + (lado * 0.84 - xf) * t, 0.7, zf, graxaAzulMat));
+        [0.74, 0.55].forEach((y) => {
+            cilindro(hid, 0.008, 0.02, lado * 0.93, y + 0.05, -CANAL_ASA_Z - 0.002, latãoMat, 'z', 6);
+            [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => cilindro(hid, 0.01, 0.012, lado * 0.84 + a * 0.065, y + b * 0.065, -CANAL_ASA_Z - 0.004, parafusoMat, 'z', 6));
+        });
+    });
+
+    // Carcaça móvel: 2 chapas de apoio (BSA3816) e a proteção (BSA3835).
+    const apoio = grupo(frente, 'Apoio do lado móvel (chapas BSA3816)');
+    [-0.67, 0.69].forEach((x) => box(apoio, 0.2, 0.02, 0.2, x, 0.3, D / 2 - 0.12, inoxMat));
+    box(frente, 0.3, 0.12, 0.012, 0.0, 0.47, D / 2 + 0.012, acoEscuroMat).userData.label = 'Proteção (BSA3835)';
 
     // ---- teste de água: partículas correndo pelos caminhos ----
     const fluxos = [];
@@ -974,7 +1090,9 @@ async function iniciarCena() {
         return `<table><thead><tr><th>Código</th><th>Descrição</th><th>Qtd</th><th>Un</th></tr></thead><tbody>${itens.map((i) => linhaItem(i, divisor)).join('')}</tbody></table>`;
     }
     function cabecalhoLista(titulo) {
-        return `<div class="lt-topo"><div><div class="lt-titulo">Lista técnica — ${esc(titulo)}</div><div class="lt-sub">${esc(LISTA_TECNICA_MCC4.equipamento)} · atualizada em ${esc(LISTA_TECNICA_MCC4.atualizado)}</div></div><button type="button" class="lt-fechar" aria-label="Fechar">✕</button></div>`;
+        const modelo = LISTA_TECNICA_MCC4.itens.find((i) => i.conjunto === 'modelo');
+        const txtModelo = modelo ? ` · modelo ${esc(modelo.texto)} (${esc(modelo.codigo)})` : '';
+        return `<div class="lt-topo"><div><div class="lt-titulo">Lista técnica — ${esc(titulo)}</div><div class="lt-sub">${esc(LISTA_TECNICA_MCC4.equipamento)}${txtModelo} · atualizada em ${esc(LISTA_TECNICA_MCC4.atualizado)}</div></div><button type="button" class="lt-fechar" aria-label="Fechar">✕</button></div>`;
     }
     function abrirPainel(html) {
         if (!painelLista) return;
@@ -992,8 +1110,9 @@ async function iniciarCena() {
     }
     function mostrarListaGeral() {
         const ordem = ['placaLarga', 'placaEstreita', 'tubulao', 'carcacaFixa', 'carcacaMovel', 'geral', 'semPeca'];
+        // o item 'modelo' (código do molde) vai no cabeçalho, não na tabela
         const grupos = {};
-        LISTA_TECNICA_MCC4.itens.forEach((i) => { const k = i.conjunto || 'semPeca'; (grupos[k] = grupos[k] || []).push(i); });
+        LISTA_TECNICA_MCC4.itens.filter((i) => i.conjunto !== 'modelo').forEach((i) => { const k = i.conjunto || 'semPeca'; (grupos[k] = grupos[k] || []).push(i); });
         const corpo = ordem.filter((k) => grupos[k]).map((k) => `<div class="lt-grupo">${esc(NOMES_CONJUNTO[k])} <span>(${grupos[k].length})</span></div>${tabela(grupos[k], 1)}`).join('');
         abrirPainel(cabecalhoLista(`completa (${LISTA_TECNICA_MCC4.itens.length} itens)`) + corpo);
     }
