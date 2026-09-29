@@ -934,11 +934,6 @@ async function iniciarCena() {
         const rg = grupo(pe, 'Régua guia (VAIS 256/257) + distanciadores');
         box(rg, 0.03, 0.015, PLACA_ESTREITA_W + 0.08, 0, PLACA_H / 2 + 0.012, 0, inoxMat);
         [-1, 1].forEach((l) => box(rg, 0.02, 0.02, 0.02, 0, PLACA_H / 2 + 0.03, l * (PLACA_ESTREITA_W / 2 + 0.03), acoEscuroMat));
-        const tt = grupo(pe, 'Tartaruga de fixação (grampo VAI 2073)');
-        box(tt, 0.05, 0.03, 0.06, xF + s * 0.03, PLACA_H / 2 - 0.03, -0.02, ferrugemMat);
-        cilindro(tt, 0.008, 0.04, xF + s * 0.03, PLACA_H / 2, -0.02, parafusoMat, 'y', 6);
-        const pino = grupo(pe, 'Pino excêntrico + bucha');
-        cilindro(pino, 0.015, 0.03, xF - s * 0.02, PLACA_H * 0.43 + 0.02, 0.03, bronzeMat, 'y', 16);
         const cc = grupo(pe, 'Calço e chaveta da placa estreita');
         box(cc, COBRE_E + 0.02, 0.008, PLACA_ESTREITA_W, 0, -PLACA_H / 2 - 0.004, 0, inoxMat);
         box(cc, 0.012, 0.012, 0.06, s * (COBRE_E / 2 + 0.01), -PLACA_H / 2 + 0.03, 0, acoEscuroMat);
