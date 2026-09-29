@@ -21,6 +21,8 @@
 // mesmo padrão do Sinótico 3D. Esse arquivo, Molde3d.html e o link do
 // menu (app.html) são pra ser removidos depois da apresentação.
 
+import { LISTA_TECNICA_MCC4 } from './listaTecnicaMCC4.js';
+
 let cena3dIniciada = false;
 
 export function renderMolde3D() {
@@ -737,6 +739,7 @@ async function iniciarCena() {
     const CX_AGUA_E = 0.05;
     const faceCaixaAgua = COBRE_E / 2 + CX_AGUA_E;
     const Y_BASE_CARDAN = 0.12 - PLACA_CY;
+    const motorAzulMat = new THREE.MeshStandardMaterial({ color: 0x2f5d9a, roughness: 0.45, metalness: 0.4 });
     const mecanismos = [];
     const sanfonaMat = new THREE.MeshStandardMaterial({ color: 0x1c1c1e, roughness: 0.9, metalness: 0.05 });
     const perfilSanfonaGrande = [];
@@ -795,6 +798,16 @@ async function iniciarCena() {
             cilindro(cardan, 0.011, topo - base, xc, (topo + base) / 2, zCardan, canoInoxMat, 'y', 12);
             junta(Y_BASE_CARDAN + 0.05);
             box(cardan, 0.035, 0.035, 0.035, xc, Y_BASE_CARDAN, zCardan, parafusoMat);
+            // motorredutor na ponta de baixo de cada cardan (são 4) — é ele
+            // que gira o cardan e abre/fecha a placa estreita
+            const mr = grupo(quadro, 'Motorredutor do cardan');
+            const yM = Y_BASE_CARDAN - 0.06;
+            box(mr, 0.09, 0.08, 0.08, xc, yM, zCardan, pinturaCinzaMat);
+            cilindro(mr, 0.036, 0.11, xc + s * 0.1, yM, zCardan, motorAzulMat, 'x', 20);
+            for (let k = 0; k < 6; k++) cilindro(mr, 0.038, 0.006, xc + s * (0.06 + k * 0.016), yM, zCardan, motorAzulMat, 'x', 20);
+            cilindro(mr, 0.03, 0.02, xc + s * 0.165, yM, zCardan, parafusoMat, 'x', 16);
+            box(mr, 0.03, 0.03, 0.03, xc + s * 0.1, yM + 0.045, zCardan, parafusoMat);
+            box(mr, 0.12, 0.012, 0.1, xc + s * 0.03, yM - 0.046, zCardan, acoEscuroMat);
         });
 
         // Tubo telescópico de água: luva presa no suporte, tubo interno
@@ -926,6 +939,67 @@ async function iniciarCena() {
         });
     }
 
+    // ---- lista técnica (planilha da MCC#4, ver tools/gerar_lista_tecnica_mcc4.py) ----
+    // No foco mostra só o material da peça isolada; o botão "Lista técnica"
+    // mostra a tabela geral com os 155 itens. Quantidade por peça = total
+    // do molde dividido pelo nº daquela peça no molde (2 placas largas, 2
+    // estreitas, 2 tubulões), com o total do molde ao lado.
+    const PECAS_NO_MOLDE = { placaLarga: 2, placaEstreita: 2, tubulao: 2, carcacaFixa: 1, carcacaMovel: 1 };
+    const NOMES_CONJUNTO = {
+        placaLarga: 'Placa larga', placaEstreita: 'Placa estreita (telescópio, Benzer, cardan, edge roll)',
+        tubulao: 'Tubulão', carcacaFixa: 'Carcaça lado fixo (cilindros)', carcacaMovel: 'Carcaça lado móvel',
+        geral: 'Aplicação sem peça no 3D', semPeca: 'Sem aplicação na planilha',
+    };
+    function conjuntoDaLista(label) {
+        if (label.startsWith('Placa larga')) return 'placaLarga';
+        if (label.startsWith('Conjunto da placa estreita')) return 'placaEstreita';
+        if (label.startsWith('Tubulão')) return 'tubulao';
+        if (label === 'Carcaça — lado fixo') return 'carcacaFixa';
+        if (label === 'Carcaça — lado móvel') return 'carcacaMovel';
+        return null;
+    }
+    const painelLista = document.getElementById('molde3d-lista');
+    const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    function linhaItem(i, divisor) {
+        const total = i.qtd ?? '—';
+        let qtd = total;
+        if (divisor > 1 && typeof i.qtd === 'number') {
+            const por = i.qtd / divisor;
+            qtd = Number.isInteger(por) ? `${por} <small>(${i.qtd} no molde)</small>` : `${i.qtd} <small>(no molde)</small>`;
+        }
+        const aviso = i.sugestao ? ' <span class="lt-sug" title="Aplicação vazia na planilha — sugestão a confirmar">a confirmar</span>' : '';
+        return `<tr><td class="lt-cod">${esc(i.codigo)}</td><td>${esc(i.texto)}${aviso}<div class="lt-apl">${esc(i.aplicacao)}</div></td><td class="lt-qtd">${qtd}</td><td>${esc(i.un)}</td></tr>`;
+    }
+    function tabela(itens, divisor) {
+        return `<table><thead><tr><th>Código</th><th>Descrição</th><th>Qtd</th><th>Un</th></tr></thead><tbody>${itens.map((i) => linhaItem(i, divisor)).join('')}</tbody></table>`;
+    }
+    function cabecalhoLista(titulo) {
+        return `<div class="lt-topo"><div><div class="lt-titulo">Lista técnica — ${esc(titulo)}</div><div class="lt-sub">${esc(LISTA_TECNICA_MCC4.equipamento)} · atualizada em ${esc(LISTA_TECNICA_MCC4.atualizado)}</div></div><button type="button" class="lt-fechar" aria-label="Fechar">✕</button></div>`;
+    }
+    function abrirPainel(html) {
+        if (!painelLista) return;
+        painelLista.innerHTML = html;
+        painelLista.style.display = 'flex';
+        painelLista.querySelector('.lt-fechar').addEventListener('click', fecharListaTecnica);
+    }
+    function fecharListaTecnica() { if (painelLista) painelLista.style.display = 'none'; }
+    function mostrarListaTecnica(chave, label) {
+        if (!chave) { fecharListaTecnica(); return; }
+        const itens = LISTA_TECNICA_MCC4.itens.filter((i) => i.conjunto === chave);
+        const div = PECAS_NO_MOLDE[chave] || 1;
+        const nota = div > 1 ? `<div class="lt-nota">Quantidade por peça (o molde tem ${div}).</div>` : '';
+        abrirPainel(cabecalhoLista(label) + nota + (itens.length ? tabela(itens, div) : '<div class="lt-nota">Nenhum item da planilha ligado a esta peça.</div>'));
+    }
+    function mostrarListaGeral() {
+        const ordem = ['placaLarga', 'placaEstreita', 'tubulao', 'carcacaFixa', 'carcacaMovel', 'geral', 'semPeca'];
+        const grupos = {};
+        LISTA_TECNICA_MCC4.itens.forEach((i) => { const k = i.conjunto || 'semPeca'; (grupos[k] = grupos[k] || []).push(i); });
+        const corpo = ordem.filter((k) => grupos[k]).map((k) => `<div class="lt-grupo">${esc(NOMES_CONJUNTO[k])} <span>(${grupos[k].length})</span></div>${tabela(grupos[k], 1)}`).join('');
+        abrirPainel(cabecalhoLista(`completa (${LISTA_TECNICA_MCC4.itens.length} itens)`) + corpo);
+    }
+    const btnLista = document.getElementById('molde3d-btn-lista');
+    if (btnLista) btnLista.addEventListener('click', mostrarListaGeral);
+
     // ---- clique: modo foco ----
     // Clicou numa peça: some tudo em volta (inclusive o piso), a câmera
     // centraliza nela e libera girar por todos os ângulos, inclusive por
@@ -969,6 +1043,7 @@ async function iniciarCena() {
             hudPeca.textContent = label;
             hudPeca.style.display = 'block';
         }
+        mostrarListaTecnica(conjuntoDaLista(label), label);
     }
 
     function sairFoco() {
@@ -983,6 +1058,7 @@ async function iniciarCena() {
         foco = null;
         if (btnSairFoco) btnSairFoco.style.display = 'none';
         if (hudPeca) hudPeca.style.display = 'none';
+        fecharListaTecnica();
     }
     if (btnSairFoco) btnSairFoco.addEventListener('click', sairFoco);
     window.addEventListener('keydown', (e) => { if (e.key === 'Escape') sairFoco(); });

@@ -63,6 +63,7 @@
             <button type="button" id="molde3d-btn-sair-foco" class="molde3d-btn" style="display:none; border-color:#e8a33d;"><i class="fas fa-arrow-left"></i> Voltar ao molde</button>
             <button type="button" id="molde3d-btn-rotate" class="molde3d-btn"><i class="fas fa-sync"></i> Câmera girando</button>
             <button type="button" id="molde3d-btn-interior" class="molde3d-btn"><i class="fas fa-layer-group"></i> Ver interior</button>
+            <button type="button" id="molde3d-btn-lista" class="molde3d-btn"><i class="fas fa-list"></i> Lista técnica</button>
             <button type="button" id="molde3d-btn-cima" class="molde3d-btn"><i class="fas fa-arrow-down"></i> Vista de cima</button>
             <button type="button" id="molde3d-btn-agua" class="molde3d-btn"><i class="fas fa-tint"></i> Teste de água</button>
             <div id="molde3d-posicao" style="font-family:'IBM Plex Mono', monospace; font-size:.65rem; color:#8b96ab; margin-top:4px;"></div>
@@ -80,6 +81,25 @@
         <div id="molde3d-hint" style="position:absolute; left:50%; bottom:16px; transform:translateX(-50%); z-index:4; font-family:'IBM Plex Mono', monospace; font-size:.65rem; color:#8b96ab; background:rgba(17,24,38,.7); border:1px solid #233047; padding:5px 12px; border-radius:20px; white-space:nowrap;">arraste para girar · scroll para zoom</div>
     </div>
 
+    <div id="molde3d-lista" style="display:none;"></div>
+    <style>
+        #molde3d-lista { position:absolute; top:70px; left:16px; z-index:6; width:min(560px, calc(100vw - 32px)); max-height:calc(100vh - 150px); flex-direction:column; background:rgba(12,17,27,.96); border:1px solid #3a4a63; border-radius:10px; box-shadow:0 6px 24px rgba(0,0,0,.6); font-family:'IBM Plex Mono', monospace; color:#e7ecf5; overflow:auto; }
+        #molde3d-lista .lt-topo { position:sticky; top:0; display:flex; justify-content:space-between; gap:10px; padding:10px 12px; background:#182031; border-bottom:1px solid #3a4a63; }
+        #molde3d-lista .lt-titulo { font-size:.85rem; font-weight:600; }
+        #molde3d-lista .lt-sub, #molde3d-lista .lt-nota { font-size:.65rem; color:#8b96ab; }
+        #molde3d-lista .lt-nota { padding:6px 12px 0; }
+        #molde3d-lista .lt-fechar { background:none; border:none; color:#e7ecf5; font-size:16px; cursor:pointer; }
+        #molde3d-lista .lt-grupo { padding:10px 12px 4px; font-size:.75rem; color:#e8a33d; font-weight:600; }
+        #molde3d-lista .lt-grupo span { color:#8b96ab; font-weight:400; }
+        #molde3d-lista table { width:100%; border-collapse:collapse; font-size:.68rem; margin:6px 0 4px; }
+        #molde3d-lista th { text-align:left; color:#8b96ab; font-weight:500; padding:4px 8px; border-bottom:1px solid #2a3548; }
+        #molde3d-lista td { padding:5px 8px; border-bottom:1px solid #1e2738; vertical-align:top; }
+        #molde3d-lista .lt-cod { color:#8b96ab; white-space:nowrap; }
+        #molde3d-lista .lt-qtd { white-space:nowrap; text-align:right; }
+        #molde3d-lista .lt-qtd small { color:#8b96ab; }
+        #molde3d-lista .lt-apl { color:#6f7c93; font-size:.62rem; margin-top:2px; }
+        #molde3d-lista .lt-sug { color:#1a1200; background:#e8a33d; border-radius:4px; padding:0 4px; font-size:.58rem; }
+    </style>
     <style>
         @keyframes molde3d-spin { to { transform: rotate(360deg); } }
     </style>
