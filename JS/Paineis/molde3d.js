@@ -991,50 +991,79 @@ async function iniciarCena() {
         pai.add(m);
         return m;
     }
-    function blocoDistribuidor(pai, x, y, z, sz, saidas = 4, cor = acoEscuroMat) {
-        box(pai, 0.1, 0.05, 0.03, x, y, z, cor);
-        for (let k = 0; k < saidas; k++) cilindro(pai, 0.007, 0.018, x - 0.036 + k * (0.072 / (saidas - 1)), y + 0.034, z, latãoMat, 'y', 6);
-        cilindro(pai, 0.006, 0.01, x - 0.04, y, z + sz * 0.018, parafusoMat, 'z', 6);
-        cilindro(pai, 0.006, 0.01, x + 0.04, y, z + sz * 0.018, parafusoMat, 'z', 6);
+    // porca/conexão de latão onde o tubo encosta em algo (bloco, placa, válvula)
+    function conexao(pai, x, y, z, eixo) {
+        cilindro(pai, 0.0085, 0.014, x, y, z, latãoMat, eixo, 6);
+    }
+    // tê de ligação entre dois tubos
+    function te(pai, x, y, z) {
+        box(pai, 0.014, 0.014, 0.014, x, y, z, latãoMat, false);
+    }
+    // bloco distribuidor: entradas embaixo, saídas em cima, nas posições xs
+    function blocoDistribuidor(pai, x, y, z, sz, xs, prof) {
+        box(pai, 0.13, 0.05, prof, x, y, z, acoEscuroMat);
+        cilindro(pai, 0.006, 0.01, x - 0.055, y, z + sz * (prof / 2 + 0.003), parafusoMat, 'z', 6);
+        cilindro(pai, 0.006, 0.01, x + 0.055, y, z + sz * (prof / 2 + 0.003), parafusoMat, 'z', 6);
     }
     [[tras, -1]].forEach(([metade, sz]) => {  // só no lado fixo
         const g = grupo(metade, 'Tubulação da face');
         const zf = (off) => sz * (D / 2 + off);
         const zA = (off) => sz * ((D / 2 - 0.004) * 0.86 + off);
-        // 5 linhas horizontais na parte de baixo da face
-        [0.43, 0.45, 0.47, 0.49, 0.51].forEach((y, i) => {
-            linha(g, [[-1.02, y, zA(0.012 + i * 0.006)], [-0.76, y, zA(0.012 + i * 0.006)], [-0.72, y, zf(0.012 + i * 0.006)], [0.72, y, zf(0.012 + i * 0.006)], [0.76, y, zA(0.012 + i * 0.006)], [1.02, y, zA(0.012 + i * 0.006)]]);
-        });
-        // abraçadeiras segurando o feixe
-        [-0.55, -0.2, 0.2, 0.55].forEach((x) => box(g, 0.016, 0.1, 0.045, x, 0.47, zf(0.032), acoEscuroMat, false));
-        // subidas verticais da face até as válvulas/tampas de cima
-        [-0.62, -0.58, -0.2, 0.18, 0.56, 0.6].forEach((x, i) => {
-            const y0 = 0.43 + (i % 5) * 0.02;
-            linha(g, [[x, y0, zf(0.012 + (i % 5) * 0.006)], [x, 0.8, zf(0.012 + (i % 5) * 0.006)], [x + (x < 0 ? 0.08 : -0.08), 0.8, zf(0.012)]]);
-        });
-        // corpo de válvulas no meio da face (foto: 3 válvulas + filtro vermelho)
-        const vg = grupo(metade, 'Válvulas e filtro da face');
-        [-0.1, 0.02, 0.14].forEach((x) => {
-            box(vg, 0.05, 0.05, 0.035, x, 0.72, zf(0.02), acoEscuroMat);
-            cilindro(vg, 0.012, 0.03, x, 0.76, zf(0.02), latãoMat, 'y', 8);
-            linha(g, [[x, 0.695, zf(0.02)], [x, 0.53, zf(0.012)]]);
-        });
-        cilindro(vg, 0.016, 0.05, -0.2, 0.7, zf(0.03), vermelhoMangMat, 'y', 16);
-        // blocos distribuidores na asa + tubos entrando por cima
+        const Y = [0.43, 0.45, 0.47, 0.49, 0.51];      // alturas das 5 linhas
+        const O = [0.012, 0.018, 0.024, 0.03, 0.036];  // afastamento de cada linha
+        const YD = 0.6, YB = YD - 0.025, YT = YD + 0.025; // distribuidor
         [-1, 1].forEach((lado) => {
             const xb = lado * 0.95;
-            blocoDistribuidor(g, xb, 0.6, zA(0.02), sz);
-            [0, 1, 2, 3].forEach((k) => {
-                const xs = xb - 0.036 + k * 0.024;
-                linha(g, [[xs, 0.634, zA(0.02)], [xs, 0.7 + k * 0.012, zA(0.02)], [lado * 0.76, 0.7 + k * 0.012, zA(0.02)], [lado * 0.74, 0.7 + k * 0.012, zf(0.012 + k * 0.006)]]);
-                linha(g, [[xs, 0.575, zA(0.02)], [xs, 0.515 - k * 0.006, zA(0.02)]]);
+            const px = (i) => xb + lado * (-0.048 + i * 0.024); // porta i do bloco
+            blocoDistribuidor(g, xb, YD, zA(0.024), sz, null, 0.042);
+            // 5 linhas horizontais: saem do bloco por baixo, descem em 90°,
+            // correm pela asa e pela face até o centro
+            Y.forEach((y, i) => {
+                const x = px(i);
+                linha(g, [[x, YB, zA(O[i])], [x, y, zA(O[i])], [lado * 0.76, y, zA(O[i])], [lado * 0.72, y, zf(O[i])], [0, y, zf(O[i])]]);
+                conexao(g, x, YB - 0.007, zA(O[i]), 'y');
             });
-            // pacote de tubos verticais na ponta da asa
-            [0, 1, 2, 3, 4].forEach((k) => {
-                const zk = zA(-0.02 - k * 0.018);
-                linha(g, [[lado * 1.515, 0.44, zk], [lado * 1.515, 0.66, zk], [lado * 1.44, 0.7, zk]]);
+            // saídas de cima do bloco: sobem, viram pra face e entram na placa
+            Y.forEach((_, i) => {
+                const x = px(i), yk = 0.7 + i * 0.014, xe = lado * (0.66 - i * 0.03);
+                linha(g, [[x, YT, zA(O[i])], [x, yk, zA(O[i])], [lado * 0.76, yk, zA(O[i])], [lado * 0.72, yk, zf(O[i])], [xe, yk, zf(O[i])], [xe, yk, zf(0)]]);
+                conexao(g, x, YT + 0.007, zA(O[i]), 'y');
+                conexao(g, xe, yk, zf(0.006), 'z');
             });
+            // pacote de tubos na ponta da asa: sai da caixa, sobe e entra
+            // por cima da asa externa
             box(g, 0.02, 0.2, 0.1, lado * 1.52, 0.55, zA(-0.055), acoEscuroMat, false);
+            [0, 1, 2, 3, 4].forEach((k) => {
+                const zk = zA(-0.02 - k * 0.018), xk = lado * (1.44 - k * 0.03);
+                linha(g, [[lado * 1.53, 0.65, zk], [lado * 1.53, 0.74, zk], [xk, 0.74, zk], [xk, 0.7, zk]]);
+                conexao(g, lado * 1.53, 0.657, zk, 'y');
+                conexao(g, xk, 0.707, zk, 'y');
+            });
+        });
+        // abraçadeiras segurando o feixe
+        [-0.55, -0.3, 0.3, 0.55].forEach((x) => box(g, 0.016, 0.1, 0.045, x, 0.47, zf(0.026), acoEscuroMat, false));
+        // subidas: saem da linha com um tê e entram na placa lá em cima
+        [[-0.62, 0], [-0.58, 1], [0.56, 3], [0.6, 4]].forEach(([x, i]) => {
+            te(g, x, Y[i], zf(O[i]));
+            linha(g, [[x, Y[i], zf(O[i])], [x, 0.82, zf(O[i])], [x, 0.82, zf(0)]]);
+            conexao(g, x, 0.82, zf(0.006), 'z');
+        });
+        // filtro vermelho em linha na subida do centro-esquerda
+        te(g, -0.2, Y[2], zf(O[2]));
+        linha(g, [[-0.2, Y[2], zf(O[2])], [-0.2, 0.82, zf(O[2])], [-0.2, 0.82, zf(0)]]);
+        conexao(g, -0.2, 0.82, zf(0.006), 'z');
+        const vg = grupo(metade, 'Válvulas e filtro da face');
+        cilindro(vg, 0.016, 0.06, -0.2, 0.66, zf(O[2]), vermelhoMangMat, 'y', 16);
+        conexao(vg, -0.2, 0.627, zf(O[2]), 'y');
+        conexao(vg, -0.2, 0.693, zf(O[2]), 'y');
+        // 3 válvulas presas na placa, ligadas nas linhas de baixo por tê
+        [[-0.08, 2], [0.04, 3], [0.16, 4]].forEach(([x, i]) => {
+            const zv = zf(O[i]);
+            box(vg, 0.05, 0.05, 0.03, x, 0.72, zf(O[i] - 0.004), acoEscuroMat);
+            cilindro(vg, 0.012, 0.03, x, 0.76, zv, latãoMat, 'y', 8);
+            linha(g, [[x, Y[i], zv], [x, 0.695, zv]]);
+            te(g, x, Y[i], zv);
+            conexao(g, x, 0.688, zv, 'y');
         });
     });
 
