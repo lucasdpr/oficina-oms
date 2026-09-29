@@ -598,8 +598,7 @@ async function iniciarCena() {
         g.add(agua);
         aguasTubulao.push(agua);
         // entrada de água por CIMA do tubulão (a água entra por cima e sai por baixo)
-        const pontos = [[x, 1.1, 0.5], [x, 1.02, 0.36], [x, 0.9, TUB_ZC], [x, TUB_Y + 0.085, TUB_ZC]];
-        tubo(g, pontos, 0.03, canoMat);
+        const pontos = [[x, TUB_Y + 0.22, TUB_ZC], [x, TUB_Y + 0.085, TUB_ZC]];
         entradasTubulao.push({ x, pontos });
     });
 
@@ -808,19 +807,21 @@ async function iniciarCena() {
             return { luva, interno };
         });
         conjunto(`Conjunto da placa estreita — ${s > 0 ? 'direita' : 'esquerda'}`, placaEstreita, quadro);
-        const sanfona = new THREE.Mesh(sanfonaGrandeGeo, sanfonaMat);
-        sanfona.rotation.z = s > 0 ? -Math.PI / 2 : Math.PI / 2;
-        sanfona.position.set(0, FUSO_Y, 0);
-        sanfona.userData.label = 'Sanfona do fuso';
-        quadro.add(sanfona);
-        const ponta = grupo(quadro, 'Cilindro da ponta (suporte em U)');
-        const xp = s * 1.38;
-        cilindro(ponta, 0.07, 0.34, xp, FUSO_Y, 0, pinturaCinzaMat, 'x', 24);
-        cilindro(ponta, 0.03, 0.02, xp + s * 0.175, FUSO_Y, 0, buracoMat, 'x', 16);
-        [-1, 1].forEach((l) => box(ponta, 0.36, 0.2, 0.025, xp, FUSO_Y - 0.02, l * 0.085, acoEscuroMat));
-        box(ponta, 0.36, 0.025, 0.2, xp, FUSO_Y - 0.12, 0, acoEscuroMat);
-        box(ponta, 0.025, 0.16, 0.2, xp - s * 0.17, FUSO_Y - 0.04, 0, acoEscuroMat);
-        mecanismos.push({ s, placa: placaEstreita, frameX, teles, fusos, sanfona, pontaPlaca: () => placaEstreita.position.x + s * faceCaixaAgua });
+        // Sanfona e cilindro da ponta nas 2 caixas Benzer (em cima e embaixo).
+        const sanfonas = [FUSO_Y, -FUSO_Y].map((yf) => {
+            const sf = new THREE.Mesh(sanfonaGrandeGeo, sanfonaMat);
+            sf.rotation.z = s > 0 ? -Math.PI / 2 : Math.PI / 2;
+            sf.position.set(0, yf, 0);
+            sf.userData.label = 'Sanfona do fuso';
+            quadro.add(sf);
+            const ponta = grupo(quadro, 'Cilindro da ponta');
+            const xp = s * 1.38;
+            cilindro(ponta, 0.07, 0.34, xp, yf, 0, pinturaCinzaMat, 'x', 24);
+            cilindro(ponta, 0.03, 0.02, xp + s * 0.175, yf, 0, buracoMat, 'x', 16);
+            cilindro(ponta, 0.022, 0.1, xp - s * 0.2, yf, 0, canoInoxMat, 'x', 14);
+            return sf;
+        });
+        mecanismos.push({ s, placa: placaEstreita, frameX, teles, fusos, sanfonas, pontaPlaca: () => placaEstreita.position.x + s * faceCaixaAgua });
     }
     montarMecanismoEstreita(placas[2], 1);
     montarMecanismoEstreita(placas[3], -1);
@@ -838,8 +839,10 @@ async function iniciarCena() {
                 roscas.forEach((r, i) => { r.visible = 0.03 + i * 0.014 < Lf - 0.01; });
             });
             const Ls = Math.max(0.01, gap - 0.04);
-            m.sanfona.scale.y = Ls;
-            m.sanfona.position.x = pOut + m.s * 0.02;
+            m.sanfonas.forEach((sf) => {
+                sf.scale.y = Ls;
+                sf.position.x = pOut + m.s * 0.02;
+            });
             m.teles.forEach(({ luva, interno }) => {
                 luva.scale.y = L;
                 luva.position.x = m.frameX - m.s * L / 2;
