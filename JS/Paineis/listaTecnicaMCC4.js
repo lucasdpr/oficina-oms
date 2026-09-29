@@ -9,8 +9,8 @@ export const LISTA_TECNICA_MCC4 = {
    "qtd": 8,
    "un": "CDA",
    "aplicacao": "Stauff",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "conjunto": "geral",
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -18,9 +18,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "ADAPTADOR BARDELLA CSNBSA3958",
    "qtd": null,
    "un": "CDA",
-   "aplicacao": "Fixação cilindro (BSA3958)",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -118,9 +118,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "ARRUELA BARDELLA CSNBSA3954",
    "qtd": null,
    "un": "CDA",
-   "aplicacao": "Fixação cilindro (BSA3954)",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -128,9 +128,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "ARRUELA BARDELLA CSNBSA3955",
    "qtd": null,
    "un": "CDA",
-   "aplicacao": "Fixação cilindro (BSA3955)",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -138,9 +138,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "ARRUELA BARDELLA CSNBSA3956",
    "qtd": null,
    "un": "CDA",
-   "aplicacao": "Fixação cilindro (BSA3956)",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -148,9 +148,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "ARRUELA DE PRESSÃO M10",
    "qtd": 1,
    "un": "CEM",
-   "aplicacao": "Fixação M10",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M10"
   },
   {
@@ -158,9 +158,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "ARRUELA DE PRESSÃO M10 - INOX",
    "qtd": 20,
    "un": "CDA",
-   "aplicacao": "Fixação M10 inox",
-   "conjunto": "tubulao",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M10"
   },
   {
@@ -168,9 +168,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "ARRUELA DE PRESSÃO M12",
    "qtd": 1,
    "un": "KG",
-   "aplicacao": "Fixação M12",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M12"
   },
   {
@@ -178,9 +178,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "ARRUELA DE PRESSÃO M16",
    "qtd": 1,
    "un": "KG",
-   "aplicacao": "Fixação M16",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M16"
   },
   {
@@ -188,9 +188,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "ARRUELA DE PRESSÃO M20",
    "qtd": 12,
    "un": "CDA",
-   "aplicacao": "Fixação M20",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M20"
   },
   {
@@ -198,9 +198,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "ARRUELA DE PRESSAO M24 DIN 127",
    "qtd": 24,
    "un": "CDA",
-   "aplicacao": "Fixação M24",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M24"
   },
   {
@@ -208,9 +208,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "ARRUELA DE PRESSÃO M6 - INOX",
    "qtd": 10,
    "un": "CDA",
-   "aplicacao": "Fixação M6",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M6"
   },
   {
@@ -218,9 +218,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "ARRUELA DE PRESSÃO M8",
    "qtd": 20,
    "un": "CDA",
-   "aplicacao": "Fixação M8",
-   "conjunto": "carcacaMovel",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M8"
   },
   {
@@ -228,9 +228,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "ARRUELA LIS CIRC ACO CARB M24",
    "qtd": 1,
    "un": "KG",
-   "aplicacao": "Fixação M24",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M24"
   },
   {
@@ -238,9 +238,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "ARRUELA LISA M12",
    "qtd": 1,
    "un": "KG",
-   "aplicacao": "Fixação M12",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M12"
   },
   {
@@ -248,9 +248,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "ARRUELA LISA M13 X 6 X 48MM",
    "qtd": 2,
    "un": "CDA",
-   "aplicacao": "Arruela da tartaruga",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M13"
   },
   {
@@ -258,9 +258,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "BUCHA BARDELLA CSNBSA3823",
    "qtd": null,
    "un": "CDA",
-   "aplicacao": "Bucha do pino excêntrico",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -268,9 +268,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "BUCHA BARDELLA CSNBSA3957",
    "qtd": 4,
    "un": "CDA",
-   "aplicacao": "Fixação cilindro (BSA3957)",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -278,9 +278,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "BUCHA BARDELLA CSNVAI2174",
    "qtd": 4,
    "un": "CDA",
-   "aplicacao": "Bucha do cardan (VAI 2174)",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -338,9 +338,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "CJ CALÇO DES VAI 2137/2138/2139",
    "qtd": 16,
    "un": "CDA",
-   "aplicacao": "Calço do foot roll (VAI 2137/2138/2139)",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -348,9 +348,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "CONECTOR COMP INOX   3/8 \"    10,0MM",
    "qtd": 8,
    "un": "CDA",
-   "aplicacao": "Tubulação Hidráulica 10mm",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -358,9 +358,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "CONEXÃO 1/4\" COMPRESSÃO 188D-E-1",
    "qtd": 1,
    "un": "CDA",
-   "aplicacao": "Tubulação de graxa",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -368,9 +368,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "CONEXÃO 1/8\" PARA TUBO DE 1/4\"",
    "qtd": 2,
    "un": "CDA",
-   "aplicacao": "Tubulação de graxa",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -378,9 +378,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "CONTRA PINO CONFORME NORMA DIN11024 (GRAMPO DA PORCA DE AJUSTE 1,65)",
    "qtd": 1,
    "un": "KG",
-   "aplicacao": "Porca de ajuste",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -388,9 +388,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "COTOVELO 1/8\" X 90º",
    "qtd": 20,
    "un": "CDA",
-   "aplicacao": "Tubulação de graxa",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -398,9 +398,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "COTOVELO 10MM -3/8\" NPT ERMETO",
    "qtd": 24,
    "un": "CDA",
-   "aplicacao": "Tubulação Hidráulica 10mm",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -408,9 +408,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "COTOVELO 3/8\" P/ TUBO 12MM",
    "qtd": 20,
    "un": "CDA",
-   "aplicacao": "Tubulação Hidráulica 12mm",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -428,9 +428,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "COTOVELO PARA TUBO 10MM IGUAL - ERMETO",
    "qtd": 4,
    "un": "CDA",
-   "aplicacao": "Tubulação Hidráulica 10mm",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -439,8 +439,8 @@ export const LISTA_TECNICA_MCC4 = {
    "qtd": 1,
    "un": "CDA",
    "aplicacao": "Régua",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "conjunto": "geral",
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -449,8 +449,8 @@ export const LISTA_TECNICA_MCC4 = {
    "qtd": 1,
    "un": "CDA",
    "aplicacao": "Régua",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "conjunto": "geral",
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -459,8 +459,8 @@ export const LISTA_TECNICA_MCC4 = {
    "qtd": 2,
    "un": "CDA",
    "aplicacao": "Distribuidor de Graxa",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "conjunto": "geral",
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -509,8 +509,8 @@ export const LISTA_TECNICA_MCC4 = {
    "qtd": 4,
    "un": "CDA",
    "aplicacao": "Bolacha do Clamp",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "conjunto": "geral",
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -518,9 +518,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "ELEMENTO FILTRO HIDRAUL BETA 100  20UM",
    "qtd": 2,
    "un": "CDA",
-   "aplicacao": "Elemento filtro hidráulico",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -528,9 +528,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "ELEMENTO FILTRO HIDRAUL BETA 200  10UM",
    "qtd": 2,
    "un": "CDA",
-   "aplicacao": "Elemento filtro hidráulico",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -538,9 +538,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "ELEMENTO FILTRO HIDRAUL BETA 200  25UM",
    "qtd": 2,
    "un": "CDA",
-   "aplicacao": "Elemento filtro hidráulico",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -549,8 +549,8 @@ export const LISTA_TECNICA_MCC4 = {
    "qtd": 1,
    "un": "CDA",
    "aplicacao": "Água Principal",
-   "conjunto": "tubulao",
-   "sugestao": true,
+   "conjunto": "geral",
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -559,8 +559,8 @@ export const LISTA_TECNICA_MCC4 = {
    "qtd": 1,
    "un": "CDA",
    "aplicacao": "Água Principal",
-   "conjunto": "tubulao",
-   "sugestao": true,
+   "conjunto": "geral",
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -569,8 +569,8 @@ export const LISTA_TECNICA_MCC4 = {
    "qtd": 1,
    "un": "CDA",
    "aplicacao": "Engate Agua Principal",
-   "conjunto": "tubulao",
-   "sugestao": true,
+   "conjunto": "geral",
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -579,8 +579,8 @@ export const LISTA_TECNICA_MCC4 = {
    "qtd": 1,
    "un": "CDA",
    "aplicacao": "Engate Hidrogenio",
-   "conjunto": "tubulao",
-   "sugestao": true,
+   "conjunto": "geral",
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -589,8 +589,8 @@ export const LISTA_TECNICA_MCC4 = {
    "qtd": 1,
    "un": "CDA",
    "aplicacao": "Engate Hidráulica",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "conjunto": "geral",
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -599,8 +599,8 @@ export const LISTA_TECNICA_MCC4 = {
    "qtd": 1,
    "un": "CDA",
    "aplicacao": "Engate Graxa",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "conjunto": "geral",
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -609,8 +609,8 @@ export const LISTA_TECNICA_MCC4 = {
    "qtd": 1,
    "un": "CDA",
    "aplicacao": "Engate Hidráulica",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "conjunto": "geral",
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -619,8 +619,8 @@ export const LISTA_TECNICA_MCC4 = {
    "qtd": 1,
    "un": "CDA",
    "aplicacao": "Engate Graxa",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "conjunto": "geral",
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -628,9 +628,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "FILTRO HIDRAUL ROS 1    \" 20UM",
    "qtd": 2,
    "un": "CDA",
-   "aplicacao": "Filtro hidráulico",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -638,9 +638,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "FILTRO HIDRAUL ROS 1    \" BETA1000 6UM",
    "qtd": 2,
    "un": "CDA",
-   "aplicacao": "Filtro hidráulico",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -648,9 +648,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "GAXETA 65 X 80,1 X 6,3MM",
    "qtd": 4,
    "un": "CDA",
-   "aplicacao": "Gaxeta Telescópio",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -669,8 +669,8 @@ export const LISTA_TECNICA_MCC4 = {
    "qtd": 12,
    "un": "CDA",
    "aplicacao": "O'ring distribuidor",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "conjunto": "geral",
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -728,9 +728,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "JOELHO PONTA LISA P/TUBO 8MM",
    "qtd": 20,
    "un": "CDA",
-   "aplicacao": "Tubulação de graxa 8mm",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -738,9 +738,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "MANGUEIRA 1/4\" X 1100 (GRAXA)",
    "qtd": 2,
    "un": "CDA",
-   "aplicacao": "Mangueira de graxa",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -748,9 +748,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "MANGUEIRA 1/4\" X 800 (GRAXA)",
    "qtd": null,
    "un": "CDA",
-   "aplicacao": "Mangueira de graxa",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -758,9 +758,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "MANGUEIRA 1/4\" X 900 (GRAXA)",
    "qtd": 18,
    "un": "CDA",
-   "aplicacao": "Mangueira de graxa",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -768,9 +768,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAF CB CIL SEXT INT M10X50MM",
    "qtd": 24,
    "un": "CDA",
-   "aplicacao": "Fixação M10",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M10"
   },
   {
@@ -778,9 +778,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAF CB SEXT M10X90MM INOX",
    "qtd": 32,
    "un": "CDA",
-   "aplicacao": "Fixação M10 inox",
-   "conjunto": "tubulao",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M10"
   },
   {
@@ -788,9 +788,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO BARDELLA CSNBSA3919",
    "qtd": null,
    "un": "CDA",
-   "aplicacao": "Régua (BSA3919)",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -798,9 +798,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO BARDELLA CSNBSA3953",
    "qtd": null,
    "un": "CDA",
-   "aplicacao": "Fixação cilindro (BSA3953)",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -808,9 +808,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CABEÇA CIL.SEXT.INT M5 X 20MM",
    "qtd": 15,
    "un": "CDA",
-   "aplicacao": "Fixação M5",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M5"
   },
   {
@@ -818,9 +818,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CABEÇA CIL.SEXT.INT.M10 X 16MM",
    "qtd": 20,
    "un": "CDA",
-   "aplicacao": "Fixação M10",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M10"
   },
   {
@@ -828,9 +828,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CABEÇA CIL.SEXT.INT.M12 X 25MM",
    "qtd": 8,
    "un": "CDA",
-   "aplicacao": "Fixação M12",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M12"
   },
   {
@@ -838,9 +838,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CABEÇA CIL.SEXT.INT.M16 X 30MM",
    "qtd": 30,
    "un": "CDA",
-   "aplicacao": "Fixação M16",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M16"
   },
   {
@@ -848,9 +848,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CABEÇA CIL.SEXT.INT.M20 X 95MM",
    "qtd": 16,
    "un": "CDA",
-   "aplicacao": "Fixação M20",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M20"
   },
   {
@@ -858,9 +858,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CABEÇA CIL.SEXT.INT.M27 X 125MM",
    "qtd": null,
    "un": "CDA",
-   "aplicacao": "Fixação M27",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M27"
   },
   {
@@ -868,9 +868,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CABEÇA CIL.SEXT.INT.M5 X 16MM",
    "qtd": null,
    "un": "CDA",
-   "aplicacao": "Fixação M5",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M5"
   },
   {
@@ -878,9 +878,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CABEÇA CIL.SEXT.INT.M6 X 16MM",
    "qtd": 8,
    "un": "CDA",
-   "aplicacao": "Fixação M6",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M6"
   },
   {
@@ -888,9 +888,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CABEÇA CIL.SEXT.INT.M8 X 14MM",
    "qtd": 24,
    "un": "CDA",
-   "aplicacao": "Fixação M8",
-   "conjunto": "carcacaMovel",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M8"
   },
   {
@@ -898,9 +898,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CABEÇA CIL.SEXT.INT.M8 X 25MM",
    "qtd": 24,
    "un": "CDA",
-   "aplicacao": "Fixação M8",
-   "conjunto": "carcacaMovel",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M8"
   },
   {
@@ -908,9 +908,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CABEÇA CILINDRICA M12 X 110MM (CLASSE 12.9)",
    "qtd": 16,
    "un": "CDA",
-   "aplicacao": "Fixação M12",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M12"
   },
   {
@@ -918,9 +918,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CABEÇA SEXT.M6 X 10MM-INOX",
    "qtd": 8,
    "un": "CDA",
-   "aplicacao": "Fixação M6",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M6"
   },
   {
@@ -928,9 +928,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CABEÇA SEXTAVADA M10 X 20MM",
    "qtd": 68,
    "un": "CDA",
-   "aplicacao": "Fixação M10",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M10"
   },
   {
@@ -938,9 +938,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CABEÇA SEXTAVADA M10 X 45MM",
    "qtd": 16,
    "un": "CDA",
-   "aplicacao": "Fixação M10",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M10"
   },
   {
@@ -948,9 +948,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CABEÇA SEXTAVADA M10 X 50MM",
    "qtd": 20,
    "un": "CDA",
-   "aplicacao": "Fixação M10",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M10"
   },
   {
@@ -958,9 +958,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CABEÇA SEXTAVADA M20 X 110MM (CLASSE 10.9)",
    "qtd": 16,
    "un": "CDA",
-   "aplicacao": "Fixação M20",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M20"
   },
   {
@@ -968,9 +968,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CABEÇA SEXTAVADA M20 X 85MM",
    "qtd": 8,
    "un": "CDA",
-   "aplicacao": "Fixação M20",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M20"
   },
   {
@@ -978,9 +978,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CABEÇA SEXTAVADA M24 X 110MM",
    "qtd": null,
    "un": "CDA",
-   "aplicacao": "Fixação M24",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M24"
   },
   {
@@ -988,9 +988,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CABEÇA SEXTAVADA M24 X 140MM",
    "qtd": null,
    "un": "CDA",
-   "aplicacao": "Fixação M24",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M24"
   },
   {
@@ -998,9 +998,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CABEÇA SEXTAVADA M24 X 390MM",
    "qtd": null,
    "un": "CDA",
-   "aplicacao": "Fixação M24",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M24"
   },
   {
@@ -1008,9 +1008,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CABEÇA SEXTAVADA M24 X 90MM",
    "qtd": 6,
    "un": "CDA",
-   "aplicacao": "Fixação M24",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M24"
   },
   {
@@ -1018,9 +1018,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CABEÇA SEXTAVADA M6 X 20MM",
    "qtd": null,
    "un": "CDA",
-   "aplicacao": "Fixação M6",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M6"
   },
   {
@@ -1028,9 +1028,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CABEÇA SEXTAVADA M8 X 30MM",
    "qtd": 16,
    "un": "CDA",
-   "aplicacao": "Fixação M8",
-   "conjunto": "carcacaMovel",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M8"
   },
   {
@@ -1039,8 +1039,8 @@ export const LISTA_TECNICA_MCC4 = {
    "qtd": 2,
    "un": "CDA",
    "aplicacao": "Parafuso de Montagem dos Distribuidores",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "conjunto": "geral",
+   "sugestao": false,
    "bitola": "M6"
   },
   {
@@ -1048,9 +1048,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CIL CL10.9    M24X     70MM",
    "qtd": 24,
    "un": "CDA",
-   "aplicacao": "Fixação M24",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M24"
   },
   {
@@ -1058,9 +1058,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO CIL CL12.9    M16X     70MM",
    "qtd": 8,
    "un": "CDA",
-   "aplicacao": "Fixação M16",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M16"
   },
   {
@@ -1078,9 +1078,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO PRIMETALS 1501, 1510E",
    "qtd": 2,
    "un": "CDA",
-   "aplicacao": "Parafuso Primetals",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -1098,9 +1098,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PARAFUSO SEXT CL4.6    M16X     90MM",
    "qtd": 8,
    "un": "CDA",
-   "aplicacao": "Fixação M16",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M16"
   },
   {
@@ -1119,8 +1119,8 @@ export const LISTA_TECNICA_MCC4 = {
    "qtd": 2,
    "un": "CDA",
    "aplicacao": "Pino Exentrico",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "conjunto": "geral",
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -1128,9 +1128,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PINO CONFORME DESENHO B-354724 MC.3",
    "qtd": 10,
    "un": "CDA",
-   "aplicacao": "Pino (desenho B-354724)",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -1138,9 +1138,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PINO GRAXEIRO 1/4\" TIPO BOTÃO",
    "qtd": 14,
    "un": "CDA",
-   "aplicacao": "Pino graxeiro",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -1178,9 +1178,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PORCA DE APERTO PARA TUBO 8MM",
    "qtd": 8,
    "un": "CDA",
-   "aplicacao": "Tubulação de graxa 8mm",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -1188,9 +1188,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PORCA SEXT CL5 MG     M 8",
    "qtd": 30,
    "un": "CDA",
-   "aplicacao": "Fixação M8",
-   "conjunto": "carcacaMovel",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M8"
   },
   {
@@ -1198,9 +1198,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PORCA SEXT CL5 MG     M12",
    "qtd": 30,
    "un": "CDA",
-   "aplicacao": "Fixação M12",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M12"
   },
   {
@@ -1208,9 +1208,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PORCA SEXTAVADA M16 - INOX",
    "qtd": 20,
    "un": "CDA",
-   "aplicacao": "Fixação M16",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M16"
   },
   {
@@ -1218,9 +1218,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PORCA SEXTAVADA M20 - INOX",
    "qtd": 32,
    "un": "CDA",
-   "aplicacao": "Fixação M20",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M20"
   },
   {
@@ -1228,9 +1228,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PORCA SEXTAVADA M24 - INOX",
    "qtd": 20,
    "un": "CDA",
-   "aplicacao": "Fixação M24",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M24"
   },
   {
@@ -1238,9 +1238,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PORCA SEXTAVADA M6 - INOX",
    "qtd": 30,
    "un": "CDA",
-   "aplicacao": "Fixação M6",
-   "conjunto": "placaEstreita",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": "M6"
   },
   {
@@ -1248,9 +1248,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "PROTECAO BARDELLA CSNBSA3835",
    "qtd": null,
    "un": "CDA",
-   "aplicacao": "Proteção (BSA3835)",
-   "conjunto": "carcacaMovel",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -1368,9 +1368,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "ROTULA 40,000X 105,00MM",
    "qtd": null,
    "un": "CDA",
-   "aplicacao": "Rótula do cilindro",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -1409,8 +1409,8 @@ export const LISTA_TECNICA_MCC4 = {
    "qtd": 2,
    "un": "CDA",
    "aplicacao": "Tubulação Hidráulico 12mm",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "conjunto": "geral",
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -1419,8 +1419,8 @@ export const LISTA_TECNICA_MCC4 = {
    "qtd": 1,
    "un": "CDA",
    "aplicacao": "Tubulação de graxa 10mm",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "conjunto": "geral",
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -1459,8 +1459,8 @@ export const LISTA_TECNICA_MCC4 = {
    "qtd": 2,
    "un": "CDA",
    "aplicacao": "Flexivel das Cangalhas",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "conjunto": "geral",
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -1478,9 +1478,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "TUBO METALICO FLEXIVEL Ø 2\" X 1900MM",
    "qtd": null,
    "un": "CDA",
-   "aplicacao": "Flexível água",
-   "conjunto": "tubulao",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -1488,9 +1488,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "UNIAO M/T ACO 10,0 MM X 3/8 \"",
    "qtd": null,
    "un": "CDA",
-   "aplicacao": "Tubulação Hidráulica 10mm",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -1499,8 +1499,8 @@ export const LISTA_TECNICA_MCC4 = {
    "qtd": 48,
    "un": "CDA",
    "aplicacao": "União de Graxa 8mm",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "conjunto": "geral",
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -1508,9 +1508,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "UNIÃO PARA TUBO 1/4\"",
    "qtd": 20,
    "un": "CDA",
-   "aplicacao": "Tubulação de graxa",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -1518,9 +1518,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "UNIÃO UMA 12 x 3/8\" NPT",
    "qtd": 20,
    "un": "CDA",
-   "aplicacao": "Tubulação Hidráulica 12mm",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -1528,9 +1528,9 @@ export const LISTA_TECNICA_MCC4 = {
    "texto": "VALVULA LINCOLN 504316063",
    "qtd": 4,
    "un": "CDA",
-   "aplicacao": "Válvula Lincoln (graxa)",
-   "conjunto": "placaLarga",
-   "sugestao": true,
+   "aplicacao": "",
+   "conjunto": null,
+   "sugestao": false,
    "bitola": null
   },
   {
@@ -1549,8 +1549,8 @@ export const LISTA_TECNICA_MCC4 = {
    "qtd": 12,
    "un": "CDA",
    "aplicacao": "Tomador de Pressão",
-   "conjunto": "carcacaFixa",
-   "sugestao": true,
+   "conjunto": "geral",
+   "sugestao": false,
    "bitola": null
   }
  ]

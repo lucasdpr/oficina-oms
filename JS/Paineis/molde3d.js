@@ -496,16 +496,8 @@ async function iniciarCena() {
             box(g, 0.49, 0.29, d * 0.8 - CANAL_ASA_Z, lado * 1.265, 0.555, zA(d * 0.8), asaMat).userData.label = 'Asa lateral (parte externa)';
             // aba de apoio embaixo da asa externa
             box(g, 0.5, 0.05, d * 0.7, lado * 1.25, 0.385, sinal * (d * 0.7) / 2, acoEscuroMat).userData.label = 'Aba de apoio da asa';
-            // tampa redonda aparafusada na ponta da asa (foto)
-            const tp = grupo(g, 'Tampa redonda da ponta');
-            cilindro(tp, 0.075, 0.02, lado * 1.52, 0.6, zA(d * 0.8), acoEscuroMat, 'x', 28);
-            for (let k = 0; k < 8; k++) {
-                const a = (k / 8) * Math.PI * 2;
-                cilindro(tp, 0.007, 0.026, lado * 1.52, 0.6 + Math.cos(a) * 0.058, zA(d * 0.8) + Math.sin(a) * 0.058, parafusoMat, 'x', 6);
-            }
             // olhal de içamento em cima da asa externa
             olhal(g, lado * 1.38, 0.755, sinal * (d * 0.8 - 0.06));
-            // bloco de trás em cima da asa interna
             // proteção preta em cima da asa — sai no "Ver interior"
             const protecao = box(g, 0.18, 0.08, 0.12, lado * 1.02, 0.89, sinal * (CANAL_ASA_Z + 0.08), ferrugemMat);
             protecao.userData.label = 'Proteção';
@@ -641,10 +633,6 @@ async function iniciarCena() {
                 cilindro(g, 0.007, 0.03, xf, TUB_Y + Math.cos(a) * 0.094, TUB_ZC + Math.sin(a) * 0.094, inoxMat, 'x', 6);
             }
         });
-        // engate rápido de bronze da água principal (entrada por cima)
-        const eng = grupo(g, 'Engate rápido bronze 2.1/2 (água principal)');
-        cilindro(eng, 0.04, 0.05, x, TUB_Y + 0.11, TUB_ZC, bronzeMat, 'y', 6);
-        cilindro(eng, 0.034, 0.06, x, TUB_Y + 0.165, TUB_ZC, bronzeMat, 'y', 20);
         const geo = new THREE.CylinderGeometry(0.078, 0.078, 1, 28);
         geo.translate(0, 0.5, 0);
         const agua = new THREE.Mesh(geo, aguaTubulaoMat);
@@ -926,25 +914,7 @@ async function iniciarCena() {
     [placas[0], placas[1]].forEach((p, i) => {
         const sp = i === 0 ? 1 : -1;
         const zFora = sp * COBRE_E / 2;
-        const bk = grupo(p, 'Back-up da placa larga (BSA3851)');
-        box(bk, PLACA_LARGA_W - 0.06, PLACA_H - 0.06, 0.012, 0, 0, zFora + sp * 0.006, acoEscuroMat);
-        for (let k = 0; k < 8; k++) {
-            [PLACA_H / 2 - 0.05, -PLACA_H / 2 + 0.05].forEach((y) => {
-                cilindro(bk, 0.011, 0.012, -0.5 + k * (1 / 7), y, zFora + sp * 0.018, parafusoMat, 'z', 6);
-            });
-        }
-        const bol = grupo(p, 'Bolacha do clamp (BSA3915)');
-        [-0.45, 0.45].forEach((x) => cilindro(bol, 0.04, 0.02, x, PLACA_H / 2 - 0.1, zFora + sp * 0.022, inoxMat, 'z', 24));
-
-        const cang = grupo(p, 'Cangalha do foot roll + 48 bicos Unijet');
-        const yC = -PLACA_H / 2 - 0.27;
         const zC = -sp * 0.025;
-        cilindro(cang, 0.02, PLACA_LARGA_W - 0.1, 0, yC, zC, inoxMat, 'x', 12);
-        for (let k = 0; k < 24; k++) {
-            [-0.018, 0.018].forEach((dz) => cilindro(cang, 0.005, 0.025, -0.55 + k * (1.1 / 23), yC + 0.02, zC + dz, latãoMat, 'y', 6));
-        }
-        tubo(cang, [[PLACA_LARGA_W / 2 - 0.05, yC, zC], [PLACA_LARGA_W / 2 + 0.08, yC - 0.04, zC], [PLACA_LARGA_W / 2 + 0.15, yC - 0.15, zC + sp * 0.05]], 0.018, inoxMat, 'Flexível da cangalha 2.1/2');
-
         const gx = grupo(p, 'Distribuidor de graxa + válvulas Lincoln');
         const xd = -PLACA_LARGA_W / 2 + 0.12;
         const yd = -PLACA_H / 2 - 0.1;
@@ -952,7 +922,7 @@ async function iniciarCena() {
         box(gx, 0.05, 0.09, 0.03, xd, yd, zd, graxaAzulMat);
         for (let k = 0; k < 6; k++) cilindro(gx, 0.004, 0.02, xd + 0.03, yd - 0.035 + k * 0.014, zd, latãoMat, 'x', 6);
         [0.05, 0.1].forEach((dx) => { box(gx, 0.03, 0.04, 0.03, xd + dx + 0.04, yd, zd, latãoMat); });
-        MANCAIS_FOOT_ROLL.forEach((xm) => tubo(gx, [[xd + 0.035, yd, zd], [xm * 0.6, yd + 0.05, zd], [xm, -PLACA_H / 2 - 0.035, zC - sp * 0.04]], 0.004, borrachaMat, 'Mangueira de graxa 1/4"'));
+        MANCAIS_FOOT_ROLL.forEach((xm) => tubo(gx, [[xd + 0.035, yd, zd], [xm * 0.6, yd + 0.05, zd], [xm, -PLACA_H / 2 - 0.035, zC - sp * 0.04]], 0.0025, borrachaMat, 'Mangueira de graxa 1/4"'));
     });
 
     // Placa estreita: guia lateral com tirantes T e macaco de ajuste,
@@ -985,18 +955,91 @@ async function iniciarCena() {
     // de pressão e parafusos M24 de fixação dos cilindros.
     const hid = grupo(tras, 'Hidráulica dos cilindros (filtros, engates, tubulação)');
     [-1, 1].forEach((lado) => {
-        const xf = lado * 0.55;
-        const zf = -D / 2 - 0.05;
-        cilindro(hid, 0.035, 0.16, xf, 0.5, zf, graxaAzulMat, 'y', 20);
-        cilindro(hid, 0.04, 0.03, xf, 0.595, zf, acoEscuroMat, 'y', 20);
-        cilindro(hid, 0.012, 0.04, xf, 0.63, zf, latãoMat, 'y', 8);
-        tubo(hid, [[xf, 0.63, zf], [xf, 0.7, zf], [lado * 0.84, 0.72, zf], [lado * 0.84, 0.72, -D / 2 + 0.02]], 0.006, inoxMat, 'Tubo hidráulico inox');
-        [0.3, 0.6].forEach((t) => box(hid, 0.025, 0.02, 0.02, xf + (lado * 0.84 - xf) * t, 0.7, zf, graxaAzulMat));
         [0.74, 0.55].forEach((y) => {
-            cilindro(hid, 0.008, 0.02, lado * 0.93, y + 0.05, -CANAL_ASA_Z - 0.002, latãoMat, 'z', 6);
             [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => cilindro(hid, 0.01, 0.012, lado * 0.84 + a * 0.065, y + b * 0.065, -CANAL_ASA_Z - 0.004, parafusoMat, 'z', 6));
         });
     });
+
+    // ---- tubulação completa (foto da face "OMS") ----
+    // Tubos finos em paralelo correndo pela face e pelas asas, subindo em
+    // 90°, blocos distribuidores, válvulas e as mangueiras vermelhas em
+    // cima. Montada nas duas metades (espelhada).
+    const tuboFinoMat = new THREE.MeshStandardMaterial({ color: 0x8e949b, roughness: 0.35, metalness: 0.85 });
+    const vermelhoMangMat = new THREE.MeshStandardMaterial({ color: 0xa8432a, roughness: 0.7 });
+    const R = 0.0045;
+    function linha(pai, pts, r = R, mat = tuboFinoMat) {
+        // polilinha com cantos arredondados curtos (curva de 90° de tubo)
+        const v = pts.map((p) => new THREE.Vector3(...p));
+        const cam = new THREE.CurvePath();
+        for (let i = 0; i < v.length - 1; i++) {
+            const a0 = v[i], a1 = v[i + 1];
+            if (i === 0 && v.length > 2) { cam.add(new THREE.LineCurve3(a0, a1.clone().lerp(a0, Math.min(0.02 / a0.distanceTo(a1), 0.5)))); continue; }
+            const ini = a0.clone().lerp(a1, Math.min(0.02 / a0.distanceTo(a1), 0.5));
+            if (i > 0) cam.add(new THREE.QuadraticBezierCurve3(cam.getPoint(1), a0, ini));
+            const fim = i === v.length - 2 ? a1 : a1.clone().lerp(a0, Math.min(0.02 / a0.distanceTo(a1), 0.5));
+            cam.add(new THREE.LineCurve3(ini, fim));
+        }
+        const m = new THREE.Mesh(new THREE.TubeGeometry(cam, Math.max(24, v.length * 16), r, 6, false), mat);
+        pai.add(m);
+        return m;
+    }
+    // porca/conexão de latão onde o tubo encosta em algo (bloco, placa, válvula)
+    function conexao(pai, x, y, z, eixo) {
+        cilindro(pai, 0.0085, 0.014, x, y, z, latãoMat, eixo, 6);
+    }
+    // tê de ligação entre dois tubos
+    function te(pai, x, y, z) {
+        box(pai, 0.014, 0.014, 0.014, x, y, z, latãoMat, false);
+    }
+    // bloco distribuidor: entradas embaixo, saídas em cima, nas posições xs
+    function blocoDistribuidor(pai, x, y, z, sz, xs, prof) {
+        box(pai, 0.13, 0.05, prof, x, y, z, acoEscuroMat);
+        cilindro(pai, 0.006, 0.01, x - 0.055, y, z + sz * (prof / 2 + 0.003), parafusoMat, 'z', 6);
+        cilindro(pai, 0.006, 0.01, x + 0.055, y, z + sz * (prof / 2 + 0.003), parafusoMat, 'z', 6);
+    }
+    // Circuito do lado fixo, só ligando peças que existem:
+    // engates de entrada (centro) → filtros → distribuidor de cada asa →
+    // portas A/B dos 2 cilindros de avanço/retorno daquela asa.
+    {
+        const sz = -1;
+        const zf = (off) => sz * (D / 2 + off);
+        const zA = (off) => sz * ((D / 2 - 0.004) * 0.86 + off);
+        const Z = zA(0.02);
+        const YP = 0.47, YT = 0.45;          // linha de pressão e de retorno
+        const OP = 0.014, OT = 0.03;         // afastamento das 2 linhas na face
+        // bloco de entrada no centro com os 2 engates rápidos de óleo
+        box(hid, 0.08, 0.05, 0.035, 0, 0.46, zf(0.022), acoEscuroMat).userData.label = 'Bloco de entrada (engates de óleo)';
+        [-0.02, 0.02].forEach((x) => {
+            cilindro(hid, 0.008, 0.025, x, 0.422, zf(0.022), latãoMat, 'y', 8);
+            cilindro(hid, 0.011, 0.012, x, 0.404, zf(0.022), parafusoMat, 'y', 6);
+        });
+        [-1, 1].forEach((lado) => {
+            const xb = lado * 1.08, yb = 0.645;
+            // distribuidor na asa (entradas P/T embaixo, 4 saídas A/B pro lado dos cilindros)
+            box(hid, 0.06, 0.16, 0.04, xb, yb, Z, acoEscuroMat).userData.label = 'Distribuidor hidráulico dos cilindros';
+            [-0.015, 0.015].forEach((dx) => cilindro(hid, 0.006, 0.012, xb + dx, yb + 0.084, Z, latãoMat, 'y', 6)); // tomadores de pressão
+            [yb - 0.06, yb + 0.06].forEach((y) => cilindro(hid, 0.006, 0.01, xb, y, Z + sz * 0.022, parafusoMat, 'z', 6));
+            // P e T: centro → filtro → distribuidor
+            [[YP, OP, -0.012], [YT, OT, 0.012]].forEach(([y, o, dx]) => {
+                const xs = xb + lado * dx;
+                linha(hid, [[lado * 0.04, y, zf(o)], [lado * 0.72, y, zf(o)], [lado * 0.76, y, Z], [xs, y, Z], [xs, yb - 0.08, Z]]);
+                conexao(hid, xs, yb - 0.087, Z, 'y');
+                conexao(hid, lado * 0.047, y, zf(o), 'x');
+            });
+            // filtro em linha na pressão
+            cilindro(hid, 0.018, 0.08, lado * 0.45, YP, zf(OP), graxaAzulMat, 'x', 16).userData.label = 'Filtro hidráulico';
+            [-0.045, 0.045].forEach((d) => conexao(hid, lado * 0.45 + d, YP, zf(OP), 'x'));
+            // abraçadeiras Stauff nas 2 linhas
+            [0.22, 0.62].forEach((x) => box(hid, 0.014, 0.05, 0.03, lado * x, 0.46, zf(0.022), graxaAzulMat, false));
+            // saídas A/B → cilindro de cima (0.74) e de baixo (0.55), sem cruzar
+            [[yb + 0.06, 0.99, 0.76], [yb + 0.02, 0.97, 0.72], [yb - 0.02, 0.97, 0.57], [yb - 0.06, 0.99, 0.53]].forEach(([ys, col, yt]) => {
+                const xp = xb - lado * 0.03, xc = lado * col, xe = lado * 0.92;
+                linha(hid, [[xp, ys, Z], [xc, ys, Z], [xc, yt, Z], [xe, yt, Z]]);
+                conexao(hid, xp - lado * 0.006, ys, Z, 'x');
+                conexao(hid, xe, yt, Z, 'x');
+            });
+        });
+    }
 
     // Carcaça móvel: 2 chapas de apoio (BSA3816) e a proteção (BSA3835).
     const apoio = grupo(frente, 'Apoio do lado móvel (chapas BSA3816)');
