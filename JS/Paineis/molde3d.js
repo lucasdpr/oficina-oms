@@ -206,6 +206,24 @@ function criarTexturaFurosCarcaca(THREE) {
     return texturaDeCanvas(THREE, c);
 }
 
+// Tampa de cima da carcaça (foto de cima): aço gasto com retângulos
+// contornados em tinta vermelha e alguns furos de parafuso.
+function criarTexturaTampaTopo(THREE) {
+    const [c, ctx] = novoCanvas(1024, 256);
+    ctx.fillStyle = '#3b3e43';
+    ctx.fillRect(0, 0, 1024, 256);
+    for (let i = 0; i < 2500; i++) {
+        ctx.fillStyle = i % 2 ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.08)';
+        ctx.fillRect(Math.random() * 1024, Math.random() * 256, 2, 2);
+    }
+    ctx.strokeStyle = '#d9542b';
+    ctx.lineWidth = 5;
+    [[90, 70, 150, 110], [330, 60, 170, 120], [590, 70, 150, 110], [820, 60, 130, 120]].forEach(([x, y, w, h]) => ctx.strokeRect(x, y, w, h));
+    ctx.fillStyle = '#0c0b0a';
+    [[40, 40], [40, 216], [984, 40], [984, 216], [512, 30]].forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fill(); });
+    return texturaDeCanvas(THREE, c);
+}
+
 function criarTexturaTexto(THREE, texto, cor) {
     const [c, ctx] = novoCanvas(256, 128);
     ctx.clearRect(0, 0, 256, 128);
@@ -305,6 +323,7 @@ async function iniciarCena() {
     // Asas do lado móvel com material próprio: ficam semitransparentes no
     // "Ver interior" pra dar pra ver o tubulão de água dentro delas.
     const acoAsaMovelMat = acoMat.clone();
+    const acoAsaFixoMat = acoMat.clone();
     const acoEscuroMat = new THREE.MeshStandardMaterial({ map: texAco, color: 0x9ea2a8, roughness: 0.85, metalness: 0.45 });
     const ferrugemMat = new THREE.MeshStandardMaterial({ color: 0x2c2f33, roughness: 0.8, metalness: 0.4 });
     const buracoMat = new THREE.MeshStandardMaterial({ color: 0x0c0b0a, roughness: 1, metalness: 0 });
@@ -322,6 +341,7 @@ async function iniciarCena() {
     const teleInternoMat = canoInoxMat.clone();
     const aguaMat = new THREE.MeshStandardMaterial({ color: 0x4fb3ff, emissive: 0x1a6fd0, emissiveIntensity: 0.7, roughness: 0.2, metalness: 0, transparent: true, opacity: 0.9 });
     const aguaTubulaoMat = new THREE.MeshStandardMaterial({ color: 0x3d9cf0, emissive: 0x1557a8, emissiveIntensity: 0.5, roughness: 0.15, metalness: 0, transparent: true, opacity: 0.75 });
+    const tampaTopoMat = new THREE.MeshStandardMaterial({ map: criarTexturaTampaTopo(THREE), roughness: 0.8, metalness: 0.35 });
     const furosCarcacaMat = new THREE.MeshStandardMaterial({ map: criarTexturaFurosCarcaca(THREE), alphaTest: 0.5, roughness: 0.8, metalness: 0.3 });
 
     const cobreFrenteMat = new THREE.MeshPhysicalMaterial({ map: criarTexturaPlacaFrente(THREE), roughness: 0.38, metalness: 0.85, clearcoat: 0.2, clearcoatRoughness: 0.4 });
@@ -402,6 +422,8 @@ async function iniciarCena() {
     const PLACA_ESTREITA_W = 0.14; // = espessura do veio
     const PLACA_H = 0.5;
     const COBRE_E = 0.045;
+    // meia-largura do canal aberto no topo = face de fora das placas largas
+    const CANAL_Z = PLACA_ESTREITA_W / 2 + COBRE_E;
     const PLACA_CY = CORPO_Y0 + 0.03 + PLACA_H / 2;
 
     // Colunas da grade de furos (mesmas da textura da placa larga) — usadas
@@ -422,16 +444,25 @@ async function iniciarCena() {
         const face = sinal * (D / 2);    // z da face externa dessa metade
         const fz = (off) => face + sinal * off;
 
-        // corpo central
-        box(g, CORPO_W, CORPO_H, d, 0, CORPO_CY, zc, acoMat).userData.label = 'Corpo central da carcaça';
+        // corpo central — começa em CANAL_Z (não em z=0): o vão no meio é o
+        // canal do molde, aberto em cima, onde ficam as 4 placas de cobre
+        // (vista de cima, igual à foto).
+        const dCorpo = d - CANAL_Z;
+        box(g, CORPO_W, CORPO_H, dCorpo, 0, CORPO_CY, sinal * (CANAL_Z + dCorpo / 2), acoMat).userData.label = 'Corpo central da carcaça';
+        // tampa de cima com as marcações vermelhas (foto de cima)
+        const tampaTopo = new THREE.Mesh(new THREE.PlaneGeometry(CORPO_W, dCorpo), tampaTopoMat);
+        tampaTopo.rotation.x = -Math.PI / 2;
+        tampaTopo.position.set(0, CORPO_TOPO + 0.001, sinal * (CANAL_Z + dCorpo / 2));
+        if (sinal < 0) tampaTopo.rotation.z = Math.PI;
+        g.add(tampaTopo);
+        // réguas/guias ao longo da borda do canal
+        box(g, CORPO_W - 0.1, 0.025, 0.05, 0, CORPO_TOPO + 0.012, sinal * (CANAL_Z + 0.03), acoEscuroMat).userData.label = 'Guia da borda do canal';
         // aba fina no topo, no centro
         box(g, 0.035, 0.06, 0.03, 0, CORPO_TOPO + 0.03, fz(-0.05), acoEscuroMat);
-        // abertura do canal do molde no topo (cavidade entre as placas)
-        box(g, 1.22, 0.006, 0.09, 0, CORPO_TOPO + 0.002, sinal * 0.045, buracoMat, false);
 
         // 🆕 furos de água na face interna da carcaça (onde a placa larga
         // encosta) — é por eles que a água sai pra placa.
-        const faceInterna = zc - sinal * (d / 2);
+        const faceInterna = sinal * CANAL_Z;
         const furos = new THREE.Mesh(new THREE.PlaneGeometry(PLACA_LARGA_W, PLACA_H), furosCarcacaMat);
         furos.position.set(0, PLACA_CY, faceInterna - sinal * 0.0015);
         furos.rotation.y = sinal > 0 ? Math.PI : 0;
@@ -494,7 +525,7 @@ async function iniciarCena() {
 
     const frente = construirMetade(1, acoAsaMovelMat);
     frente.userData.label = 'Carcaça — lado móvel';
-    const tras = construirMetade(-1, acoMat);
+    const tras = construirMetade(-1, acoAsaFixoMat);
     tras.userData.label = 'Carcaça — lado fixo';
     conjunto('Carcaça — lado móvel', frente);
     conjunto('Carcaça — lado fixo', tras);
@@ -638,15 +669,22 @@ async function iniciarCena() {
     adicionarGuia(placas[2], 1);
     adicionarGuia(placas[3], -1);
 
-    // ---- cilindros de avanço/retorno (nos cantos da placa larga do lado fixo, atrás) ----
-    // Fotos reais: flange quadrada com bujões sextavados, camisa redonda
-    // pintada de cinza, vedação com fita e haste com ponta roscada. A
-    // ponta roscada vai na placa; a flange fica pro lado da carcaça.
-    function adicionarCilindroAvanco(placaLarga, x, y) {
-        const g = grupo(placaLarga, 'Cilindro de avanço/retorno');
-        // placa de trás: gira 180° pra o cilindro apontar pra fora (-z)
-        g.position.set(x, y, -COBRE_E / 2);
+    // ---- cilindros de avanço/retorno: dentro da carcaça do lado FIXO ----
+    // 4 cilindros (2 em cada asa, em cima e embaixo, nas marcações da foto)
+    // embutidos na carcaça fixa, com a haste saindo pela face interna. É a
+    // haste que empurra/puxa o lado MÓVEL (carcaça + placa juntas) entre
+    // avançado, neutro e afastado. Flange quadrada com bujões, camisa
+    // cinza, vedação com fita e haste com ponta roscada (fotos reais).
+    const hastesCilindro = [];
+    function adicionarCilindroAvanco(x, y) {
+        const g = grupo(tras, 'Cilindro de avanço/retorno (carcaça fixa)');
+        // face interna da asa fixa; gira 180° pra o corpo entrar na carcaça (-z)
+        g.position.set(x, y, 0);
         g.rotation.y = Math.PI;
+        box(tras, 0.16, 0.16, 0.004, x, y, -0.001, buracoMat, false);
+        const haste = cilindro(tras, 0.016, 1, x, y, 0, canoInoxMat, 'z', 16);
+        haste.userData.label = 'Haste do cilindro de avanço/retorno';
+        hastesCilindro.push(haste);
         cilindro(g, 0.019, 0.03, 0, 0, 0.005, canoInoxMat, 'z', 16);
         for (let i = 0; i < 4; i++) cilindro(g, 0.021, 0.003, 0, 0, i * 0.007, parafusoMat, 'z', 16);
         cilindro(g, 0.028, 0.02, 0, 0, 0.03, parafusoMat, 'z', 6);
@@ -662,7 +700,7 @@ async function iniciarCena() {
         cilindro(g, 0.009, 0.02, 0, 0.075, 0.301, fitaCremeMat, 'y', 12);
         cilindro(g, 0.01, 0.02, (x > 0 ? 1 : -1) * 0.075, 0, 0.301, fitaCremeMat, 'x', 12);
     }
-    [[-0.5, 0.17], [0.5, 0.17], [-0.5, -0.17], [0.5, -0.17]].forEach(([x, y]) => adicionarCilindroAvanco(placas[1], x, y));
+    [[-0.84, 0.74], [0.84, 0.74], [-0.84, 0.55], [0.84, 0.55]].forEach(([x, y]) => adicionarCilindroAvanco(x, y));
 
     // ---- mecanismo de cada placa estreita ----
     // A caixa d'água e os fusos são presos na placa (andam com ela). O
@@ -972,6 +1010,31 @@ async function iniciarCena() {
     });
     atualizarHudLargura();
 
+    // Posição do lado móvel (quanto ele fica afastado do fixo).
+    const POSICOES_MOVEL = { avancado: 0, neutro: 0.05, afastado: 0.12 };
+    const NOMES_POSICAO = { avancado: 'Avançado', neutro: 'Neutro', afastado: 'Afastado' };
+    let posMovel = POSICOES_MOVEL.neutro;
+    let alvoMovel = POSICOES_MOVEL.neutro;
+    const hudPosicao = document.getElementById('molde3d-posicao');
+    function irPara(nome) {
+        alvoMovel = POSICOES_MOVEL[nome];
+        document.querySelectorAll('[data-posicao-movel]').forEach((b) => b.classList.toggle('ativo', b.dataset.posicaoMovel === nome));
+        if (hudPosicao) hudPosicao.textContent = `Lado móvel: ${NOMES_POSICAO[nome]}`;
+    }
+    document.querySelectorAll('[data-posicao-movel]').forEach((b) => b.addEventListener('click', () => irPara(b.dataset.posicaoMovel)));
+    irPara('neutro');
+
+    const btnCima = document.getElementById('molde3d-btn-cima');
+    if (btnCima) {
+        btnCima.addEventListener('click', () => {
+            autoRotacionar = false;
+            if (btnRotate) btnRotate.innerHTML = '<i class="fas fa-sync" style="opacity:.5;"></i> Câmera parada';
+            controls.target.set(0, CORPO_TOPO, 0);
+            camera.position.set(0.001, CORPO_TOPO + 3.2, 0.6);
+            controls.update();
+        });
+    }
+
     const btnAgua = document.getElementById('molde3d-btn-agua');
     const hudAgua = document.getElementById('molde3d-agua');
     if (btnAgua) {
@@ -1036,11 +1099,20 @@ async function iniciarCena() {
             transicaoT = Math.min(1, transicaoT + dt / DURACAO);
             const e = transicaoT < 0.5 ? 4 * transicaoT ** 3 : 1 - (-2 * transicaoT + 2) ** 3 / 2;
             kAtual = interiorAberto ? e : 1 - e;
-            frente.position.z = ABERTURA * kAtual;
             tras.position.z = -ABERTURA * kAtual;
             grupoCobre.position.y = 0.6 * kAtual;
             definirOpacidade(acoAsaMovelMat, 1 - 0.72 * kAtual);
+            definirOpacidade(acoAsaFixoMat, 1 - 0.6 * kAtual);
         }
+        // Lado móvel (carcaça + placa larga, tudo junto) indo pra posição
+        // escolhida: avançado / neutro / afastado. O lado fixo não se mexe.
+        posMovel += (alvoMovel - posMovel) * Math.min(1, dt * 4);
+        frente.position.z = ABERTURA * kAtual + posMovel;
+        hastesCilindro.forEach((h) => {
+            const comp = 0.01 + posMovel;
+            h.scale.y = comp;
+            h.position.z = comp / 2;
+        });
 
         if (direcaoEstreitas !== 0) {
             const antes = ajusteEstreitas;
@@ -1053,6 +1125,7 @@ async function iniciarCena() {
             const { eixoAfastamento, sinalAfastamento, baseAfastamento, aberturaAfastamento } = p.userData;
             let valor = baseAfastamento + aberturaAfastamento * kAtual * sinalAfastamento;
             if (eixoAfastamento === 'x') valor -= sinalAfastamento * ajusteEstreitas;
+            if (p === placas[0]) valor += posMovel;
             if (eixoAfastamento === 'z') p.position.z = valor; else p.position.x = valor;
         });
         atualizarTelescopicos();
