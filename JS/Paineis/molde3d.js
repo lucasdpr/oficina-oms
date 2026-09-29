@@ -435,6 +435,7 @@ async function iniciarCena() {
     // inteiro; no "Ver interior" cada uma desliza pro seu lado e revela as
     // placas de cobre no meio. sinal +1 = frente (lado móvel), -1 = trás
     // (lado fixo).
+    const protecoes = [];
     function construirMetade(sinal, asaMat) {
         const g = new THREE.Group();
         const d = D / 2 - 0.004;
@@ -493,7 +494,10 @@ async function iniciarCena() {
             // olhal de içamento em cima da asa externa
             olhal(g, lado * 1.38, 0.755, sinal * (d * 0.8 - 0.06));
             // bloco de trás em cima da asa interna
-            box(g, 0.18, 0.08, 0.12, lado * 1.02, 0.89, sinal * (CANAL_ASA_Z + 0.08), ferrugemMat);
+            // proteção preta em cima da asa — sai no "Ver interior"
+            const protecao = box(g, 0.18, 0.08, 0.12, lado * 1.02, 0.89, sinal * (CANAL_ASA_Z + 0.08), ferrugemMat);
+            protecao.userData.label = 'Proteção';
+            protecoes.push(protecao);
         });
 
         // furos redondos nos cantos de cima, na junção corpo/asa
@@ -1131,6 +1135,7 @@ async function iniciarCena() {
             grupoCobre.position.y = 0.6 * kAtual;
             definirOpacidade(acoAsaMovelMat, 1 - 0.72 * kAtual);
             definirOpacidade(acoAsaFixoMat, 1 - 0.6 * kAtual);
+            protecoes.forEach((m) => { m.visible = kAtual < 0.05; });
         }
         // Lado móvel (carcaça + placa larga, tudo junto) indo pra posição
         // escolhida: avançado / neutro / afastado. O lado fixo não se mexe.
