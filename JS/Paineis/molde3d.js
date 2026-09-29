@@ -730,11 +730,6 @@ async function iniciarCena() {
             box(g, 0.04, 0.042, 0.012, xr + sinal * 0.01, y, -0.051, mancalMat);
             cilindro(g, 0.011, 0.004, xr, y, 0.058, tampaRoloMat, 'z', 12);
         });
-        // cangalha do edge roll com 5 bicos Unijet + tubo de cobre
-        const cg = grupo(g, 'Cangalha do edge roll + bicos Unijet');
-        const xc = -sinal * 0.075;
-        cilindro(cg, 0.008, 0.2, xc, 0, 0.05, cobreTuboMat, 'y', 8);
-        [0.08, 0.04, 0, -0.04, -0.08].forEach((y) => cilindro(cg, 0.006, 0.02, xc + sinal * 0.012, y, 0.05, latãoMat, 'x', 8));
         g.userData.label = 'Edge roll (rolos + guias)';
     }
 
@@ -922,7 +917,6 @@ async function iniciarCena() {
         box(gx, 0.05, 0.09, 0.03, xd, yd, zd, graxaAzulMat);
         for (let k = 0; k < 6; k++) cilindro(gx, 0.004, 0.02, xd + 0.03, yd - 0.035 + k * 0.014, zd, latãoMat, 'x', 6);
         [0.05, 0.1].forEach((dx) => { box(gx, 0.03, 0.04, 0.03, xd + dx + 0.04, yd, zd, latãoMat); });
-        MANCAIS_FOOT_ROLL.forEach((xm) => tubo(gx, [[xd + 0.035, yd, zd], [xm * 0.6, yd + 0.05, zd], [xm, -PLACA_H / 2 - 0.035, zC - sp * 0.04]], 0.0025, borrachaMat, 'Mangueira de graxa 1/4"'));
     });
 
     // Placa estreita: guia lateral com tirantes T e macaco de ajuste,
