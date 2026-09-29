@@ -331,6 +331,7 @@ async function iniciarCena() {
     const canoInoxMat = new THREE.MeshStandardMaterial({ color: 0x9a9da3, roughness: 0.3, metalness: 0.9 });
     const fitaAmarelaMat = new THREE.MeshStandardMaterial({ color: 0xd9a830, roughness: 0.7 });
     const tampaPretaMat = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.6 });
+    const motorAzulMat = new THREE.MeshStandardMaterial({ color: 0x2f5d9a, roughness: 0.45, metalness: 0.4 });
     const pinturaCinzaMat = new THREE.MeshStandardMaterial({ color: 0x8f959b, roughness: 0.7, metalness: 0.3 });
     const bronzeMat = new THREE.MeshStandardMaterial({ color: 0xc19a3a, roughness: 0.3, metalness: 0.85 });
     const latãoMat = new THREE.MeshStandardMaterial({ color: 0xd8b25a, roughness: 0.3, metalness: 0.85 });
@@ -561,29 +562,43 @@ async function iniciarCena() {
     box(frente, 0.08, 0.13, 0.015, -0.92, 0.59, (D / 2 - 0.004) * 0.86 + 0.008, ferrugemMat);
     // cano em U da esquerda
     tubo(frente, [[-1.5, 0.52, 0.34], [-1.2, 0.52, 0.36], [-1.08, 0.5, 0.38], [-1.05, 0.42, 0.38], [-1.05, 0.33, 0.36]], 0.028, canoMat, 'Cano em U');
+    // Motorredutor na ponta de fora de cada um dos 4 cardans (os com
+    // fita amarela) — é ele que gira o cardan e abre/fecha a placa estreita.
+    function motorredutor(pai, p, lado) {
+        const mr = grupo(pai, 'Motorredutor do cardan');
+        mr.position.copy(p);
+        mr.rotation.y = lado * 0.6;
+        box(mr, 0.1, 0.09, 0.09, lado * 0.09, 0, 0, pinturaCinzaMat);
+        cilindro(mr, 0.04, 0.13, lado * 0.2, 0, 0, motorAzulMat, 'x', 20);
+        for (let k = 0; k < 6; k++) cilindro(mr, 0.042, 0.006, lado * (0.15 + k * 0.018), 0, 0, motorAzulMat, 'x', 20);
+        cilindro(mr, 0.034, 0.02, lado * 0.275, 0, 0, parafusoMat, 'x', 16);
+        box(mr, 0.035, 0.035, 0.035, lado * 0.2, 0.05, 0, parafusoMat);
+        box(mr, 0.2, 0.012, 0.11, lado * 0.15, -0.052, 0, acoEscuroMat);
+    }
+
     // mangueira da esquerda com ponta de fita amarela
-    const mEsq = tubo(frente, [[-0.95, 0.36, 0.3], [-1.15, 0.37, 0.55], [-1.35, 0.38, 0.72]], 0.018, canoMat, 'Mangueira de água');
+    const mEsq = tubo(frente, [[-0.95, 0.36, 0.3], [-1.15, 0.37, 0.55], [-1.35, 0.38, 0.72]], 0.018, canoMat, 'Cardan (saída externa)');
     const pEsq = mEsq.getPoint(1);
     cilindro(frente, 0.03, 0.08, pEsq.x, pEsq.y, pEsq.z, fitaAmarelaMat, 'x').rotation.y = 0.6;
-    cilindro(frente, 0.034, 0.04, pEsq.x - 0.05, pEsq.y, pEsq.z + 0.03, tampaPretaMat, 'x').rotation.y = 0.6;
+    motorredutor(frente, pEsq, -1);
     // cano em U grande da direita (sobe, vai pra direita, desce)
     tubo(frente, [[0.9, 0.22, 0.34], [0.95, 0.4, 0.36], [0.98, 0.52, 0.38], [1.15, 0.54, 0.38], [1.5, 0.55, 0.36], [1.56, 0.5, 0.36], [1.56, 0.44, 0.36]], 0.03, canoMat, 'Cano em U');
     // cano inox horizontal passando embaixo do corpo
     tubo(frente, [[-0.4, 0.22, 0.42], [0.1, 0.22, 0.43], [0.5, 0.23, 0.43], [0.9, 0.22, 0.4]], 0.02, canoInoxMat, 'Cano inox');
     // mangueira da direita com ponta de fita amarela
-    const mDir = tubo(frente, [[1.02, 0.4, 0.32], [1.2, 0.33, 0.55], [1.45, 0.24, 0.75]], 0.018, canoMat, 'Mangueira de água');
+    const mDir = tubo(frente, [[1.02, 0.4, 0.32], [1.2, 0.33, 0.55], [1.45, 0.24, 0.75]], 0.018, canoMat, 'Cardan (saída externa)');
     const pDir = mDir.getPoint(1);
     cilindro(frente, 0.03, 0.08, pDir.x, pDir.y, pDir.z, fitaAmarelaMat, 'x').rotation.y = -0.6;
-    cilindro(frente, 0.034, 0.04, pDir.x + 0.05, pDir.y, pDir.z + 0.03, tampaPretaMat, 'x').rotation.y = -0.6;
+    motorredutor(frente, pDir, 1);
     // as mesmas 2 mangueiras no lado fixo (espelhadas pra trás)
     [
         [[[-0.95, 0.36, -0.3], [-1.15, 0.37, -0.55], [-1.35, 0.38, -0.72]], -1],
         [[[1.02, 0.4, -0.32], [1.2, 0.33, -0.55], [1.45, 0.24, -0.75]], 1],
     ].forEach(([pts, lado]) => {
-        const m = tubo(tras, pts, 0.018, canoMat, 'Mangueira de água');
+        const m = tubo(tras, pts, 0.018, canoMat, 'Cardan (saída externa)');
         const pm = m.getPoint(1);
         cilindro(tras, 0.03, 0.08, pm.x, pm.y, pm.z, fitaAmarelaMat, 'x').rotation.y = lado * 0.6;
-        cilindro(tras, 0.034, 0.04, pm.x + lado * 0.05, pm.y, pm.z - 0.03, tampaPretaMat, 'x').rotation.y = lado * 0.6;
+        motorredutor(tras, pm, lado);
     });
 
     // ---- tubulão de água (só no lado móvel, dentro de cada asa) ----
@@ -767,7 +782,6 @@ async function iniciarCena() {
     const CX_AGUA_E = 0.05;
     const faceCaixaAgua = COBRE_E / 2 + CX_AGUA_E;
     const Y_BASE_CARDAN = 0.12 - PLACA_CY;
-    const motorAzulMat = new THREE.MeshStandardMaterial({ color: 0x2f5d9a, roughness: 0.45, metalness: 0.4 });
     const mecanismos = [];
     const sanfonaMat = new THREE.MeshStandardMaterial({ color: 0x1c1c1e, roughness: 0.9, metalness: 0.05 });
     const perfilSanfonaGrande = [];
@@ -826,16 +840,6 @@ async function iniciarCena() {
             cilindro(cardan, 0.011, topo - base, xc, (topo + base) / 2, zCardan, canoInoxMat, 'y', 12);
             junta(Y_BASE_CARDAN + 0.05);
             box(cardan, 0.035, 0.035, 0.035, xc, Y_BASE_CARDAN, zCardan, parafusoMat);
-            // motorredutor na ponta de baixo de cada cardan (são 4) — é ele
-            // que gira o cardan e abre/fecha a placa estreita
-            const mr = grupo(quadro, 'Motorredutor do cardan');
-            const yM = Y_BASE_CARDAN - 0.06;
-            box(mr, 0.09, 0.08, 0.08, xc, yM, zCardan, pinturaCinzaMat);
-            cilindro(mr, 0.036, 0.11, xc + s * 0.1, yM, zCardan, motorAzulMat, 'x', 20);
-            for (let k = 0; k < 6; k++) cilindro(mr, 0.038, 0.006, xc + s * (0.06 + k * 0.016), yM, zCardan, motorAzulMat, 'x', 20);
-            cilindro(mr, 0.03, 0.02, xc + s * 0.165, yM, zCardan, parafusoMat, 'x', 16);
-            box(mr, 0.03, 0.03, 0.03, xc + s * 0.1, yM + 0.045, zCardan, parafusoMat);
-            box(mr, 0.12, 0.012, 0.1, xc + s * 0.03, yM - 0.046, zCardan, acoEscuroMat);
         });
 
         // Tubo telescópico de água: luva presa no suporte, tubo interno
