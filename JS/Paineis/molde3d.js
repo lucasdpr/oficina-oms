@@ -968,6 +968,81 @@ async function iniciarCena() {
         });
     });
 
+    // ---- tubulação completa (foto da face "OMS") ----
+    // Tubos finos em paralelo correndo pela face e pelas asas, subindo em
+    // 90°, blocos distribuidores, válvulas e as mangueiras vermelhas em
+    // cima. Montada nas duas metades (espelhada).
+    const tuboFinoMat = new THREE.MeshStandardMaterial({ color: 0x8e949b, roughness: 0.35, metalness: 0.85 });
+    const vermelhoMangMat = new THREE.MeshStandardMaterial({ color: 0xa8432a, roughness: 0.7 });
+    const R = 0.0045;
+    function linha(pai, pts, r = R, mat = tuboFinoMat) {
+        // polilinha com cantos arredondados curtos (curva de 90° de tubo)
+        const v = pts.map((p) => new THREE.Vector3(...p));
+        const cam = new THREE.CurvePath();
+        for (let i = 0; i < v.length - 1; i++) {
+            const a0 = v[i], a1 = v[i + 1];
+            if (i === 0 && v.length > 2) { cam.add(new THREE.LineCurve3(a0, a1.clone().lerp(a0, Math.min(0.02 / a0.distanceTo(a1), 0.5)))); continue; }
+            const ini = a0.clone().lerp(a1, Math.min(0.02 / a0.distanceTo(a1), 0.5));
+            if (i > 0) cam.add(new THREE.QuadraticBezierCurve3(cam.getPoint(1), a0, ini));
+            const fim = i === v.length - 2 ? a1 : a1.clone().lerp(a0, Math.min(0.02 / a0.distanceTo(a1), 0.5));
+            cam.add(new THREE.LineCurve3(ini, fim));
+        }
+        const m = new THREE.Mesh(new THREE.TubeGeometry(cam, Math.max(24, v.length * 16), r, 6, false), mat);
+        pai.add(m);
+        return m;
+    }
+    function blocoDistribuidor(pai, x, y, z, sz, saidas = 4, cor = acoEscuroMat) {
+        box(pai, 0.1, 0.05, 0.03, x, y, z, cor);
+        for (let k = 0; k < saidas; k++) cilindro(pai, 0.007, 0.018, x - 0.036 + k * (0.072 / (saidas - 1)), y + 0.034, z, latãoMat, 'y', 6);
+        cilindro(pai, 0.006, 0.01, x - 0.04, y, z + sz * 0.018, parafusoMat, 'z', 6);
+        cilindro(pai, 0.006, 0.01, x + 0.04, y, z + sz * 0.018, parafusoMat, 'z', 6);
+    }
+    [[frente, 1], [tras, -1]].forEach(([metade, sz]) => {
+        const g = grupo(metade, 'Tubulação da face');
+        const zf = (off) => sz * (D / 2 + off);
+        const zA = (off) => sz * ((D / 2 - 0.004) * 0.86 + off);
+        // 5 linhas horizontais na parte de baixo da face
+        [0.43, 0.45, 0.47, 0.49, 0.51].forEach((y, i) => {
+            linha(g, [[-1.02, y, zA(0.012 + i * 0.006)], [-0.76, y, zA(0.012 + i * 0.006)], [-0.72, y, zf(0.012 + i * 0.006)], [0.72, y, zf(0.012 + i * 0.006)], [0.76, y, zA(0.012 + i * 0.006)], [1.02, y, zA(0.012 + i * 0.006)]]);
+        });
+        // abraçadeiras segurando o feixe
+        [-0.55, -0.2, 0.2, 0.55].forEach((x) => box(g, 0.016, 0.1, 0.045, x, 0.47, zf(0.032), acoEscuroMat, false));
+        // subidas verticais da face até as válvulas/tampas de cima
+        [-0.62, -0.58, -0.2, 0.18, 0.56, 0.6].forEach((x, i) => {
+            const y0 = 0.43 + (i % 5) * 0.02;
+            linha(g, [[x, y0, zf(0.012 + (i % 5) * 0.006)], [x, 0.8, zf(0.012 + (i % 5) * 0.006)], [x + (x < 0 ? 0.08 : -0.08), 0.8, zf(0.012)]]);
+        });
+        // corpo de válvulas no meio da face (foto: 3 válvulas + filtro vermelho)
+        const vg = grupo(metade, 'Válvulas e filtro da face');
+        [-0.1, 0.02, 0.14].forEach((x) => {
+            box(vg, 0.05, 0.05, 0.035, x, 0.72, zf(0.02), acoEscuroMat);
+            cilindro(vg, 0.012, 0.03, x, 0.76, zf(0.02), latãoMat, 'y', 8);
+            linha(g, [[x, 0.695, zf(0.02)], [x, 0.53, zf(0.012)]]);
+        });
+        cilindro(vg, 0.016, 0.05, -0.2, 0.7, zf(0.03), vermelhoMangMat, 'y', 16);
+        // blocos distribuidores na asa + tubos entrando por cima
+        [-1, 1].forEach((lado) => {
+            const xb = lado * 0.95;
+            blocoDistribuidor(g, xb, 0.6, zA(0.02), sz);
+            [0, 1, 2, 3].forEach((k) => {
+                const xs = xb - 0.036 + k * 0.024;
+                linha(g, [[xs, 0.634, zA(0.02)], [xs, 0.7 + k * 0.012, zA(0.02)], [lado * 0.76, 0.7 + k * 0.012, zA(0.02)], [lado * 0.74, 0.7 + k * 0.012, zf(0.012 + k * 0.006)]]);
+                linha(g, [[xs, 0.575, zA(0.02)], [xs, 0.515 - k * 0.006, zA(0.02)]]);
+            });
+            // pacote de tubos verticais na ponta da asa
+            [0, 1, 2, 3, 4].forEach((k) => {
+                const zk = zA(-0.02 - k * 0.018);
+                linha(g, [[lado * 1.515, 0.44, zk], [lado * 1.515, 0.66, zk], [lado * 1.44, 0.7, zk]]);
+            });
+            box(g, 0.02, 0.2, 0.1, lado * 1.52, 0.55, zA(-0.055), acoEscuroMat, false);
+        });
+        // mangueiras vermelhas em cima (foto)
+        [0, 1].forEach((k) => {
+            const zt = sz * (0.2 + k * 0.05);
+            tubo(g, [[-0.5, 0.925, zt], [-0.25, 0.97, zt + sz * 0.04], [0.05, 0.93, zt], [0.35, 0.98, zt - sz * 0.03], [0.62, 0.925, zt]], 0.008, vermelhoMangMat, 'Mangueira hidráulica');
+        });
+    });
+
     // Carcaça móvel: 2 chapas de apoio (BSA3816) e a proteção (BSA3835).
     const apoio = grupo(frente, 'Apoio do lado móvel (chapas BSA3816)');
     [-0.67, 0.69].forEach((x) => box(apoio, 0.2, 0.02, 0.2, x, 0.3, D / 2 - 0.12, inoxMat));
