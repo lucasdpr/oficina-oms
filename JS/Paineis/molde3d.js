@@ -206,6 +206,21 @@ function criarTexturaFurosCarcaca(THREE) {
     return texturaDeCanvas(THREE, c);
 }
 
+// Tampa de cima da carcaça (foto de cima): aço gasto com retângulos
+// e alguns furos de parafuso.
+function criarTexturaTampaTopo(THREE) {
+    const [c, ctx] = novoCanvas(1024, 256);
+    ctx.fillStyle = '#3b3e43';
+    ctx.fillRect(0, 0, 1024, 256);
+    for (let i = 0; i < 2500; i++) {
+        ctx.fillStyle = i % 2 ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.08)';
+        ctx.fillRect(Math.random() * 1024, Math.random() * 256, 2, 2);
+    }
+    ctx.fillStyle = '#0c0b0a';
+    [[40, 40], [40, 216], [984, 40], [984, 216], [512, 30]].forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fill(); });
+    return texturaDeCanvas(THREE, c);
+}
+
 function criarTexturaTexto(THREE, texto, cor) {
     const [c, ctx] = novoCanvas(256, 128);
     ctx.clearRect(0, 0, 256, 128);
@@ -305,6 +320,7 @@ async function iniciarCena() {
     // Asas do lado móvel com material próprio: ficam semitransparentes no
     // "Ver interior" pra dar pra ver o tubulão de água dentro delas.
     const acoAsaMovelMat = acoMat.clone();
+    const acoAsaFixoMat = acoMat.clone();
     const acoEscuroMat = new THREE.MeshStandardMaterial({ map: texAco, color: 0x9ea2a8, roughness: 0.85, metalness: 0.45 });
     const ferrugemMat = new THREE.MeshStandardMaterial({ color: 0x2c2f33, roughness: 0.8, metalness: 0.4 });
     const buracoMat = new THREE.MeshStandardMaterial({ color: 0x0c0b0a, roughness: 1, metalness: 0 });
@@ -322,6 +338,7 @@ async function iniciarCena() {
     const teleInternoMat = canoInoxMat.clone();
     const aguaMat = new THREE.MeshStandardMaterial({ color: 0x4fb3ff, emissive: 0x1a6fd0, emissiveIntensity: 0.7, roughness: 0.2, metalness: 0, transparent: true, opacity: 0.9 });
     const aguaTubulaoMat = new THREE.MeshStandardMaterial({ color: 0x3d9cf0, emissive: 0x1557a8, emissiveIntensity: 0.5, roughness: 0.15, metalness: 0, transparent: true, opacity: 0.75 });
+    const tampaTopoMat = new THREE.MeshStandardMaterial({ map: criarTexturaTampaTopo(THREE), roughness: 0.8, metalness: 0.35 });
     const furosCarcacaMat = new THREE.MeshStandardMaterial({ map: criarTexturaFurosCarcaca(THREE), alphaTest: 0.5, roughness: 0.8, metalness: 0.3 });
 
     const cobreFrenteMat = new THREE.MeshPhysicalMaterial({ map: criarTexturaPlacaFrente(THREE), roughness: 0.38, metalness: 0.85, clearcoat: 0.2, clearcoatRoughness: 0.4 });
@@ -402,6 +419,9 @@ async function iniciarCena() {
     const PLACA_ESTREITA_W = 0.14; // = espessura do veio
     const PLACA_H = 0.5;
     const COBRE_E = 0.045;
+    // meia-largura do canal aberto no topo = face de fora das placas largas
+    const CANAL_Z = PLACA_ESTREITA_W / 2 + COBRE_E;
+    const CANAL_ASA_Z = 0.1; // meia-largura do canal nas asas (fuso/sanfona)
     const PLACA_CY = CORPO_Y0 + 0.03 + PLACA_H / 2;
 
     // Colunas da grade de furos (mesmas da textura da placa larga) — usadas
@@ -415,6 +435,7 @@ async function iniciarCena() {
     // inteiro; no "Ver interior" cada uma desliza pro seu lado e revela as
     // placas de cobre no meio. sinal +1 = frente (lado móvel), -1 = trás
     // (lado fixo).
+    const protecoes = [];
     function construirMetade(sinal, asaMat) {
         const g = new THREE.Group();
         const d = D / 2 - 0.004;
@@ -422,16 +443,25 @@ async function iniciarCena() {
         const face = sinal * (D / 2);    // z da face externa dessa metade
         const fz = (off) => face + sinal * off;
 
-        // corpo central
-        box(g, CORPO_W, CORPO_H, d, 0, CORPO_CY, zc, acoMat).userData.label = 'Corpo central da carcaça';
+        // corpo central — começa em CANAL_Z (não em z=0): o vão no meio é o
+        // canal do molde, aberto em cima, onde ficam as 4 placas de cobre
+        // (vista de cima, igual à foto).
+        const dCorpo = d - CANAL_Z;
+        box(g, CORPO_W, CORPO_H, dCorpo, 0, CORPO_CY, sinal * (CANAL_Z + dCorpo / 2), acoMat).userData.label = 'Corpo central da carcaça';
+        // tampa de cima com as marcações vermelhas (foto de cima)
+        const tampaTopo = new THREE.Mesh(new THREE.PlaneGeometry(CORPO_W, dCorpo), tampaTopoMat);
+        tampaTopo.rotation.x = -Math.PI / 2;
+        tampaTopo.position.set(0, CORPO_TOPO + 0.001, sinal * (CANAL_Z + dCorpo / 2));
+        if (sinal < 0) tampaTopo.rotation.z = Math.PI;
+        g.add(tampaTopo);
+        // réguas/guias ao longo da borda do canal
+        box(g, CORPO_W - 0.1, 0.025, 0.05, 0, CORPO_TOPO + 0.012, sinal * (CANAL_Z + 0.03), acoEscuroMat).userData.label = 'Guia da borda do canal';
         // aba fina no topo, no centro
         box(g, 0.035, 0.06, 0.03, 0, CORPO_TOPO + 0.03, fz(-0.05), acoEscuroMat);
-        // abertura do canal do molde no topo (cavidade entre as placas)
-        box(g, 1.22, 0.006, 0.09, 0, CORPO_TOPO + 0.002, sinal * 0.045, buracoMat, false);
 
         // 🆕 furos de água na face interna da carcaça (onde a placa larga
         // encosta) — é por eles que a água sai pra placa.
-        const faceInterna = zc - sinal * (d / 2);
+        const faceInterna = sinal * CANAL_Z;
         const furos = new THREE.Mesh(new THREE.PlaneGeometry(PLACA_LARGA_W, PLACA_H), furosCarcacaMat);
         furos.position.set(0, PLACA_CY, faceInterna - sinal * 0.0015);
         furos.rotation.y = sinal > 0 ? Math.PI : 0;
@@ -439,21 +469,35 @@ async function iniciarCena() {
         g.add(furos);
 
         // asas laterais escalonadas (esquerda e direita)
+        // As asas começam em CANAL_ASA_Z (não em z=0): o canal do molde
+        // continua aberto até a ponta, onde ficam fuso, sanfona e cilindro
+        // (foto de cima).
+        const zA = (prof) => sinal * (CANAL_ASA_Z + (prof - CANAL_ASA_Z) / 2);
         [-1, 1].forEach((lado) => {
             // parte interna, mais alta, colada no corpo
-            box(g, 0.46, 0.43, d * 0.86, lado * 0.95, 0.635, sinal * (d * 0.86) / 2, asaMat).userData.label = 'Asa lateral (parte interna)';
+            box(g, 0.46, 0.43, d * 0.86 - CANAL_ASA_Z, lado * 0.95, 0.635, zA(d * 0.86), asaMat).userData.label = 'Asa lateral (parte interna)';
             // rampa entre a parte interna e a externa
-            const rampa = box(g, 0.2, 0.06, d * 0.8, lado * 1.07, 0.745, sinal * (d * 0.8) / 2, asaMat);
+            const rampa = box(g, 0.2, 0.06, d * 0.8 - CANAL_ASA_Z, lado * 1.07, 0.745, zA(d * 0.8), asaMat);
             rampa.rotation.z = lado * 0.55;
             rampa.userData.label = 'Asa lateral (rampa)';
             // parte externa, mais baixa
-            box(g, 0.49, 0.29, d * 0.8, lado * 1.265, 0.555, sinal * (d * 0.8) / 2, asaMat).userData.label = 'Asa lateral (parte externa)';
+            box(g, 0.49, 0.29, d * 0.8 - CANAL_ASA_Z, lado * 1.265, 0.555, zA(d * 0.8), asaMat).userData.label = 'Asa lateral (parte externa)';
             // aba de apoio embaixo da asa externa
             box(g, 0.5, 0.05, d * 0.7, lado * 1.25, 0.385, sinal * (d * 0.7) / 2, acoEscuroMat).userData.label = 'Aba de apoio da asa';
+            // tampa redonda aparafusada na ponta da asa (foto)
+            const tp = grupo(g, 'Tampa redonda da ponta');
+            cilindro(tp, 0.075, 0.02, lado * 1.52, 0.6, zA(d * 0.8), acoEscuroMat, 'x', 28);
+            for (let k = 0; k < 8; k++) {
+                const a = (k / 8) * Math.PI * 2;
+                cilindro(tp, 0.007, 0.026, lado * 1.52, 0.6 + Math.cos(a) * 0.058, zA(d * 0.8) + Math.sin(a) * 0.058, parafusoMat, 'x', 6);
+            }
             // olhal de içamento em cima da asa externa
             olhal(g, lado * 1.38, 0.755, sinal * (d * 0.8 - 0.06));
             // bloco de trás em cima da asa interna
-            box(g, 0.18, 0.08, 0.12, lado * 1.02, 0.89, sinal * 0.1, ferrugemMat);
+            // proteção preta em cima da asa — sai no "Ver interior"
+            const protecao = box(g, 0.18, 0.08, 0.12, lado * 1.02, 0.89, sinal * (CANAL_ASA_Z + 0.08), ferrugemMat);
+            protecao.userData.label = 'Proteção';
+            protecoes.push(protecao);
         });
 
         // furos redondos nos cantos de cima, na junção corpo/asa
@@ -494,7 +538,7 @@ async function iniciarCena() {
 
     const frente = construirMetade(1, acoAsaMovelMat);
     frente.userData.label = 'Carcaça — lado móvel';
-    const tras = construirMetade(-1, acoMat);
+    const tras = construirMetade(-1, acoAsaFixoMat);
     tras.userData.label = 'Carcaça — lado fixo';
     conjunto('Carcaça — lado móvel', frente);
     conjunto('Carcaça — lado fixo', tras);
@@ -522,17 +566,27 @@ async function iniciarCena() {
     const pDir = mDir.getPoint(1);
     cilindro(frente, 0.03, 0.08, pDir.x, pDir.y, pDir.z, fitaAmarelaMat, 'x').rotation.y = -0.6;
     cilindro(frente, 0.034, 0.04, pDir.x + 0.05, pDir.y, pDir.z + 0.03, tampaPretaMat, 'x').rotation.y = -0.6;
+    // as mesmas 2 mangueiras no lado fixo (espelhadas pra trás)
+    [
+        [[[-0.95, 0.36, -0.3], [-1.15, 0.37, -0.55], [-1.35, 0.38, -0.72]], -1],
+        [[[1.02, 0.4, -0.32], [1.2, 0.33, -0.55], [1.45, 0.24, -0.75]], 1],
+    ].forEach(([pts, lado]) => {
+        const m = tubo(tras, pts, 0.018, canoMat, 'Mangueira de água');
+        const pm = m.getPoint(1);
+        cilindro(tras, 0.03, 0.08, pm.x, pm.y, pm.z, fitaAmarelaMat, 'x').rotation.y = lado * 0.6;
+        cilindro(tras, 0.034, 0.04, pm.x + lado * 0.05, pm.y, pm.z - 0.03, tampaPretaMat, 'x').rotation.y = lado * 0.6;
+    });
 
     // ---- tubulão de água (só no lado móvel, dentro de cada asa) ----
-    const TUB_Y = 0.63;
+    const TUB_Y = 0.6;
     const TUB_ZC = 0.2;
-    const TUB_L = 0.34;
+    const TUB_L = 0.78; // vai da asa interna até o final da carcaça (ponta da asa externa)
     const aguasTubulao = [];
     const entradasTubulao = [];
     [-1, 1].forEach((lado) => {
         const g = grupo(frente, 'Tubulão de água (lado móvel)');
         conjunto(`Tubulão de água — ${lado < 0 ? 'esquerda' : 'direita'}`, g);
-        const x = lado * 0.95;
+        const x = lado * 1.12;
         cilindro(g, 0.085, TUB_L, x, TUB_Y, TUB_ZC, tubulaoMat, 'x', 32);
         [x - TUB_L / 2, x + TUB_L / 2].forEach((xf) => cilindro(g, 0.105, 0.02, xf, TUB_Y, TUB_ZC, acoEscuroMat, 'x', 32));
         const geo = new THREE.CylinderGeometry(0.078, 0.078, 1, 28);
@@ -543,9 +597,8 @@ async function iniciarCena() {
         agua.visible = false;
         g.add(agua);
         aguasTubulao.push(agua);
-        // entrada de água por baixo, saindo pela frente do molde
-        const pontos = [[x, 0.2, 0.56], [x, 0.21, 0.36], [x, 0.3, TUB_ZC], [x, TUB_Y - 0.085, TUB_ZC]];
-        tubo(g, pontos, 0.03, canoMat);
+        // entrada de água por CIMA do tubulão (a água entra por cima e sai por baixo)
+        const pontos = [[x, TUB_Y + 0.22, TUB_ZC], [x, TUB_Y + 0.085, TUB_ZC]];
         entradasTubulao.push({ x, pontos });
     });
 
@@ -604,17 +657,19 @@ async function iniciarCena() {
 
     // Foot roll: 3 eixos inox empilhados embaixo da placa larga, cada um
     // apoiado em 4 mancais de ferro fundido com faixa vermelha.
+    const MANCAIS_FOOT_ROLL = [-(PLACA_LARGA_W - 0.06) / 2 + 0.025, -0.19, 0.19, (PLACA_LARGA_W - 0.06) / 2 - 0.025];
     function adicionarFootRoll(placaLarga, sinal) {
         const g = grupo(placaLarga, 'Foot roll');
         g.position.set(0, -PLACA_H / 2 - 0.035, -sinal * 0.025);
         [0, -0.068, -0.136].forEach((y) => {
             cilindro(g, 0.028, PLACA_LARGA_W - 0.06, 0, y, 0, canoInoxMat, 'x', 24);
-            [-0.46, -0.15, 0.15, 0.46].forEach((x) => {
+            // mancais das pontas no fim do rolo (sem sobra pro lado)
+            MANCAIS_FOOT_ROLL.forEach((x) => {
                 box(g, 0.05, 0.062, 0.075, x, y, 0, mancalMat);
-                cilindro(g, 0.0295, 0.028, x + 0.042, y, 0, faixaVermelhaMat, 'x', 24);
+                cilindro(g, 0.0295, 0.028, x - Math.sign(x) * 0.042, y, 0, faixaVermelhaMat, 'x', 24);
             });
         });
-        [-0.46, -0.15, 0.15, 0.46].forEach((x) => box(g, 0.03, 0.05, 0.03, x, -0.19, sinal * 0.02, mancalMat));
+        MANCAIS_FOOT_ROLL.forEach((x) => box(g, 0.03, 0.05, 0.03, x, -0.19, sinal * 0.02, mancalMat));
     }
 
     // Guia: bloco de ferro enferrujado embaixo da placa estreita, com os
@@ -638,15 +693,22 @@ async function iniciarCena() {
     adicionarGuia(placas[2], 1);
     adicionarGuia(placas[3], -1);
 
-    // ---- cilindros de avanço/retorno (nos cantos da placa larga do lado fixo, atrás) ----
-    // Fotos reais: flange quadrada com bujões sextavados, camisa redonda
-    // pintada de cinza, vedação com fita e haste com ponta roscada. A
-    // ponta roscada vai na placa; a flange fica pro lado da carcaça.
-    function adicionarCilindroAvanco(placaLarga, x, y) {
-        const g = grupo(placaLarga, 'Cilindro de avanço/retorno');
-        // placa de trás: gira 180° pra o cilindro apontar pra fora (-z)
-        g.position.set(x, y, -COBRE_E / 2);
+    // ---- cilindros de avanço/retorno: dentro da carcaça do lado FIXO ----
+    // 4 cilindros (2 em cada asa, em cima e embaixo, nas marcações da foto)
+    // embutidos na carcaça fixa, com a haste saindo pela face interna. É a
+    // haste que empurra/puxa o lado MÓVEL (carcaça + placa juntas) entre
+    // avançado, neutro e afastado. Flange quadrada com bujões, camisa
+    // cinza, vedação com fita e haste com ponta roscada (fotos reais).
+    const hastesCilindro = [];
+    function adicionarCilindroAvanco(x, y) {
+        const g = grupo(tras, 'Cilindro de avanço/retorno (carcaça fixa)');
+        // face interna da asa fixa; gira 180° pra o corpo entrar na carcaça (-z)
+        g.position.set(x, y, -CANAL_ASA_Z);
         g.rotation.y = Math.PI;
+        box(tras, 0.16, 0.16, 0.004, x, y, -CANAL_ASA_Z - 0.001, buracoMat, false);
+        const haste = cilindro(tras, 0.016, 1, x, y, 0, canoInoxMat, 'z', 16);
+        haste.userData.label = 'Haste do cilindro de avanço/retorno';
+        hastesCilindro.push(haste);
         cilindro(g, 0.019, 0.03, 0, 0, 0.005, canoInoxMat, 'z', 16);
         for (let i = 0; i < 4; i++) cilindro(g, 0.021, 0.003, 0, 0, i * 0.007, parafusoMat, 'z', 16);
         cilindro(g, 0.028, 0.02, 0, 0, 0.03, parafusoMat, 'z', 6);
@@ -662,7 +724,7 @@ async function iniciarCena() {
         cilindro(g, 0.009, 0.02, 0, 0.075, 0.301, fitaCremeMat, 'y', 12);
         cilindro(g, 0.01, 0.02, (x > 0 ? 1 : -1) * 0.075, 0, 0.301, fitaCremeMat, 'x', 12);
     }
-    [[-0.5, 0.17], [0.5, 0.17], [-0.5, -0.17], [0.5, -0.17]].forEach(([x, y]) => adicionarCilindroAvanco(placas[1], x, y));
+    [[-0.84, 0.74], [0.84, 0.74], [-0.84, 0.55], [0.84, 0.55]].forEach(([x, y]) => adicionarCilindroAvanco(x, y));
 
     // ---- mecanismo de cada placa estreita ----
     // A caixa d'água e os fusos são presos na placa (andam com ela). O
@@ -676,6 +738,10 @@ async function iniciarCena() {
     const faceCaixaAgua = COBRE_E / 2 + CX_AGUA_E;
     const Y_BASE_CARDAN = 0.12 - PLACA_CY;
     const mecanismos = [];
+    const sanfonaMat = new THREE.MeshStandardMaterial({ color: 0x1c1c1e, roughness: 0.9, metalness: 0.05 });
+    const perfilSanfonaGrande = [];
+    for (let i = 0; i <= 30; i++) perfilSanfonaGrande.push(new THREE.Vector2(i % 2 ? 0.062 : 0.048, i / 30));
+    const sanfonaGrandeGeo = new THREE.LatheGeometry(perfilSanfonaGrande, 20);
     const pecasGiratorias = [];
     function montarMecanismoEstreita(placaEstreita, s) {
         const fusos = [];
@@ -741,7 +807,21 @@ async function iniciarCena() {
             return { luva, interno };
         });
         conjunto(`Conjunto da placa estreita — ${s > 0 ? 'direita' : 'esquerda'}`, placaEstreita, quadro);
-        mecanismos.push({ s, placa: placaEstreita, frameX, teles, fusos, pontaPlaca: () => placaEstreita.position.x + s * faceCaixaAgua });
+        // Sanfona e cilindro da ponta nas 2 caixas Benzer (em cima e embaixo).
+        const sanfonas = [FUSO_Y, -FUSO_Y].map((yf) => {
+            const sf = new THREE.Mesh(sanfonaGrandeGeo, sanfonaMat);
+            sf.rotation.z = s > 0 ? -Math.PI / 2 : Math.PI / 2;
+            sf.position.set(0, yf, 0);
+            sf.userData.label = 'Sanfona do fuso';
+            quadro.add(sf);
+            const ponta = grupo(quadro, 'Cilindro da ponta');
+            const xp = s * 1.38;
+            cilindro(ponta, 0.07, 0.34, xp, yf, 0, pinturaCinzaMat, 'x', 24);
+            cilindro(ponta, 0.03, 0.02, xp + s * 0.175, yf, 0, buracoMat, 'x', 16);
+            cilindro(ponta, 0.022, 0.1, xp - s * 0.2, yf, 0, canoInoxMat, 'x', 14);
+            return sf;
+        });
+        mecanismos.push({ s, placa: placaEstreita, frameX, teles, fusos, sanfonas, pontaPlaca: () => placaEstreita.position.x + s * faceCaixaAgua });
     }
     montarMecanismoEstreita(placas[2], 1);
     montarMecanismoEstreita(placas[3], -1);
@@ -757,6 +837,11 @@ async function iniciarCena() {
                 haste.position.x = x0 + m.s * Lf / 2;
                 ponta.position.x = x0 + m.s * Lf;
                 roscas.forEach((r, i) => { r.visible = 0.03 + i * 0.014 < Lf - 0.01; });
+            });
+            const Ls = Math.max(0.01, gap - 0.04);
+            m.sanfonas.forEach((sf) => {
+                sf.scale.y = Ls;
+                sf.position.x = pOut + m.s * 0.02;
             });
             m.teles.forEach(({ luva, interno }) => {
                 luva.scale.y = L;
@@ -801,20 +886,25 @@ async function iniciarCena() {
             criarFluxo(metade, 7, 0.9, 0.011, (t, out) => out.set(hx, hy - 0.07 * t * t, z0 - sinal * 0.3 * t), { spray: true });
         });
     });
-    // 4) água subindo pelos canais das placas largas
+    // 4) água DESCENDO pelos canais das placas largas e saindo por baixo
     [placas[0], placas[1]].forEach((p, i) => {
         const sp = i === 0 ? 1 : -1;
         [1, 5, 9, 13, 17, 21].forEach((col) => {
             const xc = xColuna(col);
-            criarFluxo(p, 8, 0.45, 0.009, (t, out) => out.set(xc, -0.22 + 0.44 * t, sp * (COBRE_E / 2 + 0.008)));
+            criarFluxo(p, 8, 0.45, 0.009, (t, out) => out.set(xc, 0.22 - 0.44 * t, sp * (COBRE_E / 2 + 0.008)));
+        });
+        [3, 11, 19].forEach((col) => {
+            const xc = xColuna(col);
+            criarFluxo(p, 6, 0.6, 0.01, (t, out) => out.set(xc, -PLACA_H / 2 - 0.3 * t, sp * (COBRE_E / 2 + 0.03)));
         });
     });
     // 5) telescópicos → caixa d'água da placa estreita, e subindo/descendo nela
     mecanismos.forEach((m) => {
         TELE_Y.forEach((yt) => criarFluxo(grupoCobre, 10, 0.6, 0.012, (t, out) => out.set(m.frameX + (m.pontaPlaca() - m.frameX) * t, PLACA_CY + yt, 0)));
-        [1, -1].forEach((dir) => [0.035, -0.035].forEach((zc) => {
-            criarFluxo(m.placa, 6, 0.55, 0.009, (t, out) => out.set(m.s * (faceCaixaAgua + 0.008), dir * 0.2 * t, zc));
-        }));
+        [0.035, -0.035].forEach((zc) => {
+            criarFluxo(m.placa, 8, 0.55, 0.009, (t, out) => out.set(m.s * (faceCaixaAgua + 0.008), 0.2 - 0.4 * t, zc));
+            criarFluxo(m.placa, 4, 0.7, 0.01, (t, out) => out.set(m.s * (faceCaixaAgua + 0.008), -PLACA_H / 2 - 0.25 * t, zc));
+        });
     });
 
     const testeAgua = { ativo: false, t: 0 };
@@ -972,6 +1062,31 @@ async function iniciarCena() {
     });
     atualizarHudLargura();
 
+    // Posição do lado móvel (quanto ele fica afastado do fixo).
+    const POSICOES_MOVEL = { avancado: 0, neutro: 0.05, afastado: 0.12 };
+    const NOMES_POSICAO = { avancado: 'Avançado', neutro: 'Neutro', afastado: 'Afastado' };
+    let posMovel = POSICOES_MOVEL.neutro;
+    let alvoMovel = POSICOES_MOVEL.neutro;
+    const hudPosicao = document.getElementById('molde3d-posicao');
+    function irPara(nome) {
+        alvoMovel = POSICOES_MOVEL[nome];
+        document.querySelectorAll('[data-posicao-movel]').forEach((b) => b.classList.toggle('ativo', b.dataset.posicaoMovel === nome));
+        if (hudPosicao) hudPosicao.textContent = `Lado móvel: ${NOMES_POSICAO[nome]}`;
+    }
+    document.querySelectorAll('[data-posicao-movel]').forEach((b) => b.addEventListener('click', () => irPara(b.dataset.posicaoMovel)));
+    irPara('neutro');
+
+    const btnCima = document.getElementById('molde3d-btn-cima');
+    if (btnCima) {
+        btnCima.addEventListener('click', () => {
+            autoRotacionar = false;
+            if (btnRotate) btnRotate.innerHTML = '<i class="fas fa-sync" style="opacity:.5;"></i> Câmera parada';
+            controls.target.set(0, CORPO_TOPO, 0);
+            camera.position.set(0.001, CORPO_TOPO + 3.2, 0.6);
+            controls.update();
+        });
+    }
+
     const btnAgua = document.getElementById('molde3d-btn-agua');
     const hudAgua = document.getElementById('molde3d-agua');
     if (btnAgua) {
@@ -992,9 +1107,9 @@ async function iniciarCena() {
         if (etapa === etapaHud) return;
         etapaHud = etapa;
         hudAgua.textContent = [
-            '1/3 · Enchendo os tubulões do lado móvel…',
-            '2/3 · Circulando: carcaça → placas largas · telescópicos → placas estreitas',
-            '3/3 · Circuito cheio — água chegando em todas as placas ✓ (simulação)',
+            '1/3 · Água entrando por cima e enchendo os tubulões do lado móvel…',
+            '2/3 · Descendo pelas placas: carcaça → placas largas · telescópicos → placas estreitas',
+            '3/3 · Circuito cheio — entra por cima, sai por baixo ✓ (simulação)',
         ][etapa];
     }
 
@@ -1036,11 +1151,21 @@ async function iniciarCena() {
             transicaoT = Math.min(1, transicaoT + dt / DURACAO);
             const e = transicaoT < 0.5 ? 4 * transicaoT ** 3 : 1 - (-2 * transicaoT + 2) ** 3 / 2;
             kAtual = interiorAberto ? e : 1 - e;
-            frente.position.z = ABERTURA * kAtual;
             tras.position.z = -ABERTURA * kAtual;
             grupoCobre.position.y = 0.6 * kAtual;
             definirOpacidade(acoAsaMovelMat, 1 - 0.72 * kAtual);
+            definirOpacidade(acoAsaFixoMat, 1 - 0.6 * kAtual);
+            protecoes.forEach((m) => { m.visible = kAtual < 0.05; });
         }
+        // Lado móvel (carcaça + placa larga, tudo junto) indo pra posição
+        // escolhida: avançado / neutro / afastado. O lado fixo não se mexe.
+        posMovel += (alvoMovel - posMovel) * Math.min(1, dt * 4);
+        frente.position.z = ABERTURA * kAtual + posMovel;
+        hastesCilindro.forEach((h) => {
+            const comp = 2 * CANAL_ASA_Z + 0.01 + posMovel;
+            h.scale.y = comp;
+            h.position.z = -CANAL_ASA_Z + comp / 2;
+        });
 
         if (direcaoEstreitas !== 0) {
             const antes = ajusteEstreitas;
@@ -1053,6 +1178,7 @@ async function iniciarCena() {
             const { eixoAfastamento, sinalAfastamento, baseAfastamento, aberturaAfastamento } = p.userData;
             let valor = baseAfastamento + aberturaAfastamento * kAtual * sinalAfastamento;
             if (eixoAfastamento === 'x') valor -= sinalAfastamento * ajusteEstreitas;
+            if (p === placas[0]) valor += posMovel;
             if (eixoAfastamento === 'z') p.position.z = valor; else p.position.x = valor;
         });
         atualizarTelescopicos();
