@@ -997,7 +997,7 @@ async function iniciarCena() {
         cilindro(pai, 0.006, 0.01, x - 0.04, y, z + sz * 0.018, parafusoMat, 'z', 6);
         cilindro(pai, 0.006, 0.01, x + 0.04, y, z + sz * 0.018, parafusoMat, 'z', 6);
     }
-    [[frente, 1], [tras, -1]].forEach(([metade, sz]) => {
+    [[tras, -1]].forEach(([metade, sz]) => {  // só no lado fixo
         const g = grupo(metade, 'Tubulação da face');
         const zf = (off) => sz * (D / 2 + off);
         const zA = (off) => sz * ((D / 2 - 0.004) * 0.86 + off);
@@ -1035,11 +1035,6 @@ async function iniciarCena() {
                 linha(g, [[lado * 1.515, 0.44, zk], [lado * 1.515, 0.66, zk], [lado * 1.44, 0.7, zk]]);
             });
             box(g, 0.02, 0.2, 0.1, lado * 1.52, 0.55, zA(-0.055), acoEscuroMat, false);
-        });
-        // mangueiras vermelhas em cima (foto)
-        [0, 1].forEach((k) => {
-            const zt = sz * (0.2 + k * 0.05);
-            tubo(g, [[-0.5, 0.925, zt], [-0.25, 0.97, zt + sz * 0.04], [0.05, 0.93, zt], [0.35, 0.98, zt - sz * 0.03], [0.62, 0.925, zt]], 0.008, vermelhoMangMat, 'Mangueira hidráulica');
         });
     });
 
