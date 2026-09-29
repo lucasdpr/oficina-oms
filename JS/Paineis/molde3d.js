@@ -929,8 +929,6 @@ async function iniciarCena() {
         const gl = grupo(pe, 'Guia lateral + tirantes T + macaco de ajuste');
         box(gl, 0.02, PLACA_H * 0.8, 0.03, xF + s * 0.01, 0, 0.065, acoEscuroMat);
         [0.12, -0.12].forEach((y) => cilindro(gl, 0.008, 0.05, xF + s * 0.02, y, 0.065, parafusoMat, 'x', 8));
-        box(gl, 0.04, 0.04, 0.04, xF + s * 0.02, -PLACA_H * 0.4 - 0.03, 0.065, pinturaCinzaMat);
-        cilindro(gl, 0.006, 0.06, xF + s * 0.02, -PLACA_H * 0.4 - 0.08, 0.065, inoxMat, 'y', 8);
         const rg = grupo(pe, 'Régua guia (VAIS 256/257) + distanciadores');
         box(rg, 0.03, 0.015, PLACA_ESTREITA_W + 0.08, 0, PLACA_H / 2 + 0.012, 0, inoxMat);
         [-1, 1].forEach((l) => box(rg, 0.02, 0.02, 0.02, 0, PLACA_H / 2 + 0.03, l * (PLACA_ESTREITA_W / 2 + 0.03), acoEscuroMat));
