@@ -730,11 +730,6 @@ async function iniciarCena() {
             box(g, 0.04, 0.042, 0.012, xr + sinal * 0.01, y, -0.051, mancalMat);
             cilindro(g, 0.011, 0.004, xr, y, 0.058, tampaRoloMat, 'z', 12);
         });
-        // cangalha do edge roll com 5 bicos Unijet + tubo de cobre
-        const cg = grupo(g, 'Cangalha do edge roll + bicos Unijet');
-        const xc = -sinal * 0.075;
-        cilindro(cg, 0.008, 0.2, xc, 0, 0.05, cobreTuboMat, 'y', 8);
-        [0.08, 0.04, 0, -0.04, -0.08].forEach((y) => cilindro(cg, 0.006, 0.02, xc + sinal * 0.012, y, 0.05, latãoMat, 'x', 8));
         g.userData.label = 'Edge roll (rolos + guias)';
     }
 
@@ -922,7 +917,6 @@ async function iniciarCena() {
         box(gx, 0.05, 0.09, 0.03, xd, yd, zd, graxaAzulMat);
         for (let k = 0; k < 6; k++) cilindro(gx, 0.004, 0.02, xd + 0.03, yd - 0.035 + k * 0.014, zd, latãoMat, 'x', 6);
         [0.05, 0.1].forEach((dx) => { box(gx, 0.03, 0.04, 0.03, xd + dx + 0.04, yd, zd, latãoMat); });
-        MANCAIS_FOOT_ROLL.forEach((xm) => tubo(gx, [[xd + 0.035, yd, zd], [xm * 0.6, yd + 0.05, zd], [xm, -PLACA_H / 2 - 0.035, zC - sp * 0.04]], 0.0025, borrachaMat, 'Mangueira de graxa 1/4"'));
     });
 
     // Placa estreita: guia lateral com tirantes T e macaco de ajuste,
@@ -932,19 +926,9 @@ async function iniciarCena() {
         const pe = m.placa;
         const s = m.s;
         const xF = s * faceCaixaAgua;
-        const gl = grupo(pe, 'Guia lateral + tirantes T + macaco de ajuste');
-        box(gl, 0.02, PLACA_H * 0.8, 0.03, xF + s * 0.01, 0, 0.065, acoEscuroMat);
-        [0.12, -0.12].forEach((y) => cilindro(gl, 0.008, 0.05, xF + s * 0.02, y, 0.065, parafusoMat, 'x', 8));
-        box(gl, 0.04, 0.04, 0.04, xF + s * 0.02, -PLACA_H * 0.4 - 0.03, 0.065, pinturaCinzaMat);
-        cilindro(gl, 0.006, 0.06, xF + s * 0.02, -PLACA_H * 0.4 - 0.08, 0.065, inoxMat, 'y', 8);
         const rg = grupo(pe, 'Régua guia (VAIS 256/257) + distanciadores');
         box(rg, 0.03, 0.015, PLACA_ESTREITA_W + 0.08, 0, PLACA_H / 2 + 0.012, 0, inoxMat);
         [-1, 1].forEach((l) => box(rg, 0.02, 0.02, 0.02, 0, PLACA_H / 2 + 0.03, l * (PLACA_ESTREITA_W / 2 + 0.03), acoEscuroMat));
-        const tt = grupo(pe, 'Tartaruga de fixação (grampo VAI 2073)');
-        box(tt, 0.05, 0.03, 0.06, xF + s * 0.03, PLACA_H / 2 - 0.03, -0.02, ferrugemMat);
-        cilindro(tt, 0.008, 0.04, xF + s * 0.03, PLACA_H / 2, -0.02, parafusoMat, 'y', 6);
-        const pino = grupo(pe, 'Pino excêntrico + bucha');
-        cilindro(pino, 0.015, 0.03, xF - s * 0.02, PLACA_H * 0.43 + 0.02, 0.03, bronzeMat, 'y', 16);
         const cc = grupo(pe, 'Calço e chaveta da placa estreita');
         box(cc, COBRE_E + 0.02, 0.008, PLACA_ESTREITA_W, 0, -PLACA_H / 2 - 0.004, 0, inoxMat);
         box(cc, 0.012, 0.012, 0.06, s * (COBRE_E / 2 + 0.01), -PLACA_H / 2 + 0.03, 0, acoEscuroMat);
