@@ -709,6 +709,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { criarQualidade3D } from './JS/Paineis/qualidade3d.js';
 import { getLayoutRolos, getPartesDoRolo, getLayoutBarraTransversal, CAMPOS_OCORRENCIA_BARRA_TRANSVERSAL } from './JS/Core/dados.js';
 
 // ==========================================================================
@@ -4732,8 +4733,10 @@ window.addEventListener('resize', () => {
 // ==========================================================================
 // LOOP DE RENDER
 // ==========================================================================
+const qualidade = criarQualidade3D(renderer);
 function animar() {
     requestAnimationFrame(animar);
+    if (!qualidade.deveRenderizar(performance.now())) return;
     controls.update();
     atualizarAco();
     renderer.render(scene, camera);

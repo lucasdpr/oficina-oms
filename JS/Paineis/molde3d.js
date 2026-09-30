@@ -23,6 +23,7 @@
 
 import { LISTA_TECNICA_MCC4 } from './listaTecnicaMCC4.js';
 
+import { criarQualidade3D } from './qualidade3d.js';
 let cena3dIniciada = false;
 
 export function renderMolde3D() {
@@ -1375,12 +1376,14 @@ async function iniciarCena() {
         setTimeout(() => { loading.style.display = 'none'; }, 400);
     }
 
+    const qualidade = criarQualidade3D(renderer);
     const clock = new THREE.Clock();
     const eixoY = new THREE.Vector3(0, 1, 0);
     let tempo = 0;
     let kAtual = 0;
     function animar() {
         requestAnimationFrame(animar);
+        if (!qualidade.deveRenderizar(performance.now())) return;
         const dt = Math.min(clock.getDelta(), 0.05);
         tempo += dt;
 

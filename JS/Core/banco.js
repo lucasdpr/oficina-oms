@@ -67,10 +67,23 @@ window.fetch = (recurso, opcoes = {}) => {
 
     if (ehEscritaNaNossaApi) {
         _cacheLeituraGET.clear();
-        if (OPERADOR_LOGADO && OPERADOR_LOGADO.token) {
+        const tinhaToken = !!(OPERADOR_LOGADO && OPERADOR_LOGADO.token);
+        if (tinhaToken) {
             opcoes = { ...opcoes, headers: { ...(opcoes.headers || {}), Authorization: `Bearer ${OPERADOR_LOGADO.token}` } };
         }
-        return fetchOriginalBanco(recurso, opcoes);
+        const promessa = fetchOriginalBanco(recurso, opcoes);
+        // Sessão vencida: o servidor responde 401 "faça login novamente".
+        // Antes a ação só falhava (sem explicar) e o app continuava com cara
+        // de logado. Agora avisa e volta pra tela de login.
+        if (tinhaToken && !/\/api\/colaboradores\/(login|definir_senha)/.test(url)) {
+            promessa.then(resp => {
+                if (resp.status !== 401) return;
+                resp.clone().json().then(j => {
+                    if (/fa[cç]a login novamente/i.test((j && j.detail) || '')) tratarSessaoExpirada();
+                }).catch(() => {});
+            }).catch(() => {});
+        }
+        return promessa;
     }
 
     if (metodo === 'GET' && ehNossaApi) {
@@ -91,6 +104,45 @@ window.fetch = (recurso, opcoes = {}) => {
 
     return fetchOriginalBanco(recurso, opcoes);
 };
+
+// ==========================================================================
+// SESSÃO: renovação automática + aviso quando expira
+// ==========================================================================
+// O token do servidor vale 7 dias e é renovado enquanto o app é usado
+// (ao abrir e a cada 30 min). Se mesmo assim vencer (ficou 7+ dias sem
+// abrir) ou for revogado, limpa o login salvo e volta pra tela de login
+// com um aviso — em vez de deixar o app "logado" com tudo falhando. A
+// fila offline mora em outra chave do localStorage e é preservada.
+let _sessaoExpiradaTratada = false;
+function tratarSessaoExpirada() {
+    if (_sessaoExpiradaTratada) return;
+    _sessaoExpiradaTratada = true;
+    try { localStorage.removeItem("oms_operador_v32_local"); } catch (e) {}
+    alert("Sua sessão expirou. Entre de novo com a matrícula e a senha — o que estava na fila offline continua salvo e é enviado depois do login.");
+    window.location.reload();
+}
+
+async function renovarSessao() {
+    const op = OPERADOR_LOGADO;
+    if (!op || !op.token || op.visitante) return;
+    try {
+        const base = await resolverApiBase();
+        const resp = await window.fetch(`${base}/api/colaboradores/renovar_sessao`, { method: 'POST' });
+        if (resp.status === 401) return tratarSessaoExpirada();
+        if (!resp.ok) return; // servidor acordando / sem rede: tenta na próxima
+        const dados = await resp.json();
+        if (!dados || !dados.token) return;
+        // Atualiza as duas cópias do operador (estado.js e banco.js) e o
+        // que está salvo no aparelho.
+        const outra = typeof window.getOperadorLogado === 'function' ? window.getOperadorLogado() : null;
+        [op, outra].forEach(o => { if (o) o.token = dados.token; });
+        localStorage.setItem("oms_operador_v32_local", JSON.stringify(op));
+    } catch (e) { /* sem rede: mantém o token atual */ }
+}
+window.renovarSessao = renovarSessao;
+setTimeout(renovarSessao, 3000);
+setInterval(renovarSessao, 30 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) renovarSessao(); });
 
 export function fetchComTimeout(url, opts = {}, ms = 1500) {
     const controller = new AbortController();
