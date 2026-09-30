@@ -710,6 +710,13 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { criarQualidade3D } from './JS/Paineis/qualidade3d.js';
+// Texto de evento: escapa tudo e só devolve as marcações do sistema (mesma regra de window.formatarAcaoEvento em JS/Core/utils.js)
+function formatarAcaoEvento(acao) {
+    let t = String(acao ?? '').replace(/<button\b[^>]*>[\s\S]*?<\/button>/gi, '').replace(/<\/?div\b[^>]*>/gi, '').replace(/<i\b[^>]*><\/i>/gi, '');
+    t = t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    return t.replace(/&lt;span style=&quot;((?:color:\s*(?:#[0-9a-fA-F]{3,8}|var\(--[\w-]+\));?\s*)(?:font-weight:\s*\d+;?\s*)?)&quot;&gt;/g, '<span style="$1">')
+        .replace(/&lt;\/span&gt;/g, '</span>').replace(/&lt;(\/?)(strong|b)&gt;/g, '<$1$2>').replace(/&lt;br\s*\/?&gt;/g, '<br>').trim();
+}
 import { getLayoutRolos, getPartesDoRolo, getLayoutBarraTransversal, CAMPOS_OCORRENCIA_BARRA_TRANSVERSAL } from './JS/Core/dados.js';
 
 // ==========================================================================
@@ -4259,7 +4266,7 @@ function abrirModalPeca(slot, peca) {
                 const linhas = eventos.map(e => `
                     <div style="padding:7px 0; border-bottom:1px solid var(--border); font-size:12px;">
                         <div style="color:var(--text-muted); font-family:var(--mono);">${e.data_hora || '—'} · ${e.operador || 'Sistema'}</div>
-                        <div style="color:var(--text-primary); margin-top:2px;">${e.acao || ''}</div>
+                        <div style="color:var(--text-primary); margin-top:2px;">${formatarAcaoEvento(e.acao)}</div>
                     </div>`).join('');
                 div.innerHTML = `<label class="obs-label">Prontuário — últimos eventos</label><div style="max-height:220px; overflow-y:auto;">${linhas}</div>`;
             } catch (erro) {

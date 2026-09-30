@@ -362,7 +362,7 @@ window.abrirEventosColaborador = async function(matricula, nome) {
             ? eventos.map(e => `
                 <div style="padding:8px 0; border-bottom:1px solid var(--border);">
                     <div class="text-muted font-code" style="font-size:11px;">${e.data_hora || '—'} · ${e.operador || 'Sistema'}</div>
-                    <div style="margin-top:2px; font-size:13px;">${e.acao || ''}</div>
+                    <div style="margin-top:2px; font-size:13px;">${window.formatarAcaoEvento(e.acao)}</div>
                 </div>`).join('')
             : '<div class="text-muted" style="padding:12px 0;">Nenhum evento registrado ainda pra este colaborador.</div>';
     } catch (e) {

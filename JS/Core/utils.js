@@ -671,3 +671,24 @@ window.prepararHtmlLaudo = function (html) {
         return html;
     }
 };
+
+
+// ==========================================================================
+// 🔧 SEGURANÇA — TEXTO DOS EVENTOS (Prontuário, Auditoria, painéis)
+// ==========================================================================
+// O texto de um evento (log_eventos.acao) era jogado na tela como HTML
+// cru — inclusive a NOTA MANUAL que qualquer técnico digita no Prontuário.
+// Uma nota com <img onerror=...> rodaria código no aparelho de todo mundo
+// que abrisse aquele Prontuário. Aqui: escapa TUDO e devolve só as poucas
+// marcações que o próprio sistema usa (etiqueta colorida, negrito, quebra).
+window.formatarAcaoEvento = function (acao) {
+    let t = String(acao ?? '');
+    // resto de versões antigas: botão/ícone/div gravados dentro do evento
+    t = t.replace(/<button\b[^>]*>[\s\S]*?<\/button>/gi, '').replace(/<\/?div\b[^>]*>/gi, '').replace(/<i\b[^>]*><\/i>/gi, '');
+    t = t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    t = t.replace(/&lt;span style=&quot;((?:color:\s*(?:#[0-9a-fA-F]{3,8}|var\(--[\w-]+\));?\s*)(?:font-weight:\s*\d+;?\s*)?)&quot;&gt;/g, '<span style="$1">')
+         .replace(/&lt;\/span&gt;/g, '</span>')
+         .replace(/&lt;(\/?)(strong|b)&gt;/g, '<$1$2>')
+         .replace(/&lt;br\s*\/?&gt;/g, '<br>');
+    return t.trim();
+};

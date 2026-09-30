@@ -833,9 +833,10 @@ window.concluirEImprimirFolhaoR2 = async function(tag) {
     await window.finalizarExecucaoChecklist(tag); // fecha o ciclo do Checklist (ver folhaoPersistencia.js)
     finalizarRascunhoFolhao(tag, "Straightener R2");
 
-    let btnPDF = `<button onclick="window.abrirFolhaoR2('${tag}')" class="btn-outline-danger" style="padding: 2px 8px; font-size: 10px; margin-left: 10px; cursor: pointer;"><i class="fas fa-file-pdf"></i> Visualizar Folhão</button>`;
+    // (antes gravava um <button> "Visualizar Folhão" dentro do evento — que
+    // abria o formulário de edição, não o PDF, e virava HTML cru no histórico)
     if (window.registrarHistorico) {
-        window.registrarHistorico(tag, `📋 Reparo concluído — Laudo Oficial (STRAIGHTENER R-II) impresso. <br><div style="margin-top: 5px;">${btnPDF}</div>`);
+        window.registrarHistorico(tag, `📋 Reparo concluído — Laudo Oficial (STRAIGHTENER R-II) impresso.`);
     }
 
     if (typeof renderReparos === 'function') renderReparos();

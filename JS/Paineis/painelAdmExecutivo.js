@@ -111,7 +111,7 @@ window.renderPainelAdmExecutivo = async function() {
                     return `
                     <div style="display:flex; gap:12px; padding:8px 0; border-top:1px solid var(--border-color);">
                         <span class="text-muted" style="font-size:0.72rem; font-family:var(--font-mono); flex-shrink:0; white-space:nowrap;">${hora}</span>
-                        <span style="font-size:0.8rem; color:var(--text-body);">${e.acao || e.peca_id || 'Evento registrado'}</span>
+                        <span style="font-size:0.8rem; color:var(--text-body);">${window.formatarAcaoEvento(e.acao || e.peca_id || 'Evento registrado')}</span>
                     </div>`;
                 }).join('')
                 : `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhum evento recente.</div>`;
