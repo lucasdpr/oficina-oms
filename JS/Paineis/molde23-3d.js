@@ -21,6 +21,8 @@
 
 let cena3dIniciada = false;
 
+import { criarQualidade3D } from './qualidade3d.js';
+
 export function renderMolde23_3D() {
     if (cena3dIniciada) return;
     cena3dIniciada = true;
@@ -1140,12 +1142,14 @@ async function iniciarCenaMCC23() {
         setTimeout(() => { loading.style.display = 'none'; }, 400);
     }
 
+    const qualidade = criarQualidade3D(renderer);
     const clock = new THREE.Clock();
     const eixoY = new THREE.Vector3(0, 1, 0);
     let tempo = 0;
     let kAtual = 0;
     function animar() {
         requestAnimationFrame(animar);
+        if (!qualidade.deveRenderizar(performance.now())) return;
         const dt = Math.min(clock.getDelta(), 0.05);
         tempo += dt;
 

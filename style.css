@@ -2012,8 +2012,11 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 24px;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  /* 🔧 PERFORMANCE ("no PC de casa, com monitor de 32", o site fica < 30
+     fps"): o backdrop-filter de cada cartão obriga a GPU a copiar e
+     desfocar o que está atrás dele a cada quadro — com dezenas de
+     cartões numa tela 4K isso vira o gargalo. O fundo (--bg-card) já é
+     82% opaco, então sem o desfoque a aparência quase não muda. */
 }
 
 .panel-card-header {
@@ -6690,5 +6693,26 @@ textarea,
         inset: 0;
         z-index: 2;
         display: flex;
+    }
+}
+
+
+/* ==========================================
+   PERFORMANCE EM TELA GRANDE (>= 1800px)
+   O custo de animação/desfoque cresce com o número de pixels: num
+   monitor 4K de 32" o login animado (fundo em movimento + vidro
+   desfocado por cima) derrubava o fps mesmo em PC forte. Aqui o
+   efeito decorativo fica estático — mesmo visual, sem animar.
+========================================== */
+@media (min-width: 1800px) {
+    .login-bg-imagem,
+    .login-bg-circuito,
+    .login-home-container::before,
+    .login-home-container::after,
+    .login-card-central::after { animation: none !important; }
+    .login-card-central {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        background: rgba(15, 23, 42, 0.9);
     }
 }

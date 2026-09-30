@@ -239,6 +239,7 @@
         @media (max-width: 600px) { .kpi-container { grid-template-columns: 1fr; } .kpi-data h4 { font-size: 1.5rem; } .btn-premium { font-size: 0.75rem; padding: 8px 14px; } .painel-geral-grid-3 { grid-template-columns: 1fr; } }
         /* ===== MODAL ===== */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 9999; padding: 20px; }
+        @media (min-width: 1800px) { .modal-overlay { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(0,0,0,0.85); } } /* tela grande: desfocar o fundo inteiro a cada quadro custa caro */
         .modal-overlay:not(.hidden) { display: flex; animation: modalOverlayFade 0.2s ease-out; }
         @keyframes modalOverlayFade { from { opacity: 0; } to { opacity: 1; } }
         .modal-content { background: var(--bg-card); border-radius: var(--radius-lg); max-width: 1400px; width: 95%; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--border-color); box-shadow: var(--shadow); animation: modalContentPop 0.25s cubic-bezier(0.34,1.56,0.64,1); }
