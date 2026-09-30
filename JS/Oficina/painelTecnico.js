@@ -807,7 +807,13 @@ function atualizarPainelCompleto() {
     executarSeguro(() => atualizarNovosKPIs(), 'atualizarNovosKPIs');
     if (typeof window.atualizarKPIsAvancados === 'function') executarSeguro(() => window.atualizarKPIsAvancados(), 'atualizarKPIsAvancados');
     if (typeof window.renderizarTopCriticos === 'function') executarSeguro(() => window.renderizarTopCriticos(), 'renderizarTopCriticos');
-    executarSeguro(() => window.atualizarStatusMaquinas(), 'atualizarStatusMaquinas');
+    // status das máquinas vem do servidor: consultar no máximo a cada 30s
+    // por aqui (quem precisa atualizar na hora, ex: ao mudar uma OS,
+    // chama window.atualizarStatusMaquinas() direto e não passa por isso)
+    if (!window.__ultimoStatusMaquinasMs || Date.now() - window.__ultimoStatusMaquinasMs > 30000) {
+        window.__ultimoStatusMaquinasMs = Date.now();
+        executarSeguro(() => window.atualizarStatusMaquinas(), 'atualizarStatusMaquinas');
+    }
     // 🔧 CORREÇÃO ("várias coisas bugando" — vários fetches duplicados,
     // console cheio de erro de rede, cards de gráfico piscando):
     // JS/painelGeralExtra.js JÁ preenche estes mesmos cards (donuts,

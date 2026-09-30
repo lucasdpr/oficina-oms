@@ -589,3 +589,34 @@ export function atividadeAindaNaoComecou(x) {
     const hoje = new Date().toISOString().slice(0, 10);
     return x.data_inicio > hoje;
 }
+
+
+// ==========================================================================
+// 🆕 innerHTML "ESTÁVEL" (opt-in) — anti-pisca
+// ==========================================================================
+// ("a tela dá uns piscos de atualização toda hora"): várias listas e
+// gráficos do Painel Geral eram REESCRITOS por inteiro (innerHTML =) a
+// cada rodada de atualização automática, mesmo quando os dados eram
+// exatamente os mesmos — o navegador destrói e recria todos os elementos,
+// o que aparece como um pisca (e ainda apaga hover, seleção e o estado de
+// <details> abertos). Em elementos marcados com o atributo
+// data-html-estavel, atribuir o MESMO html de novo passa a não fazer
+// nada. Só vale pra quem tem o atributo: o resto do sistema não muda.
+(function () {
+    const desc = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+    if (!desc || !desc.set || Element.prototype.__htmlEstavelInstalado) return;
+    Object.defineProperty(Element.prototype, '__htmlEstavelInstalado', { value: true });
+    Object.defineProperty(Element.prototype, 'innerHTML', {
+        configurable: true,
+        enumerable: desc.enumerable,
+        get: desc.get,
+        set(valor) {
+            if (this.hasAttribute('data-html-estavel')) {
+                const novo = String(valor);
+                if (this.__htmlEstavel === novo) return;
+                this.__htmlEstavel = novo;
+            }
+            desc.set.call(this, valor);
+        },
+    });
+})();

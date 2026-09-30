@@ -630,7 +630,7 @@
     <!-- 🆕 MODAL — LANÇAMENTO DE ATIVIDADE EM MASSA (só ADM). Programa
          uma atividade (com prazo, inclusive futuro) pra várias áreas de
          uma vez, ou pra todas de uma vez só. -->
-    <div id="modal-atividade-massa" class="modal-overlay hidden">
+    <div id="modal-atividade-massa" class="modal-overlay hidden modal-tela-cheia">
         <div class="modal-content" style="max-width: 520px; max-height: 90vh; overflow-y: auto;">
             <div class="modal-header">
                 <h2><i class="fas fa-layer-group" style="color:var(--brand);"></i> Programar Atividade em Massa</h2>
@@ -966,7 +966,7 @@
             <h3 class="painel-donut-titulo">
                 <i class="fas fa-chart-line" style="color:var(--info);"></i> Tonelagem por Dia (últimos 7 dias)
             </h3>
-            <div id="painel-linha-tonelagem" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+            <div id="painel-linha-tonelagem" data-html-estavel style="flex:1; display:flex; flex-direction:column; min-height:0;">
                 <div class="text-muted" style="text-align:center; margin:auto; padding:20px 0;">Carregando...</div>
             </div>
         </div>
@@ -974,13 +974,13 @@
             <h3 class="painel-donut-titulo">
                 <i class="fas fa-chart-pie" style="color:var(--danger);"></i> Risco dos Ativos
             </h3>
-            <div id="painel-donut-risco"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
+            <div id="painel-donut-risco" data-html-estavel><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
         </div>
         <div class="glass-panel painel-donut-card">
             <h3 class="painel-donut-titulo">
                 <i class="fas fa-chart-pie" style="color:var(--info);"></i> Status das Atividades
             </h3>
-            <div id="painel-donut-status"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
+            <div id="painel-donut-status" data-html-estavel><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
         </div>
     </div>
 
@@ -1014,7 +1014,7 @@
         </div>
 
         <!-- O Container original que o JS popula -->
-        <div id="top-criticos-container" style="max-height: 400px; overflow-y: auto; padding-right: 8px;">
+        <div id="top-criticos-container" data-html-estavel style="max-height: 400px; overflow-y: auto; padding-right: 8px;">
             <!-- Fallback enquanto o JS não carrega -->
             <div class="text-muted" style="text-align:center; padding: 40px 0; border: 1px dashed var(--border-color); border-radius: var(--radius);">
                 <i class="fas fa-satellite-dish fa-spin" style="font-size: 2rem; margin-bottom: 10px; color: var(--brand);"></i>
@@ -1032,7 +1032,7 @@
                     <i class="fas fa-ranking-star" style="color:#f59e0b;"></i> Risco por Veio
                 </h3>
                 <p class="text-muted" style="font-size: 0.75rem; margin-bottom: 14px;">Desgaste médio, dos veios mais críticos aos mais tranquilos.</p>
-                <div id="painel-ranking-veios">
+                <div id="painel-ranking-veios" data-html-estavel>
                     <div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>
                 </div>
             </div>
@@ -1042,7 +1042,7 @@
                     <i class="fas fa-triangle-exclamation" style="color:var(--danger);"></i> Atividades Atrasadas
                 </h3>
                 <p class="text-muted" style="font-size: 0.75rem; margin-bottom: 14px;">Em todas as áreas da Oficina, com prazo vencido.</p>
-                <div id="painel-atrasadas-globais">
+                <div id="painel-atrasadas-globais" data-html-estavel>
                     <div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>
                 </div>
             </div>
@@ -1052,7 +1052,7 @@
                     <i class="fas fa-industry" style="color:#3b82f6;"></i> Produção Lançada
                 </h3>
                 <p class="text-muted" style="font-size: 0.75rem; margin-bottom: 14px;">Toneladas apontadas por MCC, hoje e nos últimos 7 dias.</p>
-                <div id="painel-producao-lancada">
+                <div id="painel-producao-lancada" data-html-estavel>
                     <div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>
                 </div>
             </div>
@@ -1798,7 +1798,7 @@
                  aqui a lista completa por trás do número, com dados de
                  fácil acesso (área, status, responsável...). Ver
                  window.abrirDetalheSupervisorPorIndice em script.js. -->
-            <div id="modal-supervisor-detalhe" class="modal-overlay hidden" style="z-index:10001;">
+            <div id="modal-supervisor-detalhe" class="modal-overlay hidden modal-tela-cheia" style="z-index:10001;">
                 <div class="modal-content" style="max-width:560px; max-height:80vh; display:flex; flex-direction:column; text-align:left;">
                     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
                         <h2 id="modal-supervisor-detalhe-titulo" style="color:var(--text-heading); margin:0; font-size:1.05rem;">Detalhe</h2>
@@ -2182,7 +2182,7 @@
         </div>
     </section>
 
-    <div id="modal-procedimento" class="modal-overlay hidden">
+    <div id="modal-procedimento" class="modal-overlay hidden modal-tela-cheia">
         <div class="modal-content" style="max-width:720px; max-height:90vh; overflow-y:auto;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; gap:10px;">
                 <div>
@@ -2215,8 +2215,18 @@
          equipamento, dividido em seções (Mecânica, Elétrica, Hidráulica,
          Caldeiraria, Usinagem, Tubulação, Jato/Pintura). Diferente do
          Procedimento oficial acima; editável só pelas 3 matrículas ADM. -->
-    <div id="modal-checklist-execucao" class="modal-overlay hidden">
-        <div class="modal-content" style="max-width:720px; max-height:90vh; overflow-y:auto;">
+    <!-- 🔧 TELA CHEIA (pedido: "não quero mais essa janela, quero aba
+         inteira, porque no celular bugava tudo"): antes era uma janelinha
+         (max-height 90vh, rolagem interna dentro de overlay), que no
+         celular brigava com a barra do navegador/teclado e com a rolagem
+         da página por trás. Agora ocupa a tela toda (classe
+         modal-tela-cheia, ver style.css) com uma barra "Voltar" fixa no
+         topo, injetada por Core/navegacao.js em toda janela com essa
+         classe. Continua sendo um .modal-overlay de propósito: o botão
+         voltar do celular e o Esc já fecham ele pelo tratamento
+         genérico de modais. -->
+    <div id="modal-checklist-execucao" class="modal-overlay modal-tela-cheia hidden">
+        <div class="modal-content">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; gap:10px;">
                 <div>
                     <h2 style="color:var(--text-heading); margin-bottom:2px;" id="checklist-execucao-titulo"><i class="fas fa-list-check"></i> Checklist de Execução</h2>
@@ -2282,7 +2292,7 @@
 
     <!-- 🆕 Modal "Criar Aviso" — ADM cria um comunicado (ver
          window.abrirModalCriarAviso/salvarNovoAviso em script.js). -->
-    <div id="modal-criar-aviso" class="modal-overlay hidden" style="z-index:10002;">
+    <div id="modal-criar-aviso" class="modal-overlay hidden modal-tela-cheia" style="z-index:10002;">
         <div class="modal-content" style="max-width:520px; text-align:left;">
             <h2 style="color:var(--text-heading); margin-bottom:14px;"><i class="fas fa-bullhorn"></i> Novo Aviso</h2>
             <p class="text-muted" style="font-size:11.5px; margin-bottom:14px;">
@@ -2560,7 +2570,7 @@
 
             <!-- 🆕 Modal "Iniciar" da Fila da Ponte: qual ponte física (221/146)
                  e quais acessórios de içamento vão ser usados. -->
-            <div id="modal-iniciar-ponte" class="modal-overlay hidden" style="z-index:10001;">
+            <div id="modal-iniciar-ponte" class="modal-overlay hidden modal-tela-cheia" style="z-index:10001;">
                 <div class="modal-content" style="max-width:480px; text-align:left;">
                     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
                         <h2 style="color:var(--text-heading); margin:0;">🏗️ Iniciar Atendimento</h2>
@@ -2682,7 +2692,7 @@
 
             <!-- 🆕 Cadastro de colaborador novo direto pela tela (antes só
                  dava rodando script no servidor) -->
-            <div id="modal-novo-colaborador" class="modal-overlay hidden">
+            <div id="modal-novo-colaborador" class="modal-overlay hidden modal-tela-cheia">
                 <div class="modal-content" style="max-width:440px;">
                     <div class="modal-header">
                         <h2><i class="fas fa-user-plus"></i> Novo Colaborador</h2>
@@ -2716,7 +2726,7 @@
             <!-- 🆕 Eventos de cada funcionário separado — mesma
                  infraestrutura do Prontuário das peças (log_eventos),
                  filtrado pela matrícula do colaborador. -->
-            <div id="modal-eventos-colaborador" class="modal-overlay hidden">
+            <div id="modal-eventos-colaborador" class="modal-overlay hidden modal-tela-cheia">
                 <div class="modal-content" style="max-width:520px; max-height:80vh; display:flex; flex-direction:column;">
                     <div class="modal-header">
                         <h2><i class="fas fa-list-check"></i> Eventos — <span id="eventos-colab-titulo">-</span></h2>
@@ -2749,7 +2759,7 @@
 
     <div id="print-content" class="print-only"></div>
 
-    <div id="modal-folhao-r1" class="modal-overlay hidden">
+    <div id="modal-folhao-r1" class="modal-overlay hidden modal-tela-cheia">
         <div class="modal-content" style="max-width: 1100px; max-height: 90vh; overflow-y: auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
                 <h2 style="color:var(--text-heading);"><i class="fas fa-clipboard-check"></i> Liberação Oficial - STRAIGHTENER R1</h2>
@@ -2796,7 +2806,7 @@
     </div>
 
     <!-- MODAL FOLHÃO DESEMPENADEIRA (CADEIRAS) -->
-<div id="modal-folhao-desempenadeira" class="modal-overlay hidden">
+<div id="modal-folhao-desempenadeira" class="modal-overlay hidden modal-tela-cheia">
     <div class="modal-content" style="max-width: 1000px; max-height: 90vh; overflow-y: auto;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
             <h2 style="color:var(--text-heading);"><i class="fas fa-clipboard-check"></i> Liberação - Cadeira (Desempenadeira)</h2>
@@ -2899,7 +2909,7 @@
     </div>
 </div>
 
-    <div id="modal-folhao-bow" class="modal-overlay hidden">
+    <div id="modal-folhao-bow" class="modal-overlay hidden modal-tela-cheia">
         <div class="modal-content" style="max-width: 1100px; max-height: 90vh; overflow-y: auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
                 <h2 style="color:var(--text-heading);"><i class="fas fa-clipboard-check"></i> Liberação Oficial - BOW</h2>
@@ -2946,7 +2956,7 @@
         </div>
     </div>
 
-    <div id="modal-folhao-horizontal" class="modal-overlay hidden">
+    <div id="modal-folhao-horizontal" class="modal-overlay hidden modal-tela-cheia">
         <div class="modal-content" style="max-width: 1100px; max-height: 90vh; overflow-y: auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
                 <h2 style="color:var(--text-heading);"><i class="fas fa-clipboard-check"></i> Liberação Oficial - HORIZONTAL</h2>
@@ -2993,7 +3003,7 @@
         </div>
     </div>
 
-    <div id="modal-folhao-seg-grupo" class="modal-overlay hidden">
+    <div id="modal-folhao-seg-grupo" class="modal-overlay hidden modal-tela-cheia">
         <div class="modal-content" style="max-width: 1000px; max-height: 90vh; overflow-y: auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
                 <h2 style="color:var(--text-heading);"><i class="fas fa-clipboard-check"></i> Liberação - Segmento <span id="segg-grupo-label">Grupo</span> (MCC 2/3)</h2>
@@ -3062,7 +3072,7 @@
         </div>
     </div>
 
-    <div id="modal-folhao-segmento-zero" class="modal-overlay hidden">
+    <div id="modal-folhao-segmento-zero" class="modal-overlay hidden modal-tela-cheia">
         <div class="modal-content" style="max-width: 1000px; max-height: 90vh; overflow-y: auto;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
                 <h2><i class="fas fa-clipboard-check"></i> Liberação - Segmento Zero</h2>
@@ -3108,7 +3118,7 @@
         </div>
     </div>
 
-    <div id="modal-folhao-r2" class="modal-overlay hidden">
+    <div id="modal-folhao-r2" class="modal-overlay hidden modal-tela-cheia">
         <div class="modal-content" style="max-width: 1200px; max-height: 90vh; display: flex; flex-direction: column;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px; flex-shrink:0;">
                 <h2><i class="fas fa-clipboard-check"></i> Liberação - Straightener R2</h2>
@@ -3235,7 +3245,7 @@
         </div>
     </div>
 
-    <div id="modal-folhao-molde23" class="modal-overlay hidden">
+    <div id="modal-folhao-molde23" class="modal-overlay hidden modal-tela-cheia">
         <div class="modal-content" style="max-width: 1100px; max-height: 90vh; overflow-y: auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
                 <h2 style="color:var(--text-heading);"><i class="fas fa-clipboard-check"></i> Liberação - Molde MCC 2/3</h2>
@@ -3300,7 +3310,7 @@
         </div>
     </div>
 
-    <div id="modal-folhao-molde4" class="modal-overlay hidden">
+    <div id="modal-folhao-molde4" class="modal-overlay hidden modal-tela-cheia">
         <div class="modal-content" style="max-width: 1400px; max-height: 90vh; overflow-y: auto;">
             
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
@@ -3364,7 +3374,7 @@
         </div>
     </div>
 
-    <div id="modal-folhao-mcc4" class="modal-overlay hidden">
+    <div id="modal-folhao-mcc4" class="modal-overlay hidden modal-tela-cheia">
         <div class="modal-content" style="max-width: 1400px; max-height: 90vh; display: flex; flex-direction: column;">
             <div style="display:flex; justify-content:space-between; align-items:center; padding: 12px 20px; border-bottom: 2px solid rgba(56,189,248,0.25); flex-shrink:0;">
                 <h2 style="color:var(--text-heading); margin:0;">
@@ -3444,11 +3454,22 @@
         // garante que os cards de KPI (ex: "ATIVOS MONITORADOS") reflitam
         // o BANCO_ATIVOS de verdade, mesmo se alguma renderização anterior
         // tiver rodado cedo demais. Leve (só números, não recria tabelas).
+        // 🔧 PERFORMANCE/PISCA: antes rodava atualizarPainelCompleto()
+        // (que reescreve o "Top Críticos" e consulta o status das
+        // máquinas) TODO segundo, em qualquer aba do sistema e até com a
+        // aba do navegador escondida — pisca na tela e trabalho à toa,
+        // pior ainda em monitor grande. Agora só roda o painel completo
+        // quando o Painel Geral/Supervisor está de fato na tela; nas
+        // outras abas basta o cálculo leve dos números, e com a aba do
+        // navegador escondida não faz nada.
         setInterval(() => {
+            if (document.hidden) return;
             const logado = !!localStorage.getItem('oms_operador_v32_local');
-            if (logado) {
-                if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
-                if (typeof window.atualizarPainelCompleto === 'function') window.atualizarPainelCompleto();
+            if (!logado) return;
+            if (typeof window.calcularKpisGlobais === 'function') window.calcularKpisGlobais();
+            const idAba = document.querySelector('.tab-content.active')?.id;
+            if ((idAba === 'aba-painel' || idAba === 'aba-painel-supervisor') && typeof window.atualizarPainelCompleto === 'function') {
+                window.atualizarPainelCompleto();
             }
         }, 1000);
 
@@ -3598,7 +3619,7 @@
     <!-- MODAL: PRONTUÁRIO INDIVIDUAL DO EQUIPAMENTO -->
     <!-- ============================================================== -->
     <!-- MODAL: EQUIPAMENTOS CRÍTICOS -->
-    <div id="modal-criticos" class="modal-overlay hidden">
+    <div id="modal-criticos" class="modal-overlay hidden modal-tela-cheia">
         <div class="modal-content" style="max-width: 560px;">
             <div class="modal-header">
                 <h2><i class="fas fa-radiation" style="color:var(--danger);"></i> Equipamentos Críticos (≥80%)</h2>
@@ -3611,7 +3632,7 @@
     </div>
 
     <!-- MODAL: REGISTRAR INTERVENÇÃO RÁPIDA -->
-    <div id="modal-intervencao" class="modal-overlay hidden">
+    <div id="modal-intervencao" class="modal-overlay hidden modal-tela-cheia">
         <div class="modal-content" style="max-width: 520px;">
             <div class="modal-header">
                 <h2><i class="fas fa-screwdriver-wrench" style="color:#eab308;"></i> Registrar Intervenção</h2>
@@ -3663,7 +3684,7 @@
     </div>
 
     <!-- MODAL: RETIRAR EQUIPAMENTO (SAQUE PARA REPARO) -->
-    <div id="modal-relatorio" class="modal-overlay hidden">
+    <div id="modal-relatorio" class="modal-overlay hidden modal-tela-cheia">
         <div class="modal-content" style="max-width: 520px;">
             <div class="modal-header">
                 <h2><i class="fas fa-exchange-alt" style="color:var(--warning);"></i> Retirar Equipamento <span id="modal-tag" class="font-code" style="color:var(--warning);"></span></h2>
@@ -3686,7 +3707,7 @@
     </div>
 
     <!-- MODAL: RELATÓRIO DIÁRIO DO TÉCNICO -->
-    <div id="modal-relatorio-diario" class="modal-overlay hidden">
+    <div id="modal-relatorio-diario" class="modal-overlay hidden modal-tela-cheia">
         <div class="modal-content" style="max-width: 520px;">
             <div class="modal-header">
                 <h2><i class="fas fa-clipboard-list" style="color:#06b6d4;"></i> Relatório Diário</h2>
@@ -3705,7 +3726,7 @@
         </div>
     </div>
 
-    <div id="modal-historico-ativo" class="modal-overlay hidden">
+    <div id="modal-historico-ativo" class="modal-overlay hidden modal-tela-cheia">
         <div class="modal-content" style="max-width: 760px;">
             <div class="modal-header">
                 <h2><i class="fas fa-book-open" style="color:var(--brand);"></i> Prontuário — <span id="hist-tag-nome" class="font-code" style="color:var(--brand);">--</span></h2>

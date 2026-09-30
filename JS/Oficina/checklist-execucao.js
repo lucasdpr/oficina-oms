@@ -752,7 +752,7 @@ function renderizarLinhaEtapaChecklistExecucao(e, secao, isAdmin) {
     // colados um no outro — risco real de tocar Excluir em vez de
     // Mover"): min-width/min-height 40px + mais gap entre eles.
     const botoesAdmin = isAdmin ? `
-        <div style="display:flex; flex-wrap:wrap; gap:8px; flex-shrink:0;">
+        <div class="checklist-botoes-admin" style="display:flex; flex-wrap:wrap; gap:8px; flex-shrink:0;">
             <button class="btn-premium" style="min-width:40px; min-height:40px; padding:8px; font-size:12px;" title="Editar (texto e mapeamento com o Folhão)" onclick='window.editarEtapaChecklistExecucao(${e.id})'><i class="fas fa-pen"></i></button>
             <button class="btn-premium" style="min-width:40px; min-height:40px; padding:8px; font-size:12px;" title="Mover pra cima" onclick="window.moverEtapaChecklistExecucao(${e.id}, '${secao.chave}', -1)"><i class="fas fa-arrow-up"></i></button>
             <button class="btn-premium" style="min-width:40px; min-height:40px; padding:8px; font-size:12px;" title="Mover pra baixo" onclick="window.moverEtapaChecklistExecucao(${e.id}, '${secao.chave}', 1)"><i class="fas fa-arrow-down"></i></button>
@@ -764,7 +764,7 @@ function renderizarLinhaEtapaChecklistExecucao(e, secao, isAdmin) {
         const preenchida = !!(e.valor && e.valor.trim());
         return `
             <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start; padding:8px; border-radius:8px; background:${preenchida ? 'var(--success-bg)' : 'var(--bg-td)'}; margin-bottom:6px;">
-                <div style="flex:1; min-width:0;">
+                <div class="checklist-linha-texto" style="flex:1; min-width:0;">
                     <div style="font-size:13px; color:var(--text-heading);">${e.texto}</div>
                     ${preenchida
                         ? `<div style="font-size:12px; color:var(--text-accent); margin-top:2px;"><i class="fas fa-ruler"></i> ${e.valor}</div>
@@ -790,7 +790,7 @@ function renderizarLinhaEtapaChecklistExecucao(e, secao, isAdmin) {
         const completo = totalCampos > 0 && preenchidos === totalCampos;
         return `
             <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start; padding:8px; border-radius:8px; background:${completo ? 'var(--success-bg)' : 'var(--bg-td)'}; margin-bottom:6px;">
-                <div style="flex:1; min-width:0;">
+                <div class="checklist-linha-texto" style="flex:1; min-width:0;">
                     <div style="font-size:13px; color:var(--text-heading);">${e.texto}</div>
                     <div class="text-muted" style="font-size:11px; margin-top:2px;"><i class="fas fa-ruler-combined"></i> ${preenchidos} / ${totalCampos} medições preenchidas</div>
                 </div>
@@ -823,7 +823,7 @@ function renderizarLinhaEtapaChecklistExecucao(e, secao, isAdmin) {
     return `
         <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start; padding:8px; border-radius:8px; background:${corFundo}; margin-bottom:6px;">
             <input type="checkbox" ${e.marcado ? 'checked' : ''} style="margin-top:3px; width:18px; height:18px; flex-shrink:0;" onchange="window.marcarEtapaChecklistExecucao(${e.id}, this.checked)">
-            <div style="flex:1; min-width:0;">
+            <div class="checklist-linha-texto" style="flex:1; min-width:0;">
                 <div style="font-size:13px; color:var(--text-heading);">${e.texto}${badgeResposta}${badgeOrigem}</div>
                 ${e.marcado ? `<div class="text-muted" style="font-size:11px; margin-top:2px;"><i class="fas fa-user"></i> ${e.colaborador || '—'} · marcado por ${e.tecnico_nome || '—'} em ${e.data_hora ? new Date(e.data_hora).toLocaleString('pt-BR') : ''}</div>` : ''}
                 ${e.descricao ? `<details style="margin-top:4px;"><summary style="font-size:11px; color:var(--text-accent); cursor:pointer;">Ver passo a passo</summary><div class="text-muted" style="font-size:11px; white-space:pre-line; margin-top:4px;">${e.descricao}</div></details>` : ''}
