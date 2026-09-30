@@ -392,7 +392,7 @@ window.abrirFolhaoSegmentoZero = function(id) {
     }
 
     const tagEl = document.getElementById('segzero-tag-ativo');
-    if (tagEl) tagEl.innerText = id;
+    if (tagEl) { if ('value' in tagEl) tagEl.value = id; else tagEl.innerText = id; }
     const dataInicio = document.getElementById('segzero-data-inicio');
     const dataFim = document.getElementById('segzero-data-fim');
     if (dataInicio) dataInicio.valueAsDate = new Date();
@@ -742,7 +742,7 @@ window.previsualizarFolhaoSegZero = function() {
     const htmlPreview = montarHtmlLaudoSegZero(ID_FOLHAO_SEGZERO_ATUAL);
     const win = window.open('', '_blank', 'width=1100,height=800');
     if (win) {
-        win.document.write(htmlPreview);
+        win.document.write(window.prepararHtmlLaudo(htmlPreview));
         win.document.close();
     } else {
         alert('Seu navegador bloqueou a janela de pré-visualização (pop-up). Permita pop-ups pra este site e tente de novo.');
@@ -826,11 +826,12 @@ window.concluirEImprimirFolhaoSegmentoZero = async function(tag) {
         }
     }
 
+    await window.finalizarExecucaoChecklist(tag); // fecha o ciclo do Checklist (ver folhaoPersistencia.js)
     finalizarRascunhoFolhao(tag, "Segmento Zero");
     if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Reparo concluído — Folhão de manutenção (Segmento Zero) impresso.`);
 
     const printDiv = document.getElementById('print-content');
-    if (printDiv) printDiv.innerHTML = htmlPDF;
+    if (printDiv) printDiv.innerHTML = window.prepararHtmlLaudo(htmlPDF);
 
     if (typeof renderReparos === 'function') renderReparos();
     if (typeof renderReservas === 'function') renderReservas();

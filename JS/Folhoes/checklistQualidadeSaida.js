@@ -398,7 +398,7 @@ window.salvarChecklistQualidadeSaida = async function(registroId, pecaId) {
     document.getElementById('modal-checklist-qualidade-overlay').classList.add('hidden');
 
     const printDiv = document.getElementById('print-content');
-    if (printDiv) printDiv.innerHTML = montarHtmlChecklistQualidade(pecaId);
+    if (printDiv) printDiv.innerHTML = window.prepararHtmlLaudo(montarHtmlChecklistQualidade(pecaId));
     alert('✅ Checklist salvo. A impressão vai abrir em seguida.');
     setTimeout(() => window.print(), 400);
 };

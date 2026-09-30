@@ -620,3 +620,54 @@ export function atividadeAindaNaoComecou(x) {
         },
     });
 })();
+
+
+// ==========================================================================
+// 🆕 ACABAMENTO DE IMPRESSÃO DOS LAUDOS (Folhões) — aplicado na hora de
+// mostrar/imprimir (pré-visualização, "Concluir" e reimpressão pelo
+// histórico), então vale inclusive pra laudos antigos já salvos no banco.
+// - As tabelas dos laudos não usavam <thead>: numa tabela que quebrava de
+//   página, a 2ª página vinha sem cabeçalho (e às vezes com 1 linha órfã
+//   no topo). Aqui as linhas iniciais só de <th> viram <thead>, que o
+//   navegador repete em cada página.
+// - Nenhuma linha é cortada ao meio, e título de seção não fica sozinho
+//   no pé da página, separado da tabela dele.
+// ==========================================================================
+const CSS_IMPRESSAO_LAUDO = `<style id="css-impressao-laudo">
+    @media print {
+        tr, th, td { break-inside: avoid; page-break-inside: avoid; }
+        thead { display: table-header-group; }
+        .titulo-secao, h2, h3, h4 { break-after: avoid; page-break-after: avoid; }
+        .assinatura-box { break-inside: avoid; }
+    }
+</style>`;
+window.prepararHtmlLaudo = function (html) {
+    if (!html || typeof html !== 'string' || html.includes('id="css-impressao-laudo"')) return html;
+    try {
+        const tpl = document.createElement('template');
+        tpl.innerHTML = html;
+        tpl.content.querySelectorAll('table').forEach(tabela => {
+            if (tabela.tHead) return;
+            const corpo = tabela.tBodies[0];
+            if (!corpo || corpo.rows.length < 6) return; // tabela pequena não quebra de página
+            const cabecalho = [];
+            for (const tr of corpo.rows) {
+                if (cabecalho.length >= 2) break;
+                const celulas = [...tr.cells];
+                if (celulas.length && celulas.every(c => c.tagName === 'TH')) cabecalho.push(tr); else break;
+            }
+            if (!cabecalho.length || cabecalho.length >= corpo.rows.length) return;
+            // Tabela com sub-cabeçalhos no meio (várias tabelas numa só, ex:
+            // Rolamento/Teste/Medidas do Bow): repetir o 1º cabeçalho numa
+            // página que mostra outra sub-tabela enganaria quem lê — deixa quieta.
+            const temSubCabecalho = [...corpo.rows].slice(cabecalho.length).some(tr => [...tr.cells].length && [...tr.cells].every(c => c.tagName === 'TH'));
+            if (temSubCabecalho) return;
+            const thead = tabela.createTHead();
+            cabecalho.forEach(tr => thead.appendChild(tr));
+        });
+        return CSS_IMPRESSAO_LAUDO + tpl.innerHTML;
+    } catch (e) {
+        console.error('⚠️ Acabamento de impressão do laudo falhou (segue o HTML original):', e);
+        return html;
+    }
+};

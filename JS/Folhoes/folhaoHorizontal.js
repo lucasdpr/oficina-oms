@@ -493,7 +493,7 @@ window.abrirFolhaoHorizontal = function(id) {
 
     // Preenche cabeçalho
     const tagNameEl = document.getElementById('horizontal-tag-name');
-    if (tagNameEl) tagNameEl.innerText = id;
+    if (tagNameEl) { if ('value' in tagNameEl) tagNameEl.value = id; else tagNameEl.innerText = id; }
     // 🆕 Nº SEGMENTO, DATA INÍCIO/FIM e LÍDER RESPONSÁVEL não são mais
     // digitados pelo técnico: Nº Segmento é a própria tag do equipamento
     // (já vem do cadastro), e os outros três são travados (ver
@@ -853,12 +853,14 @@ function montarHtmlLaudoHorizontal(tag) {
         manutencaoHorizontal.forEach((tarefa, index) => {
             const p = document.getElementById(`hz-p-${index}`)?.checked ? 'X' : '';
             const g = document.getElementById(`hz-g-${index}`)?.checked ? 'X' : '';
+            const resp = window.escapeHtmlNotif(getV(`hz-resp-${index}`));
             const mat = window.escapeHtmlNotif(getV(`hz-mat-${index}`));
             const data = window.escapeHtmlNotif(getV(`hz-dat-${index}`));
             html += `<tr><td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${tarefa.item}</td>
                 <td style="border:1px solid #000; padding:3px; font-size:9px;">${tarefa.desc}</td>
                 <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${p}</td>
                 <td style="text-align:center; border:1px solid #000; padding:3px; font-weight:bold;">${g}</td>
+                <td style="text-align:center; border:1px solid #000; padding:3px;">${resp}</td>
                 <td style="text-align:center; border:1px solid #000; padding:3px;">${mat}</td>
                 <td style="text-align:center; border:1px solid #000; padding:3px;">${data}</td></tr>`;
         });
@@ -972,7 +974,7 @@ function montarHtmlLaudoHorizontal(tag) {
         <table>
             <tr><th style="width:5%;">Item</th><th>Descrição da Atividade</th>
                 <th style="width:4%;">P</th><th style="width:4%;">G</th>
-                <th style="width:12%;">Matrícula</th><th style="width:12%;">Data</th></tr>
+                <th style="width:16%;">Executante</th><th style="width:12%;">Matrícula</th><th style="width:12%;">Data</th></tr>
             ${gerarManutencaoPDF()}
         </table>
 
@@ -1042,7 +1044,7 @@ window.previsualizarFolhaoHorizontal = function() {
     const htmlPreview = montarHtmlLaudoHorizontal(ID_FOLHAO_HORIZ_ATUAL);
     const win = window.open('', '_blank', 'width=1100,height=800');
     if (win) {
-        win.document.write(htmlPreview);
+        win.document.write(window.prepararHtmlLaudo(htmlPreview));
         win.document.close();
     } else {
         alert('Seu navegador bloqueou a janela de pré-visualização (pop-up). Permita pop-ups pra este site e tente de novo.');
@@ -1162,7 +1164,7 @@ window.concluirEImprimirFolhaoHorizontal = async function(tag) {
     if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Reparo concluído — Folhão de manutenção (Horizontal) impresso.`);
 
     const printDiv = document.getElementById('print-content');
-    if (printDiv) printDiv.innerHTML = htmlPDF;
+    if (printDiv) printDiv.innerHTML = window.prepararHtmlLaudo(htmlPDF);
 
     if (typeof renderReparos === 'function') renderReparos();
     if (typeof renderReservas === 'function') renderReservas();

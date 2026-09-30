@@ -309,8 +309,8 @@ window.visualizarLaudo = async function(id) {
         if (!resp.ok) return alert('Laudo não encontrado.');
         const laudo = await resp.json();
         const win = window.open('', '_blank', 'width=1100,height=800');
-        if (win) { win.document.write(laudo.html); win.document.close(); }
-        else { const p = document.getElementById('print-content'); if (p) { p.innerHTML = laudo.html; window.print(); } }
+        if (win) { win.document.write(window.prepararHtmlLaudo(laudo.html)); win.document.close(); }
+        else { const p = document.getElementById('print-content'); if (p) { p.innerHTML = window.prepararHtmlLaudo(laudo.html); window.print(); } }
     } catch (e) {
         console.error('⚠️ Erro ao carregar laudo:', e);
         alert('Não foi possível conectar ao servidor.');

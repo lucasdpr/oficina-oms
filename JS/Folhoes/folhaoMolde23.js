@@ -583,7 +583,7 @@ function renderizarMateriais() {
     if (!container) return;
     let rows = '';
     for (let i = 1; i <= 20; i++) {
-        rows += `<tr><td><input id="mat-desc-${i}" style="width:100%;"></td><td><input id="mat-qtd-${i}" style="width:60px;"></td></tr>`;
+        rows += `<tr><td><input id="m23mat-desc-${i}" style="width:100%;"></td><td><input id="m23mat-qtd-${i}" style="width:60px;"></td></tr>`; // ids próprios: "mat-desc-N" colidia com o Folhão do Bow
     }
     const html = `
         <h3 style="color:var(--text-heading);">MATERIAIS UTILIZADOS NA MANUTENÇÃO</h3>
@@ -749,6 +749,44 @@ function montarHtmlLaudoMolde23(tag) {
         localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
     }
 
+    // 🆕 Auxiliares das seções 6 a 18 (antes metade do formulário não ia
+    // pro laudo: responsável/matrícula/data de cada seção, face sul e
+    // saída das placas largas, alinhamento, placas estreitas na saída,
+    // JB2 completo, folga de aresta e materiais).
+    const ev = (id) => window.escapeHtmlNotif(getV(id));
+    const dataBR = (id) => { const v = getV(id) || ''; const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/); return window.escapeHtmlNotif(m ? `${m[3]}/${m[2]}/${m[1]}` : v); };
+    const tdc = (v) => `<td style="text-align:center;">${v}</td>`;
+    const responsavel = (p) => (getV(`${p}-nome`) || getV(`${p}-matricula`) || getV(`${p}-data`))
+        ? `<div style="font-size:9px; margin:2px 0 8px; padding:3px 6px; border:1px solid #000; border-top:0;">RESPONSÁVEL: <strong>${ev(`${p}-nome`) || '—'}</strong> &nbsp;·&nbsp; MATRÍCULA: ${ev(`${p}-matricula`) || '—'} &nbsp;·&nbsp; DATA: ${dataBR(`${p}-data`) || '—'}</div>`
+        : '';
+    const linhasStatus = (itens) => itens.map(([rotulo, id]) => `<tr><td>${rotulo}</td>${tdc(ev(id))}<td>${ev(`${id}-obs`)}</td></tr>`).join('');
+    const gradePlacaLarga = (pfx, face, rotulo) => `
+        <table><tr><th colspan="7">${rotulo}</th></tr><tr><th>1600</th><th>1300</th><th>1000</th><th>LINHA CENTRO</th><th>1000</th><th>1300</th><th>1600</th></tr>
+            ${[1,2,3].map(l => `<tr>${[1,2,3,4,5,6,7].map(c => tdc(ev(`${pfx}-${face}${l}-${c}`))).join('')}</tr>`).join('')}
+        </table>`;
+    const alinhPlacaLarga = (pfx, face, rotulo, tol) => `
+        <table><tr><th colspan="2">${rotulo}</th></tr><tr><th>RÉGUA LESTE</th><th>RÉGUA OESTE</th></tr>
+            <tr><td>SUPERIOR (1): ${ev(`${pfx}-alinh-${face}1`)}</td><td>SUPERIOR (3): ${ev(`${pfx}-alinh-${face}3`)}</td></tr>
+            <tr><td>INFERIOR (2): ${ev(`${pfx}-alinh-${face}2`)}</td><td>INFERIOR (4): ${ev(`${pfx}-alinh-${face}4`)}</td></tr>
+            <tr><td colspan="2" style="font-size:9px;">TOLERÂNCIA: ${tol}</td></tr>
+        </table>`;
+    const placasLargas = (pfx, titulo) => `
+        <div class="titulo-secao">${titulo}</div>
+        ${gradePlacaLarga(pfx, 'n', 'FACE NORTE')}
+        ${gradePlacaLarga(pfx, 's', 'FACE SUL')}
+        ${alinhPlacaLarga(pfx, 'n', 'ALINHAMENTO FACE PRINCIPAL NORTE (FIXA)', '1,0 +/- 0,1')}
+        ${alinhPlacaLarga(pfx, 's', 'ALINHAMENTO FACE PRINCIPAL SUL (MÓVEL)', 'SUPERIOR 0,1 mm E INFERIOR 0,2 mm')}
+        ${responsavel(pfx)}`;
+    const placasEstreitas = (pfx, titulo) => `
+        <div class="titulo-secao">${titulo}</div>
+        <div style="margin-bottom:4px;">PLACA ESQUERDA AFASTADA: <strong>${getRadioValue(`${pfx}-esq-af`) || '—'}</strong> &nbsp;|&nbsp; PLACA DIREITA AFASTADA: <strong>${getRadioValue(`${pfx}-dir-af`) || '—'}</strong></div>
+        <table><tr><th>PONTO</th><th>ESQUERDA</th><th>DIREITA</th></tr>
+            ${[1,2,3].map(i => `<tr>${tdc(i)}${tdc(ev(`${pfx}-e${i}`))}${tdc(ev(`${pfx}-d${i}`))}</tr>`).join('')}
+        </table>
+        ${responsavel(pfx)}`;
+    const LARGURAS_FA = [830,870,950,1030,1100,1180,1230,1300,1380,1460,1500,1530,1550,1580,1620];
+    const materiaisPreenchidos = Array.from({ length: 20 }, (_, i) => i + 1).filter(i => getV(`m23mat-desc-${i}`) || getV(`m23mat-qtd-${i}`));
+
     // FUNÇÃO AUXILIAR PARA CHECKLISTS DO PDF
     function gerarLinhasChecklist(prefix, array, isMatricula = false) {
         let html = '';
@@ -851,20 +889,23 @@ function montarHtmlLaudoMolde23(tag) {
         <div class="titulo-secao">5. INSPEÇÃO FINAL DOS MOLDES</div>
         <table><tr><th style="width:5%;">ITEM</th><th>DESCRIÇÃO</th><th style="width:8%;">SIM</th><th style="width:8%;">NÃO</th></tr>${gerarLinhasChecklist('fin', inspecaoFinal)}</table>
 
-        <!-- DIÂMETROS DOS ROLOS (CHEGADA) -->
-        <div class="titulo-secao">6. DIÂMETROS DOS ROLOS - CHEGADA</div>
-        <table><tr><th>LADO FIXO</th><td style="text-align:center;">${window.escapeHtmlNotif(getV('dia-c-fixo'))}</td><th>LADO MÓVEL</th><td style="text-align:center;">${window.escapeHtmlNotif(getV('dia-c-movel'))}</td></tr>
-            <tr><th>LADO DIREITO</th><td style="text-align:center;">${window.escapeHtmlNotif(getV('dia-c-dir'))}</td><th>LADO ESQUERDO</th><td style="text-align:center;">${window.escapeHtmlNotif(getV('dia-c-esq'))}</td></tr>
+        <!-- DIÂMETROS DOS ROLOS -->
+        <div class="titulo-secao">6. DIÂMETROS DOS ROLOS (FOOT ROLL E EDGE ROLL) - CHEGADA</div>
+        <table><tr><th>LADO FIXO</th>${tdc(ev('dia-c-fixo'))}<th>LADO MÓVEL</th>${tdc(ev('dia-c-movel'))}</tr>
+            <tr><th>LADO DIREITO</th>${tdc(ev('dia-c-dir'))}<th>LADO ESQUERDO</th>${tdc(ev('dia-c-esq'))}</tr>
         </table>
-        
-        <div class="titulo-secao">6.1 DIÂMETROS DOS ROLOS - SAÍDA</div>
-        <table><tr><th>LADO FIXO</th><td style="text-align:center;">${window.escapeHtmlNotif(getV('dia-s-fixo'))}</td><th>LADO MÓVEL</th><td style="text-align:center;">${window.escapeHtmlNotif(getV('dia-s-movel'))}</td></tr>
-            <tr><th>LADO DIREITO</th><td style="text-align:center;">${window.escapeHtmlNotif(getV('dia-s-dir'))}</td><th>LADO ESQUERDO</th><td style="text-align:center;">${window.escapeHtmlNotif(getV('dia-s-esq'))}</td></tr>
+        ${responsavel('dia-c')}
+
+        <div class="titulo-secao">6.1 DIÂMETROS DOS ROLOS (FOOT ROLL E EDGE ROLL) - SAÍDA</div>
+        <table><tr><th>LADO FIXO</th>${tdc(ev('dia-s-fixo'))}<th>LADO MÓVEL</th>${tdc(ev('dia-s-movel'))}</tr>
+            <tr><th>LADO DIREITO</th>${tdc(ev('dia-s-dir'))}<th>LADO ESQUERDO</th>${tdc(ev('dia-s-esq'))}</tr>
         </table>
-        
+        ${responsavel('dia-s')}
+
         <!-- ALINHAMENTO DOS ROLOS -->
         <div class="titulo-secao">7. ALINHAMENTO DOS ROLOS</div>
-        <table><tr><th>LADO FIXO</th><td style="text-align:center;">${window.escapeHtmlNotif(getV('alinh-fixo'))}</td><th>LADO MÓVEL</th><td style="text-align:center;">${window.escapeHtmlNotif(getV('alinh-movel'))}</td></tr></table>
+        <table><tr><th>LADO FIXO</th>${tdc(ev('alinh-fixo'))}<th>LADO MÓVEL</th>${tdc(ev('alinh-movel'))}</tr></table>
+        ${responsavel('alinh')}
 
         <div class="quebra-pagina"></div>
 
@@ -874,69 +915,96 @@ function montarHtmlLaudoMolde23(tag) {
             ${[1,2,3,4,5,6,7].map(i => `<tr><td style="text-align:center;">${i}</td><td>${['VERIFICAR TAMPA DE PROTEÇÃO;','EFETUAR A TROCA DAS GAXETAS DE ISOLAÇÃO DO SENSOR','VERIFICAR PARAFUSO DE FIXAÇÃO DO SUPORTE DO SENSOR, TORQUE 50 NM;','VERIFICAR PARAFUSO DE FIXAÇÃO DA TAMPA DE PROTEÇÃO DO SENSOR, TORQUE 40 NM;','VERIFICAR ESTADO DE CONSERVAÇÃO E LIMPEZA;','TESTE DE ESTANQUIEDADE (5 BAR);','CHECK NA CONEXÕES DE ALIMENTAÇÃO DE ÁGUA;'][i-1]}</td><td style="text-align:center;">${getCheckboxValue(`sn-${i}`)==='OK'?'X':''}</td></tr>`).join('')}
         </table>
         <table><tr><th style="width:5%;">ITEM</th><th>DESCRIÇÃO</th><th>VALOR</th></tr>
-            ${[8,9,10,11,12,13,14,15].map(i => `<tr><td style="text-align:center;">${i}</td><td>${['VERIFICAR RESISTÊNCIA ENTRE OS PINOS 1-2 LIMITES DE Ω (140...300)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 3-4 LIMITES DE Ω (0...2)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 1-5 LIMITES DE Ω (70...150)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 3-5 LIMITES DE Ω (0...1)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 7-8 LIMITES DE Ω (0...1)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 8-9 LIMITES DE Ω (100...140)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 15-16 LIMITES DE Ω (3...10)','VERIFICAR RESISTÊNCIA NO PINO 10 E A CARCAÇA DO SENSOR LIMITE DE Ω (0...1)'][i-8]}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV(`sn-${i}`))}</td></tr>`).join('')}
+            ${[8,9,10,11,12,13,14,15].map(i => `<tr><td style="text-align:center;">${i}</td><td>${['VERIFICAR RESISTÊNCIA ENTRE OS PINOS 1-2 LIMITES DE Ω (140...300)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 3-4 LIMITES DE Ω (0...2)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 1-5 LIMITES DE Ω (70...150)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 3-5 LIMITES DE Ω (0...1)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 7-8 LIMITES DE Ω (0...1)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 8-9 LIMITES DE Ω (100...140)','VERIFICAR RESISTÊNCIA ENTRE OS PINOS 15-16 LIMITES DE Ω (3...10)','VERIFICAR RESISTÊNCIA NO PINO 10 E A CARCAÇA DO SENSOR LIMITE DE Ω (0...1)'][i-8]}</td>${tdc(ev(`sn-${i}`))}</tr>`).join('')}
         </table>
+        ${responsavel('sn')}
 
         <!-- ISOLAÇÃO DOS SENSORES -->
         <div class="titulo-secao">9. ISOLAÇÃO DOS SENSORES DE NÍVEL</div>
         <table><tr><th>PINO CONECTOR</th><th>LIMITE</th><th>VALOR</th></tr>
-            ${["5 e 6","5 e 8","5 e 10","5 e 15","6 e 8","6 e 10","6 e 15","8 e 10","8 e 15","10 e 15"].map((p,i) => `<tr><td style="text-align:center;">${p}</td><td style="text-align:center;">>10 MΩ</td><td style="text-align:center;">${window.escapeHtmlNotif(getV(`iso-${i}`))}</td></tr>`).join('')}
+            ${["5 e 6","5 e 8","5 e 10","5 e 15","6 e 8","6 e 10","6 e 15","8 e 10","8 e 15","10 e 15"].map((p,i) => `<tr>${tdc(p)}${tdc('&gt;10 MΩ')}${tdc(ev(`iso-${i}`))}</tr>`).join('')}
         </table>
+        ${responsavel('iso')}
 
         <div class="quebra-pagina"></div>
 
         <!-- TERMOPARES -->
         <div class="titulo-secao">10. TERMOPARES</div>
+        <table><tr><th>CAIXA PLACA FIXA</th>${tdc(ev('termo-fixa'))}<th>CAIXA PLACA MÓVEL</th>${tdc(ev('termo-movel'))}</tr></table>
         <table><tr><th>DESCRIÇÃO</th><th>CONDIÇÃO</th></tr>
-            <tr><td>VERIFICAR PARAFUSOS DA BASE DAS CAIXAS DOS TERMOPARES</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('termo-cond1'))}</td></tr>
-            <tr><td>TESTE DE AR (INDICAÇÃO WAMBOY)</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('termo-cond2'))}</td></tr>
-            <tr><td>ESTADO/LIMPEZA</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('termo-cond3'))}</td></tr>
-            <tr><td>BORRACHAS E VEDAÇÕES</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('termo-cond4'))}</td></tr>
-            <tr><td>TRAVAS</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('termo-cond5'))}</td></tr>
+            <tr><td>VERIFICAR PARAFUSOS DA BASE DAS CAIXAS DOS TERMOPARES</td>${tdc(ev('termo-cond1'))}</tr>
+            <tr><td>TESTE DE AR (INDICAÇÃO WAMBOY)</td>${tdc(ev('termo-cond2'))}</tr>
+            <tr><td>ESTADO/LIMPEZA</td>${tdc(ev('termo-cond3'))}</tr>
+            <tr><td>BORRACHAS E VEDAÇÕES</td>${tdc(ev('termo-cond4'))}</tr>
+            <tr><td>TRAVAS</td>${tdc(ev('termo-cond5'))}</tr>
         </table>
+        ${responsavel('termo')}
 
         <!-- CHECK JB2 -->
-        <div class="titulo-secao">11. CHECK DO JB 2 E VÁLVULAS</div>
-        <table><tr><th>DESCRIÇÃO (VÁLVULA PROPORCIONAL)</th><th>STATUS</th><th>OBS</th></tr>
-            <tr><td>SUPERIOR ESQUERDO</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('vp-se'))}</td><td>${window.escapeHtmlNotif(getV('vp-se-obs'))}</td></tr>
-            <tr><td>SUPERIOR DIREITO</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('vp-sd'))}</td><td>${window.escapeHtmlNotif(getV('vp-sd-obs'))}</td></tr>
-            <tr><td>INFERIOR ESQUERDO</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('vp-ie'))}</td><td>${window.escapeHtmlNotif(getV('vp-ie-obs'))}</td></tr>
-            <tr><td>INFERIOR DIREITO</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('vp-id'))}</td><td>${window.escapeHtmlNotif(getV('vp-id-obs'))}</td></tr>
+        <div class="titulo-secao">11. CHECK DO JB 2, VÁLVULAS, TRANSDUTORES E CABOS</div>
+        <table><tr><th>JB 2</th><th style="width:14%;">STATUS</th><th>OBSERVAÇÕES</th></tr>
+            ${linhasStatus([['FECHO PAINEL','jb2-fecho'],['CONECTORES DO WANBOY COM MOLDE','jb2-wanboy'],['VEDAÇÃO DO JB 2','jb2-vedacao']])}
         </table>
+        <table><tr><th>CONECTORES DA VÁLVULA PROPORCIONAL</th><th style="width:14%;">STATUS</th><th>OBSERVAÇÕES</th></tr>
+            ${linhasStatus([['SUPERIOR ESQUERDO','vp-se'],['SUPERIOR DIREITO','vp-sd'],['INFERIOR ESQUERDO','vp-ie'],['INFERIOR DIREITO','vp-id']])}
+        </table>
+        <table><tr><th>CONECTORES DOS TRANSDUTORES DE POSIÇÃO</th><th style="width:14%;">STATUS</th><th>OBSERVAÇÕES</th></tr>
+            ${linhasStatus([['SUPERIOR ESQUERDO','tp-se'],['SUPERIOR DIREITO','tp-sd'],['INFERIOR ESQUERDO','tp-ie'],['INFERIOR DIREITO','tp-id']])}
+        </table>
+        <table><tr><th>BLOCO PRINCIPAL</th><th style="width:14%;">STATUS</th><th>OBSERVAÇÕES</th></tr>
+            ${linhasStatus([['VEDAÇÕES','bp-ved'],['VÁLVULAS E CONECTORES','bp-valv'],['TRANSDUTORES (ÓLEO/AR)','bp-trans']])}
+        </table>
+        <table><tr><th>CABOS DO AJUSTE DE LARGURA DO MOLDE</th><th style="width:14%;">STATUS</th><th>OBSERVAÇÕES</th></tr>
+            ${linhasStatus([['SUPERIOR ESQUERDO','cal-se'],['SUPERIOR DIREITO','cal-sd'],['INFERIOR ESQUERDO','cal-ie'],['INFERIOR DIREITO','cal-id'],['BANCO DE VÁLVULAS','cal-bv']])}
+        </table>
+        ${responsavel('jb2')}
 
         <!-- RESISTÊNCIA DAS PLACAS -->
         <div class="titulo-secao">12. TESTE DE RESISTÊNCIA DAS PLACAS</div>
         <table><tr><th>PLACA MÓVEL</th><th>PLACA FIXA</th><th>ESTREITA DIR</th><th>ESTREITA ESQ</th></tr>
-            <tr><td style="text-align:center;">${window.escapeHtmlNotif(getV('res-placa-movel'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('res-placa-fixa'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('res-placa-est-dir'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('res-placa-est-esq'))}</td></tr>
+            <tr>${tdc(ev('res-placa-movel'))}${tdc(ev('res-placa-fixa'))}${tdc(ev('res-placa-est-dir'))}${tdc(ev('res-placa-est-esq'))}</tr>
         </table>
+        ${responsavel('res')}
 
         <div class="quebra-pagina"></div>
 
-        <!-- PERITAGEM LARGAS - ENTRADA -->
-        <div class="titulo-secao">13. PERITAGEM PLACAS LARGAS - ENTRADA / SAÍDA</div>
-        <table><tr><th colspan="7">FACE NORTE - ENTRADA</th></tr><tr><th>1600</th><th>1300</th><th>1000</th><th>LINHA CENTRO</th><th>1000</th><th>1300</th><th>1600</th></tr>
-            ${[1,2,3].map(l => `<tr>${[1,2,3,4,5,6,7].map(c => `<td style="text-align:center;">${window.escapeHtmlNotif(getV(`pl-ent-n${l}-${c}`))}</td>`).join('')}</tr>`).join('')}
-        </table>
-        
-        <!-- PERITAGEM ESTREITAS -->
-        <div class="titulo-secao">14. PERITAGEM PLACAS ESTREITAS - CHEGADA / SAÍDA</div>
-        <div>ESQ AFASTADA: ${getRadioValue('pe-c-esq-af')} | DIR AFASTADA: ${getRadioValue('pe-c-dir-af')}</div>
-        <table><tr><th>PONTO</th><th>ESQUERDA</th><th>DIREITA</th></tr>
-            ${[1,2,3].map(i => `<tr><td style="text-align:center;">${i}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV(`pe-c-e${i}`))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV(`pe-c-d${i}`))}</td></tr>`).join('')}
-        </table>
+        <!-- PERITAGEM LARGAS -->
+        ${placasLargas('pl-ent', '13. PERITAGEM DAS PLACAS LARGAS - AO ENTRAR NA OFICINA')}
+        ${placasLargas('pl-sai', '13.1 PERITAGEM DAS PLACAS LARGAS - AO SAIR DA OFICINA')}
 
-        <!-- AJUSTE DE CHAVETAS E RESFRIAMENTO -->
+        <div class="quebra-pagina"></div>
+
+        <!-- PERITAGEM ESTREITAS -->
+        ${placasEstreitas('pe-c', '14. PERITAGEM DAS PLACAS ESTREITAS - CHEGADA')}
+        ${placasEstreitas('pe-s', '14.1 PERITAGEM DAS PLACAS ESTREITAS - SAÍDA')}
+
+        <!-- AJUSTE DE CHAVETAS -->
         <div class="titulo-secao">15. AJUSTE DE CHAVETAS</div>
         <table><tr><th>PLACA</th><th>LADO</th><th>A</th><th>B</th><th>NOME</th><th>REG</th></tr>
-            <tr><td rowspan="2" style="text-align:center;font-weight:bold;">ESQUERDA</td><td style="text-align:center;">A</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-esq-a-a'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-esq-a-b'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-esq-a-nome'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-esq-a-reg'))}</td></tr>
-            <tr><td style="text-align:center;">B</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-esq-b-a'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-esq-b-b'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-esq-b-nome'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-esq-b-reg'))}</td></tr>
-            <tr><td rowspan="2" style="text-align:center;font-weight:bold;">DIREITA</td><td style="text-align:center;">A</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-dir-a-a'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-dir-a-b'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-dir-a-nome'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-dir-a-reg'))}</td></tr>
-            <tr><td style="text-align:center;">B</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-dir-b-a'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-dir-b-b'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-dir-b-nome'))}</td><td style="text-align:center;">${window.escapeHtmlNotif(getV('chav-dir-b-reg'))}</td></tr>
+            ${[['esq','ESQUERDA'],['dir','DIREITA']].map(([l, rot]) => ['a','b'].map((lado, k) => `<tr>${k === 0 ? `<td rowspan="2" style="text-align:center;font-weight:bold;">${rot}</td>` : ''}${tdc(lado.toUpperCase())}${tdc(ev(`chav-${l}-${lado}-a`))}${tdc(ev(`chav-${l}-${lado}-b`))}${tdc(ev(`chav-${l}-${lado}-nome`))}${tdc(ev(`chav-${l}-${lado}-reg`))}</tr>`).join('')).join('')}
         </table>
-        
+        ${responsavel('chav')}
+
+        <!-- RESFRIAMENTO -->
         <div class="titulo-secao">16. AVALIAÇÃO DO SISTEMA DE RESFRIAMENTO</div>
-        <div><strong>FACE NORTE / FIXA:</strong> ${window.escapeHtmlNotif(getV('ref-norte'))}</div>
-        <div><strong>FACE SUL / MÓVEL:</strong> ${window.escapeHtmlNotif(getV('ref-sul'))}</div>
+        <table><tr><th style="width:25%;">FACE NORTE / FIXA</th><td>${ev('ref-norte')}</td></tr><tr><th>FACE SUL / MÓVEL</th><td>${ev('ref-sul')}</td></tr></table>
+        ${responsavel('ref')}
+
+        <div class="quebra-pagina"></div>
+
+        <!-- FOLGA DE ARESTA -->
+        <div class="titulo-secao">17. RELATÓRIO FOLGA DE ARESTA (TOLERÂNCIA 0,25 POR FACE)</div>
+        <table><tr><th rowspan="2">LARGURA</th><th colspan="3">ESQUERDA</th><th colspan="3">DIREITA</th></tr>
+            <tr><th>SUP</th><th>MEIO</th><th>INF</th><th>SUP</th><th>MEIO</th><th>INF</th></tr>
+            ${LARGURAS_FA.map(l => `<tr><th>${l}</th>${['esq-sup','esq-meio','esq-inf','dir-sup','dir-meio','dir-inf'].map(pos => tdc(ev(`fa-${l}-${pos}`))).join('')}</tr>`).join('')}
+        </table>
+        ${responsavel('fa')}
+
+        <!-- MATERIAIS -->
+        <div class="titulo-secao">18. MATERIAIS UTILIZADOS NA MANUTENÇÃO</div>
+        <table><tr><th>DESCRIÇÃO DO MATERIAL / SKU</th><th style="width:18%;">QUANTIDADE</th></tr>
+            ${materiaisPreenchidos.map(i => `<tr><td>${ev(`m23mat-desc-${i}`)}</td>${tdc(ev(`m23mat-qtd-${i}`))}</tr>`).join('') || '<tr><td colspan="2" style="text-align:center; color:#777;">Nenhum material informado.</td></tr>'}
+        </table>
 
         <!-- ASSINATURAS -->
         <div style="margin-top:40px; display:flex; justify-content:space-around; text-align:center; font-size:10px; font-weight:bold;">
@@ -1009,7 +1077,7 @@ window.previsualizarFolhaoMolde23 = function() {
     const htmlPreview = montarHtmlLaudoMolde23(ID_FOLHAO_MOLDE23_ATUAL);
     const win = window.open('', '_blank', 'width=1100,height=800');
     if (win) {
-        win.document.write(htmlPreview);
+        win.document.write(window.prepararHtmlLaudo(htmlPreview));
         win.document.close();
     } else {
         alert('Seu navegador bloqueou a janela de pré-visualização (pop-up). Permita pop-ups pra este site e tente de novo.');
@@ -1176,7 +1244,7 @@ window.concluirEImprimirFolhaoMolde23 = async function(tag) {
     if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Reparo concluído — Folhão de manutenção (Molde 2/3) impresso.`);
 
     const printDiv = document.getElementById('print-content');
-    if (printDiv) printDiv.innerHTML = htmlPDF;
+    if (printDiv) printDiv.innerHTML = window.prepararHtmlLaudo(htmlPDF);
 
     if (typeof renderReparos === 'function') renderReparos();
     if (typeof renderReservas === 'function') renderReservas();
