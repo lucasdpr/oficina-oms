@@ -337,7 +337,7 @@ function montarLinhasHistorico(acoes, laudos, filtroData, filtroCategoria) {
                     <td><small class="text-muted">${item.data}</small></td>
                     <td><span class="ind-card-tag bg-tag">${item.tag}</span></td>
                     <td style="color: var(--text-main);">
-                        ${item.acao}
+                        ${window.formatarAcaoEvento(item.acao)}
                         <button class="btn-xs-primary" onclick="window.visualizarLaudo('${item.id}')" style="margin-left:8px; color:var(--text-accent);">
                             <i class="fas fa-eye"></i> Ver PDF
                         </button>
@@ -353,7 +353,7 @@ function montarLinhasHistorico(acoes, laudos, filtroData, filtroCategoria) {
                 <tr data-grupo-dia="${grupoIndice}" class="${escondida.trim()}">
                     <td><small class="text-muted">${item.data}</small></td>
                     <td><span class="ind-card-tag bg-tag">${item.tag}</span></td>
-                    <td style="color: var(--text-main);">${item.acao}</td>
+                    <td style="color: var(--text-main);">${window.formatarAcaoEvento(item.acao)}</td>
                     <td><small class="text-muted">${item.responsavel}</small></td>
                 </tr>
             `);
@@ -1049,7 +1049,7 @@ window.renderPainelSupervisor = async function() {
                         return `
                         <div style="display:flex; gap:10px; padding:8px 0; border-top:1px solid var(--border-color);">
                             <span class="text-muted" style="font-size:0.72rem; font-family:var(--font-mono); flex-shrink:0;">${hora}</span>
-                            <span style="font-size:0.8rem; color:var(--text-body);">${e.acao || e.peca_id || 'Evento registrado'}</span>
+                            <span style="font-size:0.8rem; color:var(--text-body);">${window.formatarAcaoEvento(e.acao || e.peca_id || 'Evento registrado')}</span>
                         </div>`;
                     }).join('')
                     : `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhum evento recente.</div>`;
@@ -1310,7 +1310,7 @@ window.renderPainelSupervisor = async function() {
             historicoTrocasEl.innerHTML = trocas.length
                 ? `<div class="sup-card" style="--sup-cor:#6366f1; grid-column: 1 / -1;">` + trocas.map(e => `
                     <div class="sup-lista-linha">
-                        <span style="color:var(--text-body);"><span class="font-code" style="font-weight:700; color:var(--text-heading);">${e.peca_id}</span> — ${e.acao}</span>
+                        <span style="color:var(--text-body);"><span class="font-code" style="font-weight:700; color:var(--text-heading);">${window.escapeHtmlNotif(e.peca_id)}</span> — ${window.formatarAcaoEvento(e.acao)}</span>
                         <span class="text-muted" style="font-size:11px; white-space:nowrap; margin-left:10px;">${e.operador || 'Sistema'} · ${(e.data_hora || '').slice(0, 16).replace('T', ' ')}</span>
                     </div>
                 `).join('') + `</div>`

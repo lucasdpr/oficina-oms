@@ -327,7 +327,7 @@ function renderizarChecklistManutencaoR2() {
             <td style="text-align:center;"><input type="checkbox" id="chk-r2-p-${index}"></td>
             <td style="text-align:center;"><input type="checkbox" id="chk-r2-g-${index}"></td>
             <td><input type="text" id="resp-r2-${index}" style="width:80px;" placeholder="Resp."></td>
-            <td><input type="text" id="mat-r2-${index}" style="width:80px;" placeholder="Matrícula"></td>
+            <td><input type="text" id="matr-r2-${index}" style="width:80px;" placeholder="Matrícula"></td>
             <td><input type="date" id="dat-r2-${index}" style="width:100px;"></td>
         `;
         tbody.appendChild(tr);
@@ -681,7 +681,7 @@ function montarHtmlLaudoR2(tag) {
         let p = document.getElementById(`chk-r2-p-${index}`)?.checked ? 'X' : '';
         let g = document.getElementById(`chk-r2-g-${index}`)?.checked ? 'X' : '';
         let resp = window.escapeHtmlNotif(document.getElementById(`resp-r2-${index}`)?.value) || '';
-        let mat = window.escapeHtmlNotif(document.getElementById(`mat-r2-${index}`)?.value) || '';
+        let mat = window.escapeHtmlNotif(document.getElementById(`matr-r2-${index}`)?.value) || ''; // "mat-r2-N" era o mesmo id do material aplicado
         let dat = window.escapeHtmlNotif(document.getElementById(`dat-r2-${index}`)?.value) || '';
         html += `<tr>
             <td style="text-align:center; font-weight:bold;">${tarefa.item}</td>
@@ -734,7 +734,7 @@ window.previsualizarFolhaoR2 = function() {
     const htmlPreview = montarHtmlLaudoR2(ID_FOLHAO_R2_ATUAL);
     const win = window.open('', '_blank', 'width=1100,height=800');
     if (win) {
-        win.document.write(htmlPreview);
+        win.document.write(window.prepararHtmlLaudo(htmlPreview));
         win.document.close();
     } else {
         alert('Seu navegador bloqueou a janela de pré-visualização (pop-up). Permita pop-ups pra este site e tente de novo.');
@@ -830,11 +830,13 @@ window.concluirEImprimirFolhaoR2 = async function(tag) {
         }
     }
 
+    await window.finalizarExecucaoChecklist(tag); // fecha o ciclo do Checklist (ver folhaoPersistencia.js)
     finalizarRascunhoFolhao(tag, "Straightener R2");
 
-    let btnPDF = `<button onclick="window.abrirFolhaoR2('${tag}')" class="btn-outline-danger" style="padding: 2px 8px; font-size: 10px; margin-left: 10px; cursor: pointer;"><i class="fas fa-file-pdf"></i> Visualizar Folhão</button>`;
+    // (antes gravava um <button> "Visualizar Folhão" dentro do evento — que
+    // abria o formulário de edição, não o PDF, e virava HTML cru no histórico)
     if (window.registrarHistorico) {
-        window.registrarHistorico(tag, `📋 Reparo concluído — Laudo Oficial (STRAIGHTENER R-II) impresso. <br><div style="margin-top: 5px;">${btnPDF}</div>`);
+        window.registrarHistorico(tag, `📋 Reparo concluído — Laudo Oficial (STRAIGHTENER R-II) impresso.`);
     }
 
     if (typeof renderReparos === 'function') renderReparos();
@@ -847,7 +849,7 @@ window.concluirEImprimirFolhaoR2 = async function(tag) {
         alert("Erro: A div com id 'print-content' não foi encontrada no HTML.");
         return;
     }
-    printContent.innerHTML = html;
+    printContent.innerHTML = window.prepararHtmlLaudo(html);
     setTimeout(() => window.print(), 500);
 };
 

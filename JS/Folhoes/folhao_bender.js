@@ -538,7 +538,7 @@ export function montarHtmlLaudoBender(tag, motivo, getVFunc) {
 export function imprimirPDFBender(tag, motivo, getVFunc) {
   const html = montarHtmlLaudoBender(tag, motivo, getVFunc);
   const printDiv = document.getElementById("print-content");
-  if (printDiv) printDiv.innerHTML = html;
+  if (printDiv) printDiv.innerHTML = window.prepararHtmlLaudo(html);
   setTimeout(() => { window.print(); }, 500);
 }
 

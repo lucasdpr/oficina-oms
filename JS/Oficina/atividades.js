@@ -7,7 +7,7 @@
 // por área. Ficam juntos porque compartilham o mesmo estado de "área
 // aberta agora" e "cache de atividades" (Core/estado.js).
 
-import { resolverApiBase, BANCO_ATIVOS } from '../Core/banco.js?v=5';
+import { resolverApiBase, BANCO_ATIVOS, sincronizarAtivosReaisMCC4 } from '../Core/banco.js?v=5';
 import {
     OPERADOR_LOGADO,
     OFICINA_AREA_ATUAL, setOficinaAreaAtual,
@@ -1043,7 +1043,22 @@ window.processarMarcadorAtividadeConcluida = async function(descricao) {
         const matchReabastecer = descricao.match(/\[REABASTECER_RESERVA:([^\]]+)\]/);
         if (matchReabastecer) {
             const idPeca = matchReabastecer[1];
+            // 🔧 CORREÇÃO ("peça some da Reserva da Oficina mas nunca chega na
+            // Reserva da Máquina"): antes decidia pelo cache local do
+            // aparelho da Logística — se o reparo tinha sido concluído em
+            // OUTRO aparelho e este ainda não tinha sincronizado, a peça
+            // aparecia aqui como "Oficina / Reparo", a entrega era ignorada
+            // em silêncio e a peça ficava presa na Reserva da Oficina.
+            // Agora busca o estado atual no servidor antes de decidir.
+            try { await sincronizarAtivosReaisMCC4(); } catch (e) { /* segue com o cache */ }
             const peca = BANCO_ATIVOS.find(a => a.id === idPeca);
+            if (peca && peca.local !== "Oficina / Reserva" && peca.local !== "Máquina / Reserva") {
+                // Entrega confirmada, mas a peça não está onde deveria (ex:
+                // voltou pra reparo, já foi instalada) — não mexe no local,
+                // mas deixa registrado e avisa quem concluiu.
+                if (window.registrarHistorico) await window.registrarHistorico(peca.id, `⚠️ Logística confirmou a entrega na Reserva da Máquina, mas a peça estava em "${peca.local}" — local não alterado. Conferir.`);
+                alert(`⚠️ ${peca.id} está em "${peca.local}", não na Reserva da Oficina — por isso NÃO foi movida pra Reserva na Máquina. Confira com a oficina.`);
+            }
             if (peca && peca.local === "Oficina / Reserva") {
                 peca.local = "Máquina / Reserva";
                 localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));

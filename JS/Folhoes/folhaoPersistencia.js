@@ -72,14 +72,41 @@ function marcarEditadoManual(el) {
 // --------------------------------------------------------------
 // PREENCHE O MODAL COM UM RASCUNHO CARREGADO DO BANCO
 // --------------------------------------------------------------
+// 🆕 Linhas de material criadas com "Adicionar linha" só existem depois
+// do clique — ao reabrir o Folhão, o rascunho trazia os valores delas mas
+// o <input> ainda não existia, e o material digitado sumia sem aviso.
+// Aqui: se o campo salvo casa com um desses padrões, cria as linhas que
+// faltam antes de preencher.
+const LINHAS_DINAMICAS_FOLHAO = [
+    [/^desemp_mat_(?:cod|desc|qtd)_(\d+)$/, 'adicionarLinhaMaterialDesemp'],
+    [/^mat-bender-(?:desc|qtd)-(\d+)$/, 'adicionarLinhaMaterialBender'],
+    [/^(?:mat|qtd)-r2-(\d+)$/, 'adicionarLinhaMaterialR2'],
+];
+function garantirCampoDinamico(id) {
+    for (const [regex, nomeFn] of LINHAS_DINAMICAS_FOLHAO) {
+        if (!regex.test(id) || typeof window[nomeFn] !== 'function') continue;
+        for (let n = 0; n < 80 && !document.getElementById(id); n++) window[nomeFn]();
+        return document.getElementById(id);
+    }
+    return null;
+}
+
 export function preencherDadosModal(modalId, dados) {
     if (!dados) return;
     const modal = document.getElementById(modalId);
     if (!modal) return;
 
     const campos = dados.campos || {};
+    // Cadeira: a lista de materiais depende do tipo (Superior/Inferior) —
+    // se o rascunho foi salvo com o outro tipo, recarrega a lista certa
+    // ANTES de preencher as quantidades (senão caem nas linhas erradas).
+    const tipoCadeiraEl = document.getElementById('desemp-tipo-cadeira');
+    if (modalId === 'modal-folhao-desempenadeira' && campos['desemp-tipo-cadeira'] && tipoCadeiraEl && tipoCadeiraEl.value !== campos['desemp-tipo-cadeira'] && typeof window.carregarMateriaisDesemp === 'function') {
+        tipoCadeiraEl.value = campos['desemp-tipo-cadeira'];
+        window.carregarMateriaisDesemp(campos['desemp-tipo-cadeira']);
+    }
     Object.keys(campos).forEach(id => {
-        const el = document.getElementById(id);
+        const el = document.getElementById(id) || garantirCampoDinamico(id);
         if (!el) return;
         if (el.type === 'checkbox') el.checked = !!campos[id];
         else el.value = campos[id];
@@ -236,15 +263,26 @@ export async function restaurarRascunhoNoModal(modalId, equipamentoId) {
 // --------------------------------------------------------------
 export function ativarAutoSalvamentoFolhao(modalId, equipamentoId, tipoFolhao) {
     const modal = document.getElementById(modalId);
-    if (!modal || modal.dataset.autoSaveFolhao === '1') return;
+    if (!modal) return;
+    // 🐛 CORRIGIDO (perda/mistura de dados): os listeners abaixo são ligados
+    // UMA vez por janela, mas guardavam o equipamentoId da PRIMEIRA peça
+    // aberta. Abrir o Folhão da peça A e depois o da peça B na mesma
+    // sessão fazia tudo que era digitado na B ser salvo como rascunho da
+    // A. Agora a peça atual fica no próprio modal e é lida na hora de salvar.
+    modal.dataset.folhaoEquipamento = equipamentoId || '';
+    modal.dataset.folhaoTipo = tipoFolhao || '';
+    if (modal.dataset.autoSaveFolhao === '1') return;
     modal.dataset.autoSaveFolhao = '1';
 
     let timer = null;
     const salvarAgora = () => {
         clearTimeout(timer);
+        const equipamentoAgendado = modal.dataset.folhaoEquipamento;
         timer = setTimeout(() => {
+            // trocou de peça antes do salvamento disparar: não mistura
+            if (!equipamentoAgendado || modal.dataset.folhaoEquipamento !== equipamentoAgendado) return;
             const dados = coletarDadosModal(modalId);
-            salvarRascunhoFolhao(equipamentoId, tipoFolhao, dados);
+            salvarRascunhoFolhao(equipamentoAgendado, modal.dataset.folhaoTipo, dados);
         }, 800);
     };
 
@@ -316,3 +354,84 @@ window.addEventListener('beforeunload', (event) => {
 window.ativarAutoSalvamentoFolhao = ativarAutoSalvamentoFolhao;
 
 console.log("✅ folhaoPersistencia.js carregado – progresso de folhão agora persiste no banco.");
+
+// --------------------------------------------------------------
+// 🆕 FECHA A EXECUÇÃO DO CHECKLIST (status "concluida") ao concluir o
+// reparo. Bow/Horizontal/Molde já faziam isso; Bender, R1, R2, Cadeira,
+// Segmento Zero e o genérico NÃO — a execução ficava "em andamento" pra
+// sempre, e como /execucoes/iniciar reaproveita a execução aberta, o
+// PRÓXIMO reparo da mesma peça nascia com o checklist já 100% marcado do
+// reparo anterior (e o laudo novo sobrescrevia o antigo, que é gravado
+// por execução).
+// --------------------------------------------------------------
+export async function finalizarExecucaoChecklist(equipamentoId) {
+    try {
+        const apiBase = await resolverApiBase();
+        const respStatus = await fetch(`${apiBase}/api/checklist-execucao/status/${encodeURIComponent(equipamentoId)}`, { cache: 'no-store' });
+        const status = respStatus.ok ? await respStatus.json() : null;
+        if (!status || !status.execucao_id) return;
+        await fetch(`${apiBase}/api/checklist-execucao/execucoes/finalizar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ execucao_id: status.execucao_id })
+        });
+    } catch (e) {
+        console.error('⚠️ Não consegui finalizar a execução do Checklist:', e);
+    }
+}
+window.finalizarExecucaoChecklist = finalizarExecucaoChecklist;
+
+
+// --------------------------------------------------------------
+// 🆕 PROGRESSO POR ABA ("x/y" em cada aba do Folhão) — o técnico vê o que
+// falta preencher sem abrir aba por aba. Conta campos editáveis
+// preenchidos e perguntas SIM/NÃO respondidas dentro do conteúdo de cada
+// aba (a aba aponta pro conteúdo pelo 2º argumento do onclick).
+// --------------------------------------------------------------
+function conteudoDaAba(tab) {
+    const m = (tab.getAttribute('onclick') || '').match(/,\s*['"]([\w-]+)['"]\s*\)/);
+    return m ? document.getElementById(m[1]) : null;
+}
+export function atualizarProgressoAbasFolhao(modal) {
+    if (!modal) return;
+    modal.querySelectorAll('.folhao-tab').forEach(tab => {
+        const alvo = conteudoDaAba(tab);
+        if (!alvo) return;
+        let total = 0, feitos = 0;
+        alvo.querySelectorAll('input, textarea, select').forEach(el => {
+            if (el.readOnly || el.disabled || el.type === 'radio' || el.type === 'checkbox' || el.type === 'hidden' || el.type === 'button' || el.type === 'file') return;
+            total++;
+            if (String(el.value || '').trim()) feitos++;
+        });
+        const grupos = new Set([...alvo.querySelectorAll('input[type="radio"][name]')].map(r => r.name));
+        grupos.forEach(nome => {
+            total++;
+            if (alvo.querySelector(`input[type="radio"][name="${CSS.escape(nome)}"]:checked`)) feitos++;
+        });
+        let badge = tab.querySelector('.folhao-tab-prog');
+        if (!total) { if (badge) badge.remove(); return; }
+        if (!badge) { badge = document.createElement('span'); badge.className = 'folhao-tab-prog'; tab.appendChild(badge); }
+        badge.textContent = `${feitos}/${total}`;
+        tab.classList.toggle('folhao-tab-completa', feitos === total);
+        tab.classList.toggle('folhao-tab-iniciada', feitos > 0 && feitos < total);
+    });
+}
+window.atualizarProgressoAbasFolhao = atualizarProgressoAbasFolhao;
+
+let _timerProgressoAbas = null;
+function agendarProgressoAbas(modal, atraso = 250) {
+    clearTimeout(_timerProgressoAbas);
+    _timerProgressoAbas = setTimeout(() => atualizarProgressoAbasFolhao(modal), atraso);
+}
+['input', 'change'].forEach(tipo => document.addEventListener(tipo, (e) => {
+    const modal = e.target.closest && e.target.closest('.modal-overlay');
+    if (modal && modal.querySelector('.folhao-tabs')) agendarProgressoAbas(modal);
+}, true));
+// Ao abrir um Folhão: conta de novo depois que o rascunho e o
+// autopreenchimento do Checklist (que não disparam eventos) terminarem.
+new MutationObserver((muts) => muts.forEach(m => {
+    const el = m.target;
+    if (el.classList && el.classList.contains('modal-overlay') && !el.classList.contains('hidden') && el.querySelector('.folhao-tabs')) {
+        [400, 1500, 4000].forEach(t => setTimeout(() => atualizarProgressoAbasFolhao(el), t));
+    }
+})).observe(document.documentElement, { attributes: true, attributeFilter: ['class'], subtree: true });

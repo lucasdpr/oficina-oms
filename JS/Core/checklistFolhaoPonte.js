@@ -157,6 +157,7 @@ export function preencherCamposFolhao(valores, camposProtegidos) {
 
     Object.entries(valores || {}).forEach(([campo, valor]) => {
         if (!valor) return; // etapa ainda não respondida — não mexe no campo
+        if (!String(campo || '').trim()) return; // etapa com mapeamento em branco — não é "campo não encontrado" (era o aviso com a lista vazia)
         if (protegidos.has(campo)) return; // campo de cabeçalho da OS — nunca vem do Checklist
 
         // Campo pode ser: par de radios SIM/NÃO (name="campo"), um

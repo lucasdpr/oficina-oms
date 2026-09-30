@@ -5,7 +5,7 @@
 import { BANCO_ATIVOS, resolverApiBase, OPERADOR_LOGADO } from '../Core/banco.js?v=5';
 import { renderAtivos, renderReparos, renderReservas } from '../ui.js';
 import { gerarTelasBenderHTML, montarHtmlLaudoBender } from './folhao_bender.js';
-import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao } from './folhaoPersistencia.js';
+import { restaurarRascunhoNoModal, ativarAutoSalvamentoFolhao, finalizarRascunhoFolhao, carregarRascunhoFolhao } from './folhaoPersistencia.js';
 import { buscarPonteChecklist, preencherCamposFolhao, ligarListenerEdicaoManualFolhao, mostrarAvisoPreenchimentoChecklist } from '../Core/checklistFolhaoPonte.js';
 
 let ID_FOLHAO_ATUAL = null;
@@ -921,7 +921,7 @@ export function previsualizarFolhaoMolde4() {
     const htmlPreview = montarHtmlLaudoMolde4(ID_FOLHAO_ATUAL);
     const win = window.open('', '_blank', 'width=1100,height=800');
     if (win) {
-        win.document.write(htmlPreview);
+        win.document.write(window.prepararHtmlLaudo(htmlPreview));
         win.document.close();
     } else {
         alert('Seu navegador bloqueou a janela de pré-visualização (pop-up). Permita pop-ups pra este site e tente de novo.');
@@ -1030,8 +1030,14 @@ window.concluirEImprimirFolhaoMolde4 = async function(tag) {
     // com desgaste acumulado, então não é "vida nova" nem "zero").
     // Sem valor informado no Parcial, mantém a tonelagem como estava
     // (mais seguro que zerar por engano).
-    const tipoExecucaoM4 = (getV('molde4-tipo-exec') || 'GERAL').toUpperCase();
-    const tonEntradaParcial = getV('molde4-ton-entrada');
+    // 🔧 CORREÇÃO: o "Concluir" é clicado no Checklist de Execução, muitas
+    // vezes sem o Folhão ter sido aberto nesta sessão — ler da tela dava
+    // vazio, e um reparo PARCIAL virava GERAL (zerando as corridas do
+    // molde). Agora vale o que foi SALVO no rascunho; a tela só como reserva.
+    const rascunhoM4 = await carregarRascunhoFolhao(tag).catch(() => null);
+    const campoSalvoM4 = (id) => { const v = rascunhoM4?.campos?.[id]; return (v !== undefined && v !== null && v !== '') ? String(v) : getV(id); };
+    const tipoExecucaoM4 = (campoSalvoM4('molde4-tipo-exec') || 'GERAL').toUpperCase();
+    const tonEntradaParcial = campoSalvoM4('molde4-ton-entrada');
     const anteriorItem = item ? { local: item.local, ton: item.ton, dias: item.dias } : null;
     if (item) {
         item.local = "Oficina / Reserva";
@@ -1112,7 +1118,7 @@ window.concluirEImprimirFolhaoMolde4 = async function(tag) {
     if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Reparo concluído — Folhão de manutenção (Molde MCC4) impresso.`);
 
     const printDiv = document.getElementById('print-content');
-    if (printDiv) printDiv.innerHTML = htmlPDF;
+    if (printDiv) printDiv.innerHTML = window.prepararHtmlLaudo(htmlPDF);
 
     if (typeof renderReparos === 'function') renderReparos();
     if (typeof renderReservas === 'function') renderReservas();
@@ -1182,11 +1188,12 @@ window.concluirEImprimirFolhaoGenerico = async function(tag) {
         console.error("Erro ao atualizar peça na nuvem:", e);
     }
 
+    await window.finalizarExecucaoChecklist(tag); // fecha o ciclo do Checklist (ver folhaoPersistencia.js)
     finalizarRascunhoFolhao(tag, tipoLabel);
     if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Reparo concluído — Folhão de manutenção (${tipoLabel}) impresso.`);
 
     const printDiv = document.getElementById('print-content');
-    if (printDiv) printDiv.innerHTML = htmlPDF;
+    if (printDiv) printDiv.innerHTML = window.prepararHtmlLaudo(htmlPDF);
 
     if (typeof renderReparos === 'function') renderReparos();
     if (typeof renderReservas === 'function') renderReservas();
@@ -1333,6 +1340,7 @@ function montarHtmlLaudoMolde4(tag) {
                 <td colspan="2"><strong>LÍDER RESPONSÁVEL:</strong> ${lider}</td>
                 <td colspan="2"><strong>DESEMPENHO:</strong> ${desempenho}</td>
             </tr>
+            ${(tipoE === 'PARCIAL' || getV('molde4-ton-entrada')) ? `<tr><td colspan="4"><strong>CORRIDAS DE ENTRADA (PARCIAL):</strong> ${window.escapeHtmlNotif(getV('molde4-ton-entrada')) || '—'}</td></tr>` : ''}
         </table>
 
         <div class="titulo-secao">Identificação de Componentes</div>
@@ -1620,7 +1628,7 @@ window.previsualizarFolhaoBender = function() {
     const htmlPreview = montarHtmlLaudoBender(ID_FOLHAO_ATUAL, motivo, getV);
     const win = window.open('', '_blank', 'width=1100,height=800');
     if (win) {
-        win.document.write(htmlPreview);
+        win.document.write(window.prepararHtmlLaudo(htmlPreview));
         win.document.close();
     } else {
         alert('Seu navegador bloqueou a janela de pré-visualização (pop-up). Permita pop-ups pra este site e tente de novo.');
@@ -1707,7 +1715,10 @@ window.concluirEImprimirFolhaoBender = async function(tag) {
     // 🆕 Parcial x Geral: Geral zera (como sempre). Parcial NÃO mexe em
     // tonelagem/dias — Bender e equipamentos não-molde não têm o
     // conceito de "entra com X corridas" que o molde tem.
-    const tipoExecucaoBender = (getV('mcc4-tipo-exec') || 'GERAL').toUpperCase();
+    // Tipo de execução: vale o que foi salvo no rascunho (o Folhão pode nem
+    // estar aberto nesta sessão); a tela só como reserva.
+    const rascunhoBender = await carregarRascunhoFolhao(tag).catch(() => null);
+    const tipoExecucaoBender = (rascunhoBender?.radios?.['mcc4-tipo-exec'] || getRadioValue('mcc4-tipo-exec') || 'GERAL').toUpperCase();
     if (item) {
         item.local = "Oficina / Reserva";
         // 🆕 Pede pra Logística reabastecer a Reserva na Máquina com essa
@@ -1720,6 +1731,7 @@ window.concluirEImprimirFolhaoBender = async function(tag) {
         localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
     }
 
+    await window.finalizarExecucaoChecklist(tag); // fecha o ciclo do Checklist (ver folhaoPersistencia.js)
     finalizarRascunhoFolhao(tag, "Bender");
     const motivo = document.getElementById("mcc4-motivo")?.value || "Manutenção";
     if (window.registrarHistorico) {
@@ -1732,7 +1744,7 @@ window.concluirEImprimirFolhaoBender = async function(tag) {
     if (window.calcularKpisGlobais) window.calcularKpisGlobais();
 
     const printDiv = document.getElementById('print-content');
-    if (printDiv) printDiv.innerHTML = htmlPDF;
+    if (printDiv) printDiv.innerHTML = window.prepararHtmlLaudo(htmlPDF);
     setTimeout(() => window.print(), 500);
 };
 

@@ -374,6 +374,28 @@ function montarHtmlLaudoSegGrupo(tag) {
         return h + `</table>`;
     };
 
+    // 🆕 Seções que existiam no formulário e não iam pro laudo:
+    // rolamentos quebrados (chegada), rolamentos montados (saída) e
+    // cilindros hidráulicos (motriz e clamp).
+    const marcado = (id) => document.getElementById(id)?.checked ? 'X' : '';
+    const gerarRolamentosQuebradosPDF = (prefix) => ['sup', 'inf'].map(base => `
+        <table><tr><th colspan="6">ROLAMENTO QUEBRADO — BASE ${base === 'sup' ? 'SUPERIOR' : 'INFERIOR'}</th></tr>
+            <tr><th>MANCAL</th>${[1,2,3,4,5].map(r => `<th>ROLO ${r}</th>`).join('')}</tr>
+            ${[['fixo', '1 (FIXO)'], ['movel', '2 (MÓVEL)']].map(([m, rot]) => `<tr><td><b>${rot}</b></td>${[1,2,3,4,5].map(r => `<td style="text-align:center; font-weight:bold;">${marcado(`${prefix}-${base}-${m}-${r}`)}</td>`).join('')}</tr>`).join('')}
+        </table>`).join('');
+    const gerarRolamentosMontadosPDF = () => ['sup', 'inf'].map(base => `
+        <table><tr><th colspan="11">ROLAMENTOS MONTADOS — BASE ${base === 'sup' ? 'SUPERIOR' : 'INFERIOR'}</th></tr>
+            <tr><th rowspan="2">MANCAL</th>${[1,2,3,4,5].map(r => `<th colspan="2">ROLO ${r}</th>`).join('')}</tr>
+            <tr>${[1,2,3,4,5].map(() => '<th>NOVO</th><th>REUT.</th>').join('')}</tr>
+            ${[['fixo', '1 (FIXO)'], ['movel', '2 (MÓVEL)']].map(([m, rot]) => `<tr><td><b>${rot}</b></td>${[1,2,3,4,5].map(r => `<td style="text-align:center; font-weight:bold;">${marcado(`rm-${base}-${m}-${r}-novo`)}</td><td style="text-align:center; font-weight:bold;">${marcado(`rm-${base}-${m}-${r}-reut`)}</td>`).join('')}</tr>`).join('')}
+        </table>`).join('');
+    const gerarCilindrosPDF = () => {
+        const linha = (tipo, pos) => `<tr><td style="text-align:center;"><b>${pos}</b></td><td style="text-align:center;">${window.escapeHtmlNotif(getV(`cil-${tipo}-${pos}-num`))}</td>${['novo','rep','reut','prod'].map(c => `<td style="text-align:center; font-weight:bold;">${marcado(`cil-${tipo}-${pos}-${c}`)}</td>`).join('')}</tr>`;
+        const cab = '<tr><th>POSIÇÃO</th><th>NÚMERO</th><th>NOVO</th><th>REPARADO</th><th>REUTILIZADO</th><th>PRODUÇÃO</th></tr>';
+        return `<table><tr><th colspan="6">CILINDROS MOTRIZ</th></tr>${cab}${['A','B'].map(p => linha('motriz', p)).join('')}</table>
+            <table><tr><th colspan="6">CILINDROS CLAMP (PORCAS)</th></tr>${cab}${[1,2,3,4].map(p => linha('clamp', p)).join('')}</table>`;
+    };
+
     const gerarTabelaGapPDF = (prefix) => {
         let h = `<table><tr><th>CONJ. ROLO</th><th>Posição A</th><th>Posição B</th><th>Posição C</th></tr>`;
         for (let i = 1; i <= 5; i++) {
@@ -451,6 +473,7 @@ function montarHtmlLaudoSegGrupo(tag) {
 
         <div class="titulo-secao">3. DIÂMETRO DOS ROLOS — CHEGADA</div>
         ${gerarTabelaDiametroPDF('segg-diam-cheg')}
+        ${gerarRolamentosQuebradosPDF('segg-rq-cheg')}
         <div class="assinatura-box">DATA: ____/____/____ NOME:______________________________________ MATRÍCULA:_________</div>
 
         <div class="quebra-pagina"></div>
@@ -462,6 +485,10 @@ function montarHtmlLaudoSegGrupo(tag) {
 
         <div class="titulo-secao">6. DIÂMETRO DOS ROLOS — SAÍDA</div>
         ${gerarTabelaDiametroPDF('segg-diam-sai')}
+        ${gerarRolamentosMontadosPDF()}
+
+        <div class="titulo-secao">6.1 CILINDROS HIDRÁULICOS</div>
+        ${gerarCilindrosPDF()}
 
         <div class="quebra-pagina"></div>
         <div class="titulo-secao">7. MATERIAIS APLICADOS (SEGMENTO GRUPO ${grupo})</div>
@@ -487,7 +514,7 @@ window.previsualizarFolhaoSegGrupo = function () {
     const htmlPreview = montarHtmlLaudoSegGrupo(ID_FOLHAO_SEGGRUPO_ATUAL);
     const win = window.open('', '_blank', 'width=1100,height=800');
     if (win) {
-        win.document.write(htmlPreview);
+        win.document.write(window.prepararHtmlLaudo(htmlPreview));
         win.document.close();
     } else {
         alert('Seu navegador bloqueou a janela de pré-visualização (pop-up). Permita pop-ups pra este site e tente de novo.');
@@ -588,7 +615,7 @@ window.concluirEImprimirFolhaoSegmentoGrupo = async function (tag) {
     if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Reparo concluído — Folhão de manutenção (Segmento de Grupo) impresso.`);
 
     const printDiv = document.getElementById('print-content');
-    if (printDiv) printDiv.innerHTML = htmlPDF;
+    if (printDiv) printDiv.innerHTML = window.prepararHtmlLaudo(htmlPDF);
 
     if (typeof renderReparos === 'function') renderReparos();
     if (typeof renderReservas === 'function') renderReservas();

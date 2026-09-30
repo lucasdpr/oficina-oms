@@ -672,6 +672,7 @@ window.abrirHistoricoIndividual = abrirHistoricoIndividual;
 // ==============================================================
 // RESUMO RÁPIDO DO PRONTUÁRIO (entrada atual, dias, folhões feitos)
 // ==============================================================
+const REGEX_REPARO_CONCLUIDO = /reparo conclu[ií]do/i;
 function renderizarResumoHistoricoIndividual(item) {
     const container = document.getElementById("hist-resumo-cards");
     if (!container) return;
@@ -706,7 +707,12 @@ function renderizarResumoHistoricoIndividual(item) {
     // Conta quantos folhões (laudos de manutenção) já foram feitos nesse
     // equipamento, olhando o histórico global por menções de finalização.
     const historicoItem = HISTORICO_ACOES.filter(h => h.tag === item.id);
-    const folhoesFeitos = historicoItem.filter(h => (h.acao || "").toLowerCase().includes("folhão") || (h.acao || "").toLowerCase().includes("laudo")).length;
+    // 🔧 Antes contava QUALQUER evento que citasse "folhão"/"laudo" (salvo,
+    // finalizado, impresso...) — um reparo só virava 3+. Agora conta só o
+    // "Reparo concluído", que todo Folhão registra uma vez ao concluir. O
+    // número definitivo vem do servidor (ver atualizarTabelaHistoricoComServidor);
+    // este, do histórico local, é só o valor inicial enquanto carrega.
+    const folhoesFeitos = historicoItem.filter(h => REGEX_REPARO_CONCLUIDO.test(h.acao || "")).length;
 
     // 🔧 REFINAMENTO (Fase R2): chip sólido -- neutro (corDias ==
     // var(--text-muted)) fica com fundo neutro, qualquer cor de status
@@ -725,7 +731,7 @@ function renderizarResumoHistoricoIndividual(item) {
         </div>
         <div class="kpi-card">
             <div class="kpi-icon"><i class="fas fa-clipboard-check"></i></div>
-            <div class="kpi-data"><h4 style="font-size:1.3rem;">${folhoesFeitos}</h4><p>Folhões Concluídos</p></div>
+            <div class="kpi-data"><h4 style="font-size:1.3rem;" id="hist-qtd-folhoes">${folhoesFeitos}</h4><p>Folhões Concluídos</p></div>
         </div>
     `;
 
@@ -775,7 +781,7 @@ function renderizarTabelaHistoricoIndividual(id) {
         return `
         <tr>
             <td style="font-size: 11px; white-space: nowrap; color: var(--text-muted);">${h.data}</td>
-            <td style="font-size: 13px; color: var(--text-body);"><i class="fas ${icone}" style="color:${cor}; margin-right:8px;"></i>${window.escapeHtmlNotif(h.acao)}</td>
+            <td style="font-size: 13px; color: var(--text-body);"><i class="fas ${icone}" style="color:${cor}; margin-right:8px;"></i>${window.formatarAcaoEvento(h.acao)}</td>
             <td style="font-size: 11px; color: var(--text-accent);">${window.escapeHtmlNotif(h.responsavel || 'Sistema')}</td>
         </tr>`;
     }).join("");
@@ -818,6 +824,9 @@ async function atualizarTabelaHistoricoComServidor(id) {
         // Prontuário ou aberto o de outra peça — não sobrescreve com um
         // resultado que já não é mais o que está na tela.
         if (ID_HISTORICO_ATUAL !== id) return;
+
+        const qtdFolhoesEl = document.getElementById('hist-qtd-folhoes');
+        if (qtdFolhoesEl) qtdFolhoesEl.textContent = eventos.filter(ev => ev.peca_id === id && REGEX_REPARO_CONCLUIDO.test(ev.acao || '')).length;
 
         if (eventos.length === 0) {
             // 🔧 Mensagem mais clara pra peças antigas (da importação
@@ -876,8 +885,8 @@ async function atualizarTabelaHistoricoComServidor(id) {
             return `
             <tr>
                 <td style="font-size: 11px; white-space: nowrap; color: var(--text-muted);">${e.data_hora || '—'}</td>
-                <td style="font-size: 13px; color: var(--text-body);"><i class="fas ${icone}" style="color:${cor}; margin-right:8px;"></i>${e.acao || ''}${marcadorPendencia}</td>
-                <td style="font-size: 11px; color: var(--text-accent);">${e.operador || 'Sistema'}</td>
+                <td style="font-size: 13px; color: var(--text-body);"><i class="fas ${icone}" style="color:${cor}; margin-right:8px;"></i>${window.formatarAcaoEvento(e.acao)}${marcadorPendencia}</td>
+                <td style="font-size: 11px; color: var(--text-accent);">${window.escapeHtmlNotif(e.operador || 'Sistema')}</td>
             </tr>`;
         }).join("");
     } catch (e) {
@@ -912,9 +921,13 @@ function salvarRegistroManual() {
         return alert("Escreva algo para registrar.");
     }
 
-    window.registrarHistorico(ID_HISTORICO_ATUAL, `<span style="color:var(--text-accent);">[REGISTRO MANUAL]</span> ${nota}`);
+    const idAtual = ID_HISTORICO_ATUAL;
+    const gravando = window.registrarHistorico(idAtual, `<span style="color:var(--text-accent);">[REGISTRO MANUAL]</span> ${nota}`);
     document.getElementById("input-nota-manual").value = "";
-    renderizarTabelaHistoricoIndividual(ID_HISTORICO_ATUAL);
+    renderizarTabelaHistoricoIndividual(idAtual);
+    // recarrega do servidor depois de gravar (antes a nota nova só
+    // aparecia na lista local deste aparelho)
+    Promise.resolve(gravando).finally(() => { if (ID_HISTORICO_ATUAL === idAtual) atualizarTabelaHistoricoComServidor(idAtual); });
     const itemAtual = BANCO_ATIVOS.find(a => a.id === ID_HISTORICO_ATUAL);
     if (itemAtual) renderizarResumoHistoricoIndividual(itemAtual);
 }

@@ -182,7 +182,7 @@ window.carregarMateriaisDesemp = function(tipo) {
         `;
         tbody.appendChild(tr);
     });
-    alert(`Materiais de Cadeira ${tipo} carregados!`);
+    // (antes mostrava um alert "Materiais carregados!" toda vez que o Folhão abria)
 };
 
 // 4. Adicionar linha de material
@@ -490,9 +490,13 @@ function montarHtmlLaudoDesemp(tag) {
                 const codigo = cells[0].textContent.trim() || cells[0].querySelector('input')?.value || '';
                 const descricao = cells[1].textContent.trim() || cells[1].querySelector('input')?.value || '';
                 const qtd = cells[2].querySelector('input')?.value || '';
+                if (!String(qtd).trim()) return; // só o que foi aplicado (antes listava as ~40 linhas, vazias inclusive)
                 html += `<tr><td>${window.escapeHtmlNotif(codigo)}</td><td>${window.escapeHtmlNotif(descricao)}</td><td style="text-align:center;">${window.escapeHtmlNotif(qtd)}</td></tr>`;
             }
         });
+    }
+    if (!tbodyMateriais || ![...tbodyMateriais.querySelectorAll('tr td:nth-child(3) input')].some(i => String(i.value).trim())) {
+        html += `<tr><td colspan="3" style="text-align:center; color:#777;">Nenhum material informado.</td></tr>`;
     }
     html += `</table><div class="quebra-pagina"></div>`;
 
@@ -523,7 +527,7 @@ window.previsualizarFolhaoDesemp = function() {
     if (htmlPreview === null) return; // equipamento não encontrado, já alertou
     const win = window.open('', '_blank', 'width=1100,height=800');
     if (win) {
-        win.document.write(htmlPreview);
+        win.document.write(window.prepararHtmlLaudo(htmlPreview));
         win.document.close();
     } else {
         alert('Seu navegador bloqueou a janela de pré-visualização (pop-up). Permita pop-ups pra este site e tente de novo.');
@@ -606,7 +610,7 @@ window.concluirEImprimirFolhaoDesemp = async function(tag) {
 
     const printContent = document.getElementById('print-content');
     if (!printContent) { alert('Elemento print-content não encontrado.'); return; }
-    printContent.innerHTML = html;
+    printContent.innerHTML = window.prepararHtmlLaudo(html);
 
     // Atualiza o banco
     if (item) {
@@ -622,6 +626,7 @@ window.concluirEImprimirFolhaoDesemp = async function(tag) {
         }
     }
 
+    await window.finalizarExecucaoChecklist(tag); // fecha o ciclo do Checklist (ver folhaoPersistencia.js)
     finalizarRascunhoFolhao(tag, "Desempenadeira (Cadeira)");
     if (window.registrarHistorico) window.registrarHistorico(tag, `📋 Reparo concluído — Laudo Desempenadeira (${item?.tipo === 'Cadeira Superior' ? 'SUPERIOR' : 'INFERIOR'}) impresso.`);
 
