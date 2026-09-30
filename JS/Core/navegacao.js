@@ -367,6 +367,36 @@ document.addEventListener('click', function(e) {
         modalEl.classList.add('hidden');
     }
 
+    // 🆕 Janelas em tela cheia (.modal-tela-cheia): injeta, uma vez só, a
+    // barra "Voltar" fixa no topo. O botão chama o mesmo caminho do botão
+    // voltar do celular (tentarFecharModal), então cada janela fecha do
+    // jeito certo dela, sem editar as 20+ janelas uma a uma.
+    function prepararTelaCheia(modalEl) {
+        if (!modalEl.classList.contains('modal-tela-cheia')) return;
+        const conteudo = modalEl.querySelector(':scope > .modal-content');
+        if (!conteudo || conteudo.querySelector(':scope > .modal-tela-barra')) return;
+        const barra = document.createElement('div');
+        barra.className = 'modal-tela-barra';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'modal-tela-voltar';
+        btn.innerHTML = '<i class="fas fa-arrow-left"></i> Voltar';
+        btn.addEventListener('click', () => tentarFecharModal(modalEl));
+        barra.appendChild(btn);
+        conteudo.insertBefore(barra, conteudo.firstChild);
+    }
+
+    // 🔧 CORREÇÃO ("no celular buga tudo"): 9 janelas estavam DENTRO do
+    // <main> (que tem z-index:1 e cria a própria camada) — o z-index:9999
+    // delas só valia dentro dessa camada, então o cabeçalho "OMS Mobile"
+    // (4000) e o menu lateral (5000) ficavam POR CIMA da janela. Levar
+    // todas pra filhas diretas do <body> resolve de vez.
+    function promoverModaisParaBody() {
+        document.querySelectorAll('.modal-overlay').forEach((m) => {
+            if (m.parentElement !== document.body) document.body.appendChild(m);
+        });
+    }
+
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((m) => {
             if (m.type !== 'attributes' || m.attributeName !== 'class') return;
@@ -377,6 +407,7 @@ document.addEventListener('click', function(e) {
             const estavaEscondidoAntes = (m.oldValue || '').split(' ').includes('hidden');
 
             if (estavaEscondidoAntes && !estaEscondidoAgora) {
+                prepararTelaCheia(el);
                 // Modal ABRIU agora — empilha o estado no histórico.
                 try { history.pushState({ omsModal: true }, ''); } catch (e) { /* ambiente sem History API — segue sem quebrar */ }
             } else if (!estavaEscondidoAntes && estaEscondidoAgora && !fechandoViaBotaoVoltar) {
@@ -403,6 +434,7 @@ document.addEventListener('click', function(e) {
     });
 
     function iniciarObservadorModais() {
+        promoverModaisParaBody();
         observer.observe(document.body, {
             attributes: true,
             attributeFilter: ['class'],

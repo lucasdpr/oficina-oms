@@ -6716,3 +6716,98 @@ textarea,
         background: rgba(15, 23, 42, 0.9);
     }
 }
+
+
+/* ==========================================
+   JANELAS EM TELA CHEIA (.modal-tela-cheia)
+   Antes eram janelinhas com max-height 90vh e rolagem interna: no
+   celular brigavam com a barra do navegador, com o teclado e com a
+   rolagem da página por trás. Agora ocupam a tela toda, com uma barra
+   "Voltar" sempre visível no topo (injetada por Core/navegacao.js). O
+   botão voltar do celular e o Esc continuam fechando pelo tratamento
+   genérico de modais.
+========================================== */
+.modal-overlay.modal-tela-cheia {
+    padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
+    background: var(--bg-main);
+    height: 100vh;
+    height: 100dvh; /* celular: descontando a barra do navegador que aparece/some */
+    animation: none;
+}
+.modal-overlay.modal-tela-cheia > .modal-content {
+    max-width: none !important;
+    max-height: none !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: var(--bg-main);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    /* conteúdo centralizado numa coluna larga em tela grande */
+    padding: 0 max(16px, calc((100% - 1200px) / 2)) calc(40px + env(safe-area-inset-bottom)) !important;
+}
+/* folhões: continuam com cabeçalho fixo + corpo rolável, agora na altura toda */
+.modal-overlay.modal-tela-cheia > .modal-content:has(.folhao-tabs) {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+/* a página por trás não rola junto */
+body:has(.modal-tela-cheia:not(.hidden)) { overflow: hidden; }
+
+/* barra "Voltar" fixa no topo */
+.modal-tela-barra {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    padding: calc(10px + env(safe-area-inset-top)) 0 10px;
+    margin-bottom: 12px;
+    background: var(--bg-main);
+    border-bottom: 1px solid var(--border-color);
+    /* fundo de borda a borda apesar do padding lateral do conteúdo */
+    box-shadow: 0 0 0 100vmax var(--bg-main);
+    clip-path: inset(0 -100vmax);
+}
+.modal-tela-voltar {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px; /* alvo de toque confortável */
+    padding: 8px 18px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-heading);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.modal-tela-voltar:hover { border-color: var(--text-accent); }
+
+/* o "X" antigo das janelas usava a cor de texto de botão preenchido
+   (escura no tema escuro) sobre fundo escuro: ficava invisível */
+.modal-content .btn-close-emergency { color: var(--text-heading); }
+
+/* celular: 100vh inclui a área da barra do navegador e cortava o fim
+   das janelas — dvh acompanha a área realmente visível */
+@supports (height: 100dvh) {
+    .modal-overlay { height: 100dvh; }
+    .modal-content { max-height: 90dvh; }
+}
+
+/* Checklist de Execução no celular: os 4 botões de admin (editar/mover/
+   excluir) espremiam o texto da etapa numa coluna estreita — passam
+   pra linha de baixo */
+@media (max-width: 600px) {
+    .checklist-linha-texto { flex: 1 1 60% !important; min-width: 55% !important; }
+    .checklist-botoes-admin { width: 100%; justify-content: flex-end; }
+}
