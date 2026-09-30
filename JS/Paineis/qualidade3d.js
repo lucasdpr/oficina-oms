@@ -18,6 +18,7 @@ const RATIO_MIN = 0.5;
 const ORCAMENTO_PIXELS = 4.0e6; // ~2560x1560 de pixels reais
 
 export function criarQualidade3D(renderer, { maxFps = 60, alvoFps = 45 } = {}) {
+    diagnosticarGpu(renderer);
     const intervalo = 1000 / maxFps;
     const dprMax = Math.min(window.devicePixelRatio || 1, 2);
     const tam = { x: 0, y: 0, set(x, y) { this.x = x; this.y = y; return this; } };
@@ -92,4 +93,35 @@ export function criarQualidade3D(renderer, { maxFps = 60, alvoFps = 45 } = {}) {
             return true;
         },
     };
+}
+
+// ==========================================================================
+// DIAGNÓSTICO DE GPU
+// ==========================================================================
+// PC forte com 3D lento e embaçado quase sempre é o navegador renderizando
+// por SOFTWARE (aceleração de hardware desligada / placa bloqueada) ou
+// usando a placa de vídeo integrada em vez da dedicada. Aqui detecta o
+// caso do software e avisa na tela (uma vez, dispensável); o nome da GPU
+// que o navegador está usando sempre vai pro console e pra
+// window.__gpu3d, pra dar pra conferir depois.
+const REGEX_SOFTWARE = /swiftshader|llvmpipe|softpipe|software|basic render|microsoft basic/i;
+
+export function diagnosticarGpu(renderer) {
+    let nome = 'desconhecida';
+    try {
+        const gl = renderer.getContext();
+        const ext = gl.getExtension('WEBGL_debug_renderer_info');
+        nome = String(gl.getParameter(ext ? ext.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
+    } catch (e) { /* segue com "desconhecida" */ }
+    const software = REGEX_SOFTWARE.test(nome);
+    window.__gpu3d = { nome, software };
+    console.info('[3D] GPU em uso:', nome, software ? '(SOFTWARE — sem aceleração de hardware)' : '');
+    if (software && !sessionStorage.getItem('gpu3d-aviso-fechado')) {
+        const aviso = document.createElement('div');
+        aviso.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:99999;max-width:min(560px,92vw);padding:10px 14px;border-radius:10px;background:#3a2a10;border:1px solid #e8a33d;color:#fff;font:12px/1.4 "IBM Plex Mono",monospace;box-shadow:0 4px 18px rgba(0,0,0,.6);cursor:pointer;';
+        aviso.textContent = 'O navegador está desenhando o 3D pelo processador (sem placa de vídeo), por isso fica lento e embaçado. Ative "Usar aceleração de hardware" nas configurações do navegador (Sistema) e reinicie-o. Toque pra fechar.';
+        aviso.addEventListener('click', () => { aviso.remove(); try { sessionStorage.setItem('gpu3d-aviso-fechado', '1'); } catch (e) {} });
+        document.body.appendChild(aviso);
+    }
+    return { nome, software };
 }
