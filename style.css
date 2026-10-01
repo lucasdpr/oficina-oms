@@ -6950,6 +6950,11 @@ body:has(.modal-tela-cheia:not(.hidden)) { overflow: hidden; }
 .adm-alerta-lista { font-size: 0.78rem; color: var(--text-body); max-height: 132px; overflow-y: auto; border-top: 1px solid var(--border-color); padding-top: 6px; }
 .adm-alerta-lista div { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; align-items: center; }
 .adm-alerta-lista button { padding: 2px 8px; font-size: 11px; }
+/* No celular os botões ganham tamanho de toque global, e a lista cortava o 3º item */
+@media (max-width: 768px) {
+    .adm-alerta-lista { max-height: 220px; }
+    .adm-alerta-lista button { width: auto !important; min-height: 0 !important; padding: 4px 10px !important; font-size: 12px !important; flex: 0 0 auto; }
+}
 .adm-alerta-acoes { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
 .adm-alerta-acoes button { padding: 6px 12px; font-size: 12px; }
 .adm-linha-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
