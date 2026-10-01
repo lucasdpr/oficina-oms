@@ -107,7 +107,8 @@ window.renderPainelAdmExecutivo = async function() {
             const eventos = resp.ok ? await resp.json() : [];
             container.innerHTML = Array.isArray(eventos) && eventos.length
                 ? eventos.slice(0, 10).map(e => {
-                    const hora = e.data_hora ? new Date(e.data_hora.replace(' ', 'T') + 'Z').toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '–';
+                    // data_hora já vem em horário de Brasília (agora_brasil no backend) — antes somava 'Z' e mostrava 3h a menos
+                    const hora = e.data_hora ? new Date(e.data_hora.replace(' ', 'T').slice(0, 19)).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '–';
                     return `
                     <div style="display:flex; gap:12px; padding:8px 0; border-top:1px solid var(--border-color);">
                         <span class="text-muted" style="font-size:0.72rem; font-family:var(--font-mono); flex-shrink:0; white-space:nowrap;">${hora}</span>

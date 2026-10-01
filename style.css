@@ -6977,3 +6977,11 @@ body:has(.modal-tela-cheia:not(.hidden)) { overflow: hidden; }
     .adm-kpis { grid-template-columns: repeat(2, 1fr); }
     .adm-export-grid { grid-template-columns: 1fr; }
 }
+
+/* Sub-abas do painel do supervisor (painelSupervisorUI.js) */
+.sup-subabas { display: flex; gap: 6px; overflow-x: auto; margin: 16px 0 12px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color); scrollbar-width: thin; }
+.sup-subaba { flex: 0 0 auto; background: transparent; border: 1px solid transparent; border-radius: 8px 8px 0 0; color: var(--text-secondary, #9ca3af); padding: 8px 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.sup-subaba:hover { color: var(--text-primary, #fff); background: var(--bg-card); }
+.sup-subaba.active { color: var(--text-primary, #fff); background: var(--bg-card); border-color: var(--border-color); border-bottom: 2px solid var(--primary, #3b82f6); }
+.sup-subaba-painel { display: flex; flex-direction: column; gap: 16px; }
+.sup-subaba-painel.hidden { display: none; }
