@@ -2415,7 +2415,7 @@
                             <div class="painel-hero-icone"><i class="fas fa-user-shield"></i></div>
                             <div>
                                 <h1 id="painel-adm-saudacao">Olá!</h1>
-                                <p>Aqui você administra comunicados, conversas com as áreas e colaboradores do sistema.</p>
+                                <p>Visão geral do sistema: o que precisa de ação, onde estão as peças, quem está usando e os comunicados.</p>
                             </div>
                         </div>
                         <div class="painel-hero-badges">
@@ -2424,6 +2424,41 @@
                             <div class="painel-hero-badge" id="painel-adm-badge-mensagens"><i class="fas fa-comments"></i> – <span>Mensagens não lidas</span></div>
                             <div class="painel-hero-badge" id="painel-adm-badge-colaboradores"><i class="fas fa-users"></i> – <span>Colaboradores ativos</span></div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- 🆕 PONTOS DE ATENÇÃO — só aparece o que precisa de ação, com o
+                     botão pra resolver (ver renderizarAtencaoAdm em painelAdmExecutivo.js) -->
+                <div class="adm-bloco">
+                    <div class="adm-bloco-titulo"><i class="fas fa-triangle-exclamation"></i> Pontos de atenção <small>o que precisa de ação agora</small></div>
+                    <div id="adm-atencao" class="adm-atencao-grid"><div class="text-muted" style="padding:16px;">Verificando...</div></div>
+                </div>
+
+                <div class="adm-linha-2">
+                    <div class="glass-panel adm-card">
+                        <div class="adm-card-titulo"><i class="fas fa-industry" style="color:var(--brand);"></i> Situação da planta <small>onde estão as peças agora</small></div>
+                        <div id="adm-planta"><div class="text-muted" style="padding:16px 0;">Carregando...</div></div>
+                    </div>
+                    <div class="glass-panel adm-card">
+                        <div class="adm-card-titulo"><i class="fas fa-heart-pulse" style="color:var(--success);"></i> Saúde do sistema <small>servidor, banco e este aparelho</small></div>
+                        <div id="adm-saude"><div class="text-muted" style="padding:16px 0;">Verificando...</div></div>
+                    </div>
+                </div>
+
+                <div class="adm-linha-2">
+                    <div class="glass-panel adm-card">
+                        <div class="adm-card-titulo"><i class="fas fa-user-clock" style="color:var(--info);"></i> Uso do sistema <small>quem está acessando de verdade</small></div>
+                        <div id="adm-uso"><div class="text-muted" style="padding:16px 0;">Carregando...</div></div>
+                    </div>
+                    <div class="glass-panel adm-card">
+                        <div class="adm-card-titulo"><i class="fas fa-file-excel" style="color:#22c55e;"></i> Exportar para Excel <small>planilha (.csv) pra análise ou backup</small></div>
+                        <div class="adm-export-grid">
+                            <button class="btn-outline-neutral" onclick="window.exportarCsvAdm('pecas')"><i class="fas fa-cubes"></i> Peças e locais</button>
+                            <button class="btn-outline-neutral" onclick="window.exportarCsvAdm('colaboradores')"><i class="fas fa-users"></i> Colaboradores</button>
+                            <button class="btn-outline-neutral" onclick="window.exportarCsvAdm('eventos')"><i class="fas fa-clock-rotate-left"></i> Histórico (últimos 2.000)</button>
+                            <button class="btn-outline-neutral" onclick="window.exportarCsvAdm('reparos')"><i class="fas fa-screwdriver-wrench"></i> Reparos em andamento</button>
+                        </div>
+                        <p class="text-muted" style="font-size:0.72rem; margin-top:10px;">Abre direto no Excel. Bom pra guardar uma cópia semanal — o banco só permite voltar até 6h atrás.</p>
                     </div>
                 </div>
 
@@ -2437,6 +2472,10 @@
                             <button class="tecnico-atalho-btn" onclick="window.abrirChatAdmLista()"><i class="fas fa-comments"></i><span>Mensagens das Áreas</span></button>
                             <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-admin-colaboradores')"><i class="fas fa-user-gear"></i><span>Colaboradores</span></button>
                             <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-historico')"><i class="fas fa-history"></i><span>Auditoria</span></button>
+                            <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-reparos')"><i class="fas fa-screwdriver-wrench"></i><span>Reparos</span></button>
+                            <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-reservas')"><i class="fas fa-boxes-stacked"></i><span>Reservas</span></button>
+                            <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-ordens-servico')"><i class="fas fa-file-invoice"></i><span>Ordens de Serviço</span></button>
+                            <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-qualidade')"><i class="fas fa-magnifying-glass"></i><span>Qualidade</span></button>
                         </div>
                     </div>
                     <div class="glass-panel painel-ajuda-card">
