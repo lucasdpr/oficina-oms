@@ -308,7 +308,7 @@ function renderPainelVeios() {
             htmlSlots += `
                 <div class="ind-card" style="border-top: 3px solid var(--${corClass}); min-width: 260px; max-width: 300px; background: var(--bg-td); border-radius: var(--radius-md); padding: 16px 18px; transition: all var(--transition-base); ${temOcorrenciaMancal ? 'box-shadow: 0 0 0 2px var(--danger);' : ''}">
                     <div class="flex-between" style="margin-bottom: 4px;">
-                        <span class="font-code" style="font-size: 0.9rem; font-weight: 700; color: var(--text-heading);">${pecaEncontrada.id}</span>
+                        <span class="font-code" title="Código interno: ${pecaEncontrada.id}" style="font-size: 0.9rem; font-weight: 700; color: var(--text-heading);">${pecaEncontrada.tag_patrimonio || pecaEncontrada.id}</span>
                         <span class="bg-tag" style="font-size: 0.55rem;">${pecaEncontrada.tipo}</span>
                     </div>
                     ${temOcorrenciaMancal ? `
