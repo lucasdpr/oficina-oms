@@ -763,7 +763,17 @@ window.renderPainelSupervisor = async function() {
     SUP_DETALHE_CACHE = []; // reseta a cada render — índices só valem pra esta tela atual
 
     const ativos = Array.isArray(window.BANCO_ATIVOS) ? window.BANCO_ATIVOS : (typeof BANCO_ATIVOS !== 'undefined' ? BANCO_ATIVOS : []);
-    const atividades = Array.isArray(window.OFICINA_ATIVIDADES_CACHE) ? window.OFICINA_ATIVIDADES_CACHE : (typeof OFICINA_ATIVIDADES_CACHE !== 'undefined' ? OFICINA_ATIVIDADES_CACHE : []);
+    // 🔧 CORREÇÃO ("Status das Atividades: 0", "Resumo: tudo 0", "Top
+    // técnicos sem dado"): antes lia OFICINA_ATIVIDADES_CACHE, que só é
+    // preenchido pela aba Oficina — e só com a área que estiver aberta
+    // nela. Abrindo o Supervisor direto, tudo de atividade aparecia
+    // zerado. Agora busca as atividades de TODAS as áreas aqui.
+    let atividades = Array.isArray(OFICINA_ATIVIDADES_CACHE) ? OFICINA_ATIVIDADES_CACHE : [];
+    try {
+        const apiBaseAtv = await resolverApiBase();
+        const respAtv = await fetch(`${apiBaseAtv}/api/oficina/atividades?limite=1000`, { cache: 'no-store' });
+        if (respAtv.ok) { const lista = await respAtv.json(); if (Array.isArray(lista)) atividades = lista; }
+    } catch (e) { console.error('⚠️ Supervisor: não consegui buscar as atividades (usando o que já tinha):', e); }
     const materiais = Array.isArray(window.BANCO_MATERIAIS) ? window.BANCO_MATERIAIS : (typeof BANCO_MATERIAIS !== 'undefined' ? BANCO_MATERIAIS : []);
 
     // ---------------------------------------------------------
@@ -992,7 +1002,7 @@ window.renderPainelSupervisor = async function() {
         elSupFila.innerHTML = filaOrdenada.length
             ? filaOrdenada.map(a => {
                 const cor = a.pct >= 80 ? 'var(--danger)' : (a.pct >= 50 ? 'var(--warning)' : 'var(--success)');
-                const statusLabel = a.pct >= 80 ? 'Crítico' : (a.pct >= 50 ? 'Atenção' : 'Normal');
+                const statusLabel = a.pct >= 100 ? 'Acima da meta' : a.pct >= 80 ? 'Crítico' : (a.pct >= 50 ? 'Atenção' : 'Normal');
                 const match = (a.local || '').match(/Veio\s*([A-Z])/i);
                 return `<tr>
                     <td style="text-align:left;"><strong>${a.id}</strong><br><span class="text-muted" style="font-size:0.72rem;">${a.tipo || ''}</span></td>
@@ -1041,11 +1051,13 @@ window.renderPainelSupervisor = async function() {
         (async () => {
             try {
                 const apiBase = await resolverApiBase();
-                const resp = await fetchComRetry(`${apiBase}/api/historico_eventos?limite=6`);
-                const eventos = resp.ok ? await resp.json() : [];
+                const resp = await fetchComRetry(`${apiBase}/api/historico_eventos?limite=40`);
+                // sem login/logout/turno — ruído que empurrava o que importa pra fora da lista
+                const eventos = (resp.ok ? await resp.json() : []).filter(e => !['AUTENTICAÇÃO', 'SISTEMA'].includes(e.peca_id));
                 elSupRecentes.innerHTML = Array.isArray(eventos) && eventos.length
                     ? eventos.slice(0, 6).map(e => {
-                        const hora = e.data_hora ? new Date(e.data_hora.replace(' ', 'T') + 'Z').toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }) : '--:--';
+                        // data_hora já vem em horário de Brasília (agora_brasil no backend) — antes somava 'Z' e mostrava 3h a menos
+                        const hora = e.data_hora ? new Date(e.data_hora.replace(' ', 'T').slice(0, 19)).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }) : '--:--';
                         return `
                         <div style="display:flex; gap:10px; padding:8px 0; border-top:1px solid var(--border-color);">
                             <span class="text-muted" style="font-size:0.72rem; font-family:var(--font-mono); flex-shrink:0;">${hora}</span>
@@ -1333,7 +1345,12 @@ window.renderPainelSupervisor = async function() {
         try {
             const apiBase = await resolverApiBase();
             const areasComEquipe = (typeof AREAS_OFICINA !== 'undefined' ? AREAS_OFICINA : []).filter(a => a.tipo === 'oficina' || a.tipo === 'administrativo');
-            const resultadosEfetivo = await Promise.all(areasComEquipe.map(async cfg => {
+            // 🆕 /equipe_todas traz todas as áreas numa chamada (antes: 1 por área)
+            let equipeTodas = null;
+            try { const rT = await fetch(`${apiBase}/api/oficina/equipe_todas`, { cache: 'no-store' }); if (rT.ok) equipeTodas = await rT.json(); } catch (e) { /* rota nova ainda não publicada */ }
+            const resultadosEfetivo = Array.isArray(equipeTodas)
+                ? areasComEquipe.map(cfg => ({ cfg, lista: equipeTodas.filter(p => p.area === cfg.chave) }))
+                : await Promise.all(areasComEquipe.map(async cfg => {
                 try {
                     const resp = await fetch(`${apiBase}/api/oficina/equipe/${encodeURIComponent(cfg.chave)}`, { cache: 'no-store' });
                     const lista = resp.ok ? await resp.json() : [];
@@ -1471,7 +1488,7 @@ window.renderPainelSupervisor = async function() {
                 fetch(`${apiBase}/api/mensagens_area/resumo`, { cache: 'no-store', headers: headersAdmin() }).catch(() => null),
                 fetch(`${apiBase}/api/avisos/todos`, { cache: 'no-store' }).catch(() => null),
                 fetch(`${apiBase}/api/registros_ocorrencia?limite=6`, { cache: 'no-store' }).catch(() => null),
-                fetch(`${apiBase}/api/laudos?limite=100`, { cache: 'no-store' }).catch(() => null),
+                fetch(`${apiBase}/api/laudos?limite=100&resumo=true`, { cache: 'no-store' }).catch(() => null),
                 fetch(`${apiBase}/api/oficina/atividades/mais_reabertas?limite=20`, { cache: 'no-store' }).catch(() => null),
             ]);
             const padroes = respPadroes && respPadroes.ok ? await respPadroes.json() : [];

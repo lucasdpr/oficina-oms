@@ -143,7 +143,8 @@ async function renderProducaoLancada() {
 
         logs.filter(l => l.desfeito !== 1).forEach(log => {
             if (!log.data_hora) return;
-            const dataUTC = new Date(log.data_hora.replace(' ', 'T') + 'Z');
+            // data_hora já vem em horário de Brasília (agora_brasil no backend) — antes somava 'Z' e mostrava 3h a menos
+            const dataUTC = new Date(log.data_hora.replace(' ', 'T').slice(0, 19));
             const dataLocalStr = dataUTC.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 
             if (dataUTC.getTime() >= seteDiasAtras) {
@@ -382,7 +383,8 @@ async function renderLinhaTonelagem() {
 
         lista.filter(l => l.desfeito !== 1).forEach(log => {
             if (!log.data_hora) return;
-            const dataUTC = new Date(log.data_hora.replace(' ', 'T') + 'Z');
+            // data_hora já vem em horário de Brasília (agora_brasil no backend) — antes somava 'Z' e mostrava 3h a menos
+            const dataUTC = new Date(log.data_hora.replace(' ', 'T').slice(0, 19));
             const chave = dataUTC.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
             const balde = porChave[chave];
             if (balde) balde.total += (log.qtd_mcc2 || 0) + (log.qtd_mcc3 || 0) + (log.qtd_mcc4 || 0);

@@ -77,6 +77,28 @@ window.carregarStatusChecklistExecucaoReparo = async function(idsEquipamentos, f
     if (pendentes.length === 0) return;
     pendentes.forEach(id => CHECKLIST_EXECUCAO_CARREGANDO_IDS.add(id));
 
+    // 🆕 Caminho rápido: /progresso traz TODAS as peças em reparo numa
+    // chamada só (antes eram 2 por peça, e a de laudos baixava o HTML
+    // inteiro do laudo só pra saber se ele existia). Se o servidor ainda
+    // não tiver essa rota (deploy antigo), cai no jeito anterior abaixo.
+    try {
+        const respLote = await fetch(`${apiBase}/api/checklist-execucao/progresso`, { cache: 'no-store' });
+        if (respLote.ok) {
+            const lista = await respLote.json();
+            const porEquip = new Map((Array.isArray(lista) ? lista : []).map(r => [r.equipamento_id, r]));
+            pendentes.forEach(id => {
+                const r = porEquip.get(id);
+                window.CHECKLIST_EXECUCAO_STATUS_CACHE[id] = r
+                    ? { ...r, folhaoSalvo: !!r.folhao_salvo }
+                    : { execucao_id: null, total: 0, marcadas: 0, percentual: 0, completo: false, folhaoSalvo: false };
+                CHECKLIST_EXECUCAO_CARREGANDO_IDS.delete(id);
+            });
+            if (document.getElementById('reparos-table-body') && typeof window.renderReparos === 'function') window.renderReparos();
+            if (document.getElementById('reparos-lista-andamento') && typeof window.carregarReparosAndamento === 'function') window.carregarReparosAndamento();
+            return;
+        }
+    } catch (e) { /* segue pro jeito antigo */ }
+
     // 🔧 CORREÇÃO ("servidor gratuito do Render sobrecarregado, onda de
     // erro de CORS/Failed to fetch"): antes, TODOS os ids pendentes
     // disparavam fetch ao mesmo tempo via Promise.all — 2 requisições

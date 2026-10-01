@@ -165,8 +165,9 @@ window.carregarHistoricoApontamentoGeral = async function() {
         if (!tbody) return;
         if (Array.isArray(json) && json.length > 0) {
             tbody.innerHTML = json.map(log => {
-                // 🔥 Conversão de UTC para Horário Local (Brasília)
-                const dataHoraLocal = new Date(log.data_hora.replace(' ', 'T') + 'Z')
+                // data_hora já é horário de Brasília (gravado com agora_brasil)
+                // data_hora já vem em horário de Brasília (agora_brasil no backend) — antes somava 'Z' e mostrava 3h a menos
+                const dataHoraLocal = new Date(log.data_hora.replace(' ', 'T').slice(0, 19))
                                          .toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 
                 let btnAcao = log.desfeito === 1 
@@ -188,8 +189,9 @@ window.carregarHistoricoApontamentoMoldes = async function() {
         if (!tbody) return;
         if (Array.isArray(json) && json.length > 0) {
             tbody.innerHTML = json.map(log => {
-                // 🔥 Conversão de UTC para Horário Local (Brasília)
-                const dataHoraLocal = new Date(log.data_hora.replace(' ', 'T') + 'Z')
+                // data_hora já é horário de Brasília (gravado com agora_brasil)
+                // data_hora já vem em horário de Brasília (agora_brasil no backend) — antes somava 'Z' e mostrava 3h a menos
+                const dataHoraLocal = new Date(log.data_hora.replace(' ', 'T').slice(0, 19))
                                          .toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 
                 let btnAcao = log.desfeito === 1 
