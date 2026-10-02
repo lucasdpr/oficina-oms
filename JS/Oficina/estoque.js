@@ -590,6 +590,7 @@ window.processarCadastroPeca = async function() {
     if (typeof window.verificarAcesso === 'function' && !window.verificarAcesso()) return;
 
     const tagInput = document.getElementById('add-tag');
+    const numeroEquip = (document.getElementById('add-numero-equip')?.value || '').trim() || null;
     const tipoSelect = document.getElementById('add-tipo');
     const metaInput = document.getElementById('add-meta');
     const tonInput = document.getElementById('add-ton-atual');
@@ -733,6 +734,7 @@ window.processarCadastroPeca = async function() {
         dias: 0, // calcularDias() recalcula pela dataEntradaVeio
         ordem: typeof getOrdemPadrao === 'function' ? getOrdemPadrao(tipo) : 999,
         dataReparo: null,
+        tag_patrimonio: numeroEquip,
         dataEntradaVeio: dataEntradaMs,
         substituidoPor: null
     } : {
@@ -748,6 +750,7 @@ window.processarCadastroPeca = async function() {
         dias: 0,
         ordem: typeof getOrdemPadrao === 'function' ? getOrdemPadrao(tipo) : 999,
         dataReparo: null,
+        tag_patrimonio: numeroEquip,
         dataEntradaVeio: null
     };
 
@@ -781,6 +784,7 @@ window.processarCadastroPeca = async function() {
 
     // Limpa os campos e fecha o formulário
     tagInput.value = '';
+    { const n = document.getElementById('add-numero-equip'); if (n) n.value = ''; }
     metaInput.value = '';
     if (tonInput) tonInput.value = '';
     tipoSelect.value = '';
@@ -839,7 +843,7 @@ function renderizarTopCriticos() {
         
         return `
             <div class="top-critico-item" style="cursor: pointer;" onclick="${onclick}">
-                <span class="tag">${a.id}</span>
+                <span class="tag" title="Código interno: ${a.id}">${window.rotuloEquipamento(a)}</span>
                 <span class="tipo">${a.tipo}</span>
                 <span class="porcentagem">${a.pct.toFixed(1)}%</span>
                 <span style="font-size: 10px; color: var(--text-muted);">🔗 ${a.mcc_compat ? 'MCC '+a.mcc_compat : ''} · Veio ${veio}</span>

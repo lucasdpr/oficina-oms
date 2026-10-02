@@ -505,7 +505,7 @@ function renderPainelDevTeste() {
         .sort((a, b) => (a.tipo || "").localeCompare(b.tipo || "") || (a.id || "").localeCompare(b.id || ""))
         .map(item => `
             <tr>
-                <td class="font-code">${item.id}</td>
+                <td class="font-code" title="Código interno: ${item.id}">${window.rotuloEquipamento(item)}</td>
                 <td>${item.tipo || "-"}</td>
                 <td>${item.local || "-"}</td>
                 <td style="display:flex; gap:6px; flex-wrap:wrap;">
@@ -704,7 +704,7 @@ window.abrirDetalheSupervisorPorIndice = function(idx) {
             return `
                 <div class="sup-lista-linha sup-lista-linha-clicavel" style="flex-direction:column; align-items:stretch;" onclick="window.fecharModalSupervisorDetalhe(); window.abrirHistoricoIndividual('${a.id}')">
                     <div style="display:flex; justify-content:space-between; width:100%;">
-                        <strong style="color:var(--text-heading);">${a.id}</strong>
+                        <strong style="color:var(--text-heading);">${window.rotuloEquipamento(a)}</strong>
                         <span class="text-muted">${a.tipo || '—'}</span>
                     </div>
                     <div class="text-muted" style="font-size:11.5px;">Local: ${a.local || '—'}${pct !== null ? ` · Desgaste: ${pct}%` : ''}</div>
@@ -1005,7 +1005,7 @@ window.renderPainelSupervisor = async function() {
                 const statusLabel = a.pct >= 100 ? 'Acima da meta' : a.pct >= 80 ? 'Crítico' : (a.pct >= 50 ? 'Atenção' : 'Normal');
                 const match = (a.local || '').match(/Veio\s*([A-Z])/i);
                 return `<tr>
-                    <td style="text-align:left;"><strong>${a.id}</strong><br><span class="text-muted" style="font-size:0.72rem;">${a.tipo || ''}</span></td>
+                    <td style="text-align:left;"><strong>${window.rotuloEquipamento(a)}</strong><br><span class="text-muted" style="font-size:0.72rem;">${a.tipo || ''}</span></td>
                     <td>${a.mcc_compat ? 'MCC ' + a.mcc_compat : '—'}</td>
                     <td><span style="color:${cor}; font-weight:700;">${statusLabel}</span></td>
                     <td style="color:${cor}; font-weight:700;">${a.pct.toFixed(1)}%</td>
@@ -1094,7 +1094,7 @@ window.renderPainelSupervisor = async function() {
                 ${reparoMaisAntigos.length
                     ? reparoMaisAntigos.map(a => `
                         <div class="sup-lista-linha sup-lista-linha-clicavel" onclick="window.abrirHistoricoIndividual('${a.id}')">
-                            <span style="color:var(--text-body);">${a.id} <span class="text-muted">(${a.tipo || '—'})</span></span>
+                            <span style="color:var(--text-body);">${window.rotuloEquipamento(a)} <span class="text-muted">(${a.tipo || '—'})</span></span>
                             <span style="font-weight:700; color:${a.diasReais > 15 ? '#ef4444' : '#f59e0b'};">${a.diasReais}d</span>
                         </div>
                     `).join('')
@@ -1745,7 +1745,7 @@ window.renderPainelSupervisor = async function() {
                 ${instaladosComRitmo.length
                     ? instaladosComRitmo.map(a => `
                         <div class="sup-lista-linha sup-lista-linha-clicavel" onclick="window.abrirHistoricoIndividual('${a.id}')">
-                            <span style="color:var(--text-body);">${a.id} <span class="text-muted">(${a.tipo || '—'})</span></span>
+                            <span style="color:var(--text-body);">${window.rotuloEquipamento(a)} <span class="text-muted">(${a.tipo || '—'})</span></span>
                             <span style="font-weight:700; color:${corPrevisao(a.diasParaMeta)};">~${a.diasParaMeta}d</span>
                         </div>
                     `).join('') + `<div style="font-size:10.5px; color:var(--text-muted); margin-top:10px;">Projeção no ritmo médio de uso desde a instalação — não é garantia, só um alerta antecipado.</div>`

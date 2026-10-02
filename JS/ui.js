@@ -198,7 +198,7 @@ function renderReservas() {
                 if (!permiteSwap) {
                     htmlFinal += `
                         <tr>
-                            <td class="font-code">${a.id}</td>
+                            <td class="font-code" title="Código interno: ${a.id}">${window.rotuloEquipamento(a)}</td>
                             <td><span class="ind-card-tag bg-tag">${a.tipo}</span></td>
                             <td><span class="status-pill ${statusClass}">${pctFixed}%</span></td>
                             <td colspan="2" class="text-center text-muted" style="font-size:12px;">Aguardando transporte</td>
@@ -247,7 +247,7 @@ function renderReservas() {
 
                 htmlFinal += `
                     <tr>
-                        <td class="font-code">${a.id}</td>
+                        <td class="font-code" title="Código interno: ${a.id}">${window.rotuloEquipamento(a)}</td>
                         <td><span class="ind-card-tag bg-tag">${a.tipo}</span></td>
                         <td><span class="status-pill ${statusClass}">${pctFixed}%</span></td>
                         <td>${veioSelect}</td>
