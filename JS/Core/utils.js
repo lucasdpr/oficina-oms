@@ -692,3 +692,12 @@ window.formatarAcaoEvento = function (acao) {
          .replace(/&lt;br\s*\/?&gt;/g, '<br>');
     return t.trim();
 };
+
+
+// Como o equipamento aparece pro usuário: o número do equipamento
+// (tag_patrimonio, ex: 1-04) quando existe; senão o código interno (id).
+// O id continua sendo a chave em tudo que é lógica (onclick, busca, API).
+export function rotuloEquipamento(a) {
+    return (a && (a.tag_patrimonio || a.id)) || '';
+}
+window.rotuloEquipamento = rotuloEquipamento;

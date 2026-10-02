@@ -4288,7 +4288,7 @@ function abrirModalPeca(slot, peca) {
             // API: move pra Oficina/Reparo, zera os dias, marca a data de
             // saída (pro contador de dias funcionar certo depois) e
             // registra no histórico de auditoria.
-            if (!confirm(`Encaminhar ${peca.id} pra Oficina / Reparo?`)) return;
+            if (!confirm(`Encaminhar ${peca.tag_patrimonio || peca.id} pra Oficina / Reparo?`)) return;
             const btn = modal.querySelector('#btn-oficina');
             btn.disabled = true;
             btn.textContent = 'Enviando...';
@@ -4320,7 +4320,7 @@ function abrirModalPeca(slot, peca) {
                     })
                 }).catch(() => {}); // não trava o fluxo se só o log de auditoria falhar
 
-                alert(`✅ ${peca.id} encaminhado pra Oficina / Reparo.`);
+                alert(`✅ ${peca.tag_patrimonio || peca.id} encaminhado pra Oficina / Reparo.`);
                 fecharModal();
                 carregarDados();
             } catch (erro) {

@@ -160,7 +160,7 @@ async function renderizarAtencaoSupervisor() {
     const acima = ativos.filter(a => (a.local || '').startsWith('MCC') && a.meta > 0 && a.ton >= a.meta).sort((a, b) => (b.ton / b.meta) - (a.ton / a.meta));
     if (acima.length) c.push(cartao({ nivel: 'critico', num: acima.length, titulo: 'Na máquina acima da meta',
         desc: 'Já passaram da tonelagem/meta de vida útil e continuam instaladas — candidatas à próxima troca.',
-        lista: acima.slice(0, 8).map(a => `<div><span><b>${esc(a.id)}</b> · ${esc(a.local)}</span><span>${Math.round(a.ton / a.meta * 100)}%</span></div>`),
+        lista: acima.slice(0, 8).map(a => `<div><span><b>${esc(window.rotuloEquipamento(a))}</b> · ${esc(a.local)}</span><span>${Math.round(a.ton / a.meta * 100)}%</span></div>`),
         acoes: `<button class="btn-outline-neutral" onclick="window.mostrarSubabaSupervisor('maquinas')">Ver fila de inspeção</button>` }));
 
     // 7. Reserva da Oficina sem pedido pra Logística
@@ -169,7 +169,7 @@ async function renderizarAtencaoSupervisor() {
     const semPedido = ativos.filter(a => a.local === 'Oficina / Reserva' && !comPedido.has(a.id));
     if (semPedido.length) c.push(cartao({ num: semPedido.length, titulo: 'Reserva parada na oficina',
         desc: 'Peça pronta sem pedido pra Logística levar pra Reserva da Máquina.',
-        lista: semPedido.map(a => `<div><span><b>${esc(a.id)}</b> · ${esc(a.tipo)}</span><button class="btn-outline-neutral" onclick="window.enviarReservaParaMaquina('${esc(a.id)}')">Pedir</button></div>`) }));
+        lista: semPedido.map(a => `<div><span><b>${esc(window.rotuloEquipamento(a))}</b> · ${esc(a.tipo)}</span><button class="btn-outline-neutral" onclick="window.enviarReservaParaMaquina('${esc(a.id)}')">Pedir</button></div>`) }));
 
     // 8. Logística atrasada
     const logAtras = logAbertas.map(a => ({ ...a, dias: diasDesde(a.criado_em) })).filter(a => a.dias >= 2).sort((a, b) => b.dias - a.dias);

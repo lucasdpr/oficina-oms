@@ -365,7 +365,7 @@ function gerarCardGraficoHTML(a) {
         <div class="mcc-grafico-card premium-shadow" style="border-top: 3px solid ${cor};">
             <div class="mcc-grafico-header">
                 <div class="mcc-grafico-info">
-                    <span class="mcc-tag-id">${a.id}</span>
+                    <span class="mcc-tag-id" title="Código interno: ${a.id}">${window.rotuloEquipamento(a)}</span>
                     <span class="ind-card-tag bg-tag">${a.tipo}</span>
                 </div>
                 <div class="mcc-grafico-porcentagem" style="color:${cor};">${pctFixed}%</div>
@@ -454,7 +454,9 @@ function renderAtivos() {
 
         return `
             <tr>
-                <td class="editavel font-code" onclick="fazerCelulaEditavel(this, '${a.id}', 'id')">${a.id}</td>
+                ${a.tag_patrimonio
+                    ? `<td class="font-code" title="Código interno: ${a.id}">${a.tag_patrimonio}</td>`
+                    : `<td class="editavel font-code" onclick="fazerCelulaEditavel(this, '${a.id}', 'id')">${a.id}</td>`}
                 <td><span class="ind-card-tag bg-tag">${a.tipo} <span style="opacity:0.7; font-size:10px;">(MCC ${a.mcc_compat || ''})</span></span></td>
                 <td class="font-code text-muted">${a.local || "Não Alocado"}</td>
                 <td class="editavel font-code" onclick="fazerCelulaEditavel(this, '${a.id}', 'dias')">${calcularDias(a)}</td>
@@ -549,7 +551,7 @@ export function renderReparos() {
                 const dias = calcularDias(a);
                 htmlFinal += `
                     <tr>
-                        <td class="font-code" data-label="TAG" style="padding-left: 45px;">${a.id}</td>
+                        <td class="font-code" data-label="TAG" style="padding-left: 45px;" title="Código interno: ${a.id}">${window.rotuloEquipamento(a)}</td>
                         <td data-label="Tipo"><span class="ind-card-tag bg-tag">${a.tipo}</span></td>
                         <td data-label="Desgaste">
                             <div class="flex-align-center gap-10">
@@ -651,7 +653,7 @@ function abrirHistoricoIndividual(id) {
 
     const tagNome = document.getElementById("hist-tag-nome");
     const tagLocal = document.getElementById("hist-tag-local");
-    if (tagNome) tagNome.innerText = item.id;
+    if (tagNome) { tagNome.innerText = window.rotuloEquipamento(item); tagNome.title = `Código interno: ${item.id}`; }
     if (tagLocal) tagLocal.innerText = item.local || "Não alocado";
 
     renderizarResumoHistoricoIndividual(item);
