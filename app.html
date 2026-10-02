@@ -3544,6 +3544,13 @@
                 if (window.atualizarPainelCompleto) window.atualizarPainelCompleto();
                 console.log("✅ Usuário logado:", operador.nome);
 
+                // Sessão restaurada pula o finalizarLogin, então o sinal de
+                // presença (Online na Administração) e os avisos de chat/feed
+                // nunca eram ligados: quem só reabria o app aparecia Offline.
+                if (typeof window.iniciarHeartbeatColaborador === 'function') window.iniciarHeartbeatColaborador();
+                if (typeof window.iniciarNotificacaoGlobalChat === 'function') window.iniciarNotificacaoGlobalChat();
+                if (typeof window.iniciarNotificacaoGlobalFeed === 'function') window.iniciarNotificacaoGlobalFeed();
+
                 // 🆕 Clicar numa notificação push abre o app direto na
                 // Central de Notificações (ver enviar_push_para_area no
                 // backend, url="/app.html#notificacoes") — sem isso, o
