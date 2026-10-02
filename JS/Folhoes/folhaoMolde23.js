@@ -638,7 +638,7 @@ window.abrirFolhaoMolde23 = function(id) {
 
     // Preenche cabeçalho
     const tagNameEl = document.getElementById('molde23-tag-name');
-    if (tagNameEl) tagNameEl.innerText = window.rotuloPorId(id);
+    if (tagNameEl) { if ('value' in tagNameEl) tagNameEl.value = window.rotuloPorId(id); else tagNameEl.innerText = window.rotuloPorId(id); }
     window.mostrarTipoNoFormulario(tagNameEl, id);
     // 🆕 DATA INÍCIO/FIM e LÍDER RESPONSÁVEL não são mais digitados pelo
     // técnico nem resetados pra "hoje" toda vez que reabre — ver

@@ -719,6 +719,11 @@ export function nomeTipoEquipamento(a) {
     if (u === 'ZERO' || u === 'SEGMENTO ZERO') return 'Segmento Zero';
     m = u.match(/^(?:STRAIGHTENER\s+)?(R[12])$/);
     if (m) return `Straightener ${m[1]}`;
+    if (u === 'STRAIGHTENER') {
+        const id = String((a && a.id) || '').toUpperCase();
+        if (id.includes('STR-1') || id.includes('R1')) return 'Straightener R1';
+        if (id.includes('STR-2') || id.includes('R2')) return 'Straightener R2';
+    }
     if (t && t === u) return t.toLowerCase().replace(/(^|\s)\S/g, c => c.toUpperCase());
     return t;
 }
