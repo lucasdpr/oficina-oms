@@ -325,7 +325,7 @@ function renderizarAtividadesArea() {
                     <div style="flex:1; min-width:0;">
                         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
                             ${x.equipamento_id
-                                ? `<span class="font-code" style="font-weight:700; color:var(--text-heading);">${x.equipamento_id}</span>`
+                                ? `<span class="font-code" style="font-weight:700; color:var(--text-heading);">${window.rotuloPorId(x.equipamento_id)}</span>`
                                 : `<span class="ind-card-tag bg-tag">Tarefa avulsa</span>`}
                             <span style="font-size:10px; background:var(--text-accent, #3b82f6); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">COMEÇA ${inicioFormatado}</span>
                         </div>
@@ -411,7 +411,7 @@ function renderizarAtividadesArea() {
             <div style="flex:1; min-width:0;">
                 <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
                     ${x.equipamento_id
-                        ? `<span class="font-code" style="font-weight:700; color:var(--text-heading);">${x.equipamento_id}</span>`
+                        ? `<span class="font-code" style="font-weight:700; color:var(--text-heading);">${window.rotuloPorId(x.equipamento_id)}</span>`
                         : `<span class="ind-card-tag bg-tag">Tarefa avulsa</span>`}
                     <span class="status-text-pill" style="--sev-color:${corStatus[x.status] || 'var(--text-muted)'};">${x.status}</span>
                     ${iconePrioridade[x.prioridade] ? `<span title="Prioridade ${x.prioridade}">${iconePrioridade[x.prioridade]}</span>` : ''}

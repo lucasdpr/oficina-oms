@@ -392,7 +392,8 @@ window.abrirFolhaoSegmentoZero = function(id) {
     }
 
     const tagEl = document.getElementById('segzero-tag-ativo');
-    if (tagEl) { if ('value' in tagEl) tagEl.value = id; else tagEl.innerText = id; }
+    if (tagEl) { if ('value' in tagEl) tagEl.value = window.rotuloPorId(id); else tagEl.innerText = window.rotuloPorId(id); }
+    window.mostrarTipoNoFormulario(tagEl, id);
     const dataInicio = document.getElementById('segzero-data-inicio');
     const dataFim = document.getElementById('segzero-data-fim');
     if (dataInicio) dataInicio.valueAsDate = new Date();
@@ -604,7 +605,8 @@ function montarHtmlLaudoSegZero(tag) {
                 <p style="margin: 4px 0 0 0; font-size: 8px; color: #333; font-weight: bold;">DATA INÍCIO: ${dtInicio} | DATA FIM: ${dtFim}</p>
             </div>
             <div style="width: 20%; font-size: 9px; border-left: 2px solid #000; padding: 8px; line-height: 1.4; font-weight: bold;">
-                <div style="color: #002b5e;">TAG: <span style="color:#000;">${tag}</span></div>
+                <div style="color: #002b5e;">TIPO: <span style="color:#000;">${window.tipoPorId(tag)}</span></div>
+                <div style="color: #002b5e;">TAG: <span style="color:#000;">${window.rotuloPorId(tag)}</span></div>
             </div>
         </div>
 

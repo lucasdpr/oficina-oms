@@ -638,7 +638,8 @@ window.abrirFolhaoMolde23 = function(id) {
 
     // Preenche cabeçalho
     const tagNameEl = document.getElementById('molde23-tag-name');
-    if (tagNameEl) tagNameEl.innerText = id;
+    if (tagNameEl) tagNameEl.innerText = window.rotuloPorId(id);
+    window.mostrarTipoNoFormulario(tagNameEl, id);
     // 🆕 DATA INÍCIO/FIM e LÍDER RESPONSÁVEL não são mais digitados pelo
     // técnico nem resetados pra "hoje" toda vez que reabre — ver
     // preencherCabecalhoExecucaoMolde23, que trava os três com o que o
@@ -828,7 +829,8 @@ function montarHtmlLaudoMolde23(tag) {
                 <p style="margin: 4px 0 0 0; font-size: 8px; color: #333; font-weight: bold;">DATA INÍCIO: ${dataInicio} | DATA FIM: ${dataFim}</p>
             </div>
             <div style="width: 20%; font-size: 9px; border-left: 2px solid #000; padding: 8px; line-height: 1.4; font-weight: bold;">
-                <div style="color: #002b5e;">MOLDE TAG: <span style="color:#000;">${tag}</span></div>
+                <div style="color: #002b5e;">TIPO: <span style="color:#000;">${window.tipoPorId(tag)}</span></div>
+                <div style="color: #002b5e;">MOLDE TAG: <span style="color:#000;">${window.rotuloPorId(tag)}</span></div>
             </div>
         </div>
 

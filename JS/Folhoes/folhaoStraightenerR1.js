@@ -497,7 +497,8 @@ window.abrirFolhaoR1 = function(id) {
 
     // Preenche cabeçalho
     const tagNameEl = document.getElementById('r1-tag-name');
-    if (tagNameEl) { if ('value' in tagNameEl) tagNameEl.value = id; else tagNameEl.innerText = id; }
+    if (tagNameEl) { if ('value' in tagNameEl) tagNameEl.value = window.rotuloPorId(id); else tagNameEl.innerText = window.rotuloPorId(id); }
+    window.mostrarTipoNoFormulario(tagNameEl, id);
     const dataInicio = document.getElementById('r1-data-inicio');
     const dataFim = document.getElementById('r1-data-fim');
     if (dataInicio) dataInicio.valueAsDate = new Date();
@@ -852,7 +853,8 @@ function montarHtmlLaudoR1(tag) {
                 <p style="margin: 4px 0 0 0; font-size: 8px; color: #333; font-weight: bold;">DATA INÍCIO: ${dtInicio} | DATA FIM: ${dtFim}</p>
             </div>
             <div style="width: 20%; font-size: 9px; border-left: 2px solid #000; padding: 8px; line-height: 1.4; font-weight: bold;">
-                <div style="color: #002b5e;">TAG: <span style="color:#000;">${tag}</span></div>
+                <div style="color: #002b5e;">TIPO: <span style="color:#000;">${window.tipoPorId(tag)}</span></div>
+                <div style="color: #002b5e;">TAG: <span style="color:#000;">${window.rotuloPorId(tag)}</span></div>
             </div>
         </div>
 

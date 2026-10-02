@@ -1452,7 +1452,7 @@ window.renderPainelSupervisor = async function() {
                             </div>
                             ${porMcc[mcc].map(ex => `
                                 <div class="sup-barra-linha">
-                                    <span class="sup-barra-nome" title="${ex.equipamento_id} — ${ex.tecnico_nome || 'sem técnico'}">${ex.equipamento_id}</span>
+                                    <span class="sup-barra-nome" title="${ex.equipamento_id} — ${ex.tecnico_nome || 'sem técnico'}">${window.rotuloPorId(ex.equipamento_id)}</span>
                                     <span class="sup-barra-trilho"><span class="sup-barra-preenchimento" style="width:${Math.max(4, ex.percentual)}%; background:${corPct(ex.percentual)};"></span></span>
                                     <span class="sup-barra-valor">${ex.percentual}%</span>
                                 </div>
