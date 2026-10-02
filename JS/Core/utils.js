@@ -708,3 +708,53 @@ export function rotuloPorId(id) {
     return a ? rotuloEquipamento(a) : id;
 }
 window.rotuloPorId = rotuloPorId;
+
+// Nome do tipo do equipamento como aparece nos folhões
+// (ex: "GRUPO 1" / "Segmento Grupo 1" -> "Segmento de Grupo 1").
+export function nomeTipoEquipamento(a) {
+    const t = String((a && a.tipo) || '').trim();
+    const u = t.toUpperCase();
+    let m = u.match(/^(?:SEGMENTO\s+)?(?:DE\s+)?GRUPO\s*(\d)/);
+    if (m) return `Segmento de Grupo ${m[1]}`;
+    if (u === 'ZERO' || u === 'SEGMENTO ZERO') return 'Segmento Zero';
+    m = u.match(/^(?:STRAIGHTENER\s+)?(R[12])$/);
+    if (m) return `Straightener ${m[1]}`;
+    if (t && t === u) return t.toLowerCase().replace(/(^|\s)\S/g, c => c.toUpperCase());
+    return t;
+}
+export function tipoPorId(id) {
+    const a = (window.BANCO_ATIVOS || []).find(x => x.id === id);
+    return a ? nomeTipoEquipamento(a) : '';
+}
+window.tipoPorId = tipoPorId;
+window.nomeTipoEquipamento = nomeTipoEquipamento;
+
+// Mostra o tipo do equipamento junto da TAG no cabeçalho do formulário do
+// folhão (campo "Tipo de equipamento" logo acima da TAG).
+export function mostrarTipoNoFormulario(el, id) {
+    if (!el) return;
+    const tipo = tipoPorId(id);
+    if (el.tagName === 'INPUT') {
+        const grupo = el.closest('.input-group');
+        if (!grupo || !grupo.parentElement) return;
+        let alvo = grupo.previousElementSibling;
+        if (!alvo || alvo.dataset.folhaoTipo !== '1') {
+            alvo = document.createElement('div');
+            alvo.className = 'input-group';
+            alvo.dataset.folhaoTipo = '1';
+            alvo.innerHTML = '<label>Tipo de equipamento</label><input type="text" readonly class="premium-input">';
+            grupo.parentElement.insertBefore(alvo, grupo);
+        }
+        alvo.querySelector('input').value = tipo;
+    } else {
+        let alvo = el.nextElementSibling;
+        if (!alvo || alvo.dataset.folhaoTipo !== '1') {
+            alvo = document.createElement('span');
+            alvo.dataset.folhaoTipo = '1';
+            alvo.style.cssText = 'margin-left:8px; opacity:.85;';
+            el.insertAdjacentElement('afterend', alvo);
+        }
+        alvo.textContent = tipo ? `· ${tipo}` : '';
+    }
+}
+window.mostrarTipoNoFormulario = mostrarTipoNoFormulario;

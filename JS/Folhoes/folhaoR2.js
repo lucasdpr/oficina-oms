@@ -377,6 +377,7 @@ window.abrirFolhaoR2 = function(id) {
     ID_FOLHAO_R2_ATUAL = id;
     let tagNameEl = document.getElementById('r2-tag-name');
     if (tagNameEl) tagNameEl.value = window.rotuloPorId(id);
+    window.mostrarTipoNoFormulario(tagNameEl, id);
 
     document.getElementById('modal-folhao-r2').classList.remove('hidden');
 
@@ -482,6 +483,7 @@ function montarHtmlLaudoR2(tag) {
                 <p style="margin: 5px 0 0 0; font-size: 10px; color: #333; text-transform: uppercase; font-weight: bold;">Laudo Oficial de Manutenção e Peritagem</p>
             </div>
             <div style="width: 20%; font-size: 10px; border-left: 2px solid #000; padding: 10px; line-height: 1.5; font-weight: bold;">
+                <div style="color: #002b5e;">TIPO: <span style="color:#000;">${window.tipoPorId(tag)}</span></div>
                 <div style="color: #002b5e;">TAG: <span style="color:#000;">${window.rotuloPorId(tag)}</span></div>
                 <div>INÍCIO: <span style="color:#000; font-weight:normal;">${dataInicio}</span></div>
                 <div>FIM: <span style="color:#000; font-weight:normal;">${dataFim}</span></div>

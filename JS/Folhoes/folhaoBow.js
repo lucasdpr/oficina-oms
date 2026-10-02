@@ -494,6 +494,7 @@ window.abrirFolhaoBow = function(id) {
     // Preenche cabeçalho
     const tagNameEl = document.getElementById('bow-tag-name');
     if (tagNameEl) { if ('value' in tagNameEl) tagNameEl.value = window.rotuloPorId(id); else tagNameEl.innerText = window.rotuloPorId(id); }
+    window.mostrarTipoNoFormulario(tagNameEl, id);
     // 🆕 Nº SEGMENTO, DATA INÍCIO/FIM e LÍDER RESPONSÁVEL não são mais
     // digitados pelo técnico — mesmo tratamento do Horizontal (ver
     // preencherCabecalhoExecucaoHorizontal em folhaoHorizontal.js).
@@ -888,6 +889,7 @@ function montarHtmlLaudoBow(tag) {
                 <p style="margin: 4px 0 0 0; font-size: 8px; color: #333; font-weight: bold;">DATA INÍCIO: ${dtInicio} | DATA FIM: ${dtFim}</p>
             </div>
             <div style="width: 20%; font-size: 9px; border-left: 2px solid #000; padding: 8px; line-height: 1.4; font-weight: bold;">
+                <div style="color: #002b5e;">TIPO: <span style="color:#000;">${window.tipoPorId(tag)}</span></div>
                 <div style="color: #002b5e;">TAG: <span style="color:#000;">${window.rotuloPorId(tag)}</span></div>
             </div>
         </div>

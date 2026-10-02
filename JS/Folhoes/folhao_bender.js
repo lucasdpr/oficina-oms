@@ -373,6 +373,7 @@ export function montarHtmlLaudoBender(tag, motivo, getVFunc) {
         <p style="margin: 3px 0 0 0; font-size: 9px; color: #333; font-weight: bold;">Laudo Oficial de Manutenção e Peritagem</p>
       </div>
       <div style="width: 25%; font-size: 8px; border-left: 2px solid #000; padding: 8px; line-height: 1.4;">
+        <div><strong>TIPO:</strong> ${window.tipoPorId(tag)}</div>
         <div><strong>TAG:</strong> ${window.rotuloPorId(tag)}</div>
         <div><strong>INÍCIO:</strong> ${window.escapeHtmlNotif(getV('mcc4-data-inicio'))}</div>
         <div><strong>FIM:</strong> ${window.escapeHtmlNotif(getV('mcc4-data-fim'))}</div>

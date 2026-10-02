@@ -760,6 +760,7 @@ export async function abrirFolhaoMCC4(id) {
 
         const tagInput = document.getElementById("mcc4-tag-name");
         if (tagInput) tagInput.innerText = window.rotuloPorId(id);
+        window.mostrarTipoNoFormulario(tagInput, id);
         const dataInicio = document.getElementById("mcc4-data-inicio");
         if (dataInicio) dataInicio.valueAsDate = new Date();
         const dataFim = document.getElementById("mcc4-data-fim");
@@ -824,6 +825,7 @@ export async function abrirFolhaoMCC4(id) {
 
         const tagInput = document.getElementById("molde4-tag-name");
         if (tagInput) tagInput.value = window.rotuloPorId(id);
+        window.mostrarTipoNoFormulario(tagInput, id);
         // 🆕 DATA INÍCIO/FIM e LÍDER RESPONSÁVEL não são mais digitados
         // pelo técnico nem resetados pra "hoje" toda vez que reabre —
         // ver preencherCabecalhoExecucaoMolde4, que trava os três com o
@@ -1325,7 +1327,7 @@ function montarHtmlLaudoMolde4(tag) {
                 <p style="margin: 4px 0 0 0; font-size: 8.5pt; font-weight: bold;">DATA INÍCIO: ${dtIni} &nbsp;|&nbsp; DATA FIM: ${dtFim}</p>
             </div>
             <div style="width: 20%; font-size: 9pt; border-left: 2px solid #000; padding: 8px; font-weight: bold; text-align: center;">
-                TAG<br><span style="font-size: 13pt;">${window.rotuloPorId(tag)}</span>
+                <span style="font-size: 8pt;">${window.tipoPorId(tag)}</span><br>TAG<br><span style="font-size: 13pt;">${window.rotuloPorId(tag)}</span>
             </div>
         </div>
 
