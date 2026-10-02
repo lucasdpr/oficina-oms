@@ -275,7 +275,7 @@ window.abrirFolhaoSegmentoGrupo = function (id) {
     const modal = document.getElementById('modal-folhao-seg-grupo');
     if (!modal) { alert('Modal do Segmento Grupo não encontrado!'); return; }
 
-    document.getElementById('segg-tag-name').value = id;
+    document.getElementById('segg-tag-name').value = window.rotuloPorId(id);
     document.getElementById('segg-grupo-label').innerText = `Grupo ${GRUPO_ATUAL}`;
     document.getElementById('segg-data-inicio').valueAsDate = new Date();
     document.getElementById('segg-data-fim').valueAsDate = new Date();
@@ -451,7 +451,7 @@ function montarHtmlLaudoSegGrupo(tag) {
                 <h2 style="margin: 0; font-size: 12px; color: #000;">CHECK LIST GERAL - SEGMENTO GRUPO ${grupo} (MCC 2/3)</h2>
                 <p style="margin: 4px 0 0 0; font-size: 8px; font-weight: bold;">DATA INÍCIO: ${dtIni} | DATA FIM: ${dtFim}</p>
             </div>
-            <div style="width: 20%; font-size: 9px; border-left: 2px solid #000; padding: 8px; font-weight: bold;">TAG: ${tag}</div>
+            <div style="width: 20%; font-size: 9px; border-left: 2px solid #000; padding: 8px; font-weight: bold;">TAG: ${window.rotuloPorId(tag)}</div>
         </div>
 
         <table style="margin-bottom: 15px; border: 2px solid #000;">

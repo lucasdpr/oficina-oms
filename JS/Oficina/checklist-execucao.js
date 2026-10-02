@@ -403,7 +403,7 @@ window.abrirChecklistExecucao = async function(equipamentoId) {
     CHECKLIST_EXECUCAO_TIPO_ATUAL = resolverTipoEquipamento(BANCO_ATIVOS.find(a => a.id === equipamentoId));
     const modal = document.getElementById('modal-checklist-execucao');
     const titulo = document.getElementById('checklist-execucao-titulo');
-    if (titulo) titulo.textContent = `Checklist de Execução — ${equipamentoId}`;
+    if (titulo) titulo.textContent = `Checklist de Execução — ${window.rotuloPorId(equipamentoId)}`;
     if (modal) modal.classList.remove('hidden');
 
     const container = document.getElementById('checklist-execucao-secoes');

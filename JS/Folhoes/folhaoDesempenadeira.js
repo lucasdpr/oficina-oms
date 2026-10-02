@@ -232,7 +232,7 @@ window.abrirFolhaoDesempenadeira = function(id) {
     }
 
     // Preenche a TAG e campos iniciais
-    document.getElementById('desemp-tag-ativo').value = id;
+    document.getElementById('desemp-tag-ativo').value = window.rotuloPorId(id);
 
     // Define o tipo de cadeira (Superior ou Inferior) automaticamente
     const tipoSelect = document.getElementById('desemp-tipo-cadeira');
@@ -399,7 +399,7 @@ function montarHtmlLaudoDesemp(tag) {
                 <p style="margin: 5px 0 0 0; font-size: 10px; color: #333; text-transform: uppercase; font-weight: bold;">Laudo Oficial de Manutenção e Peritagem</p>
             </div>
             <div style="width: 20%; font-size: 10px; border-left: 2px solid #000; padding: 10px; line-height: 1.5; font-weight: bold;">
-                <div style="color: #002b5e;">TAG: <span style="color:#000;">${tag}</span></div>
+                <div style="color: #002b5e;">TAG: <span style="color:#000;">${window.rotuloPorId(tag)}</span></div>
                 <div>MONTAGEM: <span style="color:#000; font-weight:normal;">${window.escapeHtmlNotif(dataMontagem)}</span></div>
                 <div>TROCA: <span style="color:#000; font-weight:normal;">${window.escapeHtmlNotif(dataTroca)}</span></div>
             </div>

@@ -701,3 +701,10 @@ export function rotuloEquipamento(a) {
     return (a && (a.tag_patrimonio || a.id)) || '';
 }
 window.rotuloEquipamento = rotuloEquipamento;
+
+// Igual a rotuloEquipamento, mas a partir do id (os folhões guardam só o id).
+export function rotuloPorId(id) {
+    const a = (window.BANCO_ATIVOS || []).find(x => x.id === id);
+    return a ? rotuloEquipamento(a) : id;
+}
+window.rotuloPorId = rotuloPorId;
