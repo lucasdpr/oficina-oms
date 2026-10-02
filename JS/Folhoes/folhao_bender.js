@@ -380,7 +380,7 @@ export function montarHtmlLaudoBender(tag, motivo, getVFunc) {
         <div><strong>MOTIVO:</strong> ${window.escapeHtmlNotif(motivo)}</div>
         <div><strong>VEIO SAÍDA:</strong> ${document.querySelector('input[name="mcc4-veio-saida"]:checked')?.value || ''}</div>
         <div><strong>VEIO ENTRADA:</strong> ${document.querySelector('input[name="mcc4-veio-entrada"]:checked')?.value || ''}</div>
-        <div><strong>TIPO:</strong> ${document.querySelector('input[name="mcc4-tipo-exec"]:checked')?.value || ''}</div>
+        <div><strong>EXECUÇÃO:</strong> ${document.querySelector('input[name="mcc4-tipo-exec"]:checked')?.value || ''}</div>
       </div>
     </div>`;
 

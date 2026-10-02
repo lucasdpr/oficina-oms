@@ -455,7 +455,8 @@ async function atualizarHistoricoGlobalComServidor(filtroData) {
         // servidor também, do mesmo jeito que já faz com os eventos.
         let laudosDoServidor = [];
         try {
-            const respLaudos = await fetch(`${apiBase}/api/laudos?limite=200`, { cache: 'no-store' });
+            // resumo=true: a lista não usa o html (visualizarLaudo busca o laudo por id), então não baixa os 200 laudos inteiros
+            const respLaudos = await fetch(`${apiBase}/api/laudos?limite=200&resumo=true`, { cache: 'no-store' });
             if (respLaudos.ok) {
                 const laudosBrutos = await respLaudos.json();
                 if (Array.isArray(laudosBrutos)) {
