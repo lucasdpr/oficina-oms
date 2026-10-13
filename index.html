@@ -48,7 +48,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
 
 <style>
@@ -69,7 +69,7 @@
     --paper-dim: #c9c2b3;
     --amber: #f0a334;
     --amber-deep: #c97a12;
-    --font-display: 'Big Shoulders', 'Inter', sans-serif;
+    --font-display: 'Archivo', 'Inter', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
     --font-body: 'Inter', -apple-system, sans-serif;
     --ease: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1099,6 +1099,7 @@ footer a:hover { color: var(--amber); }
     right: clamp(20px, 4vw, 64px); top: 50%;
     transform: translateY(-46%);
     display: flex; align-items: flex-start; gap: 14px;
+    transform-style: preserve-3d; transition: transform 0.4s ease-out;
 }
 .shot { position: relative; width: clamp(150px, 15vw, 220px); aspect-ratio: 3 / 4; margin: 0;
     overflow: hidden; border: 1px solid var(--line); background: var(--panel);
@@ -1137,13 +1138,94 @@ footer a:hover { color: var(--amber); }
    (antes ficava um anel parado no canto superior esquerdo) */
 .cursor-dot, .cursor-ring { opacity: 0; }
 body.cursor-moved .cursor-dot, body.cursor-moved .cursor-ring { opacity: 1; }
+
+/* ===== Refinos 2 ===== */
+.brand { align-items: center; }
+.brand img { width: 30px; height: 30px; border-radius: 7px; }
+.navbar .conn-status { display: none; }
+/* cabeçalho de seção em 2 colunas: título à esquerda, texto à direita
+   (antes o título ficava espremido à esquerda com metade da tela vazia) */
+@media (min-width: 993px) {
+    .section-head { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); column-gap: 64px; align-items: end; }
+    .section-head .tag { grid-column: 1; }
+    .section-head h2 { grid-column: 1; max-width: 18ch; }
+    .section-head p { grid-column: 2; grid-row: 1 / span 2; align-self: end; margin-top: 0; }
+}
+.section-head h2 { font-size: clamp(30px, 4.2vw, 52px); }
+/* fotos de propósito/história: lado a lado com o texto, em vez de texto
+   por cima da foto (a foto do propósito já tem o texto escrito na placa) */
+@media (min-width: 993px) {
+    .photo-break { display: grid; grid-template-columns: 1.15fr 1fr; align-items: stretch; min-height: 0; padding: 0; }
+    .photo-break-bg { position: relative; inset: auto; min-height: 560px; }
+    .photo-break-bg::after { background: linear-gradient(90deg, transparent 70%, rgba(13,11,8,0.6)); }
+    .photo-break-content { background: var(--panel); backdrop-filter: none; -webkit-backdrop-filter: none;
+        max-width: none; display: flex; flex-direction: column; justify-content: center; padding: 64px clamp(32px, 4vw, 72px); border-left: 2px solid var(--amber); }
+    #historia .photo-break-bg { order: 2; }
+    #historia .photo-break-content { border-left: none; border-right: 2px solid var(--amber); }
+}
+/* diagrama de fluxo horizontal no PC (antes: coluna estreita no meio da tela) */
+@media (min-width: 993px) {
+    .flow { max-width: 1240px; margin: 64px auto 0; flex-direction: row; align-items: center; gap: 0; }
+    .flow-top { width: auto; flex: 3; }
+    .flow-merge { width: 40px; height: 1px; background: var(--line); }
+    .flow-merge::before, .flow-merge span { display: none; }
+    .flow-wide { width: auto; flex: 1.2; }
+    .flow-line { width: 40px; height: 1px; }
+}
+
+.hero h1 { font-size: clamp(34px, 4vw, 58px); line-height: 1; letter-spacing: -1.5px; }
+.section-head h2, .cta-final h2 { font-size: clamp(28px, 3.4vw, 44px); letter-spacing: -1px; line-height: 1.05; }
+.photo-break blockquote { font-size: clamp(24px, 3vw, 38px); letter-spacing: -0.5px; }
+.manifesto-line.line-3, .manifesto-line.line-4 { font-size: clamp(30px, 4.6vw, 58px); letter-spacing: -1px; }
+.pillar h3 { font-size: 20px; } .feature h4 { font-size: 16px; } .veio-label { font-size: 18px; }
+.specs-row strong { font-size: 28px; letter-spacing: -0.5px; }
+.team-text .stat { font-size: clamp(44px, 5vw, 72px); letter-spacing: -2px; }
+
+/* ===== Efeitos das fotos do topo ===== */
+.hero-visual { perspective: 1200px; }
+.shot { opacity: 0; animation: shotIn 1.1s cubic-bezier(0.16,1,0.3,1) forwards, shotFloat 7s ease-in-out infinite; transform-style: preserve-3d; }
+.shot.s1 { animation-delay: 0.35s, 1.5s; } .shot.s2 { animation-delay: 0.5s, 2.3s; } .shot.s3 { animation-delay: 0.65s, 3.1s; }
+@keyframes shotIn { from { opacity: 0; transform: translateY(60px) rotateX(18deg) scale(0.92); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes shotFloat { 0%,100% { translate: 0 0; } 50% { translate: 0 -12px; } }
+.shot img { transition: transform 0.9s cubic-bezier(0.16,1,0.3,1), filter 0.5s ease; transform: scale(1.06); filter: saturate(0.75) contrast(1.05) brightness(0.85); }
+.shot:hover img { transform: scale(1.16); filter: saturate(1.05) contrast(1.08) brightness(1); }
+.shot::before { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    background: linear-gradient(115deg, transparent 35%, rgba(255,214,150,0.28) 50%, transparent 65%);
+    transform: translateX(-120%); animation: shotShine 6s ease-in-out infinite; }
+.shot.s2::before { animation-delay: 2s; } .shot.s3::before { animation-delay: 4s; }
+@keyframes shotShine { 0%, 70% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
+.shot:hover { border-color: var(--amber); box-shadow: 0 30px 70px -20px rgba(240,163,52,0.35), 0 0 0 1px rgba(240,163,52,0.4); }
+.hero-visual::before { content: ''; position: absolute; inset: -15% -10%; z-index: -1;
+    background: radial-gradient(closest-side, rgba(240,163,52,0.18), transparent); filter: blur(20px); animation: ctaGlow 6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .shot, .shot::before, .hero-visual::before { animation: none; opacity: 1; } }
+
+/* ===== Cursor "mira de oficina": retícula girando + faíscas ===== */
+.cursor-dot { width: 4px; height: 4px; background: #ffd08a; box-shadow: 0 0 8px 2px rgba(240,163,52,0.8); }
+.cursor-ring { width: 38px; height: 38px; border: 1px dashed rgba(240,163,52,0.7); background: none;
+    transition: width .3s cubic-bezier(.16,1,.3,1), height .3s cubic-bezier(.16,1,.3,1), border-radius .3s, border-color .3s; }
+.cursor-ring::before, .cursor-ring::after { content: ''; position: absolute; left: 50%; top: 50%; background: var(--amber); transform: translate(-50%,-50%); transition: opacity .2s; }
+.cursor-ring::before { width: 54px; height: 1px; background: linear-gradient(90deg, var(--amber) 0 8px, transparent 8px calc(100% - 8px), var(--amber) calc(100% - 8px)); }
+.cursor-ring::after { width: 1px; height: 54px; background: linear-gradient(180deg, var(--amber) 0 8px, transparent 8px calc(100% - 8px), var(--amber) calc(100% - 8px)); }
+.cursor-ring .giro { position: absolute; inset: 0; border-radius: 50%; border: 1px solid transparent; border-top-color: var(--amber); animation: giroMira 1.6s linear infinite; }
+@keyframes giroMira { to { transform: rotate(360deg); } }
+.cursor-ring.is-big { width: 64px; height: 46px; border-radius: 4px; border: 1px solid var(--amber); background: rgba(240,163,52,0.08); }
+.cursor-ring.is-big::before, .cursor-ring.is-big::after, .cursor-ring.is-big .giro { opacity: 0; }
+#faiscas { position: fixed; inset: 0; z-index: 9996; pointer-events: none; }
+@media (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) { #faiscas { display: none; } }
+
+/* ===== Fotos da página entram com uma "cortina" ao rolar ===== */
+.team-photo img, .photo-break-bg { clip-path: inset(0 0 100% 0); transition: clip-path 1.3s cubic-bezier(.77,0,.18,1), transform 0.9s cubic-bezier(0.16,1,0.3,1); }
+.team-photo.in-view img, .photo-break.foto-on .photo-break-bg { clip-path: inset(0 0 0 0); }
+@media (prefers-reduced-motion: reduce) { .team-photo img, .photo-break-bg { clip-path: none; } }
+@media (min-width: 993px) { .hero-content > * { max-width: min(560px, 44vw); } }
 </style>
 </head>
 <body>
 
 <div class="grain" aria-hidden="true"></div>
 <div class="spotlight" id="spotlight" aria-hidden="true"></div>
-<div class="cursor-ring" id="cursor-ring" aria-hidden="true"></div>
+<div class="cursor-ring" id="cursor-ring" aria-hidden="true"><span class="giro"></span></div>
+<canvas id="faiscas" aria-hidden="true"></canvas>
 <div class="cursor-dot" id="cursor-dot" aria-hidden="true"></div>
 
 <!-- 🆕 Aviso de nova versão do site — mesma lógica de app.html: aparece
@@ -1163,7 +1245,7 @@ body.cursor-moved .cursor-dot, body.cursor-moved .cursor-ring { opacity: 1; }
 </div>
 
 <nav class="navbar">
-    <a href="#top" class="brand">OMS <small>CSN — GMLC/GGMA</small></a>
+    <a href="#top" class="brand"><img src="JS/assets/icon-192.png?v=4" alt="" width="30" height="30">OMS <small>CSN — GMLC/GGMA</small></a>
     <div class="nav-links">
         <a href="#transformacao">Transformação</a>
         <a href="#arquitetura">Sistema</a>
@@ -1177,7 +1259,6 @@ body.cursor-moved .cursor-dot, body.cursor-moved .cursor-ring { opacity: 1; }
         <span class="conn-status online" id="conn-status">
             <span class="dot"></span><span id="conn-status-text">On-line</span>
         </span>
-        <a href="app.html" class="nav-login">Entrar</a>
         <button type="button" class="btn btn-line btn-instalar-pwa" hidden style="padding:11px 18px; min-height:auto; font-size:13px;" onclick="window.instalarAppOMS()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg> Instalar App
         </button>
@@ -1239,7 +1320,7 @@ body.cursor-moved .cursor-dot, body.cursor-moved .cursor-ring { opacity: 1; }
     <div class="specs-row">
         <div><strong>MCC 2 · 3 · 4</strong><span>Cobertura completa da Aciaria</span></div>
         <div><strong>100%</strong><span>Folhões digitais, sem papel</span></div>
-        <div><strong>PWA</strong><span>Instalável, com uso offline em campo</span></div>
+        <div><strong>Offline</strong><span>Instalável no celular, funciona em campo</span></div>
     </div>
 </div>
 
@@ -2106,6 +2187,48 @@ body.cursor-moved .cursor-dot, body.cursor-moved .cursor-ring { opacity: 1; }
         if (jaInstalado) return;
         const ehIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
         if (ehIOS) window.__mostrarBotaoInstalarPWA();
+    })();
+
+    // ---- Fotos do topo inclinam em 3D seguindo o mouse ----
+    (function () {
+        if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        const vis = document.querySelector('.hero-visual');
+        if (!vis) return;
+        window.addEventListener('mousemove', (e) => {
+            const x = e.clientX / window.innerWidth - 0.5, y = e.clientY / window.innerHeight - 0.5;
+            vis.style.transform = `translateY(-46%) rotateY(${(x * 10).toFixed(2)}deg) rotateX(${(-y * 8).toFixed(2)}deg)`;
+        }, { passive: true });
+    })();
+
+    // ---- Faíscas de solda saindo do cursor ----
+    (function () {
+        if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        const cv = document.getElementById('faiscas'); if (!cv) return;
+        const ctx = cv.getContext('2d'); let ps = [], lx = 0, ly = 0;
+        const tam = () => { cv.width = innerWidth; cv.height = innerHeight; }; tam(); addEventListener('resize', tam);
+        addEventListener('mousemove', (e) => {
+            const v = Math.hypot(e.clientX - lx, e.clientY - ly); lx = e.clientX; ly = e.clientY;
+            for (let i = 0; i < Math.min(4, v / 6); i++) ps.push({ x: lx, y: ly, vx: (Math.random() - 0.5) * 3, vy: (Math.random() - 0.9) * 3, v: 1 });
+        }, { passive: true });
+        addEventListener('click', (e) => { for (let i = 0; i < 26; i++) { const a = Math.random() * 6.28, f = 2 + Math.random() * 5; ps.push({ x: e.clientX, y: e.clientY, vx: Math.cos(a) * f, vy: Math.sin(a) * f - 2, v: 1 }); } });
+        (function loop() {
+            ctx.clearRect(0, 0, cv.width, cv.height);
+            ps = ps.filter(p => (p.v -= 0.025) > 0);
+            for (const p of ps) {
+                p.vy += 0.15; p.x += p.vx; p.y += p.vy;
+                ctx.strokeStyle = `rgba(255,${150 + 80 * p.v | 0},60,${p.v})`; ctx.lineWidth = 1.6;
+                ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 2, p.y - p.vy * 2); ctx.stroke();
+            }
+            requestAnimationFrame(loop);
+        })();
+    })();
+
+    // ---- Cortina das fotos de propósito/história ----
+    (function () {
+        const obs = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('foto-on'); obs.unobserve(e.target); } }), { threshold: 0.25 });
+        document.querySelectorAll('.photo-break').forEach(el => obs.observe(el));
     })();
 </script>
 </body>
