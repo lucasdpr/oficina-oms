@@ -464,7 +464,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 }
 .specs-row {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     max-width: 1240px;
     margin: 0 auto;
 }
@@ -1129,7 +1129,9 @@ footer a:hover { color: var(--amber); }
     .navbar .btn-instalar-pwa { display: none !important; }
     .navbar { padding-top: calc(14px + env(safe-area-inset-top)); padding-bottom: 14px; }
     .nav-actions { gap: 10px; }
-    .specs-row { grid-template-columns: 1fr 1fr 1fr; }
+    .specs-row { grid-template-columns: 1fr 1fr; }
+    .specs-row > div:nth-child(3) { border-left: none; }
+    .specs-row > div:nth-child(n+3) { border-top: 1px solid var(--line); }
     .specs-row > div { border-top: none; border-left: 1px solid var(--line); padding: 20px 14px; }
     .specs-row > div:first-child { border-left: none; }
     .specs-row strong { font-size: 24px; }
@@ -1218,6 +1220,28 @@ body.cursor-moved .cursor-dot, body.cursor-moved .cursor-ring { opacity: 1; }
 .team-photo.in-view img, .photo-break.foto-on .photo-break-bg { clip-path: inset(0 0 0 0); }
 @media (prefers-reduced-motion: reduce) { .team-photo img, .photo-break-bg { clip-path: none; } }
 @media (min-width: 993px) { .hero-content > * { max-width: min(560px, 44vw); } }
+
+/* ===== Telas reais ===== */
+.telas { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.tela { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+    box-shadow: 0 40px 80px -30px rgba(0,0,0,0.9); transition: transform .5s cubic-bezier(.16,1,.3,1), border-color .3s; }
+.tela:hover { transform: translateY(-6px); border-color: rgba(240,163,52,0.45); }
+.tela-grande { grid-column: 1 / -1; }
+.tela-barra { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-bottom: 1px solid var(--line); font-family: var(--font-mono); font-size: 11px; color: var(--paper-dim); }
+.tela-barra i { width: 9px; height: 9px; border-radius: 50%; background: #3a342b; } .tela-barra i:first-child { background: var(--amber); }
+.tela-barra span { margin-left: 8px; }
+.tela img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; }
+.tela-grande img { aspect-ratio: 16 / 8; object-position: 50% 60%; }
+.tela figcaption { padding: 12px 14px; font-size: 13px; color: var(--paper-dim); border-top: 1px solid var(--line); }
+@media (max-width: 992px) { .telas { grid-template-columns: 1fr; } .tela-grande img { aspect-ratio: 16/10; } }
+
+/* ===== Legibilidade (projetor/telão): textos secundários mais claros ===== */
+.section-head p, .pillar li, .feature p, .cycle-step p, .specs-row span, .hero-trust, .compare-col h3 { color: var(--paper-dim); }
+.hero-sub, .photo-break p.lede, .team-text p { color: #e2dccf; }
+.manifesto-line { opacity: 0.8; filter: none; }
+/* ===== Efeitos mais contidos para apresentação ===== */
+.grain { opacity: 0.03; animation: none; }
+.ticker-track { animation-duration: 60s; }
 </style>
 </head>
 <body>
@@ -1249,6 +1273,7 @@ body.cursor-moved .cursor-dot, body.cursor-moved .cursor-ring { opacity: 1; }
     <div class="nav-links">
         <a href="#transformacao">Transformação</a>
         <a href="#arquitetura">Sistema</a>
+        <a href="#telas">Telas</a>
         <a href="#recursos">Recursos</a>
         <a href="#equipe">Equipe</a>
         <a href="#mcc">MCCs</a>
@@ -1318,9 +1343,10 @@ body.cursor-moved .cursor-dot, body.cursor-moved .cursor-ring { opacity: 1; }
 
 <div class="specs">
     <div class="specs-row">
-        <div><strong>MCC 2 · 3 · 4</strong><span>Cobertura completa da Aciaria</span></div>
-        <div><strong>100%</strong><span>Folhões digitais, sem papel</span></div>
-        <div><strong>Offline</strong><span>Instalável no celular, funciona em campo</span></div>
+        <div><strong>3 MCCs</strong><span>6 veios — C, D, E, F, G e H</span></div>
+        <div><strong>380+</strong><span>Equipamentos rastreados peça a peça</span></div>
+        <div><strong>10</strong><span>Folhões digitais, um por tipo de equipamento</span></div>
+        <div><strong>1.000+</strong><span>Etapas de checklist cadastradas</span></div>
     </div>
 </div>
 
@@ -1417,6 +1443,20 @@ body.cursor-moved .cursor-dot, body.cursor-moved .cursor-ring { opacity: 1; }
         <div class="flow-node flow-wide">Histórico &amp; KPIs</div>
         <div class="flow-line" aria-hidden="true"></div>
         <div class="flow-node flow-wide flow-final">Decisão</div>
+    </div>
+</section>
+
+<!-- ============ TELAS REAIS DO SISTEMA ============ -->
+<section id="telas">
+    <div class="section-head reveal">
+        <span class="tag">O sistema por dentro</span>
+        <h2>Telas reais do OMS</h2>
+        <p>Cada molde em 3D, peça por peça, e o folhão digital que substitui o papel na liberação do equipamento.</p>
+    </div>
+    <div class="section-inner telas">
+        <figure class="tela tela-grande reveal"><div class="tela-barra"><i></i><i></i><i></i><span>Molde MCC 4 — 3D</span></div><img src="JS/assets/telas/molde-mcc4-3d.jpg" alt="Tela do OMS com o molde da MCC 4 em 3D, com botões de lista técnica, vista interior e teste de água" loading="lazy"><figcaption>Molde MCC 4 em 3D: lista técnica, vista interior e teste de água</figcaption></figure>
+        <figure class="tela reveal"><div class="tela-barra"><i></i><i></i><i></i><span>Molde MCC 2/3 — 3D</span></div><img src="JS/assets/telas/molde-mcc23-3d.jpg" alt="Tela do OMS com o molde da MCC 2/3 em 3D" loading="lazy"><figcaption>Molde MCC 2/3 em 3D</figcaption></figure>
+        <figure class="tela reveal"><div class="tela-barra"><i></i><i></i><i></i><span>Folhão digital</span></div><img src="JS/assets/telas/folhao-digital.jpg" alt="Tela do folhão digital de liberação do Segmento de Grupo 1" loading="lazy"><figcaption>Folhão de liberação — Segmento de Grupo</figcaption></figure>
     </div>
 </section>
 
@@ -2210,9 +2250,9 @@ body.cursor-moved .cursor-dot, body.cursor-moved .cursor-ring { opacity: 1; }
         const tam = () => { cv.width = innerWidth; cv.height = innerHeight; }; tam(); addEventListener('resize', tam);
         addEventListener('mousemove', (e) => {
             const v = Math.hypot(e.clientX - lx, e.clientY - ly); lx = e.clientX; ly = e.clientY;
-            for (let i = 0; i < Math.min(4, v / 6); i++) ps.push({ x: lx, y: ly, vx: (Math.random() - 0.5) * 3, vy: (Math.random() - 0.9) * 3, v: 1 });
+            if (false) for (let i = 0; i < Math.min(4, v / 6); i++) ps.push({ x: lx, y: ly, vx: (Math.random() - 0.5) * 3, vy: (Math.random() - 0.9) * 3, v: 1 });
         }, { passive: true });
-        addEventListener('click', (e) => { for (let i = 0; i < 26; i++) { const a = Math.random() * 6.28, f = 2 + Math.random() * 5; ps.push({ x: e.clientX, y: e.clientY, vx: Math.cos(a) * f, vy: Math.sin(a) * f - 2, v: 1 }); } });
+        addEventListener('click', (e) => { for (let i = 0; i < 14; i++) { const a = Math.random() * 6.28, f = 2 + Math.random() * 5; ps.push({ x: e.clientX, y: e.clientY, vx: Math.cos(a) * f, vy: Math.sin(a) * f - 2, v: 1 }); } });
         (function loop() {
             ctx.clearRect(0, 0, cv.width, cv.height);
             ps = ps.filter(p => (p.v -= 0.025) > 0);
