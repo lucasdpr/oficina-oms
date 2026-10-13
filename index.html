@@ -347,9 +347,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .hero-bg {
     position: absolute; inset: 0;
     background-image:
-        linear-gradient(180deg, rgba(13,11,8,0.72) 0%, rgba(13,11,8,0.5) 22%, rgba(13,11,8,0.55) 45%, rgba(13,11,8,0.97) 92%),
-        linear-gradient(100deg, rgba(13,11,8,0.78) 0%, rgba(13,11,8,0.3) 55%),
-        url('JS/assets/USINAGEM.jpg');
+        radial-gradient(900px 600px at 78% 40%, rgba(240,163,52,0.10), transparent 70%);
     background-size: cover;
     background-position: center 30%;
     filter: saturate(1) contrast(1.05) brightness(0.85);
@@ -1087,6 +1085,58 @@ footer a:hover { color: var(--amber); }
     .hero-content { padding-bottom: 48px; }
     .photo-break { min-height: 60vh; padding: 0 20px 48px; }
 }
+
+/* ===== HERO — trio de fotos (Usinagem / Caldeiraria / Elétrica) em
+   moldura, no tamanho real delas: as fotos são retratos de 750px, e
+   esticadas em tela cheia ficavam borradas e escuras. ===== */
+.hero { align-items: center; }
+.hero-content { padding-top: 120px; padding-bottom: 96px; }
+.hero h1 { font-size: clamp(42px, 6vw, 88px); max-width: none; }
+.hero h1 .line { white-space: nowrap; }
+.hero-sub { max-width: 46ch; }
+.hero-visual {
+    position: absolute; z-index: 1;
+    right: clamp(20px, 4vw, 64px); top: 50%;
+    transform: translateY(-46%);
+    display: flex; align-items: flex-start; gap: 14px;
+}
+.shot { position: relative; width: clamp(150px, 15vw, 220px); aspect-ratio: 3 / 4; margin: 0;
+    overflow: hidden; border: 1px solid var(--line); background: var(--panel);
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.8), 0 0 0 1px rgba(240,163,52,0.06);
+    transition: transform 0.6s cubic-bezier(0.16,1,0.3,1), border-color 0.3s ease; }
+.shot img { width: 100%; height: 100%; object-fit: cover; filter: saturate(0.95) contrast(1.05); }
+.shot::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgba(13,11,8,0.85)); }
+.shot figcaption { position: absolute; left: 12px; bottom: 10px; z-index: 1; font-family: var(--font-mono); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--paper); }
+.shot figcaption::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--amber); margin-right: 7px; vertical-align: 1px; }
+.shot.s1 { margin-top: 56px; } .shot.s3 { margin-top: 110px; }
+.shot:hover { transform: translateY(-8px); border-color: rgba(240,163,52,0.5); }
+#hero-canvas { opacity: 0.35; }
+@media (max-width: 1100px) { .hero-visual { opacity: 0.35; } }
+@media (max-width: 992px) {
+    .hero { flex-direction: column; align-items: stretch; }
+    .hero-content { padding-top: 110px; padding-bottom: 28px; }
+    .hero-visual { position: relative; right: auto; top: auto; transform: none; opacity: 1; order: 2;
+        padding: 0 clamp(20px, 4vw, 48px) 48px; gap: 10px; }
+    .shot { width: 33%; } .shot.s1 { margin-top: 18px; } .shot.s3 { margin-top: 36px; }
+}
+
+/* ===== Navbar no celular — antes os botões quebravam em 2 linhas e o
+   menu (hambúrguer) era empurrado pra fora da tela. ===== */
+.btn { white-space: nowrap; }
+@media (max-width: 992px) {
+    .brand small { display: none; }
+    .navbar .btn-instalar-pwa { display: none !important; }
+    .navbar { padding-top: calc(14px + env(safe-area-inset-top)); padding-bottom: 14px; }
+    .nav-actions { gap: 10px; }
+    .specs-row { grid-template-columns: 1fr 1fr 1fr; }
+    .specs-row > div { border-top: none; border-left: 1px solid var(--line); padding: 20px 14px; }
+    .specs-row > div:first-child { border-left: none; }
+    .specs-row strong { font-size: 24px; }
+}
+/* cursor customizado só aparece depois do primeiro movimento do mouse
+   (antes ficava um anel parado no canto superior esquerdo) */
+.cursor-dot, .cursor-ring { opacity: 0; }
+body.cursor-moved .cursor-dot, body.cursor-moved .cursor-ring { opacity: 1; }
 </style>
 </head>
 <body>
@@ -1149,7 +1199,7 @@ footer a:hover { color: var(--amber); }
         <a href="#resultados">Resultados</a>
     <a href="#historia">História</a>
     <button type="button" class="btn btn-line btn-instalar-pwa" hidden onclick="window.instalarAppOMS()">
-        <i class="fas fa-download"></i> Instalar App
+        Instalar App
     </button>
     <a href="app.html" class="btn btn-solid">Acessar OMS</a>
 </div>
@@ -1160,6 +1210,11 @@ footer a:hover { color: var(--amber); }
 <section class="hero">
     <div class="hero-bg"></div>
     <canvas id="hero-canvas" aria-hidden="true"></canvas>
+    <div class="hero-visual" aria-hidden="true">
+        <figure class="shot s1"><img src="JS/assets/USINAGEM.jpg" alt="" decoding="async"><figcaption>Usinagem</figcaption></figure>
+        <figure class="shot s2"><img src="JS/assets/SOLDA%20FOTO.jpg" alt="" decoding="async"><figcaption>Caldeiraria</figcaption></figure>
+        <figure class="shot s3"><img src="JS/assets/ELETRICA%20.jpg" alt="" decoding="async"><figcaption>Elétrica</figcaption></figure>
+    </div>
     <div class="hero-content">
         <span class="tag hero-fade d1">GMLC / GGMA — Volta Redonda, RJ</span>
         <h1><span class="line line-a">Controle total</span><br><span class="line line-b">da <em>manutenção</em></span></h1>
@@ -1357,7 +1412,7 @@ footer a:hover { color: var(--amber); }
             <p>Na OMS, a força feminina é protagonista — o maior número de mulheres atuando diretamente na manutenção de moldes e segmentos, rompendo barreiras e trazendo inovação, precisão e cuidado para cada serviço.</p>
         </div>
         <div class="team-photo">
-            <img src="JS/assets/Equipe%20feminino.png" alt="Equipe feminina da OMS - CSN" loading="lazy" decoding="async" onerror="this.parentElement.style.display='none'">
+            <img src="JS/assets/equipe-feminino.jpg" alt="Equipe feminina da OMS - CSN" loading="lazy" decoding="async" onerror="this.parentElement.style.display='none'">
         </div>
     </div>
 </section>
@@ -1435,7 +1490,7 @@ footer a:hover { color: var(--amber); }
 
 <!-- ============ FOTO — HISTÓRIA ============ -->
 <section class="photo-break" id="historia" style="padding-top:0; padding-bottom:0;">
-    <div class="photo-break-bg" style="background-image:url('JS/assets/SOLDA%20FOTO.jpg');"></div>
+    <div class="photo-break-bg" style="background-image:url('JS/assets/historia-oficina.jpg');"></div>
     <div class="photo-break-content reveal">
         <span class="tag" style="margin-bottom:20px; display:inline-block;">Nossa Origem</span>
         <blockquote>Forjado no calor da operação.</blockquote>
@@ -1838,12 +1893,14 @@ footer a:hover { color: var(--amber); }
         // apertado na horizontal — um núcleo deslocado pra direita (como no
         // desktop) sairia do enquadramento. Fica mais centralizado no mobile.
         nucleo.position.set(ehMobile ? 1.2 : 3.5, -0.6, -1.8);
+        nucleo.visible = false;
         scene.add(nucleo);
 
         const brilhoGeo = new THREE.IcosahedronGeometry(ehMobile ? 2.3 : 3.1, 1);
         const brilhoMat = new THREE.MeshBasicMaterial({ color: 0xf0a334, wireframe: true, transparent: true, opacity: 0.14 });
         const brilho = new THREE.Mesh(brilhoGeo, brilhoMat);
         brilho.position.copy(nucleo.position);
+        brilho.visible = false;
         scene.add(brilho);
 
         let mouseX = 0, mouseY = 0;
@@ -1898,6 +1955,7 @@ footer a:hover { color: var(--amber); }
         let rx = mx, ry = my;
         window.addEventListener('mousemove', (e) => {
             mx = e.clientX; my = e.clientY;
+            document.body.classList.add('cursor-moved');
             dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%,-50%)`;
             if (spot) {
                 spot.style.setProperty('--sx', mx + 'px');
@@ -1970,7 +2028,7 @@ footer a:hover { color: var(--amber); }
     // 🔧 Bump manual: mude essa string a cada deploy visível (mesmo
     // espírito do CACHE_VERSION do service-worker.js, mas comparado
     // aqui na página, sem precisar consultar o SW pra confirmar).
-    window.OMS_BUILD_ID = '2026.09.09-aviso-atualizacao-2';
+    window.OMS_BUILD_ID = '2026.10.13-visual-hero';
     (function () {
         try {
             const anterior = localStorage.getItem('oms_build_id');
@@ -2002,8 +2060,9 @@ footer a:hover { color: var(--amber); }
             // instalada agora é diferente da que você tinha ao abrir o
             // site". Só mostra o aviso, não recarrega sozinho.
             let jaAvisouNovaVersao = false;
+            const tinhaVersaoAnterior = !!navigator.serviceWorker.controller;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
-                if (jaAvisouNovaVersao) return;
+                if (jaAvisouNovaVersao || !tinhaVersaoAnterior) return;
                 jaAvisouNovaVersao = true;
                 const aviso = document.getElementById('aviso-nova-versao');
                 if (aviso) aviso.style.display = 'flex';
