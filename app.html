@@ -571,6 +571,13 @@
 @media (max-width:600px){.lg2-card{padding:32px 22px 24px;backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(22,19,14,.94)}.lg2-card h1{font-size:25px}.lg2-topo{padding:14px 16px}.lg2-linha{opacity:.35}}
 @media (max-height:640px){.lg2-rodape{display:none}}
 @media (prefers-reduced-motion:reduce){.lg2-card,.lg2-linha path{animation:none;stroke-dashoffset:0}}
+/* Sem cursor de texto / ponto de inserção piscando fora dos campos:
+   clicar numa palavra não deve mostrar o "I" nem o caret (acontece com a
+   navegação por cursor do navegador ligada — tecla F7 no Chrome/Edge). */
+html { caret-color: transparent; cursor: default; }
+input, textarea, [contenteditable="true"] { caret-color: auto; cursor: text; }
+a, button, [onclick], label[for], select { cursor: pointer; }
+.lg2 input { caret-color: #f0a334; }
 </style>
 <div id="tela-login-home" class="lg2 no-print">
     <div class="lg2-glow" aria-hidden="true"></div>
@@ -3848,7 +3855,7 @@
 
         // ---- Confirmação de atualização — "não tenho como saber se
         // atualizou ou não". Ver comentário equivalente em index.html.
-        window.OMS_BUILD_ID = '2026.09.09-aviso-atualizacao-2';
+        window.OMS_BUILD_ID = '2026.10.14-login-transicao';
         (function () {
             try {
                 const anterior = localStorage.getItem('oms_build_id');
@@ -3886,6 +3893,16 @@
                 navigator.serviceWorker.addEventListener('controllerchange', () => {
                     if (jaAvisouNovaVersao) return;
                     jaAvisouNovaVersao = true;
+                    // 🆕 Ainda na tela de login e sem nada digitado? Recarrega
+                    // sozinho — senão o login roda com o JS antigo já carregado
+                    // (ex.: "a transição de entrada não apareceu" logo após um
+                    // deploy). Com algo digitado, só avisa, pra não apagar.
+                    const telaLogin = document.getElementById('tela-login-home');
+                    const digitou = ['login-nome', 'login-matricula'].some(id => (document.getElementById(id)?.value || '').trim());
+                    if (telaLogin && telaLogin.style.display !== 'none' && !digitou) {
+                        window.forcarAtualizacaoOMS();
+                        return;
+                    }
                     document.getElementById('aviso-nova-versao')?.classList.remove('hidden');
                 });
             });

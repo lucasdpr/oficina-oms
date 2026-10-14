@@ -507,6 +507,12 @@ section { position: relative; scroll-margin-top: 52px; }
     .expand.sticky .expand-pin { position: sticky; top: 0; }
     .expand.sticky .expand-media { border-radius: 22px; }
 }
+/* Sem cursor de texto / ponto de inserção piscando fora dos campos:
+   clicar numa palavra não deve mostrar o "I" nem o caret (acontece com a
+   navegação por cursor do navegador ligada — tecla F7 no Chrome/Edge). */
+html { caret-color: transparent; cursor: default; }
+input, textarea, [contenteditable="true"] { caret-color: auto; cursor: text; }
+a, button, [onclick], label[for], select { cursor: pointer; }
 </style>
 </head>
 <body>
