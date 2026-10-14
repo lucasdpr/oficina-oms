@@ -1479,7 +1479,9 @@ body .ae-notas { min-height: 220px; font-size: 1rem; line-height: 1.5; border-ra
 [id^="modal-folhao"] .input-group > label { text-transform: lowercase !important; letter-spacing: 0 !important; font-size: .86rem !important; font-weight: 600 !important; color: var(--ds-texto-2) !important; display: block; margin-bottom: 6px; }
 [id^="modal-folhao"] .input-group > label::first-letter { text-transform: uppercase; }
 [id^="modal-folhao"] .modal-content > div[style*="grid-template-columns"] { border-radius: var(--ds-r) !important; background: var(--ds-bloco) !important; border: 1px solid var(--ds-linha); padding: 16px !important; gap: 14px !important; }
-[id^="modal-folhao"] .input-group input, [id^="modal-folhao"] .input-group select { min-height: 44px; }
+[id^="modal-folhao"] .input-group input:not([type="radio"]):not([type="checkbox"]), [id^="modal-folhao"] .input-group select { min-height: 44px; }
+[id^="modal-folhao"] .input-group input[type="radio"] { width: 22px; height: 22px; accent-color: var(--ds-ambar); }
+[id^="modal-folhao"] .input-group label[style*="font-size"], [id^="modal-folhao"] .input-group span[style*="font-size"] { font-size: .92rem !important; text-transform: none !important; }
 .folhao-geral { margin: 16px 0 12px; padding: 14px 16px; border-radius: var(--ds-r); background: var(--ds-bloco); border: 1px solid var(--ds-linha); }
 .folhao-geral-txt { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 10px; }
 .folhao-geral-txt strong { font: 600 1.1rem var(--ds-fonte-titulo); color: var(--ds-texto); }
@@ -1542,7 +1544,8 @@ body .rs-excluir:hover { border-color: var(--ds-perigo) !important; color: var(-
 
 /* ---------- janelas de detalhe: checklist de execução e prontuário ---------- */
 body #modal-checklist-execucao #checklist-execucao-titulo { font: 600 1.5rem var(--ds-fonte-titulo); letter-spacing: -.02em; }
-body #modal-checklist-execucao .modal-content > div:first-child .text-muted { font-size: .9rem !important; }
+body #modal-checklist-execucao .modal-content > div:first-child :is(.text-muted, div[style*="font-size:11px"]) { font-size: .92rem !important; }
+body #modal-checklist-execucao .modal-content > div:nth-child(2) > span.text-muted { font-size: .92rem !important; }
 body #modal-checklist-execucao #checklist-execucao-progresso { font: 600 1.05rem var(--ds-fonte-titulo) !important; color: var(--ds-ambar) !important; }
 body #modal-checklist-execucao .premium-bar { height: 12px !important; border-radius: 999px !important; background: var(--ds-bloco-2) !important; overflow: hidden; }
 body #modal-checklist-execucao #checklist-execucao-barra-fill { border-radius: 999px !important; background: linear-gradient(90deg, var(--ds-ok), color-mix(in srgb, var(--ds-ok) 70%, #fff)) !important; }
@@ -1599,6 +1602,19 @@ body #modal-procedimento #procedimento-etapas-lista [style*="font-size:12px"], b
 .pc-etapa.pc-feita { background: color-mix(in srgb, var(--ds-ok) 9%, var(--ds-bloco)); border-color: color-mix(in srgb, var(--ds-ok) 40%, var(--ds-linha)); }
 .pc-etapa-tit { font-size: 1.02rem; font-weight: 600; color: var(--ds-texto); line-height: 1.4; }
 body #modal-procedimento .btn-success { min-height: 52px; font-size: 1rem !important; border-radius: var(--ds-r-md) !important; }
+
+/* ---------- janelas pequenas (formulários e confirmações) ---------- */
+body :is(#modal-iniciar-ponte, #modal-criar-aviso, #modal-novo-colaborador, #modal-atividade-massa, #modal-atividade-extra-checklist, #modal-colaboradores-etapa, #modal-aviso-pendente, #modal-eventos-colaborador, #modal-escolha-tipo-execucao) .modal-content { border-radius: var(--ds-r) !important; background: var(--ds-bloco) !important; }
+body :is(#modal-iniciar-ponte, #modal-criar-aviso, #modal-novo-colaborador, #modal-atividade-massa, #modal-atividade-extra-checklist, #modal-colaboradores-etapa, #modal-aviso-pendente, #modal-eventos-colaborador) h2 { font: 600 1.4rem var(--ds-fonte-titulo) !important; letter-spacing: -.02em; }
+body :is(#modal-iniciar-ponte, #modal-criar-aviso, #modal-novo-colaborador, #modal-atividade-massa, #modal-atividade-extra-checklist, #modal-colaboradores-etapa) :is(p, .text-muted)[style*="font-size"] { font-size: .92rem !important; line-height: 1.45; }
+body :is(#modal-iniciar-ponte, #modal-criar-aviso, #modal-novo-colaborador, #modal-atividade-massa, #modal-atividade-extra-checklist, #modal-colaboradores-etapa) .input-group > label, body :is(#modal-iniciar-ponte, #modal-criar-aviso, #modal-novo-colaborador, #modal-atividade-massa, #modal-atividade-extra-checklist, #modal-colaboradores-etapa) .input-group > label[style] { font-size: .92rem !important; font-weight: 600; color: var(--ds-texto-2); text-transform: none !important; letter-spacing: 0 !important; }
+body :is(#modal-iniciar-ponte, #modal-criar-aviso, #modal-novo-colaborador, #modal-atividade-massa, #modal-atividade-extra-checklist, #modal-colaboradores-etapa) :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { min-height: 48px; font-size: 1rem !important; }
+body :is(#modal-iniciar-ponte, #modal-criar-aviso, #modal-novo-colaborador, #modal-atividade-massa, #modal-atividade-extra-checklist, #modal-colaboradores-etapa, #modal-aviso-pendente) :is(.btn-premium, .btn-outline-danger, .btn-outline-neutral) { min-height: 48px !important; padding: 0 20px !important; font-size: .95rem !important; border-radius: var(--ds-r-md) !important; }
+body :is(#modal-iniciar-ponte, #modal-atividade-massa, #modal-colaboradores-etapa) input[type="checkbox"], body #modal-iniciar-ponte input[type="radio"] { width: 22px !important; height: 22px !important; accent-color: var(--ds-ambar); flex: none; }
+body #modal-iniciar-ponte .chip-select, body #modal-atividade-massa label:has(input[type="checkbox"]), body #modal-colaboradores-etapa #colaboradores-etapa-lista label { min-height: 48px; display: flex; align-items: center; gap: 10px; font-size: .98rem !important; }
+body #modal-iniciar-ponte .chip-select-grid { gap: 8px; }
+body #modal-colaboradores-etapa #colaboradores-etapa-lista { max-height: 280px !important; }
+body #modal-colaboradores-etapa label[for="colaboradores-etapa-todos"] { font-size: .98rem !important; }
 
 /* ------------------------------------------------------------------
    RESPONSIVO
@@ -1686,9 +1702,10 @@ body #modal-procedimento .btn-success { min-height: 52px; font-size: 1rem !impor
     .ae-proc { flex-wrap: wrap; }
     .ae-abrir { width: 100%; justify-content: center; }
     .ae-materiais { max-height: 380px; }
-    #area-oficina-tabs { overflow-x: auto; scrollbar-width: none; flex-wrap: nowrap; }
+    #area-oficina-tabs { flex-wrap: wrap; gap: 6px; overflow: visible; }
     #area-oficina-tabs::-webkit-scrollbar { display: none; }
-    #area-oficina-tabs .folhao-tab { flex: 1 0 auto; padding: 0 6px; font-size: .78rem; white-space: nowrap; justify-content: center; }
+    #area-oficina-tabs .folhao-tab { flex: 1 1 30%; padding: 0 8px; font-size: .88rem; white-space: nowrap; justify-content: center; border: 1px solid var(--ds-linha) !important; border-radius: 999px !important; }
+    #area-oficina-tabs .folhao-tab.active { border-color: var(--ds-ambar) !important; }
     #area-oficina-tabs .ae-cont { display: none; }
     #area-oficina-tabs .folhao-tab i:not(.ae-cont) { display: none; }
     .ae-cont { margin-left: 3px; }
