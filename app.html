@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" style="background:#16171a;">
+<html lang="pt-BR" style="background:#1a2232;">
 <head>
     <!-- ==============================================================
          🔧 CAPTURA DE ERROS VISÍVEL NA TELA — pega qualquer erro de
@@ -49,7 +49,7 @@
          tinha ficado amarela numa aplicação anterior da paleta — esse
          elemento é do sistema (Android/iOS), não conteúdo, e nunca devia
          ter sido tocado. Volta pro neutro escuro (mesmo tom do fundo). -->
-    <meta name="theme-color" content="#16171a">
+    <meta name="theme-color" content="#1a2232">
     <link rel="apple-touch-icon" href="JS/assets/icon-192.png?v=4">
     <!-- 🆕 BOTÃO INSTALAR APP — captura o evento ASSIM QUE POSSÍVEL (ver
          mesmo bloco em index.html). -->
@@ -74,7 +74,7 @@
     <link rel="stylesheet" href="style.css?v=14" />
     <!-- Novo padrão visual (tokens + componentes ds-*). Vem DEPOIS do
          style.css pra vencer em empate de especificidade. -->
-    <link rel="stylesheet" href="design-system.css?v=25" />
+    <link rel="stylesheet" href="design-system.css?v=26" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="JS/assets/icon-192.png?v=4">
@@ -539,39 +539,39 @@
 <!-- LOGIN — mesma linguagem visual do index.html (grafite quente,
      brilho âmbar, linha de lingotamento, card limpo e botões pílula). -->
 <style>
-.lg2{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:24px 16px;overflow:hidden;background:#0d0b08;color:#f2ede2;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
-.lg2-glow{position:absolute;inset:0;pointer-events:none;background:radial-gradient(60% 50% at 50% 38%,rgba(240,163,52,.16),transparent 70%),radial-gradient(40% 35% at 80% 90%,rgba(255,122,26,.08),transparent 70%)}
+.lg2{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:24px 16px;overflow:hidden;background:#121a28;color:#f2f5fa;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+.lg2-glow{position:absolute;inset:0;pointer-events:none;background:radial-gradient(60% 50% at 50% 38%,rgba(240,163,52,.16),transparent 70%),radial-gradient(40% 35% at 80% 90%,rgba(90,174,255,.12),transparent 70%)}
 .lg2-linha{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;opacity:.55}
 .lg2-linha path{fill:none;stroke:url(#lg2Hot);stroke-width:2;stroke-linecap:round;stroke-dasharray:3200;stroke-dashoffset:3200;animation:lg2Corre 2.6s cubic-bezier(.6,0,.2,1) .2s forwards}
 @keyframes lg2Corre{to{stroke-dashoffset:0}}
 .lg2-topo{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:18px 22px;z-index:2}
-.lg2-link{color:#c9c2b3;text-decoration:none;font-size:14px;display:inline-flex;gap:8px;align-items:center;transition:color .2s}
-.lg2-link:hover{color:#f2ede2}
-.lg2-pill-ghost{font:500 14px Inter,system-ui,sans-serif;color:#f2ede2;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.14);padding:9px 18px;border-radius:999px;cursor:pointer;display:inline-flex;gap:8px;align-items:center;transition:background .2s,border-color .2s}
+.lg2-link{color:#c6cedb;text-decoration:none;font-size:14px;display:inline-flex;gap:8px;align-items:center;transition:color .2s}
+.lg2-link:hover{color:#f2f5fa}
+.lg2-pill-ghost{font:500 14px Inter,system-ui,sans-serif;color:#f2f5fa;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.14);padding:9px 18px;border-radius:999px;cursor:pointer;display:inline-flex;gap:8px;align-items:center;transition:background .2s,border-color .2s}
 .lg2-pill-ghost:hover{background:rgba(240,163,52,.1);border-color:rgba(240,163,52,.45)}
-.lg2-card{position:relative;z-index:1;width:100%;max-width:400px;padding:40px 32px 30px;border-radius:28px;background:linear-gradient(180deg,rgba(28,24,18,.82),rgba(18,15,11,.88));border:1px solid rgba(255,230,179,.09);box-shadow:0 30px 80px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.04);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);animation:lg2Entra .7s cubic-bezier(.2,.8,.2,1) both}
+.lg2-card{position:relative;z-index:1;width:100%;max-width:400px;padding:40px 32px 30px;border-radius:28px;background:linear-gradient(180deg,rgba(32,42,62,.85),rgba(22,30,46,.92));border:1px solid rgba(255,230,179,.09);box-shadow:0 30px 80px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.04);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);animation:lg2Entra .7s cubic-bezier(.2,.8,.2,1) both}
 @keyframes lg2Entra{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:none}}
 .lg2-logo{width:56px;height:56px;border-radius:16px;display:block;margin:0 auto 18px;box-shadow:0 8px 30px rgba(240,163,52,.25)}
-.lg2-card h1{font-family:"Inter Tight",Inter,system-ui,sans-serif;font-weight:600;font-size:28px;letter-spacing:-.02em;text-align:center;margin:0 0 6px;color:#f2ede2}
-.lg2-sub{text-align:center;color:#8b8b8f;font-size:14px;margin:0 0 28px}
+.lg2-card h1{font-family:"Inter Tight",Inter,system-ui,sans-serif;font-weight:600;font-size:28px;letter-spacing:-.02em;text-align:center;margin:0 0 6px;color:#f2f5fa}
+.lg2-sub{text-align:center;color:#93a0b6;font-size:14px;margin:0 0 28px}
 .lg2-campo{margin-bottom:16px}
-.lg2-campo label{display:block;font-size:13px;font-weight:500;color:#c9c2b3;margin:0 0 7px 4px}
+.lg2-campo label{display:block;font-size:13px;font-weight:500;color:#c6cedb;margin:0 0 7px 4px}
 .lg2-input{position:relative}
-.lg2-input input{width:100%;height:52px;box-sizing:border-box;padding:0 46px 0 44px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.1);color:#f2ede2;font:500 16px Inter,system-ui,sans-serif;letter-spacing:.02em;outline:none;transition:border-color .2s,box-shadow .2s,background .2s}
-.lg2-input input::placeholder{color:#6e695e;text-transform:none;letter-spacing:0}
+.lg2-input input{width:100%;height:52px;box-sizing:border-box;padding:0 46px 0 44px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.1);color:#f2f5fa;font:500 16px Inter,system-ui,sans-serif;letter-spacing:.02em;outline:none;transition:border-color .2s,box-shadow .2s,background .2s}
+.lg2-input input::placeholder{color:#7d8aa3;text-transform:none;letter-spacing:0}
 .lg2-input input:focus{border-color:rgba(240,163,52,.7);background:rgba(240,163,52,.05);box-shadow:0 0 0 4px rgba(240,163,52,.14)}
-.lg2-input .lg2-ico{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:#8b8b8f;font-size:15px;pointer-events:none}
-.lg2-input .login-input-icon-toggle{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#8b8b8f;font-size:15px;padding:6px;transition:color .2s}
+.lg2-input .lg2-ico{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:#93a0b6;font-size:15px;pointer-events:none}
+.lg2-input .login-input-icon-toggle{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#93a0b6;font-size:15px;padding:6px;transition:color .2s}
 .lg2-input .login-input-icon-toggle:hover{color:#f0a334}
 .lg2-entrar{width:100%;height:52px;margin-top:10px;text-transform:none;border:0;border-radius:999px;background:#f0a334;color:#1a1208;font:600 16px "Inter Tight",Inter,system-ui,sans-serif;letter-spacing:-.005em;cursor:pointer;box-shadow:0 10px 30px rgba(240,163,52,.28);transition:transform .15s,box-shadow .2s,background .2s}
 .lg2-entrar:hover{background:#ffb24d;box-shadow:0 14px 38px rgba(240,163,52,.38)}
 .lg2-entrar:active{transform:scale(.985)}
 .lg2-entrar:disabled{opacity:.7;cursor:wait}
-.lg2-ajuda{margin:20px 0 0;font-size:13px;line-height:1.5;color:#8b8b8f;text-align:center}
-.lg2-ajuda strong{color:#c9c2b3;font-weight:600}
-.lg2-rodape{position:absolute;bottom:18px;left:0;right:0;text-align:center;font-size:12px;color:#6e695e;z-index:1;display:flex;gap:8px;justify-content:center;align-items:center}
+.lg2-ajuda{margin:20px 0 0;font-size:13px;line-height:1.5;color:#93a0b6;text-align:center}
+.lg2-ajuda strong{color:#c6cedb;font-weight:600}
+.lg2-rodape{position:absolute;bottom:18px;left:0;right:0;text-align:center;font-size:12px;color:#7d8aa3;z-index:1;display:flex;gap:8px;justify-content:center;align-items:center}
 .lg2-dot{width:6px;height:6px;border-radius:50%;background:#5bd68a;box-shadow:0 0 8px #5bd68a}
-@media (max-width:600px){.lg2-card{padding:32px 22px 24px;backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(22,19,14,.94)}.lg2-card h1{font-size:25px}.lg2-topo{padding:14px 16px}.lg2-linha{opacity:.35}}
+@media (max-width:600px){.lg2-card{padding:32px 22px 24px;backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(26,34,52,.96)}.lg2-card h1{font-size:25px}.lg2-topo{padding:14px 16px}.lg2-linha{opacity:.35}}
 @media (max-height:640px){.lg2-rodape{display:none}}
 @media (prefers-reduced-motion:reduce){.lg2-card,.lg2-linha path{animation:none;stroke-dashoffset:0}}
 /* Sem cursor de texto / ponto de inserção piscando fora dos campos:
@@ -915,7 +915,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
     <!-- KPIs -->
     <div class="cc-kpis">
         <button type="button" class="cc-kpi" onclick="window.abrirAba(event,'aba-fluxo')">
-            <span class="cc-ico" style="--ic:var(--ds-texto-2)"><i class="fas fa-industry"></i></span><span class="cc-rotulo">Instaladas</span>
+            <span class="cc-ico" style="--ic:var(--ds-azul)"><i class="fas fa-industry"></i></span><span class="cc-rotulo">Instaladas</span>
             <strong id="pg-kpi-instaladas">0</strong>
             <span class="cc-kpi-sub" id="pg-kpi-sub-total">—</span>
             <span id="kpi-total" hidden>0</span>
@@ -931,7 +931,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
             <span class="cc-kpi-sub" id="pg-kpi-sub-alem">—</span>
         </button>
         <button type="button" class="cc-kpi" onclick="window.abrirAba(null,'aba-reparos')">
-            <span class="cc-ico" style="--ic:var(--ds-texto-2)"><i class="fas fa-screwdriver-wrench"></i></span><span class="cc-rotulo">Em reparo</span>
+            <span class="cc-ico" style="--ic:var(--ds-azul)"><i class="fas fa-screwdriver-wrench"></i></span><span class="cc-rotulo">Em reparo</span>
             <strong id="kpi-reparo">0</strong>
             <span class="cc-kpi-sub" id="pg-kpi-sub-reparo">—</span>
         </button>
@@ -1072,8 +1072,8 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                     <p class="cc-sub" style="margin:10px 0 16px">O que for lançado aqui desconta a vida útil das peças instaladas e alimenta a previsão de trocas do painel.</p>
                     <div class="cc-kpis pd-kpis">
                         <div class="cc-kpi" style="cursor:default"><span class="cc-ico"><i class="fas fa-industry"></i></span><span class="cc-rotulo">Hoje</span><strong id="pd-hoje">—</strong><span class="cc-kpi-sub">toneladas + panelas lançadas</span></div>
-                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-texto-2)"><i class="fas fa-calendar-week"></i></span><span class="cc-rotulo">Últimos 7 dias</span><strong id="pd-semana">—</strong><span class="cc-kpi-sub" id="pd-semana-sub">—</span></div>
-                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-texto-2)"><i class="fas fa-clock-rotate-left"></i></span><span class="cc-rotulo">Último lançamento</span><strong id="pd-ultimo" style="font-size:1.3rem">—</strong><span class="cc-kpi-sub" id="pd-ultimo-sub">—</span></div>
+                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-azul)"><i class="fas fa-calendar-week"></i></span><span class="cc-rotulo">Últimos 7 dias</span><strong id="pd-semana">—</strong><span class="cc-kpi-sub" id="pd-semana-sub">—</span></div>
+                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-azul)"><i class="fas fa-clock-rotate-left"></i></span><span class="cc-rotulo">Último lançamento</span><strong id="pd-ultimo" style="font-size:1.3rem">—</strong><span class="cc-kpi-sub" id="pd-ultimo-sub">—</span></div>
                     </div>
                 </div>
                 <div class="cc-grade cc-grade-2 pd-grade">
@@ -1232,7 +1232,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                     <div class="cc-titulo-ico"><span class="cc-ico"><i class="fas fa-scroll"></i></span><div><div class="cc-rotulo">Estoque</div><h2 class="cc-titulo">Rolos de reposição</h2></div></div>
                     <p class="cc-sub" style="margin:10px 0 16px">Saldo de rolos na oficina, separado por conjunto. Use − e + para dar baixa ou entrada.</p>
                     <div class="cc-kpis es-kpis">
-                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-texto-2)"><i class="fas fa-boxes-stacked"></i></span><span class="cc-rotulo">Peças em estoque</span><strong id="es-rolos-pecas">—</strong><span class="cc-kpi-sub" id="es-rolos-tipos">—</span></div>
+                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-azul)"><i class="fas fa-boxes-stacked"></i></span><span class="cc-rotulo">Peças em estoque</span><strong id="es-rolos-pecas">—</strong><span class="cc-kpi-sub" id="es-rolos-tipos">—</span></div>
                         <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-perigo)"><i class="fas fa-circle-xmark"></i></span><span class="cc-rotulo">Zerados</span><strong id="es-rolos-zerados">—</strong><span class="cc-kpi-sub">tipos sem nenhuma peça</span></div>
                         <div class="cc-kpi" style="cursor:default"><span class="cc-ico"><i class="fas fa-triangle-exclamation"></i></span><span class="cc-rotulo">Baixos</span><strong id="es-rolos-baixos">—</strong><span class="cc-kpi-sub">tipos com 1 a 5 peças</span></div>
                     </div>
@@ -1245,7 +1245,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                     <div class="cc-titulo-ico"><span class="cc-ico"><i class="fas fa-oil-can"></i></span><div><div class="cc-rotulo">Estoque</div><h2 class="cc-titulo">Hidráulica</h2></div></div>
                     <p class="cc-sub" style="margin:10px 0 16px">Porcas e cilindros: quanto está aplicado na máquina e quanto tem de reserva na oficina para cobrir uma troca.</p>
                     <div class="cc-kpis es-kpis">
-                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-texto-2)"><i class="fas fa-industry"></i></span><span class="cc-rotulo">Na máquina</span><strong id="es-hid-aplicado">—</strong><span class="cc-kpi-sub" id="es-hid-itens">—</span></div>
+                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-azul)"><i class="fas fa-industry"></i></span><span class="cc-rotulo">Na máquina</span><strong id="es-hid-aplicado">—</strong><span class="cc-kpi-sub" id="es-hid-itens">—</span></div>
                         <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-ok)"><i class="fas fa-warehouse"></i></span><span class="cc-rotulo">Reserva na oficina</span><strong id="es-hid-reserva">—</strong><span class="cc-kpi-sub">peças prontas para troca</span></div>
                         <div class="cc-kpi" style="cursor:default"><span class="cc-ico"><i class="fas fa-shield-halved"></i></span><span class="cc-rotulo">Cobertura</span><strong id="es-hid-cobertura">—</strong><span class="cc-kpi-sub" id="es-hid-cobertura-sub">reserva ÷ aplicado</span></div>
                     </div>
@@ -1260,7 +1260,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                         <button class="cc-btn cc-btn-cheio" onclick="window.toggleFormMaterial()"><i class="fas fa-plus"></i> Cadastrar entrada</button>
                     </div>
                     <div class="cc-kpis es-kpis es-kpis-4" style="margin-top:16px">
-                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-texto-2)"><i class="fas fa-barcode"></i></span><span class="cc-rotulo">Materiais</span><strong id="es-mat-itens">—</strong><span class="cc-kpi-sub" id="es-mat-unidades">—</span></div>
+                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-azul)"><i class="fas fa-barcode"></i></span><span class="cc-rotulo">Materiais</span><strong id="es-mat-itens">—</strong><span class="cc-kpi-sub" id="es-mat-unidades">—</span></div>
                         <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-ok)"><i class="fas fa-circle-check"></i></span><span class="cc-rotulo">Normal</span><strong id="es-mat-normal">—</strong><span class="cc-kpi-sub">mais de 10 un.</span></div>
                         <div class="cc-kpi" style="cursor:default"><span class="cc-ico"><i class="fas fa-triangle-exclamation"></i></span><span class="cc-rotulo">Baixo</span><strong id="es-mat-baixo">—</strong><span class="cc-kpi-sub">de 1 a 10 un.</span></div>
                         <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-perigo)"><i class="fas fa-circle-xmark"></i></span><span class="cc-rotulo">Zerado</span><strong id="es-mat-zerado">—</strong><span class="cc-kpi-sub">pedir reposição</span></div>
@@ -1634,7 +1634,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                 <div class="cc-bloco">
                     <div class="cc-titulo-ico"><span class="cc-ico"><i class="fas fa-file-invoice"></i></span><div><div class="cc-rotulo">Ordens de serviço</div><h2 class="cc-titulo">Registrar OS</h2></div></div>
                     <div class="cc-kpis os-kpis" style="margin-top:18px">
-                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-texto-2)"><i class="fas fa-list"></i></span><span class="cc-rotulo">Total</span><strong id="os-badge-total">0</strong></div>
+                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-azul)"><i class="fas fa-list"></i></span><span class="cc-rotulo">Total</span><strong id="os-badge-total">0</strong></div>
                         <div class="cc-kpi" style="cursor:default"><span class="cc-ico"><i class="fas fa-wrench"></i></span><span class="cc-rotulo">Em andamento</span><strong id="os-badge-andamento">0</strong></div>
                         <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-ok)"><i class="fas fa-check"></i></span><span class="cc-rotulo">Concluídas</span><strong id="os-badge-concluido">0</strong></div>
                     </div>
@@ -2246,9 +2246,9 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                     </div>
                     <div class="cc-kpis es-kpis-4 fp-kpis" style="margin-top:16px">
                         <div class="cc-kpi" style="cursor:default"><span class="cc-ico"><i class="fas fa-hourglass-half"></i></span><span class="cc-rotulo">Na fila</span><strong id="fila-ponte-kpi-fila">—</strong><span class="cc-kpi-sub">pedidos aguardando</span></div>
-                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-texto-2)"><i class="fas fa-clock"></i></span><span class="cc-rotulo">Espera estimada</span><strong id="fila-ponte-kpi-espera">—</strong><span class="cc-kpi-sub">para um pedido novo</span></div>
+                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-azul)"><i class="fas fa-clock"></i></span><span class="cc-rotulo">Espera estimada</span><strong id="fila-ponte-kpi-espera">—</strong><span class="cc-kpi-sub">para um pedido novo</span></div>
                         <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-ok)"><i class="fas fa-play"></i></span><span class="cc-rotulo">Em atendimento</span><strong id="fp-kpi-andamento">—</strong><span class="cc-kpi-sub" id="fp-kpi-andamento-sub">agora</span></div>
-                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-texto-2)"><i class="fas fa-circle-check"></i></span><span class="cc-rotulo">Atendidos hoje</span><strong id="fp-kpi-hoje">—</strong><span class="cc-kpi-sub">concluídos no dia</span></div>
+                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-azul)"><i class="fas fa-circle-check"></i></span><span class="cc-rotulo">Atendidos hoje</span><strong id="fp-kpi-hoje">—</strong><span class="cc-kpi-sub">concluídos no dia</span></div>
                     </div>
                 </div>
 

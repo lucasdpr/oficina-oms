@@ -15,28 +15,40 @@
    ================================================================== */
 
 :root {
-    --ds-fundo: #16171a;
-    --ds-bloco: #1e1f23;
-    --ds-bloco-2: #25262b;
-    --ds-linha: #303238;
-    --ds-linha-forte: #3e4047;
+    /* Paleta "aço azulado": mais clara que o grafite antigo e com cor —
+       fundo azul-ardósia, blocos que se destacam do fundo, âmbar da
+       marca + cores de apoio (azul, verde, roxo, ciano) pra dar leitura
+       rápida a cada tipo de informação. */
+    --ds-fundo: #1a2232;
+    --ds-bloco: #232d40;
+    --ds-bloco-2: #2c384e;
+    --ds-linha: #36435c;
+    --ds-linha-forte: #4a5874;
 
-    --ds-texto: #eeeeec;
-    --ds-texto-2: #b8b8b6;
-    --ds-texto-3: #8b8b8f;
+    --ds-texto: #f2f5fa;
+    --ds-texto-2: #c6cedb;
+    --ds-texto-3: #93a0b6;
 
-    --ds-ambar: #f0a334;
-    --ds-sobre-ambar: #1a1208;
-    --ds-perigo: #ff4b3e;
-    --ds-ok: #59c48a;
-    --ds-info: #8fb4d9;
-    --ds-alerta: #f0a334;
+    --ds-ambar: #f7a928;
+    --ds-sobre-ambar: #1c1404;
+    --ds-perigo: #ff5d52;
+    --ds-ok: #34d39a;
+    --ds-info: #5aaeff;
+    --ds-alerta: #f7a928;
 
-    /* escala de desgaste: neutro → âmbar → laranja → vermelho */
-    --pg-c0: #5c5c62;
-    --pg-c1: #b08436;
-    --pg-c2: #f0a334;
-    --pg-c3: #ff4b3e;
+    /* cores de apoio */
+    --ds-azul: #5aaeff;
+    --ds-verde: #34d39a;
+    --ds-roxo: #a98bff;
+    --ds-ciano: #2fd3e6;
+    --ds-laranja: #ff8a3d;
+    --ds-rosa: #ff6fae;
+
+    /* escala de desgaste: verde → amarelo → laranja → vermelho */
+    --pg-c0: #2fbf87;
+    --pg-c1: #e9c43c;
+    --pg-c2: #ff8a3d;
+    --pg-c3: #ff4d4d;
 
     --ds-fonte: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
     --ds-fonte-titulo: "Inter Tight", Inter, system-ui, sans-serif;
@@ -82,36 +94,36 @@ body.light-mode {
    pelo grafite/âmbar em todo lugar de uma vez, sem mexer tela por tela.
    ------------------------------------------------------------------ */
 :root {
-    --bg-main: #16171a;
-    --bg-card: #1e1f23;
-    --bg-sidebar: #121316;
-    --bg-input: #25262b;
-    --bg-hover: rgba(240, 163, 52, .07);
+    --bg-main: #1a2232;
+    --bg-card: #232d40;
+    --bg-sidebar: #161d2b;
+    --bg-input: #2c384e;
+    --bg-hover: rgba(90, 174, 255, .08);
     --bg-th: rgba(0, 0, 0, .28);
     --bg-td: rgba(255, 255, 255, .015);
-    --welcome-bg: #1e1f23;
-    --body-radial: #16171a;
-    --text-main: #d4d4d2;
-    --text-muted: #8b8b8f;
-    --text-heading: #eeeeec;
-    --text-accent: #e3b866;
+    --welcome-bg: #232d40;
+    --body-radial: #1a2232;
+    --text-main: #dde3ec;
+    --text-muted: #93a0b6;
+    --text-heading: #f2f5fa;
+    --text-accent: #ffc35c;
     --text-on-primary: #1a1208;
-    --brand: #f0a334;
-    --brand-bg: rgba(240, 163, 52, .13);
-    --success: #59c48a;
-    --success-bg: rgba(89, 196, 138, .13);
+    --brand: #f7a928;
+    --brand-bg: rgba(247, 169, 40, .14);
+    --success: #34d39a;
+    --success-bg: rgba(52, 211, 154, .14);
     --warning: #e8892b;
     --warning-bg: rgba(232, 137, 43, .14);
     --limit: #ff7a1a;
     --limit-bg: rgba(255, 122, 26, .14);
-    --danger: #ff4b3e;
-    --danger-bg: rgba(255, 75, 62, .13);
-    --info: #d9b67a;
-    --info-bg: rgba(217, 182, 122, .12);
-    --purple: #c79a6b;
-    --purple-bg: rgba(199, 154, 107, .12);
-    --border-color: #303238;
-    --border-glow: rgba(240, 163, 52, .3);
+    --danger: #ff5d52;
+    --danger-bg: rgba(255, 93, 82, .14);
+    --info: #5aaeff;
+    --info-bg: rgba(90, 174, 255, .14);
+    --purple: #a98bff;
+    --purple-bg: rgba(169, 139, 255, .14);
+    --border-color: #36435c;
+    --border-glow: rgba(247, 169, 40, .35);
     --shadow-card: none;
     --shadow-hover: none;
     --shadow: none;
@@ -967,8 +979,9 @@ body.light-mode {
 @media screen {
     body:not(.light-mode) {
         background:
-            radial-gradient(1200px 520px at 60% -180px, rgba(240, 163, 52, .07), transparent 70%),
-            radial-gradient(900px 600px at 0% 100%, rgba(255, 255, 255, .025), transparent 70%),
+            radial-gradient(1100px 520px at 70% -160px, rgba(90, 174, 255, .16), transparent 70%),
+            radial-gradient(900px 480px at 10% -120px, rgba(247, 169, 40, .09), transparent 70%),
+            radial-gradient(900px 600px at 0% 100%, rgba(169, 139, 255, .07), transparent 70%),
             var(--ds-fundo) fixed !important;
     }
     .cc-bloco, .cc-briefing, .cc-kpi, .sq-resumo > *, .tc-acao, .pg-arco, .pg-mcc, .pg-prev-col, .cc-numeros > *,
@@ -1615,6 +1628,66 @@ body #modal-iniciar-ponte .chip-select, body #modal-atividade-massa label:has(in
 body #modal-iniciar-ponte .chip-select-grid { gap: 8px; }
 body #modal-colaboradores-etapa #colaboradores-etapa-lista { max-height: 280px !important; }
 body #modal-colaboradores-etapa label[for="colaboradores-etapa-todos"] { font-size: .98rem !important; }
+
+/* ------------------------------------------------------------------
+   TEMA VIVO (feedback: "muito escuro, tudo cinza, não dá destaque")
+   Cada informação ganha cor pelo significado: azul = informação/contagem,
+   verde = ok/pronto, âmbar = atenção/marca, vermelho = risco, roxo =
+   tempo/histórico, ciano = movimento/logística. Os KPIs ganham faixa e
+   brilho na cor do ícone, a barra lateral ganha ícones coloridos.
+   ------------------------------------------------------------------ */
+.cc-kpi { --kc: var(--ds-ambar); }
+.cc-kpi:has(> .cc-ico[style*="ds-azul"]) { --kc: var(--ds-azul); }
+.cc-kpi:has(> .cc-ico[style*="ds-ok"]), .cc-kpi:has(> .cc-ico[style*="ds-verde"]) { --kc: var(--ds-ok); }
+.cc-kpi:has(> .cc-ico[style*="ds-perigo"]) { --kc: var(--ds-perigo); }
+.cc-kpi:has(> .cc-ico[style*="ds-roxo"]) { --kc: var(--ds-roxo); }
+.cc-kpi:has(> .cc-ico[style*="ds-ciano"]) { --kc: var(--ds-ciano); }
+.cc-kpi:has(> .cc-ico[style*="ds-texto"]) { --kc: var(--ds-azul); }
+@media screen {
+    body .cc-kpi {
+        background: radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--kc) 16%, transparent), transparent 60%), linear-gradient(180deg, color-mix(in srgb, var(--kc) 6%, var(--ds-bloco)), var(--ds-bloco)) !important;
+        border: 1px solid color-mix(in srgb, var(--kc) 22%, var(--ds-linha)) !important;
+        overflow: hidden;
+    }
+    body .cc-kpi::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: linear-gradient(90deg, var(--kc), color-mix(in srgb, var(--kc) 30%, transparent)); }
+    .cc-kpi .cc-ico[style*="ds-texto"] { --ic: var(--ds-azul) !important; }
+    .cc-ico { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ic, var(--ds-ambar)) 28%, transparent); background: color-mix(in srgb, var(--ic, var(--ds-ambar)) 18%, transparent) !important; }
+
+    /* cards de topo do Supervisor com a mesma linguagem dos KPIs */
+    #aba-painel-supervisor .painel-sup-hero > :nth-child(1) { --kc: var(--ds-perigo); }
+    #aba-painel-supervisor .painel-sup-hero > :nth-child(2) { --kc: var(--ds-laranja); }
+    #aba-painel-supervisor .painel-sup-hero > :nth-child(3) { --kc: var(--ds-ambar); }
+    #aba-painel-supervisor .painel-sup-hero > :nth-child(4) { --kc: var(--ds-ok); }
+    #aba-painel-supervisor .painel-sup-hero > * { position: relative; overflow: hidden; background: radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--kc, var(--ds-azul)) 16%, transparent), transparent 60%), linear-gradient(180deg, color-mix(in srgb, var(--kc, var(--ds-azul)) 6%, var(--ds-bloco)), var(--ds-bloco)) !important; border: 1px solid color-mix(in srgb, var(--kc, var(--ds-azul)) 24%, var(--ds-linha)) !important; }
+    #aba-painel-supervisor .painel-sup-hero > *::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: linear-gradient(90deg, var(--kc, var(--ds-azul)), transparent); }
+    /* barra de frota saudável em verde */
+    .cc-medidor > i { background: linear-gradient(90deg, var(--ds-ok), color-mix(in srgb, var(--ds-ok) 55%, #fff)) !important; box-shadow: 0 0 12px color-mix(in srgb, var(--ds-ok) 50%, transparent); }
+    .cc-saude-num { color: var(--ds-ok); }
+
+    /* blocos destacam do fundo com borda clara e filete de luz */
+    .cc-bloco, body .glass-panel { border-color: var(--ds-linha) !important; }
+    .cc-titulo { color: var(--ds-texto); }
+    .cc-rotulo { color: var(--ds-texto-3); }
+
+    /* barra lateral com ícones coloridos por assunto */
+    .sidebar .nav-link i { width: 28px; height: 28px; display: inline-grid; place-items: center; border-radius: 8px; background: color-mix(in srgb, var(--nc, var(--ds-azul)) 16%, transparent); color: var(--nc, var(--ds-azul)) !important; flex: none; }
+    .sidebar .nav-link.active { background: color-mix(in srgb, var(--nc, var(--ds-ambar)) 14%, var(--ds-bloco-2)); border-left-color: var(--nc, var(--ds-ambar)); }
+    .sidebar .nav-link.active i { background: var(--nc, var(--ds-ambar)) !important; color: var(--ds-fundo) !important; width: 28px !important; height: 28px !important; }
+    #nav-painel, #nav-sinotico, #nav-molde-mcc4-3d, #nav-molde-mcc23-3d, #nav-ordens-servico { --nc: var(--ds-azul); }
+    #nav-tecnico, #nav-producao, #nav-almoxarifado { --nc: var(--ds-ambar); }
+    #nav-oficina, #nav-area-oficina, #nav-reparos { --nc: var(--ds-laranja); }
+    #nav-fila-ponte, #nav-fluxo, #nav-hidraulica, #nav-rolos { --nc: var(--ds-ciano); }
+    #nav-chats, #nav-reservas { --nc: var(--ds-verde); }
+    #nav-notificacoes { --nc: var(--ds-rosa); }
+    #nav-painel-supervisor, #nav-painel-adm, #nav-qualidade, #nav-historico, #nav-admin-colaboradores, #nav-dev-teste { --nc: var(--ds-roxo); }
+
+    /* botões secundários e chips com um pouco mais de presença */
+    body .cc-btn { background: var(--ds-bloco-2); border-color: var(--ds-linha-forte); color: var(--ds-texto); }
+    body .cc-btn.on { background: var(--ds-texto); color: var(--ds-fundo); }
+
+    /* tabelas e linhas mais legíveis no fundo novo */
+    body .premium-table th { color: var(--ds-texto-2); }
+}
 
 /* ------------------------------------------------------------------
    RESPONSIVO

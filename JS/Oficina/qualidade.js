@@ -328,7 +328,7 @@ window.renderizarKpisQualidade = function(lista) {
         <div class="cc-kpi" style="cursor:default"><span class="cc-ico"><i class="fas fa-hourglass-half"></i></span><span class="cc-rotulo">Aguardando saída</span><strong>${aguardando}</strong></div>
         <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-ok)"><i class="fas fa-check"></i></span><span class="cc-rotulo">Concluídos</span><strong>${concluidos}</strong></div>
         <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:${achadosPendentes ? 'var(--ds-perigo)' : 'var(--ds-texto-2)'}"><i class="fas fa-triangle-exclamation"></i></span><span class="cc-rotulo">Achados pendentes</span><strong${achadosPendentes ? ' class="cc-perigo"' : ''}>${achadosPendentes}</strong></div>
-        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-texto-2)"><i class="fas fa-list-check"></i></span><span class="cc-rotulo">Achados no total</span><strong>${achadosTotal}</strong></div>
+        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-azul)"><i class="fas fa-list-check"></i></span><span class="cc-rotulo">Achados no total</span><strong>${achadosTotal}</strong></div>
     `;
 };
 
