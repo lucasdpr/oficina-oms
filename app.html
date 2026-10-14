@@ -74,7 +74,7 @@
     <link rel="stylesheet" href="style.css?v=14" />
     <!-- Novo padrão visual (tokens + componentes ds-*). Vem DEPOIS do
          style.css pra vencer em empate de especificidade. -->
-    <link rel="stylesheet" href="design-system.css?v=17" />
+    <link rel="stylesheet" href="design-system.css?v=19" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="JS/assets/icon-192.png?v=4">
@@ -1242,7 +1242,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                     <div class="cc-kpis es-kpis">
                         <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-texto-2)"><i class="fas fa-boxes-stacked"></i></span><span class="cc-rotulo">Peças em estoque</span><strong id="es-rolos-pecas">—</strong><span class="cc-kpi-sub" id="es-rolos-tipos">—</span></div>
                         <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-perigo)"><i class="fas fa-circle-xmark"></i></span><span class="cc-rotulo">Zerados</span><strong id="es-rolos-zerados">—</strong><span class="cc-kpi-sub">tipos sem nenhuma peça</span></div>
-                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico"><i class="fas fa-triangle-exclamation"></i></span><span class="cc-rotulo">Baixos</span><strong id="es-rolos-baixos">—</strong><span class="cc-kpi-sub">tipos com 1 ou 2 peças</span></div>
+                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico"><i class="fas fa-triangle-exclamation"></i></span><span class="cc-rotulo">Baixos</span><strong id="es-rolos-baixos">—</strong><span class="cc-kpi-sub">tipos com 1 a 5 peças</span></div>
                     </div>
                 </div>
                 <div id="rolos-table-body" class="es-grupos"></div>
@@ -2182,23 +2182,17 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                  duplica nada do que já é do Supervisor (ativos, produção,
                  equipe técnica da oficina). -->
             <section id="aba-painel-adm" class="tab-content">
-                <div class="painel-hero">
-                    <div class="painel-hero-fundo"></div>
-                    <div class="painel-hero-conteudo">
-                        <div class="sup-header-selo" style="margin-bottom:10px;"><span class="sup-pulso"></span> PAINEL ADM</div>
-                        <div class="painel-hero-titulo">
-                            <div class="painel-hero-icone"><i class="fas fa-user-shield"></i></div>
-                            <div>
-                                <h1 id="painel-adm-saudacao">Olá!</h1>
-                                <p>Visão geral do sistema: o que precisa de ação, onde estão as peças, quem está usando e os comunicados.</p>
-                            </div>
-                        </div>
-                        <div class="painel-hero-badges">
-                            <button class="painel-hero-badge" style="cursor:pointer; font-family:inherit;" onclick="window.renderPainelAdmExecutivo()"><i class="fas fa-rotate"></i> Atualizar<span>dados</span></button>
-                            <div class="painel-hero-badge" id="painel-adm-badge-comunicados"><i class="fas fa-bullhorn"></i> – <span>Comunicados ativos</span></div>
-                            <div class="painel-hero-badge" id="painel-adm-badge-mensagens"><i class="fas fa-comments"></i> – <span>Mensagens não lidas</span></div>
-                            <div class="painel-hero-badge" id="painel-adm-badge-colaboradores"><i class="fas fa-users"></i> – <span>Colaboradores ativos</span></div>
-                        </div>
+                <!-- ADM no padrão novo: cabeçalho com números do app; o resto
+                     dos blocos mantém ids e é preenchido por painelAdmExecutivo.js -->
+                <div class="cc-bloco">
+                    <div class="es-cab">
+                        <div class="cc-titulo-ico"><span class="cc-ico"><i class="fas fa-user-shield"></i></span><div><div class="cc-rotulo">Administração e suporte do aplicativo</div><h2 class="cc-titulo" id="painel-adm-saudacao">Olá!</h2></div></div>
+                        <button class="cc-btn" onclick="window.renderPainelAdmExecutivo()"><i class="fas fa-rotate"></i> Atualizar</button>
+                    </div>
+                    <div class="adm-topo-nums">
+                        <button type="button" class="adm-topo-num" id="painel-adm-badge-colaboradores" onclick="window.abrirAba(event,'aba-admin-colaboradores')"><strong>–</strong><span>Colaboradores ativos</span></button>
+                        <button type="button" class="adm-topo-num" id="painel-adm-badge-mensagens" onclick="window.abrirChatAdmLista()"><strong>–</strong><span>Mensagens não lidas</span></button>
+                        <button type="button" class="adm-topo-num" id="painel-adm-badge-comunicados" onclick="window.abrirModalCriarAviso()"><strong>–</strong><span>Comunicados ativos</span></button>
                     </div>
                 </div>
 
@@ -2210,22 +2204,22 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                 </div>
 
                 <div class="adm-linha-2">
-                    <div class="glass-panel adm-card">
+                    <div class="cc-bloco adm-card">
                         <div class="adm-card-titulo"><i class="fas fa-industry" style="color:var(--brand);"></i> Situação da planta <small>onde estão as peças agora</small></div>
                         <div id="adm-planta"><div class="text-muted" style="padding:16px 0;">Carregando...</div></div>
                     </div>
-                    <div class="glass-panel adm-card">
+                    <div class="cc-bloco adm-card">
                         <div class="adm-card-titulo"><i class="fas fa-heart-pulse" style="color:var(--success);"></i> Saúde do sistema <small>servidor, banco e este aparelho</small></div>
                         <div id="adm-saude"><div class="text-muted" style="padding:16px 0;">Verificando...</div></div>
                     </div>
                 </div>
 
                 <div class="adm-linha-2">
-                    <div class="glass-panel adm-card">
+                    <div class="cc-bloco adm-card">
                         <div class="adm-card-titulo"><i class="fas fa-user-clock" style="color:var(--info);"></i> Uso do sistema <small>quem está acessando de verdade</small></div>
                         <div id="adm-uso"><div class="text-muted" style="padding:16px 0;">Carregando...</div></div>
                     </div>
-                    <div class="glass-panel adm-card">
+                    <div class="cc-bloco adm-card">
                         <div class="adm-card-titulo"><i class="fas fa-file-excel" style="color:#22c55e;"></i> Exportar para Excel <small>planilha (.csv) pra análise ou backup</small></div>
                         <div class="adm-export-grid">
                             <button class="btn-outline-neutral" onclick="window.exportarCsvAdm('pecas')"><i class="fas fa-cubes"></i> Peças e locais</button>
@@ -2237,59 +2231,43 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                     </div>
                 </div>
 
-                <div class="painel-geral-linha4">
-                    <div class="glass-panel painel-acesso-rapido-card">
-                        <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:2px;">Acesso Rápido</h3>
-                        <p class="text-muted" style="font-size:0.75rem; margin-bottom:16px;">Rotinas administrativas.</p>
-                        <div class="tecnico-atalhos-grid">
-                            <button class="tecnico-atalho-btn" onclick="window.abrirModalCriarAviso()"><i class="fas fa-bullhorn"></i><span>Novo Comunicado</span></button>
-                            <button class="tecnico-atalho-btn" onclick="window.abrirModalAtividadeMassa()"><i class="fas fa-layer-group"></i><span>Atividade em Massa</span></button>
-                            <button class="tecnico-atalho-btn" onclick="window.abrirChatAdmLista()"><i class="fas fa-comments"></i><span>Mensagens das Áreas</span></button>
-                            <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-admin-colaboradores')"><i class="fas fa-user-gear"></i><span>Colaboradores</span></button>
-                            <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-historico')"><i class="fas fa-history"></i><span>Auditoria</span></button>
-                            <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-reparos')"><i class="fas fa-screwdriver-wrench"></i><span>Reparos</span></button>
-                            <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-reservas')"><i class="fas fa-boxes-stacked"></i><span>Reservas</span></button>
-                            <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-ordens-servico')"><i class="fas fa-file-invoice"></i><span>Ordens de Serviço</span></button>
-                            <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-qualidade')"><i class="fas fa-magnifying-glass"></i><span>Qualidade</span></button>
-                        </div>
-                    </div>
-                    <div class="glass-panel painel-ajuda-card">
-                        <div class="painel-ajuda-icone"><i class="fas fa-circle-question"></i></div>
-                        <div>
-                            <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:2px;">Precisa de ajuda?</h3>
-                            <p class="text-muted" style="font-size:0.8rem; margin-bottom:12px;">Acesse o suporte do sistema.</p>
-                            <button class="btn-outline-neutral" style="width:100%;" onclick="alert('Suporte: fale com o administrador do sistema ou o setor de TI da CSN.')">Falar com suporte <i class="fas fa-arrow-right"></i></button>
-                        </div>
+                <div class="cc-bloco">
+                    <div class="cc-titulo-ico" style="margin-bottom:14px"><span class="cc-ico"><i class="fas fa-bolt"></i></span><div><div class="cc-rotulo">Rotinas administrativas</div><h2 class="cc-titulo">Acesso rápido</h2></div></div>
+                    <div class="tecnico-atalhos-grid adm-atalhos">
+                        <button class="tecnico-atalho-btn" onclick="window.abrirModalCriarAviso()"><i class="fas fa-bullhorn"></i><span>Novo Comunicado</span></button>
+                        <button class="tecnico-atalho-btn" onclick="window.abrirModalAtividadeMassa()"><i class="fas fa-layer-group"></i><span>Atividade em Massa</span></button>
+                        <button class="tecnico-atalho-btn" onclick="window.abrirChatAdmLista()"><i class="fas fa-comments"></i><span>Mensagens das Áreas</span></button>
+                        <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-admin-colaboradores')"><i class="fas fa-user-gear"></i><span>Colaboradores</span></button>
+                        <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-historico')"><i class="fas fa-history"></i><span>Auditoria</span></button>
+                        <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-reparos')"><i class="fas fa-screwdriver-wrench"></i><span>Reparos</span></button>
+                        <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-reservas')"><i class="fas fa-boxes-stacked"></i><span>Reservas</span></button>
+                        <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-ordens-servico')"><i class="fas fa-file-invoice"></i><span>Ordens de Serviço</span></button>
+                        <button class="tecnico-atalho-btn" onclick="window.abrirAba(event,'aba-qualidade')"><i class="fas fa-magnifying-glass"></i><span>Qualidade</span></button>
+                        <button class="tecnico-atalho-btn" onclick="alert('Suporte: fale com o administrador do sistema ou o setor de TI da CSN.')"><i class="fas fa-circle-question"></i><span>Suporte</span></button>
                     </div>
                 </div>
 
-                <div class="painel-sup-secao painel-sup-secao-qualidade">
-                    <div class="painel-sup-secao-titulo">
-                        <span class="sup-secao-icone"><i class="fas fa-bullhorn"></i></span>
-                        <span class="sup-secao-texto">Comunicados do Sistema<small>o que foi avisado, e quem já leu</small></span>
-                    </div>
-                    <div class="painel-sup-secao-corpo" id="adm-exec-avisos-lista"></div>
+                <div class="cc-bloco">
+                    <div class="cc-titulo-ico" style="margin-bottom:6px"><span class="cc-ico"><i class="fas fa-bullhorn"></i></span><div><div class="cc-rotulo">O que foi avisado e quem já leu</div><h2 class="cc-titulo">Comunicados do sistema</h2></div></div>
+                    <div id="adm-exec-avisos-lista"></div>
                 </div>
 
-                <div class="painel-geral-linha3-lateral" style="grid-template-columns: 1fr 1fr;">
-                    <div class="glass-panel" style="padding:20px;">
-                        <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:4px;"><i class="fas fa-comments" style="color:var(--brand);"></i> Mensagens das Áreas</h3>
-                        <p class="text-muted" style="font-size:0.75rem; margin-bottom:14px;">Conversas por área — supervisão e não lidas.</p>
+                <div class="adm-linha-2">
+                    <div class="cc-bloco adm-card">
+                        <div class="cc-titulo-ico" style="margin-bottom:10px"><span class="cc-ico"><i class="fas fa-comments"></i></span><div><div class="cc-rotulo">Supervisão e não lidas</div><h2 class="cc-titulo">Mensagens das áreas</h2></div></div>
                         <div id="painel-adm-mensagens-areas"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
                     </div>
-                    <div class="glass-panel" style="padding:20px;">
-                        <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:4px;"><i class="fas fa-users" style="color:var(--info);"></i> Colaboradores</h3>
-                        <p class="text-muted" style="font-size:0.75rem; margin-bottom:14px;">Ativos e inativos, por cargo.</p>
+                    <div class="cc-bloco adm-card">
+                        <div class="cc-titulo-ico" style="margin-bottom:10px"><span class="cc-ico"><i class="fas fa-users"></i></span><div><div class="cc-rotulo">Ativos e inativos, por cargo</div><h2 class="cc-titulo">Colaboradores</h2></div></div>
                         <div id="painel-adm-colaboradores-resumo"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
                     </div>
                 </div>
 
-                <div class="glass-panel" style="padding:20px; margin-top:24px;">
-                    <div class="flex-between" style="margin-bottom:4px;">
-                        <h3 style="color:var(--text-heading); font-size:1rem;"><i class="fas fa-clock-rotate-left" style="color:var(--warning);"></i> Últimos Eventos do Sistema</h3>
-                        <button class="btn-outline-neutral" style="padding:6px 12px; font-size:12px;" onclick="window.abrirAba(event,'aba-historico')">Ver Auditoria Completa <i class="fas fa-arrow-right"></i></button>
+                <div class="cc-bloco">
+                    <div class="es-cab" style="margin-bottom:10px">
+                        <div class="cc-titulo-ico"><span class="cc-ico"><i class="fas fa-clock-rotate-left"></i></span><div><div class="cc-rotulo">De todas as áreas</div><h2 class="cc-titulo">Últimos eventos</h2></div></div>
+                        <button class="cc-btn" onclick="window.abrirAba(event,'aba-historico')">Auditoria completa <i class="fas fa-arrow-right"></i></button>
                     </div>
-                    <p class="text-muted" style="font-size:0.75rem; margin-bottom:14px;">Últimos eventos registrados, de todas as áreas.</p>
                     <div id="painel-adm-eventos-recentes"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
                 </div>
             </section>
@@ -2315,31 +2293,25 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                  solicitar as pontes daqui, com prioridade, previsão de tempo de
                  espera, fila reordenável e chat com o técnico da ponte. -->
             <section id="aba-fila-ponte" class="tab-content">
-                <div class="glass-panel" style="border-top:4px solid var(--border-color); padding:24px; margin-bottom:20px;">
-                    <h2>🏗️ Fila da Ponte Rolante</h2>
-                    <p class="text-muted" style="font-size:13px;">Solicite a Ponte 221 ou 146 — fila única, atendida pela ordem de prioridade.</p>
+                <!-- Fila da ponte no padrão novo: números da fila, pedido em
+                     bloco próprio e fila em cards com posição e previsão de
+                     início. Ids/funções mantidos (atividades.js). -->
+                <div class="cc-bloco">
+                    <div class="es-cab">
+                        <div class="cc-titulo-ico"><span class="cc-ico"><i class="fas fa-truck-ramp-box"></i></span><div><div class="cc-rotulo">Pontes 221 e 146 · fila única</div><h2 class="cc-titulo">Fila da ponte rolante</h2></div></div>
+                        <button class="cc-btn cc-btn-cheio" onclick="window.abrirFormFilaPonte()"><i class="fas fa-plus"></i> Solicitar a ponte</button>
+                    </div>
+                    <div class="cc-kpis es-kpis-4 fp-kpis" style="margin-top:16px">
+                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico"><i class="fas fa-hourglass-half"></i></span><span class="cc-rotulo">Na fila</span><strong id="fila-ponte-kpi-fila">—</strong><span class="cc-kpi-sub">pedidos aguardando</span></div>
+                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-texto-2)"><i class="fas fa-clock"></i></span><span class="cc-rotulo">Espera estimada</span><strong id="fila-ponte-kpi-espera">—</strong><span class="cc-kpi-sub">para um pedido novo</span></div>
+                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-ok)"><i class="fas fa-play"></i></span><span class="cc-rotulo">Em atendimento</span><strong id="fp-kpi-andamento">—</strong><span class="cc-kpi-sub" id="fp-kpi-andamento-sub">agora</span></div>
+                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-texto-2)"><i class="fas fa-circle-check"></i></span><span class="cc-rotulo">Atendidos hoje</span><strong id="fp-kpi-hoje">—</strong><span class="cc-kpi-sub">concluídos no dia</span></div>
+                    </div>
                 </div>
 
-                <div class="kpi-container" style="margin-bottom:20px;">
-                    <div class="kpi-card warning">
-                        <div class="kpi-icon glow-warning"><i class="fas fa-hourglass-half"></i></div>
-                        <div class="kpi-data"><h4 id="fila-ponte-kpi-fila">–</h4><p>Na Fila Agora</p></div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-icon glow-brand"><i class="fas fa-clock"></i></div>
-                        <div class="kpi-data"><h4 id="fila-ponte-kpi-espera">–</h4><p>Tempo Médio de Espera</p></div>
-                    </div>
-                </div>
-
-                <div class="glass-panel" style="padding:24px; margin-bottom:20px;">
-                    <div class="flex-between" style="margin-bottom:16px;">
-                        <h3 style="color:var(--text-heading); font-size:1rem;"><i class="fas fa-plus"></i> Solicitar a Ponte</h3>
-                        <button class="btn-xs-primary" style="color:var(--brand); background:var(--brand-bg);" onclick="document.getElementById('fila-ponte-form-card').classList.toggle('hidden')">
-                            <i class="fas fa-plus"></i> Nova Solicitação
-                        </button>
-                    </div>
-                    <div class="hidden" id="fila-ponte-form-card">
-                        <div class="form-grid-4" style="margin-bottom:12px;">
+                <div class="cc-bloco hidden fp-form" id="fila-ponte-form-card">
+                    <div class="cc-titulo-ico" style="margin-bottom:16px"><span class="cc-ico"><i class="fas fa-paper-plane"></i></span><div><div class="cc-rotulo">Novo pedido</div><h2 class="cc-titulo">O que a ponte precisa fazer?</h2></div></div>
+                    <div class="form-grid-4" style="margin-bottom:12px;">
                             <div class="input-group" style="grid-column: span 2;">
                                 <label>O que precisa?</label>
                                 <textarea id="fila-ponte-descricao" class="premium-textarea" rows="1" placeholder="Ex: Içar molde do Veio C pra bancada..."></textarea>
@@ -2348,12 +2320,12 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                                 <label>Prioridade</label>
                                 <select id="fila-ponte-prioridade" class="premium-select" style="width:100%;">
                                     <option value="Normal">Normal</option>
-                                    <option value="Urgente">🔴 Urgente</option>
-                                    <option value="Rápida">⚡ Rápida</option>
+                                    <option value="Urgente">Urgente</option>
+                                    <option value="Rápida">Rápida</option>
                                 </select>
                             </div>
                             <div class="input-group">
-                                <label>Duração Estimada <span class="text-muted" style="font-weight:400;">(min)</span></label>
+                                <label>Duração estimada <span class="text-muted" style="font-weight:400;">(min)</span></label>
                                 <input type="number" id="fila-ponte-duracao" class="premium-input" style="width:100%;" min="1" placeholder="Ex: 30">
                             </div>
                         </div>
@@ -2369,15 +2341,14 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                                 <label class="chip-select"><input type="checkbox" class="fila-ponte-acessorio-check" value="Cinta"> Cinta</label>
                             </div>
                         </div>
-                        <div style="display:flex; justify-content:flex-end; gap:8px;">
-                            <button class="btn-outline-danger" onclick="document.getElementById('fila-ponte-form-card').classList.add('hidden')">Cancelar</button>
-                            <button class="btn-premium" onclick="window.criarSolicitacaoFilaPonteRolante()"><i class="fas fa-paper-plane"></i> Solicitar</button>
-                        </div>
+                    <div class="fp-form-acoes">
+                        <button class="cc-btn" onclick="document.getElementById('fila-ponte-form-card').classList.add('hidden')">Cancelar</button>
+                        <button class="cc-btn cc-btn-cheio" onclick="window.criarSolicitacaoFilaPonteRolante()"><i class="fas fa-paper-plane"></i> Entrar na fila</button>
                     </div>
                 </div>
 
-                <div class="glass-panel" style="padding:24px;">
-                    <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:16px;"><i class="fas fa-list-ol"></i> Fila Atual</h3>
+                <div class="cc-bloco">
+                    <div class="es-grupo-cab"><h3>Fila agora</h3><span id="fp-fila-resumo"></span></div>
                     <div id="fila-ponte-lista"></div>
                 </div>
             </section>
@@ -2387,7 +2358,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
             <div id="modal-iniciar-ponte" class="modal-overlay hidden modal-tela-cheia" style="z-index:10001;">
                 <div class="modal-content" style="max-width:480px; text-align:left;">
                     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
-                        <h2 style="color:var(--text-heading); margin:0;">🏗️ Iniciar Atendimento</h2>
+                        <h2 style="color:var(--text-heading); margin:0;">Iniciar atendimento</h2>
                         <button class="btn-close-emergency" onclick="window.fecharModalIniciarPonte()"><i class="fas fa-times"></i></button>
                     </div>
                     <div class="input-group" style="margin-bottom:14px;">
@@ -3239,16 +3210,16 @@ a, button, [onclick], label[for], select { cursor: pointer; }
         import './JS/Oficina/ordemServico.js?v=2';
         import './JS/Paineis/colaboradores.js?v=2';
         import './JS/Paineis/chats.js?v=1';
-        import './JS/Paineis/painelAdmExecutivo.js?v=1';
+        import './JS/Paineis/painelAdmExecutivo.js?v=2';
         import './JS/Paineis/painelSupervisorUI.js?v=2';
         import './JS/Paineis/centralAreas.js?v=2';
-        import './JS/Oficina/atividades.js?v=3';
+        import './JS/Oficina/atividades.js?v=4';
         import './JS/Paineis/painelAreaAdministrativa.js?v=2';
         import './JS/Oficina/apontamento.js?v=2';
         import './JS/Paineis/notificacoes.js?v=3';
         import './JS/Oficina/painelTecnico.js?v=5';
         import './JS/Oficina/folhoesPonte.js?v=1';
-        import './JS/Oficina/estoque.js?v=4';
+        import './JS/Oficina/estoque.js?v=5';
         import './JS/Oficina/veiosAtivos.js?v=7';
         import './JS/ui.js?v=14';
         import './JS/painelGeralExtra.js?v=1';

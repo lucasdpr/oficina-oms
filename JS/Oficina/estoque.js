@@ -164,7 +164,7 @@ function renderRolos() {
     esTxt("es-rolos-pecas", BANCO_ROLOS.reduce((s, r) => s + qtd(r), 0).toLocaleString('pt-BR'));
     esTxt("es-rolos-tipos", `em ${BANCO_ROLOS.length} tipos de rolo`);
     esTxt("es-rolos-zerados", BANCO_ROLOS.filter(r => qtd(r) === 0).length);
-    esTxt("es-rolos-baixos", BANCO_ROLOS.filter(r => qtd(r) > 0 && qtd(r) <= 2).length);
+    esTxt("es-rolos-baixos", BANCO_ROLOS.filter(r => qtd(r) > 0 && qtd(r) <= 5).length);
 
     if (!BANCO_ROLOS.length) {
         alvo.innerHTML = `<div class="cc-bloco es-vazio">Nenhum rolo cadastrado.</div>`;
@@ -178,10 +178,10 @@ function renderRolos() {
             <div class="es-grupo-cab"><h3>${conj}</h3><span>${(t => `${t} ${t === 1 ? 'peça' : 'peças'}`)(itens.reduce((s, r) => s + qtd(r), 0))} · ${itens.length} ${itens.length === 1 ? 'tipo' : 'tipos'}${zerados ? ` · <b class="cc-perigo">${zerados} zerado${zerados > 1 ? 's' : ''}</b>` : ''}</span></div>
             <div class="es-itens">${itens.map(r => {
                 const n = qtd(r);
-                const est = n === 0 ? 'es-zero' : (n <= 2 ? 'es-baixo' : '');
+                const est = n === 0 ? 'es-zero' : (n <= 5 ? 'es-baixo' : '');
                 return `<div class="es-item ${est}">
                     <div class="es-item-topo"><strong class="es-nome">${r.nome}</strong><span class="es-mcc">MCC ${r.mcc_compat}</span></div>
-                    ${n === 0 ? '<span class="es-alerta"><i class="fas fa-circle-xmark"></i> Sem peça na oficina</span>' : (n <= 2 ? '<span class="es-alerta"><i class="fas fa-triangle-exclamation"></i> Estoque baixo</span>' : '')}
+                    ${n === 0 ? '<span class="es-alerta"><i class="fas fa-circle-xmark"></i> Sem peça na oficina</span>' : (n <= 5 ? '<span class="es-alerta"><i class="fas fa-triangle-exclamation"></i> Estoque baixo</span>' : '')}
                     ${esStepper(`alterarSaldoRolo('${r.id}', -1)`, `alterarSaldoRolo('${r.id}', 1)`, `saldo-rolo-${r.id}`, n, n === 1 ? 'peça' : 'peças')}
                 </div>`;
             }).join('')}</div>

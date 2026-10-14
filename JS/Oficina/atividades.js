@@ -583,39 +583,61 @@ window.renderFilaPonteRolante = async function() {
         // alheio.
         const podeExcluir = (x) => podeAtender || (OPERADOR_LOGADO && x.solicitante_matricula && x.solicitante_matricula === OPERADOR_LOGADO.matricula);
 
+        // Números do topo: quem está sendo atendido e quanto saiu hoje.
+        const hojeISO = new Date().toISOString().slice(0, 10);
+        const andamento = emAberto.filter(x => x.status === 'Em Andamento');
+        const elAnd = document.getElementById('fp-kpi-andamento');
+        if (elAnd) elAnd.textContent = andamento.length;
+        const elAndSub = document.getElementById('fp-kpi-andamento-sub');
+        if (elAndSub) elAndSub.textContent = andamento.length ? andamento.map(x => x.equipamento_id ? `Ponte ${x.equipamento_id}` : 'ponte').join(' · ') : 'nenhuma ponte ocupada';
+        const elHoje = document.getElementById('fp-kpi-hoje');
+        if (elHoje) elHoje.textContent = atividades.filter(x => x.status === 'Concluído' && String(x.concluido_em || '').slice(0, 10) === hojeISO).length;
+        const elRes = document.getElementById('fp-fila-resumo');
+        if (elRes) elRes.textContent = emAberto.length ? `${emAberto.length} ${emAberto.length === 1 ? 'pedido' : 'pedidos'} em aberto` : '';
+
+        const fmtMin = m => m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}min` : ''}` : `${m}min`;
+        const esc = v => window.escapeHtmlNotif ? window.escapeHtmlNotif(String(v ?? '')) : String(v ?? '');
+
         if (!emAberto.length) {
-            lista.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhuma solicitação na fila agora.</div>`;
+            lista.innerHTML = `<div class="fp-vazio"><i class="fas fa-circle-check"></i><div><strong>Fila vazia</strong><span>As pontes estão livres. Um pedido novo é atendido na hora.</span></div></div>`;
         } else {
-            lista.innerHTML = emAberto.map((x, i) => {
-                const cor = FILA_PONTE_CORES_PRIORIDADE[x.prioridade] || '#94a3b8';
+            // Previsão de início: soma das durações de quem está na frente
+            // (só quando todos na frente informaram a duração).
+            let acumulado = 0, previsivel = true;
+            lista.innerHTML = `<div class="fp-lista">${emAberto.map((x, i) => {
+                const prio = x.prioridade || 'Normal';
+                const cor = FILA_PONTE_CORES_PRIORIDADE[prio] || '#94a3b8';
+                const emAtend = x.status === 'Em Andamento';
+                const inicio = emAtend ? '<span class="fp-agora"><i class="cc-led"></i> Em atendimento</span>'
+                    : (i === 0 || (previsivel && acumulado === 0) ? '<span class="fp-prev">Próximo</span>'
+                    : (previsivel ? `<span class="fp-prev">começa em ~${fmtMin(acumulado)}</span>` : ''));
+                if (x.duracao_estimada_min) acumulado += Number(x.duracao_estimada_min) || 0; else previsivel = false;
+                const area = x.solicitante_area ? (AREAS_OFICINA.find(a => a.chave === x.solicitante_area)?.nome || x.solicitante_area) : '';
+                const tags = [
+                    area && `<span><i class="fas fa-user"></i> ${esc(area)}</span>`,
+                    x.duracao_estimada_min && `<span><i class="fas fa-stopwatch"></i> ~${fmtMin(Number(x.duracao_estimada_min))}</span>`,
+                    x.equipamento_id && `<span><i class="fas fa-truck-ramp-box"></i> Ponte ${esc(x.equipamento_id)}</span>`,
+                    x.acessorios_ponte && `<span><i class="fas fa-link"></i> ${esc(x.acessorios_ponte)}</span>`,
+                ].filter(Boolean).join('');
                 return `
-                <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px 12px; padding:12px 0; border-bottom:1px solid var(--border);">
-                    <div style="display:flex; align-items:center; gap:10px; min-width:0;">
-                        ${podeAtender ? `
-                        <div style="display:flex; flex-direction:column; gap:2px;">
-                            <button class="btn-xs-primary" style="padding:2px 6px;" title="Subir na fila" ${i === 0 ? 'disabled' : ''} onclick="window.moverFilaPonteRolante(${x.id}, -1)"><i class="fas fa-caret-up"></i></button>
-                            <button class="btn-xs-primary" style="padding:2px 6px;" title="Descer na fila" ${i === emAberto.length - 1 ? 'disabled' : ''} onclick="window.moverFilaPonteRolante(${x.id}, 1)"><i class="fas fa-caret-down"></i></button>
-                        </div>` : ''}
-                        <span style="font-weight:700; color:${cor}; font-size:12px; min-width:60px;">${x.prioridade || 'Normal'}</span>
-                        <div style="min-width:0;">
-                            <div style="color:var(--text-body); word-break:break-word;">${x.descricao}</div>
-                            <div class="text-muted" style="font-size:11px;">${x.solicitante_area ? `Solicitado por: ${AREAS_OFICINA.find(a => a.chave === x.solicitante_area)?.nome || x.solicitante_area} — ` : ''}${x.duracao_estimada_min ? `~${x.duracao_estimada_min}min — ` : ''}${x.equipamento_id ? `Ponte ${x.equipamento_id} — ` : ''}${x.acessorios_ponte ? `${x.acessorios_ponte} — ` : ''}${x.status}</div>
-                        </div>
+                <div class="fp-item${emAtend ? ' fp-ativo' : ''}" style="--pc:${cor}">
+                    <div class="fp-pos">${podeAtender ? `<button class="fp-mover" title="Subir na fila" aria-label="Subir na fila" ${i === 0 ? 'disabled' : ''} onclick="window.moverFilaPonteRolante(${x.id}, -1)"><i class="fas fa-chevron-up"></i></button>` : ''}<strong>${i + 1}º</strong>${podeAtender ? `<button class="fp-mover" title="Descer na fila" aria-label="Descer na fila" ${i === emAberto.length - 1 ? 'disabled' : ''} onclick="window.moverFilaPonteRolante(${x.id}, 1)"><i class="fas fa-chevron-down"></i></button>` : ''}</div>
+                    <div class="fp-corpo">
+                        <div class="fp-linha1"><span class="fp-prio">${esc(prio)}</span>${inicio}</div>
+                        <div class="fp-desc">${esc(x.descricao)}</div>
+                        ${tags ? `<div class="fp-tags">${tags}</div>` : ''}
                     </div>
-                    <div style="display:flex; gap:6px; flex-shrink:0;">
-                        <button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.abrirConversaAtividade(${x.id})" title="Conversa"><i class="fas fa-comments"></i></button>
-                        ${podeAtender && x.status === 'Pendente' ? `<button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusFilaPonteRolante(${x.id}, 'Em Andamento')">Iniciar</button>` : ''}
-                        ${podeAtender && x.status === 'Em Andamento' ? `<button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusFilaPonteRolante(${x.id}, 'Concluído')">Concluir</button>` : ''}
-                        ${podeExcluir(x) ? `<button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.excluirSolicitacaoFilaPonteRolante(${x.id})" title="Excluir"><i class="fas fa-trash"></i></button>` : ''}
+                    <div class="fp-acoes">
+                        <button class="cc-btn" onclick="window.abrirConversaAtividade(${x.id})" title="Conversa" aria-label="Conversa"><i class="fas fa-comments"></i></button>
+                        ${podeAtender && x.status === 'Pendente' ? `<button class="cc-btn cc-btn-cheio" onclick="window.mudarStatusFilaPonteRolante(${x.id}, 'Em Andamento')"><i class="fas fa-play"></i> Iniciar</button>` : ''}
+                        ${podeAtender && emAtend ? `<button class="cc-btn cc-btn-cheio" onclick="window.mudarStatusFilaPonteRolante(${x.id}, 'Concluído')"><i class="fas fa-check"></i> Concluir</button>` : ''}
+                        ${podeExcluir(x) ? `<button class="cc-btn fp-excluir" onclick="window.excluirSolicitacaoFilaPonteRolante(${x.id})" title="Excluir" aria-label="Excluir"><i class="fas fa-trash"></i></button>` : ''}
                     </div>
                 </div>`;
-            }).join('');
+            }).join('')}</div>`;
         }
 
-        // 🆕 Arquivo separado por dia (concluído/recusado/etc) — em vez
-        // de uma lista plana das últimas 10, agrupa por data (concluido_em
-        // quando tem, senão criado_em) pra achar "o que rolou no dia X"
-        // sem precisar caçar item por item numa lista única.
+        // Arquivo por dia (concluído/recusado/etc), recolhido.
         if (finalizadas.length) {
             const porDia = new Map();
             finalizadas.forEach(x => {
@@ -625,15 +647,13 @@ window.renderFilaPonteRolante = async function() {
             });
             const diasOrdenados = [...porDia.keys()].sort((a, b) => b.localeCompare(a));
             lista.innerHTML += `
-                <details style="margin-top:16px;">
-                    <summary class="text-muted" style="cursor:pointer; font-size:12px;">Arquivo — atendimentos por dia</summary>
+                <details class="fp-arquivo">
+                    <summary><i class="fas fa-box-archive"></i> Atendimentos anteriores <span>${finalizadas.length}</span></summary>
                     ${diasOrdenados.map(dia => `
-                        <div style="margin-top:10px;">
-                            <div style="font-weight:700; font-size:12px; color:var(--text-heading); margin-bottom:4px;">${dia ? new Date(dia + 'T00:00:00').toLocaleDateString('pt-BR') : 'Sem data'}</div>
+                        <div class="fp-dia">
+                            <div class="fp-dia-tit">${dia ? new Date(dia + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }) : 'Sem data'} <span>${porDia.get(dia).length}</span></div>
                             ${porDia.get(dia).map(x => `
-                                <div style="padding:8px 0; border-bottom:1px solid var(--border); font-size:12px;" class="text-muted">
-                                    ${x.descricao} — ${x.status}${x.equipamento_id ? ` — Ponte ${x.equipamento_id}` : ''}
-                                </div>
+                                <div class="fp-dia-item"><span class="fp-dia-st fp-st-${x.status === 'Concluído' ? 'ok' : 'outro'}">${esc(x.status)}</span><span class="fp-dia-desc">${esc(x.descricao)}</span>${x.equipamento_id ? `<span class="fp-dia-ponte">Ponte ${esc(x.equipamento_id)}</span>` : ''}</div>
                             `).join('')}
                         </div>
                     `).join('')}
@@ -642,6 +662,16 @@ window.renderFilaPonteRolante = async function() {
     } catch (e) {
         console.error('⚠️ Não consegui carregar a fila da Ponte Rolante:', e);
         lista.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">Não foi possível carregar a fila agora.</div>`;
+    }
+};
+
+window.abrirFormFilaPonte = function() {
+    const card = document.getElementById('fila-ponte-form-card');
+    if (!card) return;
+    card.classList.toggle('hidden');
+    if (!card.classList.contains('hidden')) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(() => document.getElementById('fila-ponte-descricao')?.focus(), 300);
     }
 };
 

@@ -35,9 +35,9 @@ window.renderPainelAdmExecutivo = async function() {
             const resp = await fetch(`${apiBase}/api/avisos/todos`, { cache: 'no-store' });
             const avisos = resp.ok ? await resp.json() : [];
             const ativos = Array.isArray(avisos) ? avisos.filter(a => a.ativo).length : 0;
-            if (badge) badge.innerHTML = `<i class="fas fa-bullhorn"></i> ${ativos} <span>Comunicados ativos</span>`;
+            if (badge) badge.innerHTML = `<strong>${ativos}</strong><span>Comunicados ativos</span>`;
         } catch (e) {
-            if (badge) badge.innerHTML = `<i class="fas fa-bullhorn"></i> – <span>Comunicados ativos</span>`;
+            if (badge) badge.innerHTML = `<strong>–</strong><span>Comunicados ativos</span>`;
         }
     })();
 
@@ -49,7 +49,7 @@ window.renderPainelAdmExecutivo = async function() {
             const resp = await fetch(`${apiBase}/api/mensagens_area/resumo`, { cache: 'no-store', headers: headersAdmin() });
             const resumo = resp.ok ? await resp.json() : [];
             const totalNaoLidas = Array.isArray(resumo) ? resumo.reduce((s, r) => s + (Number(r.nao_lidas) || 0), 0) : 0;
-            if (badge) badge.innerHTML = `<i class="fas fa-comments"></i> ${totalNaoLidas} <span>Mensagens não lidas</span>`;
+            if (badge) badge.innerHTML = `<strong>${totalNaoLidas}</strong><span>Mensagens não lidas</span>`;
 
             if (container) {
                 const comConversa = Array.isArray(resumo) ? resumo.slice().sort((a, b) => (Number(b.nao_lidas) || 0) - (Number(a.nao_lidas) || 0)) : [];
@@ -74,7 +74,7 @@ window.renderPainelAdmExecutivo = async function() {
             const resp = await fetch(`${apiBase}/api/colaboradores/todos`, { cache: 'no-store', headers: headersAdmin() });
             const colaboradores = resp.ok ? await resp.json() : [];
             const ativos = Array.isArray(colaboradores) ? colaboradores.filter(c => c.ativo) : [];
-            if (badge) badge.innerHTML = `<i class="fas fa-users"></i> ${ativos.length} <span>Colaboradores ativos</span>`;
+            if (badge) badge.innerHTML = `<strong>${ativos.length}</strong><span>Colaboradores ativos</span>`;
 
             if (container) {
                 const porCargo = {};
