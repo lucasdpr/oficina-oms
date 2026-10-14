@@ -71,6 +71,145 @@ body.light-mode {
 }
 
 /* ------------------------------------------------------------------
+   TEMA GLOBAL — o app inteiro passa pro padrão novo
+   ------------------------------------------------------------------
+   style.css define as variáveis de cor/raio/sombra usadas por TODAS as
+   telas (sidebar, modais, tabelas, folhões…). Este arquivo carrega
+   depois, então redefinir as mesmas variáveis aqui troca o azul antigo
+   pelo grafite/âmbar em todo lugar de uma vez, sem mexer tela por tela.
+   ------------------------------------------------------------------ */
+:root {
+    --bg-main: #0e0c0a;
+    --bg-card: #15120f;
+    --bg-sidebar: #0b0a08;
+    --bg-input: #1b1814;
+    --bg-hover: rgba(240, 163, 52, .07);
+    --bg-th: rgba(0, 0, 0, .28);
+    --bg-td: rgba(255, 240, 210, .018);
+    --welcome-bg: #15120f;
+    --body-radial: #0e0c0a;
+    --text-main: #d6cfc2;
+    --text-muted: #8a8577;
+    --text-heading: #f0ebe1;
+    --text-accent: #e3b866;
+    --text-on-primary: #1a1208;
+    --brand: #f0a334;
+    --brand-bg: rgba(240, 163, 52, .13);
+    --success: #59c48a;
+    --success-bg: rgba(89, 196, 138, .13);
+    --warning: #e8892b;
+    --warning-bg: rgba(232, 137, 43, .14);
+    --limit: #ff7a1a;
+    --limit-bg: rgba(255, 122, 26, .14);
+    --danger: #ff4b3e;
+    --danger-bg: rgba(255, 75, 62, .13);
+    --info: #d9b67a;
+    --info-bg: rgba(217, 182, 122, .12);
+    --purple: #c79a6b;
+    --purple-bg: rgba(199, 154, 107, .12);
+    --border-color: #2a251e;
+    --border-glow: rgba(240, 163, 52, .3);
+    --shadow-card: none;
+    --shadow-hover: none;
+    --shadow: none;
+    --font-display: "Inter Tight", Inter, system-ui, sans-serif;
+    --radius: 4px;
+    --radius-sm: 2px;
+    --radius-md: 4px;
+    --radius-lg: 6px;
+    --radius-xl: 6px;
+    --radius-card: 6px;
+}
+body.light-mode {
+    --bg-main: #efece6;
+    --bg-card: #f8f6f2;
+    --bg-sidebar: #f4f1ec;
+    --bg-input: #ffffff;
+    --bg-hover: rgba(201, 122, 18, .08);
+    --bg-th: rgba(60, 40, 10, .05);
+    --bg-td: rgba(60, 40, 10, .015);
+    --welcome-bg: #f8f6f2;
+    --body-radial: #efece6;
+    --text-main: #2e2a23;
+    --text-muted: #81796b;
+    --text-heading: #16130f;
+    --text-accent: #9a5f0c;
+    --text-on-primary: #fff8ec;
+    --brand: #c97a12;
+    --brand-bg: rgba(201, 122, 18, .12);
+    --success: #1f8f55;
+    --warning: #c46a10;
+    --danger: #d4291d;
+    --info: #8a6a35;
+    --info-bg: rgba(138, 106, 53, .1);
+    --purple: #8a6a35;
+    --border-color: #dcd6cb;
+}
+body, body.light-mode {
+    background-image: none;
+    background-color: var(--bg-main);
+}
+.glass-panel { box-shadow: none; }
+
+/* Barra lateral */
+.sidebar { background: var(--bg-sidebar); border-right: 1px solid var(--ds-linha); }
+.sidebar::after { display: none; }
+.sidebar-header h2 { font-family: var(--ds-fonte-titulo); font-weight: 600; letter-spacing: -.01em; }
+.sidebar-header h2 i, .sidebar-header h2 i.text-accent {
+    background: none;
+    -webkit-text-fill-color: var(--ds-ambar);
+    color: var(--ds-ambar);
+}
+.sidebar .operator-box { border-radius: 0; border: 1px solid var(--ds-linha); background: var(--ds-bloco); box-shadow: none; }
+.sidebar-nav { gap: 0; }
+.nav-link {
+    border-radius: 0;
+    border-left: 2px solid transparent;
+    font: 500 .84rem var(--ds-fonte);
+    color: var(--ds-texto-2);
+    box-shadow: none;
+}
+.nav-link i { color: var(--ds-texto-3); }
+.nav-link:hover { background: var(--ds-bloco-2); color: var(--ds-texto); transform: none; }
+.nav-link:hover i { color: var(--ds-texto-2); transform: none; }
+.nav-link.active {
+    background: var(--ds-bloco-2);
+    border-left-color: var(--ds-ambar);
+    color: var(--ds-texto);
+    box-shadow: none;
+}
+.nav-link.active i {
+    background: none;
+    color: var(--ds-ambar);
+    width: 20px;
+    height: auto;
+    border-radius: 0;
+    box-shadow: none;
+}
+.sidebar-footer { border-top: 1px solid var(--ds-linha); }
+
+/* Barra do topo no celular */
+.mobile-header {
+    background: var(--ds-fundo);
+    border: 0;
+    border-bottom: 1px solid var(--ds-linha);
+    border-radius: 0;
+    box-shadow: none;
+}
+.mobile-header .login-logo-factory {
+    background: var(--ds-ambar) !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+.mobile-header .login-logo-factory svg { fill: var(--ds-sobre-ambar) !important; }
+.mobile-header strong { font-family: var(--ds-fonte-titulo); font-weight: 600; letter-spacing: -.01em; }
+.btn-mobile-menu { border-radius: 0 !important; background: transparent !important; border: 1px solid var(--ds-linha-forte) !important; color: var(--ds-texto) !important; box-shadow: none !important; }
+
+::-webkit-scrollbar-thumb { border-radius: 0; background: var(--ds-linha-forte); }
+::-webkit-scrollbar-thumb:hover { background: var(--ds-ambar); }
+
+/* ------------------------------------------------------------------
    COMPONENTES cc-
    ------------------------------------------------------------------ */
 .cc-rotulo {

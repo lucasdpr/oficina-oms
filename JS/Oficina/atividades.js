@@ -321,13 +321,13 @@ function renderizarAtividadesArea() {
             ${futuras.map(x => {
                 const inicioFormatado = x.data_inicio.split('-').reverse().join('/');
                 return `
-                <div class="atividade-card" style="--card-accent:var(--text-accent, #3b82f6); opacity:0.85;">
+                <div class="atividade-card" style="--card-accent:var(--text-accent, #d9b67a); opacity:0.85;">
                     <div style="flex:1; min-width:0;">
                         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
                             ${x.equipamento_id
                                 ? `<span class="font-code" style="font-weight:700; color:var(--text-heading);">${window.rotuloPorId(x.equipamento_id)}</span>`
                                 : `<span class="ind-card-tag bg-tag">Tarefa avulsa</span>`}
-                            <span style="font-size:10px; background:var(--text-accent, #3b82f6); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">COMEÇA ${inicioFormatado}</span>
+                            <span style="font-size:10px; background:var(--text-accent, #d9b67a); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">COMEÇA ${inicioFormatado}</span>
                         </div>
                         <div style="font-size:13px; color:var(--text-body);">${window.limparMarcadorTecnicoDescricao(x.descricao)}</div>
                         <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">${x.responsavel ? `${x.responsavel} · ` : ''}${x.criado_em || ''}</div>
@@ -437,7 +437,7 @@ function renderizarAtividadesArea() {
                             ? `<i class="fas fa-user-gear"></i> ${window.escapeHtmlNotif(x.executado_por)} · `
                             : (x.responsavel ? `${window.escapeHtmlNotif(x.responsavel)} · ` : '')
                     }${x.criado_por ? `Criado por ${window.escapeHtmlNotif(x.criado_por)} · ` : ''}${x.criado_em || ''}
-                    ${x.data_inicio ? ` · <span style="color:var(--text-accent, #3b82f6);">Início salvo: ${x.data_inicio.split('-').reverse().join('/')}</span>` : ''}
+                    ${x.data_inicio ? ` · <span style="color:var(--text-accent, #d9b67a);">Início salvo: ${x.data_inicio.split('-').reverse().join('/')}</span>` : ''}
                     ${prazoFormatado ? ` · Prazo: <span style="color:${atrasada ? 'var(--danger)' : 'var(--text-muted)'}; font-weight:${atrasada ? '700' : '400'};">${prazoFormatado}</span>` : ''}
                 </div>
                 ${(() => {
@@ -451,7 +451,7 @@ function renderizarAtividadesArea() {
                     const areaExecInfo = (typeof AREAS_OFICINA !== 'undefined' ? AREAS_OFICINA : (window.AREAS_OFICINA || [])).find(a => a.chave === x.area);
                     const nomeAreaExec = (areaExecInfo && areaExecInfo.nome) || x.area;
                     const quem = x.executado_por ? ` — <strong>${window.escapeHtmlNotif(x.executado_por)}</strong>` : '';
-                    return `<div style="font-size:11px; color:var(--text-accent, #3b82f6); margin-top:4px;"><i class="fas fa-people-arrows"></i> Pedido por esta área, executando em ${nomeAreaExec}${quem}</div>`;
+                    return `<div style="font-size:11px; color:var(--text-accent, #d9b67a); margin-top:4px;"><i class="fas fa-people-arrows"></i> Pedido por esta área, executando em ${nomeAreaExec}${quem}</div>`;
                 })()}
             </div>
             <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">

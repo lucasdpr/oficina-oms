@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" style="background:#0a0e14;">
+<html lang="pt-BR" style="background:#0e0c0a;">
 <head>
     <!-- ==============================================================
          🔧 CAPTURA DE ERROS VISÍVEL NA TELA — pega qualquer erro de
@@ -49,7 +49,7 @@
          tinha ficado amarela numa aplicação anterior da paleta — esse
          elemento é do sistema (Android/iOS), não conteúdo, e nunca devia
          ter sido tocado. Volta pro neutro escuro (mesmo tom do fundo). -->
-    <meta name="theme-color" content="#0a0e14">
+    <meta name="theme-color" content="#0e0c0a">
     <link rel="apple-touch-icon" href="JS/assets/icon-192.png?v=4">
     <!-- 🆕 BOTÃO INSTALAR APP — captura o evento ASSIM QUE POSSÍVEL (ver
          mesmo bloco em index.html). -->
@@ -74,7 +74,7 @@
     <link rel="stylesheet" href="style.css?v=14" />
     <!-- Novo padrão visual (tokens + componentes ds-*). Vem DEPOIS do
          style.css pra vencer em empate de especificidade. -->
-    <link rel="stylesheet" href="design-system.css?v=3" />
+    <link rel="stylesheet" href="design-system.css?v=4" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="JS/assets/icon-192.png?v=4">
@@ -143,7 +143,7 @@
         .chip-select { position: relative; display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: var(--radius); background: var(--bg-td); cursor: pointer; font-size: 0.8rem; color: var(--text-main); transition: all var(--transition); user-select: none; }
         .chip-select:hover { border-color: var(--text-accent); }
         .chip-select input { accent-color: var(--text-accent); width: 15px; height: 15px; flex-shrink: 0; }
-        .chip-select:has(input:checked) { background: rgba(59,130,246,0.15); border-color: var(--text-accent); color: var(--text-heading); }
+        .chip-select:has(input:checked) { background: rgba(217, 182, 122,0.15); border-color: var(--text-accent); color: var(--text-heading); }
         .chip-select-radio { display: flex; gap: 10px; flex-wrap: wrap; }
         .chip-select-radio label { flex: 1; min-width: 110px; }
         @media (max-width: 640px) {
@@ -165,7 +165,7 @@
         .glass-panel { background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow); border-radius: var(--radius-lg); transition: all var(--transition); }
         .glass-panel:hover { box-shadow: 0 12px 40px rgba(0,0,0,0.5); }
         /* ===== WELCOME BOX ===== */
-        .welcome-box { background: linear-gradient(145deg, rgba(22,29,43,0.95), rgba(9,12,18,0.95)); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 28px 32px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+        .welcome-box { background: linear-gradient(145deg, rgba(27, 24, 20,0.95), rgba(11, 10, 8,0.95)); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 28px 32px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
         .welcome-box h1 { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; background: linear-gradient(135deg, var(--text-heading) 35%, var(--brand) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         .welcome-box h1 span { background: linear-gradient(135deg, var(--text-heading) 35%, var(--brand) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         .welcome-box p { color: var(--text-muted); font-size: 0.95rem; }
@@ -202,7 +202,7 @@
         .status-pill { padding: 4px 14px; border-radius: 30px; font-size: 0.7rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.3px; transition: box-shadow 0.2s ease; }
         .status-pill.operacao { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.25); }
         .status-pill.reparo { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.25); }
-        .status-pill.reserva { background: rgba(59,130,246,0.15); color: #3b82f6; border: 1px solid rgba(59,130,246,0.25); }
+        .status-pill.reserva { background: rgba(217, 182, 122,0.15); color: #d9b67a; border: 1px solid rgba(217, 182, 122,0.25); }
         .status-pill.warning { background: rgba(234,179,8,0.15); color: #eab308; border: 1px solid rgba(234,179,8,0.25); }
         .status-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 6px currentColor; flex-shrink: 0; }
         /* ===== MCC FILTERS ===== */
@@ -248,7 +248,7 @@
         @keyframes modalOverlayFade { from { opacity: 0; } to { opacity: 1; } }
         .modal-content { background: var(--bg-card); border-radius: var(--radius-lg); max-width: 1400px; width: 95%; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--border-color); box-shadow: var(--shadow); animation: modalContentPop 0.25s cubic-bezier(0.34,1.56,0.64,1); }
         @keyframes modalContentPop { from { opacity: 0; transform: scale(0.95) translateY(12px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 2px solid rgba(56,189,248,0.25); background: linear-gradient(90deg, rgba(56,189,248,0.06), transparent); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 2px solid rgba(240, 163, 52,0.25); background: linear-gradient(90deg, rgba(240, 163, 52,0.06), transparent); }
         .modal-header h2 { margin: 0; font-size: 20px; color: var(--text-heading); }
         .btn-close-modal { background: none; border: none; font-size: 28px; cursor: pointer; color: #999; transition: color 0.2s, transform 0.2s; }
         .btn-close-modal:hover { color: #fff; transform: rotate(90deg); }
@@ -262,9 +262,9 @@
         .modal-footer .btn-success:active { background: #059669; }
         .modal-footer .btn-secondary:hover { background: #5a6268; }
         /* ===== ABA TABS ===== */
-        .folhao-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; border-bottom: 2px solid rgba(56,189,248,0.25); margin-bottom: 10px; padding-bottom: 2px; position: relative; }
+        .folhao-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; border-bottom: 2px solid rgba(240, 163, 52,0.25); margin-bottom: 10px; padding-bottom: 2px; position: relative; }
         .folhao-tab { background: transparent; border: none; color: var(--text-muted); padding: 8px 16px; font-weight: 600; font-size: 0.8rem; cursor: pointer; border-radius: 4px 4px 0 0; transition: color 0.2s ease, background 0.2s ease, transform 0.15s ease; white-space: nowrap; }
-        .folhao-tab.active { background: var(--brand); color: var(--text-on-primary, #04121c); box-shadow: 0 -2px 12px rgba(56,189,248,0.35); }
+        .folhao-tab.active { background: var(--brand); color: var(--text-on-primary, #04121c); box-shadow: 0 -2px 12px rgba(240, 163, 52,0.35); }
         .folhao-tab:hover:not(.active) { color: var(--text-heading); background: rgba(255,255,255,0.05); transform: translateY(-1px); }
         .folhao-content { display: block; animation: fadeInTab 0.25s ease-out; }
         .folhao-content.hidden { display: none; }
@@ -506,7 +506,7 @@
          a categoria (a) da regra: CTA de ação primária). O que era só
          decoração ao redor (ícone e borda âmbar) virou neutro — o
          amarelo fica reservado pra quem de fato executa a ação. -->
-    <div id="aviso-nova-versao" class="hidden" style="position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:99999; background:var(--panel-2, #1e293b); color:#fff; padding:12px 16px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,0.4); border:1px solid var(--border-color); display:flex; align-items:center; gap:12px;">
+    <div id="aviso-nova-versao" class="hidden" style="position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:99999; background:var(--panel-2, #1b1814); color:#fff; padding:12px 16px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,0.4); border:1px solid var(--border-color); display:flex; align-items:center; gap:12px;">
         <i class="fas fa-rotate" style="color:var(--text-muted);"></i>
         <span>Nova versão do sistema disponível.</span>
         <button type="button" onclick="window.forcarAtualizacaoOMS()" style="background:var(--brand); color:var(--text-on-primary); border:none; padding:6px 14px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12.5px;">Atualizar agora</button>
@@ -519,8 +519,8 @@
          já tentava de novo sozinho nesse caso; só faltava avisar quem
          está usando em vez de deixar a tela muda com erro cru no
          console. Mesmo padrão visual do aviso-nova-versao acima. -->
-    <div id="aviso-conectando-servidor" class="hidden" style="position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:99999; background:var(--panel-2, #1e293b); color:#fff; padding:12px 16px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,0.4); border:1px solid var(--border-color); display:flex; align-items:center; gap:10px;">
-        <i class="fas fa-circle-notch fa-spin" style="color:var(--text-accent, #38bdf8);"></i>
+    <div id="aviso-conectando-servidor" class="hidden" style="position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:99999; background:var(--panel-2, #1b1814); color:#fff; padding:12px 16px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,0.4); border:1px solid var(--border-color); display:flex; align-items:center; gap:10px;">
+        <i class="fas fa-circle-notch fa-spin" style="color:var(--text-accent, #e3b866);"></i>
         <span>Conectando ao servidor... pode levar até 1 minuto na primeira vez.</span>
     </div>
 
@@ -817,7 +817,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                 <!-- 🆕 Botão "Instalar App" — mesmo esquema do de notificações
                      acima: some sozinho se o app já estiver instalado ou se o
                      navegador não suportar. Ver window.instalarAppOMS. -->
-                <button class="btn-auth btn-instalar-pwa hidden" style="margin-bottom:8px; background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.3);" onclick="window.instalarAppOMS()">
+                <button class="btn-auth btn-instalar-pwa hidden" style="margin-bottom:8px; background:rgba(240, 163, 52,0.12); color:#e3b866; border:1px solid rgba(240, 163, 52,0.3);" onclick="window.instalarAppOMS()">
                     <i class="fas fa-download"></i> Instalar App
                 </button>
             </div>
@@ -1056,7 +1056,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                 <!-- 🆕 EQUIPAMENTOS DA ÁREA (todos, não só os críticos) -->
                 <div class="glass-panel" style="padding: 18px; margin-top: 16px;">
                     <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom: 12px;">
-                        <i class="fas fa-layer-group" style="color:#3b82f6;"></i> Equipamentos da Minha Área (no Veio)
+                        <i class="fas fa-layer-group" style="color:#d9b67a;"></i> Equipamentos da Minha Área (no Veio)
                     </h3>
                     <div id="tecnico-lista-equipamentos-area" style="max-height: 320px; overflow-y:auto;"></div>
                 </div>
@@ -1084,7 +1084,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
 
             <section id="aba-producao" class="tab-content">
                 <div class="glass-panel" style="padding:24px; margin-bottom: 24px;">
-                    <h1 style="color: var(--text-heading); margin-bottom: 8px;"><i class="fas fa-calculator" style="color:#3b82f6;"></i> Central de Apontamento Diário</h1>
+                    <h1 style="color: var(--text-heading); margin-bottom: 8px;"><i class="fas fa-calculator" style="color:#d9b67a;"></i> Central de Apontamento Diário</h1>
                     <p class="text-muted" style="margin-bottom: 24px;">Lançamentos de produção para cálculo de desgaste e vida útil da máquina.</p>
 
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
@@ -1093,7 +1093,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                             <h3 style="color: var(--text-heading); margin-bottom: 15px;"><i class="fas fa-industry"></i> Tonelagem (Equipamentos Gerais)</h3>
                             <p style="color: var(--text-muted); font-size: 11px; margin-bottom: 15px;">Atualiza o desgaste de Bows, Horizontais, Benders, etc.</p>
                             <div class="input-group" style="margin-bottom: 12px;">
-                                <label style="color: #3b82f6;">MCC #2 (Ton)</label>
+                                <label style="color: #d9b67a;">MCC #2 (Ton)</label>
                                 <input type="number" id="prod-mcc2" class="premium-input" placeholder="Ex: 3131" style="font-size: 16px; font-weight: bold;">
                             </div>
                             <div class="input-group" style="margin-bottom: 12px;">
@@ -1111,7 +1111,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                             <h3 style="color: var(--text-heading); margin-bottom: 15px;"><i class="fas fa-fire"></i> Apontamento de Moldes</h3>
                             <p style="color: var(--text-muted); font-size: 11px; margin-bottom: 15px;">Exclusivo para vida útil de Moldes (Contagem em Corridas).</p>
                             <div class="input-group" style="margin-bottom: 12px;">
-                                <label style="color: #3b82f6;">MCC #2 (Panelas)</label>
+                                <label style="color: #d9b67a;">MCC #2 (Panelas)</label>
                                 <input type="number" id="molde-prod-mcc2" class="premium-input" placeholder="Ex: 2" style="font-size: 16px; font-weight: bold;">
                             </div>
                             <div class="input-group" style="margin-bottom: 12px;">
@@ -1609,7 +1609,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                         <div id="painel-supervisor-atividades-recentes"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
                     </div>
                     <div class="glass-panel" style="padding:20px;">
-                        <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:4px;"><i class="fas fa-industry" style="color:#3b82f6;"></i> Produção Lançada</h3>
+                        <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom:4px;"><i class="fas fa-industry" style="color:#d9b67a;"></i> Produção Lançada</h3>
                         <p class="text-muted" style="font-size:0.75rem; margin-bottom:14px;">Toneladas apontadas por MCC, hoje e nos últimos 7 dias.</p>
                         <div id="painel-supervisor-producao-lancada"><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
                     </div>
@@ -3333,7 +3333,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
 
     <div id="modal-folhao-mcc4" class="modal-overlay hidden modal-tela-cheia">
         <div class="modal-content" style="max-width: 1400px; max-height: 90vh; display: flex; flex-direction: column;">
-            <div style="display:flex; justify-content:space-between; align-items:center; padding: 12px 20px; border-bottom: 2px solid rgba(56,189,248,0.25); flex-shrink:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding: 12px 20px; border-bottom: 2px solid rgba(240, 163, 52,0.25); flex-shrink:0;">
                 <h2 style="color:var(--text-heading); margin:0;">
                     <i class="fas fa-clipboard-check"></i> Liberação - BENDER
                     <span id="mcc4-tag-name" style="color:#f59e0b; font-size:0.9em;"></span>
@@ -3354,7 +3354,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                 </div>
             </div>
 
-            <div class="folhao-tabs" style="flex-shrink:0; padding:0 20px; border-bottom: 2px solid rgba(56,189,248,0.25);">
+            <div class="folhao-tabs" style="flex-shrink:0; padding:0 20px; border-bottom: 2px solid rgba(240, 163, 52,0.25);">
                 </div>
 
             <div class="folhao-body" style="flex:1; overflow-y:auto; padding: 10px 20px 20px 20px;">
@@ -3524,7 +3524,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                         input.min = 1;
                         input.max = 99;
                         input.step = 1;
-                        input.style.cssText = 'width:55px;height:32px;padding:4px 6px;font-size:14px;font-weight:bold;border-radius:4px;border:3px solid #10b981;background:#0f172a;color:#ffffff;text-align:center;display:inline-block !important;visibility:visible !important;opacity:1 !important;';
+                        input.style.cssText = 'width:55px;height:32px;padding:4px 6px;font-size:14px;font-weight:bold;border-radius:4px;border:3px solid #10b981;background:#16130f;color:#ffffff;text-align:center;display:inline-block !important;visibility:visible !important;opacity:1 !important;';
                         posCell.innerHTML = '';
                         posCell.appendChild(input);
                         count++;
@@ -3676,7 +3676,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
     <div id="modal-relatorio-diario" class="modal-overlay hidden modal-tela-cheia">
         <div class="modal-content" style="max-width: 520px;">
             <div class="modal-header">
-                <h2><i class="fas fa-clipboard-list" style="color:#06b6d4;"></i> Relatório Diário</h2>
+                <h2><i class="fas fa-clipboard-list" style="color:#f0c06a;"></i> Relatório Diário</h2>
                 <button class="btn-close-modal" onclick="window.fecharModalRelatorioDiario()"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">

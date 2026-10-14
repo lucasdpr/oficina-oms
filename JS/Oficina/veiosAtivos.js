@@ -379,7 +379,7 @@ function gerarCardGraficoHTML(a) {
                 <span>Lim: ${(a.meta || 0).toLocaleString()}</span>
                 ${a.tipo === "Oscilador" || a.tipo === "Mesa Osciladora" ? '' : `<span>Dias: <strong>${dias}</strong></span>`}
             </div>
-            <button class="btn-xs-primary w-100" style="border: 1px dashed var(--text-accent); color: var(--text-accent); background: rgba(56,189,248,0.05); padding: 8px; border-radius: 4px; cursor: pointer;" onclick="abrirHistoricoIndividual('${a.id}')">
+            <button class="btn-xs-primary w-100" style="border: 1px dashed var(--text-accent); color: var(--text-accent); background: rgba(240, 163, 52,0.05); padding: 8px; border-radius: 4px; cursor: pointer;" onclick="abrirHistoricoIndividual('${a.id}')">
                 <i class="fas fa-book-open"></i> Ver Prontuário
             </button>
         </div>`;
@@ -517,7 +517,7 @@ export function renderReparos() {
     });
 
     let htmlFinal = "";
-    const coresMCC = { "2": "#3b82f6", "3": "#8b5cf6", "4": "#ec4899" };
+    const coresMCC = { "2": "#d9b67a", "3": "#8b5cf6", "4": "#ec4899" };
 
     Object.keys(grupos).sort().forEach(mcc => {
         const itens = grupos[mcc];
@@ -773,7 +773,7 @@ function renderizarTabelaHistoricoIndividual(id) {
         if (a.includes("entrou") || a.includes("instalado")) return { icone: "fa-arrow-right-to-bracket", cor: "#22c55e" };
         if (a.includes("saiu") || a.includes("sacado")) return { icone: "fa-arrow-right-from-bracket", cor: "#ef4444" };
         if (a.includes("reparo")) return { icone: "fa-tools", cor: "#eab308" };
-        if (a.includes("folhão") || a.includes("laudo")) return { icone: "fa-clipboard-check", cor: "#38bdf8" };
+        if (a.includes("folhão") || a.includes("laudo")) return { icone: "fa-clipboard-check", cor: "#e3b866" };
         if (a.includes("registro manual")) return { icone: "fa-pen", cor: "#a855f7" };
         return { icone: "fa-circle-dot", cor: "var(--text-muted)" };
     };
@@ -850,7 +850,7 @@ async function atualizarTabelaHistoricoComServidor(id) {
             if (a.includes("entrou") || a.includes("instalado")) return { icone: "fa-arrow-right-to-bracket", cor: "#22c55e" };
             if (a.includes("saiu") || a.includes("sacado")) return { icone: "fa-arrow-right-from-bracket", cor: "#ef4444" };
             if (a.includes("reparo")) return { icone: "fa-tools", cor: "#eab308" };
-            if (a.includes("folhão") || a.includes("laudo")) return { icone: "fa-clipboard-check", cor: "#38bdf8" };
+            if (a.includes("folhão") || a.includes("laudo")) return { icone: "fa-clipboard-check", cor: "#e3b866" };
             if (a.includes("registro manual")) return { icone: "fa-pen", cor: "#a855f7" };
             return { icone: "fa-circle-dot", cor: "var(--text-muted)" };
         };

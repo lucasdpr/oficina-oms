@@ -427,7 +427,7 @@ function renderizarPlantaAdm() {
         porMcc[mcc][c]++;
     });
     const n = ativos.length || 1;
-    const cores = { maquina: 'var(--success)', reparo: 'var(--danger)', resOf: 'var(--warning, #f59e0b)', resMaq: 'var(--info, #38bdf8)' };
+    const cores = { maquina: 'var(--success)', reparo: 'var(--danger)', resOf: 'var(--warning, #f59e0b)', resMaq: 'var(--info, #e3b866)' };
     el.innerHTML = `
         <div class="adm-kpis">
             <div class="adm-kpi" onclick="window.abrirAba(event,'aba-painel')"><b style="color:${cores.maquina}">${total.maquina}</b><span>Na máquina</span></div>

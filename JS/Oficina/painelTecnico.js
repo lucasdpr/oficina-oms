@@ -246,10 +246,10 @@ window.carregarAtividadesPainelTecnico = async function() {
                     <div>
                         ${x.equipamento_id ? `<span class="font-code" style="font-weight:700; color:var(--text-heading);">${window.rotuloPorId(x.equipamento_id)}</span> · ` : ''}
                         <span style="font-size:13px; color:var(--text-body);">${window.limparMarcadorTecnicoDescricao(x.descricao)}</span>
-                        ${futura ? `<span style="font-size:10px; background:var(--text-accent, #3b82f6); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700; margin-left:6px;">PROGRAMADA</span>` : ''}
+                        ${futura ? `<span style="font-size:10px; background:var(--text-accent, #d9b67a); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700; margin-left:6px;">PROGRAMADA</span>` : ''}
                         <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
                             ${futura
-                                ? `<span style="color:var(--text-accent, #3b82f6); font-weight:700;">Começa ${inicioFormatado}</span>`
+                                ? `<span style="color:var(--text-accent, #d9b67a); font-weight:700;">Começa ${inicioFormatado}</span>`
                                 : `<span style="color:${corStatus[x.status] || 'var(--text-muted)'}; font-weight:700;">${x.status}</span>`}
                             ${x.responsavel ? ` · <i class="fas fa-user"></i> ${x.responsavel}` : ' · <span style="font-style:italic;">Sem responsável</span>'}
                             ${prazoFormatado ? ` · Prazo: <span style="color:${atrasada ? 'var(--danger)' : 'var(--text-muted)'}; font-weight:${atrasada ? '700' : '400'};">${prazoFormatado}</span>` : ''}
@@ -381,7 +381,7 @@ window.carregarReparosAndamento = async function() {
         // sente falta do agrupamento é o ADM, que vê tudo junto e sem
         // essa separação a lista fica uma bagunça de máquinas diferentes
         // misturadas.
-        const coresMCC = { "2": "#3b82f6", "3": "#8b5cf6", "4": "#ec4899" };
+        const coresMCC = { "2": "#d9b67a", "3": "#8b5cf6", "4": "#ec4899" };
         const grupos = {};
         itens.forEach(item => {
             const mcc = item.equipamento.mcc_compat || "2/3";

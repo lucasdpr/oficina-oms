@@ -156,7 +156,7 @@ function renderRolos() {
 
     equipamentosDiferentes.forEach(equipamento => {
         htmlFinal += `
-            <tr style="background: rgba(56, 189, 248, 0.08); border-left: 4px solid var(--text-accent);">
+            <tr style="background: rgba(240, 163, 52, 0.08); border-left: 4px solid var(--text-accent);">
                 <td colspan="5" style="padding: 12px 16px; color: var(--text-accent); font-weight: 700; text-transform: uppercase; font-size: 14px;"><i class="fas fa-layer-group"></i> Equipamento: ${equipamento}</td>
             </tr>
         `;

@@ -738,7 +738,7 @@ window.renderizarChecklistExecucao = function() {
                         ${subagrupar ? `<i class="fas ${aberta ? 'fa-chevron-down' : 'fa-chevron-right'}" style="font-size:11px; color:var(--text-muted);"></i>` : ''}
                         <i class="fas ${secao.icone}"></i> ${secao.nome}
                         ${subagrupar ? `<span class="text-muted" style="font-weight:500; font-size:11px;">(${marcadasDaSecao}/${etapasDaSecao.length})</span>` : ''}
-                        ${concluida ? `<span style="background:#22c55e; color:#0a0e17; padding:2px 8px; border-radius:20px; font-size:10.5px; font-weight:700;"><i class="fas fa-check"></i> Finalizado</span>` : ''}
+                        ${concluida ? `<span style="background:#22c55e; color:#0e0c0a; padding:2px 8px; border-radius:20px; font-size:10.5px; font-weight:700;"><i class="fas fa-check"></i> Finalizado</span>` : ''}
                     </div>
                     ${isAdmin ? `<button class="btn-premium" style="padding:5px 10px; font-size:11px;" onclick="event.stopPropagation(); window.formNovaEtapaChecklistExecucao('${secao.chave}')"><i class="fas fa-plus"></i> Etapa</button>` : ''}
                 </div>
@@ -840,7 +840,7 @@ function renderizarLinhaEtapaChecklistExecucao(e, secao, isAdmin) {
     // sem precisar ler o texto todo do colaborador.
     const veioDoFolhao = e.marcado && (e.colaborador || '').includes('(via Folhão)');
     const badgeOrigem = veioDoFolhao
-        ? `<span style="font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px; margin-left:6px; background:var(--primary, #38bdf8); color:#04202e;"><i class="fas fa-file-signature"></i> via Folhão</span>`
+        ? `<span style="font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px; margin-left:6px; background:var(--primary, #e3b866); color:#04202e;"><i class="fas fa-file-signature"></i> via Folhão</span>`
         : '';
     return `
         <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start; padding:8px; border-radius:8px; background:${corFundo}; margin-bottom:6px;">
