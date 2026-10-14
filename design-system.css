@@ -608,6 +608,56 @@ body, body.light-mode {
 .sq-cel-vazia { cursor: default; flex-direction: row; align-items: center; gap: 12px; color: var(--ds-texto-3); font-size: .78rem; background: repeating-linear-gradient(135deg, var(--ds-bloco), var(--ds-bloco) 6px, var(--ds-fundo) 6px, var(--ds-fundo) 12px); }
 
 /* ------------------------------------------------------------------
+   PAINEL DO TÉCNICO (tc-) — aba-tecnico
+   ------------------------------------------------------------------ */
+#aba-tecnico > * { margin-bottom: 14px; }
+#aba-tecnico > .cc-faixa { margin-bottom: 0; }
+.tc-topo { border-top: 0; }
+.tc-saudacao { font: 600 clamp(1.6rem, 3vw, 2.4rem)/1.1 var(--ds-fonte-titulo); letter-spacing: -.02em; color: var(--ds-texto); margin: 8px 0 8px; }
+.tc-resumo { font-size: .95rem; line-height: 1.5; color: var(--ds-texto-2); margin: 0; }
+.tc-resumo b { color: var(--ds-texto); font-weight: 600; }
+.tc-resumo .cc-perigo { color: var(--ds-perigo); font-weight: 600; }
+.tc-aviso { margin-top: 14px; padding: 10px 14px; border: 1px solid var(--ds-perigo); color: var(--ds-perigo); font-size: .84rem; font-weight: 500; }
+.tc-acoes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--ds-linha); border: 1px solid var(--ds-linha); }
+.tc-acao {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 18px 18px 16px;
+    min-height: 110px;
+    border: 0;
+    border-radius: 0;
+    background: var(--ds-bloco);
+    color: var(--ds-texto);
+    text-align: left;
+    cursor: pointer;
+    font-family: var(--ds-fonte);
+    transition: background .15s;
+}
+.tc-acao:hover { background: var(--ds-bloco-2); }
+.tc-acao strong { font: 600 1.05rem var(--ds-fonte-titulo) !important; letter-spacing: -.01em; margin-top: auto; }
+.tc-acao > span:last-child { font-size: .76rem !important; color: var(--ds-texto-3); }
+.tc-acao-principal { background: var(--ds-ambar); color: var(--ds-sobre-ambar); }
+.tc-acao-principal:hover { background: color-mix(in srgb, var(--ds-ambar) 88%, #fff); }
+.tc-acao-principal .cc-rotulo, .tc-acao-principal > span:last-child { color: color-mix(in srgb, var(--ds-sobre-ambar) 70%, transparent) !important; }
+
+.tc-linha { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--ds-linha); cursor: pointer; }
+.tc-linha:hover { background: var(--ds-bloco-2); }
+.tc-linha-txt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.tc-linha-num { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; width: 110px; }
+.tc-linha-num .pg-trilho { width: 100%; min-width: 0; }
+.tc-ativ { font-size: .88rem; color: var(--ds-texto); line-height: 1.4; }
+.tc-futura { opacity: .7; }
+.tc-seta { color: var(--ds-texto-3); font-size: .9rem; }
+.tc-vazio { padding: 16px 0; font-size: .82rem; color: var(--ds-texto-3); border-bottom: 1px solid var(--ds-linha); }
+.tc-subtitulo { display: flex; justify-content: space-between; padding: 14px 0 8px; border-bottom: 1px solid var(--ds-linha-forte); }
+.tc-subtitulo:first-child { padding-top: 4px; }
+.tc-rolagem { max-height: 420px; overflow-y: auto; }
+.tc-ver-todos { margin-top: 14px; }
+.tc-grade > .cc-bloco { min-width: 0; }
+
+/* ------------------------------------------------------------------
    RESPONSIVO
    ------------------------------------------------------------------ */
 @media (max-width: 1280px) {
@@ -619,6 +669,7 @@ body, body.light-mode {
     .cc-grade-3 > .cc-bloco:last-child { border-left: 0; }
 }
 @media (max-width: 1024px) {
+    .tc-acoes { grid-template-columns: 1fr 1fr; }
     .cc-briefing { grid-template-columns: 1fr; }
     .cc-maquinas { border-left: 0; border-top: 1px solid var(--ds-linha); }
     .pg-arcos, .pg-mapa-grade { grid-template-columns: 1fr; }
@@ -647,6 +698,9 @@ body, body.light-mode {
     .cc-tabela .cc-esconde-cel { display: none; }
     .cc-faixa > span:nth-child(2) { display: none; }
     .sq-resumo { grid-template-columns: 1fr 1fr; }
+    .tc-acoes { grid-template-columns: 1fr 1fr; }
+    .tc-acao { min-height: 96px; padding: 14px; }
+    .tc-linha-num { width: 84px; }
     .sq-slots { grid-template-columns: 1fr; }
     .sq-vazia { padding: 10px 12px; }
     .sq-resumo > div:first-child { grid-column: 1 / -1; }

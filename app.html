@@ -74,7 +74,7 @@
     <link rel="stylesheet" href="style.css?v=14" />
     <!-- Novo padrão visual (tokens + componentes ds-*). Vem DEPOIS do
          style.css pra vencer em empate de especificidade. -->
-    <link rel="stylesheet" href="design-system.css?v=5" />
+    <link rel="stylesheet" href="design-system.css?v=6" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="JS/assets/icon-192.png?v=4">
@@ -1012,72 +1012,53 @@ a, button, [onclick], label[for], select { cursor: pointer; }
 </section>
 
             <section id="aba-tecnico" class="tab-content">
-                <div class="welcome-box">
-                    <div>
-                        <h1><i class="fas fa-hard-hat" style="color:#22c55e;"></i> Painel do Técnico</h1>
-                        <p>Tudo que você precisa no dia a dia, num só lugar.</p>
+                <!-- Painel do Técnico no padrão "centro de controle"
+                     (design-system.css, classes tc-*). Pensado pro celular
+                     no chão de fábrica: resumo do turno em uma frase, 4
+                     ações grandes e depois as listas por prioridade. Ids
+                     das listas mantidos (JS/Oficina/painelTecnico.js). -->
+                <div class="cc-faixa">
+                    <span>[ OMS · PAINEL DO TÉCNICO ]</span>
+                    <span id="tc-faixa-area">—</span>
+                    <span class="cc-faixa-dir"><i class="cc-led"></i><span id="tc-faixa-data">—</span></span>
+                </div>
+                <div class="cc-bloco tc-topo">
+                    <div class="cc-rotulo">Seu turno</div>
+                    <h1 class="tc-saudacao" id="tc-saudacao">Olá</h1>
+                    <p class="tc-resumo" id="tc-resumo">Carregando sua área…</p>
+                    <div id="tecnico-aviso-sem-area" class="tc-aviso hidden">Sua área ainda não foi cadastrada. Fale com um ADM pra liberar seu acesso completo.</div>
+                </div>
+                <div class="tc-acoes">
+                    <button type="button" class="tc-acao tc-acao-principal" onclick="window.abrirAbaReparo('iniciar')"><span class="cc-rotulo">01</span><strong>Iniciar reparo</strong><span>Abrir folhão de uma peça</span></button>
+                    <button type="button" class="tc-acao" onclick="window.abrirAbaReparo('andamento')"><span class="cc-rotulo">02</span><strong>Reparo em andamento</strong><span>Continuar de onde parou</span></button>
+                    <button type="button" class="tc-acao" onclick="window.irParaAreaTecnico()"><span class="cc-rotulo">03</span><strong>Minha área</strong><span>Quadro de atividades</span></button>
+                    <button type="button" class="tc-acao" onclick="window.irCriarAtividadeTecnico()"><span class="cc-rotulo">04</span><strong>Criar atividade</strong><span>Programar ou registrar</span></button>
+                </div>
+                <div class="cc-grade cc-grade-2 tc-grade">
+                    <div class="cc-bloco">
+                        <div class="cc-rotulo">01 / Minhas atividades</div>
+                        <h2 class="cc-titulo">Pendentes e em andamento</h2>
+                        <div id="tecnico-lista-atividades"></div>
+                    </div>
+                    <div class="cc-bloco">
+                        <div class="cc-rotulo">02 / Prioridade da área</div>
+                        <h2 class="cc-titulo">Peças ≥ 80% da meta</h2>
+                        <div id="tecnico-lista-criticos"></div>
                     </div>
                 </div>
-
-                <!-- 🆕 Aviso pra técnico sem área cadastrada ainda (ADM nunca vê isso) -->
-                <div id="tecnico-aviso-sem-area" class="hidden" style="background:rgba(239,68,68,0.1); border:1px solid var(--danger); border-radius:var(--radius-sm,8px); padding:12px 16px; margin-top:14px; color:var(--danger); font-size:13px; font-weight:600;">
-                    <i class="fas fa-exclamation-triangle"></i> Sua área ainda não foi cadastrada. Fale com um ADM pra liberar seu acesso completo.
-                </div>
-
-                <!-- ATALHOS RÁPIDOS -->
-                <div class="tecnico-atalhos-grid">
-                    <button class="tecnico-atalho-btn" onclick="window.abrirAbaReparo('iniciar')">
-                        <i class="fas fa-wrench"></i>
-                        <span>Iniciar Reparo</span>
-                    </button>
-                    <button class="tecnico-atalho-btn" onclick="window.abrirAbaReparo('andamento')">
-                        <i class="fas fa-hourglass-half"></i>
-                        <span>Reparo em Andamento</span>
-                    </button>
-                    <button class="tecnico-atalho-btn" onclick="window.irParaAreaTecnico()">
-                        <i class="fas fa-industry"></i>
-                        <span>Área</span>
-                    </button>
-                    <button class="tecnico-atalho-btn" onclick="window.irCriarAtividadeTecnico()">
-                        <i class="fas fa-plus"></i>
-                        <span>Criar Atividade</span>
-                    </button>
-                </div>
-
-                <!-- 🆕 ATIVIDADES DA ÁREA (pendentes / em andamento — inclui as
-                     agendadas pra data futura, que ficam "Pendente" até o prazo) -->
-                <div class="glass-panel" style="padding: 18px; margin-top: 16px;">
-                    <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom: 12px;">
-                        <i class="fas fa-clipboard-list" style="color:#eab308;"></i> Atividades da Área (Pendentes / Em Andamento)
-                    </h3>
-                    <div id="tecnico-lista-atividades"></div>
-                </div>
-
-                <!-- 🆕 EQUIPAMENTOS DA ÁREA (todos, não só os críticos) -->
-                <div class="glass-panel" style="padding: 18px; margin-top: 16px;">
-                    <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom: 12px;">
-                        <i class="fas fa-layer-group" style="color:#d9b67a;"></i> Equipamentos da Minha Área (no Veio)
-                    </h3>
-                    <div id="tecnico-lista-equipamentos-area" style="max-height: 320px; overflow-y:auto;"></div>
-                </div>
-
-                <!-- EQUIPAMENTOS CRÍTICOS -->
-                <div class="glass-panel" style="padding: 18px; margin-top: 16px;">
-                    <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom: 12px;">
-                        <i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i> Equipamentos Críticos (≥80%)
-                    </h3>
-                    <div id="tecnico-lista-criticos"></div>
-                </div>
-
-                <!-- RESERVAS DISPONÍVEIS PRA SWAP -->
-                <div class="glass-panel" style="padding: 18px; margin-top: 16px; margin-bottom: 20px;">
-                    <h3 style="color:var(--text-heading); font-size:1rem; margin-bottom: 12px;">
-                        <i class="fas fa-boxes" style="color:#22c55e;"></i> Reserva Pronta pra Instalar
-                    </h3>
-                    <div id="tecnico-lista-reservas"></div>
+                <div class="cc-grade cc-grade-2 tc-grade">
+                    <div class="cc-bloco">
+                        <div class="cc-rotulo">03 / Equipamentos da área</div>
+                        <h2 class="cc-titulo">Instalados no veio</h2>
+                        <div id="tecnico-lista-equipamentos-area" class="tc-rolagem"></div>
+                    </div>
+                    <div class="cc-bloco">
+                        <div class="cc-rotulo">04 / Reserva</div>
+                        <h2 class="cc-titulo">Pronta pra instalar</h2>
+                        <div id="tecnico-lista-reservas"></div>
+                    </div>
                 </div>
             </section>
-
             <section id="aba-fluxo" class="tab-content">
                 <div class="cc-bloco sq"><div class="cc-rotulo">Sequenciamento estrutural</div><h1 id="titulo-veio-focado" class="sq-titulo">Sequenciamento</h1><div id="container-fluxo-horizontal-scroll"></div></div>
             </section>
