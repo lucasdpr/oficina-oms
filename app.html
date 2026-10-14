@@ -74,7 +74,7 @@
     <link rel="stylesheet" href="style.css?v=14" />
     <!-- Novo padrão visual (tokens + componentes ds-*). Vem DEPOIS do
          style.css pra vencer em empate de especificidade. -->
-    <link rel="stylesheet" href="design-system.css?v=14" />
+    <link rel="stylesheet" href="design-system.css?v=15" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="JS/assets/icon-192.png?v=4">
@@ -1793,7 +1793,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                         <span id="area-oficina-nome">Área</span>
                     </h2>
                     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:11.5px; color:var(--text-muted);">
-                        <span id="area-oficina-status-badge" style="font-weight:700;">🟢 Normal</span>
+                        <span id="area-oficina-status-badge" class="ar-status-area" style="font-weight:700;">Normal</span>
                         <span>·</span>
                         <span><i class="fas fa-user-shield"></i> <span id="area-oficina-responsavel-turno">Sem responsável definido</span></span>
                         <span>·</span>
@@ -1828,11 +1828,11 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                      window.carregarOsDaArea / renderizarOsDaArea. -->
                 <div id="area-oficina-os-container" style="margin-bottom:16px;"></div>
 
-                <div class="mcc-filter-group" id="area-oficina-filtros" style="margin-bottom:16px;">
+                <div class="ca-filtros" id="area-oficina-filtros" style="margin-bottom:16px;">
                     <button class="btn-filter-mcc active" data-status="" onclick="window.filtrarAtividadesArea('', this)">Todas</button>
-                    <button class="btn-filter-mcc" data-status="Pendente" onclick="window.filtrarAtividadesArea('Pendente', this)">⏳ Pendente</button>
-                    <button class="btn-filter-mcc" data-status="Em Andamento" onclick="window.filtrarAtividadesArea('Em Andamento', this)">🔧 Em Andamento</button>
-                    <button class="btn-filter-mcc" data-status="Concluído" onclick="window.filtrarAtividadesArea('Concluído', this)">✅ Concluído</button>
+                    <button class="btn-filter-mcc" data-status="Pendente" onclick="window.filtrarAtividadesArea('Pendente', this)">Pendentes</button>
+                    <button class="btn-filter-mcc" data-status="Em Andamento" onclick="window.filtrarAtividadesArea('Em Andamento', this)">Em andamento</button>
+                    <button class="btn-filter-mcc" data-status="Concluído" onclick="window.filtrarAtividadesArea('Concluído', this)">Concluídas</button>
                 </div>
 
                 <div id="area-oficina-lista" style="margin-bottom:16px;"></div>
@@ -1875,8 +1875,8 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                             <label>Prioridade</label>
                             <select id="area-oficina-prioridade" class="premium-select" style="width:100%;">
                                 <option value="Normal">Normal</option>
-                                <option value="Alta">🔴 Alta</option>
-                                <option value="Baixa">🔵 Baixa</option>
+                                <option value="Alta">Alta</option>
+                                <option value="Baixa">Baixa</option>
                             </select>
                         </div>
                         <div class="input-group">

@@ -125,7 +125,7 @@ window.abrirAreaOficina = async function(chave, abaInicial) {
     // da Central de Áreas) + timestamp de quando essa tela carregou.
     const s = window.calcularStatusArea(chave);
     const badge = document.getElementById('area-oficina-status-badge');
-    if (badge) { badge.textContent = `${s.emoji} ${s.label}`; badge.style.color = s.cor; }
+    if (badge) { badge.textContent = s.label; badge.style.color = s.cor; badge.dataset.nivel = s.label === 'Crítico' ? 'critico' : (s.label === 'Normal' ? 'ok' : 'atencao'); }
     const ts = document.getElementById('area-oficina-timestamp');
     if (ts) ts.textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     const respEl = document.getElementById('area-oficina-responsavel-turno');
@@ -255,22 +255,20 @@ function renderizarOsDaArea() {
     if (!container) return;
     if (!OS_DA_AREA_CACHE.length) { container.innerHTML = ''; return; }
 
+    // 🎨 padrão novo: faixa recolhível e compacta — as atividades da
+    // área (o trabalho do técnico) ficam no topo, as OS um toque abaixo.
     container.innerHTML = `
-        <h4 style="font-size:12px; color:var(--text-accent); text-transform:uppercase; letter-spacing:0.5px; margin:0 0 8px;">
-            <i class="fas fa-file-invoice"></i> OS envolvendo esta área (${OS_DA_AREA_CACHE.length})
-        </h4>
-        ${OS_DA_AREA_CACHE.map(os => `
-            <div class="atividade-card" style="--card-accent:var(--warning, #f59e0b); cursor:pointer;" onclick="window.irParaOsEspecifica('${os.numero_os || ('#' + os.id)}')">
-                <div style="flex:1; min-width:0;">
-                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
-                        <span class="font-code" style="font-weight:700; color:var(--text-heading);">${os.numero_os ? `OS ${os.numero_os}` : `OS #${os.id}`}</span>
-                        ${os.maquina ? `<span class="ind-card-tag bg-tag">${os.maquina}</span>` : ''}
-                    </div>
-                    <div style="font-size:13px; color:var(--text-body);">${os.descricao || '(sem descrição)'}</div>
-                    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">${os.criado_por ? `${os.criado_por} · ` : ''}${os.criado_em || ''}</div>
-                </div>
+        <details class="ar-os">
+            <summary><span class="cc-ico"><i class="fas fa-file-invoice"></i></span><span><strong>${OS_DA_AREA_CACHE.length} OS envolvendo esta área</strong><small>Toque para ver</small></span><i class="fas fa-chevron-down ar-os-seta"></i></summary>
+            <div class="ar-os-lista">${OS_DA_AREA_CACHE.map(os => `
+                <button type="button" class="ar-os-item" onclick="window.irParaOsEspecifica('${os.numero_os || ('#' + os.id)}')">
+                    <strong>${os.numero_os ? `OS ${os.numero_os}` : `OS #${os.id}`}</strong>
+                    ${os.maquina ? `<span class="os-maq">${os.maquina}</span>` : ''}
+                    <span class="ar-os-desc">${os.descricao || '(sem descrição)'}</span>
+                    <span class="ar-os-data">${(os.criado_em || '').slice(0, 10).split('-').reverse().join('/')}</span>
+                </button>`).join('')}
             </div>
-        `).join('')}
+        </details>
     `;
 }
 
@@ -315,9 +313,7 @@ function renderizarAtividadesArea() {
     // Pendente sozinha.
     const futurasHtml = futuras.length === 0 ? '' : `
         <div class="area-oficina-programadas">
-            <h4 style="font-size:12px; color:var(--text-accent); text-transform:uppercase; letter-spacing:0.5px; margin:16px 0 8px;">
-                <i class="fas fa-calendar-plus"></i> Programadas (ainda não começaram)
-            </h4>
+            <div class="cc-rotulo" style="margin:20px 0 8px"><i class="fas fa-calendar-plus"></i> Programadas — ainda não começaram</div>
             ${futuras.map(x => {
                 const inicioFormatado = x.data_inicio.split('-').reverse().join('/');
                 return `
@@ -327,7 +323,7 @@ function renderizarAtividadesArea() {
                             ${x.equipamento_id
                                 ? `<span class="font-code" style="font-weight:700; color:var(--text-heading);">${window.rotuloPorId(x.equipamento_id)}</span>`
                                 : `<span class="ind-card-tag bg-tag">Tarefa avulsa</span>`}
-                            <span style="font-size:10px; background:var(--text-accent, #d9b67a); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">COMEÇA ${inicioFormatado}</span>
+                            <span class="ar-tag">Começa ${inicioFormatado}</span>
                         </div>
                         <div style="font-size:13px; color:var(--text-body);">${window.limparMarcadorTecnicoDescricao(x.descricao)}</div>
                         <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">${x.responsavel ? `${x.responsavel} · ` : ''}${x.criado_em || ''}</div>
@@ -355,120 +351,64 @@ function renderizarAtividadesArea() {
     // material chegar) e "Recusado" (nem chegou a iniciar, ex: pediram
     // e não forneceram material) — ambos SEMPRE vêm com motivo (ver
     // mudarStatusAtividadeOficina), e avisam quem pediu a atividade.
-    const corStatus = { 'Pendente': 'var(--warning)', 'Em Andamento': 'var(--info)', 'Concluído': 'var(--success)', 'Aguardando': '#f97316', 'Recusado': 'var(--danger)' };
-    const iconePrioridade = { 'Alta': '🔴', 'Baixa': '🔵' };
+    // 🎨 padrão novo: ordem por urgência (atrasada → em andamento →
+    // pendente → aguardando → recusado → concluído); ação principal grande
+    // e as demais em linha embaixo, com texto (antes: coluna de botões só
+    // com ícone, que esticava o cartão).
+    const peso = x => (atividadeEstaAtrasada(x) ? 0 : ({ 'Em Andamento': 1, 'Pendente': 2, 'Aguardando': 3, 'Recusado': 4, 'Concluído': 5 }[x.status] ?? 4));
+    itens = itens.slice().sort((a, b) => peso(a) - peso(b) || (a.prioridade === 'Alta' ? -1 : 0) - (b.prioridade === 'Alta' ? -1 : 0));
+    const nivelStatus = { 'Pendente': 'pendente', 'Em Andamento': 'andamento', 'Concluído': 'ok', 'Aguardando': 'aguardando', 'Recusado': 'critico' };
+    const b = (txt, fn, cls = '') => `<button type="button" class="cc-btn ${cls}" onclick="${fn}">${txt}</button>`;
 
-    container.innerHTML = statsHtml + itens.map(x => {
+    container.innerHTML = statsHtml + `<div class="ar-lista">` + itens.map(x => {
         const atrasada = atividadeEstaAtrasada(x);
         const prazoFormatado = x.prazo ? x.prazo.split('-').reverse().join('/') : null;
-        const corBorda = atrasada ? 'var(--danger)' : (corStatus[x.status] || 'var(--text-muted)');
-
-        // Botões de ação variam por status — sempre um jeito de avançar
-        // (ou pausar/recusar com motivo), nunca "passar por cima" sem
-        // justificar.
-        // 🆕 Bugfix: quando a área ATUAL só PEDIU a atividade (x.area é
-        // outra área, x.solicitante_area === OFICINA_AREA_ATUAL) ela está
-        // vendo o card só por transparência — quem de fato EXECUTA é que
-        // decide Iniciar/Recusar/Concluir/Aguardando. Sem essa checagem o
-        // solicitante conseguia mexer no status de um trabalho que nem é
-        // dele.
         const estaNoQuadroExecutor = x.area === OFICINA_AREA_ATUAL;
-        let botoesAcao = '';
+        let principal = '', secundarias = '';
         if (estaNoQuadroExecutor) {
-            if (x.status === 'Pendente') {
-                botoesAcao = `
-                    <button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Em Andamento')">Iniciar</button>
-                    <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Recusado')">Recusar</button>
-                `;
-            } else if (x.status === 'Em Andamento') {
-                botoesAcao = `
-                    <button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Concluído')">Concluir</button>
-                    <button class="btn-premium" style="padding:4px 10px; font-size:11px; background:#f97316; border-color:#f97316;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Aguardando')">Aguardando</button>
-                `;
-            } else if (x.status === 'Aguardando') {
-                botoesAcao = `<button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Em Andamento')"><i class="fas fa-play"></i> Retomar</button>`;
-            } else if (x.status === 'Recusado') {
-                botoesAcao = `<button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusAtividadeOficina(${x.id}, 'Pendente')"><i class="fas fa-rotate-left"></i> Reabrir</button>`;
-            }
+            if (x.status === 'Pendente') { principal = b('Iniciar', `window.mudarStatusAtividadeOficina(${x.id}, 'Em Andamento')`, 'cc-btn-cheio'); secundarias = b('Recusar', `window.mudarStatusAtividadeOficina(${x.id}, 'Recusado')`, 'ar-perigo'); }
+            else if (x.status === 'Em Andamento') { principal = b('Concluir', `window.mudarStatusAtividadeOficina(${x.id}, 'Concluído')`, 'cc-btn-cheio'); secundarias = b('Aguardando', `window.mudarStatusAtividadeOficina(${x.id}, 'Aguardando')`); }
+            else if (x.status === 'Aguardando') principal = b('Retomar', `window.mudarStatusAtividadeOficina(${x.id}, 'Em Andamento')`, 'cc-btn-cheio');
+            else if (x.status === 'Recusado') principal = b('Reabrir', `window.mudarStatusAtividadeOficina(${x.id}, 'Pendente')`);
         }
-        // 🆕 Reabrir uma atividade CONCLUÍDA é exceção à regra acima
-        // (estaNoQuadroExecutor): tanto quem pediu quanto quem executou
-        // (e ADM, nos dois quadros) pode reabrir — diferente de
-        // Iniciar/Recusar/Concluir, que são só de quem executa. Por
-        // isso fica fora do "if (estaNoQuadroExecutor)".
-        if (x.status === 'Concluído') {
-            botoesAcao += `<button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.reabrirAtividadeOficina(${x.id})"><i class="fas fa-rotate-left"></i> Reabrir</button>`;
-        }
-
+        if (x.status === 'Concluído') principal = b('Reabrir', `window.reabrirAtividadeOficina(${x.id})`);
+        const outraArea = (() => {
+            if (x.area === OFICINA_AREA_ATUAL) return '';
+            const info = (typeof AREAS_OFICINA !== 'undefined' ? AREAS_OFICINA : (window.AREAS_OFICINA || [])).find(a => a.chave === x.area);
+            return `<div class="ar-outra"><i class="fas fa-people-arrows"></i> Pedido por esta área, executando em ${(info && info.nome) || x.area}${x.executado_por ? ` — <b>${window.escapeHtmlNotif(x.executado_por)}</b>` : ''}</div>`;
+        })();
         return `
-        <div class="atividade-card" id="atividade-card-${x.id}" style="--card-accent:${corBorda};">
-            ${x.foto_base64 ? `
-                <img src="${x.foto_base64}"
-                     style="width:56px; height:56px; object-fit:cover; border-radius:8px; border:1px solid var(--border-color); cursor:pointer; flex-shrink:0;"
-                     onclick="window.abrirFotoAmpliada('${x.foto_base64}', '${(x.criado_por || 'Sistema').replace(/'/g, "\\'")} — ${x.criado_em || ''}')"
-                     title="${x.criado_por || 'Sistema'} — ${x.criado_em || ''}">
-            ` : ''}
-            <div style="flex:1; min-width:0;">
-                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
-                    ${x.equipamento_id
-                        ? `<span class="font-code" style="font-weight:700; color:var(--text-heading);">${window.rotuloPorId(x.equipamento_id)}</span>`
-                        : `<span class="ind-card-tag bg-tag">Tarefa avulsa</span>`}
-                    <span class="status-text-pill" style="--sev-color:${corStatus[x.status] || 'var(--text-muted)'};">${x.status}</span>
-                    ${iconePrioridade[x.prioridade] ? `<span title="Prioridade ${x.prioridade}">${iconePrioridade[x.prioridade]}</span>` : ''}
-                    ${atrasada ? `<span style="font-size:10px; background:var(--danger); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">ATRASADA</span>` : ''}
-                    ${x.reaberturas_count > 0 ? `<span style="font-size:10px; background:#f97316; color:#fff; padding:2px 6px; border-radius:4px; font-weight:700; cursor:pointer;" onclick="window.verHistoricoReaberturasAtividade(${x.id})" title="Ver histórico de reaberturas"><i class="fas fa-rotate-left"></i> Reaberta ${x.reaberturas_count}x</span>` : ''}
+        <div class="ar-card${atrasada ? ' ar-atrasada' : ''}" id="atividade-card-${x.id}" data-nivel="${atrasada ? 'critico' : (nivelStatus[x.status] || 'pendente')}">
+            <div class="ar-card-topo">
+                ${x.foto_base64 ? `<img class="ar-foto" src="${x.foto_base64}" alt="" onclick="window.abrirFotoAmpliada('${x.foto_base64}', '${(x.criado_por || 'Sistema').replace(/'/g, "\\'")} — ${x.criado_em || ''}')">` : ''}
+                <div class="ar-card-corpo">
+                    <div class="ar-tags">
+                        ${x.equipamento_id ? `<strong class="sq-id">${window.rotuloPorId(x.equipamento_id)}</strong>` : `<span class="ar-tag">Tarefa avulsa</span>`}
+                        <span class="ca-status ar-status">${x.status}</span>
+                        ${atrasada ? `<span class="ar-tag ar-tag-perigo">Atrasada</span>` : ''}
+                        ${x.prioridade === 'Alta' ? `<span class="ar-tag ar-tag-perigo">Prioridade alta</span>` : ''}
+                        ${x.prioridade === 'Baixa' ? `<span class="ar-tag">Prioridade baixa</span>` : ''}
+                        ${x.reaberturas_count > 0 ? `<button type="button" class="ar-tag ar-tag-alerta" onclick="window.verHistoricoReaberturasAtividade(${x.id})">Reaberta ${x.reaberturas_count}x</button>` : ''}
+                    </div>
+                    <p class="ar-desc">${window.escapeHtmlNotif(window.limparMarcadorTecnicoDescricao(x.descricao))}</p>
+                    ${x.motivo_status ? `<div class="ar-motivo"><i class="fas fa-circle-info"></i> ${window.escapeHtmlNotif(x.motivo_status)}</div>` : ''}
+                    <div class="ar-meta">
+                        ${x.executado_por ? `<span><i class="fas fa-user-gear"></i> ${window.escapeHtmlNotif(x.executado_por)}</span>` : (x.responsavel ? `<span><i class="fas fa-user"></i> ${window.escapeHtmlNotif(x.responsavel)}</span>` : '<span>Sem responsável</span>')}
+                        ${prazoFormatado ? `<span class="${atrasada ? 'cc-perigo' : ''}"><i class="fas fa-calendar"></i> Prazo ${prazoFormatado}</span>` : ''}
+                        <span>${x.criado_por ? `Criado por ${window.escapeHtmlNotif(x.criado_por)} · ` : ''}${x.criado_em || ''}</span>
+                    </div>
+                    ${outraArea}
                 </div>
-                <div style="font-size:13px; color:var(--text-body);">${window.escapeHtmlNotif(window.limparMarcadorTecnicoDescricao(x.descricao))}</div>
-                ${x.motivo_status ? `<div style="font-size:11.5px; color:${corStatus[x.status]}; margin-top:4px;"><i class="fas fa-circle-info"></i> ${window.escapeHtmlNotif(x.motivo_status)}</div>` : ''}
-                <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
-                    ${
-                        // 🔧 CORREÇÃO ("iniciei, selecionei quem está fazendo, mas
-                        // não mostra quem tá fazendo"): "Iniciar" salva quem vai
-                        // executar num campo separado (executado_por, ver
-                        // mudarStatusAtividadeOficina/routers/oficina.py) — não
-                        // sobrescreve `responsavel`, que só existe se foi
-                        // preenchido na CRIAÇÃO da atividade. O card só mostrava
-                        // `responsavel`, então uma atividade sem responsável
-                        // definido na criação ficava sem exibir ninguém, mesmo
-                        // depois de alguém ter sido escolhido ao iniciar.
-                        // Prioriza executado_por (mais recente/real) e cai pra
-                        // responsavel só se não tiver execução ainda.
-                        x.executado_por
-                            ? `<i class="fas fa-user-gear"></i> ${window.escapeHtmlNotif(x.executado_por)} · `
-                            : (x.responsavel ? `${window.escapeHtmlNotif(x.responsavel)} · ` : '')
-                    }${x.criado_por ? `Criado por ${window.escapeHtmlNotif(x.criado_por)} · ` : ''}${x.criado_em || ''}
-                    ${x.data_inicio ? ` · <span style="color:var(--text-accent, #d9b67a);">Início salvo: ${x.data_inicio.split('-').reverse().join('/')}</span>` : ''}
-                    ${prazoFormatado ? ` · Prazo: <span style="color:${atrasada ? 'var(--danger)' : 'var(--text-muted)'}; font-weight:${atrasada ? '700' : '400'};">${prazoFormatado}</span>` : ''}
-                </div>
-                ${(() => {
-                    // 🆕 Item 5: quem PEDIU a atividade extra continua vendo
-                    // ela no PRÓPRIO quadro mesmo sendo executada por outra
-                    // área (ver filtro em renderizarAtividadesArea) — esse
-                    // aviso deixa claro que não é uma tarefa da área atual,
-                    // e quando alguém já pegou o serviço (executado_por),
-                    // mostra o NOME de quem tá executando, não só a área.
-                    if (x.area === OFICINA_AREA_ATUAL) return '';
-                    const areaExecInfo = (typeof AREAS_OFICINA !== 'undefined' ? AREAS_OFICINA : (window.AREAS_OFICINA || [])).find(a => a.chave === x.area);
-                    const nomeAreaExec = (areaExecInfo && areaExecInfo.nome) || x.area;
-                    const quem = x.executado_por ? ` — <strong>${window.escapeHtmlNotif(x.executado_por)}</strong>` : '';
-                    return `<div style="font-size:11px; color:var(--text-accent, #d9b67a); margin-top:4px;"><i class="fas fa-people-arrows"></i> Pedido por esta área, executando em ${nomeAreaExec}${quem}</div>`;
-                })()}
             </div>
-            <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
-                ${botoesAcao}
-                <button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.abrirConversaAtividade(${x.id})" title="Conversa">
-                    <i class="fas fa-comments"></i>
-                </button>
-                <button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.editarAtividadeOficina(${x.id})">
-                    <i class="fas fa-pen"></i>
-                </button>
-                <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.excluirAtividadeOficina(${x.id})">
-                    <i class="fas fa-trash"></i>
-                </button>
+            <div class="ar-acoes">
+                ${principal}${secundarias}
+                <span class="ar-acoes-esp"></span>
+                ${b('<i class="fas fa-comments"></i> Conversa', `window.abrirConversaAtividade(${x.id})`, 'ar-leve')}
+                ${b('<i class="fas fa-pen"></i> Editar', `window.editarAtividadeOficina(${x.id})`, 'ar-leve')}
+                ${b('<i class="fas fa-trash"></i>', `window.excluirAtividadeOficina(${x.id})`, 'ar-leve ar-perigo')}
             </div>
-        </div>
-    `;
-    }).join('') + futurasHtml;
+        </div>`;
+    }).join('') + `</div>` + futurasHtml;
 }
 window.renderizarAtividadesArea = renderizarAtividadesArea;
 
