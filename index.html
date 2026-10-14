@@ -1,35 +1,36 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="anim">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
     <title>OMS | Oficina de Moldes e Segmentos – CSN</title>
-    <meta name="description" content="OMS — sistema de gestão de manutenção da Oficina de Moldes e Segmentos da CSN. Digitalização, rastreabilidade e controle operacional de moldes e segmentos das MCC 2, 3 e 4, do registro em campo à decisão baseada em dados.">
+    <meta name="description" content="OMS — sistema de gestão de manutenção da Oficina de Moldes e Segmentos da CSN. Cada molde e cada segmento das MCC 2, 3 e 4, rastreado do reparo à linha, em um só sistema.">
     <link rel="canonical" href="https://oms.csn.com.br/">
 
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="OMS — CSN">
     <meta property="og:title" content="OMS | Oficina de Moldes e Segmentos – CSN">
-    <meta property="og:description" content="Digitalização, rastreabilidade e controle operacional de moldes e segmentos das MCC 2, 3 e 4 — do registro em campo à decisão baseada em dados.">
-    <meta property="og:image" content="https://oms.csn.com.br/JS/assets/USINAGEM.jpg">
+    <meta property="og:description" content="Do molde à decisão. Cada molde e cada segmento das MCC 2, 3 e 4, rastreado do reparo à linha.">
+    <meta property="og:image" content="https://oms.csn.com.br/JS/assets/Equipe.jpeg">
     <meta property="og:url" content="https://oms.csn.com.br/">
     <meta property="og:locale" content="pt_BR">
-
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="OMS | Oficina de Moldes e Segmentos – CSN">
-    <meta name="twitter:description" content="Digitalização, rastreabilidade e controle operacional de moldes e segmentos das MCC 2, 3 e 4.">
-    <meta name="twitter:image" content="https://oms.csn.com.br/JS/assets/USINAGEM.jpg">
+    <meta name="twitter:description" content="Do molde à decisão. Cada molde e cada segmento das MCC 2, 3 e 4, rastreado do reparo à linha.">
+    <meta name="twitter:image" content="https://oms.csn.com.br/JS/assets/Equipe.jpeg">
 
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0d0b08">
     <link rel="icon" href="JS/assets/icon-192.png?v=4">
     <link rel="apple-touch-icon" href="JS/assets/icon-192.png?v=4">
-    <!-- 🆕 BOTÃO INSTALAR APP — captura o evento ASSIM QUE POSSÍVEL (bem
-         no <head>, antes de qualquer outra coisa carregar). O Chrome/Edge
-         disparam "beforeinstallprompt" logo depois do load da página; se
-         a gente só começar a escutar no bloco de script do fim do body, corre o
-         risco de perder o evento e o botão nunca aparecer. -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="OMS CSN">
+
     <script>
+        // Botão "Instalar app": o Chrome/Edge disparam beforeinstallprompt logo
+        // depois do load; escutando só no fim do body, o evento podia se perder.
         window.__pwaInstallEvent = null;
         window.addEventListener('beforeinstallprompt', function (e) {
             e.preventDefault();
@@ -40,2236 +41,1223 @@
             window.__pwaInstallEvent = null;
             if (typeof window.__esconderBotaoInstalarPWA === 'function') window.__esconderBotaoInstalarPWA();
         });
+        // A classe "anim" deixa os elementos animados escondidos até o GSAP
+        // assumir. Sem animação (reduzir movimento) ou se algo falhar, a
+        // página aparece inteira, parada — nunca fica conteúdo invisível.
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.remove('anim');
+        setTimeout(function () { if (!window.__omsAnimPronto) document.documentElement.classList.remove('anim'); }, 3500);
     </script>
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="OMS CSN">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
 /* ============================================================
    OMS — Oficina de Moldes e Segmentos — CSN
-   Dossiê técnico de manutenção. Reconstrução completa.
+   Página de apresentação. Tema: o percurso do aço numa máquina de
+   lingotamento contínuo (molde → bender → bow → straightener →
+   horizontal), que é exatamente onde vivem os moldes e segmentos
+   que a oficina mantém.
    ============================================================ */
-
-* { margin: 0; padding: 0; box-sizing: border-box; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-    --ink: #0d0b08;
+    --bg: #0d0b08;
     --panel: #16130f;
     --panel-2: #1e1a14;
-    --line: rgba(255, 250, 240, 0.10);
-    --steel: #8a8577;
-    --paper: #f2ede2;
-    --paper-dim: #c9c2b3;
+    --line: rgba(255, 250, 240, 0.09);
+    --line-2: rgba(255, 250, 240, 0.16);
+    --text: #f2ede2;
+    --text-2: #c9c2b3;
+    --text-3: #8a8577;
     --amber: #f0a334;
     --amber-deep: #c97a12;
-    --font-display: 'Archivo', 'Inter', sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
-    --font-body: 'Inter', -apple-system, sans-serif;
-    --ease: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    --hot: #ff7a1a;
+    --white-hot: #ffe6b3;
+    --display: 'Inter Tight', 'Inter', system-ui, sans-serif;
+    --body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --wrap: 1180px;
+    --gutter: 24px;
 }
 
-html { scroll-behavior: smooth; overflow-x: hidden; background: var(--ink); }
+html { background: var(--bg); scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body {
-    background: var(--ink);
-    color: var(--paper-dim);
-    font-family: var(--font-body);
-    line-height: 1.6;
-    overflow-x: hidden;
-    padding-top: env(safe-area-inset-top);
+    background: var(--bg);
+    color: var(--text-2);
+    font: 400 17px/1.55 var(--body);
+    letter-spacing: -0.011em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: clip;
 }
-a, button {
-    -webkit-tap-highlight-color: transparent;
-}
+img { display: block; max-width: 100%; }
 a { color: inherit; text-decoration: none; }
-img { max-width: 100%; display: block; }
-.container { max-width: 1240px; margin: 0 auto; padding: 0 32px; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; border-radius: 8px; }
+::selection { background: rgba(240, 163, 52, 0.35); color: #fff; }
 
-a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
-    outline: 2px solid var(--amber);
-    outline-offset: 3px;
-}
+.skip { position: absolute; left: -999px; top: 10px; z-index: 100; background: var(--amber); color: #17130c; padding: 10px 18px; border-radius: 999px; font-weight: 600; }
+.skip:focus { left: 12px; }
 
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: var(--ink); }
-::-webkit-scrollbar-thumb { background: var(--amber-deep); }
+.wrap { width: min(var(--wrap), 100% - var(--gutter) * 2); margin-inline: auto; }
+section { position: relative; scroll-margin-top: 52px; }
 
-/* ===== GRÃO DE FILME — textura sutil por cima de tudo, dá o
-   acabamento "produção cara" em vez de plano/vetorial demais ===== */
-.grain {
-    position: fixed; inset: -60px;
-    z-index: 9997;
-    pointer-events: none;
-    opacity: 0.05;
-    mix-blend-mode: overlay;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-    animation: grainMove 0.4s steps(3) infinite;
+.eyebrow { font: 600 17px/1.2 var(--body); color: var(--amber); letter-spacing: -0.01em; margin-bottom: 14px; }
+.h2 {
+    font: 600 clamp(40px, 6vw, 80px)/1.04 var(--display);
+    letter-spacing: -0.038em;
+    color: var(--text);
+    text-wrap: balance;
 }
-@keyframes grainMove {
-    0%, 100% { transform: translate(0, 0); }
-    33% { transform: translate(-2%, -1.5%); }
-    66% { transform: translate(1.5%, 2%); }
+.h2 .dim { color: var(--text-3); }
+.lead { font-size: clamp(19px, 1.9vw, 24px); line-height: 1.42; letter-spacing: -0.016em; color: var(--text-2); max-width: 38ch; text-wrap: pretty; }
+.hot {
+    background: linear-gradient(92deg, var(--white-hot) 0%, var(--amber) 40%, var(--hot) 75%, var(--amber) 100%);
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: hotShift 7s ease-in-out infinite alternate;
 }
-@media (prefers-reduced-motion: reduce) { .grain { animation: none; } }
+@keyframes hotShift { to { background-position: 100% 0; } }
 
-/* ===== SPOTLIGHT — segue o cursor, reforça a metáfora "luz na oficina" ===== */
-.spotlight {
-    position: fixed; inset: 0;
-    z-index: 1;
-    pointer-events: none;
-    background: radial-gradient(560px circle at var(--sx, 50%) var(--sy, 30%), rgba(240, 163, 52, 0.07), transparent 70%);
-}
-@media (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) { .spotlight { display: none; } }
-
-/* ===== CURSOR CUSTOMIZADO — ponto + anel com atraso, cresce sobre
-   elementos clicáveis. Só em telas com mouse de verdade. ===== */
-.cursor-dot, .cursor-ring {
-    position: fixed; top: 0; left: 0;
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 9998;
-    transform: translate(-50%, -50%);
-}
-.cursor-dot { width: 5px; height: 5px; background: var(--amber); }
-.cursor-ring {
-    width: 32px; height: 32px;
-    border: 1px solid rgba(240, 163, 52, 0.55);
-    transition: width 0.25s ease, height 0.25s ease, border-color 0.25s ease, background 0.25s ease;
-}
-.cursor-ring.is-big {
-    width: 60px; height: 60px;
-    background: rgba(240, 163, 52, 0.1);
-    border-color: var(--amber);
-}
-@media (hover: hover) and (pointer: fine) {
-    body.cursor-ready, body.cursor-ready a, body.cursor-ready button, body.cursor-ready .mcc-tab { cursor: none; }
-}
-@media (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) {
-    .cursor-dot, .cursor-ring { display: none; }
-}
-
-/* ===== TICKER — faixa industrial correndo, tipo painel de status ===== */
-.ticker {
-    overflow: hidden;
-    background: var(--ink);
-    border-bottom: 1px solid var(--line);
-}
-.ticker-track {
-    display: flex;
-    width: max-content;
-    gap: 0;
-    padding: 15px 0;
-    animation: tickerScroll 32s linear infinite;
-}
-.ticker-track span {
-    font-family: var(--font-mono);
-    font-size: 12.5px;
-    letter-spacing: 1.5px;
-    color: var(--steel);
+/* ===== Botões estilo pílula ===== */
+.pill {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    height: 36px; padding: 0 18px;
+    border-radius: 999px;
+    font: 500 14px/1 var(--body); letter-spacing: -0.01em;
     white-space: nowrap;
-    padding: 0 28px;
-    display: inline-flex;
-    align-items: center;
-    gap: 28px;
+    transition: background 0.25s, color 0.25s, box-shadow 0.35s, transform 0.2s var(--ease);
 }
-.ticker-track span::after { content: '◆'; color: var(--amber-deep); font-size: 8px; }
-@keyframes tickerScroll {
-    from { transform: translateX(0); }
-    to { transform: translateX(-50%); }
-}
-.ticker:hover .ticker-track { animation-play-state: paused; }
-@media (prefers-reduced-motion: reduce) { .ticker-track { animation: none; } }
+.pill[hidden] { display: none; }
+.pill:active { transform: scale(0.97); }
+.pill-solid { background: var(--amber); color: #17130c; }
+.pill-solid:hover { background: #ffb84f; box-shadow: 0 0 0 6px rgba(240, 163, 52, 0.12), 0 12px 34px -10px rgba(240, 163, 52, 0.6); }
+.pill-ghost { color: var(--text); box-shadow: inset 0 0 0 1px var(--line-2); }
+.pill-ghost:hover { color: var(--amber); box-shadow: inset 0 0 0 1px rgba(240, 163, 52, 0.6); }
+.pill-lg { height: 52px; padding: 0 30px; font-size: 17px; }
+.link-arrow { display: inline-flex; align-items: center; gap: 6px; color: var(--amber); font-weight: 500; font-size: 17px; }
+.link-arrow svg { transition: transform 0.3s var(--ease); }
+.link-arrow:hover svg { transform: translateX(4px); }
 
-/* ===== rótulo técnico reutilizável ===== */
-.tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--amber);
-    padding-left: 10px;
-    border-left: 2px solid var(--amber);
-    line-height: 1.3;
+/* ===== NAV — barra fina translúcida ===== */
+.nav {
+    position: fixed; inset: 0 0 auto; z-index: 50;
+    padding-top: env(safe-area-inset-top);
+    background: rgba(13, 11, 8, 0.6);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s, background 0.3s;
 }
-
-/* ===== BOTÕES ===== */
-.btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 15px 30px;
-    font-weight: 600;
-    font-size: 15px;
-    font-family: inherit;
-    border-radius: 3px;
-    border: 1px solid transparent;
-    min-height: 48px;
-    cursor: pointer;
-    transition: background var(--ease), border-color var(--ease), color var(--ease);
-    /* 🐛 CORRIGIDO ("botão Instalar App apareceu cinza/apagado"): até
-       agora todo .btn na página era uma <a> (sem fundo nativo), então
-       ninguém tinha reparado que nem .btn nem .btn-line definiam
-       background — o primeiro <button> de verdade a usar essas classes
-       (Instalar App) herdou o cinza padrão do navegador por cima. */
-    background: none;
-    appearance: none;
-    -webkit-appearance: none;
-}
-.btn-solid { background: var(--amber); color: #17130c; }
-.btn-solid:hover { background: #ffb547; }
-.btn-line {
-    border-color: var(--line);
-    color: var(--paper);
-}
-.btn-line:hover { border-color: var(--amber); color: var(--amber); }
-.btn.magnetic { transition: transform 0.15s ease-out, background var(--ease), border-color var(--ease), color var(--ease); }
-@media (prefers-reduced-motion: reduce) { .btn.magnetic { transition: background var(--ease), border-color var(--ease), color var(--ease); } }
-
-/* ===== NAVBAR ===== */
-.navbar {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px clamp(20px, 4vw, 48px);
-    padding-top: calc(20px + env(safe-area-inset-top));
-    background: rgba(13, 11, 8, 0.85);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--line);
-    transition: padding var(--ease);
-}
-.brand {
-    font-family: var(--font-display);
-    text-transform: uppercase;
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    color: var(--paper);
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-}
-.brand small {
-    font-family: var(--font-mono);
-    text-transform: none;
-    font-size: 11px;
-    color: var(--steel);
-    font-weight: 400;
-}
+.nav.scrolled { border-bottom-color: var(--line); background: rgba(13, 11, 8, 0.78); }
+.nav-in { width: min(var(--wrap), 100% - 32px); height: 52px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.brand { display: flex; align-items: center; gap: 9px; font: 700 19px/1 var(--display); color: var(--text); letter-spacing: -0.02em; }
+.brand img { width: 26px; height: 26px; border-radius: 7px; }
 .nav-links { display: flex; gap: 30px; }
-.nav-links a {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--paper-dim);
-    transition: color var(--ease);
-}
-.nav-links a:hover { color: var(--amber); }
-.nav-actions { display: flex; align-items: center; gap: 18px; }
-.conn-status {
-    display: flex; align-items: center; gap: 6px;
-    font-family: var(--font-mono);
-    font-size: 11px; color: var(--steel);
-}
-.conn-status .dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: #4caf6a;
-    box-shadow: 0 0 0 0 rgba(76,175,106,0.6);
-    animation: dotPulse 1.8s infinite;
-}
-.conn-status.offline .dot { background: var(--steel); animation: none; }
-@keyframes dotPulse {
-    0% { box-shadow: 0 0 0 0 rgba(76,175,106,0.55); }
-    70% { box-shadow: 0 0 0 6px rgba(76,175,106,0); }
-    100% { box-shadow: 0 0 0 0 rgba(76,175,106,0); }
-}
-.nav-login { font-size: 13px; font-weight: 600; color: var(--paper-dim); }
-.nav-login:hover { color: var(--amber); }
-.nav-hamburger {
-    display: none;
-    width: 44px; height: 44px;
-    align-items: center; justify-content: center;
-    background: transparent; border: 1px solid var(--line);
-    color: var(--paper); font-size: 18px; cursor: pointer;
-}
-
-.drawer-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.7); z-index: 1100; opacity: 0;
-    transition: opacity var(--ease);
-}
-.drawer-overlay.open { display: block; opacity: 1; }
-.drawer {
-    position: fixed; top: 0; right: 0; height: 100%;
-    width: min(82vw, 320px);
-    background: var(--panel);
-    border-left: 1px solid var(--line);
-    z-index: 1200;
-    transform: translateX(100%);
-    transition: transform var(--ease);
-    padding: 28px 24px;
-    padding-top: calc(28px + env(safe-area-inset-top));
-    display: flex; flex-direction: column; gap: 4px;
-}
-.drawer.open { transform: translateX(0); }
-.drawer a {
-    padding: 14px 4px;
-    font-size: 15px;
-    border-bottom: 1px solid var(--line);
-    color: var(--paper-dim);
-}
-.drawer-close {
-    align-self: flex-end;
-    width: 44px; height: 44px;
-    display: flex; align-items: center; justify-content: center;
-    background: none; border: 1px solid var(--line); color: var(--paper);
-    margin-bottom: 12px; cursor: pointer;
-}
-.drawer .btn { justify-content: center; margin-top: 20px; }
-
-/* ===== HERO — foto full-bleed ===== */
-.hero {
-    position: relative;
-    min-height: 100svh;
-    display: flex;
-    align-items: flex-end;
-    overflow: hidden;
-}
-.hero-bg {
-    position: absolute; inset: 0;
-    background-image:
-        radial-gradient(900px 600px at 78% 40%, rgba(240,163,52,0.10), transparent 70%);
-    background-size: cover;
-    background-position: center 30%;
-    filter: saturate(1) contrast(1.05) brightness(0.85);
-    will-change: transform;
-}
-/* ===== CANVAS 3D — malha de linhas girando no hero, dá profundidade
-   sem esconder a foto real por baixo (blend screen + opacidade baixa) ===== */
-#hero-canvas {
-    position: absolute; inset: 0;
-    z-index: 0;
-    mix-blend-mode: screen;
-    opacity: 0.55;
-    pointer-events: none;
-}
-@media (prefers-reduced-motion: reduce) {
-    #hero-canvas { display: none; }
-}
-.hero-content {
-    position: relative; z-index: 1;
-    width: 100%;
-    padding: 0 clamp(20px, 4vw, 48px) 72px;
-    max-width: 1240px;
-    margin: 0 auto;
-}
-.hero .tag { margin-bottom: 22px; }
-.hero h1 {
-    font-family: var(--font-display);
-    text-transform: uppercase;
-    color: var(--paper);
-    font-size: clamp(46px, 9vw, 122px);
-    font-weight: 700;
-    line-height: 0.92;
-    letter-spacing: -1px;
-    max-width: 16ch;
-    perspective: 800px;
-}
-.hero h1 em {
-    font-style: normal;
-    color: var(--amber);
-}
-/* ===== Entrada cinematográfica — cada linha do título "cai" de um
-   giro em profundidade, tipo placa se assentando; o resto do hero
-   entra em cascata logo atrás. Uma vez só, ao carregar. ===== */
-.hero h1 .line {
-    display: inline-block;
-    opacity: 0;
-    transform: translateY(48px) rotateX(50deg);
-    transform-origin: 50% 100%;
-    animation: linePlaca 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-.hero h1 .line-a { animation-delay: 0.1s; }
-.hero h1 .line-b { animation-delay: 0.26s; }
-@keyframes linePlaca { to { opacity: 1; transform: none; } }
-.hero-fade { opacity: 0; transform: translateY(22px); animation: heroFadeUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.hero-fade.d1 { animation-delay: 0.5s; }
-.hero-fade.d2 { animation-delay: 0.64s; }
-.hero-fade.d3 { animation-delay: 0.78s; }
-@keyframes heroFadeUp { to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) {
-    .hero h1 .line, .hero-fade { opacity: 1; transform: none; animation: none; }
-}
-.hero-sub {
-    margin-top: 24px;
-    max-width: 54ch;
-    font-size: clamp(16px, 2vw, 19px);
-    color: var(--paper-dim);
-}
-.hero-actions {
-    display: flex; gap: 16px; flex-wrap: wrap;
-    margin-top: 36px;
-}
-.hero-trust {
-    display: flex; gap: 24px; flex-wrap: wrap;
-    margin-top: 32px;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--steel);
-}
-.hero-trust span { display: inline-flex; align-items: center; gap: 7px; }
-.hero-trust .dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: #4caf6a;
-    box-shadow: 0 0 0 0 rgba(76,175,106,0.6);
-    animation: dotPulse 1.8s infinite;
-}
-.hero-scroll {
-    position: absolute;
-    right: clamp(20px, 4vw, 48px);
-    bottom: 28px;
-    z-index: 1;
-    writing-mode: vertical-rl;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--steel);
-    display: flex; align-items: center; gap: 10px;
-    letter-spacing: 1px;
-}
-.hero-scroll::after {
-    content: '';
-    display: block;
-    width: 1px; height: 40px;
-    background: linear-gradient(var(--steel), transparent);
-}
-@media (max-width: 640px) {
-    .hero-scroll { display: none; }
-    .hero-bg { background-position: 62% 22%; }
-}
-
-/* ===== FAIXA DE ESPECIFICAÇÕES (logo abaixo do hero) ===== */
-.specs {
-    border-top: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
-    background: var(--panel);
-}
-.specs-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    max-width: 1240px;
-    margin: 0 auto;
-}
-.specs-row > div {
-    padding: 28px clamp(20px, 4vw, 48px);
-    border-left: 1px solid var(--line);
-}
-.specs-row > div:first-child { border-left: none; }
-.specs-row strong {
-    display: block;
-    font-family: var(--font-display);
-    font-size: 34px;
-    font-weight: 700;
-    color: var(--amber);
-    line-height: 1;
-    margin-bottom: 8px;
-}
-.specs-row span { font-size: 13px; color: var(--steel); }
-
-/* ===== SEÇÕES GERAIS ===== */
-section { padding: 128px clamp(20px, 4vw, 48px); position: relative; }
-
-/* ===== FUNDO "PLANTA TÉCNICA" — grade fina à deriva, usada nas seções
-   mais "de sistema" (Arquitetura, Resultados) pra reforçar o caráter
-   técnico sem virar papel de parede chapado. ===== */
-.blueprint-bg {
-    position: absolute; inset: 0;
-    overflow: hidden;
-    pointer-events: none;
-    z-index: 0;
-}
-.blueprint-bg::before {
-    content: '';
-    position: absolute;
-    top: -20%; left: -20%; right: -20%; bottom: -20%;
-    background-image:
-        linear-gradient(rgba(240,163,52,0.06) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(240,163,52,0.06) 1px, transparent 1px);
-    background-size: 64px 64px;
-    animation: blueprintDrift 30s linear infinite;
-}
-.blueprint-bg::after {
-    content: '';
-    position: absolute; inset: 0;
-    background: radial-gradient(ellipse at 50% 0%, transparent 30%, var(--ink) 82%);
-}
-@keyframes blueprintDrift {
-    from { transform: translate(0, 0); }
-    to { transform: translate(64px, 64px); }
-}
-@media (prefers-reduced-motion: reduce) { .blueprint-bg::before { animation: none; } }
-.blueprint-bg ~ * { position: relative; z-index: 1; }
-.section-head {
-    max-width: 1240px; margin: 0 auto 60px;
-}
-.section-head h2 {
-    font-family: var(--font-display);
-    text-transform: uppercase;
-    color: var(--paper);
-    font-size: clamp(32px, 5vw, 58px);
-    font-weight: 700;
-    letter-spacing: -0.5px;
-    line-height: 1;
-    max-width: 16ch;
-    margin-top: 18px;
-}
-.section-head p {
-    max-width: 56ch;
-    margin-top: 20px;
-    font-size: 16px;
-    color: var(--steel);
-}
-.section-inner { max-width: 1240px; margin: 0 auto; }
-
-/* ===== ANTES / DEPOIS — tabela técnica, não cards ===== */
-.compare {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    position: relative;
-}
-.compare-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-}
-.compare-arrow {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 40px; height: 40px;
-    display: flex; align-items: center; justify-content: center;
-    background: var(--ink);
-    border: 1px solid var(--amber);
-    border-radius: 50%;
-    color: var(--amber);
-    z-index: 2;
-    animation: arrowPulse 2.2s ease-in-out infinite;
-}
-@keyframes arrowPulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(240,163,52,0.35); }
-    50% { box-shadow: 0 0 0 10px rgba(240,163,52,0); }
-}
-@media (max-width: 992px) {
-    .compare-arrow { transform: translate(-50%, -50%) rotate(90deg); }
-}
-@media (prefers-reduced-motion: reduce) { .compare-arrow { animation: none; } }
-.compare-col {
-    padding: 40px clamp(24px, 3vw, 48px);
-}
-.compare-col + .compare-col { border-left: 1px solid var(--line); }
-.compare-col h3 {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--steel);
-    margin-bottom: 22px;
-}
-.compare-col.is-oms h3 { color: var(--amber); }
-.compare-col ul { list-style: none; display: flex; flex-direction: column; gap: 14px; }
-.compare-col li {
-    font-size: 15px;
-    color: var(--paper-dim);
-    padding-left: 22px;
-    position: relative;
-}
-.compare-col li::before {
-    position: absolute; left: 0; top: 1px;
-    font-family: var(--font-mono); font-size: 13px;
-}
-.compare-col.is-before li::before { content: '×'; color: var(--steel); }
-.compare-col.is-oms li::before { content: '✓'; color: var(--amber); }
-
-/* ===== PILARES — grade técnica com numeração real (3 pilares reais) ===== */
-.pillars {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    border-top: 1px solid var(--line);
-    border-left: 1px solid var(--line);
-}
-.pillars.cols-4 { grid-template-columns: repeat(4, 1fr); }
-@media (max-width: 1100px) {
-    .pillars.cols-4 { grid-template-columns: repeat(2, 1fr); }
-}
-.pillar {
-    padding: 40px clamp(20px, 3vw, 36px);
-    border-right: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
-    transform-style: preserve-3d;
-    will-change: transform;
-    transition: transform 0.15s ease-out, background 0.3s ease;
-}
-.pillar:hover { background: var(--panel-2); }
-.pillar .idx, .pillar h3, .pillar ul { transform: translateZ(24px); }
-@media (prefers-reduced-motion: reduce) { .pillar { transition: none; } }
-.pillar .idx {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--amber);
-    margin-bottom: 18px;
-    display: block;
-}
-.pillar h3 {
-    font-family: var(--font-display);
-    text-transform: uppercase;
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--paper);
-    margin-bottom: 18px;
-}
-.pillar ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
-.pillar li {
-    font-size: 14px; color: var(--steel);
-    padding-left: 16px; position: relative;
-}
-.pillar li::before {
-    content: '—'; position: absolute; left: 0; color: var(--line);
-}
-
-/* ===== DIAGRAMA DE FLUXO — Operação/Manutenção/Gestão → Dados → Histórico → Decisão ===== */
-.flow {
-    margin-top: 64px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    max-width: 640px;
-}
-.flow-top {
-    display: flex;
-    gap: 16px;
-    width: 100%;
-}
-.flow-node {
-    flex: 1;
-    text-align: center;
-    padding: 16px 12px;
-    border: 1px solid var(--line);
-    background: var(--panel);
-    font-family: var(--font-mono);
-    font-size: 13px;
-    color: var(--paper-dim);
-}
-.flow-wide { width: 100%; }
-.flow-final { border-color: var(--amber); color: var(--amber); }
-.flow-merge {
-    position: relative;
-    width: 100%;
-    height: 34px;
-}
-.flow-merge::before {
-    /* linha horizontal unindo os 3 nós de cima */
-    content: '';
-    position: absolute;
-    top: 0; left: 16.5%; right: 16.5%;
-    height: 1px;
-    background: var(--line);
-}
-.flow-merge span {
-    position: absolute;
-    top: 0; left: 50%;
-    width: 1px; height: 100%;
-    background: var(--line);
-}
-.flow-line {
-    width: 1px; height: 24px;
-    background: var(--line);
-}
-@media (max-width: 640px) {
-    .flow-top { flex-direction: column; }
-    .flow-merge::before { left: 50%; right: 50%; }
-}
-
-/* ===== CICLO — sequência real, numeração justificada ===== */
-.cycle-track {
-    height: 2px;
-    background: var(--line);
-    margin-bottom: 40px;
-    position: relative;
-    overflow: hidden;
-}
-.cycle-fill {
-    position: absolute; left: 0; top: 0; height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, var(--amber-deep), var(--amber));
-}
-.cycle {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 1px;
-    background: var(--line);
-    border: 1px solid var(--line);
-}
-.cycle-step {
-    background: var(--ink);
-    padding: 28px 18px;
-    position: relative;
-    transition: background var(--ease), transform var(--ease), opacity var(--ease);
-}
-.cycle:hover .cycle-step { opacity: 0.55; }
-.cycle-step:hover {
-    background: var(--panel-2);
-    opacity: 1 !important;
-    transform: translateY(-4px);
-    z-index: 1;
-}
-.cycle-step::before {
-    content: '';
-    position: absolute;
-    left: 0; bottom: 0;
-    height: 2px; width: 0%;
-    background: var(--amber);
-    transition: width var(--ease);
-}
-.cycle-step:hover::before { width: 100%; }
-.cycle-step .num {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--amber);
-    display: block;
-    margin-bottom: 14px;
-    transition: transform var(--ease);
-}
-.cycle-step:hover .num { transform: scale(1.15); transform-origin: left; }
-.cycle-step h4 {
-    font-size: 14px; font-weight: 600; color: var(--paper);
-    margin-bottom: 6px;
-}
-.cycle-step p { font-size: 12px; color: var(--steel); }
-@media (max-width: 640px) {
-    .cycle:hover .cycle-step { opacity: 1; }
-    .cycle-step:hover { transform: none; }
-}
-
-/* ===== FOTO CHEIA COM CITAÇÃO (usado 2x) ===== */
-.photo-break {
-    position: relative;
-    min-height: 74vh;
-    display: flex;
-    align-items: flex-end;
-    padding: 0 clamp(20px, 4vw, 48px) 72px;
-    overflow: hidden;
-}
-.photo-break-bg {
-    position: absolute; inset: 0;
-    background-size: cover; background-position: center;
-    filter: saturate(1.05) contrast(1.02);
-    will-change: transform;
-    transition: transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-@media (prefers-reduced-motion: reduce) {
-    .photo-break-bg { transform: none !important; transition: none; }
-}
-.photo-break-bg::after {
-    content: '';
-    position: absolute; inset: 0;
-    background: linear-gradient(0deg, rgba(13,11,8,0.85) 0%, rgba(13,11,8,0.35) 32%, transparent 60%);
-}
-.photo-break-content {
-    position: relative; z-index: 1;
-    max-width: 780px;
-    background: rgba(13, 11, 8, 0.72);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    padding: 32px clamp(20px, 3vw, 40px);
-    border-left: 2px solid var(--amber);
-}
-.photo-break blockquote {
-    font-family: var(--font-display);
-    text-transform: uppercase;
-    color: var(--paper);
-    font-size: clamp(26px, 4vw, 46px);
-    font-weight: 600;
-    line-height: 1.08;
-    letter-spacing: -0.3px;
-}
-.photo-break cite {
-    display: block;
-    font-style: normal;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--amber);
-    margin-top: 24px;
-}
-.photo-break p.lede {
-    margin-top: 22px;
-    font-size: 16px;
-    color: var(--paper-dim);
-    max-width: 60ch;
-}
-
-/* ===== RECURSOS — lista técnica, sem grade de caixas ===== */
-.features {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    column-gap: clamp(32px, 5vw, 80px);
-    row-gap: 4px;
-}
-.feature {
-    display: grid;
-    grid-template-columns: 56px 1fr;
-    gap: 18px;
-    padding: 34px 0;
-    border-top: 1px solid var(--line);
-    transform-style: preserve-3d;
-    will-change: transform;
-    transition: transform 0.15s ease-out;
-}
-.feature .fi, .feature h4, .feature p { transform: translateZ(20px); }
-@media (prefers-reduced-motion: reduce) { .feature { transition: none; } }
-.feature .fi {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--amber);
-    padding-top: 6px;
-    letter-spacing: 0.5px;
-}
-.feature h4 {
-    font-family: var(--font-display);
-    text-transform: uppercase;
-    letter-spacing: 0.2px;
-    font-size: 19px;
-    font-weight: 600;
-    color: var(--paper);
-    margin-bottom: 8px;
-}
-.feature p { font-size: 14px; color: var(--steel); }
-
-/* ===== EQUIPE — banda de foto grande ===== */
-.team-band {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    min-height: 66vh;
-}
-.team-photo { position: relative; overflow: hidden; }
-.team-photo::after {
-    content: '';
-    position: absolute; inset: 0;
-    background: linear-gradient(180deg, transparent 60%, rgba(13,11,8,0.5) 100%);
-    pointer-events: none;
-}
-.team-photo img {
-    width: 100%; height: 100%; object-fit: cover;
-    filter: saturate(1.08) contrast(1.02) brightness(1.08);
-    transform: scale(1.06);
-    transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.team-photo:hover img, .team-photo.in-view img { transform: scale(1.14); }
-@media (prefers-reduced-motion: reduce) { .team-photo img { transition: none; } }
-.team-text {
-    padding: 80px clamp(24px, 4vw, 64px);
-    display: flex; flex-direction: column; justify-content: center;
-    background: var(--panel);
-}
-.team-text .stat {
-    font-family: var(--font-display);
-    color: var(--amber);
-    font-size: clamp(48px, 6vw, 88px);
-    font-weight: 700;
-    line-height: 1;
-    margin: 18px 0 20px;
-}
-.team-text p { font-size: 16px; color: var(--paper-dim); max-width: 44ch; }
-@media (max-width: 900px) {
-    .team-band { grid-template-columns: 1fr; }
-    .team-photo { min-height: 320px; order: 2; }
-    .team-text { order: 1; }
-}
-
-/* ===== MCC — abas técnicas ===== */
-.mcc-tabs {
-    display: flex; gap: 1px; background: var(--line);
-    border: 1px solid var(--line); margin-bottom: 1px;
-    flex-wrap: wrap;
-    position: relative;
-}
-.mcc-tab-indicator {
-    position: absolute; bottom: 0; left: 0; height: 2px;
-    background: var(--amber);
-    transition: left 0.35s cubic-bezier(0.16, 1, 0.3, 1), width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-}
-@media (prefers-reduced-motion: reduce) { .mcc-tab-indicator { transition: none; } }
-.mcc-tab {
-    flex: 1; min-width: 140px;
-    background: var(--ink);
-    border: none; cursor: pointer;
-    padding: 20px 16px;
-    text-align: left;
-    color: var(--steel);
-    font-family: var(--font-mono);
-    font-size: 13px;
-    transition: background var(--ease), color var(--ease);
-}
-.mcc-tab strong { display: block; color: var(--paper-dim); font-family: var(--font-body); font-size: 15px; font-weight: 700; margin-bottom: 4px; }
-.mcc-tab.active { background: var(--panel-2); color: var(--amber); }
-.mcc-tab.active strong { color: var(--paper); }
-.mcc-panel {
-    display: none;
-    border: 1px solid var(--line); border-top: none;
-    padding: 36px clamp(20px, 3vw, 40px);
-    background: var(--panel);
-}
-.mcc-panel.active { display: block; }
-.veio-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 40px;
-}
-.veio-col {
-    padding-left: 20px;
-    border-left: 2px solid var(--amber);
-}
-.veio-label {
-    display: block;
-    font-family: var(--font-display);
-    text-transform: uppercase;
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--paper);
-    margin-bottom: 18px;
-}
-.mcc-panel .chips { display: flex; flex-wrap: wrap; gap: 10px; }
-.mcc-panel .chip {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--paper-dim);
-    border: 1px solid var(--line);
-    padding: 8px 14px;
-}
-@media (max-width: 640px) {
-    .veio-grid { grid-template-columns: 1fr; gap: 28px; }
-}
-
-/* ===== MANIFESTO — frase de efeito ===== */
-.manifesto {
-    background: var(--ink);
-    border-top: 1px solid var(--line);
-    text-align: left;
-    padding: 140px clamp(20px, 4vw, 48px);
-}
-.manifesto .section-inner { max-width: 980px; }
-.manifesto-tag { margin-bottom: 28px; }
-.manifesto-line {
-    font-family: var(--font-display);
-    text-transform: uppercase;
-    line-height: 1.02;
-    letter-spacing: -0.5px;
-    color: var(--steel);
-    /* 🔧 CORRIGIDO ("no celular não aparece"): 0.4 + blur(2px) como
-       estado BASE é arriscado — se o JS não conseguir calcular a faixa
-       central a tempo (tela baixa, scroll rápido no touch), a linha
-       fica presa nesse estado quase ilegível pra sempre. Base agora é
-       só "meio apagado", nunca perto de invisível. */
-    opacity: 0.65;
-    filter: blur(0.5px);
-    transition: opacity 0.5s ease, filter 0.5s ease, transform 0.5s ease;
-}
-/* ===== "Teleprompter" — cada linha acende ao passar pela faixa central
-   da tela (ver IntersectionObserver com rootMargin negativo no JS);
-   diferente do .reveal comum, isso liga e desliga toda vez que a linha
-   entra/sai do centro, não só uma vez. ===== */
-.manifesto-line.is-active { opacity: 1; filter: blur(0); transform: scale(1.015); }
-@media (prefers-reduced-motion: reduce) {
-    .manifesto-line { opacity: 1; filter: none; transition: none; }
-}
-.manifesto-line.line-1 { font-size: clamp(24px, 3.4vw, 36px); font-weight: 500; }
-.manifesto-line.line-2 { font-size: clamp(24px, 3.4vw, 36px); font-weight: 500; margin-bottom: 28px; }
-.manifesto-line.line-3,
-.manifesto-line.line-4 {
-    font-size: clamp(36px, 6.2vw, 76px);
-    font-weight: 700;
-    color: var(--paper);
-}
-.manifesto-line em {
-    font-style: normal;
-    color: var(--amber);
-}
-@media (max-width: 640px) {
-    .manifesto { padding: 88px 20px; }
-    .manifesto-line.line-2 { margin-bottom: 18px; }
-}
-
-/* ===== CTA FINAL ===== */
-.cta-final {
-    background: var(--panel);
-    border-top: 1px solid var(--line);
-    text-align: left;
-    overflow: hidden;
-}
-.cta-final::before {
-    content: '';
-    position: absolute;
-    width: 60vw; height: 60vw; max-width: 700px; max-height: 700px;
-    left: 50%; top: 50%;
-    background: radial-gradient(circle, rgba(240,163,52,0.14), transparent 68%);
-    transform: translate(-50%, -50%);
-    animation: ctaGlow 6s ease-in-out infinite;
-    pointer-events: none;
-}
-@keyframes ctaGlow {
-    0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
-    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
-}
-@media (prefers-reduced-motion: reduce) { .cta-final::before { animation: none; } }
-.cta-final .section-inner {
-    position: relative; z-index: 1;
-    display: flex; justify-content: space-between; align-items: flex-end;
-    flex-wrap: wrap; gap: 32px;
-}
-.cta-final h2 {
-    font-family: var(--font-display);
-    text-transform: uppercase;
-    color: var(--paper);
-    font-size: clamp(32px, 5.5vw, 64px);
-    font-weight: 700;
-    letter-spacing: -0.5px;
-    line-height: 1;
-    max-width: 14ch;
-}
-
-/* ===== FOOTER ===== */
-footer {
-    border-top: 1px solid var(--line);
-    padding: 48px clamp(20px, 4vw, 48px) calc(32px + env(safe-area-inset-bottom));
-    display: flex; justify-content: space-between; align-items: center;
-    flex-wrap: wrap; gap: 20px;
-    font-size: 13px; color: var(--steel);
-}
-footer .foot-links { display: flex; gap: 22px; flex-wrap: wrap; }
-footer a:hover { color: var(--amber); }
-
-/* ===== REVEAL — um único tipo de entrada, discreto ===== */
-.reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.7s ease, transform 0.7s ease; }
-.reveal.in-view { opacity: 1; transform: translateY(0); }
-@media (prefers-reduced-motion: reduce) {
-    .reveal { opacity: 1; transform: none; transition: none; }
-}
-
-/* ===== RESPONSIVO ===== */
-@media (max-width: 992px) {
+.nav-links a { font-size: 13px; color: var(--text-2); transition: color 0.2s; }
+.nav-links a:hover, .nav-links a.ativo { color: var(--text); }
+.nav-cta { display: flex; gap: 10px; align-items: center; }
+.nav-progress {
+    position: absolute; left: 0; bottom: -1px; height: 1px; width: 100%;
+    transform-origin: 0 50%; transform: scaleX(0);
+    background: linear-gradient(90deg, var(--amber-deep), var(--amber), var(--white-hot));
+}
+@media (max-width: 820px) {
     .nav-links { display: none; }
-    .nav-hamburger { display: flex; }
-    .nav-login { display: none; }
-    .conn-status { display: none; }
-    .specs-row { grid-template-columns: 1fr; }
-    .specs-row > div { border-left: none; border-top: 1px solid var(--line); }
-    .specs-row > div:first-child { border-top: none; }
-    .compare-row { grid-template-columns: 1fr; }
-    .compare-col + .compare-col { border-left: none; border-top: 1px solid var(--line); }
-    .pillars { grid-template-columns: 1fr; }
-    .cycle { grid-template-columns: repeat(3, 1fr); }
-    .features { grid-template-columns: 1fr; }
+    .nav .btn-instalar-pwa { display: none !important; }
 }
 
-@media (max-width: 640px) {
-    section { padding: 80px 20px; }
-    .cycle { grid-template-columns: repeat(2, 1fr); }
-    .cta-final .section-inner { flex-direction: column; align-items: flex-start; }
-    .feature { grid-template-columns: 56px 1fr; gap: 14px; padding: 24px 20px; }
-    .hero-content { padding-bottom: 48px; }
-    .photo-break { min-height: 60vh; padding: 0 20px 48px; }
+/* ===== HERO ===== */
+.hero {
+    min-height: 100svh;
+    display: flex; flex-direction: column;
+    padding-top: calc(clamp(84px, 12vh, 112px) + env(safe-area-inset-top));
+    overflow: hidden;
+    isolation: isolate;
+}
+.hero-glow {
+    position: absolute; inset: auto 0 -25% 0; height: 95%; z-index: -1;
+    background:
+        radial-gradient(48% 55% at 22% 72%, rgba(255, 122, 26, 0.17), transparent 70%),
+        radial-gradient(40% 40% at 70% 92%, rgba(240, 163, 52, 0.10), transparent 70%);
+    animation: fornalha 6s ease-in-out infinite alternate;
+}
+@keyframes fornalha { to { opacity: 0.65; transform: scale(1.06); } }
+.hero-copy { text-align: center; width: min(1000px, 100% - 40px); margin: 0 auto; position: relative; z-index: 1; }
+.hero .eyebrow { color: var(--text-2); font-weight: 500; }
+.hero-title { font: 600 clamp(50px, min(8.6vw, 13vh), 120px)/0.98 var(--display); letter-spacing: -0.048em; color: var(--text); }
+.hero-title .ht { display: block; padding-bottom: 0.04em; }
+.hero-sub { margin: 22px auto 0; max-width: 40ch; font-size: clamp(18px, min(1.8vw, 2.9vh), 24px); line-height: 1.38; color: var(--text-2); letter-spacing: -0.017em; text-wrap: balance; }
+.hero-ctas { margin-top: 30px; display: flex; gap: 28px; align-items: center; justify-content: center; flex-wrap: wrap; }
+.strand-wrap { position: relative; flex: 1; min-height: 250px; width: min(1320px, 100%); margin: clamp(6px, 2vh, 28px) auto 0; }
+.strand { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.anim .strand { opacity: 0; }
+.s-base { fill: none; stroke: #2a241b; stroke-width: 10; stroke-linecap: round; }
+.s-hot { fill: none; stroke: url(#gHot); stroke-width: 10; stroke-linecap: round; }
+.s-glow { fill: none; stroke: url(#gHot); stroke-width: 26; stroke-linecap: round; opacity: 0.55; filter: url(#fGlow); animation: brilho 2.6s ease-in-out infinite alternate; }
+@keyframes brilho { to { opacity: 0.3; } }
+.s-pulse { fill: none; stroke: #fff4dc; stroke-width: 4; stroke-linecap: round; opacity: 0; }
+.s-pulse-halo { fill: none; stroke: #ffd28a; stroke-width: 20; stroke-linecap: round; opacity: 0; }
+.strand.vivo .s-pulse { opacity: 0.95; }
+.strand.vivo .s-pulse-halo { opacity: 0.22; }
+.s-mold { fill: rgba(240, 163, 52, 0.06); stroke: rgba(240, 163, 52, 0.75); stroke-width: 1.5; }
+.roll { fill: #1a1610; stroke: rgba(255, 250, 240, 0.18); stroke-width: 1.2; transition: fill 0.7s ease, stroke 0.7s ease; }
+.roll.lit { fill: var(--amber); stroke: var(--white-hot); transition: fill 0.12s ease, stroke 0.12s ease; }
+.s-label { font: 500 20px var(--body); fill: var(--text-3); letter-spacing: 0.02em; }
+.s-tick { stroke: rgba(255, 250, 240, 0.22); stroke-width: 1; }
+.strand.mobile .s-label { font-size: 24px; }
+
+/* ===== Revelações genéricas (o GSAP mostra; sem GSAP, já aparece) ===== */
+.anim [data-r] { opacity: 0; transform: translateY(42px); }
+.anim .hero-copy > * { opacity: 0; }
+
+/* ===== DECLARAÇÃO — palavras acendem com a rolagem ===== */
+.statement { padding: clamp(120px, 18vh, 220px) 0; }
+.statement-text {
+    font: 600 clamp(32px, 4.6vw, 62px)/1.12 var(--display);
+    letter-spacing: -0.034em;
+    color: var(--text);
+    max-width: 22ch;
+    text-wrap: pretty;
+}
+.anim .statement-text .w { opacity: 0.13; }
+.statement-text .hl { color: var(--amber); }
+
+/* ===== NÚMEROS ===== */
+.numeros { padding: clamp(100px, 14vh, 180px) 0; }
+.num-grid { margin-top: clamp(48px, 7vh, 84px); display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 40px; }
+.num { padding: 34px 0 40px; border-top: 1px solid var(--line); }
+.num b {
+    display: block;
+    font: 600 clamp(64px, 8vw, 112px)/1 var(--display);
+    letter-spacing: -0.055em;
+    background: linear-gradient(180deg, var(--text) 30%, #d9a75a 135%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    font-variant-numeric: tabular-nums;
+}
+.num span { display: block; margin-top: 12px; font-size: 17px; color: var(--text-2); max-width: 24ch; }
+@media (max-width: 820px) { .num-grid { grid-template-columns: 1fr 1fr; column-gap: 20px; } .num b { font-size: clamp(46px, 12.4vw, 80px); } .num span { font-size: 15px; } }
+
+/* ===== CICLO — anel fixo na tela enquanto a rolagem avança ===== */
+.ciclo-pin { min-height: 100svh; display: flex; flex-direction: column; justify-content: center; padding: 84px 0 40px; }
+.ciclo-head { text-align: center; }
+.ciclo-head .h2 { font-size: clamp(34px, 4.4vw, 60px); }
+.ciclo-stage { margin-top: clamp(28px, 5vh, 56px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: clamp(28px, 6vw, 96px); }
+.ring { position: relative; width: min(460px, 100%); aspect-ratio: 1; justify-self: end; }
+.ring svg { width: 100%; height: 100%; overflow: visible; }
+.ring-base { fill: none; stroke: var(--line-2); stroke-width: 2; }
+.ring-prog { fill: none; stroke: url(#gRing); stroke-width: 4; stroke-linecap: round; }
+.ring-node { fill: var(--bg); stroke: var(--line-2); stroke-width: 2; transition: fill 0.4s, stroke 0.4s; }
+.ring-node.on { fill: var(--amber); stroke: var(--white-hot); }
+.ring-label { font: 500 15px var(--body); fill: var(--text-3); transition: fill 0.4s; }
+.ring-label.on { fill: var(--text); }
+.ring-center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none; }
+.ring-num { font: 600 clamp(64px, 8vw, 104px)/1 var(--display); letter-spacing: -0.05em; color: var(--text); font-variant-numeric: tabular-nums; }
+.ring-of { margin-top: 6px; font-size: 15px; color: var(--text-3); }
+.ciclo-steps { position: relative; min-height: 230px; max-width: 460px; }
+.step { position: absolute; inset: 0 auto auto 0; opacity: 0; transform: translateY(24px); filter: blur(6px); transition: opacity 0.55s var(--ease), transform 0.55s var(--ease), filter 0.55s var(--ease); }
+.step.on { opacity: 1; transform: none; filter: none; }
+.step small { display: block; color: var(--amber); font-weight: 600; font-size: 15px; margin-bottom: 10px; }
+.step h3 { font: 600 clamp(36px, 4.4vw, 58px)/1.02 var(--display); letter-spacing: -0.04em; color: var(--text); margin-bottom: 14px; }
+.step p { font-size: clamp(18px, 1.6vw, 21px); line-height: 1.45; color: var(--text-2); }
+/* sem animação: vira uma lista comum */
+.ciclo:not(.pinned) .ciclo-steps { display: grid; gap: 30px; min-height: 0; }
+.ciclo:not(.pinned) .step { position: static; opacity: 1; transform: none; filter: none; }
+.ciclo:not(.pinned) .ring-node { fill: var(--amber); stroke: var(--white-hot); }
+.ciclo:not(.pinned) .ciclo-stage { align-items: start; }
+.ciclo:not(.pinned) .ring { position: sticky; top: 90px; }
+@media (max-width: 820px) {
+    .ciclo-pin { padding: 70px 0 28px; justify-content: flex-start; }
+    .ciclo-stage { grid-template-columns: 1fr; gap: 22px; }
+    .ring { justify-self: center; width: min(62vw, 300px, 38svh); }
+    .ring-label { display: none; }
+    .ciclo-steps { max-width: none; text-align: center; min-height: 190px; }
+    .step { inset: 0 0 auto 0; }
+    .ciclo:not(.pinned) .ciclo-steps { text-align: left; }
 }
 
-/* ===== HERO — trio de fotos (Usinagem / Caldeiraria / Elétrica) em
-   moldura, no tamanho real delas: as fotos são retratos de 750px, e
-   esticadas em tela cheia ficavam borradas e escuras. ===== */
-.hero { align-items: center; }
-.hero-content { padding-top: 120px; padding-bottom: 96px; }
-.hero h1 { font-size: clamp(42px, 6vw, 88px); max-width: none; }
-.hero h1 .line { white-space: nowrap; }
-.hero-sub { max-width: 46ch; }
-.hero-visual {
-    position: absolute; z-index: 1;
-    right: clamp(20px, 4vw, 64px); top: 50%;
-    transform: translateY(-46%);
-    display: flex; align-items: flex-start; gap: 14px;
-    transform-style: preserve-3d; transition: transform 0.4s ease-out;
+/* ===== ANTES × DEPOIS — cada linha se transforma ===== */
+.versus { padding: clamp(110px, 16vh, 200px) 0; }
+.seg { position: relative; display: inline-flex; padding: 4px; margin-top: 36px; border-radius: 999px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); }
+.seg button { position: relative; z-index: 1; height: 38px; padding: 0 22px; border-radius: 999px; font-size: 15px; font-weight: 500; color: var(--text-2); transition: color 0.3s; }
+.seg button[aria-selected="true"] { color: #17130c; }
+.seg-thumb { position: absolute; top: 4px; bottom: 4px; left: 4px; border-radius: 999px; background: var(--amber); transition: transform 0.5s var(--ease), width 0.5s var(--ease); }
+.vs { list-style: none; margin-top: clamp(36px, 6vh, 64px); }
+.vs-row { display: grid; grid-template-columns: 52px 1fr; align-items: center; padding: 24px 0; border-top: 1px solid var(--line); overflow: hidden; }
+.vs-row:last-child { border-bottom: 1px solid var(--line); }
+.vs-ico { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--line-2); color: var(--text-3); transition: background 0.5s, color 0.5s, box-shadow 0.5s; }
+.vs-ico svg { grid-area: 1 / 1; transition: opacity 0.35s, transform 0.5s var(--ease); }
+.vs-ico .i-ok { opacity: 0; transform: scale(0.4) rotate(-40deg); }
+.vs-txt { display: grid; font: 600 clamp(26px, 3.6vw, 48px)/1.15 var(--display); letter-spacing: -0.035em; }
+.vs-txt > span { grid-area: 1 / 1; transition: opacity 0.5s var(--ease), transform 0.7s var(--ease), color 0.5s; }
+.vs-old { color: var(--text-3); position: relative; justify-self: start; }
+.vs-old::after { content: ''; position: absolute; left: 0; right: 0; top: 54%; height: 2px; background: var(--text-3); transform: scaleX(0); transform-origin: 0 50%; transition: transform 0.45s var(--ease); }
+.vs-new { color: var(--text); opacity: 0; transform: translateY(110%); }
+.vs.depois .vs-old::after { transform: scaleX(1); }
+.vs.depois .vs-old { opacity: 0; transform: translateY(-110%); transition-delay: 0.32s; }
+.vs.depois .vs-new { opacity: 1; transform: none; transition-delay: 0.4s; }
+.vs.depois .vs-ico { background: rgba(240, 163, 52, 0.12); color: var(--amber); box-shadow: inset 0 0 0 1.5px rgba(240, 163, 52, 0.6); transition-delay: 0.4s; }
+.vs.depois .vs-ico .i-x { opacity: 0; transform: scale(0.4) rotate(40deg); }
+.vs.depois .vs-ico .i-ok { opacity: 1; transform: none; transition-delay: 0.45s; }
+.vs.depois .vs-row:nth-child(2) .vs-new, .vs.depois .vs-row:nth-child(2) .vs-old { transition-delay: 0.48s; }
+.vs.depois .vs-row:nth-child(3) .vs-new, .vs.depois .vs-row:nth-child(3) .vs-old { transition-delay: 0.56s; }
+.vs.depois .vs-row:nth-child(4) .vs-new, .vs.depois .vs-row:nth-child(4) .vs-old { transition-delay: 0.64s; }
+.vs.depois .vs-row:nth-child(2) .vs-old::after { transition-delay: 0.08s; }
+.vs.depois .vs-row:nth-child(3) .vs-old::after { transition-delay: 0.16s; }
+.vs.depois .vs-row:nth-child(4) .vs-old::after { transition-delay: 0.24s; }
+
+/* ===== RECURSOS — grade de blocos com luz que segue o cursor ===== */
+.recursos { padding: clamp(110px, 16vh, 200px) 0; }
+.bento { margin-top: clamp(44px, 7vh, 72px); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.tile {
+    position: relative; overflow: hidden; isolation: isolate;
+    min-height: 300px; padding: 30px;
+    border-radius: 26px;
+    background: linear-gradient(180deg, rgba(255, 250, 240, 0.045), rgba(255, 250, 240, 0.015));
+    box-shadow: inset 0 0 0 1px var(--line);
+    display: flex; flex-direction: column;
 }
-.shot { position: relative; width: clamp(150px, 15vw, 220px); aspect-ratio: 3 / 4; margin: 0;
-    overflow: hidden; border: 1px solid var(--line); background: var(--panel);
-    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.8), 0 0 0 1px rgba(240,163,52,0.06);
-    transition: transform 0.6s cubic-bezier(0.16,1,0.3,1), border-color 0.3s ease; }
-.shot img { width: 100%; height: 100%; object-fit: cover; filter: saturate(0.95) contrast(1.05); }
-.shot::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgba(13,11,8,0.85)); }
-.shot figcaption { position: absolute; left: 12px; bottom: 10px; z-index: 1; font-family: var(--font-mono); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--paper); }
-.shot figcaption::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--amber); margin-right: 7px; vertical-align: 1px; }
-.shot.s1 { margin-top: 56px; } .shot.s3 { margin-top: 110px; }
-.shot:hover { transform: translateY(-8px); border-color: rgba(240,163,52,0.5); }
-#hero-canvas { opacity: 0.35; }
-@media (max-width: 1100px) { .hero-visual { opacity: 0.35; } }
-@media (max-width: 992px) {
-    .hero { flex-direction: column; align-items: stretch; }
-    .hero-content { padding-top: 110px; padding-bottom: 28px; }
-    .hero-visual { position: relative; right: auto; top: auto; transform: none; opacity: 1; order: 2;
-        padding: 0 clamp(20px, 4vw, 48px) 48px; gap: 10px; }
-    .shot { width: 33%; } .shot.s1 { margin-top: 18px; } .shot.s3 { margin-top: 36px; }
+.tile::before, .tile::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity 0.45s; }
+.tile::before { z-index: -1; background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgba(240, 163, 52, 0.11), transparent 45%); }
+.tile::after {
+    padding: 1px;
+    background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 0%), rgba(240, 163, 52, 0.7), transparent 55%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.tile:hover::before, .tile:hover::after { opacity: 1; }
+.t-wide { grid-column: span 2; flex-direction: row; gap: 28px; align-items: stretch; }
+.t-wide .t-copy { flex: 1; display: flex; flex-direction: column; }
+.t-ico { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; color: var(--amber); background: rgba(240, 163, 52, 0.09); box-shadow: inset 0 0 0 1px rgba(240, 163, 52, 0.22); }
+.tile h3 { margin-top: auto; padding-top: 34px; font: 600 26px/1.12 var(--display); letter-spacing: -0.03em; color: var(--text); }
+.tile p { margin-top: 10px; font-size: 16px; line-height: 1.5; color: var(--text-2); max-width: 36ch; }
+/* visual: barras de desgaste por posição */
+.bars { flex: 1; display: flex; align-items: flex-end; gap: 10px; padding: 8px 4px 0; max-width: 380px; }
+.bars div { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; justify-content: flex-end; }
+.bars i { display: block; width: 100%; height: 0; border-radius: 8px 8px 3px 3px; background: linear-gradient(180deg, var(--amber), rgba(201, 122, 18, 0.35)); transition: height 1.3s var(--ease); }
+.bars i.alto { background: linear-gradient(180deg, var(--white-hot), var(--hot) 45%, rgba(201, 122, 18, 0.35)); }
+.bars span { font-size: 12px; color: var(--text-3); }
+.tile.on .bars i { height: var(--h); }
+.bars div:nth-child(2) i { transition-delay: 0.08s; } .bars div:nth-child(3) i { transition-delay: 0.16s; } .bars div:nth-child(4) i { transition-delay: 0.24s; } .bars div:nth-child(5) i { transition-delay: 0.32s; } .bars div:nth-child(6) i { transition-delay: 0.4s; }
+/* visual: checklist que se marca */
+.checks { margin-top: 26px; display: grid; gap: 10px; }
+.checks div { display: flex; align-items: center; gap: 10px; }
+.checks b { flex: 0 0 auto; width: 18px; height: 18px; border-radius: 6px; box-shadow: inset 0 0 0 1.5px var(--line-2); display: grid; place-items: center; transition: background 0.3s, box-shadow 0.3s; }
+.checks b svg { opacity: 0; transform: scale(0.3); transition: opacity 0.3s, transform 0.4s var(--ease); }
+.checks i { height: 6px; border-radius: 3px; background: var(--line-2); }
+.tile.on .checks b { background: var(--amber); box-shadow: none; }
+.tile.on .checks b svg { opacity: 1; transform: none; }
+.checks div:nth-child(2) b, .checks div:nth-child(2) b svg { transition-delay: 0.35s; }
+.checks div:nth-child(3) b, .checks div:nth-child(3) b svg { transition-delay: 0.7s; }
+/* visual: cubo 3D (Sinótico) */
+.cube-wrap { margin-top: 18px; height: 96px; display: grid; place-items: center; perspective: 420px; }
+.cube { position: relative; width: 62px; height: 62px; transform-style: preserve-3d; animation: girar 16s linear infinite; }
+.cube span { position: absolute; inset: 0; border: 1px solid rgba(240, 163, 52, 0.6); background: rgba(240, 163, 52, 0.05); }
+.cube span:nth-child(1) { transform: translateZ(31px); }
+.cube span:nth-child(2) { transform: rotateY(180deg) translateZ(31px); }
+.cube span:nth-child(3) { transform: rotateY(90deg) translateZ(31px); }
+.cube span:nth-child(4) { transform: rotateY(-90deg) translateZ(31px); }
+.cube span:nth-child(5) { transform: rotateX(90deg) translateZ(31px); }
+.cube span:nth-child(6) { transform: rotateX(-90deg) translateZ(31px); background: rgba(240, 163, 52, 0.16); }
+@keyframes girar { from { transform: rotateX(-24deg) rotateY(0); } to { transform: rotateX(-24deg) rotateY(360deg); } }
+/* visual: celular com o app */
+.phone { flex: 0 0 auto; align-self: center; width: 132px; height: 250px; border-radius: 26px; position: relative; background: linear-gradient(180deg, #1b1712, #0f0c09); box-shadow: inset 0 0 0 1.5px var(--line-2), 0 30px 60px -24px rgba(0, 0, 0, 0.9); display: grid; place-items: center; }
+.phone::before { content: ''; position: absolute; top: 10px; left: 50%; width: 38px; height: 9px; margin-left: -19px; border-radius: 6px; background: #000; }
+.phone img { width: 54px; height: 54px; border-radius: 14px; box-shadow: 0 0 0 8px rgba(240, 163, 52, 0.06), 0 0 40px rgba(240, 163, 52, 0.35); animation: respira 3.2s ease-in-out infinite; }
+@keyframes respira { 50% { box-shadow: 0 0 0 14px rgba(240, 163, 52, 0.03), 0 0 60px rgba(240, 163, 52, 0.5); } }
+.phone em { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); font: 500 11px var(--body); font-style: normal; color: var(--text-2); white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+.phone em::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--amber); }
+@media (max-width: 920px) {
+    .bento { grid-template-columns: 1fr; }
+    .t-wide { grid-column: auto; flex-direction: column; }
+    .bars { min-height: 150px; max-width: none; }
+    .tile { min-height: 0; }
+    .phone { margin-top: 10px; }
 }
 
-/* ===== Navbar no celular — antes os botões quebravam em 2 linhas e o
-   menu (hambúrguer) era empurrado pra fora da tela. ===== */
-.btn { white-space: nowrap; }
-@media (max-width: 992px) {
-    .brand small { display: none; }
-    .navbar .btn-instalar-pwa { display: none !important; }
-    .navbar { padding-top: calc(14px + env(safe-area-inset-top)); padding-bottom: 14px; }
-    .nav-actions { gap: 10px; }
-    .specs-row { grid-template-columns: 1fr 1fr; }
-    .specs-row > div:nth-child(3) { border-left: none; }
-    .specs-row > div:nth-child(n+3) { border-top: 1px solid var(--line); }
-    .specs-row > div { border-top: none; border-left: 1px solid var(--line); padding: 20px 14px; }
-    .specs-row > div:first-child { border-left: none; }
-    .specs-row strong { font-size: 24px; }
-}
-/* cursor customizado só aparece depois do primeiro movimento do mouse
-   (antes ficava um anel parado no canto superior esquerdo) */
-.cursor-dot, .cursor-ring { opacity: 0; }
-body.cursor-moved .cursor-dot, body.cursor-moved .cursor-ring { opacity: 1; }
-
-/* ===== Refinos 2 ===== */
-.brand { align-items: center; }
-.brand img { width: 30px; height: 30px; border-radius: 7px; }
-.navbar .conn-status { display: none; }
-/* cabeçalho de seção em 2 colunas: título à esquerda, texto à direita
-   (antes o título ficava espremido à esquerda com metade da tela vazia) */
-@media (min-width: 993px) {
-    .section-head { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); column-gap: 64px; align-items: end; }
-    .section-head .tag { grid-column: 1; }
-    .section-head h2 { grid-column: 1; max-width: 18ch; }
-    .section-head p { grid-column: 2; grid-row: 1 / span 2; align-self: end; margin-top: 0; }
-}
-.section-head h2 { font-size: clamp(30px, 4.2vw, 52px); }
-/* fotos de propósito/história: lado a lado com o texto, em vez de texto
-   por cima da foto (a foto do propósito já tem o texto escrito na placa) */
-@media (min-width: 993px) {
-    .photo-break { display: grid; grid-template-columns: 1.15fr 1fr; align-items: stretch; min-height: 0; padding: 0; }
-    .photo-break-bg { position: relative; inset: auto; min-height: 560px; }
-    .photo-break-bg::after { background: linear-gradient(90deg, transparent 70%, rgba(13,11,8,0.6)); }
-    .photo-break-content { background: var(--panel); backdrop-filter: none; -webkit-backdrop-filter: none;
-        max-width: none; display: flex; flex-direction: column; justify-content: center; padding: 64px clamp(32px, 4vw, 72px); border-left: 2px solid var(--amber); }
-    #historia .photo-break-bg { order: 2; }
-    #historia .photo-break-content { border-left: none; border-right: 2px solid var(--amber); }
-}
-/* diagrama de fluxo horizontal no PC (antes: coluna estreita no meio da tela) */
-@media (min-width: 993px) {
-    .flow { max-width: 1240px; margin: 64px auto 0; flex-direction: row; align-items: center; gap: 0; }
-    .flow-top { width: auto; flex: 3; }
-    .flow-merge { width: 40px; height: 1px; background: var(--line); }
-    .flow-merge::before, .flow-merge span { display: none; }
-    .flow-wide { width: auto; flex: 1.2; }
-    .flow-line { width: 40px; height: 1px; }
+/* ===== ESPECIALIDADES ===== */
+.disc { padding: clamp(110px, 16vh, 200px) 0 clamp(80px, 12vh, 140px); }
+.disc-row { margin-top: clamp(44px, 7vh, 72px); display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.disc-card { margin: 0; }
+.disc-card:nth-child(2) { margin-top: 72px; }
+.disc-img { position: relative; overflow: hidden; border-radius: 24px; aspect-ratio: 3 / 4; background: var(--panel); }
+.disc-img img { width: 100%; height: 118%; object-fit: cover; transform: scale(1.04); transition: transform 1.1s var(--ease), filter 0.6s; filter: saturate(0.9); }
+.disc-card:hover .disc-img img { transform: scale(1.1); filter: saturate(1.05); }
+.disc-card figcaption { margin-top: 16px; font: 600 24px/1.2 var(--display); letter-spacing: -0.03em; color: var(--text); }
+.anim .disc-img { clip-path: inset(100% 0 0 0 round 24px); }
+@media (max-width: 820px) {
+    .disc-row { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 14px; width: 100%; padding: 0 var(--gutter) 10px; scrollbar-width: none; }
+    .disc-row::-webkit-scrollbar { display: none; }
+    .disc-card { flex: 0 0 74%; scroll-snap-align: center; }
+    .disc-card:nth-child(2) { margin-top: 0; }
 }
 
-.hero h1 { font-size: clamp(34px, 4vw, 58px); line-height: 1; letter-spacing: -1.5px; }
-.section-head h2, .cta-final h2 { font-size: clamp(28px, 3.4vw, 44px); letter-spacing: -1px; line-height: 1.05; }
-.photo-break blockquote { font-size: clamp(24px, 3vw, 38px); letter-spacing: -0.5px; }
-.manifesto-line.line-3, .manifesto-line.line-4 { font-size: clamp(30px, 4.6vw, 58px); letter-spacing: -1px; }
-.pillar h3 { font-size: 20px; } .feature h4 { font-size: 16px; } .veio-label { font-size: 18px; }
-.specs-row strong { font-size: 28px; letter-spacing: -0.5px; }
-.team-text .stat { font-size: clamp(44px, 5vw, 72px); letter-spacing: -2px; }
+/* ===== EQUIPE — foto que se expande até tomar a tela ===== */
+.expand-pin { position: relative; height: 100svh; overflow: hidden; }
+.expand-media { position: absolute; inset: 0; overflow: hidden; }
+.expand-media img { width: 100%; height: 100%; object-fit: cover; }
+.expand-media::after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(13, 11, 8, 0.92) 0%, rgba(13, 11, 8, 0.55) 34%, rgba(13, 11, 8, 0.05) 70%); }
+.expand-copy { position: absolute; z-index: 2; left: 0; right: 0; bottom: clamp(40px, 8vh, 90px); }
+.expand-copy .h2 { max-width: 14ch; }
+.expand-copy .lead { margin-top: 18px; color: var(--text); opacity: 0.86; }
+.expand.pinned .expand-copy { opacity: 0; }
 
-/* ===== Efeitos das fotos do topo ===== */
-.hero-visual { perspective: 1200px; }
-.shot { opacity: 0; animation: shotIn 1.1s cubic-bezier(0.16,1,0.3,1) forwards, shotFloat 7s ease-in-out infinite; transform-style: preserve-3d; }
-.shot.s1 { animation-delay: 0.35s, 1.5s; } .shot.s2 { animation-delay: 0.5s, 2.3s; } .shot.s3 { animation-delay: 0.65s, 3.1s; }
-@keyframes shotIn { from { opacity: 0; transform: translateY(60px) rotateX(18deg) scale(0.92); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
-@keyframes shotFloat { 0%,100% { translate: 0 0; } 50% { translate: 0 -12px; } }
-.shot img { transition: transform 0.9s cubic-bezier(0.16,1,0.3,1), filter 0.5s ease; transform: scale(1.06); filter: saturate(0.75) contrast(1.05) brightness(0.85); }
-.shot:hover img { transform: scale(1.16); filter: saturate(1.05) contrast(1.08) brightness(1); }
-.shot::before { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
-    background: linear-gradient(115deg, transparent 35%, rgba(255,214,150,0.28) 50%, transparent 65%);
-    transform: translateX(-120%); animation: shotShine 6s ease-in-out infinite; }
-.shot.s2::before { animation-delay: 2s; } .shot.s3::before { animation-delay: 4s; }
-@keyframes shotShine { 0%, 70% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
-.shot:hover { border-color: var(--amber); box-shadow: 0 30px 70px -20px rgba(240,163,52,0.35), 0 0 0 1px rgba(240,163,52,0.4); }
-.hero-visual::before { content: ''; position: absolute; inset: -15% -10%; z-index: -1;
-    background: radial-gradient(closest-side, rgba(240,163,52,0.18), transparent); filter: blur(20px); animation: ctaGlow 6s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { .shot, .shot::before, .hero-visual::before { animation: none; opacity: 1; } }
+/* ===== DIVERSIDADE ===== */
+.split { padding: clamp(110px, 16vh, 200px) 0; }
+.split-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: clamp(36px, 6vw, 96px); align-items: center; }
+.split-grid .h2 { font-size: clamp(36px, 4.6vw, 62px); }
+.split-grid p.lead { margin-top: 22px; }
+.frame { position: relative; overflow: hidden; border-radius: 28px; aspect-ratio: 4 / 3; background: var(--panel); box-shadow: 0 40px 90px -40px rgba(0, 0, 0, 0.9); }
+.frame img { width: 100%; height: 120%; object-fit: cover; }
+@media (max-width: 820px) { .split-grid { grid-template-columns: 1fr; } .split-grid .frame { order: -1; } }
 
-/* ===== Cursor "mira de oficina": retícula girando + faíscas ===== */
-.cursor-dot { width: 4px; height: 4px; background: #ffd08a; box-shadow: 0 0 8px 2px rgba(240,163,52,0.8); }
-.cursor-ring { width: 38px; height: 38px; border: 1px dashed rgba(240,163,52,0.7); background: none;
-    transition: width .3s cubic-bezier(.16,1,.3,1), height .3s cubic-bezier(.16,1,.3,1), border-radius .3s, border-color .3s; }
-.cursor-ring::before, .cursor-ring::after { content: ''; position: absolute; left: 50%; top: 50%; background: var(--amber); transform: translate(-50%,-50%); transition: opacity .2s; }
-.cursor-ring::before { width: 54px; height: 1px; background: linear-gradient(90deg, var(--amber) 0 8px, transparent 8px calc(100% - 8px), var(--amber) calc(100% - 8px)); }
-.cursor-ring::after { width: 1px; height: 54px; background: linear-gradient(180deg, var(--amber) 0 8px, transparent 8px calc(100% - 8px), var(--amber) calc(100% - 8px)); }
-.cursor-ring .giro { position: absolute; inset: 0; border-radius: 50%; border: 1px solid transparent; border-top-color: var(--amber); animation: giroMira 1.6s linear infinite; }
-@keyframes giroMira { to { transform: rotate(360deg); } }
-.cursor-ring.is-big { width: 64px; height: 46px; border-radius: 4px; border: 1px solid var(--amber); background: rgba(240,163,52,0.08); }
-.cursor-ring.is-big::before, .cursor-ring.is-big::after, .cursor-ring.is-big .giro { opacity: 0; }
-#faiscas { position: fixed; inset: 0; z-index: 9996; pointer-events: none; }
-@media (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) { #faiscas { display: none; } }
+/* ===== MCCs — letras dos veios que se enchem de aço ===== */
+.mcc { padding: clamp(110px, 16vh, 200px) 0; text-align: center; }
+.mcc .seg { margin-top: 30px; }
+.mcc-panel { margin-top: clamp(30px, 5vh, 56px); }
+.veios { display: flex; justify-content: center; gap: clamp(10px, 3vw, 40px); }
+.veio-l {
+    position: relative;
+    font: 700 clamp(150px, 24vw, 320px)/0.86 var(--display);
+    letter-spacing: -0.05em;
+    color: transparent;
+    -webkit-text-stroke: 1.5px rgba(255, 250, 240, 0.18);
+}
+.veio-l::after {
+    content: attr(data-l);
+    position: absolute; inset: 0;
+    -webkit-text-stroke: 0;
+    background: linear-gradient(180deg, var(--white-hot) 0%, var(--amber) 38%, var(--hot) 70%, var(--amber-deep) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    clip-path: inset(100% 0 0 0);
+    transition: clip-path 1.4s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.veio-l:nth-child(2)::after { transition-delay: 0.18s; }
+.mcc-panel.cheio .veio-l::after { clip-path: inset(0 0 0 0); }
+.mcc-cap { margin-top: 22px; font: 600 clamp(22px, 2.4vw, 30px)/1.2 var(--display); letter-spacing: -0.03em; color: var(--text); }
+.chips { margin: 22px auto 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: 720px; }
+.chips span { padding: 9px 16px; border-radius: 999px; font-size: 15px; color: var(--text-2); box-shadow: inset 0 0 0 1px var(--line-2); opacity: 0; transform: translateY(12px); transition: opacity 0.5s var(--ease), transform 0.5s var(--ease); }
+.mcc-panel.cheio .chips span { opacity: 1; transform: none; }
 
-/* ===== Fotos da página entram com uma "cortina" ao rolar ===== */
-.team-photo img, .photo-break-bg { clip-path: inset(0 0 100% 0); transition: clip-path 1.3s cubic-bezier(.77,0,.18,1), transform 0.9s cubic-bezier(0.16,1,0.3,1); }
-.team-photo.in-view img, .photo-break.foto-on .photo-break-bg { clip-path: inset(0 0 0 0); }
-@media (prefers-reduced-motion: reduce) { .team-photo img, .photo-break-bg { clip-path: none; } }
-@media (min-width: 993px) { .hero-content > * { max-width: min(560px, 44vw); } }
+/* ===== HISTÓRIA ===== */
+.historia { padding: clamp(60px, 10vh, 120px) 0 clamp(110px, 16vh, 200px); }
+.hist-media { position: relative; overflow: hidden; border-radius: 30px; height: min(78svh, 720px); background: var(--panel); }
+.hist-media img { width: 100%; height: 124%; object-fit: cover; object-position: 50% 40%; }
+.hist-media::after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(13, 11, 8, 0.94) 0%, rgba(13, 11, 8, 0.4) 42%, transparent 72%); }
+.hist-copy { position: absolute; z-index: 1; left: clamp(24px, 5vw, 64px); right: clamp(24px, 5vw, 64px); bottom: clamp(28px, 6vw, 60px); }
+.hist-copy .h2 { max-width: 13ch; }
+.hist-copy p { margin-top: 18px; max-width: 58ch; font-size: clamp(16px, 1.5vw, 19px); line-height: 1.55; color: var(--text); opacity: 0.86; }
+@media (max-width: 820px) { .hist-media { height: 86svh; } }
 
-/* ===== Telas reais ===== */
-.telas { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.tela { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
-    box-shadow: 0 40px 80px -30px rgba(0,0,0,0.9); transition: transform .5s cubic-bezier(.16,1,.3,1), border-color .3s; }
-.tela:hover { transform: translateY(-6px); border-color: rgba(240,163,52,0.45); }
-.tela-grande { grid-column: 1 / -1; }
-.tela-barra { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-bottom: 1px solid var(--line); font-family: var(--font-mono); font-size: 11px; color: var(--paper-dim); }
-.tela-barra i { width: 9px; height: 9px; border-radius: 50%; background: #3a342b; } .tela-barra i:first-child { background: var(--amber); }
-.tela-barra span { margin-left: 8px; }
-.tela img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; }
-.tela-grande img { aspect-ratio: 16 / 8; object-position: 50% 60%; }
-.tela figcaption { padding: 12px 14px; font-size: 13px; color: var(--paper-dim); border-top: 1px solid var(--line); }
-@media (max-width: 992px) { .telas { grid-template-columns: 1fr; } .tela-grande img { aspect-ratio: 16/10; } }
+/* ===== PROPÓSITO ===== */
+.proposito { padding: clamp(120px, 18vh, 220px) 0; text-align: center; overflow: hidden; }
+.proposito::before { content: ''; position: absolute; left: 50%; top: 50%; width: min(900px, 120vw); aspect-ratio: 1; transform: translate(-50%, -50%); background: radial-gradient(closest-side, rgba(240, 163, 52, 0.12), transparent); pointer-events: none; }
+.prop-text { font: 600 clamp(46px, 8vw, 112px)/1.02 var(--display); letter-spacing: -0.048em; color: var(--text); max-width: 14ch; margin: 0 auto; text-wrap: balance; }
+.anim .prop-text .w { opacity: 0.13; }
+.prop-text .hl { color: var(--amber); }
+.prop-sub { margin: 30px auto 0; max-width: 48ch; font-size: clamp(17px, 1.6vw, 20px); color: var(--text-2); text-wrap: balance; }
 
-/* ===== Legibilidade (projetor/telão): textos secundários mais claros ===== */
-.section-head p, .pillar li, .feature p, .cycle-step p, .specs-row span, .hero-trust, .compare-col h3 { color: var(--paper-dim); }
-.hero-sub, .photo-break p.lede, .team-text p { color: #e2dccf; }
-.manifesto-line { opacity: 0.8; filter: none; }
-/* ===== Efeitos mais contidos para apresentação ===== */
-.grain { opacity: 0.03; animation: none; }
-.ticker-track { animation-duration: 60s; }
+/* ===== CHAMADA FINAL ===== */
+.cta { padding: clamp(110px, 16vh, 200px) 0 clamp(120px, 18vh, 220px); text-align: center; border-top: 1px solid var(--line); overflow: hidden; }
+.cta-icon { position: relative; width: 168px; height: 168px; margin: 0 auto 40px; display: grid; place-items: center; }
+.cta-ring { position: absolute; inset: -34px; border-radius: 50%; background: conic-gradient(from 0deg, transparent 0 20%, rgba(240, 163, 52, 0.55) 35%, transparent 52%, rgba(255, 122, 26, 0.4) 72%, transparent 88%); filter: blur(22px); animation: girarAnel 9s linear infinite; }
+@keyframes girarAnel { to { transform: rotate(360deg); } }
+.cta-icon img { position: relative; width: 168px; height: 168px; border-radius: 38px; box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 250, 240, 0.08); animation: flutua 6s ease-in-out infinite; }
+@keyframes flutua { 50% { transform: translateY(-12px); } }
+.cta .h2 { font-size: clamp(42px, 6.4vw, 86px); }
+.cta .lead { margin: 18px auto 0; text-align: center; }
+.cta .hero-ctas { margin-top: 38px; }
+
+/* ===== RODAPÉ ===== */
+.foot { border-top: 1px solid var(--line); padding: 26px 0 calc(26px + env(safe-area-inset-bottom)); font-size: 12px; color: var(--text-3); }
+.foot-in { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.foot nav { display: flex; gap: 20px; flex-wrap: wrap; }
+.foot a:hover { color: var(--text); }
+
+/* ===== Aviso de nova versão (Service Worker) ===== */
+#aviso-nova-versao { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 99; display: none; align-items: center; gap: 12px; padding: 8px 8px 8px 18px; border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--text); background: rgba(30, 26, 20, 0.8); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: inset 0 0 0 1px var(--line-2), 0 16px 40px -12px rgba(0, 0, 0, 0.7); white-space: nowrap; }
+#aviso-nova-versao button { height: 30px; padding: 0 14px; border-radius: 999px; background: var(--amber); color: #17130c; font-weight: 600; font-size: 12.5px; }
+
+@media (max-width: 820px) {
+    :root { --gutter: 22px; }
+    body { font-size: 16px; }
+    .hero { padding-top: calc(96px + env(safe-area-inset-top)); }
+    .hero-ctas { gap: 20px; }
+    .so-pc { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .hero-glow, .s-glow, .hot, .cube, .cta-ring, .cta-icon img, .phone img { animation: none; }
+}
 </style>
 </head>
 <body>
+<a class="skip" href="#conteudo">Pular para o conteúdo</a>
 
-<div class="grain" aria-hidden="true"></div>
-<div class="spotlight" id="spotlight" aria-hidden="true"></div>
-<div class="cursor-ring" id="cursor-ring" aria-hidden="true"><span class="giro"></span></div>
-<canvas id="faiscas" aria-hidden="true"></canvas>
-<div class="cursor-dot" id="cursor-dot" aria-hidden="true"></div>
-
-<!-- 🆕 Aviso de nova versão do site — mesma lógica de app.html: aparece
-     quando o Service Worker detecta que uma versão mais nova assumiu
-     o controle, sem recarregar sozinho. -->
-<!-- 🐛 CORRIGIDO ("aviso nunca some"): o atributo `hidden` depende de
-     `display:none` da folha de estilo padrão do navegador, que é
-     facilmente vencida por qualquer style inline — e esse elemento
-     tinha `display:flex` no próprio `style=""`, então `hidden`/
-     `el.hidden=true` nunca fazia efeito nenhum, mesmo sem erro nenhum
-     no console. Agora o JS controla `style.display` diretamente, sem
-     depender do atributo. -->
-<div id="aviso-nova-versao" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:99999; background:#1e1a14; color:#f2ede2; padding:12px 16px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,0.5); border:1px solid rgba(240,163,52,0.4); align-items:center; gap:12px;">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f0a334" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+<div id="aviso-nova-versao" role="status">
     <span>Nova versão do site disponível.</span>
-    <button type="button" onclick="window.forcarAtualizacaoOMS()" style="background:#f0a334; color:#0d0b08; border:none; padding:6px 14px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12.5px;">Atualizar agora</button>
+    <button type="button" onclick="window.forcarAtualizacaoOMS()">Atualizar</button>
 </div>
 
-<nav class="navbar">
-    <a href="#top" class="brand"><img src="JS/assets/icon-192.png?v=4" alt="" width="30" height="30">OMS <small>CSN — GMLC/GGMA</small></a>
-    <div class="nav-links">
-        <a href="#transformacao">Transformação</a>
-        <a href="#arquitetura">Sistema</a>
-        <a href="#telas">Telas</a>
-        <a href="#recursos">Recursos</a>
-        <a href="#equipe">Equipe</a>
-        <a href="#mcc">MCCs</a>
-        <a href="#resultados">Resultados</a>
-        <a href="#historia">História</a>
-    </div>
-    <div class="nav-actions">
-        <span class="conn-status online" id="conn-status">
-            <span class="dot"></span><span id="conn-status-text">On-line</span>
-        </span>
-        <button type="button" class="btn btn-line btn-instalar-pwa" hidden style="padding:11px 18px; min-height:auto; font-size:13px;" onclick="window.instalarAppOMS()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg> Instalar App
-        </button>
-        <a href="app.html" class="btn btn-solid" style="padding:11px 22px; min-height:auto; font-size:13px;">Acessar OMS</a>
-        <button class="nav-hamburger" id="nav-hamburger" aria-label="Abrir menu" aria-expanded="false">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-        </button>
-    </div>
-</nav>
-
-<div class="drawer-overlay" id="drawer-overlay"></div>
-<div class="drawer" id="drawer">
-    <button class="drawer-close" id="drawer-close" aria-label="Fechar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
-    <a href="#transformacao">Transformação</a>
-    <a href="#arquitetura">Sistema</a>
-    <a href="#recursos">Recursos</a>
-    <a href="#equipe">Equipe</a>
-    <a href="#mcc">MCCs</a>
-        <a href="#resultados">Resultados</a>
-    <a href="#historia">História</a>
-    <button type="button" class="btn btn-line btn-instalar-pwa" hidden onclick="window.instalarAppOMS()">
-        Instalar App
-    </button>
-    <a href="app.html" class="btn btn-solid">Acessar OMS</a>
-</div>
-
-<div id="top"></div>
-
-<!-- ============ HERO — foto real, sem mockup fake ============ -->
-<section class="hero">
-    <div class="hero-bg"></div>
-    <canvas id="hero-canvas" aria-hidden="true"></canvas>
-    <div class="hero-visual" aria-hidden="true">
-        <figure class="shot s1"><img src="JS/assets/USINAGEM.jpg" alt="" decoding="async"><figcaption>Usinagem</figcaption></figure>
-        <figure class="shot s2"><img src="JS/assets/SOLDA%20FOTO.jpg" alt="" decoding="async"><figcaption>Caldeiraria</figcaption></figure>
-        <figure class="shot s3"><img src="JS/assets/ELETRICA%20.jpg" alt="" decoding="async"><figcaption>Elétrica</figcaption></figure>
-    </div>
-    <div class="hero-content">
-        <span class="tag hero-fade d1">GMLC / GGMA — Volta Redonda, RJ</span>
-        <h1><span class="line line-a">Controle total</span><br><span class="line line-b">da <em>manutenção</em></span></h1>
-        <p class="hero-sub hero-fade d2">
-            Digitalização, rastreabilidade e controle operacional de moldes e segmentos
-            das MCC 2, 3 e 4 — do registro em campo à decisão baseada em dados.
-        </p>
-        <div class="hero-actions hero-fade d3">
-            <a href="app.html" class="btn btn-solid">Acessar OMS</a>
-            <a href="#arquitetura" class="btn btn-line">Explorar o sistema</a>
-        </div>
-        <div class="hero-trust hero-fade d3">
-            <span><span class="dot"></span>Sistema operacional</span>
-            <span>Dados rastreáveis</span>
-            <span>MCC 2 · 3 · 4</span>
+<header class="nav" id="nav">
+    <div class="nav-in">
+        <a class="brand" href="#topo" aria-label="OMS — início"><img src="JS/assets/icon-192.png?v=4" alt="" width="26" height="26">OMS</a>
+        <nav class="nav-links" aria-label="Seções">
+            <a href="#visao">Visão</a>
+            <a href="#ciclo">Ciclo</a>
+            <a href="#recursos">Recursos</a>
+            <a href="#equipe">Equipe</a>
+            <a href="#mcc">MCCs</a>
+        </nav>
+        <div class="nav-cta">
+            <button type="button" class="pill pill-ghost btn-instalar-pwa" hidden onclick="window.instalarAppOMS()">Instalar app</button>
+            <a class="pill pill-solid" href="app.html">Acessar OMS</a>
         </div>
     </div>
-    <span class="hero-scroll">ROLAR</span>
+    <span class="nav-progress" id="nav-progress" aria-hidden="true"></span>
+</header>
+
+<main id="conteudo">
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="topo">
+    <div class="hero-glow" aria-hidden="true"></div>
+    <div class="hero-copy">
+        <p class="eyebrow"><span class="so-pc">OMS · </span>Oficina de Moldes e Segmentos · CSN</p>
+        <h1 class="hero-title"><span class="ht">Do molde</span><span class="ht hot">à decisão.</span></h1>
+        <p class="hero-sub">Cada molde e cada segmento das MCC 2, 3 e 4&nbsp;— rastreado do reparo à linha, em um só sistema.</p>
+        <div class="hero-ctas">
+            <a class="pill pill-solid pill-lg" href="app.html">Acessar OMS</a>
+            <a class="link-arrow" href="#visao">Conheça o sistema <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        </div>
+    </div>
+    <!-- Perfil de uma máquina de lingotamento contínuo: o aço desce pelo
+         molde, curva entre os segmentos e sai na horizontal. Os rolos e os
+         rótulos são posicionados pelo JS sobre o caminho. -->
+    <div class="strand-wrap" aria-hidden="true">
+        <svg class="strand" id="strand" viewBox="0 0 1400 470" preserveAspectRatio="xMidYMax meet">
+            <defs>
+                <linearGradient id="gHot" gradientUnits="userSpaceOnUse" x1="190" y1="0" x2="1400" y2="0">
+                    <stop offset="0" stop-color="#fff4dc"/>
+                    <stop offset="0.1" stop-color="#ffd28a"/>
+                    <stop offset="0.26" stop-color="#f0a334"/>
+                    <stop offset="0.5" stop-color="#ff7a1a"/>
+                    <stop offset="0.78" stop-color="#c97a12"/>
+                    <stop offset="1" stop-color="#c97a12" stop-opacity="0.25"/>
+                </linearGradient>
+                <filter id="fGlow" x="-10%" y="-30%" width="120%" height="160%"><feGaussianBlur stdDeviation="9"/></filter>
+            </defs>
+            <path class="s-base" id="strand-path" d="M 210 16 L 210 110 A 250 250 0 0 0 460 360 L 2100 360"/>
+            <path class="s-glow" d="M 210 16 L 210 110 A 250 250 0 0 0 460 360 L 2100 360"/>
+            <g id="strand-rolls"></g>
+            <path class="s-hot" d="M 210 16 L 210 110 A 250 250 0 0 0 460 360 L 2100 360"/>
+            <path class="s-pulse-halo" d="M 210 16 L 210 110 A 250 250 0 0 0 460 360 L 2100 360"/>
+            <path class="s-pulse" d="M 210 16 L 210 110 A 250 250 0 0 0 460 360 L 2100 360"/>
+            <rect class="s-mold" x="184" y="4" width="52" height="88" rx="7"/>
+            <g id="strand-labels"></g>
+        </svg>
+    </div>
 </section>
 
-<div class="specs">
-    <div class="specs-row">
-        <div><strong>3 MCCs</strong><span>6 veios — C, D, E, F, G e H</span></div>
-        <div><strong>380+</strong><span>Equipamentos rastreados peça a peça</span></div>
-        <div><strong>10</strong><span>Folhões digitais, um por tipo de equipamento</span></div>
-        <div><strong>1.000+</strong><span>Etapas de checklist cadastradas</span></div>
+<!-- ============ DECLARAÇÃO ============ -->
+<section class="statement" id="visao">
+    <div class="wrap">
+        <p class="statement-text" data-words>Cada peça que sai da oficina carrega uma história: quem fez o reparo, o que foi trocado, quanto ela aguentou na linha. <span class="hl">O OMS guarda essa história inteira</span> — do folhão ao veio, do veio à decisão.</p>
     </div>
-</div>
+</section>
 
-<div class="ticker" aria-hidden="true">
-    <div class="ticker-track" id="ticker-track">
-        <span>MOLDES</span><span>SEGMENTOS</span><span>SINÓTICO 3D</span><span>SWAP INTELIGENTE</span><span>FOLHÕES DIGITAIS</span><span>RASTREABILIDADE</span><span>MCC 2</span><span>MCC 3</span><span>MCC 4</span><span>AUDITORIA GLOBAL</span>
-        <span>MOLDES</span><span>SEGMENTOS</span><span>SINÓTICO 3D</span><span>SWAP INTELIGENTE</span><span>FOLHÕES DIGITAIS</span><span>RASTREABILIDADE</span><span>MCC 2</span><span>MCC 3</span><span>MCC 4</span><span>AUDITORIA GLOBAL</span>
+<!-- ============ NÚMEROS ============ -->
+<section class="numeros" id="numeros">
+    <div class="wrap">
+        <p class="eyebrow" data-r>O OMS em números</p>
+        <h2 class="h2" data-r>Escala de usina.<br><span class="dim">Precisão de oficina.</span></h2>
+        <div class="num-grid">
+            <div class="num" data-r><b data-count="3">3</b><span>MCCs atendidas — 2, 3 e 4</span></div>
+            <div class="num" data-r><b data-count="6">6</b><span>veios, de C a H</span></div>
+            <div class="num" data-r><b data-count="380" data-suf="+">380+</b><span>equipamentos rastreados, peça a peça</span></div>
+            <div class="num" data-r><b data-count="1000" data-suf="+">1.000+</b><span>etapas de checklist cadastradas</span></div>
+            <div class="num" data-r><b data-count="10">10</b><span>folhões digitais, um por tipo de equipamento</span></div>
+            <div class="num" data-r><b data-count="150" data-suf="+">150+</b><span>profissionais na oficina</span></div>
+        </div>
     </div>
-</div>
+</section>
 
-<!-- ============ TRANSFORMAÇÃO ============ -->
-<section id="transformacao">
-    <div class="section-head reveal">
-        <span class="tag">A Transformação</span>
-        <h2>Do controle manual ao fluxo digital único</h2>
-    </div>
-    <div class="section-inner compare reveal">
-        <div class="compare-row">
-            <div class="compare-col is-before">
-                <h3>Antes — papel</h3>
-                <ul>
-                    <li>Planilhas soltas</li>
-                    <li>Dados dispersos</li>
-                    <li>Busca manual</li>
-                    <li>Histórico fragmentado</li>
-                </ul>
+<!-- ============ CICLO ============ -->
+<section class="ciclo" id="ciclo">
+    <div class="ciclo-pin">
+        <div class="wrap ciclo-head">
+            <p class="eyebrow">O ciclo de vida</p>
+            <h2 class="h2">Uma peça. Um ciclo.<br><span class="dim">Tudo registrado.</span></h2>
+        </div>
+        <div class="wrap ciclo-stage">
+            <div class="ring">
+                <svg viewBox="0 0 480 480" aria-hidden="true">
+                    <defs>
+                        <linearGradient id="gRing" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0" stop-color="#ffe6b3"/><stop offset="0.5" stop-color="#f0a334"/><stop offset="1" stop-color="#ff7a1a"/>
+                        </linearGradient>
+                    </defs>
+                    <circle class="ring-base" cx="240" cy="240" r="176"/>
+                    <circle class="ring-prog" id="ring-prog" cx="240" cy="240" r="176" transform="rotate(-90 240 240)"/>
+                    <g id="ring-nodes"></g>
+                </svg>
+                <div class="ring-center"><span class="ring-num" id="ring-num">01</span><span class="ring-of">de 06</span></div>
             </div>
-            <span class="compare-arrow" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"/><polyline points="13 5 20 12 13 19"/></svg>
-            </span>
-            <div class="compare-col is-oms">
-                <h3>Depois — OMS</h3>
-                <ul>
-                    <li>Dados centralizados</li>
-                    <li>Folhões digitais</li>
-                    <li>Rastreabilidade por peça</li>
-                    <li>Auditoria de ações</li>
-                </ul>
+            <div class="ciclo-steps">
+                <article class="step on" data-nome="Cadastro"><small>Etapa 01</small><h3>Cadastro</h3><p>A peça entra no sistema com tipo, MCC e número do equipamento.</p></article>
+                <article class="step" data-nome="Alocação"><small>Etapa 02</small><h3>Alocação</h3><p>Instalada no veio, na posição exata — com a data de entrada registrada.</p></article>
+                <article class="step" data-nome="Monitoramento"><small>Etapa 03</small><h3>Monitoramento</h3><p>Tonelagem e dias de uso acompanhados contra a meta de vida útil.</p></article>
+                <article class="step" data-nome="Swap"><small>Etapa 04</small><h3>Swap</h3><p>Troca guiada com a peça reserva, validando posição e veio.</p></article>
+                <article class="step" data-nome="Manutenção"><small>Etapa 05</small><h3>Manutenção</h3><p>Checklist por equipamento, folhão digital e laudo em PDF.</p></article>
+                <article class="step" data-nome="Retorno"><small>Etapa 06</small><h3>Retorno</h3><p>Liberada pela qualidade, volta pronta para a linha. E o ciclo recomeça.</p></article>
             </div>
         </div>
     </div>
 </section>
 
-<!-- ============ ARQUITETURA ============ -->
-<section id="arquitetura" style="padding-top:0;">
-    <div class="blueprint-bg" aria-hidden="true"></div>
-    <div class="section-head reveal">
-        <span class="tag">Arquitetura Funcional</span>
-        <h2>Um sistema. Toda a operação.</h2>
-        <p>Três pilares que conectam a oficina, a manutenção e a gestão em um único ecossistema.</p>
-    </div>
-    <div class="section-inner pillars">
-        <div class="pillar reveal">
-            <span class="idx">01 — Operação</span>
-            <h3>Chão de fábrica</h3>
-            <ul>
-                <li>Sequenciamento de Veios</li>
-                <li>Swap Automático</li>
-                <li>Sinótico Visual 3D</li>
-                <li>Painel do Técnico</li>
-            </ul>
+<!-- ============ ANTES × DEPOIS ============ -->
+<section class="versus" id="transformacao">
+    <div class="wrap">
+        <p class="eyebrow" data-r>A transformação</p>
+        <h2 class="h2" data-r>Do papel ao dado.</h2>
+        <div class="seg" role="tablist" aria-label="Comparação" data-r id="seg-vs">
+            <span class="seg-thumb" aria-hidden="true"></span>
+            <button type="button" role="tab" aria-selected="true" data-v="antes">Antes</button>
+            <button type="button" role="tab" aria-selected="false" data-v="depois">Com o OMS</button>
         </div>
-        <div class="pillar reveal">
-            <span class="idx">02 — Manutenção</span>
-            <h3>Registro técnico</h3>
-            <ul>
-                <li>Folhões Digitais</li>
-                <li>Checklists por Equipamento</li>
-                <li>Laudos em PDF</li>
-                <li>Prontuário por Peça</li>
-            </ul>
-        </div>
-        <div class="pillar reveal">
-            <span class="idx">03 — Gestão</span>
-            <h3>Visão e controle</h3>
-            <ul>
-                <li>Auditoria Global</li>
-                <li>Estoque Reserva</li>
-                <li>Estoque de Materiais</li>
-                <li>Rastreabilidade Completa</li>
-            </ul>
-        </div>
-    </div>
-
-    <div class="section-inner flow reveal">
-        <div class="flow-top">
-            <div class="flow-node">Operação</div>
-            <div class="flow-node">Manutenção</div>
-            <div class="flow-node">Gestão</div>
-        </div>
-        <div class="flow-merge" aria-hidden="true"><span></span></div>
-        <div class="flow-node flow-wide">Dados centralizados</div>
-        <div class="flow-line" aria-hidden="true"></div>
-        <div class="flow-node flow-wide">Histórico &amp; KPIs</div>
-        <div class="flow-line" aria-hidden="true"></div>
-        <div class="flow-node flow-wide flow-final">Decisão</div>
-    </div>
-</section>
-
-<!-- ============ TELAS REAIS DO SISTEMA ============ -->
-<section id="telas">
-    <div class="section-head reveal">
-        <span class="tag">O sistema por dentro</span>
-        <h2>Telas reais do OMS</h2>
-        <p>Cada molde em 3D, peça por peça, e o folhão digital que substitui o papel na liberação do equipamento.</p>
-    </div>
-    <div class="section-inner telas">
-        <figure class="tela tela-grande reveal"><div class="tela-barra"><i></i><i></i><i></i><span>Molde MCC 4 — 3D</span></div><img src="JS/assets/telas/molde-mcc4-3d.jpg" alt="Tela do OMS com o molde da MCC 4 em 3D, com botões de lista técnica, vista interior e teste de água" loading="lazy"><figcaption>Molde MCC 4 em 3D: lista técnica, vista interior e teste de água</figcaption></figure>
-        <figure class="tela reveal"><div class="tela-barra"><i></i><i></i><i></i><span>Molde MCC 2/3 — 3D</span></div><img src="JS/assets/telas/molde-mcc23-3d.jpg" alt="Tela do OMS com o molde da MCC 2/3 em 3D" loading="lazy"><figcaption>Molde MCC 2/3 em 3D</figcaption></figure>
-        <figure class="tela reveal"><div class="tela-barra"><i></i><i></i><i></i><span>Folhão digital</span></div><img src="JS/assets/telas/folhao-digital.jpg" alt="Tela do folhão digital de liberação do Segmento de Grupo 1" loading="lazy"><figcaption>Folhão de liberação — Segmento de Grupo</figcaption></figure>
-    </div>
-</section>
-
-<section id="como-funciona">
-    <div class="section-head reveal">
-        <span class="tag">O Ciclo</span>
-        <h2>Como funciona</h2>
-    </div>
-    <div class="section-inner">
-    <div class="cycle-track"><div class="cycle-fill" id="cycle-fill"></div></div>
-    <div class="cycle" id="cycle-secao">
-        <div class="cycle-step reveal"><span class="num">01</span><h4>Cadastro</h4><p>Peça entra no sistema</p></div>
-        <div class="cycle-step reveal"><span class="num">02</span><h4>Alocação</h4><p>Instalação em um veio</p></div>
-        <div class="cycle-step reveal"><span class="num">03</span><h4>Monitoramento</h4><p>Desgaste × meta em tempo real</p></div>
-        <div class="cycle-step reveal"><span class="num">04</span><h4>Swap</h4><p>Troca guiada com a reserva</p></div>
-        <div class="cycle-step reveal"><span class="num">05</span><h4>Manutenção</h4><p>Folhão e laudo em PDF</p></div>
-        <div class="cycle-step reveal"><span class="num">06</span><h4>Retorno</h4><p>Peça volta pronta pra linha</p></div>
-    </div>
-    </div>
-</section>
-
-<!-- ============ FOTO — PROPÓSITO ============ -->
-<section class="photo-break" style="padding-top:0; padding-bottom:0;">
-    <div class="photo-break-bg" style="background-image:url('JS/assets/Valor.jpeg');"></div>
-    <div class="photo-break-content reveal">
-        <blockquote>Cuidar da vida é o que nos move.</blockquote>
-        <p class="lede">
-            Promovemos um ambiente seguro e saudável com conhecimento, técnica, ética e colaboração —
-            porque a segurança é um valor inegociável e a base que transforma pessoas, equipes e o futuro da CSN.
-        </p>
-        <cite>— Nosso Propósito, OMS · GMLC/GGMA</cite>
+        <ul class="vs" id="vs" aria-live="polite">
+            <li class="vs-row"><span class="vs-ico"><svg class="i-x" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg><svg class="i-ok" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span><span class="vs-txt"><span class="vs-old">Planilhas soltas</span><span class="vs-new">Dados centralizados</span></span></li>
+            <li class="vs-row"><span class="vs-ico"><svg class="i-x" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg><svg class="i-ok" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span><span class="vs-txt"><span class="vs-old">Folhão no papel</span><span class="vs-new">Folhão digital, salvo sozinho</span></span></li>
+            <li class="vs-row"><span class="vs-ico"><svg class="i-x" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg><svg class="i-ok" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span><span class="vs-txt"><span class="vs-old">Histórico perdido em pastas</span><span class="vs-new">Prontuário completo por peça</span></span></li>
+            <li class="vs-row"><span class="vs-ico"><svg class="i-x" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg><svg class="i-ok" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span><span class="vs-txt"><span class="vs-old">Quem fez? Quando?</span><span class="vs-new">Cada ação com autor e data</span></span></li>
+        </ul>
     </div>
 </section>
 
 <!-- ============ RECURSOS ============ -->
-<section id="recursos">
-    <div class="section-head reveal">
-        <span class="tag">Dentro do Sistema</span>
-        <h2>Tudo que o OMS faz por você</h2>
-        <p>Um único sistema para acompanhar o ciclo completo de vida de cada equipamento — da chegada na oficina até a liberação para a linha.</p>
+<section class="recursos" id="recursos">
+    <div class="wrap">
+        <p class="eyebrow" data-r>Recursos</p>
+        <h2 class="h2" data-r>Tudo o que a oficina precisa.<br><span class="dim">Em um só lugar.</span></h2>
+        <div class="bento">
+            <article class="tile t-wide" data-r data-on>
+                <div class="t-copy">
+                    <span class="t-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 20V11M10 20V5M15 20v-7M20 20V9"/></svg></span>
+                    <h3>Sequenciamento de veios</h3>
+                    <p>Cada posição de cada veio, com o desgaste de cada peça medido contra a meta de vida útil.</p>
+                </div>
+                <div class="bars" aria-hidden="true">
+                    <div><i style="--h:46%"></i><span>S1</span></div>
+                    <div><i style="--h:72%"></i><span>S2</span></div>
+                    <div><i style="--h:24%"></i><span>S3</span></div>
+                    <div><i class="alto" style="--h:91%"></i><span>S4</span></div>
+                    <div><i style="--h:58%"></i><span>S5</span></div>
+                    <div><i style="--h:33%"></i><span>S6</span></div>
+                </div>
+            </article>
+            <article class="tile" data-r data-on>
+                <span class="t-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="m9.5 14 2 2 4-4"/></svg></span>
+                <div class="checks" aria-hidden="true">
+                    <div><b><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#17130c" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></b><i style="width:70%"></i></div>
+                    <div><b><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#17130c" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></b><i style="width:52%"></i></div>
+                    <div><b><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#17130c" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></b><i style="width:62%"></i></div>
+                </div>
+                <h3>Folhões digitais</h3>
+                <p>Um folhão para cada tipo de equipamento. O progresso é salvo sozinho.</p>
+            </article>
+            <article class="tile" data-r>
+                <span class="t-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h14l-3.5-3.5M20 16H6l3.5 3.5"/></svg></span>
+                <h3>Swap inteligente</h3>
+                <p>Troca entre oficina e linha com validação de posição e veio.</p>
+            </article>
+            <article class="tile" data-r>
+                <span class="t-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="5.5" r="2"/><circle cx="6" cy="12" r="2"/><circle cx="6" cy="18.5" r="2"/><path d="M11 5.5h9M11 12h7M11 18.5h9"/></svg></span>
+                <h3>Prontuário por peça</h3>
+                <p>Tudo o que aconteceu com cada equipamento, em ordem, com autor.</p>
+            </article>
+            <article class="tile" data-r>
+                <span class="t-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9z"/><path d="M4 7.5 12 12l8-4.5M12 12v9"/></svg></span>
+                <div class="cube-wrap" aria-hidden="true"><div class="cube"><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+                <h3>Sinótico 3D</h3>
+                <p>A posição real de cada equipamento nas MCCs, em três dimensões.</p>
+            </article>
+            <article class="tile" data-r>
+                <span class="t-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="m5 15 4.5-5 3.5 3.5L19 6"/></svg></span>
+                <h3>Auditoria e indicadores</h3>
+                <p>Cada ação registrada. Painéis por MCC, por veio e por área.</p>
+            </article>
+            <article class="tile t-wide" data-r>
+                <div class="t-copy">
+                    <span class="t-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></span>
+                    <h3>No celular. Mesmo sem sinal.</h3>
+                    <p>Instalável como aplicativo. Funciona em campo e envia o que ficou pendente assim que a conexão volta.</p>
+                </div>
+                <div class="phone" aria-hidden="true"><img src="JS/assets/icon-192.png?v=4" alt="" width="54" height="54" loading="lazy"><em>Funcionando offline</em></div>
+            </article>
+        </div>
     </div>
-    <div class="section-inner features">
-        <div class="feature reveal"><span class="fi">3D</span><div><h4>Sinótico 3D</h4><p>Visualização em 3D da posição real de cada equipamento nas MCCs, em tempo real.</p></div></div>
-        <div class="feature reveal"><span class="fi">PDF</span><div><h4>Folhões digitais por equipamento</h4><p>Checklists específicos para Molde, Bow, Horizontal, R1/R2, Bender, Segmento Zero, Segmento de Grupo e Desempenadeira.</p></div></div>
-        <div class="feature reveal"><span class="fi">AUTO</span><div><h4>Progresso salvo automaticamente</h4><p>Se o folhão for fechado no meio do preenchimento, nada se perde.</p></div></div>
-        <div class="feature reveal"><span class="fi">SWAP</span><div><h4>Swap inteligente</h4><p>Troca rápida de peças entre oficina e linha, com validação automática de posição e veio.</p></div></div>
-        <div class="feature reveal"><span class="fi">EST</span><div><h4>Estoque e materiais</h4><p>Controle de peças em reserva, rolos e materiais consumíveis com localização e valores.</p></div></div>
-        <div class="feature reveal"><span class="fi">KPI</span><div><h4>KPIs e gráficos por MCC</h4><p>Painéis com disponibilidade, tonelagem e dias em operação por veio e por MCC.</p></div></div>
-        <div class="feature reveal"><span class="fi">LOG</span><div><h4>Histórico e rastreabilidade</h4><p>Cada ação fica registrada por equipamento, com data, autor e o que foi feito.</p></div></div>
-        <div class="feature reveal"><span class="fi">PWA</span><div><h4>Instalável no celular</h4><p>Funciona como app nativo no Android e iPhone, inclusive com uso offline.</p></div></div>
+</section>
+
+<!-- ============ ESPECIALIDADES ============ -->
+<section class="disc" id="especialidades">
+    <div class="wrap">
+        <p class="eyebrow" data-r>Especialidades</p>
+        <h2 class="h2" data-r>Uma oficina.<br><span class="dim">Muitas especialidades.</span></h2>
+    </div>
+    <div class="wrap disc-row">
+        <figure class="disc-card"><div class="disc-img"><img src="JS/assets/USINAGEM.jpg" alt="Técnico operando um torno na usinagem da oficina" loading="lazy" decoding="async"></div><figcaption>Usinagem</figcaption></figure>
+        <figure class="disc-card"><div class="disc-img"><img src="JS/assets/SOLDA%20FOTO.jpg" alt="Soldador trabalhando em um equipamento na caldeiraria" loading="lazy" decoding="async"></div><figcaption>Caldeiraria</figcaption></figure>
+        <figure class="disc-card"><div class="disc-img"><img src="JS/assets/ELETRICA%20.jpg" alt="Eletricista montando um painel elétrico na oficina" loading="lazy" decoding="async"></div><figcaption>Elétrica</figcaption></figure>
     </div>
 </section>
 
 <!-- ============ EQUIPE ============ -->
-<section id="equipe" style="padding:0;">
-    <div class="team-band">
-        <div class="team-photo">
-            <img src="JS/assets/Equipe.jpeg" alt="Oficina de Moldes e Segmentos - CSN" loading="lazy" decoding="async" onerror="this.parentElement.style.display='none'">
-        </div>
-        <div class="team-text reveal">
-            <span class="tag">Nosso Time</span>
-            <span class="stat">150+</span>
-            <p>Profissionais capacitados — engenheiros, técnicos e especialistas que atuam com excelência na recuperação de moldes e segmentos para as máquinas de lingotamento contínuo.</p>
+<section class="expand" id="equipe">
+    <div class="expand-pin">
+        <div class="expand-media"><img src="JS/assets/Equipe.jpeg" alt="Equipe da Oficina de Moldes e Segmentos reunida em frente à oficina" loading="lazy" decoding="async"></div>
+        <div class="wrap expand-copy">
+            <p class="eyebrow">Nosso time</p>
+            <h2 class="h2">Mais de 150 profissionais.</h2>
+            <p class="lead">Engenheiros, técnicos e especialistas na recuperação de moldes e segmentos das máquinas de lingotamento contínuo.</p>
         </div>
     </div>
 </section>
 
 <!-- ============ DIVERSIDADE ============ -->
-<section id="diversidade" style="padding:0;">
-    <div class="team-band">
-        <div class="team-text reveal">
-            <span class="tag">Diversidade que Transforma</span>
-            <h2 style="font-family:var(--font-display); text-transform:uppercase; color:var(--paper); font-size:clamp(28px,4vw,42px); font-weight:700; line-height:1.05; margin:18px 0 20px;">O maior efetivo de mulheres nas oficinas da CSN</h2>
-            <p>Na OMS, a força feminina é protagonista — o maior número de mulheres atuando diretamente na manutenção de moldes e segmentos, rompendo barreiras e trazendo inovação, precisão e cuidado para cada serviço.</p>
-        </div>
-        <div class="team-photo">
-            <img src="JS/assets/equipe-feminino.jpg" alt="Equipe feminina da OMS - CSN" loading="lazy" decoding="async" onerror="this.parentElement.style.display='none'">
-        </div>
-    </div>
-</section>
-
-<!-- ============ MCC — abas ============ -->
-<section id="mcc">
-    <div class="section-head reveal">
-        <span class="tag">Lingotamento Contínuo</span>
-        <h2>Atuação nas 3 MCCs</h2>
-        <p>A OMS atende as três máquinas de lingotamento contínuo da CSN, garantindo a disponibilidade e a qualidade dos componentes críticos.</p>
-    </div>
-    <div class="section-inner reveal">
-        <div class="mcc-tabs">
-            <button class="mcc-tab active" data-mcc="mcc2" onclick="window.trocarMcc('mcc2', this)"><strong>MCC 2</strong>Veios C e D</button>
-            <button class="mcc-tab" data-mcc="mcc3" onclick="window.trocarMcc('mcc3', this)"><strong>MCC 3</strong>Veios E e F</button>
-            <button class="mcc-tab" data-mcc="mcc4" onclick="window.trocarMcc('mcc4', this)"><strong>MCC 4</strong>Veios G e H</button>
-            <span class="mcc-tab-indicator" id="mcc-tab-indicator" aria-hidden="true"></span>
-        </div>
-        <div class="mcc-panel active" id="mcc2">
-            <div class="veio-grid">
-                <div class="veio-col">
-                    <span class="veio-label">Veio C</span>
-                    <div class="chips">
-                        <span class="chip">Molde</span><span class="chip">Segmento</span>
-                        <span class="chip">Cadeira Superior</span><span class="chip">Cadeira Inferior</span>
-                    </div>
-                </div>
-                <div class="veio-col">
-                    <span class="veio-label">Veio D</span>
-                    <div class="chips">
-                        <span class="chip">Molde</span><span class="chip">Segmento</span>
-                        <span class="chip">Cadeira Superior</span><span class="chip">Cadeira Inferior</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="mcc-panel" id="mcc3">
-            <div class="veio-grid">
-                <div class="veio-col">
-                    <span class="veio-label">Veio E</span>
-                    <div class="chips">
-                        <span class="chip">Molde</span><span class="chip">Segmento</span>
-                        <span class="chip">Cadeira Superior</span><span class="chip">Cadeira Inferior</span>
-                    </div>
-                </div>
-                <div class="veio-col">
-                    <span class="veio-label">Veio F</span>
-                    <div class="chips">
-                        <span class="chip">Molde</span><span class="chip">Segmento</span>
-                        <span class="chip">Cadeira Superior</span><span class="chip">Cadeira Inferior</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="mcc-panel" id="mcc4">
-            <div class="veio-grid">
-                <div class="veio-col">
-                    <span class="veio-label">Veio G</span>
-                    <div class="chips">
-                        <span class="chip">Molde</span><span class="chip">Bender</span><span class="chip">Bow</span>
-                        <span class="chip">Straightener R1</span><span class="chip">Straightener R2</span><span class="chip">Horizontal</span>
-                    </div>
-                </div>
-                <div class="veio-col">
-                    <span class="veio-label">Veio H</span>
-                    <div class="chips">
-                        <span class="chip">Molde</span><span class="chip">Bender</span><span class="chip">Bow</span>
-                        <span class="chip">Straightener R1</span><span class="chip">Straightener R2</span><span class="chip">Horizontal</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- ============ FOTO — HISTÓRIA ============ -->
-<section class="photo-break" id="historia" style="padding-top:0; padding-bottom:0;">
-    <div class="photo-break-bg" style="background-image:url('JS/assets/historia-oficina.jpg');"></div>
-    <div class="photo-break-content reveal">
-        <span class="tag" style="margin-bottom:20px; display:inline-block;">Nossa Origem</span>
-        <blockquote>Forjado no calor da operação.</blockquote>
-        <p class="lede">
-            O OMS não nasceu em um escritório convencional — foi construído por engenheiros e mecânicos
-            que vivem as dores reais do chão de fábrica todos os dias. Uma ferramenta que fala a língua
-            da manutenção siderúrgica, elimina a burocracia do papel e foca no que realmente importa:
-            a disponibilidade e a segurança dos ativos.
-        </p>
-    </div>
-</section>
-
-<!-- ============ RESULTADOS — o que muda na operação, por papel ============ -->
-<section id="resultados">
-    <div class="blueprint-bg" aria-hidden="true"></div>
-    <div class="section-head reveal">
-        <span class="tag">Resultados</span>
-        <h2>O que muda na operação</h2>
-    </div>
-    <div class="section-inner pillars cols-4">
-        <div class="pillar reveal">
-            <span class="idx">Operador</span>
-            <h3>Mais clareza</h3>
-            <ul>
-                <li>Sinótico visual do que está instalado em cada veio</li>
-                <li>Registro do folhão direto no equipamento</li>
-                <li>Painel do técnico com atalhos do dia a dia</li>
-            </ul>
-        </div>
-        <div class="pillar reveal">
-            <span class="idx">Técnico</span>
-            <h3>Menos retrabalho</h3>
-            <ul>
-                <li>Checklist específico por tipo de equipamento</li>
-                <li>Progresso salvo automaticamente</li>
-                <li>Swap com validação de posição e veio</li>
-            </ul>
-        </div>
-        <div class="pillar reveal">
-            <span class="idx">Supervisão</span>
-            <h3>Mais rastreabilidade</h3>
-            <ul>
-                <li>Prontuário completo por peça</li>
-                <li>Histórico de cada ação, com autor e data</li>
-                <li>Laudos em PDF no padrão da engenharia</li>
-            </ul>
-        </div>
-        <div class="pillar reveal">
-            <span class="idx">Gestão</span>
-            <h3>Melhor visão dos indicadores</h3>
-            <ul>
-                <li>KPIs de disponibilidade e tonelagem por MCC</li>
-                <li>Auditoria global do sistema</li>
-                <li>Estoque de reserva e materiais centralizado</li>
-            </ul>
-        </div>
-    </div>
-</section>
-
-<!-- ============ MANIFESTO ============ -->
-<section class="manifesto">
-    <div class="section-inner">
-        <span class="tag manifesto-tag reveal">Visão</span>
-        <p class="manifesto-line line-1">Cada segundo conta.</p>
-        <p class="manifesto-line line-2">Cada decisão importa.</p>
-        <p class="manifesto-line line-3">Com o OMS, dados viram <em>ação</em></p>
-        <p class="manifesto-line line-4">e a oficina vira <em>performance</em>.</p>
-    </div>
-</section>
-
-<!-- ============ CTA FINAL ============ -->
-<section class="cta-final">
-    <div class="section-inner">
+<section class="split" id="diversidade">
+    <div class="wrap split-grid">
         <div>
-            <span class="tag">A operação continua</span>
-            <h2>Agora, com mais controle.</h2>
+            <p class="eyebrow" data-r>Diversidade que transforma</p>
+            <h2 class="h2" data-r>O maior efetivo de mulheres nas oficinas da CSN.</h2>
+            <p class="lead" data-r>Na OMS, a força feminina é protagonista — atuando diretamente na manutenção de moldes e segmentos, com precisão e cuidado em cada serviço.</p>
         </div>
-        <div style="display:flex; gap:16px; flex-wrap:wrap;">
-            <a href="app.html" class="btn btn-solid">Acessar OMS</a>
-            <a href="#arquitetura" class="btn btn-line">Conhecer o sistema</a>
+        <div class="frame" data-r><img src="JS/assets/equipe-feminino.jpg" alt="Equipe feminina da Oficina de Moldes e Segmentos" loading="lazy" decoding="async"></div>
+    </div>
+</section>
+
+<!-- ============ MCCs ============ -->
+<section class="mcc" id="mcc">
+    <div class="wrap">
+        <p class="eyebrow" data-r>Lingotamento contínuo</p>
+        <h2 class="h2" data-r>Três máquinas.<br><span class="dim">Seis veios.</span></h2>
+        <div class="seg" role="tablist" aria-label="Máquina" id="seg-mcc" data-r>
+            <span class="seg-thumb" aria-hidden="true"></span>
+            <button type="button" role="tab" aria-selected="true" data-mcc="2">MCC 2</button>
+            <button type="button" role="tab" aria-selected="false" data-mcc="3">MCC 3</button>
+            <button type="button" role="tab" aria-selected="false" data-mcc="4">MCC 4</button>
+        </div>
+        <div class="mcc-panel" id="mcc-panel" aria-live="polite">
+            <div class="veios"><span class="veio-l" data-l="C">C</span><span class="veio-l" data-l="D">D</span></div>
+            <p class="mcc-cap">Veios C e D</p>
+            <div class="chips"></div>
         </div>
     </div>
 </section>
 
-<footer>
-    <span>&copy; 2026 OMS — Oficina de Moldes e Segmentos · CSN Volta Redonda · GMLC/GGMA</span>
-    <div class="foot-links">
-        <a href="#transformacao">Transformação</a>
-        <a href="#recursos">Recursos</a>
-        <a href="#equipe">Equipe</a>
-        <a href="#mcc">MCCs</a>
-        <a href="#resultados">Resultados</a>
-        <a href="app.html">Sistema</a>
+<!-- ============ HISTÓRIA ============ -->
+<section class="historia" id="historia">
+    <div class="wrap">
+        <div class="hist-media">
+            <img src="JS/assets/historia-oficina.jpg" alt="Técnico da oficina trabalhando na recuperação de um equipamento" loading="lazy" decoding="async">
+            <div class="hist-copy">
+                <p class="eyebrow">Nossa origem</p>
+                <h2 class="h2">Forjado no calor da operação.</h2>
+                <p>O OMS não nasceu em um escritório. Foi construído por engenheiros e mecânicos que vivem as dores reais do chão de fábrica — uma ferramenta que fala a língua da manutenção siderúrgica, troca o papel pelo dado e foca no que importa: a disponibilidade e a segurança dos ativos.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============ PROPÓSITO ============ -->
+<section class="proposito" id="proposito">
+    <div class="wrap">
+        <p class="eyebrow" data-r>Nosso propósito</p>
+        <p class="prop-text" data-words>Cuidar da vida é o que nos <span class="hl">move.</span></p>
+        <p class="prop-sub" data-r>Promovemos um ambiente seguro e saudável com conhecimento, técnica, ética e colaboração — porque a segurança é um valor inegociável.</p>
+    </div>
+</section>
+
+<!-- ============ CHAMADA FINAL ============ -->
+<section class="cta" id="acesso">
+    <div class="wrap">
+        <div class="cta-icon" data-r><span class="cta-ring" aria-hidden="true"></span><img src="JS/assets/icon-512.png?v=4" alt="Ícone do aplicativo OMS" width="168" height="168" loading="lazy"></div>
+        <h2 class="h2" data-r>Pronto para a operação.</h2>
+        <p class="lead" data-r>No computador da oficina ou no celular, em campo.</p>
+        <div class="hero-ctas" data-r>
+            <a class="pill pill-solid pill-lg" href="app.html">Acessar OMS</a>
+            <button type="button" class="pill pill-ghost pill-lg btn-instalar-pwa" hidden onclick="window.instalarAppOMS()">Instalar no celular</button>
+        </div>
+    </div>
+</section>
+
+</main>
+
+<footer class="foot">
+    <div class="wrap foot-in">
+        <span>&copy; 2026 OMS — Oficina de Moldes e Segmentos · CSN Volta Redonda · GMLC/GGMA</span>
+        <nav aria-label="Rodapé">
+            <a href="#visao">Visão</a>
+            <a href="#ciclo">Ciclo</a>
+            <a href="#recursos">Recursos</a>
+            <a href="#equipe">Equipe</a>
+            <a href="#mcc">MCCs</a>
+            <a href="app.html">Acessar</a>
+        </nav>
     </div>
 </footer>
 
+<script src="vendor/gsap/gsap.min.js"></script>
+<script src="vendor/gsap/ScrollTrigger.min.js"></script>
 <script>
-// ---- Menu mobile ----
-    (function () {
-        const abrir = document.getElementById('nav-hamburger');
-        const fechar = document.getElementById('drawer-close');
-        const overlay = document.getElementById('drawer-overlay');
-        const drawer = document.getElementById('drawer');
-        function open() {
-            drawer.classList.add('open'); overlay.classList.add('open');
-            abrir.setAttribute('aria-expanded', 'true');
-            document.body.style.overflow = 'hidden';
-        }
-        function close() {
-            drawer.classList.remove('open'); overlay.classList.remove('open');
-            abrir.setAttribute('aria-expanded', 'false');
-            document.body.style.overflow = '';
-        }
-        abrir?.addEventListener('click', open);
-        fechar?.addEventListener('click', close);
-        overlay?.addEventListener('click', close);
-        drawer?.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
-        document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
-    })();
+(function () {
+    const raiz = document.documentElement;
+    const reduz = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const temGsap = !!(window.gsap && window.ScrollTrigger);
+    const animar = temGsap && !reduz;
+    if (!animar) raiz.classList.remove('anim');
+    const ehCelular = () => window.innerWidth < 700;
 
-    // ---- Abas MCC ----
-    window.trocarMcc = function (id, btn) {
-        document.querySelectorAll('.mcc-tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.mcc-panel').forEach(p => p.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById(id).classList.add('active');
-        moverIndicadorMcc(btn);
-    };
-    // Indicador deslizante por baixo da aba ativa — recalcula posição a
-    // cada troca e no load/resize (o layout é flex-wrap, então a
-    // posição real de cada botão pode mudar de tela pra tela).
-    function moverIndicadorMcc(btn) {
-        const indicador = document.getElementById('mcc-tab-indicator');
-        if (!indicador || !btn) return;
-        indicador.style.left = btn.offsetLeft + 'px';
-        indicador.style.width = btn.offsetWidth + 'px';
+    // ---- Barra do topo ----
+    const nav = document.getElementById('nav');
+    const marcarNav = () => nav.classList.toggle('scrolled', window.scrollY > 8);
+    window.addEventListener('scroll', marcarNav, { passive: true });
+    marcarNav();
+
+    // ================================================================
+    // LINHA DE LINGOTAMENTO (hero): rolos dos dois lados do veio e os
+    // nomes dos equipamentos ao longo do caminho do aço.
+    // ================================================================
+    const strand = document.getElementById('strand');
+    const caminho = document.getElementById('strand-path');
+    const SVGNS = 'http://www.w3.org/2000/svg';
+    const L = caminho.getTotalLength();
+    const rolos = [];
+    // Ponto e normal numa distância s do caminho.
+    function ponto(s) {
+        const p = caminho.getPointAtLength(s);
+        const a = caminho.getPointAtLength(Math.max(0, s - 1));
+        const b = caminho.getPointAtLength(Math.min(L, s + 1));
+        const tx = b.x - a.x, ty = b.y - a.y, n = Math.hypot(tx, ty) || 1;
+        return { x: p.x, y: p.y, nx: ty / n, ny: -tx / n };
     }
-    window.addEventListener('load', () => moverIndicadorMcc(document.querySelector('.mcc-tab.active')));
-    window.addEventListener('resize', () => moverIndicadorMcc(document.querySelector('.mcc-tab.active')));
-
-    // ---- Status de conexão ----
-    (function () {
-        const pill = document.getElementById('conn-status');
-        const texto = document.getElementById('conn-status-text');
-        if (!pill || !texto) return;
-        function atualizar() {
-            if (navigator.onLine) {
-                pill.classList.remove('offline'); pill.classList.add('online');
-                texto.textContent = 'On-line';
-            } else {
-                pill.classList.remove('online'); pill.classList.add('offline');
-                texto.textContent = 'Off-line';
-            }
+    (function montarLinha() {
+        const g = document.getElementById('strand-rolls');
+        for (let s = 104; s < L - 30; s += 27) {
+            const p = ponto(s);
+            [-1, 1].forEach(lado => {
+                const c = document.createElementNS(SVGNS, 'circle');
+                c.setAttribute('cx', (p.x + p.nx * 13 * lado).toFixed(1));
+                c.setAttribute('cy', (p.y + p.ny * 13 * lado).toFixed(1));
+                c.setAttribute('r', '5.5');
+                c.setAttribute('class', 'roll');
+                g.appendChild(c);
+                rolos.push({ el: c, s: s, aceso: false });
+            });
         }
-        window.addEventListener('online', atualizar);
-        window.addEventListener('offline', atualizar);
-        atualizar();
-    })();
-
-    // ---- Scroll reveal em cascata (grades revelam item por item) ----
-    (function () {
-        const alvos = document.querySelectorAll('.reveal');
-        if (!alvos.length) return;
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-            alvos.forEach(el => el.classList.add('in-view'));
-            return;
-        }
-        // agrupa por elemento-pai pra escalonar o delay dentro de cada grade
-        const grupos = new Map();
-        alvos.forEach(el => {
-            const pai = el.parentElement;
-            if (!grupos.has(pai)) grupos.set(pai, []);
-            grupos.get(pai).push(el);
-        });
-        grupos.forEach(irmaos => {
-            irmaos.forEach((el, i) => {
-                el.style.transitionDelay = Math.min(i * 70, 280) + 'ms';
-            });
-        });
-        const obs = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('in-view');
-                    obs.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
-        alvos.forEach(el => obs.observe(el));
-    })();
-
-    // ---- Parallax nas fotos de fundo + zoom cinematográfico de entrada ----
-    // (unificado num só lugar pra não ter duas rotinas brigando pelo
-    // mesmo transform: a escala de entrada some assim que a seção fica
-    // visível, e o parallax continua rolando por cima dela.)
-    (function () {
-        const fundos = document.querySelectorAll('.hero-bg, .photo-break-bg');
-        if (!fundos.length) return;
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-        const revelados = new WeakSet();
-        const obsZoom = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) { revelados.add(entry.target); obsZoom.unobserve(entry.target); }
-            });
-        }, { threshold: 0.1 });
-        fundos.forEach(bg => obsZoom.observe(bg.parentElement));
-
-        let ticking = false;
-        function atualizar() {
-            fundos.forEach((bg) => {
-                const rect = bg.parentElement.getBoundingClientRect();
-                const meio = rect.top + rect.height / 2 - window.innerHeight / 2;
-                const desloc = meio * -0.08;
-                const escala = revelados.has(bg.parentElement) ? 1.12 : 1.22;
-                bg.style.transform = `translateY(${desloc}px) scale(${escala})`;
-            });
-            ticking = false;
-        }
-        window.addEventListener('scroll', () => {
-            if (!ticking) { requestAnimationFrame(atualizar); ticking = true; }
-        }, { passive: true });
-        atualizar();
-        // reagenda algumas vezes logo no início pra pegar a transição
-        // assim que o IntersectionObserver marcar "revelado".
-        [100, 300, 600, 1000, 1600].forEach(t => setTimeout(atualizar, t));
-    })();
-
-    // ---- Tilt 3D nos cards (pilares/recursos) seguindo o mouse ----
-    // Efeito clássico de "cartão que se inclina pro cursor" — só entra em
-    // telas com mouse de verdade (hover: hover) e sem reduced-motion.
-    (function () {
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-        if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-        const cartoes = document.querySelectorAll('.pillar, .feature');
-        cartoes.forEach(el => {
-            let raf = null;
-            el.addEventListener('mousemove', (e) => {
-                const rect = el.getBoundingClientRect();
-                const px = (e.clientX - rect.left) / rect.width - 0.5;
-                const py = (e.clientY - rect.top) / rect.height - 0.5;
-                if (raf) return;
-                raf = requestAnimationFrame(() => {
-                    el.style.transform = `perspective(800px) rotateX(${(-py * 8).toFixed(2)}deg) rotateY(${(px * 8).toFixed(2)}deg)`;
-                    raf = null;
-                });
-            });
-            el.addEventListener('mouseleave', () => {
-                el.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg)';
-            });
+        const rotulos = [
+            { s: 46, t: 'Molde' }, { s: 160, t: 'Bender' }, { s: 300, t: 'Bow' },
+            { s: 445, t: 'Straightener' }, { s: 790, t: 'Horizontal' }, { s: 1330, t: 'Placa' }
+        ];
+        const gl = document.getElementById('strand-labels');
+        rotulos.forEach(r => {
+            const p = ponto(r.s);
+            // a normal (nx, ny) aponta pra dentro da curva; o texto fica do lado de fora
+            const ox = -p.nx, oy = -p.ny;
+            const horizontal = Math.abs(oy) > 0.9;
+            const tick = document.createElementNS(SVGNS, 'line');
+            tick.setAttribute('x1', (p.x + ox * 20).toFixed(1)); tick.setAttribute('y1', (p.y + oy * 20).toFixed(1));
+            tick.setAttribute('x2', (p.x + ox * 32).toFixed(1)); tick.setAttribute('y2', (p.y + oy * 32).toFixed(1));
+            tick.setAttribute('class', 's-tick');
+            const txt = document.createElementNS(SVGNS, 'text');
+            txt.setAttribute('x', (p.x + ox * (horizontal ? 30 : 40)).toFixed(1));
+            txt.setAttribute('y', (p.y + oy * (horizontal ? 54 : 40) + (horizontal ? 0 : 5)).toFixed(1));
+            txt.setAttribute('text-anchor', horizontal ? 'middle' : 'end');
+            txt.setAttribute('class', 's-label');
+            txt.textContent = r.t;
+            const gg = document.createElementNS(SVGNS, 'g');
+            gg.setAttribute('class', 's-lbl');
+            gg.appendChild(tick); gg.appendChild(txt);
+            gl.appendChild(gg);
         });
     })();
+    // No celular a máquina inteira fica minúscula: enquadra só o molde, a
+    // curva e o começo da horizontal, com rótulos maiores.
+    function enquadrar() {
+        const cel = ehCelular();
+        strand.setAttribute('viewBox', cel ? '24 0 640 470' : '0 0 1400 470');
+        strand.setAttribute('preserveAspectRatio', cel ? 'xMinYMax meet' : 'xMidYMax meet');
+        strand.classList.toggle('mobile', cel);
+    }
+    enquadrar();
+    window.addEventListener('resize', enquadrar);
 
-    // ---- Botões magnéticos — seguem o cursor um pouco dentro de si ----
-    (function () {
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-        if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-        document.querySelectorAll('.btn').forEach(btn => {
-            btn.classList.add('magnetic');
-            btn.addEventListener('mousemove', (e) => {
-                const rect = btn.getBoundingClientRect();
-                const x = (e.clientX - rect.left - rect.width / 2) * 0.28;
-                const y = (e.clientY - rect.top - rect.height / 2) * 0.35;
-                btn.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+    const dashPaths = strand.querySelectorAll('.s-base, .s-hot, .s-glow');
+    const pulsos = strand.querySelectorAll('.s-pulse, .s-pulse-halo');
+    const D = 90; // tamanho do pulso de aço quente que corre pela linha
+    pulsos.forEach(p => { p.style.strokeDasharray = D + ' ' + (L + D); p.style.strokeDashoffset = D; });
+
+    function acenderRolos(cabeca) {
+        const centro = cabeca - D / 2;
+        for (const r of rolos) {
+            const perto = Math.abs(r.s - centro) < 34;
+            if (perto !== r.aceso) { r.aceso = perto; r.el.classList.toggle('lit', perto); }
+        }
+    }
+
+    // ================================================================
+    // Palavras que acendem (declaração e propósito)
+    // ================================================================
+    document.querySelectorAll('[data-words]').forEach(bloco => {
+        const partes = [];
+        bloco.childNodes.forEach(no => {
+            const destaque = no.nodeType === 1;
+            (no.textContent || '').split(/(\s+)/).forEach(pedaco => {
+                if (!pedaco) return;
+                if (/^\s+$/.test(pedaco)) { partes.push(document.createTextNode(pedaco)); return; }
+                const w = document.createElement('span');
+                w.className = 'w' + (destaque ? ' hl' : '');
+                w.textContent = pedaco;
+                partes.push(w);
             });
-            btn.addEventListener('mouseleave', () => { btn.style.transform = 'translate(0,0)'; });
         });
-    })();
-
-    // ---- Zoom das fotos de Equipe/Diversidade — não dá só pra depender
-    // de :hover (no touch isso quase nunca dispara direito, ficava "sem
-    // efeito nenhum" no celular). Dispara também por scroll, uma vez.
-    (function () {
-        const fotos = document.querySelectorAll('.team-photo');
-        if (!fotos.length) return;
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-        const obs = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) { entry.target.classList.add('in-view'); obs.unobserve(entry.target); }
-            });
-        }, { threshold: 0.35 });
-        fotos.forEach(f => obs.observe(f));
-    })();
-
-    // ---- Contador animado (150+ da Equipe, 100% das specs) ----
-    (function () {
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-        document.querySelectorAll('.team-text .stat, .specs-row strong').forEach((alvo) => {
-            const numero = parseInt(alvo.textContent, 10);
-            // só anima quem começa mesmo com um número (pula "MCC 2 · 3 · 4" e "PWA")
-            if (!numero || !/^\d/.test(alvo.textContent.trim())) return;
-            const sufixo = alvo.textContent.replace(/^[0-9]+/, '');
-            let animou = false;
-            const obs = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting && !animou) {
-                        animou = true;
-                        const inicio = performance.now();
-                        const duracao = 1400;
-                        function passo(agora) {
-                            const t = Math.min((agora - inicio) / duracao, 1);
-                            const facilitado = 1 - Math.pow(1 - t, 3);
-                            alvo.textContent = Math.round(facilitado * numero) + sufixo;
-                            if (t < 1) requestAnimationFrame(passo);
-                        }
-                        requestAnimationFrame(passo);
-                        obs.unobserve(alvo);
-                    }
-                });
-            }, { threshold: 0.5 });
-            alvo.textContent = '0' + sufixo;
-            obs.observe(alvo);
-        });
-    })();
-
-    // ---- "Teleprompter" do Manifesto — cada linha acende ao cruzar a
-    // faixa central da tela (rootMargin negativo simula essa faixa) e
-    // apaga de novo ao sair — diferente do .reveal comum, que só liga
-    // uma vez e nunca mais desliga.
-    (function () {
-        const linhas = document.querySelectorAll('.manifesto-line');
-        if (!linhas.length) return;
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-            linhas.forEach(l => l.classList.add('is-active'));
-            return;
-        }
-        const obs = new IntersectionObserver((entries) => {
-            entries.forEach(entry => entry.target.classList.toggle('is-active', entry.isIntersecting));
-        }, { rootMargin: '-32% 0px -32% 0px', threshold: 0 });
-        linhas.forEach(l => obs.observe(l));
-    })();
-
-    // ---- Fundo 3D do hero (Three.js) — malha de linhas conectadas tipo
-    // "rede de sensores", girando devagar e reagindo ao mouse. Decorativo,
-    // por trás do texto (mix-blend:screen), nunca atrapalha a leitura.
-    // 🔧 Precisa esperar o <script defer> do three.js terminar de rodar —
-    // este bloco aqui é um <script> normal no meio do body, que executa
-    // ANTES dos scripts deferred (só saem depois do parse do HTML todo).
-    // Sem o DOMContentLoaded abaixo, THREE ainda não existiria aqui.
-    document.addEventListener('DOMContentLoaded', function () {
-        const canvas = document.getElementById('hero-canvas');
-        if (!canvas || typeof THREE === 'undefined') return;
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-        // 🔧 CORRIGIDO ("no celular não aparece"): antes o canvas inteiro
-        // ficava com display:none abaixo de 640px, por medo de pesar —
-        // só que isso apagava o efeito pra maioria de quem acessa (celular).
-        // Agora ele SEMPRE aparece; só reduz densidade/pixel-ratio em tela
-        // pequena, que é o ajuste de performance de verdade.
-        const ehMobile = window.innerWidth < 640;
-        const hero = canvas.parentElement;
-        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !ehMobile });
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, ehMobile ? 1.5 : 2));
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
-        camera.position.z = 9;
-
-        // Nuvem de pontos conectados por linhas curtas — sugere "rede de
-        // dados" (rastreabilidade), tema do produto, sem virar decoração
-        // genérica de partículas soltas. Metade dos pontos em tela pequena.
-        const N = ehMobile ? 24 : 46;
-        const pontos = [];
-        for (let i = 0; i < N; i++) {
-            pontos.push(new THREE.Vector3(
-                (Math.random() - 0.5) * 14,
-                (Math.random() - 0.5) * 8,
-                (Math.random() - 0.5) * 6
-            ));
-        }
-        const geoPontos = new THREE.BufferGeometry().setFromPoints(pontos);
-        const matPontos = new THREE.PointsMaterial({ color: 0xf0a334, size: 0.06, transparent: true, opacity: 0.85 });
-        const nuvem = new THREE.Points(geoPontos, matPontos);
-        scene.add(nuvem);
-
-        const posLinhas = [];
-        const DIST_MAX = 3.1;
-        for (let i = 0; i < N; i++) {
-            for (let j = i + 1; j < N; j++) {
-                if (pontos[i].distanceTo(pontos[j]) < DIST_MAX) {
-                    posLinhas.push(pontos[i].x, pontos[i].y, pontos[i].z, pontos[j].x, pontos[j].y, pontos[j].z);
-                }
-            }
-        }
-        const geoLinhas = new THREE.BufferGeometry();
-        geoLinhas.setAttribute('position', new THREE.Float32BufferAttribute(posLinhas, 3));
-        const matLinhas = new THREE.LineBasicMaterial({ color: 0xf0a334, transparent: true, opacity: 0.18 });
-        const rede = new THREE.LineSegments(geoLinhas, matLinhas);
-        scene.add(rede);
-
-        // ===== NÚCLEO — um icosaedro wireframe girando devagar, com uma
-        // cópia maior e mais transparente por trás simulando um brilho
-        // (bloom "de pobre", sem precisar de post-processing) — dá o peso
-        // visual que só a nuvem de pontos não tinha.
-        // 🔧 AJUSTADO: primeiro achou pequeno (raio 2.1→3.3, z -2.2→-0.8),
-        // depois ficou grande demais dominando o hero. Meio-termo — maior
-        // que o original, mas sem tomar a tela.
-        const nucleoGeo = new THREE.IcosahedronGeometry(ehMobile ? 1.9 : 2.6, 1);
-        const nucleoMat = new THREE.MeshBasicMaterial({ color: 0xf0a334, wireframe: true, transparent: true, opacity: 0.5 });
-        const nucleo = new THREE.Mesh(nucleoGeo, nucleoMat);
-        // Em tela estreita (retrato) o campo de visão da câmera é bem mais
-        // apertado na horizontal — um núcleo deslocado pra direita (como no
-        // desktop) sairia do enquadramento. Fica mais centralizado no mobile.
-        nucleo.position.set(ehMobile ? 1.2 : 3.5, -0.6, -1.8);
-        nucleo.visible = false;
-        scene.add(nucleo);
-
-        const brilhoGeo = new THREE.IcosahedronGeometry(ehMobile ? 2.3 : 3.1, 1);
-        const brilhoMat = new THREE.MeshBasicMaterial({ color: 0xf0a334, wireframe: true, transparent: true, opacity: 0.14 });
-        const brilho = new THREE.Mesh(brilhoGeo, brilhoMat);
-        brilho.position.copy(nucleo.position);
-        brilho.visible = false;
-        scene.add(brilho);
-
-        let mouseX = 0, mouseY = 0;
-        window.addEventListener('mousemove', (e) => {
-            mouseX = (e.clientX / window.innerWidth - 0.5);
-            mouseY = (e.clientY / window.innerHeight - 0.5);
-        }, { passive: true });
-
-        function redimensionar() {
-            const w = hero.clientWidth, h = hero.clientHeight;
-            renderer.setSize(w, h, false);
-            camera.aspect = w / h;
-            camera.updateProjectionMatrix();
-        }
-        redimensionar();
-        window.addEventListener('resize', redimensionar);
-
-        let pararAnimacao = false;
-        const obsVisivel = new IntersectionObserver((entries) => {
-            pararAnimacao = !entries[0].isIntersecting;
-        });
-        obsVisivel.observe(hero);
-
-        function animar(t) {
-            requestAnimationFrame(animar);
-            if (pararAnimacao) return;
-            nuvem.rotation.y = t * 0.00006 + mouseX * 0.3;
-            nuvem.rotation.x = mouseY * 0.2;
-            rede.rotation.y = nuvem.rotation.y;
-            rede.rotation.x = nuvem.rotation.x;
-            nucleo.rotation.x = t * 0.00012;
-            nucleo.rotation.y = t * 0.00018 + mouseX * 0.4;
-            brilho.rotation.copy(nucleo.rotation);
-            renderer.render(scene, camera);
-        }
-        requestAnimationFrame(animar);
+        bloco.textContent = '';
+        partes.forEach(p => bloco.appendChild(p));
     });
 
-    // ---- Cursor customizado + spotlight — anel com atraso (lerp) seguindo
-    // o mouse, crescendo sobre links/botões; spotlight é um brilho amber
-    // fraco que acompanha o cursor por cima da página inteira.
-    (function () {
-        if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-        const dot = document.getElementById('cursor-dot');
-        const ring = document.getElementById('cursor-ring');
-        const spot = document.getElementById('spotlight');
-        if (!dot || !ring) return;
-        document.body.classList.add('cursor-ready');
+    // ================================================================
+    // Anel do ciclo: nós e nomes ao redor
+    // ================================================================
+    const passos = [...document.querySelectorAll('.step')];
+    const gNos = document.getElementById('ring-nodes');
+    const nos = [], nomes = [];
+    passos.forEach((st, i) => {
+        const ang = (-90 + i * (360 / passos.length)) * Math.PI / 180;
+        const c = document.createElementNS(SVGNS, 'circle');
+        c.setAttribute('cx', (240 + 176 * Math.cos(ang)).toFixed(1));
+        c.setAttribute('cy', (240 + 176 * Math.sin(ang)).toFixed(1));
+        c.setAttribute('r', '9');
+        c.setAttribute('class', 'ring-node' + (i === 0 ? ' on' : ''));
+        gNos.appendChild(c); nos.push(c);
+        const t = document.createElementNS(SVGNS, 'text');
+        t.setAttribute('x', (240 + 212 * Math.cos(ang)).toFixed(1));
+        t.setAttribute('y', (240 + 212 * Math.sin(ang) + 5).toFixed(1));
+        t.setAttribute('text-anchor', Math.abs(Math.cos(ang)) < 0.2 ? 'middle' : (Math.cos(ang) > 0 ? 'start' : 'end'));
+        t.setAttribute('class', 'ring-label' + (i === 0 ? ' on' : ''));
+        t.textContent = st.dataset.nome;
+        gNos.appendChild(t); nomes.push(t);
+    });
+    const numAnel = document.getElementById('ring-num');
+    let passoAtual = 0;
+    function mostrarPasso(i) {
+        if (i === passoAtual) return;
+        passoAtual = i;
+        passos.forEach((st, k) => st.classList.toggle('on', k === i));
+        nos.forEach((n, k) => n.classList.toggle('on', k <= i));
+        nomes.forEach((n, k) => n.classList.toggle('on', k === i));
+        numAnel.textContent = String(i + 1).padStart(2, '0');
+    }
 
-        let mx = window.innerWidth / 2, my = window.innerHeight / 2;
-        let rx = mx, ry = my;
-        window.addEventListener('mousemove', (e) => {
-            mx = e.clientX; my = e.clientY;
-            document.body.classList.add('cursor-moved');
-            dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%,-50%)`;
-            if (spot) {
-                spot.style.setProperty('--sx', mx + 'px');
-                spot.style.setProperty('--sy', my + 'px');
-            }
-        }, { passive: true });
+    // ================================================================
+    // Controles segmentados (Antes × Depois, MCCs)
+    // ================================================================
+    function moverPolegar(seg) {
+        const ativo = seg.querySelector('[aria-selected="true"]');
+        const pol = seg.querySelector('.seg-thumb');
+        if (!ativo || !pol) return;
+        pol.style.width = ativo.offsetWidth + 'px';
+        pol.style.transform = 'translateX(' + (ativo.offsetLeft - 4) + 'px)';
+    }
+    function selecionar(seg, botao) {
+        seg.querySelectorAll('[role="tab"]').forEach(b => b.setAttribute('aria-selected', b === botao ? 'true' : 'false'));
+        moverPolegar(seg);
+    }
+    const todosSeg = () => document.querySelectorAll('.seg').forEach(moverPolegar);
+    window.addEventListener('resize', todosSeg);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(todosSeg);
+    todosSeg();
 
-        function anelSegue() {
-            rx += (mx - rx) * 0.18;
-            ry += (my - ry) * 0.18;
-            ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%,-50%)`;
-            requestAnimationFrame(anelSegue);
-        }
-        requestAnimationFrame(anelSegue);
+    const segVs = document.getElementById('seg-vs');
+    const listaVs = document.getElementById('vs');
+    let mexeuNoVs = false;
+    function verVs(qual, doUsuario) {
+        if (doUsuario) mexeuNoVs = true;
+        selecionar(segVs, segVs.querySelector('[data-v="' + qual + '"]'));
+        listaVs.classList.toggle('depois', qual === 'depois');
+    }
+    segVs.querySelectorAll('[role="tab"]').forEach(b => b.addEventListener('click', () => verVs(b.dataset.v, true)));
+    // Ao chegar na seção, mostra o "antes" por um instante e vira sozinho.
+    new IntersectionObserver((es, obs) => es.forEach(e => {
+        if (!e.isIntersecting) return;
+        obs.disconnect();
+        setTimeout(() => { if (!mexeuNoVs) verVs('depois', false); }, reduz ? 0 : 1100);
+    }), { threshold: 0.55 }).observe(listaVs);
 
-        document.querySelectorAll('a, button, .mcc-tab').forEach(el => {
-            el.addEventListener('mouseenter', () => ring.classList.add('is-big'));
-            el.addEventListener('mouseleave', () => ring.classList.remove('is-big'));
-        });
-    })();
-
-    // ---- Barra de progresso do "Como funciona" — enche conforme a
-    // seção do ciclo passa pela tela (não é só um scroll bar genérico,
-    // acompanha exatamente o range da própria seção).
-    (function () {
-        const secao = document.getElementById('cycle-secao');
-        const barra = document.getElementById('cycle-fill');
-        if (!secao || !barra) return;
-        let ticking = false;
-        function atualizar() {
-            const rect = secao.getBoundingClientRect();
-            const vh = window.innerHeight;
-            const total = rect.height + vh * 0.6;
-            const percorrido = vh * 0.8 - rect.top;
-            const progresso = Math.min(Math.max(percorrido / total, 0), 1);
-            barra.style.width = (progresso * 100).toFixed(1) + '%';
-            ticking = false;
-        }
-        window.addEventListener('scroll', () => {
-            if (!ticking) { requestAnimationFrame(atualizar); ticking = true; }
-        }, { passive: true });
-        atualizar();
-    })();
-
-    // 🐛 CORRIGIDO ("clico em Atualizar e parece que não muda nada"):
-    // location.reload() no Safari/iOS às vezes não força uma busca nova
-    // de verdade na rede (comportamento conhecido do WebKit, ainda mais
-    // com Service Worker no meio) — o reload "acontece" mas visualmente
-    // nada muda. Navegar pra uma URL com um parâmetro novo obriga o
-    // navegador a tratar como uma página diferente da que já tinha
-    // guardada, sem essa ambiguidade. `replace` evita empilhar histórico.
-    window.forcarAtualizacaoOMS = function () {
-        // 🐛 CORRIGIDO ("clico e o aviso fica lá"): antes o aviso só
-        // sumia se/quando a navegação abaixo terminasse — sem retorno
-        // visual imediato do clique. Esconde na hora, não depende de
-        // mais nada pra desaparecer.
-        const aviso = document.getElementById('aviso-nova-versao');
-        if (aviso) aviso.style.display = 'none';
-        const url = new URL(window.location.href);
-        url.searchParams.set('_upd', Date.now());
-        window.location.replace(url.toString());
+    const MCCS = {
+        '2': { veios: ['C', 'D'], itens: ['Molde', 'Segmento Zero', 'Segmentos de Grupo', 'Cadeira Superior', 'Cadeira Inferior'] },
+        '3': { veios: ['E', 'F'], itens: ['Molde', 'Segmento Zero', 'Segmentos de Grupo', 'Cadeira Superior', 'Cadeira Inferior'] },
+        '4': { veios: ['G', 'H'], itens: ['Molde', 'Bender', 'Bow', 'Straightener R1', 'Straightener R2', 'Horizontal'] }
     };
+    const segMcc = document.getElementById('seg-mcc');
+    const painelMcc = document.getElementById('mcc-panel');
+    function verMcc(n) {
+        const m = MCCS[n];
+        selecionar(segMcc, segMcc.querySelector('[data-mcc="' + n + '"]'));
+        painelMcc.classList.remove('cheio');
+        painelMcc.querySelector('.veios').innerHTML = m.veios.map(v => '<span class="veio-l" data-l="' + v + '">' + v + '</span>').join('');
+        painelMcc.querySelector('.mcc-cap').textContent = 'Veios ' + m.veios[0] + ' e ' + m.veios[1];
+        painelMcc.querySelector('.chips').innerHTML = m.itens.map((t, i) => '<span style="transition-delay:' + (0.5 + i * 0.06).toFixed(2) + 's">' + t + '</span>').join('');
+        void painelMcc.offsetWidth; // reinicia a transição
+        if (painelMcc.dataset.visto || reduz) painelMcc.classList.add('cheio');
+    }
+    segMcc.querySelectorAll('[role="tab"]').forEach(b => b.addEventListener('click', () => verMcc(b.dataset.mcc)));
+    verMcc('2');
+    new IntersectionObserver((es, obs) => es.forEach(e => {
+        if (!e.isIntersecting) return;
+        obs.disconnect();
+        painelMcc.dataset.visto = '1';
+        painelMcc.classList.add('cheio');
+    }), { threshold: 0.4 }).observe(painelMcc);
 
-    // ---- Confirmação de atualização — "não tenho como saber se
-    // atualizou ou não". Compara um identificador de versão guardado no
-    // localStorage: se já existia um valor diferente do atual, é
-    // porque essa aba estava numa versão anterior e agora carregou a
-    // nova — mostra uma confirmação rápida. Na primeira visita (sem
-    // valor guardado ainda) só grava, não mostra nada.
-    // 🔧 Bump manual: mude essa string a cada deploy visível (mesmo
-    // espírito do CACHE_VERSION do service-worker.js, mas comparado
-    // aqui na página, sem precisar consultar o SW pra confirmar).
-    window.OMS_BUILD_ID = '2026.10.13-visual-hero';
-    (function () {
-        try {
-            const anterior = localStorage.getItem('oms_build_id');
-            if (anterior && anterior !== window.OMS_BUILD_ID) {
-                const confirmacao = document.createElement('div');
-                confirmacao.textContent = '✅ Site atualizado para a versão mais recente.';
-                confirmacao.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:99999;background:#16a34a;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,0.4);';
-                document.body.appendChild(confirmacao);
-                setTimeout(() => confirmacao.remove(), 5000);
-            }
-            localStorage.setItem('oms_build_id', window.OMS_BUILD_ID);
-        } catch (e) { /* localStorage pode falhar em modo privado — não é crítico */ }
-    })();
+    // Blocos de recursos: luz segue o cursor; os visuais "ligam" ao aparecer.
+    document.querySelectorAll('.tile').forEach(t => {
+        t.addEventListener('pointermove', e => {
+            const r = t.getBoundingClientRect();
+            t.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+            t.style.setProperty('--my', (e.clientY - r.top) + 'px');
+        });
+    });
+    const ioLigar = new IntersectionObserver((es, obs) => es.forEach(e => {
+        if (!e.isIntersecting) return;
+        setTimeout(() => e.target.classList.add('on'), reduz ? 0 : 250);
+        obs.unobserve(e.target);
+    }), { threshold: 0.45 });
+    document.querySelectorAll('[data-on]').forEach(el => ioLigar.observe(el));
 
-    // ---- Service worker (PWA) ----
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('service-worker.js')
-                .then((registro) => {
-                    // 🆕 Checa se tem versão nova de tempos em tempos — sem
-                    // isso, uma aba aberta há muito tempo só saberia de uma
-                    // versão nova ao ser fechada e reaberta.
-                    setInterval(() => registro.update().catch(() => {}), 30 * 60 * 1000);
-                })
-                .catch(() => {});
+    // ================================================================
+    // Sem animação: tudo no estado final, parado.
+    // ================================================================
+    if (!animar) {
+        strand.style.opacity = 1;
+        return;
+    }
 
-            // 🆕 Dispara quando o Service Worker que controla esta aba
-            // muda pra um mais novo — sinal confiável de "a versão
-            // instalada agora é diferente da que você tinha ao abrir o
-            // site". Só mostra o aviso, não recarrega sozinho.
-            let jaAvisouNovaVersao = false;
-            const tinhaVersaoAnterior = !!navigator.serviceWorker.controller;
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                if (jaAvisouNovaVersao || !tinhaVersaoAnterior) return;
-                jaAvisouNovaVersao = true;
-                const aviso = document.getElementById('aviso-nova-versao');
-                if (aviso) aviso.style.display = 'flex';
-            });
+    // ================================================================
+    // ANIMAÇÕES (GSAP + ScrollTrigger)
+    // ================================================================
+    gsap.registerPlugin(ScrollTrigger);
+    ScrollTrigger.config({ ignoreMobileResize: true });
+    window.__omsAnimPronto = true;
+
+    // Progresso da página na barra do topo
+    gsap.to('#nav-progress', { scaleX: 1, ease: 'none', scrollTrigger: { start: 0, end: 'max', scrub: 0.3 } });
+
+    // ---- Entrada do hero ----
+    gsap.set('.hero-copy > *', { opacity: 1 });
+    dashPaths.forEach(p => { p.style.strokeDasharray = L; p.style.strokeDashoffset = L; });
+    gsap.set('#strand-rolls .roll', { opacity: 0, scale: 0, transformOrigin: '50% 50%' });
+    gsap.set('.s-mold, .s-lbl', { opacity: 0 });
+    gsap.set(strand, { opacity: 1 });
+
+    // Pulso de aço quente correndo pela linha, acendendo os rolos por onde passa.
+    const pulsoLoop = gsap.fromTo(pulsos, { strokeDashoffset: D }, {
+        strokeDashoffset: -L, duration: L / 400, ease: 'none', repeat: -1, paused: true,
+        onUpdate: function () { acenderRolos(this.progress() * (L + D)); }
+    });
+
+    gsap.timeline({ defaults: { ease: 'power3.out' } })
+        .from('.hero .eyebrow', { y: 24, opacity: 0, filter: 'blur(8px)', duration: 1 }, 0.1)
+        .from('.hero-title .ht', { y: 70, opacity: 0, filter: 'blur(14px)', duration: 1.3, stagger: 0.14 }, 0.2)
+        .from('.hero-sub', { y: 30, opacity: 0, filter: 'blur(8px)', duration: 1.1 }, 0.6)
+        .from('.hero-ctas', { y: 24, opacity: 0, duration: 1 }, 0.78)
+        .to('.s-mold', { opacity: 1, duration: 0.8 }, 0.5)
+        .to('.s-base', { strokeDashoffset: 0, duration: 1.6, ease: 'power2.inOut' }, 0.55)
+        .to('#strand-rolls .roll', { opacity: 1, scale: 1, duration: 0.5, stagger: 0.008, ease: 'back.out(2)' }, 0.9)
+        .to('.s-hot, .s-glow', { strokeDashoffset: 0, duration: 2.4, ease: 'power2.inOut' }, 1.3)
+        .to('.s-lbl', { opacity: 1, duration: 0.7, stagger: 0.12 }, 1.6)
+        .add(() => { strand.classList.add('vivo'); pulsoLoop.play(); });
+
+    ScrollTrigger.create({
+        trigger: '.hero', start: 'top top', end: 'bottom top',
+        onLeave: () => pulsoLoop.pause(),
+        onEnterBack: () => { if (strand.classList.contains('vivo')) pulsoLoop.play(); }
+    });
+
+    // Ao rolar pra fora do hero: texto sobe e some, a linha aproxima.
+    gsap.timeline({ scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } })
+        .to('.hero-copy', { y: -90, opacity: 0, ease: 'none' }, 0)
+        .to('.strand-wrap', { scale: 1.12, y: -40, opacity: 0.25, ease: 'none', transformOrigin: '30% 80%' }, 0)
+
+    // ---- Revelações ao entrar na tela ----
+    ScrollTrigger.batch('[data-r]', {
+        start: 'top 88%',
+        once: true,
+        onEnter: lote => gsap.to(lote, { opacity: 1, y: 0, duration: 1.1, ease: 'power3.out', stagger: 0.09, overwrite: true })
+    });
+
+    // ---- Palavras acendendo ----
+    document.querySelectorAll('[data-words]').forEach(bloco => {
+        gsap.to(bloco.querySelectorAll('.w'), {
+            opacity: 1, ease: 'none', stagger: 0.1,
+            scrollTrigger: { trigger: bloco, start: 'top 82%', end: 'bottom 45%', scrub: true }
+        });
+    });
+
+    // ---- Números contando ----
+    document.querySelectorAll('[data-count]').forEach(el => {
+        const alvo = Number(el.dataset.count), suf = el.dataset.suf || '';
+        const obj = { v: 0 };
+        el.textContent = '0' + suf;
+        ScrollTrigger.create({
+            trigger: el, start: 'top 86%', once: true,
+            onEnter: () => gsap.to(obj, {
+                v: alvo, duration: alvo > 50 ? 2 : 1.4, ease: 'power2.out',
+                onUpdate: () => { el.textContent = Math.round(obj.v).toLocaleString('pt-BR') + suf; }
+            })
+        });
+    });
+
+    // ---- Ciclo: anel preso na tela enquanto as etapas avançam ----
+    const ciclo = document.querySelector('.ciclo');
+    const progAnel = document.getElementById('ring-prog');
+    const CIRC = 2 * Math.PI * 176;
+    ciclo.classList.add('pinned');
+    progAnel.style.strokeDasharray = CIRC;
+    progAnel.style.strokeDashoffset = CIRC;
+    ScrollTrigger.create({
+        trigger: ciclo, start: 'top top',
+        end: () => '+=' + Math.round(window.innerHeight * 2.6),
+        pin: true, anticipatePin: 1,
+        onUpdate: self => {
+            gsap.to(progAnel, { strokeDashoffset: CIRC * (1 - self.progress), duration: 0.35, ease: 'power1.out', overwrite: true });
+            mostrarPasso(Math.min(passos.length - 1, Math.floor(self.progress * passos.length * 0.999)));
+        }
+    });
+
+    // ---- Especialidades: cortina + parallax nas fotos ----
+    gsap.utils.toArray('.disc-img').forEach((img, i) => {
+        gsap.to(img, { clipPath: 'inset(0% 0% 0% 0% round 24px)', duration: 1.4, ease: 'power4.inOut', delay: (i % 3) * 0.12,
+            scrollTrigger: { trigger: img, start: 'top 90%', once: true } });
+        gsap.fromTo(img.querySelector('img'), { yPercent: -9 }, { yPercent: 0, ease: 'none',
+            scrollTrigger: { trigger: img, start: 'top bottom', end: 'bottom top', scrub: true } });
+    });
+
+    // ---- Equipe: a foto cresce até tomar a tela inteira ----
+    const expand = document.querySelector('.expand');
+    expand.classList.add('pinned');
+    const recorte = () => ehCelular() ? 'inset(16% 6% 32% 6% round 22px)' : 'inset(14% 22% 14% 22% round 30px)';
+    gsap.timeline({
+        scrollTrigger: { trigger: expand, start: 'top top', end: () => '+=' + Math.round(window.innerHeight * 1.5), pin: true, scrub: 0.6, anticipatePin: 1, invalidateOnRefresh: true }
+    })
+        .fromTo('.expand-media', { clipPath: recorte }, { clipPath: 'inset(0% 0% 0% 0% round 0px)', ease: 'none', duration: 1 }, 0)
+        .fromTo('.expand-media img', { scale: 1.3 }, { scale: 1, ease: 'none', duration: 1 }, 0)
+        .fromTo('.expand-copy', { opacity: 0, y: 50 }, { opacity: 1, y: 0, ease: 'power2.out', duration: 0.35 }, 0.7);
+
+    // ---- Fotos com parallax por dentro da moldura ----
+    gsap.utils.toArray('.frame img, .hist-media img').forEach(img => {
+        gsap.fromTo(img, { yPercent: -12 }, { yPercent: 0, ease: 'none',
+            scrollTrigger: { trigger: img.parentElement, start: 'top bottom', end: 'bottom top', scrub: true } });
+    });
+    gsap.fromTo('.hist-media', { scale: 0.92, borderRadius: 48 }, { scale: 1, borderRadius: 30, ease: 'none',
+        scrollTrigger: { trigger: '.hist-media', start: 'top bottom', end: 'top 25%', scrub: true } });
+    gsap.from('.hist-copy > *', { y: 40, opacity: 0, duration: 1.1, ease: 'power3.out', stagger: 0.1,
+        scrollTrigger: { trigger: '.hist-media', start: 'top 45%', once: true } });
+
+    // ---- Ícone final: inclina na direção do mouse ----
+    const icone = document.querySelector('.cta-icon');
+    if (icone && window.matchMedia('(hover: hover)').matches) {
+        document.querySelector('.cta').addEventListener('pointermove', e => {
+            const r = icone.getBoundingClientRect();
+            const x = (e.clientX - (r.left + r.width / 2)) / window.innerWidth;
+            const y = (e.clientY - (r.top + r.height / 2)) / window.innerHeight;
+            gsap.to(icone, { rotateY: x * 26, rotateX: -y * 26, transformPerspective: 700, duration: 0.6, ease: 'power2.out' });
         });
     }
 
-    // ---- Botão "Instalar App" — o evento beforeinstallprompt já é
-    // capturado lá no <head> (window.__pwaInstallEvent), mesmo antes
-    // deste script rodar. Aqui só ficam as funções que mexem no botão
-    // e o clique de instalar de verdade.
-    window.__mostrarBotaoInstalarPWA = function () {
-        document.querySelectorAll('.btn-instalar-pwa').forEach(b => { b.hidden = false; });
-    };
-    window.__esconderBotaoInstalarPWA = function () {
-        document.querySelectorAll('.btn-instalar-pwa').forEach(b => { b.hidden = true; });
-    };
+    // ---- Link ativo na barra conforme a seção ----
+    document.querySelectorAll('.nav-links a').forEach(a => {
+        const alvo = document.querySelector(a.getAttribute('href'));
+        if (!alvo) return;
+        ScrollTrigger.create({ trigger: alvo, start: 'top 50%', end: 'bottom 50%', onToggle: s => a.classList.toggle('ativo', s.isActive) });
+    });
 
-    window.instalarAppOMS = async function () {
-        const ehIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
-        if (window.__pwaInstallEvent) {
-            // Chrome/Edge (PC e Android) — prompt nativo de instalação.
-            window.__pwaInstallEvent.prompt();
-            await window.__pwaInstallEvent.userChoice;
-            window.__pwaInstallEvent = null;
-            window.__esconderBotaoInstalarPWA();
-        } else if (ehIOS) {
-            // Safari/iOS NUNCA dispara beforeinstallprompt — só dá pra
-            // instalar via Compartilhar, e isso é manual por natureza do
-            // sistema, não tem como automatizar.
-            alert('Pra instalar no iPhone/iPad:\n\n1. Toque no ícone de Compartilhar (o quadrado com a seta pra cima), na barra do Safari.\n2. Escolha "Adicionar à Tela de Início".');
-        } else {
-            alert('Seu navegador ainda não liberou a instalação automática.\n\nProcure "Instalar app" ou "Adicionar à tela inicial" no menu do navegador (geralmente nos três pontinhos ⋮).');
+    window.addEventListener('load', () => ScrollTrigger.refresh());
+})();
+
+// ---- Atualização do site / Service Worker / Instalar app ----
+// location.reload() no Safari/iOS às vezes não busca de novo; navegar pra
+// uma URL com parâmetro novo obriga a página nova.
+window.forcarAtualizacaoOMS = function () {
+    const aviso = document.getElementById('aviso-nova-versao');
+    if (aviso) aviso.style.display = 'none';
+    const url = new URL(window.location.href);
+    url.searchParams.set('_upd', Date.now());
+    window.location.replace(url.toString());
+};
+
+// Mude a cada deploy visível: quem estava numa versão anterior vê a confirmação.
+window.OMS_BUILD_ID = '2026.10.14-apresentacao';
+(function () {
+    try {
+        const anterior = localStorage.getItem('oms_build_id');
+        if (anterior && anterior !== window.OMS_BUILD_ID) {
+            const ok = document.createElement('div');
+            ok.textContent = 'Site atualizado para a versão mais recente.';
+            ok.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:99;background:rgba(30,26,20,.85);color:#f2ede2;padding:10px 18px;border-radius:999px;font:500 13px Inter,system-ui,sans-serif;box-shadow:inset 0 0 0 1px rgba(255,250,240,.16);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);white-space:nowrap;';
+            document.body.appendChild(ok);
+            setTimeout(() => ok.remove(), 5000);
         }
-    };
+        localStorage.setItem('oms_build_id', window.OMS_BUILD_ID);
+    } catch (e) { /* localStorage pode falhar em modo privado */ }
+})();
 
-    // iOS nunca dispara beforeinstallprompt, então mostra o botão direto
-    // (a menos que já esteja rodando instalado, em modo standalone).
-    (function () {
-        const jaInstalado = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-        if (jaInstalado) return;
-        const ehIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
-        if (ehIOS) window.__mostrarBotaoInstalarPWA();
-    })();
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js')
+            .then(registro => { setInterval(() => registro.update().catch(() => {}), 30 * 60 * 1000); })
+            .catch(() => {});
+        // Só avisa quando JÁ havia uma versão controlando a página: na
+        // primeira visita o SW novo assume (clients.claim) e isso não é
+        // "versão nova".
+        let jaAvisou = false;
+        const tinhaVersaoAnterior = !!navigator.serviceWorker.controller;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (jaAvisou || !tinhaVersaoAnterior) return;
+            jaAvisou = true;
+            const aviso = document.getElementById('aviso-nova-versao');
+            if (aviso) aviso.style.display = 'flex';
+        });
+    });
+}
 
-    // ---- Fotos do topo inclinam em 3D seguindo o mouse ----
-    (function () {
-        if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-        const vis = document.querySelector('.hero-visual');
-        if (!vis) return;
-        window.addEventListener('mousemove', (e) => {
-            const x = e.clientX / window.innerWidth - 0.5, y = e.clientY / window.innerHeight - 0.5;
-            vis.style.transform = `translateY(-46%) rotateY(${(x * 10).toFixed(2)}deg) rotateX(${(-y * 8).toFixed(2)}deg)`;
-        }, { passive: true });
-    })();
-
-    // ---- Faíscas de solda saindo do cursor ----
-    (function () {
-        if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-        const cv = document.getElementById('faiscas'); if (!cv) return;
-        const ctx = cv.getContext('2d'); let ps = [], lx = 0, ly = 0;
-        const tam = () => { cv.width = innerWidth; cv.height = innerHeight; }; tam(); addEventListener('resize', tam);
-        addEventListener('mousemove', (e) => {
-            const v = Math.hypot(e.clientX - lx, e.clientY - ly); lx = e.clientX; ly = e.clientY;
-            if (false) for (let i = 0; i < Math.min(4, v / 6); i++) ps.push({ x: lx, y: ly, vx: (Math.random() - 0.5) * 3, vy: (Math.random() - 0.9) * 3, v: 1 });
-        }, { passive: true });
-        addEventListener('click', (e) => { for (let i = 0; i < 14; i++) { const a = Math.random() * 6.28, f = 2 + Math.random() * 5; ps.push({ x: e.clientX, y: e.clientY, vx: Math.cos(a) * f, vy: Math.sin(a) * f - 2, v: 1 }); } });
-        (function loop() {
-            ctx.clearRect(0, 0, cv.width, cv.height);
-            ps = ps.filter(p => (p.v -= 0.025) > 0);
-            for (const p of ps) {
-                p.vy += 0.15; p.x += p.vx; p.y += p.vy;
-                ctx.strokeStyle = `rgba(255,${150 + 80 * p.v | 0},60,${p.v})`; ctx.lineWidth = 1.6;
-                ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 2, p.y - p.vy * 2); ctx.stroke();
-            }
-            requestAnimationFrame(loop);
-        })();
-    })();
-
-    // ---- Cortina das fotos de propósito/história ----
-    (function () {
-        const obs = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('foto-on'); obs.unobserve(e.target); } }), { threshold: 0.25 });
-        document.querySelectorAll('.photo-break').forEach(el => obs.observe(el));
-    })();
+window.__mostrarBotaoInstalarPWA = function () {
+    document.querySelectorAll('.btn-instalar-pwa').forEach(b => { b.hidden = false; });
+};
+window.__esconderBotaoInstalarPWA = function () {
+    document.querySelectorAll('.btn-instalar-pwa').forEach(b => { b.hidden = true; });
+};
+window.instalarAppOMS = async function () {
+    const ehIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+    if (window.__pwaInstallEvent) {
+        window.__pwaInstallEvent.prompt();
+        await window.__pwaInstallEvent.userChoice;
+        window.__pwaInstallEvent = null;
+        window.__esconderBotaoInstalarPWA();
+    } else if (ehIOS) {
+        alert('Para instalar no iPhone/iPad:\n\n1. Toque em Compartilhar (o quadrado com a seta para cima), na barra do Safari.\n2. Escolha "Adicionar à Tela de Início".');
+    } else {
+        alert('Seu navegador ainda não liberou a instalação automática.\n\nProcure "Instalar app" ou "Adicionar à tela inicial" no menu do navegador (geralmente nos três pontinhos ⋮).');
+    }
+};
+if (window.__pwaInstallEvent) window.__mostrarBotaoInstalarPWA();
+(function () {
+    const instalado = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    if (instalado) return;
+    if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream) window.__mostrarBotaoInstalarPWA();
+})();
 </script>
 </body>
 </html>
