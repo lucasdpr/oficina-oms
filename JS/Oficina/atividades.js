@@ -1678,10 +1678,10 @@ function renderizarEtapasProcedimento() {
         }
         const marcada = PROCEDIMENTO_ETAPAS_MARCADAS.has(e.id);
         return `
-            <label style="display:flex; gap:10px; align-items:flex-start; padding:10px; border-radius:8px; background:${marcada ? 'var(--success-bg)' : 'var(--bg-td)'}; margin-bottom:6px; cursor:pointer; transition:background 0.15s;">
-                <input type="checkbox" ${marcada ? 'checked' : ''} onchange="window.marcarEtapaProcedimento('${e.id}', this.checked)" style="margin-top:3px; width:18px; height:18px; flex-shrink:0;">
+            <label class="pc-etapa${marcada ? ' pc-feita' : ''}">
+                <input type="checkbox" ${marcada ? 'checked' : ''} onchange="this.closest('label').classList.toggle('pc-feita', this.checked); window.marcarEtapaProcedimento('${e.id}', this.checked)" style="margin-top:3px; flex-shrink:0;">
                 <div style="flex:1; min-width:0;">
-                    <div style="font-size:13px; color:var(--text-heading); font-weight:600;">${e.id} — ${e.texto}</div>
+                    <div class="pc-etapa-tit">${e.id} — ${e.texto}</div>
                     ${e.pontosChave ? `<div class="text-muted" style="font-size:11.5px; margin-top:3px;"><i class="fas fa-wrench" style="opacity:0.6;"></i> ${e.pontosChave}</div>` : ''}
                     ${e.seguranca ? `<div style="font-size:11.5px; margin-top:3px; color:var(--warning);"><i class="fas fa-triangle-exclamation"></i> ${e.seguranca}</div>` : ''}
                 </div>
