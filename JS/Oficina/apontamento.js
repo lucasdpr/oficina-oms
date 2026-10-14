@@ -162,6 +162,8 @@ window.carregarHistoricoApontamentoGeral = async function() {
         const res = await fetchComRetry(`${apiBase}/api/historico_apontamentos_geral`);
         const json = await res.json();
         const tbody = document.getElementById("tabela-historico-geral");
+        window.__pdGeral = Array.isArray(json) ? json : [];
+        if (typeof window.atualizarResumoProducao === 'function') window.atualizarResumoProducao();
         if (!tbody) return;
         if (Array.isArray(json) && json.length > 0) {
             tbody.innerHTML = json.map(log => {
@@ -170,12 +172,12 @@ window.carregarHistoricoApontamentoGeral = async function() {
                 const dataHoraLocal = new Date(log.data_hora.replace(' ', 'T').slice(0, 19))
                                          .toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 
-                let btnAcao = log.desfeito === 1 
-                    ? `<span style="color:var(--danger); font-weight:bold; font-size:10px;"><i class="fas fa-ban"></i> DESFEITO</span>` 
-                    : `<button class="btn-outline-danger" style="padding: 2px 6px; font-size: 10px;" onclick="window.desfazerApontamentoGeral(${log.id})"><i class="fas fa-undo"></i></button>`;
-                return `<tr><td>${dataHoraLocal}</td><td style="text-align:left;">${log.operador}</td><td style="color:#d9b67a; font-weight:bold;">${log.qtd_mcc2 > 0 ? '+'+log.qtd_mcc2 : '-'}</td><td style="color:#d9b67a; font-weight:bold;">${log.qtd_mcc3 > 0 ? '+'+log.qtd_mcc3 : '-'}</td><td style="color:#d9b67a; font-weight:bold;">${log.qtd_mcc4 > 0 ? '+'+log.qtd_mcc4 : '-'}</td><td>${btnAcao}</td></tr>`;
+                let btnAcao = log.desfeito === 1
+                    ? `<span class="pd-desfeito">Desfeito</span>`
+                    : `<button type="button" class="cc-btn pd-desfazer" onclick="window.desfazerApontamentoGeral(${log.id})">Desfazer</button>`;
+                return `<tr><td>${dataHoraLocal}</td><td style="text-align:left;">${log.operador}</td><td class="pd-num${log.desfeito === 1 ? ' pd-riscado' : ''}">${log.qtd_mcc2 > 0 ? '+'+Number(log.qtd_mcc2).toLocaleString('pt-BR') : '—'}</td><td class="pd-num${log.desfeito === 1 ? ' pd-riscado' : ''}">${log.qtd_mcc3 > 0 ? '+'+Number(log.qtd_mcc3).toLocaleString('pt-BR') : '—'}</td><td class="pd-num${log.desfeito === 1 ? ' pd-riscado' : ''}">${log.qtd_mcc4 > 0 ? '+'+Number(log.qtd_mcc4).toLocaleString('pt-BR') : '—'}</td><td>${btnAcao}</td></tr>`;
             }).join("");
-        } else { tbody.innerHTML = "<tr><td colspan='6'>Nenhum lançamento.</td></tr>"; }
+        } else { tbody.innerHTML = "<tr><td colspan='6' class='text-muted'>Nenhum lançamento ainda.</td></tr>"; }
     } catch (e) { console.error(e); }
 };
 
@@ -186,6 +188,8 @@ window.carregarHistoricoApontamentoMoldes = async function() {
         const res = await fetchComRetry(`${apiBase}/api/historico_apontamentos_moldes`);
         const json = await res.json();
         const tbody = document.getElementById("tabela-historico-moldes");
+        window.__pdMoldes = Array.isArray(json) ? json : [];
+        if (typeof window.atualizarResumoProducao === 'function') window.atualizarResumoProducao();
         if (!tbody) return;
         if (Array.isArray(json) && json.length > 0) {
             tbody.innerHTML = json.map(log => {
@@ -194,12 +198,12 @@ window.carregarHistoricoApontamentoMoldes = async function() {
                 const dataHoraLocal = new Date(log.data_hora.replace(' ', 'T').slice(0, 19))
                                          .toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 
-                let btnAcao = log.desfeito === 1 
-                    ? `<span style="color:var(--danger); font-weight:bold; font-size:10px;"><i class="fas fa-ban"></i> DESFEITO</span>` 
-                    : `<button class="btn-outline-danger" style="padding: 2px 6px; font-size: 10px;" onclick="window.desfazerApontamentoMolde(${log.id})"><i class="fas fa-undo"></i></button>`;
-                return `<tr><td>${dataHoraLocal}</td><td style="text-align:left;">${log.operador}</td><td style="color:var(--warning); font-weight:bold;">${log.qtd_mcc2 > 0 ? '+'+log.qtd_mcc2 : '-'}</td><td style="color:var(--warning); font-weight:bold;">${log.qtd_mcc3 > 0 ? '+'+log.qtd_mcc3 : '-'}</td><td style="color:var(--warning); font-weight:bold;">${log.qtd_mcc4 > 0 ? '+'+log.qtd_mcc4 : '-'}</td><td>${btnAcao}</td></tr>`;
+                let btnAcao = log.desfeito === 1
+                    ? `<span class="pd-desfeito">Desfeito</span>`
+                    : `<button type="button" class="cc-btn pd-desfazer" onclick="window.desfazerApontamentoMolde(${log.id})">Desfazer</button>`;
+                return `<tr><td>${dataHoraLocal}</td><td style="text-align:left;">${log.operador}</td><td class="pd-num${log.desfeito === 1 ? ' pd-riscado' : ''}">${log.qtd_mcc2 > 0 ? '+'+Number(log.qtd_mcc2).toLocaleString('pt-BR') : '—'}</td><td class="pd-num${log.desfeito === 1 ? ' pd-riscado' : ''}">${log.qtd_mcc3 > 0 ? '+'+Number(log.qtd_mcc3).toLocaleString('pt-BR') : '—'}</td><td class="pd-num${log.desfeito === 1 ? ' pd-riscado' : ''}">${log.qtd_mcc4 > 0 ? '+'+Number(log.qtd_mcc4).toLocaleString('pt-BR') : '—'}</td><td>${btnAcao}</td></tr>`;
             }).join("");
-        } else { tbody.innerHTML = "<tr><td colspan='6'>Nenhum lançamento.</td></tr>"; }
+        } else { tbody.innerHTML = "<tr><td colspan='6' class='text-muted'>Nenhum lançamento ainda.</td></tr>"; }
     } catch (e) { console.error(e); }
 };
 
@@ -609,3 +613,37 @@ window.forcarCamposPosicao = function() {
     });
 };
 
+
+
+// 🎨 Padrão novo da tela de produção: total somando enquanto digita (ajuda
+// a pegar erro de digitação antes de lançar) e o resumo do topo calculado
+// das próprias auditorias (hoje, 7 dias, último lançamento).
+window.atualizarTotaisProducao = function() {
+    const soma = pre => ['2', '3', '4'].reduce((t, m) => t + (Number(document.getElementById(pre + m)?.value) || 0), 0);
+    const ton = soma('prod-mcc'), pan = soma('molde-prod-mcc');
+    const e1 = document.getElementById('pd-total-ton'); if (e1) e1.textContent = `${ton.toLocaleString('pt-BR')} t`;
+    const e2 = document.getElementById('pd-total-pan'); if (e2) e2.textContent = `${pan.toLocaleString('pt-BR')} panela${pan === 1 ? '' : 's'}`;
+};
+
+window.atualizarResumoProducao = function() {
+    if (typeof window.atualizarTotaisProducao === 'function') window.atualizarTotaisProducao();
+    const validos = l => (Array.isArray(l) ? l : []).filter(x => x.desfeito !== 1);
+    const geral = validos(window.__pdGeral), moldes = validos(window.__pdMoldes);
+    const dia = x => (x.data_hora || '').slice(0, 10);
+    const hojeStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+    const limite = new Date(Date.now() - 6 * 864e5).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+    const soma = l => l.reduce((t, x) => t + (Number(x.qtd_mcc2) || 0) + (Number(x.qtd_mcc3) || 0) + (Number(x.qtd_mcc4) || 0), 0);
+    const tonHoje = soma(geral.filter(x => dia(x) === hojeStr)), panHoje = soma(moldes.filter(x => dia(x) === hojeStr));
+    const tonSem = soma(geral.filter(x => dia(x) >= limite)), panSem = soma(moldes.filter(x => dia(x) >= limite));
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    set('pd-hoje', `${tonHoje.toLocaleString('pt-BR')} t`);
+    const hojeSub = document.querySelector('#pd-hoje + .cc-kpi-sub'); if (hojeSub) hojeSub.textContent = `${panHoje.toLocaleString('pt-BR')} panela${panHoje === 1 ? '' : 's'} hoje`;
+    set('pd-semana', `${tonSem.toLocaleString('pt-BR')} t`);
+    set('pd-semana-sub', `${panSem.toLocaleString('pt-BR')} panelas nos últimos 7 dias`);
+    const ultimo = [...geral, ...moldes].sort((a, b) => String(b.data_hora).localeCompare(String(a.data_hora)))[0];
+    if (ultimo) {
+        const d = new Date(String(ultimo.data_hora).replace(' ', 'T').slice(0, 19));
+        set('pd-ultimo', d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }));
+        set('pd-ultimo-sub', String(ultimo.operador || '').replace(/\s*\[.*\]\s*$/, '') || '—');
+    } else { set('pd-ultimo', 'Nenhum'); set('pd-ultimo-sub', 'ainda não houve lançamento'); }
+};
