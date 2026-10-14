@@ -260,7 +260,7 @@ window.abrirFolhaoDesempenadeira = function(id) {
     // Abre a primeira aba
     const firstTab = document.querySelector('#modal-folhao-desempenadeira .folhao-tab');
     if (firstTab) {
-        window.trocarAbaDesemp({ currentTarget: firstTab }, 'desemp-aba-dados');
+        window.trocarAbaDesemp({ currentTarget: firstTab }, 'desemp-aba-inspecao');
     }
 
     // Preenche datas
