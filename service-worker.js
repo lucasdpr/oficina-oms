@@ -11,7 +11,7 @@
 // usando a copia antiga guardada em cache.
 // ==============================================================
 
-const CACHE_VERSION = "oms-v177";
+const CACHE_VERSION = "oms-v178";
 
 // 🔧 CORREÇÃO: essa lista estava com os caminhos de uma estrutura de
 // pastas antiga (tudo direto na raiz) — o projeto hoje guarda os JS
@@ -26,6 +26,8 @@ const CACHE_VERSION = "oms-v177";
 const ARQUIVOS_PARA_CACHE = [
     "./",
     "./index.html",
+    "./vendor/gsap/gsap.min.js",
+    "./vendor/gsap/ScrollTrigger.min.js",
     "./app.html",
     "./style.css",
     "./JS/script.js",
