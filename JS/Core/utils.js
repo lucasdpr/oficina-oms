@@ -763,3 +763,16 @@ export function mostrarTipoNoFormulario(el, id) {
     }
 }
 window.mostrarTipoNoFormulario = mostrarTipoNoFormulario;
+
+
+// 🔧 CORREÇÃO (achado no teste completo): Swap e cadastro retroativo
+// montavam o local como `MCC ${mcc_compat} - Veio X` — pra peça 2/3 isso
+// virava "MCC 2/3 - Veio C", fora do padrão "MCC 2 - Veio C" que o resto
+// do sistema lê (sequenciamento, linha de lingotamento, painel). O número
+// da máquina sai do próprio veio: C/D = MCC 2, E/F = MCC 3, G/H = MCC 4.
+export function localDoVeio(veio, mccPadrao) {
+    const v = String(veio || '').trim().toUpperCase();
+    const mcc = { C: '2', D: '2', E: '3', F: '3', G: '4', H: '4' }[v] || mccPadrao || '';
+    return `MCC ${mcc} - Veio ${v}`;
+}
+window.localDoVeio = localDoVeio;

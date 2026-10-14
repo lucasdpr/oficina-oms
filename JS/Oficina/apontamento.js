@@ -11,6 +11,16 @@ import { OPERADOR_LOGADO } from '../Core/estado.js';
 import { verificarAcesso } from '../Core/permissoes.js';
 import { fetchComRetry, calcularDias, rotuloDesgaste, headersAdmin } from '../Core/utils.js';
 
+
+// Local padrão "MCC 2 - Veio C" a partir do veio (C/D = 2, E/F = 3, G/H = 4).
+// Ver comentário em Core/utils.js (localDoVeio) — duplicado aqui de
+// propósito pra não depender do cache de outro arquivo.
+function localPadraoDoVeio(veio, mccPadrao) {
+    const v = String(veio || '').trim().toUpperCase();
+    const mcc = { C: '2', D: '2', E: '3', F: '3', G: '4', H: '4' }[v] || mccPadrao || '';
+    return `MCC ${mcc} - Veio ${v}`;
+}
+
 window.abrirModalProducao = function() {
     document.getElementById("prod-mcc2").value = "";
     document.getElementById("prod-mcc3").value = "";
@@ -50,9 +60,12 @@ window.processarProducaoDiaria = async function() {
 
     if (prodMcc2 === 0 && prodMcc3 === 0 && prodMcc4 === 0) return alert("⚠️ Digite a produção de pelo menos uma máquina.");
 
-    const btn = document.querySelector("#aba-producao .btn-success");
+    // 🔧 CORREÇÃO (achado no teste completo): o botão da tela nova é
+    // ".pd-salvar" — procurar ".btn-success" dava null e o lançamento
+    // inteiro quebrava sem gravar nada. Agora tolera não achar o botão.
+    const btn = document.querySelector("#aba-producao .pd-salvar") || document.querySelector("#aba-producao .btn-success") || { disabled: false, innerHTML: "" };
     const textoOriginal = btn.innerHTML;
-    btn.disabled = true; btn.innerHTML = "<i class='fas fa-spinner fa-pulse'></i> ATUALIZANDO...";
+    btn.disabled = true; btn.innerHTML = "<i class='fas fa-spinner fa-pulse'></i> Lançando...";
 
     let pecasAtualizadas = 0;
     for (let i = 0; i < BANCO_ATIVOS.length; i++) {
@@ -534,7 +547,7 @@ window.iniciarSwapAlocacao = async function(idReserva) {
             pecaAntiga.veio = ""; pecaAntiga.posicaoFixa = ""; pecaAntiga.pos = ""; pecaAntiga.dataReparo = Date.now(); pecaAntiga.dias = 0; pecaAntiga.dataEntradaVeio = null;
             pecaAntiga.substituidoPor = pecaReserva.id;
 
-            pecaReserva.local = `MCC ${mcc} - Veio ${veio}`; pecaReserva.veio = veio; pecaReserva.posicaoFixa = slotChassi; pecaReserva.pos = slotChassi; pecaReserva.status = "Instalado"; pecaReserva.dataEntradaVeio = Date.now(); pecaReserva.dias = 0; pecaReserva.substituidoPor = null;
+            pecaReserva.local = localPadraoDoVeio(veio, mcc); pecaReserva.veio = veio; pecaReserva.posicaoFixa = slotChassi; pecaReserva.pos = slotChassi; pecaReserva.status = "Instalado"; pecaReserva.dataEntradaVeio = Date.now(); pecaReserva.dias = 0; pecaReserva.substituidoPor = null;
             localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
 
             // Persiste as duas peças no banco Postgres (a que saiu e a que entrou)
@@ -573,7 +586,7 @@ window.iniciarSwapAlocacao = async function(idReserva) {
         }
     } else {
         if (confirm(`Instalar a reserva ${pecaReserva.id} no slot ${slotChassi} do Veio ${veio}?`)) {
-            pecaReserva.local = `MCC ${mcc} - Veio ${veio}`; pecaReserva.veio = veio; pecaReserva.posicaoFixa = slotChassi; pecaReserva.pos = slotChassi; pecaReserva.status = "Instalado"; pecaReserva.dataEntradaVeio = Date.now(); pecaReserva.dias = 0; pecaReserva.substituidoPor = null;
+            pecaReserva.local = localPadraoDoVeio(veio, mcc); pecaReserva.veio = veio; pecaReserva.posicaoFixa = slotChassi; pecaReserva.pos = slotChassi; pecaReserva.status = "Instalado"; pecaReserva.dataEntradaVeio = Date.now(); pecaReserva.dias = 0; pecaReserva.substituidoPor = null;
             localStorage.setItem("oms_ativos_v32_local", JSON.stringify(BANCO_ATIVOS));
 
             if (typeof salvarPecaNoPython === 'function') {

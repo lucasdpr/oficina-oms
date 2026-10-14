@@ -267,6 +267,17 @@ window.concluirEImprimirFolhaoPorTipo = function(id) {
         console.warn(`Concluir: equipamento ${id} não encontrado no BANCO_ATIVOS.`);
         return;
     }
+    // 🔧 CORREÇÃO (achado no teste completo): uma peça que já está
+    // INSTALADA na máquina (ex: "MCC 4 - Veio H") podia continuar com um
+    // reparo antigo "em andamento" aberto — e o Concluir tirava ela do
+    // veio e mandava pra Reserva, deixando o veio sem peça no sistema.
+    // Agora avisa e só segue se a pessoa confirmar.
+    const local = item.local || '';
+    if (local && !local.startsWith('Oficina')) {
+        const seguir = confirm(`${window.rotuloEquipamento ? window.rotuloEquipamento(item) : id} está em "${local}", não na oficina.\n\nConcluir o reparo vai TIRAR a peça desse lugar e mandar pra Reserva da Oficina. Isso só está certo se ela realmente saiu da máquina.\n\nContinuar mesmo assim?`);
+        if (!seguir) return;
+    }
+
     const tipo = item.tipo || '';
     const mcc = item.mcc_compat || '';
 
@@ -274,14 +285,6 @@ window.concluirEImprimirFolhaoPorTipo = function(id) {
     if (tipo === 'Molde' && mcc !== '2/3') {
         if (typeof window.concluirEImprimirFolhaoMolde4 === 'function') {
             window.concluirEImprimirFolhaoMolde4(id);
-            return;
-        }
-    }
-
-    // ---- MOLDE MCC 2/3 ----
-    if (tipo === 'Molde' && mcc === '2/3') {
-        if (typeof window.concluirEImprimirFolhaoMolde23 === 'function') {
-            window.concluirEImprimirFolhaoMolde23(id);
             return;
         }
     }

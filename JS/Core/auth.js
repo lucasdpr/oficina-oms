@@ -216,6 +216,7 @@ async function finalizarLogin(nome, cargo, matricula, area, isAdm, token) {
     });
     localStorage.setItem("oms_operador_v32_local", JSON.stringify(OPERADOR_LOGADO));
     setOperadorBanco(OPERADOR_LOGADO); // 🔧 mantém a cópia do banco.js sincronizada (ver comentário em window.setOperadorLogado)
+    if (typeof window.verificarAtrasosOficina === 'function') window.verificarAtrasosOficina();
     if (typeof window.iniciarHeartbeatColaborador === 'function') window.iniciarHeartbeatColaborador();
     if (typeof window.iniciarNotificacaoGlobalChat === 'function') window.iniciarNotificacaoGlobalChat();
     if (typeof window.iniciarNotificacaoGlobalFeed === 'function') window.iniciarNotificacaoGlobalFeed();
