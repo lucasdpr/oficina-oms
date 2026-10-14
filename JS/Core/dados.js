@@ -255,7 +255,7 @@ export const CHECKLIST_EXECUCAO_SECOES = [
     { chave: 'eletrica',    nome: 'Elétrica',    icone: 'fa-bolt',       cor: '#eab308' },
     { chave: 'hidraulica',  nome: 'Hidráulica',  icone: 'fa-oil-can',    cor: '#6fa7a0' },
     { chave: 'caldeiraria', nome: 'Caldeiraria', icone: 'fa-fire',       cor: '#f97316' },
-    { chave: 'usinagem',    nome: 'Usinagem',    icone: 'fa-gear',       cor: '#a855f7' },
+    { chave: 'usinagem',    nome: 'Usinagem',    icone: 'fa-gear',       cor: '#9c8fb0' },
     { chave: 'tubulacao',   nome: 'Tubulação',   icone: 'fa-water',      cor: '#06b6d4' },
     { chave: 'jato',        nome: 'Jato/Pintura', icone: 'fa-spray-can', cor: '#7c8aa5' },
 ];
@@ -389,7 +389,7 @@ export const ABAS_PADRAO_OFICINA = [
 export const AREAS_OFICINA = [
     // ---- AREAS DE SERVICO GERAL (atendem qualquer equipamento) ----
     { chave: 'hidraulica',    nome: 'Hidráulica',    icone: 'fa-oil-can',        cor: '#6fa7a0', filtro: null, tipo: 'oficina' },
-    { chave: 'usinagem',      nome: 'Usinagem',       icone: 'fa-gear',           cor: '#a855f7', filtro: null, tipo: 'oficina' },
+    { chave: 'usinagem',      nome: 'Usinagem',       icone: 'fa-gear',           cor: '#9c8fb0', filtro: null, tipo: 'oficina' },
     { chave: 'caldeiraria',   nome: 'Caldeiraria',    icone: 'fa-fire',           cor: '#f97316', filtro: null, tipo: 'oficina' },
     { chave: 'jato',          nome: 'Jato',           icone: 'fa-spray-can',      cor: '#7c8aa5', filtro: null, tipo: 'oficina' },
     { chave: 'eletrica',      nome: 'Elétrica',       icone: 'fa-bolt',           cor: '#eab308', filtro: null, tipo: 'oficina' },
@@ -419,13 +419,13 @@ export const AREAS_OFICINA = [
 
     // MCC4 "geral": Bow, Horizontal e Straightener (a familia 4 que
     // NAO tem area propria) - Molde e Bender ja tem area dedicada.
-    { chave: 'mcc4', nome: 'MCC4', icone: 'fa-server', cor: '#ec4899', tipo: 'oficina',
+    { chave: 'mcc4', nome: 'MCC4', icone: 'fa-server', cor: '#c4693a', tipo: 'oficina',
         filtro: (e) => e.mcc_compat === '4' && e.tipo !== 'Molde' && e.tipo !== 'Bender' },
 
     { chave: 'bender', nome: 'Bender', icone: 'fa-compress', cor: '#eab308', tipo: 'oficina',
         filtro: (e) => e.tipo === 'Bender' },
 
-    { chave: 'molde-mcc4', nome: 'Molde MCC #4', icone: 'fa-cube', cor: '#ec4899', tipo: 'oficina',
+    { chave: 'molde-mcc4', nome: 'Molde MCC #4', icone: 'fa-cube', cor: '#c4693a', tipo: 'oficina',
         filtro: (e) => e.tipo === 'Molde' && e.mcc_compat === '4' },
 
     { chave: 'molde-mcc23', nome: 'Molde MCC #2,3', icone: 'fa-cubes', cor: '#7d93a8', tipo: 'oficina',
@@ -440,7 +440,7 @@ export const AREAS_OFICINA = [
     { chave: 'adm',           nome: 'ADM',           icone: 'fa-file-lines',    cor: '#6fa7a0', tipo: 'administrativo', abaDestino: 'aba-painel-adm' },
     { chave: 'almoxarifado',  nome: 'Almoxarifado',  icone: 'fa-boxes-stacked', cor: '#22c55e', tipo: 'administrativo', abaDestino: 'aba-painel-almoxarifado' },
     { chave: 'ponte-rolante', nome: 'Ponte Rolante', icone: 'fa-crane',        cor: '#7d93a8', tipo: 'administrativo', abaDestino: 'aba-painel-ponte-rolante' },
-    { chave: 'logistica',     nome: 'Logística',     icone: 'fa-truck',       cor: '#a855f7', tipo: 'administrativo', abaDestino: 'aba-painel-logistica' },
+    { chave: 'logistica',     nome: 'Logística',     icone: 'fa-truck',       cor: '#9c8fb0', tipo: 'administrativo', abaDestino: 'aba-painel-logistica' },
 ];
 
 // Mapa auxiliar: normaliza o texto da coluna "Equipe" da planilha do

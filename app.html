@@ -74,7 +74,7 @@
     <link rel="stylesheet" href="style.css?v=14" />
     <!-- Novo padrão visual (tokens + componentes ds-*). Vem DEPOIS do
          style.css pra vencer em empate de especificidade. -->
-    <link rel="stylesheet" href="design-system.css?v=11" />
+    <link rel="stylesheet" href="design-system.css?v=12" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="JS/assets/icon-192.png?v=4">
@@ -1078,11 +1078,11 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                                 <input type="number" id="prod-mcc2" class="premium-input" placeholder="Ex: 3131" style="font-size: 16px; font-weight: bold;">
                             </div>
                             <div class="input-group" style="margin-bottom: 12px;">
-                                <label style="color: #8b5cf6;">MCC #3 (Ton)</label>
+                                <label style="color: #d9b67a;">MCC #3 (Ton)</label>
                                 <input type="number" id="prod-mcc3" class="premium-input" placeholder="Ex: 3705" style="font-size: 16px; font-weight: bold;">
                             </div>
                             <div class="input-group" style="margin-bottom: 20px;">
-                                <label style="color: #ec4899;">MCC #4 (Ton)</label>
+                                <label style="color: #c4693a;">MCC #4 (Ton)</label>
                                 <input type="number" id="prod-mcc4" class="premium-input" placeholder="Ex: 2830" style="font-size: 16px; font-weight: bold;">
                             </div>
                             <button class="btn-premium btn-success w-100" onclick="window.processarProducaoDiaria()"><i class="fas fa-check-double"></i> Atualizar Fábrica Inteira</button>
@@ -1096,11 +1096,11 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                                 <input type="number" id="molde-prod-mcc2" class="premium-input" placeholder="Ex: 2" style="font-size: 16px; font-weight: bold;">
                             </div>
                             <div class="input-group" style="margin-bottom: 12px;">
-                                <label style="color: #8b5cf6;">MCC #3 (Panelas)</label>
+                                <label style="color: #d9b67a;">MCC #3 (Panelas)</label>
                                 <input type="number" id="molde-prod-mcc3" class="premium-input" placeholder="Ex: 5" style="font-size: 16px; font-weight: bold;">
                             </div>
                             <div class="input-group" style="margin-bottom: 20px;">
-                                <label style="color: #ec4899;">MCC #4 (Panelas)</label>
+                                <label style="color: #c4693a;">MCC #4 (Panelas)</label>
                                 <input type="number" id="molde-prod-mcc4" class="premium-input" placeholder="Ex: 8" style="font-size: 16px; font-weight: bold;">
                             </div>
                             <button class="btn-premium btn-warning w-100" onclick="window.salvarApontamentoMoldes(event)"><i class="fas fa-check"></i> Salvar Corridas (Moldes)</button>
@@ -1135,32 +1135,29 @@ a, button, [onclick], label[for], select { cursor: pointer; }
             </section>
 
             <section id="aba-reparos" class="tab-content">
-                <div class="glass-panel" style="border-top:4px solid var(--border-color);padding:24px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
-                        <div><h2><i class="fas fa-tools"></i> Setor de Manutenção (Reparo)</h2><p class="text-muted" style="font-size:13px;">Equipamentos que precisam de intervenção mecânica.</p></div>
-                       
-                    </div>
-
+                <!-- Peças em reparo no padrão novo: fila da bancada em blocos
+                     (mais antiga primeiro), com desgaste, dias na oficina e as
+                     ações grandes. Ids mantidos (reparos-table-body /
+                     reparos-lista-andamento / trocarAbaReparo). -->
+                <div class="cc-bloco">
+                    <div class="cc-titulo-ico"><span class="cc-ico"><i class="fas fa-screwdriver-wrench"></i></span><div><div class="cc-rotulo">Oficina</div><h2 class="cc-titulo">Peças em reparo</h2></div></div>
+                    <p class="cc-sub" id="rp-resumo" style="margin-top:12px">Carregando…</p>
                     <div class="folhao-tabs">
-                        <button class="folhao-tab active" onclick="window.trocarAbaReparo(event, 'reparo-sub-iniciar')">Iniciar Reparo</button>
-                        <button class="folhao-tab" onclick="window.trocarAbaReparo(event, 'reparo-sub-andamento')">Reparo em Andamento</button>
+                        <button class="folhao-tab active" onclick="window.trocarAbaReparo(event, 'reparo-sub-iniciar')">Aguardando reparo</button>
+                        <button class="folhao-tab" onclick="window.trocarAbaReparo(event, 'reparo-sub-andamento')">Em andamento</button>
                     </div>
-
                     <div id="reparo-sub-iniciar" class="folhao-content">
-                        <div class="table-responsive"><table class="premium-table tabela-mobile-cards" id="tabela-reparos"><thead><tr><th>TAG</th><th>Tipo</th><th>Desgaste</th><th>Dias em Reparo</th><th>Ações</th></tr></thead><tbody id="reparos-table-body"></tbody></table></div>
+                        <div id="reparos-table-body"></div>
                     </div>
-
                     <div id="reparo-sub-andamento" class="folhao-content" style="display:none;">
-                        <p class="text-muted" style="font-size:12px; margin-bottom:10px;">Folhões que já foram iniciados (por você ou por outro técnico) e ainda não foram concluídos.</p>
                         <div id="reparos-lista-andamento"></div>
                     </div>
                 </div>
             </section>
-
             <section id="aba-reservas" class="tab-content">
                 <div class="glass-panel" style="border-top:4px solid var(--border-color);padding:24px;margin-bottom:24px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;margin-bottom:16px;">
-                        <div><h2><i class="fas fa-boxes"></i> Estoque Disponível (Reserva)</h2><p class="text-muted" style="font-size:13px;">Peças prontas para alocação via Swap Automático.</p></div>
+                        <div class="cc-titulo-ico"><span class="cc-ico" style="--ic:var(--ds-ok)"><i class="fas fa-boxes-stacked"></i></span><div><div class="cc-rotulo">Estoque</div><h2 class="cc-titulo">Reserva pronta pra instalar</h2></div></div>
                         <button class="btn-premium" onclick="window.toggleFormAdicionar()"><i class="fas fa-plus"></i> Cadastrar Peça Nova</button>
                         <!-- FORMULÁRIO DE CADASTRO DE NOVA PEÇA -->
 <div id="form-novo-equipamento" class="cadastrar-box hidden" style="margin-top: 20px; background: rgba(0,0,0,0.2); border: 1px dashed var(--brand); padding: 20px; border-radius: var(--radius);">
@@ -1243,11 +1240,11 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                          na mesma tabela — confuso de ler). Cada botão troca qual grupo
                          de peças aparece na tabela abaixo; ver window.mudarSubAbaReserva
                          em ui.js. -->
-                    <div style="display:flex; gap:8px; margin-top:16px; border-bottom:2px solid var(--border-color);">
-                        <button id="subaba-reserva-maquina" class="btn-subaba-reserva ativo" onclick="window.mudarSubAbaReserva('maquina')" style="padding:10px 20px; background:none; border:none; border-bottom:3px solid var(--brand); color:var(--brand); font-weight:700; cursor:pointer; font-size:14px;">
+                    <div class="folhao-tabs" style="margin-top:16px;">
+                        <button id="subaba-reserva-maquina" class="btn-subaba-reserva folhao-tab active ativo" onclick="window.mudarSubAbaReserva('maquina')">
                             <i class="fas fa-industry"></i> Reserva na Máquina <span id="subaba-reserva-maquina-count"></span>
                         </button>
-                        <button id="subaba-reserva-oficina" class="btn-subaba-reserva" onclick="window.mudarSubAbaReserva('oficina')" style="padding:10px 20px; background:none; border:none; border-bottom:3px solid transparent; color:var(--text-muted); font-weight:700; cursor:pointer; font-size:14px;">
+                        <button id="subaba-reserva-oficina" class="btn-subaba-reserva folhao-tab" onclick="window.mudarSubAbaReserva('oficina')">
                             <i class="fas fa-warehouse"></i> Reserva na Oficina <span id="subaba-reserva-oficina-count"></span>
                         </button>
                     </div>

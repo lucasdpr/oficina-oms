@@ -239,6 +239,7 @@ body, body.light-mode {
         font-weight: 600;
         letter-spacing: 0;
         min-height: 40px;
+        text-transform: none !important;
     }
     body .btn-premium { background: var(--ds-ambar); border: 1px solid var(--ds-ambar); color: var(--ds-sobre-ambar); }
     body .btn-premium.btn-success { background: var(--ds-ambar); border-color: var(--ds-ambar); color: var(--ds-sobre-ambar); }
@@ -274,8 +275,8 @@ body, body.light-mode {
     body .table-responsive { border: 1px solid var(--ds-linha); border-radius: var(--ds-r-md); }
 
     /* abas (folhões, reparo, reserva…) */
-    body .folhao-tabs { border-bottom: 1px solid var(--ds-linha-forte); gap: 0; }
-    body .folhao-tab { font: 600 .78rem var(--ds-fonte); letter-spacing: 0; color: var(--ds-texto-2); border-radius: var(--ds-r-md); min-height: 44px; }
+    body .folhao-tabs { border-bottom: 1px solid var(--ds-linha-forte); gap: 0; background: transparent !important; box-shadow: none; padding: 0; }
+    body .folhao-tab { text-transform: none !important; box-shadow: none !important; font: 600 .9rem var(--ds-fonte); letter-spacing: 0; color: var(--ds-texto-2); border-radius: var(--ds-r-md); min-height: 44px; }
     body .folhao-tab:hover { background: var(--ds-bloco-2); color: var(--ds-texto); }
     body .folhao-tab.active { background: transparent; color: var(--ds-texto); border-bottom: 2px solid var(--ds-ambar); }
 
@@ -316,6 +317,8 @@ body, body.light-mode {
     color: var(--ds-texto-3);
 }
 .cc-dica { text-transform: none; letter-spacing: 0; }
+.cc-perigo { color: var(--ds-perigo); font-weight: 600; }
+.cc-sub b { color: var(--ds-texto); font-weight: 600; }
 .cc-titulo {
     font: 600 1.15rem/1.2 var(--ds-fonte-titulo);
     letter-spacing: -.015em;
@@ -1018,6 +1021,38 @@ body.light-mode {
     .cc-kpi:hover, .tc-acao:hover, .sup-cmd:hover { transform: none; }
 }
 
+/* PEÇAS EM REPARO (rp-) */
+#aba-reparos .folhao-tabs, #aba-reservas .folhao-tabs { margin-bottom: 16px; }
+.rp-grupo + .rp-grupo { margin-top: 22px; }
+.rp-grupo-topo { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.rp-grupo-topo strong { font: 600 1.05rem var(--ds-fonte-titulo); color: var(--ds-texto); }
+.rp-grupo-topo span { font-size: .84rem; color: var(--ds-texto-3); }
+.rp-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.rp-card {
+    display: flex; flex-direction: column; gap: 14px; padding: 16px;
+    background: var(--ds-fundo); background-image: var(--ds-grad-bloco);
+    border: 1px solid var(--ds-linha); border-radius: var(--ds-r);
+    box-shadow: var(--ds-sombra-bloco);
+    transition: transform .22s var(--ds-ease), box-shadow .22s var(--ds-ease), border-color .2s;
+}
+@media (hover: hover) and (pointer: fine) { .rp-card:hover { transform: translateY(-2px); box-shadow: var(--ds-sombra-hover); border-color: var(--ds-linha-forte); } }
+.rp-velha { border-color: color-mix(in srgb, var(--ds-perigo) 45%, var(--ds-linha)); }
+.rp-topo { display: flex; align-items: center; gap: 12px; }
+.rp-id { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.rp-id span { font-size: .82rem; color: var(--ds-texto-3); }
+.rp-dias { display: flex; flex-direction: column; align-items: flex-end; line-height: 1; }
+.rp-dias b { font: 700 1.6rem var(--ds-fonte-titulo); letter-spacing: -.02em; color: var(--ds-texto); }
+.rp-dias span { font-size: .74rem; color: var(--ds-texto-3); margin-top: 3px; }
+.rp-velha .rp-dias b { color: var(--ds-perigo); }
+.rp-dias-txt b { font-size: .9rem; margin-top: 3px; }
+.rp-desg { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; font-size: .8rem; color: var(--ds-texto-3); }
+.rp-desg .pg-trilho { height: 6px; min-width: 0; }
+.rp-desg b { color: var(--ds-texto); font-weight: 600; font-size: .9rem; }
+.rp-acoes { display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; }
+.rp-acoes .cc-btn { justify-content: center; }
+.rp-acoes-andamento { display: flex; flex-wrap: wrap; gap: 8px; }
+.rp-acoes-andamento > * { flex: 1 1 auto; }
+
 /* ------------------------------------------------------------------
    RESPONSIVO
    ------------------------------------------------------------------ */
@@ -1065,6 +1100,7 @@ body.light-mode {
     .sup-item { grid-template-columns: 52px minmax(0, 1fr); gap: 10px; }
     .sup-cmd-grade { grid-template-columns: 1fr 1fr; }
     .ca-kpis { grid-template-columns: 1fr 1fr; }
+    .rp-grade { grid-template-columns: 1fr; }
     .ca-kpis > :first-child { grid-column: auto; }
     .ca-linha { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; padding: 14px; }
     .ca-linha .ca-num, .ca-cab { display: none; }

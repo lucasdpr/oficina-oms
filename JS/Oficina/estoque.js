@@ -322,7 +322,7 @@ function renderMateriais() {
             <tr>
                 <td class="font-code" style="color: var(--text-heading); font-size: 15px;">${window.escapeHtmlNotif(m.codigo)}</td>
                 <td style="color: var(--text-main); font-weight: 500; font-size: 13px; max-width: 350px; overflow: hidden; text-overflow: ellipsis;">${window.escapeHtmlNotif(m.descricao)}</td>
-                <td><span class="font-code bold" style="font-size:16px; color: #a855f7;">${m.qtd.toLocaleString()} UN</span></td>
+                <td><span class="font-code bold" style="font-size:16px; color: var(--ds-texto);">${m.qtd.toLocaleString()} UN</span></td>
                 <td>${statusHtml}</td>
                 <td>
                     <div style="display:inline-flex; gap:8px;">
