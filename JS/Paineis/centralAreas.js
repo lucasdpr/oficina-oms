@@ -167,62 +167,37 @@ function renderizarGridCentralAreas() {
     // pendente) — sem nada em aberto, conta como 100% (nada travado).
     // Não é um dado novo, só uma leitura visual do que a.status já
     // calcula (pendentes/andamento/emAberto).
-    const cardsOficina = visiveis.map(({ area: a, status: s }) => {
+    // 🎨 Padrão "centro de controle": QUADRO de áreas — uma linha por área
+    // (status em texto, números em colunas, progresso e "Abrir"), no lugar
+    // da grade de cartões com emoji. Mesmo cálculo de status de antes.
+    const nivelDe = l => (l === 'Crítico' ? 'critico' : l === 'Atenção' ? 'atencao' : 'ok');
+    const linhas = visiveis.map(({ area: a, status: s }) => {
         const progresso = s.emAberto > 0 ? Math.round((s.andamento / s.emAberto) * 100) : 100;
+        const resumo = s.emAberto === 0 ? 'Sem pendência' : `${s.pendentes} pendente${s.pendentes === 1 ? '' : 's'} · ${s.andamento} em andamento${s.atrasadas ? ` · <span class="cc-perigo">${s.atrasadas} atrasada${s.atrasadas === 1 ? '' : 's'}</span>` : ''}`;
         return `
-        <div class="oficina-area-card ${s.label === 'Crítico' ? 'oficina-area-card-critico' : ''}" style="--area-severidade-cor:${s.cor};" onclick="window.abrirAreaOficina('${a.chave}')">
-            <div class="oficina-area-topo">
-                <div class="oficina-area-icone"><i class="fas ${a.icone}"></i></div>
-                <span class="oficina-area-status-badge" style="color:${s.cor};">${s.emoji} ${s.label}</span>
-            </div>
-            <h4>${a.nome}</h4>
-            <div class="oficina-area-resumo">
-                <span title="Pendentes"><i class="fas fa-hourglass-half"></i> ${s.pendentes} pendente${s.pendentes === 1 ? '' : 's'}</span>
-                <span title="Em andamento"><i class="fas fa-person-running"></i> ${s.andamento} em andamento</span>
-                ${s.atrasadas > 0 ? `<span title="Atrasadas" style="color:var(--danger);"><i class="fas fa-triangle-exclamation"></i> ${s.atrasadas} atrasada${s.atrasadas === 1 ? '' : 's'}</span>` : ''}
-            </div>
-            <div class="oficina-area-progresso" title="${progresso}% do trabalho em aberto já em andamento">
-                <div class="oficina-area-progresso-trilha">
-                    <div class="oficina-area-progresso-barra" style="width:${progresso}%; background:${s.cor};"></div>
-                </div>
-                <span class="oficina-area-progresso-texto">${progresso}%</span>
-            </div>
-            <button class="oficina-area-acessar">Acessar Área <i class="fas fa-arrow-right"></i></button>
-        </div>
-    `;
+        <div class="ca-linha" data-nivel="${nivelDe(s.label)}" onclick="window.abrirAreaOficina('${a.chave}')">
+            <span class="ca-status">${s.label}</span>
+            <div class="ca-nome"><span class="cc-ico" style="--ic:${s.label === 'Crítico' ? 'var(--ds-perigo)' : s.label === 'Atenção' ? 'var(--ds-ambar)' : 'var(--ds-texto-2)'}"><i class="fas ${a.icone}"></i></span><div><strong>${a.nome}</strong><span>${resumo}</span></div></div>
+            <span class="ca-num">${s.pendentes}</span>
+            <span class="ca-num">${s.andamento}</span>
+            <span class="ca-num${s.atrasadas ? ' cc-perigo' : ''}">${s.atrasadas}</span>
+            <div class="ca-prog" title="${progresso}% do trabalho em aberto já em andamento"><div class="pg-trilho"><i style="width:${progresso}%;background:${s.label === 'Crítico' ? 'var(--ds-perigo)' : s.label === 'Atenção' ? 'var(--ds-ambar)' : 'var(--ds-ok)'}"></i></div><span>${progresso}%</span></div>
+            <span class="ca-abrir">Abrir →</span>
+        </div>`;
     }).join('');
+    const cabecalho = `<div class="ca-linha ca-cab"><span>Status</span><span>Área</span><span class="ca-num">Pend.</span><span class="ca-num">Andam.</span><span class="ca-num">Atras.</span><span>Em andamento</span><span></span></div>`;
 
-    let cardsAdmin = '';
+    let adm = '';
     if (!CENTRAL_AREAS_FILTRO_STATUS) {
         let admVisiveis = areasAdmin;
         if (CENTRAL_AREAS_BUSCA) admVisiveis = admVisiveis.filter(a => a.nome.toLowerCase().includes(CENTRAL_AREAS_BUSCA));
-        if (admVisiveis.length > 0) {
-            cardsAdmin = `
-                <div class="central-areas-secao-titulo">Painéis Administrativos</div>
-                <div id="oficina-grade-areas-admin" class="oficina-grade">
-                    ${admVisiveis.map(a => `
-                        <div class="oficina-area-card oficina-area-card-admin" onclick="window.abrirAreaOficina('${a.chave}')">
-                            <div class="oficina-area-topo">
-                                <div class="oficina-area-icone"><i class="fas ${a.icone}"></i></div>
-                            </div>
-                            <h4>${a.nome}</h4>
-                            <button class="oficina-area-acessar">Acessar Área <i class="fas fa-arrow-right"></i></button>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
+        if (admVisiveis.length) adm = `<div class="cc-rotulo" style="margin:24px 0 8px">Painéis administrativos</div>
+            <div class="sup-cmd-grade">${admVisiveis.map(a => `<button type="button" class="sup-cmd" onclick="window.abrirAreaOficina('${a.chave}')"><strong>${a.nome}</strong><span>Abrir painel</span></button>`).join('')}</div>`;
     }
 
-    if (visiveis.length === 0 && !cardsAdmin) {
-        grid.outerHTML = `<div id="oficina-grade-areas" class="area-oficina-vazio" style="padding:40px 0;">
-            <i class="fas fa-magnifying-glass"></i>
-            <p>Nenhuma área encontrada com esse filtro/busca.</p>
-        </div>`;
-        return;
-    }
-
-    grid.outerHTML = `<div id="oficina-grade-areas" class="oficina-grade">${cardsOficina}</div>${cardsAdmin}`;
+    const alvo = document.getElementById('oficina-grade-areas');
+    if (!visiveis.length && !adm) { alvo.innerHTML = `<div class="tc-vazio">Nenhuma área encontrada com esse filtro ou busca.</div>`; return; }
+    alvo.innerHTML = (visiveis.length ? `<div class="ca-quadro">${cabecalho}${linhas}</div>` : '') + adm;
 }
 
 window.carregarOficina = async function() {
@@ -230,50 +205,21 @@ window.carregarOficina = async function() {
     if (!container) return;
 
     container.innerHTML = `
-        <div class="central-areas-toolbar">
-            <div class="login-input-wrapper" style="position:relative; flex:1; min-width:200px;">
-                <input type="text" id="central-areas-busca" placeholder="Buscar área..." oninput="window.buscarCentralAreas(this.value)" style="height:38px; border-radius:6px; padding-left:38px; width:100%;">
-                <i class="fas fa-search login-input-icon" style="top:10px; font-size:13px; color:#a855f7;"></i>
+        <div class="ca-barra">
+            <input type="search" id="central-areas-busca" class="premium-input ca-busca" placeholder="Buscar área…" oninput="window.buscarCentralAreas(this.value)" autocomplete="off">
+            <div class="ca-filtros" id="central-areas-filtros">
+                <button type="button" class="btn-filter-mcc active" data-f="" onclick="window.filtrarCentralAreas('', this)">Todas</button>
+                <button type="button" class="btn-filter-mcc" data-f="Crítico" onclick="window.filtrarCentralAreas('Crítico', this)">Críticas</button>
+                <button type="button" class="btn-filter-mcc" data-f="Atenção" onclick="window.filtrarCentralAreas('Atenção', this)">Atenção</button>
+                <button type="button" class="btn-filter-mcc" data-f="Normal" onclick="window.filtrarCentralAreas('Normal', this)">Normais</button>
             </div>
-            <div class="mcc-filter-group" id="central-areas-filtros">
-                <button class="btn-filter-mcc active" onclick="window.filtrarCentralAreas('', this)">Todas</button>
-                <button class="btn-filter-mcc" onclick="window.filtrarCentralAreas('Crítico', this)">🔴 Crítica</button>
-                <button class="btn-filter-mcc" onclick="window.filtrarCentralAreas('Atenção', this)">🟡 Atenção</button>
-                <button class="btn-filter-mcc" onclick="window.filtrarCentralAreas('Normal', this)">🟢 Normal</button>
-            </div>
-            <!-- 🆕 Ordenar por (referência mandada pelo usuário): "Prioridade"
-                 é a ordenação por severidade que já existia (sem opção antes
-                 de mudar); "Nome (A-Z)" é nova. -->
-            <select id="central-areas-ordenar" class="premium-select" style="height:38px; width:auto;" onchange="window.ordenarCentralAreas(this.value)">
-                <option value="prioridade">Ordenar por: Prioridade</option>
-                <option value="nome">Ordenar por: Nome (A-Z)</option>
+            <select id="central-areas-ordenar" class="premium-select ca-ordem" onchange="window.ordenarCentralAreas(this.value)">
+                <option value="prioridade">Ordem: prioridade</option>
+                <option value="nome">Ordem: nome (A–Z)</option>
             </select>
-            ${OPERADOR_LOGADO && OPERADOR_LOGADO.isAdm ? `
-                <button class="btn-outline-neutral" onclick="window.abrirModalAtividadeMassa()">
-                    <i class="fas fa-layer-group"></i> Atividade em Massa
-                </button>
-            ` : ''}
+            ${OPERADOR_LOGADO && OPERADOR_LOGADO.isAdm ? `<button type="button" class="cc-btn" onclick="window.abrirModalAtividadeMassa()">Atividade em massa</button>` : ''}
         </div>
-        <div class="oficina-areas-layout">
-            <!-- 🔧 wrapper próprio (não o grid de 2 colunas direto): o JS
-                 troca #oficina-grade-areas por "grade + Painéis
-                 Administrativos" junto (outerHTML com 2 nós de uma vez) —
-                 sem esse wrapper, o segundo nó (Painéis Administrativos)
-                 vira irmão direto dentro do grid de 2 colunas da direita,
-                 empurrando o painel de prioridades pra linha de baixo. -->
-            <div class="oficina-areas-principal">
-                <div id="oficina-grade-areas" class="oficina-grade"></div>
-            </div>
-            <!-- 🆕 "Prioridades agora" (referência mandada pelo usuário):
-                 ranking das áreas mais urgentes, pra não precisar escanear
-                 a grade inteira procurando o que precisa de atenção
-                 primeiro. Não é dado novo — mesmo cálculo de severidade/
-                 pendências que já colore os cards, só resumido em lista. -->
-            <div class="oficina-prioridades-painel">
-                <h3><i class="fas fa-list-ol" style="color:var(--danger);"></i> Prioridades agora</h3>
-                <div id="oficina-prioridades-lista"></div>
-            </div>
-        </div>
+        <div id="oficina-grade-areas"></div>
     `;
 
     try {
@@ -489,5 +435,9 @@ function atualizarKpisOficina() {
     definirTexto('oficina-kpi-atencao', atencao);
     definirTexto('oficina-kpi-normais', normais);
     definirTexto('oficina-kpi-andamento', emAndamento);
+    const man = document.getElementById('ca-manchete');
+    if (man) man.innerHTML = criticas
+        ? `<span class="cc-perigo">${criticas} área${criticas === 1 ? '' : 's'} com atividade atrasada</span>${atencao ? ` e ${atencao} em atenção` : ''}.`
+        : atencao ? `Nenhuma área atrasada. ${atencao} área${atencao === 1 ? '' : 's'} com trabalho em aberto.` : 'Todas as áreas em dia.';
 }
 

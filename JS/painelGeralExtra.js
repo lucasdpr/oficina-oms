@@ -516,15 +516,16 @@ function renderBriefing(an) {
                 ? `${alem.length} peças operam além da meta, mas a reserva cobre a demanda.`
                 : `Planta dentro da meta. <em>${crit}</em> peças acima de 80%.`;
 
+        // número grande + uma linha curta (menos texto corrido)
         const itens = [];
+        const dec = (num, perigo, titulo, detalhe) => `<li><b class="dec-num${perigo ? ' cc-perigo' : ''}">${num}</b><span class="dec-txt"><strong>${titulo}</strong><small>${detalhe}</small></span></li>`;
         porTipo.filter(r => r.deficit > 0).slice(0, 2).forEach(r => {
-            itens.push(`Repor <b>${escapar(r.tipo)}</b>: ${r.alem} além da meta + ${r.prox90} previstas em 90 dias contra <span class="cc-perigo">${r.reserva} na reserva</span>${r.reparo ? ` (${r.reparo} em reparo)` : ''} — déficit de <b>${r.deficit}</b>.`);
+            itens.push(dec(r.deficit, true, `Faltam ${escapar(r.tipo)}`, `${r.alem} além da meta · ${r.prox90} vencem em 90 dias · ${r.reserva} na reserva${r.reparo ? ` · ${r.reparo} em reparo` : ''}`));
         });
         const pior = veios.filter(v => v.qtd).sort((x, y) => y.crit - x.crit || y.media - x.media)[0];
-        if (pior && pior.crit) itens.push(`<b>Veio ${pior.veio} (MCC ${pior.mcc})</b> concentra ${pior.crit} peças ≥ 80% da meta${pior.alem ? `, ${pior.alem} já além` : ''} — desgaste médio de ${pior.media.toFixed(0)}%.`);
-        itens.push(`<b>${em30}</b> peça${em30 === 1 ? '' : 's'} deve${em30 === 1 ? '' : 'm'} bater a meta nos próximos 30 dias e <b>${em90}</b> em 90, pelo ritmo atual dos veios.`);
-        if (alem.length) itens.push(`${alem.length} peças rodando além da meta somam <b>${fmtT(excesso)}</b> acima do previsto — risco de falha sem reserva para troca.`);
-        decisoes.innerHTML = itens.slice(0, 4).map(t => `<li><span>${t}</span></li>`).join('');
+        if (pior && pior.crit) itens.push(dec(pior.crit, false, `Veio ${pior.veio} (MCC ${pior.mcc}) é o mais desgastado`, `peças ≥ 80% da meta${pior.alem ? ` · ${pior.alem} já além` : ''} · média ${pior.media.toFixed(0)}%`));
+        itens.push(dec(em30, false, 'Peças batem a meta em 30 dias', `${em90} em 90 dias, pelo ritmo atual dos veios`));
+        decisoes.innerHTML = itens.slice(0, 4).join('');
     }
 
     // KPIs
