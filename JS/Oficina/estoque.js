@@ -148,32 +148,45 @@ window.toggleCadastroJaInstalada = function() {
     if (checkbox.checked) window.atualizarVeiosCadastro();
 };
 
-function renderRolos() {
-    const tbody = document.getElementById("rolos-table-body");
-    if (!tbody) return;
-    let htmlFinal = "";
-    const equipamentosDiferentes = [...new Set(BANCO_ROLOS.map(r => r.conjunto))].sort();
+function esTxt(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+function esStepper(onMenos, onMais, idSaldo, valor, rotulo) {
+    return `<div class="es-stepper">
+        <button type="button" class="es-passo" onclick="${onMenos}" aria-label="Dar baixa"><i class="fas fa-minus"></i></button>
+        <div class="es-saldo"><strong id="${idSaldo}">${valor}</strong>${rotulo ? `<span>${rotulo}</span>` : ''}</div>
+        <button type="button" class="es-passo es-passo-mais" onclick="${onMais}" aria-label="Dar entrada"><i class="fas fa-plus"></i></button>
+    </div>`;
+}
 
-    equipamentosDiferentes.forEach(equipamento => {
-        htmlFinal += `
-            <tr style="background: rgba(240, 163, 52, 0.08); border-left: 4px solid var(--text-accent);">
-                <td colspan="5" style="padding: 12px 16px; color: var(--text-accent); font-weight: 700; text-transform: uppercase; font-size: 14px;"><i class="fas fa-layer-group"></i> Equipamento: ${equipamento}</td>
-            </tr>
-        `;
-        const rolosDesteEquipamento = BANCO_ROLOS.filter(r => r.conjunto === equipamento);
-        rolosDesteEquipamento.forEach(r => {
-            htmlFinal += `
-                <tr>
-                    <td class="font-code" style="color:var(--text-heading); padding-left: 25px;"><strong>${r.nome}</strong></td>
-                    <td><span class="ind-card-tag bg-tag">${r.conjunto}</span></td>
-                    <td><code>MCC ${r.mcc_compat}</code></td>
-                    <td><span class="font-code bold" id="saldo-rolo-${r.id}" style="font-size:16px; color:var(--text-accent); margin-right:15px;">${r.qtd} Pçs</span></td>
-                    <td><div style="display:inline-flex; gap:8px;"><button class="btn-premium btn-success" style="min-width:40px; min-height:40px; padding:8px;" onclick="alterarSaldoRolo('${r.id}', 1)"><i class="fas fa-plus"></i></button><button class="btn-premium btn-warning" style="min-width:40px; min-height:40px; padding:8px;" onclick="alterarSaldoRolo('${r.id}', -1)"><i class="fas fa-minus"></i></button></div></td>
-                </tr>
-            `;
-        });
-    });
-    tbody.innerHTML = htmlFinal;
+function renderRolos() {
+    const alvo = document.getElementById("rolos-table-body");
+    if (!alvo) return;
+    const qtd = r => Number(r.qtd) || 0;
+    esTxt("es-rolos-pecas", BANCO_ROLOS.reduce((s, r) => s + qtd(r), 0).toLocaleString('pt-BR'));
+    esTxt("es-rolos-tipos", `em ${BANCO_ROLOS.length} tipos de rolo`);
+    esTxt("es-rolos-zerados", BANCO_ROLOS.filter(r => qtd(r) === 0).length);
+    esTxt("es-rolos-baixos", BANCO_ROLOS.filter(r => qtd(r) > 0 && qtd(r) <= 2).length);
+
+    if (!BANCO_ROLOS.length) {
+        alvo.innerHTML = `<div class="cc-bloco es-vazio">Nenhum rolo cadastrado.</div>`;
+        return;
+    }
+    const conjuntos = [...new Set(BANCO_ROLOS.map(r => r.conjunto))].sort();
+    alvo.innerHTML = conjuntos.map(conj => {
+        const itens = BANCO_ROLOS.filter(r => r.conjunto === conj);
+        const zerados = itens.filter(r => qtd(r) === 0).length;
+        return `<div class="cc-bloco es-grupo">
+            <div class="es-grupo-cab"><h3>${conj}</h3><span>${(t => `${t} ${t === 1 ? 'peça' : 'peças'}`)(itens.reduce((s, r) => s + qtd(r), 0))} · ${itens.length} ${itens.length === 1 ? 'tipo' : 'tipos'}${zerados ? ` · <b class="cc-perigo">${zerados} zerado${zerados > 1 ? 's' : ''}</b>` : ''}</span></div>
+            <div class="es-itens">${itens.map(r => {
+                const n = qtd(r);
+                const est = n === 0 ? 'es-zero' : (n <= 2 ? 'es-baixo' : '');
+                return `<div class="es-item ${est}">
+                    <div class="es-item-topo"><strong class="es-nome">${r.nome}</strong><span class="es-mcc">MCC ${r.mcc_compat}</span></div>
+                    ${n === 0 ? '<span class="es-alerta"><i class="fas fa-circle-xmark"></i> Sem peça na oficina</span>' : (n <= 2 ? '<span class="es-alerta"><i class="fas fa-triangle-exclamation"></i> Estoque baixo</span>' : '')}
+                    ${esStepper(`alterarSaldoRolo('${r.id}', -1)`, `alterarSaldoRolo('${r.id}', 1)`, `saldo-rolo-${r.id}`, n, n === 1 ? 'peça' : 'peças')}
+                </div>`;
+            }).join('')}</div>
+        </div>`;
+    }).join('');
 }
 window.renderRolos = renderRolos;
 
@@ -215,50 +228,43 @@ window.alterarSaldoRolo = alterarSaldoRolo;
 // ESTOQUE HIDRÁULICO (Aplicado na Máquina x Reserva na Oficina)
 // ==========================================
 function renderHidraulica() {
-    const tbody = document.getElementById("hidraulica-table-body");
-    if (!tbody) return;
-    let htmlFinal = "";
-    const gruposMcc = [...new Set(BANCO_HIDRAULICA.map(h => h.mcc_compat))].sort();
+    const alvo = document.getElementById("hidraulica-table-body");
+    if (!alvo) return;
+    const ap = h => Number(h.qtd_aplicado) || 0;
+    const re = h => Number(h.qtd_reserva) || 0;
+    const totAp = BANCO_HIDRAULICA.reduce((s, h) => s + ap(h), 0);
+    const totRe = BANCO_HIDRAULICA.reduce((s, h) => s + re(h), 0);
+    esTxt("es-hid-aplicado", totAp.toLocaleString('pt-BR'));
+    esTxt("es-hid-itens", `em ${BANCO_HIDRAULICA.length} itens`);
+    esTxt("es-hid-reserva", totRe.toLocaleString('pt-BR'));
+    esTxt("es-hid-cobertura", totAp ? `${Math.round(totRe / totAp * 100)}%` : '—');
+    const semReserva = BANCO_HIDRAULICA.filter(h => ap(h) > 0 && re(h) === 0).length;
+    esTxt("es-hid-cobertura-sub", semReserva ? `${semReserva} ${semReserva > 1 ? 'itens' : 'item'} sem reserva` : 'reserva ÷ aplicado');
 
-    gruposMcc.forEach(mcc => {
-        htmlFinal += `
-            <tr style="background: rgba(249, 115, 22, 0.08); border-left: 4px solid #f97316;">
-                <td colspan="6" style="padding: 12px 16px; color: #f97316; font-weight: 700; text-transform: uppercase; font-size: 14px;"><i class="fas fa-server"></i> MCC ${mcc}</td>
-            </tr>
-        `;
-        const itensDoGrupo = BANCO_HIDRAULICA.filter(h => h.mcc_compat === mcc);
-        itensDoGrupo.forEach(h => {
-            const aplicado = h.qtd_aplicado || 0;
-            const reserva = h.qtd_reserva || 0;
-            htmlFinal += `
-                <tr>
-                    <td class="font-code" style="color:var(--text-heading); padding-left: 25px;"><strong>${h.nome}</strong></td>
-                    <td><span class="ind-card-tag bg-tag">${h.conjunto}</span></td>
-                    <td><code>MCC ${h.mcc_compat}</code></td>
-                    <td>
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span class="font-code bold" id="saldo-hidraulica-aplicado-${h.id}" style="font-size:15px; color:#22c55e;"><i class="fas fa-industry" style="font-size:11px;"></i> ${aplicado}</span>
-                            <div style="display:inline-flex; gap:8px;">
-                                <button class="btn-premium btn-success" style="min-width:36px; min-height:36px; padding:6px;" onclick="alterarSaldoHidraulica('${h.id}', 'aplicado', 1)"><i class="fas fa-plus"></i></button>
-                                <button class="btn-premium btn-warning" style="min-width:36px; min-height:36px; padding:6px;" onclick="alterarSaldoHidraulica('${h.id}', 'aplicado', -1)"><i class="fas fa-minus"></i></button>
-                            </div>
-                        </div>
-                    </td>
-                    <td>
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span class="font-code bold" id="saldo-hidraulica-reserva-${h.id}" style="font-size:15px; color:var(--text-accent);"><i class="fas fa-warehouse" style="font-size:11px;"></i> ${reserva}</span>
-                            <div style="display:inline-flex; gap:8px;">
-                                <button class="btn-premium btn-success" style="min-width:36px; min-height:36px; padding:6px;" onclick="alterarSaldoHidraulica('${h.id}', 'reserva', 1)"><i class="fas fa-plus"></i></button>
-                                <button class="btn-premium btn-warning" style="min-width:36px; min-height:36px; padding:6px;" onclick="alterarSaldoHidraulica('${h.id}', 'reserva', -1)"><i class="fas fa-minus"></i></button>
-                            </div>
-                        </div>
-                    </td>
-                    <td><span class="font-code text-muted" style="font-size:12px;">Total: ${aplicado + reserva}</span></td>
-                </tr>
-            `;
-        });
-    });
-    tbody.innerHTML = htmlFinal;
+    if (!BANCO_HIDRAULICA.length) {
+        alvo.innerHTML = `<div class="cc-bloco es-vazio">Nenhum item hidráulico cadastrado.</div>`;
+        return;
+    }
+    const grupos = [...new Set(BANCO_HIDRAULICA.map(h => h.mcc_compat))].sort();
+    alvo.innerHTML = grupos.map(mcc => {
+        const itens = BANCO_HIDRAULICA.filter(h => h.mcc_compat === mcc);
+        return `<div class="cc-bloco es-grupo">
+            <div class="es-grupo-cab"><h3>MCC ${mcc}</h3><span>${itens.length} ${itens.length === 1 ? 'item' : 'itens'}</span></div>
+            <div class="es-itens es-itens-hid">${itens.map(h => {
+                const a = ap(h), r = re(h);
+                const cob = a ? Math.min(100, Math.round(r / a * 100)) : (r ? 100 : 0);
+                const est = (a > 0 && r === 0) ? 'es-zero' : (cob < 15 ? 'es-baixo' : '');
+                return `<div class="es-item ${est}">
+                    <div class="es-item-topo"><strong class="es-nome">${h.nome}</strong><span class="es-mcc">${h.conjunto}</span></div>
+                    <div class="es-duplo">
+                        <div><span class="es-lado"><i class="fas fa-industry"></i> Na máquina</span>${esStepper(`alterarSaldoHidraulica('${h.id}', 'aplicado', -1)`, `alterarSaldoHidraulica('${h.id}', 'aplicado', 1)`, `saldo-hidraulica-aplicado-${h.id}`, a, '')}</div>
+                        <div><span class="es-lado"><i class="fas fa-warehouse"></i> Reserva</span>${esStepper(`alterarSaldoHidraulica('${h.id}', 'reserva', -1)`, `alterarSaldoHidraulica('${h.id}', 'reserva', 1)`, `saldo-hidraulica-reserva-${h.id}`, r, '')}</div>
+                    </div>
+                    <div class="es-cob"><div class="es-cob-barra"><i style="width:${cob}%"></i></div><span>${a ? `Reserva cobre ${cob}% do aplicado` : 'Nada aplicado na máquina'}</span></div>
+                </div>`;
+            }).join('')}</div>
+        </div>`;
+    }).join('');
 }
 window.renderHidraulica = renderHidraulica;
 
@@ -297,44 +303,59 @@ window.alterarSaldoHidraulica = alterarSaldoHidraulica;
 // ==========================================
 // ALMOXARIFADO DE MATERIAIS GERAIS
 // ==========================================
+let FILTRO_MATERIAL = 'todos';
+function situacaoMaterial(qtd) { return qtd > 10 ? 'normal' : (qtd > 0 ? 'baixo' : 'zerado'); }
+
 function renderMateriais() {
     const tbody = document.getElementById("materiais-table-body");
     const busca = document.getElementById("busca-material") ? document.getElementById("busca-material").value.toLowerCase() : "";
     if (!tbody) return;
 
+    const qtd = m => Number(m.qtd) || 0;
+    const cont = { normal: 0, baixo: 0, zerado: 0 };
+    BANCO_MATERIAIS.forEach(m => cont[situacaoMaterial(qtd(m))]++);
+    esTxt("es-mat-itens", BANCO_MATERIAIS.length.toLocaleString('pt-BR'));
+    esTxt("es-mat-unidades", `${BANCO_MATERIAIS.reduce((s, m) => s + qtd(m), 0).toLocaleString('pt-BR')} unidades no total`);
+    esTxt("es-mat-normal", cont.normal);
+    esTxt("es-mat-baixo", cont.baixo);
+    esTxt("es-mat-zerado", cont.zerado);
+
     let filtrados = BANCO_MATERIAIS;
     if (busca) {
-        filtrados = BANCO_MATERIAIS.filter(m => m.codigo.toLowerCase().includes(busca) || m.descricao.toLowerCase().includes(busca));
+        filtrados = filtrados.filter(m => String(m.codigo).toLowerCase().includes(busca) || String(m.descricao).toLowerCase().includes(busca));
     }
+    if (FILTRO_MATERIAL !== 'todos') filtrados = filtrados.filter(m => situacaoMaterial(qtd(m)) === FILTRO_MATERIAL);
 
     if (filtrados.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nenhum material encontrado.</td></tr>`;
         return;
     }
 
+    const rotulos = { normal: 'Normal', baixo: 'Baixo', zerado: 'Zerado' };
     tbody.innerHTML = filtrados.map(m => {
-        let statusHtml = "";
-        if (m.qtd > 10) statusHtml = `<span class="status-pill operação"><i class="fas fa-check-circle"></i> Normal</span>`;
-        else if (m.qtd > 0) statusHtml = `<span class="status-pill" style="background: var(--warning-bg); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.25);"><i class="fas fa-exclamation-triangle"></i> Baixo</span>`;
-        else statusHtml = `<span class="status-pill reparo"><i class="fas fa-times-circle"></i> Zerado</span>`;
-        
+        const sit = situacaoMaterial(qtd(m));
         return `
-            <tr>
-                <td class="font-code" style="color: var(--text-heading); font-size: 15px;">${window.escapeHtmlNotif(m.codigo)}</td>
-                <td style="color: var(--text-main); font-weight: 500; font-size: 13px; max-width: 350px; overflow: hidden; text-overflow: ellipsis;">${window.escapeHtmlNotif(m.descricao)}</td>
-                <td><span class="font-code bold" style="font-size:16px; color: var(--ds-texto);">${m.qtd.toLocaleString()} UN</span></td>
-                <td>${statusHtml}</td>
+            <tr class="es-linha-${sit}">
+                <td class="font-code es-cod">${window.escapeHtmlNotif(m.codigo)}</td>
+                <td class="es-desc">${window.escapeHtmlNotif(m.descricao)}</td>
+                <td><strong class="es-num">${qtd(m).toLocaleString('pt-BR')}</strong> <span class="es-un">un.</span></td>
+                <td><span class="es-sit es-sit-${sit}">${rotulos[sit]}</span></td>
                 <td>
-                    <div style="display:inline-flex; gap:8px;">
-                        <button class="btn-premium btn-success" style="min-width:40px; min-height:40px; padding:8px;" onclick="ajustarSaldoMaterial('${m.codigo}', 1)" title="Adicionar"><i class="fas fa-plus"></i></button>
-                        <button class="btn-premium btn-warning" style="min-width:40px; min-height:40px; padding:8px;" onclick="ajustarSaldoMaterial('${m.codigo}', -1)" title="Baixar"><i class="fas fa-minus"></i></button>
-                        <button class="btn-outline-danger" style="min-width:40px; min-height:40px; padding:8px;" onclick="removerMaterial('${m.codigo}')" title="Excluir"><i class="fas fa-trash"></i></button>
+                    <div class="es-acoes">
+                        <button class="es-passo" onclick="ajustarSaldoMaterial('${m.codigo}', -1)" title="Baixar" aria-label="Baixar"><i class="fas fa-minus"></i></button>
+                        <button class="es-passo es-passo-mais" onclick="ajustarSaldoMaterial('${m.codigo}', 1)" title="Adicionar" aria-label="Adicionar"><i class="fas fa-plus"></i></button>
+                        <button class="es-passo es-passo-excluir" onclick="removerMaterial('${m.codigo}')" title="Excluir" aria-label="Excluir"><i class="fas fa-trash"></i></button>
                     </div>
                 </td>
             </tr>
         `;
     }).join("");
 }
+window.filtrarMateriais = function(f) {
+    FILTRO_MATERIAL = f;
+    document.querySelectorAll('#es-mat-chips .cc-btn').forEach(b => b.classList.toggle('on', b.dataset.f === f));
+    renderMateriais();
+};
 window.renderMateriais = renderMateriais;
 
 function toggleFormMaterial() {
