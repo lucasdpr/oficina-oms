@@ -148,6 +148,47 @@ async function fluxoDefinirNovaSenha(matricula, senhaAtual, nome, cargo, area, i
 // ==========================================
 // FINALIZA O LOGIN (comum a dev, colaborador e primeiro acesso)
 // ==========================================
+// ==========================================
+// TRANSIÇÃO DE ENTRADA — ícone do app + boas-vindas
+// ==========================================
+// Cobre a troca login → sistema com o ícone do OMS por ~1,5 s. Não
+// bloqueia nada: o sistema já monta por baixo enquanto a animação roda
+// (o que de quebra esconde o "piscar" da primeira renderização).
+function transicaoEntrada(nome) {
+    try {
+        if (document.getElementById('oms-entrada')) return;
+        const reduz = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const primeiro = String(nome || '').replace(/\s*\[.*\]\s*$/, '').trim().split(/\s+/)[0] || '';
+        const nomeFmt = primeiro ? primeiro.charAt(0).toUpperCase() + primeiro.slice(1).toLowerCase() : '';
+        const el = document.createElement('div');
+        el.id = 'oms-entrada';
+        el.setAttribute('aria-hidden', 'true');
+        el.innerHTML = `<style>
+#oms-entrada{position:fixed;inset:0;z-index:2147483000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:radial-gradient(55% 45% at 50% 45%,rgba(240,163,52,.18),transparent 70%),#0d0b08;transition:opacity .55s ease}
+#oms-entrada.sai{opacity:0;pointer-events:none}
+#oms-entrada .oe-ico{position:relative;width:104px;height:104px}
+#oms-entrada .oe-ico img{width:100%;height:100%;border-radius:26px;display:block;box-shadow:0 18px 60px rgba(240,163,52,.35);animation:oeIco .9s cubic-bezier(.2,.9,.25,1.15) both}
+#oms-entrada .oe-ico::after{content:"";position:absolute;inset:-14px;border-radius:36px;border:2px solid rgba(240,163,52,.55);animation:oeAnel 1.3s ease-out .35s both}
+#oms-entrada .oe-txt{font:600 22px "Inter Tight",Inter,system-ui,sans-serif;letter-spacing:-.02em;color:#f2ede2;animation:oeTxt .6s ease .45s both}
+#oms-entrada .oe-txt span{color:#f0a334}
+#oms-entrada .oe-barra{width:140px;height:2px;border-radius:2px;background:rgba(255,255,255,.08);overflow:hidden}
+#oms-entrada .oe-barra i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#ffe6b3,#ff7a1a,#f0a334);transform-origin:left;animation:oeBarra 1.25s cubic-bezier(.6,0,.2,1) .2s both}
+@keyframes oeIco{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+@keyframes oeAnel{from{opacity:.9;transform:scale(.85)}to{opacity:0;transform:scale(1.35)}}
+@keyframes oeTxt{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes oeBarra{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+</style>
+<div class="oe-ico"><img src="JS/assets/icon-192.png?v=4" alt=""></div>
+<div class="oe-txt">${nomeFmt ? `Bem-vindo, <span>${nomeFmt.replace(/[<>&"]/g, '')}</span>` : 'Bem-vindo ao <span>OMS</span>'}</div>
+<div class="oe-barra"><i></i></div>`;
+        document.body.appendChild(el);
+        setTimeout(() => {
+            el.classList.add('sai');
+            setTimeout(() => el.remove(), 600);
+        }, reduz ? 500 : 1500);
+    } catch (e) { console.warn('Transição de entrada falhou (login segue normal):', e); }
+}
+
 async function finalizarLogin(nome, cargo, matricula, area, isAdm, token) {
     // 🆕 Área do técnico + flag de ADM (vêm do login no back-end; no
     // acesso local de dev, is_adm é forçado true). Usado no Painel do
@@ -179,6 +220,7 @@ async function finalizarLogin(nome, cargo, matricula, area, isAdm, token) {
     if (typeof window.iniciarNotificacaoGlobalChat === 'function') window.iniciarNotificacaoGlobalChat();
     if (typeof window.iniciarNotificacaoGlobalFeed === 'function') window.iniciarNotificacaoGlobalFeed();
 
+    transicaoEntrada(nome);
     document.getElementById("tela-login-home").style.display = "none";
     document.getElementById("container-sistema-oms").style.display = "flex";
 
@@ -268,6 +310,7 @@ export async function entrarComoVisitante(nomeDigitado) {
     localStorage.setItem("oms_operador_v32_local", JSON.stringify(OPERADOR_LOGADO));
     setOperadorBanco(OPERADOR_LOGADO); // 🔧 mantém a cópia do banco.js sincronizada (ver comentário em window.setOperadorLogado)
 
+    transicaoEntrada(nome);
     document.getElementById("tela-login-home").style.display = "none";
     document.getElementById("container-sistema-oms").style.display = "flex";
 
