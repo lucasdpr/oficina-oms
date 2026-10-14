@@ -394,6 +394,7 @@ function conteudoDaAba(tab) {
 }
 export function atualizarProgressoAbasFolhao(modal) {
     if (!modal) return;
+    let totalGeral = 0, feitosGeral = 0;
     modal.querySelectorAll('.folhao-tab').forEach(tab => {
         const alvo = conteudoDaAba(tab);
         if (!alvo) return;
@@ -414,7 +415,24 @@ export function atualizarProgressoAbasFolhao(modal) {
         badge.textContent = `${feitos}/${total}`;
         tab.classList.toggle('folhao-tab-completa', feitos === total);
         tab.classList.toggle('folhao-tab-iniciada', feitos > 0 && feitos < total);
+        totalGeral += total; feitosGeral += feitos;
     });
+    // Barra geral acima das abas: quanto do folhão inteiro já foi preenchido.
+    const abas = modal.querySelector('.folhao-tabs');
+    if (abas && totalGeral) {
+        let geral = modal.querySelector('.folhao-geral');
+        if (!geral) {
+            geral = document.createElement('div');
+            geral.className = 'folhao-geral';
+            geral.innerHTML = '<div class="folhao-geral-txt"><strong></strong><span></span></div><div class="folhao-geral-barra"><i></i></div>';
+            abas.parentNode.insertBefore(geral, abas);
+        }
+        const pct = Math.round(feitosGeral / totalGeral * 100);
+        geral.querySelector('strong').textContent = `${pct}% preenchido`;
+        geral.querySelector('span').textContent = `${feitosGeral} de ${totalGeral} itens`;
+        geral.querySelector('i').style.width = pct + '%';
+        geral.classList.toggle('completo', pct === 100);
+    }
 }
 window.atualizarProgressoAbasFolhao = atualizarProgressoAbasFolhao;
 
