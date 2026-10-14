@@ -11,7 +11,7 @@
 // usando a copia antiga guardada em cache.
 // ==============================================================
 
-const CACHE_VERSION = "oms-v183";
+const CACHE_VERSION = "oms-v184";
 
 // 🔧 CORREÇÃO: essa lista estava com os caminhos de uma estrutura de
 // pastas antiga (tudo direto na raiz) — o projeto hoje guarda os JS
@@ -99,7 +99,13 @@ self.addEventListener("install", (event) => {
             // arquivo não derruba a instalação dos outros.
             return Promise.all(
                 ARQUIVOS_PARA_CACHE.map((url) =>
-                    cache.add(url).catch((err) => {
+                    // 🐛 CORRIGIDO ("diz que atualizou mas no app continua o
+                    // código velho; na aba anônima funciona"): cache.add(url)
+                    // passava pelo cache HTTP do navegador — o GitHub Pages
+                    // manda max-age=600, então a versão nova do cache era
+                    // montada com os arquivos ANTIGOS ainda guardados ali.
+                    // cache: "reload" obriga a buscar na rede de verdade.
+                    cache.add(new Request(url, { cache: "reload" })).catch((err) => {
                         console.warn("⚠️ Não consegui cachear:", url, err);
                     })
                 )
@@ -180,7 +186,13 @@ self.addEventListener("fetch", (event) => {
     // velho aqui se ninguém tiver incrementado CACHE_VERSION.
     event.respondWith(
         caches.match(event.request, { ignoreSearch: true }).then((respostaCache) => {
-            const buscaRede = fetch(event.request)
+            // "no-cache" = revalida com o servidor (304 barato se não mudou),
+            // sem aceitar cópia velha do cache HTTP (mesmo bug do install).
+            // (Request de navegação não aceita init — por isso refaz pela URL.)
+            const pedido = event.request.mode === "navigate"
+                ? new Request(event.request.url, { cache: "no-cache", credentials: "same-origin" })
+                : new Request(event.request, { cache: "no-cache" });
+            const buscaRede = fetch(pedido)
                 .then((resposta) => {
                     const copia = resposta.clone();
                     caches.open(CACHE_VERSION).then((cache) => {
