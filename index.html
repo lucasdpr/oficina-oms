@@ -492,6 +492,21 @@ section { position: relative; scroll-margin-top: 52px; }
 @media (prefers-reduced-motion: reduce) {
     .hero-glow, .s-glow, .hot, .cube, .cta-ring, .cta-icon img, .phone img { animation: none; }
 }
+
+/* ===== Celular: mesmos efeitos, mais leves de desenhar ===== */
+@media (max-width: 820px) {
+    .nav { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(13, 11, 8, 0.94); }
+    .s-glow { filter: none; animation: none; stroke-width: 20; opacity: 0.22; }
+    .hot { animation: none; }
+    .hero-glow, .phone img, .cta-ring { animation: none; }
+    .step { filter: none !important; }
+    .strand-wrap, .expand-media, .disc-img img, .frame img, .hist-media img { will-change: transform; }
+    .ciclo.sticky { height: 360svh; }
+    .ciclo.sticky .ciclo-pin { position: sticky; top: 0; height: 100svh; min-height: 0; }
+    .expand.sticky { height: 250svh; }
+    .expand.sticky .expand-pin { position: sticky; top: 0; }
+    .expand.sticky .expand-media { border-radius: 22px; }
+}
 </style>
 </head>
 <body>
@@ -819,6 +834,7 @@ section { position: relative; scroll-margin-top: 52px; }
     const animar = temGsap && !reduz;
     if (!animar) raiz.classList.remove('anim');
     const ehCelular = () => window.innerWidth < 700;
+    const leve = window.matchMedia('(max-width: 820px)').matches;
 
     // ---- Barra do topo ----
     const nav = document.getElementById('nav');
@@ -1072,7 +1088,8 @@ section { position: relative; scroll-margin-top: 52px; }
     // ---- Entrada do hero ----
     gsap.set('.hero-copy > *', { opacity: 1 });
     dashPaths.forEach(p => { p.style.strokeDasharray = L; p.style.strokeDashoffset = L; });
-    gsap.set('#strand-rolls .roll', { opacity: 0, scale: 0, transformOrigin: '50% 50%' });
+    if (leve) gsap.set('#strand-rolls', { opacity: 0 });
+    else gsap.set('#strand-rolls .roll', { opacity: 0, scale: 0, transformOrigin: '50% 50%' });
     gsap.set('.s-mold, .s-lbl', { opacity: 0 });
     gsap.set(strand, { opacity: 1 });
 
@@ -1084,12 +1101,12 @@ section { position: relative; scroll-margin-top: 52px; }
 
     gsap.timeline({ defaults: { ease: 'power3.out' } })
         .from('.hero .eyebrow', { y: 24, opacity: 0, filter: 'blur(8px)', duration: 1 }, 0.1)
-        .from('.hero-title .ht', { y: 70, opacity: 0, filter: 'blur(14px)', duration: 1.3, stagger: 0.14 }, 0.2)
+        .from('.hero-title .ht', { y: 70, opacity: 0, filter: leve ? 'none' : 'blur(14px)', duration: 1.3, stagger: 0.14 }, 0.2)
         .from('.hero-sub', { y: 30, opacity: 0, filter: 'blur(8px)', duration: 1.1 }, 0.6)
         .from('.hero-ctas', { y: 24, opacity: 0, duration: 1 }, 0.78)
         .to('.s-mold', { opacity: 1, duration: 0.8 }, 0.5)
         .to('.s-base', { strokeDashoffset: 0, duration: 1.6, ease: 'power2.inOut' }, 0.55)
-        .to('#strand-rolls .roll', { opacity: 1, scale: 1, duration: 0.5, stagger: 0.008, ease: 'back.out(2)' }, 0.9)
+        .to(leve ? '#strand-rolls' : '#strand-rolls .roll', leve ? { opacity: 1, duration: 0.8 } : { opacity: 1, scale: 1, duration: 0.5, stagger: 0.008, ease: 'back.out(2)' }, 0.9)
         .to('.s-hot, .s-glow', { strokeDashoffset: 0, duration: 2.4, ease: 'power2.inOut' }, 1.3)
         .to('.s-lbl', { opacity: 1, duration: 0.7, stagger: 0.12 }, 1.6)
         .add(() => { strand.classList.add('vivo'); pulsoLoop.play(); });
@@ -1141,10 +1158,11 @@ section { position: relative; scroll-margin-top: 52px; }
     ciclo.classList.add('pinned');
     progAnel.style.strokeDasharray = CIRC;
     progAnel.style.strokeDashoffset = CIRC;
+    if (leve) ciclo.classList.add('sticky');
     ScrollTrigger.create({
         trigger: ciclo, start: 'top top',
-        end: () => '+=' + Math.round(window.innerHeight * 2.6),
-        pin: true, anticipatePin: 1,
+        end: leve ? 'bottom bottom' : () => '+=' + Math.round(window.innerHeight * 2.6),
+        pin: !leve, anticipatePin: 1,
         onUpdate: self => {
             gsap.to(progAnel, { strokeDashoffset: CIRC * (1 - self.progress), duration: 0.35, ease: 'power1.out', overwrite: true });
             mostrarPasso(Math.min(passos.length - 1, Math.floor(self.progress * passos.length * 0.999)));
@@ -1163,10 +1181,13 @@ section { position: relative; scroll-margin-top: 52px; }
     const expand = document.querySelector('.expand');
     expand.classList.add('pinned');
     const recorte = () => ehCelular() ? 'inset(16% 6% 32% 6% round 22px)' : 'inset(14% 22% 14% 22% round 30px)';
+    if (leve) expand.classList.add('sticky');
     gsap.timeline({
-        scrollTrigger: { trigger: expand, start: 'top top', end: () => '+=' + Math.round(window.innerHeight * 1.5), pin: true, scrub: 0.6, anticipatePin: 1, invalidateOnRefresh: true }
+        scrollTrigger: leve
+            ? { trigger: expand, start: 'top top', end: 'bottom bottom', scrub: 0.5 }
+            : { trigger: expand, start: 'top top', end: () => '+=' + Math.round(window.innerHeight * 1.5), pin: true, scrub: 0.6, anticipatePin: 1, invalidateOnRefresh: true }
     })
-        .fromTo('.expand-media', { clipPath: recorte }, { clipPath: 'inset(0% 0% 0% 0% round 0px)', ease: 'none', duration: 1 }, 0)
+        .fromTo('.expand-media', leve ? { scale: 0.8 } : { clipPath: recorte }, leve ? { scale: 1, ease: 'none', duration: 1 } : { clipPath: 'inset(0% 0% 0% 0% round 0px)', ease: 'none', duration: 1 }, 0)
         .fromTo('.expand-media img', { scale: 1.3 }, { scale: 1, ease: 'none', duration: 1 }, 0)
         .fromTo('.expand-copy', { opacity: 0, y: 50 }, { opacity: 1, y: 0, ease: 'power2.out', duration: 0.35 }, 0.7);
 
@@ -1175,7 +1196,8 @@ section { position: relative; scroll-margin-top: 52px; }
         gsap.fromTo(img, { yPercent: -12 }, { yPercent: 0, ease: 'none',
             scrollTrigger: { trigger: img.parentElement, start: 'top bottom', end: 'bottom top', scrub: true } });
     });
-    gsap.fromTo('.hist-media', { scale: 0.92, borderRadius: 48 }, { scale: 1, borderRadius: 30, ease: 'none',
+    gsap.fromTo('.hist-media', leve ? { scale: 0.92 } : { scale: 0.92, borderRadius: 48 }, leve ? { scale: 1, ease: 'none',
+        scrollTrigger: { trigger: '.hist-media', start: 'top bottom', end: 'top 25%', scrub: true } } : { scale: 1, borderRadius: 30, ease: 'none',
         scrollTrigger: { trigger: '.hist-media', start: 'top bottom', end: 'top 25%', scrub: true } });
     gsap.from('.hist-copy > *', { y: 40, opacity: 0, duration: 1.1, ease: 'power3.out', stagger: 0.1,
         scrollTrigger: { trigger: '.hist-media', start: 'top 45%', once: true } });
@@ -1213,7 +1235,7 @@ window.forcarAtualizacaoOMS = function () {
 };
 
 // Mude a cada deploy visível: quem estava numa versão anterior vê a confirmação.
-window.OMS_BUILD_ID = '2026.10.14-apresentacao';
+window.OMS_BUILD_ID = '2026.10.14-apresentacao-cel';
 (function () {
     try {
         const anterior = localStorage.getItem('oms_build_id');
