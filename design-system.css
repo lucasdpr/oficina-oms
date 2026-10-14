@@ -1198,6 +1198,28 @@ body.light-mode {
 .ar-perigo { color: var(--ds-perigo) !important; }
 .ar-perigo:hover { border-color: var(--ds-perigo) !important; }
 
+/* LANÇAMENTO DE PRODUÇÃO (pd-) */
+#aba-producao > * { margin-bottom: 14px; }
+.pd-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pd-card { display: flex; flex-direction: column; gap: 16px; }
+.pd-linhas { display: flex; flex-direction: column; gap: 10px; }
+.pd-linha { display: grid; grid-template-columns: 92px minmax(0, 1fr) 70px; align-items: center; gap: 12px; margin: 0; cursor: text; }
+.pd-mcc { display: inline-flex; align-items: center; gap: 8px; font: 600 1rem var(--ds-fonte-titulo); color: var(--ds-texto); }
+.pd-mcc::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--mc); box-shadow: 0 0 0 4px color-mix(in srgb, var(--mc) 18%, transparent); }
+body .pd-input { height: 54px !important; font: 600 1.35rem var(--ds-fonte-titulo) !important; letter-spacing: -.01em; text-align: right; padding: 0 16px !important; width: 100%; }
+.pd-un { font-size: .84rem; color: var(--ds-texto-3); }
+.pd-total { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 16px; border-radius: var(--ds-r-md); background: color-mix(in srgb, var(--ds-ambar) 8%, var(--ds-fundo)); border: 1px solid color-mix(in srgb, var(--ds-ambar) 25%, var(--ds-linha)); }
+.pd-total span { font-size: .88rem; color: var(--ds-texto-2); }
+.pd-total strong { font: 700 1.6rem var(--ds-fonte-titulo); letter-spacing: -.02em; color: var(--ds-texto); }
+.pd-salvar { height: 50px; justify-content: center; font-size: .95rem !important; }
+.pd-tabela { max-height: 300px; overflow-y: auto; }
+.pd-tabela td, .pd-tabela th { text-align: left; }
+.pd-num { font-variant-numeric: tabular-nums; color: var(--ds-texto) !important; font-weight: 600; }
+.pd-riscado { text-decoration: line-through; color: var(--ds-texto-3) !important; font-weight: 400; }
+.pd-desfazer { height: 32px !important; min-height: 32px !important; padding: 0 12px !important; font-size: .76rem !important; }
+.pd-desfazer:hover { border-color: var(--ds-perigo) !important; color: var(--ds-perigo) !important; }
+.pd-desfeito { font-size: .76rem; font-weight: 600; color: var(--ds-texto-3); }
+
 /* ------------------------------------------------------------------
    RESPONSIVO
    ------------------------------------------------------------------ */
@@ -1259,6 +1281,10 @@ body.light-mode {
     .os-registrar { align-self: stretch; }
     .ql-kpis { grid-template-columns: 1fr 1fr; }
     .ql-kpis .cc-ico { display: none; }
+    .pd-kpis { grid-template-columns: 1fr 1fr; }
+    .pd-kpis > :first-child { grid-column: 1 / -1; }
+    .pd-kpis .cc-ico { display: none; }
+    .pd-linha { grid-template-columns: 76px minmax(0, 1fr) 56px; gap: 8px; }
     .ar-acoes-esp { display: none; }
     .ar-acoes .cc-btn-cheio { flex: 1 1 100%; height: 46px; }
     .ar-os-item { grid-template-columns: auto minmax(0, 1fr); }

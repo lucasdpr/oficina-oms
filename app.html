@@ -74,7 +74,7 @@
     <link rel="stylesheet" href="style.css?v=14" />
     <!-- Novo padrão visual (tokens + componentes ds-*). Vem DEPOIS do
          style.css pra vencer em empate de especificidade. -->
-    <link rel="stylesheet" href="design-system.css?v=15" />
+    <link rel="stylesheet" href="design-system.css?v=16" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="JS/assets/icon-192.png?v=4">
@@ -1064,76 +1064,51 @@ a, button, [onclick], label[for], select { cursor: pointer; }
             </section>
 
             <section id="aba-producao" class="tab-content">
-                <div class="glass-panel" style="padding:24px; margin-bottom: 24px;">
-                    <h1 style="color: var(--text-heading); margin-bottom: 8px;"><i class="fas fa-calculator" style="color:#d9b67a;"></i> Central de Apontamento Diário</h1>
-                    <p class="text-muted" style="margin-bottom: 24px;">Lançamentos de produção para cálculo de desgaste e vida útil da máquina.</p>
-
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-                        
-                        <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
-                            <h3 style="color: var(--text-heading); margin-bottom: 15px;"><i class="fas fa-industry"></i> Tonelagem (Equipamentos Gerais)</h3>
-                            <p style="color: var(--text-muted); font-size: 11px; margin-bottom: 15px;">Atualiza o desgaste de Bows, Horizontais, Benders, etc.</p>
-                            <div class="input-group" style="margin-bottom: 12px;">
-                                <label style="color: #d9b67a;">MCC #2 (Ton)</label>
-                                <input type="number" id="prod-mcc2" class="premium-input" placeholder="Ex: 3131" style="font-size: 16px; font-weight: bold;">
-                            </div>
-                            <div class="input-group" style="margin-bottom: 12px;">
-                                <label style="color: #d9b67a;">MCC #3 (Ton)</label>
-                                <input type="number" id="prod-mcc3" class="premium-input" placeholder="Ex: 3705" style="font-size: 16px; font-weight: bold;">
-                            </div>
-                            <div class="input-group" style="margin-bottom: 20px;">
-                                <label style="color: #c4693a;">MCC #4 (Ton)</label>
-                                <input type="number" id="prod-mcc4" class="premium-input" placeholder="Ex: 2830" style="font-size: 16px; font-weight: bold;">
-                            </div>
-                            <button class="btn-premium btn-success w-100" onclick="window.processarProducaoDiaria()"><i class="fas fa-check-double"></i> Atualizar Fábrica Inteira</button>
-                        </div>
-
-                        <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
-                            <h3 style="color: var(--text-heading); margin-bottom: 15px;"><i class="fas fa-fire"></i> Apontamento de Moldes</h3>
-                            <p style="color: var(--text-muted); font-size: 11px; margin-bottom: 15px;">Exclusivo para vida útil de Moldes (Contagem em Corridas).</p>
-                            <div class="input-group" style="margin-bottom: 12px;">
-                                <label style="color: #d9b67a;">MCC #2 (Panelas)</label>
-                                <input type="number" id="molde-prod-mcc2" class="premium-input" placeholder="Ex: 2" style="font-size: 16px; font-weight: bold;">
-                            </div>
-                            <div class="input-group" style="margin-bottom: 12px;">
-                                <label style="color: #d9b67a;">MCC #3 (Panelas)</label>
-                                <input type="number" id="molde-prod-mcc3" class="premium-input" placeholder="Ex: 5" style="font-size: 16px; font-weight: bold;">
-                            </div>
-                            <div class="input-group" style="margin-bottom: 20px;">
-                                <label style="color: #c4693a;">MCC #4 (Panelas)</label>
-                                <input type="number" id="molde-prod-mcc4" class="premium-input" placeholder="Ex: 8" style="font-size: 16px; font-weight: bold;">
-                            </div>
-                            <button class="btn-premium btn-warning w-100" onclick="window.salvarApontamentoMoldes(event)"><i class="fas fa-check"></i> Salvar Corridas (Moldes)</button>
-                        </div>
-
+                <!-- Lançamento de produção no padrão novo: resumo (hoje / 7 dias),
+                     dois blocos de lançamento com total somando ao digitar e as
+                     auditorias lado a lado. Ids/funções mantidos (apontamento.js). -->
+                <div class="cc-bloco">
+                    <div class="cc-titulo-ico"><span class="cc-ico"><i class="fas fa-calculator"></i></span><div><div class="cc-rotulo">Produção</div><h2 class="cc-titulo">Lançar produção do dia</h2></div></div>
+                    <p class="cc-sub" style="margin:10px 0 16px">O que for lançado aqui desconta a vida útil das peças instaladas e alimenta a previsão de trocas do painel.</p>
+                    <div class="cc-kpis pd-kpis">
+                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico"><i class="fas fa-industry"></i></span><span class="cc-rotulo">Hoje</span><strong id="pd-hoje">—</strong><span class="cc-kpi-sub">toneladas + panelas lançadas</span></div>
+                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-texto-2)"><i class="fas fa-calendar-week"></i></span><span class="cc-rotulo">Últimos 7 dias</span><strong id="pd-semana">—</strong><span class="cc-kpi-sub" id="pd-semana-sub">—</span></div>
+                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-texto-2)"><i class="fas fa-clock-rotate-left"></i></span><span class="cc-rotulo">Último lançamento</span><strong id="pd-ultimo" style="font-size:1.3rem">—</strong><span class="cc-kpi-sub" id="pd-ultimo-sub">—</span></div>
                     </div>
                 </div>
-
-                <div class="glass-panel" style="padding:24px; margin-bottom: 24px;">
-                    <h3 style="color:var(--text-heading); font-size: 16px; margin-bottom: 16px;"><i class="fas fa-history"></i> Auditoria de Lançamento de Tonelagem</h3>
-                    <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
-                        <table class="premium-table" style="font-size: 12px; text-align:center;">
-                            <thead>
-                                <tr><th>Data / Hora</th><th>Responsável</th><th>MCC 2</th><th>MCC 3</th><th>MCC 4</th><th>Desfazer</th></tr>
-                            </thead>
-                            <tbody id="tabela-historico-geral"></tbody>
-                        </table>
+                <div class="cc-grade cc-grade-2 pd-grade">
+                    <div class="cc-bloco pd-card">
+                        <div class="cc-titulo-ico"><span class="cc-ico"><i class="fas fa-weight-hanging"></i></span><div><div class="cc-rotulo">Bows, horizontais, benders, cadeiras…</div><h2 class="cc-titulo">Tonelagem</h2></div></div>
+                        <div class="pd-linhas">
+                            <label class="pd-linha" for="prod-mcc2"><span class="pd-mcc" style="--mc:#f0a334">MCC 2</span><input type="number" inputmode="numeric" min="0" id="prod-mcc2" class="premium-input pd-input" placeholder="Ex: 3131" oninput="window.atualizarTotaisProducao && window.atualizarTotaisProducao()"><span class="pd-un">t</span></label>
+                            <label class="pd-linha" for="prod-mcc3"><span class="pd-mcc" style="--mc:#d9b67a">MCC 3</span><input type="number" inputmode="numeric" min="0" id="prod-mcc3" class="premium-input pd-input" placeholder="Ex: 3705" oninput="window.atualizarTotaisProducao && window.atualizarTotaisProducao()"><span class="pd-un">t</span></label>
+                            <label class="pd-linha" for="prod-mcc4"><span class="pd-mcc" style="--mc:#c4693a">MCC 4</span><input type="number" inputmode="numeric" min="0" id="prod-mcc4" class="premium-input pd-input" placeholder="Ex: 2830" oninput="window.atualizarTotaisProducao && window.atualizarTotaisProducao()"><span class="pd-un">t</span></label>
+                        </div>
+                        <div class="pd-total"><span>Total a lançar</span><strong id="pd-total-ton">0 t</strong></div>
+                        <button type="button" class="cc-btn cc-btn-cheio pd-salvar" onclick="window.processarProducaoDiaria()">Lançar tonelagem</button>
+                    </div>
+                    <div class="cc-bloco pd-card">
+                        <div class="cc-titulo-ico"><span class="cc-ico" style="--ic:#e8892b"><i class="fas fa-fire"></i></span><div><div class="cc-rotulo">Só para a vida útil dos moldes</div><h2 class="cc-titulo">Panelas (corridas)</h2></div></div>
+                        <div class="pd-linhas">
+                            <label class="pd-linha" for="molde-prod-mcc2"><span class="pd-mcc" style="--mc:#f0a334">MCC 2</span><input type="number" inputmode="numeric" min="0" id="molde-prod-mcc2" class="premium-input pd-input" placeholder="Ex: 2" oninput="window.atualizarTotaisProducao && window.atualizarTotaisProducao()"><span class="pd-un">panelas</span></label>
+                            <label class="pd-linha" for="molde-prod-mcc3"><span class="pd-mcc" style="--mc:#d9b67a">MCC 3</span><input type="number" inputmode="numeric" min="0" id="molde-prod-mcc3" class="premium-input pd-input" placeholder="Ex: 5" oninput="window.atualizarTotaisProducao && window.atualizarTotaisProducao()"><span class="pd-un">panelas</span></label>
+                            <label class="pd-linha" for="molde-prod-mcc4"><span class="pd-mcc" style="--mc:#c4693a">MCC 4</span><input type="number" inputmode="numeric" min="0" id="molde-prod-mcc4" class="premium-input pd-input" placeholder="Ex: 8" oninput="window.atualizarTotaisProducao && window.atualizarTotaisProducao()"><span class="pd-un">panelas</span></label>
+                        </div>
+                        <div class="pd-total"><span>Total a lançar</span><strong id="pd-total-pan">0 panelas</strong></div>
+                        <button type="button" class="cc-btn cc-btn-cheio pd-salvar" onclick="window.salvarApontamentoMoldes(event)">Lançar panelas</button>
                     </div>
                 </div>
-
-                <div class="glass-panel" style="padding:24px;">
-                    <h3 style="color:var(--text-heading); font-size: 16px; margin-bottom: 16px;"><i class="fas fa-history"></i> Auditoria de Lançamento de Moldes</h3>
-                    <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
-                        <table class="premium-table" style="font-size: 12px; text-align:center;">
-                            <thead>
-                                <tr><th>Data / Hora</th><th>Responsável</th><th>MCC 2</th><th>MCC 3</th><th>MCC 4</th><th>Desfazer</th></tr>
-                            </thead>
-                            <tbody id="tabela-historico-moldes"></tbody>
-                        </table>
+                <div class="cc-grade cc-grade-2 pd-grade">
+                    <div class="cc-bloco">
+                        <div class="cc-rotulo">Auditoria</div><h2 class="cc-titulo">Lançamentos de tonelagem</h2>
+                        <div class="table-responsive pd-tabela"><table class="premium-table"><thead><tr><th>Data / hora</th><th>Responsável</th><th>MCC 2</th><th>MCC 3</th><th>MCC 4</th><th></th></tr></thead><tbody id="tabela-historico-geral"></tbody></table></div>
+                    </div>
+                    <div class="cc-bloco">
+                        <div class="cc-rotulo">Auditoria</div><h2 class="cc-titulo">Lançamentos de panelas</h2>
+                        <div class="table-responsive pd-tabela"><table class="premium-table"><thead><tr><th>Data / hora</th><th>Responsável</th><th>MCC 2</th><th>MCC 3</th><th>MCC 4</th><th></th></tr></thead><tbody id="tabela-historico-moldes"></tbody></table></div>
                     </div>
                 </div>
             </section>
-
             <section id="aba-reparos" class="tab-content">
                 <!-- Peças em reparo no padrão novo: fila da bancada em blocos
                      (mais antiga primeiro), com desgaste, dias na oficina e as
