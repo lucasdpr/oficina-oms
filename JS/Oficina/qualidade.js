@@ -290,22 +290,15 @@ window.carregarPadroesQualidade = async function() {
         }
 
         container.classList.remove('hidden');
+        // 🎨 padrão novo: alerta em bloco com faixa vermelha
         container.innerHTML = `
-            <div class="glass-panel" style="padding:18px; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.35);">
-                <h3 style="color:var(--danger); font-size:0.95rem; margin:0 0 12px 0;">
-                    <i class="fas fa-triangle-exclamation"></i> Padrão detectado — mesmo defeito em vários equipamentos
-                </h3>
+            <div class="cc-bloco ql-padrao">
+                <div class="cc-titulo-ico"><span class="cc-ico" style="--ic:var(--ds-perigo)"><i class="fas fa-triangle-exclamation"></i></span><div><div class="cc-rotulo">Padrão detectado</div><h2 class="cc-titulo">Mesmo defeito em vários equipamentos</h2></div></div>
                 ${padroes.map(p => `
-                    <div style="padding:10px 0; border-top:1px solid rgba(239,68,68,0.2);">
-                        <div style="font-weight:700; color:var(--text-heading);">${p.categoria} — ${p.total_equipamentos} equipamentos</div>
-                        <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
-                            ${(p.equipamentos || []).join(', ')}
-                        </div>
-                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
-                            De ${p.primeira_ocorrencia} até ${p.ultima_ocorrencia}
-                        </div>
-                    </div>
-                `).join('')}
+                    <div class="ql-padrao-item">
+                        <b>${p.total_equipamentos}</b>
+                        <div><strong>${p.categoria}</strong><span>${(p.equipamentos || []).join(', ')}</span>${p.primeira_ocorrencia || p.ultima_ocorrencia ? `<small>${p.primeira_ocorrencia ? `De ${p.primeira_ocorrencia} até ` : 'Última: '}${p.ultima_ocorrencia || ''}</small>` : ''}</div>
+                    </div>`).join('')}
             </div>
         `;
     } catch (e) {
@@ -332,22 +325,10 @@ window.renderizarKpisQualidade = function(lista) {
     const achadosTotal = lista.reduce((soma, r) => soma + (Number(r.achados_total) || 0), 0);
 
     container.innerHTML = `
-        <div class="kpi-card warning">
-            <div class="kpi-icon glow-warning"><i class="fas fa-hourglass-half"></i></div>
-            <div class="kpi-data"><h4>${aguardando}</h4><p>Aguardando Saída</p></div>
-        </div>
-        <div class="kpi-card success">
-            <div class="kpi-icon glow-success"><i class="fas fa-check"></i></div>
-            <div class="kpi-data"><h4>${concluidos}</h4><p>Concluídos</p></div>
-        </div>
-        <div class="kpi-card ${achadosPendentes > 0 ? 'danger' : ''}">
-            <div class="kpi-icon ${achadosPendentes > 0 ? 'glow-danger' : ''}"><i class="fas fa-triangle-exclamation"></i></div>
-            <div class="kpi-data"><h4>${achadosPendentes}</h4><p>Achados Pendentes</p></div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon glow-brand"><i class="fas fa-list-check"></i></div>
-            <div class="kpi-data"><h4>${achadosTotal}</h4><p>Achados no Total</p></div>
-        </div>
+        <div class="cc-kpi" style="cursor:default"><span class="cc-ico"><i class="fas fa-hourglass-half"></i></span><span class="cc-rotulo">Aguardando saída</span><strong>${aguardando}</strong></div>
+        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-ok)"><i class="fas fa-check"></i></span><span class="cc-rotulo">Concluídos</span><strong>${concluidos}</strong></div>
+        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:${achadosPendentes ? 'var(--ds-perigo)' : 'var(--ds-texto-2)'}"><i class="fas fa-triangle-exclamation"></i></span><span class="cc-rotulo">Achados pendentes</span><strong${achadosPendentes ? ' class="cc-perigo"' : ''}>${achadosPendentes}</strong></div>
+        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-texto-2)"><i class="fas fa-list-check"></i></span><span class="cc-rotulo">Achados no total</span><strong>${achadosTotal}</strong></div>
     `;
 };
 
@@ -367,61 +348,34 @@ window.renderizarListaQualidade = function() {
         : QUALIDADE_CACHE;
 
     if (!Array.isArray(lista) || lista.length === 0) {
-        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:30px 0;">Nenhum registro encontrado${BUSCA_QUALIDADE_ATUAL ? ' pra essa busca' : (FILTRO_QUALIDADE_ATUAL ? ' com esse filtro' : '')}.</div>`;
+        container.innerHTML = `<div class="tc-vazio">Nenhum registro encontrado${BUSCA_QUALIDADE_ATUAL ? ' pra essa busca' : (FILTRO_QUALIDADE_ATUAL ? ' com esse filtro' : '')}.</div>`;
         return;
     }
 
-    container.innerHTML = lista.map(r => {
+    // 🎨 padrão novo: bloco com fotos de entrada/saída lado a lado,
+    // status (ponto + texto), observações, achados e ações.
+    const thumb = (r, etapa, foto, rot) => `<button type="button" class="os-thumb ql-thumb" ${foto ? `onclick="window.abrirGaleriaQualidade(${r.id}, '${etapa}', '${r.peca_id}')"` : 'disabled'} title="Fotos de ${rot}">
+        ${foto ? `<img src="${foto}" alt="">` : `<i class="fas ${etapa === 'saida' ? 'fa-hourglass-half' : 'fa-image'}"></i>`}<em>${rot}</em></button>`;
+    container.innerHTML = `<div class="os-lista">${lista.map(r => {
         const concluido = r.status === 'Concluído';
-        const corStatus = concluido ? 'var(--success)' : 'var(--warning)';
-        const iconeStatus = concluido ? '✅' : '⏳';
-        const fotoCapaEntrada = r.foto_entrada_capa;
-        const fotoCapaSaida = r.foto_saida_capa;
+        const pend = Number(r.achados_pendentes) || 0, tot = Number(r.achados_total) || 0;
         return `
-        <div style="display:flex; gap:14px; padding:14px 0; border-bottom:1px solid var(--border); align-items:flex-start; flex-wrap:wrap;">
-            <div style="display:flex; gap:6px; flex-shrink:0;">
-                <div style="position:relative; cursor:pointer;" title="Fotos de Entrada" onclick="window.abrirGaleriaQualidade(${r.id}, 'entrada', '${r.peca_id}')">
-                    ${fotoCapaEntrada ? `
-                        <img src="${fotoCapaEntrada}" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:2px solid var(--info);">
-                        <span style="position:absolute; bottom:-6px; left:2px; background:var(--info); color:#04121c; font-size:9px; font-weight:800; padding:1px 5px; border-radius:8px;">ENTRADA</span>
-                    ` : `<div style="width:64px; height:64px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; color:var(--text-muted);"><i class="fas fa-image" style="font-size:18px; opacity:0.4;"></i></div>`}
-                </div>
-                <div style="position:relative; cursor:${fotoCapaSaida ? 'pointer' : 'default'};" title="Fotos de Saída" ${fotoCapaSaida ? `onclick="window.abrirGaleriaQualidade(${r.id}, 'saida', '${r.peca_id}')"` : ''}>
-                    ${fotoCapaSaida ? `
-                        <img src="${fotoCapaSaida}" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:2px solid var(--brand);">
-                        <span style="position:absolute; bottom:-6px; left:2px; background:var(--brand); color:var(--text-on-primary); font-size:9px; font-weight:800; padding:1px 5px; border-radius:8px;">SAÍDA</span>
-                    ` : `<div style="width:64px; height:64px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; color:var(--text-muted); border:1px dashed var(--border);"><i class="fas fa-hourglass-half" style="font-size:16px; opacity:0.4;"></i></div>`}
-                </div>
+        <div class="os-item ql-item" data-nivel="${concluido ? 'ok' : 'atencao'}">
+            <div class="ql-thumbs">${thumb(r, 'entrada', r.foto_entrada_capa, 'Entrada')}${thumb(r, 'saida', r.foto_saida_capa, 'Saída')}</div>
+            <div class="os-corpo">
+                <div class="os-topo"><strong class="sq-id">${r.peca_id}</strong><span class="ca-status os-status">${r.status}</span>
+                    ${tot ? `<button type="button" class="ql-achados${pend ? ' pend' : ''}" onclick="window.abrirModalAchadosQualidade(${r.id}, '${r.peca_id}', ${!concluido})">${pend ? `${pend} de ${tot} achado(s) pendente(s)` : `${tot} achado(s) resolvido(s)`}</button>` : ''}</div>
+                ${r.observacao_entrada ? `<p><b>Entrada:</b> ${window.escapeHtmlNotif(r.observacao_entrada)}</p>` : ''}
+                ${r.observacao_saida ? `<p><b>Saída:</b> ${window.escapeHtmlNotif(r.observacao_saida)}</p>` : ''}
+                <div class="os-meta">Entrada: ${r.criado_por || 'Sistema'} · ${r.criado_em || ''}${concluido && r.concluido_por ? ` · Saída: ${r.concluido_por} · ${r.concluido_em || ''}` : ''}</div>
             </div>
-            <div style="flex:1; min-width:180px;">
-                <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
-                    <span class="font-code" style="font-weight:700; color:var(--text-heading);">${r.peca_id}</span>
-                    <span class="status-text-pill" style="--sev-color:${corStatus};">${iconeStatus} ${r.status}</span>
-                </div>
-                ${r.observacao_entrada ? `<div style="font-size:12px; color:var(--text-body); margin-bottom:2px;"><strong style="color:var(--info);">Entrada:</strong> ${window.escapeHtmlNotif(r.observacao_entrada)}</div>` : ''}
-                ${r.observacao_saida ? `<div style="font-size:12px; color:var(--text-body); margin-bottom:2px;"><strong style="color:var(--brand);">Saída:</strong> ${window.escapeHtmlNotif(r.observacao_saida)}</div>` : ''}
-                ${Number(r.achados_total) > 0 ? `
-                    <div style="margin:6px 0;">
-                        <button type="button" onclick="window.abrirModalAchadosQualidade(${r.id}, '${r.peca_id}', ${!concluido})" style="background:${Number(r.achados_pendentes) > 0 ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.12)'}; color:${Number(r.achados_pendentes) > 0 ? 'var(--danger)' : 'var(--success)'}; border:1px solid currentColor; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:700; cursor:pointer;">
-                            <i class="fas fa-triangle-exclamation"></i> ${r.achados_pendentes > 0 ? `${r.achados_pendentes} de ${r.achados_total} pendente(s)` : `${r.achados_total} achado(s) resolvido(s)`}
-                        </button>
-                    </div>
-                ` : ''}
-                <div style="font-size:11px; color:var(--text-accent);">
-                    Entrada: ${r.criado_por || 'Sistema'} · ${r.criado_em || ''}
-                    ${concluido && r.concluido_por ? `<br>Saída: ${r.concluido_por} · ${r.concluido_em || ''}` : ''}
-                </div>
+            <div class="os-acoes">
+                ${!concluido ? `<button type="button" class="cc-btn cc-btn-cheio" onclick="window.abrirModalSaidaQualidade(${r.id}, '${r.peca_id}')">Registrar saída</button>` : ''}
+                ${!concluido ? `<button type="button" class="cc-btn" onclick="window.abrirModalAchadosQualidade(${r.id}, '${r.peca_id}', true)">+ Achado</button>` : ''}
+                <button type="button" class="cc-btn os-excluir" onclick="window.excluirQualidade(${r.id})" title="Excluir"><i class="fas fa-trash"></i></button>
             </div>
-            <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
-                ${!concluido ? `<button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.abrirModalAchadosQualidade(${r.id}, '${r.peca_id}', true)"><i class="fas fa-plus"></i> Achado</button>` : ''}
-                ${!concluido ? `<button class="btn-premium btn-success" style="padding:4px 10px; font-size:11px;" onclick="window.abrirModalSaidaQualidade(${r.id}, '${r.peca_id}')"><i class="fas fa-right-from-bracket"></i> Registrar Saída</button>` : ''}
-                <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.excluirQualidade(${r.id})">
-                    <i class="fas fa-trash"></i> Excluir
-                </button>
-            </div>
-        </div>
-        `;
-    }).join('');
+        </div>`;
+    }).join('')}</div>`;
 };
 
 // Galeria de fotos (entrada OU saída) de UM registro de qualidade —

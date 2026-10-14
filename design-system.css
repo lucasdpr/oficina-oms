@@ -1108,6 +1108,31 @@ body.light-mode {
 .os-acoes .cc-btn { height: 38px; min-height: 38px; padding: 0 14px; }
 .os-excluir:hover { border-color: var(--ds-perigo) !important; color: var(--ds-perigo) !important; }
 
+/* QUALIDADE (ql-) */
+#aba-qualidade > * { margin-bottom: 14px; }
+.ql-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.ql-kpis > * { border: 1px solid var(--ds-linha); border-radius: var(--ds-r); }
+.ql-campos { grid-template-columns: 1fr 2fr; }
+.ql-campos .os-campo-largo { grid-column: auto; }
+.ql-achado { display: grid; grid-template-columns: 2fr 1fr auto auto; gap: 10px; align-items: end; }
+.ql-achado .premium-textarea, .ql-achado .premium-input, .ql-achado .premium-select { width: 100%; min-height: 44px; margin: 0 !important; }
+.ql-achado .cc-btn { height: 44px; }
+#qualidade-achados-pendentes-lista:empty, #qualidade-achado-novo-foto-preview:empty { display: none; }
+.ql-padrao { border-color: color-mix(in srgb, var(--ds-perigo) 45%, var(--ds-linha)); }
+.ql-padrao-item { display: grid; grid-template-columns: 56px 1fr; gap: 12px; align-items: center; padding: 12px 0; border-top: 1px solid var(--ds-linha); margin-top: 12px; }
+.ql-padrao-item b { font: 700 1.8rem var(--ds-fonte-titulo); color: var(--ds-perigo); }
+.ql-padrao-item div { display: flex; flex-direction: column; gap: 2px; }
+.ql-padrao-item strong { color: var(--ds-texto); }
+.ql-padrao-item span { font-size: .84rem; color: var(--ds-texto-2); }
+.ql-padrao-item small { font-size: .76rem; color: var(--ds-texto-3); }
+.ql-item { grid-template-columns: auto minmax(0, 1fr) auto; }
+.ql-thumbs { display: flex; gap: 8px; }
+.ql-thumb { width: 76px; height: 76px; }
+.ql-thumb em { position: absolute; left: 0; right: 0; bottom: 0; font-style: normal; font-size: .66rem; font-weight: 600; text-align: center; padding: 2px 0; background: rgba(0, 0, 0, .65); color: #fff; }
+.ql-achados { border: 1px solid color-mix(in srgb, var(--ds-ok) 50%, transparent); background: color-mix(in srgb, var(--ds-ok) 10%, transparent); color: var(--ds-ok); border-radius: 99px; padding: 3px 12px; font: 600 .76rem var(--ds-fonte) !important; min-height: 0 !important; cursor: pointer; }
+.ql-achados.pend { border-color: color-mix(in srgb, var(--ds-perigo) 50%, transparent); background: color-mix(in srgb, var(--ds-perigo) 10%, transparent); color: var(--ds-perigo); }
+.ql-item .os-corpo p b { color: var(--ds-texto); font-weight: 600; }
+
 /* ------------------------------------------------------------------
    RESPONSIVO
    ------------------------------------------------------------------ */
@@ -1167,6 +1192,13 @@ body.light-mode {
     .os-acoes { grid-column: 1 / -1; justify-content: stretch; }
     .os-acoes .cc-btn { flex: 1 1 auto; justify-content: center; }
     .os-registrar { align-self: stretch; }
+    .ql-kpis { grid-template-columns: 1fr 1fr; }
+    .ql-kpis .cc-ico { display: none; }
+    .ql-campos { grid-template-columns: 1fr; }
+    .ql-achado { grid-template-columns: 1fr 1fr; }
+    .ql-achado-txt { grid-column: 1 / -1; }
+    .ql-item { grid-template-columns: 1fr; }
+    .ql-thumb { width: 64px; height: 64px; }
     .ca-kpis > :first-child { grid-column: auto; }
     .ca-linha { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; padding: 14px; }
     .ca-linha .ca-num, .ca-cab { display: none; }
