@@ -345,60 +345,29 @@ window.carregarReparosAndamento = async function() {
         // sente falta do agrupamento é o ADM, que vê tudo junto e sem
         // essa separação a lista fica uma bagunça de máquinas diferentes
         // misturadas.
-        const coresMCC = { "2": "#d9b67a", "3": "#8b5cf6", "4": "#ec4899" };
+        // 🎨 Padrão novo: mesmos blocos da fila de reparo, com as ações do folhão.
         const grupos = {};
-        itens.forEach(item => {
-            const mcc = item.equipamento.mcc_compat || "2/3";
-            if (!grupos[mcc]) grupos[mcc] = [];
-            grupos[mcc].push(item);
-        });
-
-        const linhaItem = ({ rascunho, execucao, equipamento }) => {
-            const dataRef = rascunho?.atualizado_em || execucao?.iniciada_em;
-            const atualizado = dataRef ? new Date(dataRef).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
-            return `
-                <div class="tecnico-item-linha" style="flex-direction:column; align-items:stretch; gap:10px; cursor:default; margin-left:14px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <span class="font-code" style="font-weight:700; color:var(--text-heading);">${equipamento.id}</span>
-                            <span class="ind-card-tag bg-tag" style="margin-left:6px;">${equipamento.tipo}</span>
+        itens.forEach(item => { const mcc = item.equipamento.mcc_compat || "2/3"; (grupos[mcc] ||= []).push(item); });
+        listaAndamento.innerHTML = Object.keys(grupos).sort().map(mcc => `
+            <div class="rp-grupo">
+                <div class="rp-grupo-topo"><strong>MCC ${mcc}</strong><span>${grupos[mcc].length} em andamento</span></div>
+                <div class="rp-grade">${grupos[mcc].map(({ rascunho, execucao, equipamento }) => {
+                    const dataRef = rascunho?.atualizado_em || execucao?.iniciada_em;
+                    const atualizado = dataRef ? new Date(dataRef).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—";
+                    return `<div class="rp-card">
+                        <div class="rp-topo">
+                            <span class="cc-ico" style="--ic:var(--ds-ok)"><i class="fas fa-person-digging"></i></span>
+                            <div class="rp-id"><strong class="sq-id">${window.rotuloEquipamento ? window.rotuloEquipamento(equipamento) : equipamento.id}</strong><span>${equipamento.tipo}</span></div>
+                            <div class="rp-dias rp-dias-txt"><span>Atualizado</span><b>${atualizado}</b></div>
                         </div>
-                        <span style="color:var(--text-accent); font-weight:600; font-size:11px;">Atualizado ${atualizado}</span>
-                    </div>
-                    <div class="flex-align-center gap-10" style="flex-wrap:wrap;">
-                        <button class="btn-premium btn-warning" onclick="window.abrirFolhaoPorTipo('${equipamento.id}')"><i class="fas fa-file-alt"></i> Folhão</button>
-                        ${window.renderizarBotaoChecklistExecucao(equipamento.id)}
-                        ${window.renderizarBotaoConcluirReparo(equipamento.id)}
-                    </div>
-                </div>`;
-        };
-
-        listaAndamento.innerHTML = Object.keys(grupos).sort().map(mcc => {
-            const porTipo = {};
-            grupos[mcc].forEach(item => {
-                const tipo = item.equipamento.tipo || "Outros";
-                if (!porTipo[tipo]) porTipo[tipo] = [];
-                porTipo[tipo].push(item);
-            });
-
-            const blocoTipos = Object.keys(porTipo).sort().map(tipo => `
-                <div style="font-weight:600; color:var(--text-muted); font-size:13px; margin:10px 0 8px 6px;">
-                    <i class="fas fa-tag"></i> ${tipo}
-                </div>
-                <div style="display:flex; flex-direction:column; gap:10px;">
-                    ${porTipo[tipo].map(linhaItem).join("")}
-                </div>
-            `).join("");
-
-            return `
-                <div style="margin-bottom:18px;">
-                    <div style="padding:10px 12px; font-weight:700; color:var(--text-heading); font-size:15px; background:${coresMCC[mcc] || '#f59e0b'}20; border-top:3px solid ${coresMCC[mcc] || '#f59e0b'}; border-radius:6px 6px 0 0;">
-                        <i class="fas fa-server"></i> MCC ${mcc}
-                    </div>
-                    ${blocoTipos}
-                </div>
-            `;
-        }).join("");
+                        <div class="rp-acoes rp-acoes-andamento">
+                            <button type="button" class="cc-btn" onclick="window.abrirFolhaoPorTipo('${equipamento.id}')">Folhão</button>
+                            ${window.renderizarBotaoChecklistExecucao(equipamento.id)}
+                            ${window.renderizarBotaoConcluirReparo(equipamento.id)}
+                        </div>
+                    </div>`;
+                }).join("")}</div>
+            </div>`).join("");
 
         // 🆕 Igual acontece na sub-aba "Iniciar Reparo": busca em segundo
         // plano o % do Checklist de Execução e se o Folhão já foi salvo,

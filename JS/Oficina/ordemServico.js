@@ -147,9 +147,9 @@ window.popularCheckboxAreasOs = function() {
     const lista = document.getElementById('os-lista-areas');
     if (!lista) return;
     lista.innerHTML = areasOficina.map(a => `
-        <label style="display:flex; align-items:center; gap:8px; padding:6px 2px; cursor:pointer;">
+        <label class="os-chip">
             <input type="checkbox" class="os-area-checkbox" value="${a.chave}">
-            <span>${a.nome}</span>
+            <i class="fas ${a.icone}"></i><span>${a.nome}</span>
         </label>
     `).join('');
     const todasEl = document.getElementById('os-todas-areas');
@@ -281,58 +281,42 @@ window.renderizarListaOrdensServico = function() {
         : OS_CACHE;
 
     if (!Array.isArray(lista) || lista.length === 0) {
-        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:30px 0;">Nenhuma OS encontrada${BUSCA_OS_ATUAL ? ' pra essa busca' : (FILTRO_OS_ATUAL ? ' com esse filtro' : ' ainda')}.</div>`;
+        container.innerHTML = `<div class="tc-vazio">Nenhuma OS encontrada${BUSCA_OS_ATUAL ? ' pra essa busca' : (FILTRO_OS_ATUAL ? ' com esse filtro' : ' ainda')}.</div>`;
         return;
     }
 
-    container.innerHTML = lista.map(os => {
+    // 🎨 Padrão novo: cada OS em bloco — miniatura da página, número,
+    // status (ponto + texto, sem emoji), descrição, quem/quando e ações.
+    container.innerHTML = `<div class="os-lista">${lista.map(os => {
         const concluida = os.status === 'Concluído';
         const naoExecutada = os.status === 'Não Executada';
-        let corStatus = 'var(--warning)';
-        let iconeStatus = '🔧';
-        if (concluida) { corStatus = 'var(--success)'; iconeStatus = '✅'; }
-        else if (naoExecutada) { corStatus = 'var(--danger)'; iconeStatus = '🚫'; }
+        const nivel = concluida ? 'ok' : naoExecutada ? 'critico' : 'atencao';
         const totalFotos = os.total_fotos || 0;
+        const titulo = os.numero_os ? `OS ${window.escapeHtmlNotif(os.numero_os)}` : `OS #${os.id}`;
+        const tituloAttr = window.escapeAtributoNotif(os.numero_os ? `OS ${os.numero_os}` : `OS #${os.id}`);
+        const areas = (os.areas && os.areas.length) ? os.areas.map(window.nomeAreaOficina).join(', ') : (os.area ? window.nomeAreaOficina(os.area) : '');
         return `
-        <div style="display:flex; gap:14px; padding:14px 0; border-bottom:1px solid var(--border); align-items:flex-start;">
-            ${os.foto_capa ? `
-                <div style="position:relative; flex-shrink:0; cursor:pointer;" onclick="window.abrirGaleriaOs(${os.id}, '${window.escapeAtributoNotif(os.numero_os ? `OS ${os.numero_os}` : `OS #${os.id}`)}')">
-                    <img src="${os.foto_capa}" style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border);">
-                    ${totalFotos > 1 ? `<span style="position:absolute; bottom:2px; right:2px; background:rgba(0,0,0,0.75); color:#fff; font-size:10px; padding:1px 6px; border-radius:10px;"><i class="fas fa-images"></i> ${totalFotos}</span>` : ''}
-                </div>
-            ` : `
-                <div style="width:70px; height:70px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--text-muted);">
-                    <i class="fas fa-file-invoice" style="font-size:20px; opacity:0.4;"></i>
-                </div>
-            `}
-            <div style="flex:1; min-width:0;">
-                <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
-                    <span class="font-code" style="font-weight:700; color:var(--text-heading);">${os.numero_os ? `OS ${window.escapeHtmlNotif(os.numero_os)}` : `#${os.id}`}</span>
-                    <span class="status-text-pill" style="--sev-color:${corStatus};">${iconeStatus} ${os.status}</span>
-                </div>
-                ${os.descricao ? `<div style="font-size:13px; color:var(--text-body); margin-bottom:4px;">${window.escapeHtmlNotif(os.descricao)}</div>` : ''}
-                ${naoExecutada && os.motivo_nao_executada ? `
-                    <div style="font-size:12px; color:var(--danger); background:rgba(239,68,68,0.08); border-left:3px solid var(--danger); padding:5px 8px; border-radius:4px; margin-bottom:4px;">
-                        <strong>Motivo:</strong> ${window.escapeHtmlNotif(os.motivo_nao_executada)}
-                    </div>
-                ` : ''}
-                <div style="font-size:11px; color:var(--text-accent);">
-                    ${window.escapeHtmlNotif(os.criado_por || 'Sistema')} · ${os.criado_em || ''}${(os.areas && os.areas.length) ? ` · ${os.areas.map(window.nomeAreaOficina).join(', ')}` : (os.area ? ` · ${window.nomeAreaOficina(os.area)}` : '')}
-                    ${concluida && os.concluido_por ? `<br>Concluída por ${window.escapeHtmlNotif(os.concluido_por)} · ${os.concluido_em || ''}` : ''}
-                    ${naoExecutada && os.encerrado_por ? `<br>Encerrada por ${window.escapeHtmlNotif(os.encerrado_por)} · ${os.encerrado_em || ''}` : ''}
-                </div>
+        <div class="os-item" data-nivel="${nivel}">
+            <button type="button" class="os-thumb" onclick="window.abrirGaleriaOs(${os.id}, '${tituloAttr}')" ${os.foto_capa ? '' : 'disabled'}>
+                ${os.foto_capa ? `<img src="${os.foto_capa}" alt="">` : `<i class="fas fa-file-invoice"></i>`}
+                ${totalFotos > 1 ? `<span><i class="fas fa-images"></i> ${totalFotos}</span>` : ''}
+            </button>
+            <div class="os-corpo">
+                <div class="os-topo"><strong>${titulo}</strong><span class="ca-status os-status">${os.status}</span>${os.maquina ? `<span class="os-maq">${window.escapeHtmlNotif(os.maquina)}</span>` : ''}</div>
+                ${os.descricao ? `<p>${window.escapeHtmlNotif(os.descricao)}</p>` : ''}
+                ${naoExecutada && os.motivo_nao_executada ? `<div class="os-motivo"><b>Motivo:</b> ${window.escapeHtmlNotif(os.motivo_nao_executada)}</div>` : ''}
+                <div class="os-meta">${window.escapeHtmlNotif(os.criado_por || 'Sistema')} · ${os.criado_em || ''}${areas ? ` · ${areas}` : ''}
+                    ${concluida && os.concluido_por ? ` · concluída por ${window.escapeHtmlNotif(os.concluido_por)} ${os.concluido_em || ''}` : ''}
+                    ${naoExecutada && os.encerrado_por ? ` · encerrada por ${window.escapeHtmlNotif(os.encerrado_por)} ${os.encerrado_em || ''}` : ''}</div>
             </div>
-            <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
-                ${!concluida ? `<button class="btn-premium btn-success" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusOrdemServico(${os.id}, 'Concluído')">Concluir</button>` : ''}
-                ${!naoExecutada ? `<button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.marcarOsNaoExecutada(${os.id})">Não Executada</button>` : ''}
-                ${(concluida || naoExecutada) ? `<button class="btn-outline-neutral" style="padding:4px 10px; font-size:11px;" onclick="window.mudarStatusOrdemServico(${os.id}, 'Em Andamento')">Reabrir</button>` : ''}
-                <button class="btn-outline-danger" style="padding:4px 10px; font-size:11px;" onclick="window.excluirOrdemServico(${os.id})">
-                    <i class="fas fa-trash"></i> Excluir
-                </button>
+            <div class="os-acoes">
+                ${!concluida ? `<button type="button" class="cc-btn cc-btn-cheio" onclick="window.mudarStatusOrdemServico(${os.id}, 'Concluído')">Concluir</button>` : ''}
+                ${(concluida || naoExecutada) ? `<button type="button" class="cc-btn" onclick="window.mudarStatusOrdemServico(${os.id}, 'Em Andamento')">Reabrir</button>` : ''}
+                ${!naoExecutada ? `<button type="button" class="cc-btn" onclick="window.marcarOsNaoExecutada(${os.id})">Não executada</button>` : ''}
+                <button type="button" class="cc-btn os-excluir" onclick="window.excluirOrdemServico(${os.id})" title="Excluir"><i class="fas fa-trash"></i></button>
             </div>
-        </div>
-        `;
-    }).join('');
+        </div>`;
+    }).join('')}</div>`;
 };
 
 // --------------------------------------------------------------

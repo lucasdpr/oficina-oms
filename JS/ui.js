@@ -305,14 +305,9 @@ window.mudarSubAbaReserva = function(aba) {
     window.SUBABA_RESERVA = aba;
     const btnMaquina = document.getElementById("subaba-reserva-maquina");
     const btnOficina = document.getElementById("subaba-reserva-oficina");
-    if (btnMaquina) {
-        btnMaquina.style.borderBottomColor = aba === 'maquina' ? 'var(--brand)' : 'transparent';
-        btnMaquina.style.color = aba === 'maquina' ? 'var(--brand)' : 'var(--text-muted)';
-    }
-    if (btnOficina) {
-        btnOficina.style.borderBottomColor = aba === 'oficina' ? 'var(--brand)' : 'transparent';
-        btnOficina.style.color = aba === 'oficina' ? 'var(--brand)' : 'var(--text-muted)';
-    }
+    // 🎨 abas no padrão (folhao-tab): só troca a classe ativa
+    if (btnMaquina) { btnMaquina.classList.toggle('active', aba === 'maquina'); btnMaquina.style.borderBottomColor = ''; btnMaquina.style.color = ''; }
+    if (btnOficina) { btnOficina.classList.toggle('active', aba === 'oficina'); btnOficina.style.borderBottomColor = ''; btnOficina.style.color = ''; }
     renderReservas();
 };
 

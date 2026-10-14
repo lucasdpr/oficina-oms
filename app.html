@@ -74,7 +74,7 @@
     <link rel="stylesheet" href="style.css?v=14" />
     <!-- Novo padrão visual (tokens + componentes ds-*). Vem DEPOIS do
          style.css pra vencer em empate de especificidade. -->
-    <link rel="stylesheet" href="design-system.css?v=11" />
+    <link rel="stylesheet" href="design-system.css?v=13" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="JS/assets/icon-192.png?v=4">
@@ -1078,11 +1078,11 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                                 <input type="number" id="prod-mcc2" class="premium-input" placeholder="Ex: 3131" style="font-size: 16px; font-weight: bold;">
                             </div>
                             <div class="input-group" style="margin-bottom: 12px;">
-                                <label style="color: #8b5cf6;">MCC #3 (Ton)</label>
+                                <label style="color: #d9b67a;">MCC #3 (Ton)</label>
                                 <input type="number" id="prod-mcc3" class="premium-input" placeholder="Ex: 3705" style="font-size: 16px; font-weight: bold;">
                             </div>
                             <div class="input-group" style="margin-bottom: 20px;">
-                                <label style="color: #ec4899;">MCC #4 (Ton)</label>
+                                <label style="color: #c4693a;">MCC #4 (Ton)</label>
                                 <input type="number" id="prod-mcc4" class="premium-input" placeholder="Ex: 2830" style="font-size: 16px; font-weight: bold;">
                             </div>
                             <button class="btn-premium btn-success w-100" onclick="window.processarProducaoDiaria()"><i class="fas fa-check-double"></i> Atualizar Fábrica Inteira</button>
@@ -1096,11 +1096,11 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                                 <input type="number" id="molde-prod-mcc2" class="premium-input" placeholder="Ex: 2" style="font-size: 16px; font-weight: bold;">
                             </div>
                             <div class="input-group" style="margin-bottom: 12px;">
-                                <label style="color: #8b5cf6;">MCC #3 (Panelas)</label>
+                                <label style="color: #d9b67a;">MCC #3 (Panelas)</label>
                                 <input type="number" id="molde-prod-mcc3" class="premium-input" placeholder="Ex: 5" style="font-size: 16px; font-weight: bold;">
                             </div>
                             <div class="input-group" style="margin-bottom: 20px;">
-                                <label style="color: #ec4899;">MCC #4 (Panelas)</label>
+                                <label style="color: #c4693a;">MCC #4 (Panelas)</label>
                                 <input type="number" id="molde-prod-mcc4" class="premium-input" placeholder="Ex: 8" style="font-size: 16px; font-weight: bold;">
                             </div>
                             <button class="btn-premium btn-warning w-100" onclick="window.salvarApontamentoMoldes(event)"><i class="fas fa-check"></i> Salvar Corridas (Moldes)</button>
@@ -1135,32 +1135,29 @@ a, button, [onclick], label[for], select { cursor: pointer; }
             </section>
 
             <section id="aba-reparos" class="tab-content">
-                <div class="glass-panel" style="border-top:4px solid var(--border-color);padding:24px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
-                        <div><h2><i class="fas fa-tools"></i> Setor de Manutenção (Reparo)</h2><p class="text-muted" style="font-size:13px;">Equipamentos que precisam de intervenção mecânica.</p></div>
-                       
-                    </div>
-
+                <!-- Peças em reparo no padrão novo: fila da bancada em blocos
+                     (mais antiga primeiro), com desgaste, dias na oficina e as
+                     ações grandes. Ids mantidos (reparos-table-body /
+                     reparos-lista-andamento / trocarAbaReparo). -->
+                <div class="cc-bloco">
+                    <div class="cc-titulo-ico"><span class="cc-ico"><i class="fas fa-screwdriver-wrench"></i></span><div><div class="cc-rotulo">Oficina</div><h2 class="cc-titulo">Peças em reparo</h2></div></div>
+                    <p class="cc-sub" id="rp-resumo" style="margin-top:12px">Carregando…</p>
                     <div class="folhao-tabs">
-                        <button class="folhao-tab active" onclick="window.trocarAbaReparo(event, 'reparo-sub-iniciar')">Iniciar Reparo</button>
-                        <button class="folhao-tab" onclick="window.trocarAbaReparo(event, 'reparo-sub-andamento')">Reparo em Andamento</button>
+                        <button class="folhao-tab active" onclick="window.trocarAbaReparo(event, 'reparo-sub-iniciar')">Aguardando reparo</button>
+                        <button class="folhao-tab" onclick="window.trocarAbaReparo(event, 'reparo-sub-andamento')">Em andamento</button>
                     </div>
-
                     <div id="reparo-sub-iniciar" class="folhao-content">
-                        <div class="table-responsive"><table class="premium-table tabela-mobile-cards" id="tabela-reparos"><thead><tr><th>TAG</th><th>Tipo</th><th>Desgaste</th><th>Dias em Reparo</th><th>Ações</th></tr></thead><tbody id="reparos-table-body"></tbody></table></div>
+                        <div id="reparos-table-body"></div>
                     </div>
-
                     <div id="reparo-sub-andamento" class="folhao-content" style="display:none;">
-                        <p class="text-muted" style="font-size:12px; margin-bottom:10px;">Folhões que já foram iniciados (por você ou por outro técnico) e ainda não foram concluídos.</p>
                         <div id="reparos-lista-andamento"></div>
                     </div>
                 </div>
             </section>
-
             <section id="aba-reservas" class="tab-content">
                 <div class="glass-panel" style="border-top:4px solid var(--border-color);padding:24px;margin-bottom:24px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;margin-bottom:16px;">
-                        <div><h2><i class="fas fa-boxes"></i> Estoque Disponível (Reserva)</h2><p class="text-muted" style="font-size:13px;">Peças prontas para alocação via Swap Automático.</p></div>
+                        <div class="cc-titulo-ico"><span class="cc-ico" style="--ic:var(--ds-ok)"><i class="fas fa-boxes-stacked"></i></span><div><div class="cc-rotulo">Estoque</div><h2 class="cc-titulo">Reserva pronta pra instalar</h2></div></div>
                         <button class="btn-premium" onclick="window.toggleFormAdicionar()"><i class="fas fa-plus"></i> Cadastrar Peça Nova</button>
                         <!-- FORMULÁRIO DE CADASTRO DE NOVA PEÇA -->
 <div id="form-novo-equipamento" class="cadastrar-box hidden" style="margin-top: 20px; background: rgba(0,0,0,0.2); border: 1px dashed var(--brand); padding: 20px; border-radius: var(--radius);">
@@ -1243,11 +1240,11 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                          na mesma tabela — confuso de ler). Cada botão troca qual grupo
                          de peças aparece na tabela abaixo; ver window.mudarSubAbaReserva
                          em ui.js. -->
-                    <div style="display:flex; gap:8px; margin-top:16px; border-bottom:2px solid var(--border-color);">
-                        <button id="subaba-reserva-maquina" class="btn-subaba-reserva ativo" onclick="window.mudarSubAbaReserva('maquina')" style="padding:10px 20px; background:none; border:none; border-bottom:3px solid var(--brand); color:var(--brand); font-weight:700; cursor:pointer; font-size:14px;">
+                    <div class="folhao-tabs" style="margin-top:16px;">
+                        <button id="subaba-reserva-maquina" class="btn-subaba-reserva folhao-tab active ativo" onclick="window.mudarSubAbaReserva('maquina')">
                             <i class="fas fa-industry"></i> Reserva na Máquina <span id="subaba-reserva-maquina-count"></span>
                         </button>
-                        <button id="subaba-reserva-oficina" class="btn-subaba-reserva" onclick="window.mudarSubAbaReserva('oficina')" style="padding:10px 20px; background:none; border:none; border-bottom:3px solid transparent; color:var(--text-muted); font-weight:700; cursor:pointer; font-size:14px;">
+                        <button id="subaba-reserva-oficina" class="btn-subaba-reserva folhao-tab" onclick="window.mudarSubAbaReserva('oficina')">
                             <i class="fas fa-warehouse"></i> Reserva na Oficina <span id="subaba-reserva-oficina-count"></span>
                         </button>
                     </div>
@@ -1677,94 +1674,48 @@ a, button, [onclick], label[for], select { cursor: pointer; }
             <!-- 🆕 REGISTRO DE OS (Ordem de Serviço) — foto da OS em papel +
                  acompanhamento de status (Em Andamento / Concluído). -->
             <section id="aba-ordens-servico" class="tab-content">
-                <!-- 🆕 Hero com foto de fundo — mesmo padrão visual já aplicado
-                     nas outras telas desta sessão (reaproveita .painel-hero*).
-                     Badges mostram contagem real por status (mesmo dado que
-                     window.carregarListaOrdensServico já busca). -->
-                <div class="painel-hero" style="margin-bottom:24px;">
-                    <div class="painel-hero-fundo"></div>
-                    <div class="painel-hero-conteudo">
-                        <div class="painel-hero-titulo">
-                            <div class="painel-hero-icone"><i class="fas fa-file-invoice"></i></div>
-                            <div>
-                                <h1>Registro de OS</h1>
-                                <p>Tire foto de cada página da OS em papel pra deixar ela registrada digitalmente.</p>
-                            </div>
-                        </div>
-                        <div class="painel-hero-badges">
-                            <div class="painel-hero-badge"><i class="fas fa-list" style="color:var(--text-accent);"></i> <strong id="os-badge-total">0</strong><span>Total</span></div>
-                            <div class="painel-hero-badge"><i class="fas fa-wrench" style="color:var(--warning);"></i> <strong id="os-badge-andamento">0</strong><span>Em Andamento</span></div>
-                            <div class="painel-hero-badge"><i class="fas fa-check" style="color:var(--success);"></i> <strong id="os-badge-concluido">0</strong><span>Concluído</span></div>
-                        </div>
+                <!-- Registro de OS no padrão novo: contadores em blocos, formulário
+                     em 3 passos (identificação, áreas em chips, foto grande) e
+                     lista em blocos. Ids/funções mantidos (ordemServico.js). -->
+                <div class="cc-bloco">
+                    <div class="cc-titulo-ico"><span class="cc-ico"><i class="fas fa-file-invoice"></i></span><div><div class="cc-rotulo">Ordens de serviço</div><h2 class="cc-titulo">Registrar OS</h2></div></div>
+                    <div class="cc-kpis os-kpis" style="margin-top:18px">
+                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-texto-2)"><i class="fas fa-list"></i></span><span class="cc-rotulo">Total</span><strong id="os-badge-total">0</strong></div>
+                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico"><i class="fas fa-wrench"></i></span><span class="cc-rotulo">Em andamento</span><strong id="os-badge-andamento">0</strong></div>
+                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-ok)"><i class="fas fa-check"></i></span><span class="cc-rotulo">Concluídas</span><strong id="os-badge-concluido">0</strong></div>
                     </div>
                 </div>
-
-                <div class="glass-panel" style="padding:24px; margin-bottom:24px;">
-                    <div class="form-grid-4" style="margin-bottom:16px;">
-                        <div class="input-group">
-                            <label>Número da OS <span style="color:var(--danger);">*</span></label>
-                            <input type="text" id="os-numero" class="premium-input" placeholder="Ex: 12345" style="width:100%;">
+                <div class="cc-bloco os-form">
+                    <div class="os-passo"><span class="os-passo-num">1</span><div><strong>Identificação</strong><span>Número da OS, máquina e o que precisa ser feito</span></div></div>
+                    <div class="os-campos">
+                        <div class="input-group"><label for="os-numero">Número da OS</label><input type="text" id="os-numero" class="premium-input" placeholder="Ex: 12345" inputmode="numeric"></div>
+                        <div class="input-group"><label for="os-maquina">Máquina afetada</label>
+                            <select id="os-maquina" class="premium-select"><option value="">Selecione…</option><option value="MCC 2">MCC 2</option><option value="MCC 3">MCC 3</option><option value="MCC 4">MCC 4</option></select>
                         </div>
-                        <div class="input-group">
-                            <!-- 🆕 Enquanto essa OS estiver "Em Andamento", a MCC
-                                 selecionada aparece como "Manutenção" no card
-                                 "Sistema Online" do Painel Geral (ela para de
-                                 lingotar) — ver window.atualizarStatusMaquinas. -->
-                            <label>Máquina afetada <span style="color:var(--danger);">*</span></label>
-                            <select id="os-maquina" class="premium-select" style="width:100%;">
-                                <option value="">Selecione...</option>
-                                <option value="MCC 2">MCC 2</option>
-                                <option value="MCC 3">MCC 3</option>
-                                <option value="MCC 4">MCC 4</option>
-                            </select>
-                        </div>
-                        <div class="input-group" style="grid-column: span 2;">
-                            <label>Descrição <span style="color:var(--danger);">*</span></label>
-                            <textarea id="os-descricao" class="premium-textarea" rows="1" placeholder="Ex: Troca de rolamento no Bender..."></textarea>
-                        </div>
+                        <div class="input-group os-campo-largo"><label for="os-descricao">Descrição</label><textarea id="os-descricao" class="premium-textarea" rows="2" placeholder="Ex: Troca de rolamento no Bender"></textarea></div>
                     </div>
-
-                    <div class="input-group" style="margin-bottom:16px;">
-                        <!-- 🆕 Uma OS pode envolver várias áreas ao mesmo tempo
-                             (pedido do usuário) — cada área marcada aqui faz a
-                             OS aparecer no quadro de trabalho DAQUELA área
-                             (Central de Áreas → área do técnico), sem "ficar"
-                             presa só na Oficina genérica (ver
-                             renderizarAtividadesArea, que mescla OS junto com
-                             as atividades normais). Mesmo padrão de checkbox
-                             já usado em "Programar Atividade em Massa". -->
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                            <label style="margin:0;">Áreas envolvidas <span style="color:var(--danger);">*</span></label>
-                            <label style="font-size:12px; font-weight:400; color:var(--text-accent); cursor:pointer; display:flex; align-items:center; gap:6px;">
-                                <input type="checkbox" id="os-todas-areas" onchange="window.alternarTodasAreasOs(this.checked)"> Selecionar todas
-                            </label>
-                        </div>
-                        <div id="os-lista-areas" style="max-height:180px; overflow-y:auto; border:1px solid var(--border-color); border-radius:var(--radius-sm,8px); padding:10px;"></div>
-                    </div>
-
-                    <div class="input-group" style="margin-bottom:16px;">
-                        <label>Fotos da OS (uma por página) <span style="color:var(--danger);">*</span></label>
-                        <input type="file" id="os-foto-input" accept="image/*" multiple style="display:none;" onchange="window.processarFotoOs(event)">
-                        <button type="button" class="btn-premium" onclick="document.getElementById('os-foto-input').click()">
-                            <i class="fas fa-camera"></i> Tirar Foto / Anexar Página
-                        </button>
-                        <div id="os-fotos-preview-container" class="hidden" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;"></div>
-                    </div>
-
-                    <button class="btn-premium btn-success" onclick="window.confirmarOrdemServico()">
-                        <i class="fas fa-check"></i> Registrar OS
+                    <div class="os-passo"><span class="os-passo-num">2</span><div><strong>Áreas envolvidas</strong><span>A OS aparece no quadro de cada área marcada</span></div>
+                        <label class="os-todas"><input type="checkbox" id="os-todas-areas" onchange="window.alternarTodasAreasOs(this.checked)"> Marcar todas</label></div>
+                    <div id="os-lista-areas" class="os-chips"></div>
+                    <div class="os-passo"><span class="os-passo-num">3</span><div><strong>Fotos da OS</strong><span>Uma foto por página do papel</span></div></div>
+                    <input type="file" id="os-foto-input" accept="image/*" multiple style="display:none;" onchange="window.processarFotoOs(event)">
+                    <button type="button" class="os-foto" onclick="document.getElementById('os-foto-input').click()">
+                        <span class="cc-ico"><i class="fas fa-camera"></i></span>
+                        <strong>Tirar foto ou anexar página</strong>
+                        <span>Pode adicionar várias</span>
                     </button>
+                    <div id="os-fotos-preview-container" class="hidden" style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;"></div>
+                    <button type="button" class="cc-btn cc-btn-cheio os-registrar" onclick="window.confirmarOrdemServico()">Registrar OS</button>
                 </div>
-
-                <div class="glass-panel" style="padding:24px;">
-                    <div class="flex-between" style="margin-bottom:16px; flex-wrap:wrap; gap:10px;">
-                        <h3 style="color:var(--text-heading); font-size:1rem;"><i class="fas fa-list"></i> OS Registradas</h3>
-                        <input type="text" id="os-busca" class="premium-input" placeholder="🔎 Buscar por número/descrição..." style="max-width:220px;" oninput="window.buscarOrdensServico(this.value)">
-                        <div class="mcc-filter-group" id="os-filtros">
+                <div class="cc-bloco">
+                    <div class="cc-rotulo">Histórico</div><h2 class="cc-titulo">OS registradas</h2>
+                    <div class="ca-barra" style="margin-top:14px">
+                        <input type="search" id="os-busca" class="premium-input ca-busca" placeholder="Buscar por número ou descrição…" oninput="window.buscarOrdensServico(this.value)">
+                        <div class="ca-filtros" id="os-filtros">
                             <button class="btn-filter-mcc active" data-status="" onclick="window.filtrarOrdensServico('', this)">Todas</button>
-                            <button class="btn-filter-mcc" data-status="Em Andamento" onclick="window.filtrarOrdensServico('Em Andamento', this)">🔧 Em Andamento</button>
-                            <button class="btn-filter-mcc" data-status="Concluído" onclick="window.filtrarOrdensServico('Concluído', this)">✅ Concluído</button>
-                            <button class="btn-filter-mcc" data-status="Não Executada" onclick="window.filtrarOrdensServico('Não Executada', this)">🚫 Não Executada</button>
+                            <button class="btn-filter-mcc" data-status="Em Andamento" onclick="window.filtrarOrdensServico('Em Andamento', this)">Em Andamento</button>
+                            <button class="btn-filter-mcc" data-status="Concluído" onclick="window.filtrarOrdensServico('Concluído', this)">Concluído</button>
+                            <button class="btn-filter-mcc" data-status="Não Executada" onclick="window.filtrarOrdensServico('Não Executada', this)">Não Executada</button>
                         </div>
                     </div>
                     <div id="os-lista-container"></div>

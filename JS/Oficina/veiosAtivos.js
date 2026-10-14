@@ -509,78 +509,47 @@ export function renderReparos() {
     const { lista: reparos, semArea } = filtrarPorAreaTecnico(reparosBrutos);
 
     if (semArea) {
-        repBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">⚠️ Sua área ainda não foi cadastrada. Fale com um ADM.</td></tr>`;
+        repBody.innerHTML = `<div class="tc-vazio">Sua área ainda não foi cadastrada. Fale com um ADM.</div>`;
+        const r1 = document.getElementById('rp-resumo'); if (r1) r1.textContent = 'Sem área cadastrada.';
         return;
     }
     if (reparos.length === 0) {
-        repBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nenhum equipamento aguardando reparo.</td></tr>`;
+        repBody.innerHTML = `<div class="tc-vazio">Nenhuma peça aguardando reparo.</div>`;
+        const r0 = document.getElementById('rp-resumo'); if (r0) r0.textContent = 'Nenhuma peça aguardando reparo.';
         return;
     }
 
+    // 🎨 Padrão novo: fila da bancada em blocos, agrupada por MCC, a peça
+    // há mais tempo na oficina primeiro (> 15 dias ganha destaque).
+    const LIMITE_DIAS = 15;
+    const comDias = reparos.map(a => ({ a, dias: calcularDias(a), pct: a.meta > 0 ? (a.ton / a.meta) * 100 : 0 }));
+    const media = comDias.length ? Math.round(comDias.reduce((s, x) => s + x.dias, 0) / comDias.length) : 0;
+    const velhas = comDias.filter(x => x.dias > LIMITE_DIAS).length;
+    const resumo = document.getElementById('rp-resumo');
+    if (resumo) resumo.innerHTML = `<b>${comDias.length}</b> peça${comDias.length === 1 ? '' : 's'} aguardando · média de <b>${media}</b> dias na oficina${velhas ? ` · <span class="cc-perigo">${velhas} há mais de ${LIMITE_DIAS} dias</span>` : ''}`;
+
     const grupos = {};
-    reparos.forEach(a => {
-        const mcc = a.mcc_compat || "2/3";
-        if (!grupos[mcc]) grupos[mcc] = [];
-        grupos[mcc].push(a);
-    });
-
-    let htmlFinal = "";
-    const coresMCC = { "2": "#d9b67a", "3": "#8b5cf6", "4": "#ec4899" };
-
-    Object.keys(grupos).sort().forEach(mcc => {
-        const itens = grupos[mcc];
-        const tipos = {};
-        itens.forEach(a => {
-            const tipo = a.tipo || "Outros";
-            if (!tipos[tipo]) tipos[tipo] = [];
-            tipos[tipo].push(a);
-        });
-
-        htmlFinal += `
-            <tr style="background: ${coresMCC[mcc] || '#f59e0b'}20; border-top: 3px solid ${coresMCC[mcc] || '#f59e0b'};">
-                <td colspan="5" style="padding: 10px 16px; font-weight: 700; color: var(--text-heading); font-size: 15px;">
-                    <i class="fas fa-server"></i> MCC ${mcc}
-                </td>
-            </tr>
-        `;
-
-        Object.keys(tipos).sort().forEach(tipo => {
-            const lista = tipos[tipo];
-            htmlFinal += `
-                <tr style="background: var(--bg-th);">
-                    <td colspan="5" style="padding: 6px 16px; font-weight: 600; color: var(--text-muted); font-size: 13px; padding-left: 30px;">
-                        <i class="fas fa-tag"></i> ${tipo}
-                    </td>
-                </tr>
-            `;
-            lista.forEach(a => {
-                const pct = a.meta > 0 ? ((a.ton / a.meta) * 100) : 0;
-                const pctFixed = pct.toFixed(1);
-                const dias = calcularDias(a);
-                htmlFinal += `
-                    <tr>
-                        <td class="font-code" data-label="TAG" style="padding-left: 45px;" title="Código interno: ${a.id}">${window.rotuloEquipamento(a)}</td>
-                        <td data-label="Tipo"><span class="ind-card-tag bg-tag">${a.tipo}</span></td>
-                        <td data-label="Desgaste">
-                            <div class="flex-align-center gap-10">
-                                <span class="font-code bold w-40" style="color: var(--text-heading);">${pctFixed}%</span>
-                                <div class="ind-gauge-bar premium-bar w-100px">
-                                    <div class="ind-gauge-fill bg-danger" style="width: ${Math.min(pct, 100)}%;"></div>
-                                </div>
-                            </div>
-                        </td>
-                        <td data-label="Dias em Reparo" style="font-weight:bold; color:var(--warning);">${dias} dias</td>
-                        <td data-label="Ações">
-                            <div class="flex-align-center gap-10 action-buttons-mobile" style="flex-wrap:wrap;">
-                                <button class="btn-premium" style="background:transparent; border-color:var(--text-accent); color:var(--text-accent); padding: 8px 12px;" onclick="abrirHistoricoIndividual('${a.id}')" title="Ver Prontuário"><i class="fas fa-book-open"></i></button>
-                                <button class="btn-premium btn-success" onclick="window.iniciarReparoEAbrirChecklist('${a.id}')"><i class="fas fa-play"></i> Iniciar Reparo</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            });
-        });
-    });
+    comDias.forEach(x => { const mcc = x.a.mcc_compat || "2/3"; (grupos[mcc] ||= []).push(x); });
+    let htmlFinal = Object.keys(grupos).sort().map(mcc => {
+        const itens = grupos[mcc].sort((x, y) => y.dias - x.dias);
+        return `<div class="rp-grupo">
+            <div class="rp-grupo-topo"><strong>MCC ${mcc}</strong><span>${itens.length} peça${itens.length === 1 ? '' : 's'}</span></div>
+            <div class="rp-grade">${itens.map(({ a, dias, pct }) => `
+                <div class="rp-card${dias > LIMITE_DIAS ? ' rp-velha' : ''}">
+                    <div class="rp-topo">
+                        <span class="cc-ico"><i class="fas fa-screwdriver-wrench"></i></span>
+                        <div class="rp-id"><strong class="sq-id" title="Código interno: ${a.id}">${window.rotuloEquipamento(a)}</strong><span>${a.tipo}</span></div>
+                        <div class="rp-dias"><b>${dias}</b><span>dia${dias === 1 ? '' : 's'}</span></div>
+                    </div>
+                    <div class="rp-desg"><span>Desgaste</span><div class="pg-trilho"><i style="width:${Math.min(pct, 100)}%;background:var(--pg-${pct >= 100 ? 'c3' : pct >= 80 ? 'c2' : pct >= 50 ? 'c1' : 'c0'})"></i></div><b>${pct.toFixed(0)}%</b></div>
+                    <div class="rp-acoes">
+                        <button type="button" class="cc-btn" onclick="abrirHistoricoIndividual('${a.id}')">Prontuário</button>
+                        <button type="button" class="cc-btn cc-btn-cheio" onclick="window.iniciarReparoEAbrirChecklist('${a.id}')">Iniciar reparo</button>
+                    </div>
+                </div>`).join('')}
+            </div>
+        </div>`;
+    }).join('');
 
     repBody.innerHTML = htmlFinal;
 
@@ -782,7 +751,7 @@ function renderizarTabelaHistoricoIndividual(id) {
         if (a.includes("saiu") || a.includes("sacado")) return { icone: "fa-arrow-right-from-bracket", cor: "#ef4444" };
         if (a.includes("reparo")) return { icone: "fa-tools", cor: "#eab308" };
         if (a.includes("folhão") || a.includes("laudo")) return { icone: "fa-clipboard-check", cor: "#e3b866" };
-        if (a.includes("registro manual")) return { icone: "fa-pen", cor: "#a855f7" };
+        if (a.includes("registro manual")) return { icone: "fa-pen", cor: "#d9b67a" };
         return { icone: "fa-circle-dot", cor: "var(--text-muted)" };
     };
 
@@ -859,7 +828,7 @@ async function atualizarTabelaHistoricoComServidor(id) {
             if (a.includes("saiu") || a.includes("sacado")) return { icone: "fa-arrow-right-from-bracket", cor: "#ef4444" };
             if (a.includes("reparo")) return { icone: "fa-tools", cor: "#eab308" };
             if (a.includes("folhão") || a.includes("laudo")) return { icone: "fa-clipboard-check", cor: "#e3b866" };
-            if (a.includes("registro manual")) return { icone: "fa-pen", cor: "#a855f7" };
+            if (a.includes("registro manual")) return { icone: "fa-pen", cor: "#d9b67a" };
             return { icone: "fa-circle-dot", cor: "var(--text-muted)" };
         };
 
