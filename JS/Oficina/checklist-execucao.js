@@ -738,7 +738,7 @@ window.renderizarChecklistExecucao = function() {
                         ${subagrupar ? `<i class="fas ${aberta ? 'fa-chevron-down' : 'fa-chevron-right'}" style="font-size:11px; color:var(--text-muted);"></i>` : ''}
                         <i class="fas ${secao.icone}"></i> ${secao.nome}
                         ${subagrupar ? `<span class="text-muted" style="font-weight:500; font-size:11px;">(${marcadasDaSecao}/${etapasDaSecao.length})</span>` : ''}
-                        ${concluida ? `<span style="background:#22c55e; color:#0e0c0a; padding:2px 8px; border-radius:20px; font-size:10.5px; font-weight:700;"><i class="fas fa-check"></i> Finalizado</span>` : ''}
+                        ${concluida ? `<span style="background:#22c55e; color:#0f0f10; padding:2px 8px; border-radius:20px; font-size:10.5px; font-weight:700;"><i class="fas fa-check"></i> Finalizado</span>` : ''}
                     </div>
                     ${isAdmin ? `<button class="btn-premium" style="padding:5px 10px; font-size:11px;" onclick="event.stopPropagation(); window.formNovaEtapaChecklistExecucao('${secao.chave}')"><i class="fas fa-plus"></i> Etapa</button>` : ''}
                 </div>
