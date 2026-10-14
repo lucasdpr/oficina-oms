@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" style="background:#0f0f10;">
+<html lang="pt-BR" style="background:#16171a;">
 <head>
     <!-- ==============================================================
          🔧 CAPTURA DE ERROS VISÍVEL NA TELA — pega qualquer erro de
@@ -49,7 +49,7 @@
          tinha ficado amarela numa aplicação anterior da paleta — esse
          elemento é do sistema (Android/iOS), não conteúdo, e nunca devia
          ter sido tocado. Volta pro neutro escuro (mesmo tom do fundo). -->
-    <meta name="theme-color" content="#0f0f10">
+    <meta name="theme-color" content="#16171a">
     <link rel="apple-touch-icon" href="JS/assets/icon-192.png?v=4">
     <!-- 🆕 BOTÃO INSTALAR APP — captura o evento ASSIM QUE POSSÍVEL (ver
          mesmo bloco em index.html). -->
@@ -74,7 +74,7 @@
     <link rel="stylesheet" href="style.css?v=14" />
     <!-- Novo padrão visual (tokens + componentes ds-*). Vem DEPOIS do
          style.css pra vencer em empate de especificidade. -->
-    <link rel="stylesheet" href="design-system.css?v=10" />
+    <link rel="stylesheet" href="design-system.css?v=11" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="JS/assets/icon-192.png?v=4">
@@ -165,7 +165,7 @@
         .glass-panel { background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow); border-radius: var(--radius-lg); transition: all var(--transition); }
         .glass-panel:hover { box-shadow: 0 12px 40px rgba(0,0,0,0.5); }
         /* ===== WELCOME BOX ===== */
-        .welcome-box { background: linear-gradient(145deg, rgba(28, 28, 31,0.95), rgba(11, 11, 12,0.95)); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 28px 32px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+        .welcome-box { background: linear-gradient(145deg, rgba(37, 38, 43,0.95), rgba(18, 19, 22,0.95)); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 28px 32px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
         .welcome-box h1 { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; background: linear-gradient(135deg, var(--text-heading) 35%, var(--brand) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         .welcome-box h1 span { background: linear-gradient(135deg, var(--text-heading) 35%, var(--brand) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         .welcome-box p { color: var(--text-muted); font-size: 0.95rem; }
@@ -506,7 +506,7 @@
          a categoria (a) da regra: CTA de ação primária). O que era só
          decoração ao redor (ícone e borda âmbar) virou neutro — o
          amarelo fica reservado pra quem de fato executa a ação. -->
-    <div id="aviso-nova-versao" class="hidden" style="position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:99999; background:var(--panel-2, #1c1c1f); color:#fff; padding:12px 16px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,0.4); border:1px solid var(--border-color); display:flex; align-items:center; gap:12px;">
+    <div id="aviso-nova-versao" class="hidden" style="position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:99999; background:var(--panel-2, #25262b); color:#fff; padding:12px 16px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,0.4); border:1px solid var(--border-color); display:flex; align-items:center; gap:12px;">
         <i class="fas fa-rotate" style="color:var(--text-muted);"></i>
         <span>Nova versão do sistema disponível.</span>
         <button type="button" onclick="window.forcarAtualizacaoOMS()" style="background:var(--brand); color:var(--text-on-primary); border:none; padding:6px 14px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12.5px;">Atualizar agora</button>
@@ -519,7 +519,7 @@
          já tentava de novo sozinho nesse caso; só faltava avisar quem
          está usando em vez de deixar a tela muda com erro cru no
          console. Mesmo padrão visual do aviso-nova-versao acima. -->
-    <div id="aviso-conectando-servidor" class="hidden" style="position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:99999; background:var(--panel-2, #1c1c1f); color:#fff; padding:12px 16px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,0.4); border:1px solid var(--border-color); display:flex; align-items:center; gap:10px;">
+    <div id="aviso-conectando-servidor" class="hidden" style="position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:99999; background:var(--panel-2, #25262b); color:#fff; padding:12px 16px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,0.4); border:1px solid var(--border-color); display:flex; align-items:center; gap:10px;">
         <i class="fas fa-circle-notch fa-spin" style="color:var(--text-accent, #e3b866);"></i>
         <span>Conectando ao servidor... pode levar até 1 minuto na primeira vez.</span>
     </div>
@@ -3473,7 +3473,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                         input.min = 1;
                         input.max = 99;
                         input.step = 1;
-                        input.style.cssText = 'width:55px;height:32px;padding:4px 6px;font-size:14px;font-weight:bold;border-radius:4px;border:3px solid #10b981;background:#161618;color:#ffffff;text-align:center;display:inline-block !important;visibility:visible !important;opacity:1 !important;';
+                        input.style.cssText = 'width:55px;height:32px;padding:4px 6px;font-size:14px;font-weight:bold;border-radius:4px;border:3px solid #10b981;background:#1e1f23;color:#ffffff;text-align:center;display:inline-block !important;visibility:visible !important;opacity:1 !important;';
                         posCell.innerHTML = '';
                         posCell.appendChild(input);
                         count++;

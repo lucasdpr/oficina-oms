@@ -6,16 +6,16 @@
 ========================================== */
 :root {
   /* Cores Base - Grafite/Navy profundo, igual ao Sinótico 3D */
-  --bg-main: #0f0f10;
-  --bg-card: rgba(22, 22, 24, 0.82);
-  --bg-sidebar: rgba(11, 11, 12, 0.97);
-  --bg-input: rgba(28, 28, 31, 0.9);
+  --bg-main: #16171a;
+  --bg-card: rgba(30, 31, 35, 0.82);
+  --bg-sidebar: rgba(18, 19, 22, 0.97);
+  --bg-input: rgba(37, 38, 43, 0.9);
   --bg-hover: rgba(240, 163, 52, 0.08);
   
   --bg-th: rgba(0, 0, 0, 0.35);
-  --bg-td: rgba(28, 28, 31, 0.45);
-  --welcome-bg: linear-gradient(145deg, rgba(28, 28, 31, 0.95) 0%, rgba(11, 11, 12, 0.95) 100%);
-  --body-radial: radial-gradient(ellipse at 50% 0%, #161618 0%, #0f0f10 65%);
+  --bg-td: rgba(37, 38, 43, 0.45);
+  --welcome-bg: linear-gradient(145deg, rgba(37, 38, 43, 0.95) 0%, rgba(18, 19, 22, 0.95) 100%);
+  --body-radial: radial-gradient(ellipse at 50% 0%, #1e1f23 0%, #16171a 65%);
   
   /* Cores de Texto */
   --text-main: #c8d2e0;
@@ -116,7 +116,7 @@ body.light-mode {
   
   --text-main: #2d3748;
   --text-muted: #64748b;
-  --text-heading: #161618;
+  --text-heading: #1e1f23;
   --text-accent: #c97a12; /* 🔧 REDESIGN: idem dark mode — vira "info neutro" secundário, não é mais a cor de destaque principal. */
   --text-on-primary: #ffffff;
 
@@ -3685,7 +3685,7 @@ h1, h2, h3, h4, h5, h6 {
     position: fixed; inset: 0; z-index: 10000;
     display: flex; justify-content: center; align-items: center;
     overflow: hidden;
-    background-color: #0f0f10; /* Fallback */
+    background-color: #16171a; /* Fallback */
 }
 
 /* Imagem de Fundo (Aço Quente) — Ken Burns bem lento, dá vida sem
@@ -3764,7 +3764,7 @@ h1, h2, h3, h4, h5, h6 {
 .login-card-central {
     position: relative; z-index: 3;
     width: 100%; max-width: 420px;
-    background: rgba(22, 22, 24, 0.65);
+    background: rgba(30, 31, 35, 0.65);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -4013,13 +4013,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 @media (hover: hover) and (pointer: fine) {
     .btn-visitante-top:hover {
-        background: #f59e0b; color: #0f0f10;
+        background: #f59e0b; color: #16171a;
         box-shadow: var(--btn-glow-shape) rgba(245, 158, 11, 0.35);
         transform: translateY(-1px);
     }
 }
 .btn-visitante-top:active {
-    background: #f59e0b; color: #0f0f10;
+    background: #f59e0b; color: #16171a;
 }
 
 /* Cartão de ajuda "1º acesso" — antes vivia dentro do card de login
@@ -4030,7 +4030,7 @@ h1, h2, h3, h4, h5, h6 {
     position: absolute; top: 110px; right: 24px; z-index: 4;
     width: 230px;
     display: flex; align-items: flex-start; gap: 8px;
-    background: rgba(22, 22, 24, 0.55);
+    background: rgba(30, 31, 35, 0.55);
     border: 1px solid rgba(245, 158, 11, 0.22);
     border-radius: 10px;
     padding: 10px 12px;
@@ -6399,7 +6399,7 @@ textarea,
     min-width: 0;
     background:
         radial-gradient(circle at 20% 10%, rgba(255, 193, 7, 0.04) 0%, transparent 40%),
-        var(--bg-main, #0f0f10);
+        var(--bg-main, #16171a);
 }
 
 .chat-thread-header {
@@ -6713,7 +6713,7 @@ textarea,
     .login-card-central {
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
-        background: rgba(22, 22, 24, 0.9);
+        background: rgba(30, 31, 35, 0.9);
     }
 }
 
