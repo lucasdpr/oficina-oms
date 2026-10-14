@@ -249,7 +249,7 @@ function renderPainelVeios() {
         return;
     }
 
-    titulo.innerHTML = `Sequenciamento Estrutural: <span style="color: var(--text-accent);">${config.nome}</span>`;
+    titulo.innerHTML = String(config.nome).replace(/(Veio\s+[A-Z])/i, '<span class="sq-titulo-veio">$1</span>');
 
     const pecasInstaladas = BANCO_ATIVOS.filter(p => 
         (p.veio === VEIO_SELECIONADO_PAINEL && p.status === "Instalado") || 
@@ -268,87 +268,95 @@ function renderPainelVeios() {
         return;
     }
 
-    let htmlSlots = "";
-
-    slots.forEach(slot => {
-        let pecaEncontrada = null;
-
+    // 🎨 Padrão "centro de controle" (design-system.css, classes sq-*):
+    // resumo do veio no topo e as posições agrupadas por zona da máquina.
+    // Cadeiras em linhas por posição (superior e inferior lado a lado,
+    // como na máquina). Posição vazia = cinza discreto (antes: caixa
+    // vermelha tracejada — várias vazias faziam a tela inteira "gritar"
+    // e escondiam o risco real). Vermelho só pra além da meta e mancal.
+    const pecaDoSlot = slot => {
         for (const p of pecasInstaladas) {
-            if (p.posicaoFixa && p.posicaoFixa === slot.id) {
-                pecaEncontrada = p;
-                break;
-            }
-            if (!p.posicaoFixa && config.mapearSlotLegado) {
-                const slotMapeado = config.mapearSlotLegado(p);
-                if (slotMapeado === slot.id) {
-                    pecaEncontrada = p;
-                    break;
-                }
-            }
+            if (p.posicaoFixa && p.posicaoFixa === slot.id) return p;
+            if (!p.posicaoFixa && config.mapearSlotLegado && config.mapearSlotLegado(p) === slot.id) return p;
         }
+        return null;
+    };
+    const pctDe = p => (p && p.meta > 0 ? (p.ton / p.meta) * 100 : 0);
+    const corDe = pct => `var(--pg-${pct >= 100 ? 'c3' : pct >= 80 ? 'c2' : pct >= 50 ? 'c1' : 'c0'})`;
+    const fmtT = n => { const v = Math.abs(n); return v >= 1e6 ? (n / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' mi t' : v >= 1e3 ? Math.round(n / 1e3).toLocaleString('pt-BR') + ' mil t' : Math.round(n) + ' t'; };
+    const temMancal = p => { try { return Object.values(JSON.parse(p.mancais_ocorrencias || '{}')).some(v => !!v); } catch (e) { return false; } };
 
-        if (pecaEncontrada) {
-            const pct = pecaEncontrada.meta > 0 ? (pecaEncontrada.ton / pecaEncontrada.meta) * 100 : 0;
-            const corClass = pct >= 80 ? "danger" : pct >= 50 ? "warning" : "success";
-            const pctDisplay = pct.toFixed(1);
-            const dias = calcularDias(pecaEncontrada);
+    // ritmo do veio = mediana de t/dia das próprias peças (mesma regra do Painel Geral)
+    const amostras = pecasInstaladas.filter(p => p.dias >= 30 && p.ton > 0).map(p => p.ton / p.dias).sort((x, y) => x - y);
+    const ritmo = amostras.length ? (amostras.length % 2 ? amostras[amostras.length >> 1] : (amostras[(amostras.length >> 1) - 1] + amostras[amostras.length >> 1]) / 2) : 0;
+    const diasMeta = p => (p.meta > 0 && ritmo > 0 ? (p.meta - p.ton) / ritmo : null);
+    const txtMeta = p => { const d = diasMeta(p); if (d === null) return ''; return d <= 0 ? `<span style="color:var(--ds-perigo)">além da meta</span>` : `meta em ~${Math.round(d)} d`; };
 
-            // 🆕 Selo de ocorrência de mancal: se a peça tem QUALQUER
-            // mancal marcado (quebra de rolamento / vazamento de graxa
-            // ou água — gravado em "mancais_ocorrencias", ver
-            // Sinotico3d.html), mostra um aviso vermelho piscando no
-            // card, pra dar pra ver de longe que tem algo errado sem
-            // precisar abrir a peça uma por uma.
-            let temOcorrenciaMancal = false;
-            try {
-                const mapaOcorrencias = JSON.parse(pecaEncontrada.mancais_ocorrencias || '{}');
-                temOcorrenciaMancal = Object.values(mapaOcorrencias).some(v => !!v);
-            } catch (e) { /* campo vazio/inválido — trata como sem ocorrência */ }
+    const ocupacao = slots.map(slot => ({ slot, peca: pecaDoSlot(slot) }));
+    const ocupadas = ocupacao.filter(o => o.peca);
+    const pcts = ocupadas.map(o => pctDe(o.peca));
+    const crit = pcts.filter(x => x >= 80).length, alem = pcts.filter(x => x >= 100).length;
+    const media = pcts.length ? pcts.reduce((x, y) => x + y, 0) / pcts.length : 0;
+    const prox90 = ocupadas.filter(o => { const d = diasMeta(o.peca); return d !== null && d > 0 && d <= 90; }).length;
 
-            htmlSlots += `
-                <div class="ind-card" style="border-top: 3px solid var(--${corClass}); min-width: 260px; max-width: 300px; background: var(--bg-td); border-radius: var(--radius-md); padding: 16px 18px; transition: all var(--transition-base); ${temOcorrenciaMancal ? 'box-shadow: 0 0 0 2px var(--danger);' : ''}">
-                    <div class="flex-between" style="margin-bottom: 4px;">
-                        <span class="font-code" title="Código interno: ${pecaEncontrada.id}" style="font-size: 0.9rem; font-weight: 700; color: var(--text-heading);">${pecaEncontrada.tag_patrimonio || pecaEncontrada.id}</span>
-                        <span class="bg-tag" style="font-size: 0.55rem;">${pecaEncontrada.tipo}</span>
-                    </div>
-                    ${temOcorrenciaMancal ? `
-                    <div style="display:flex; align-items:center; gap:5px; background: var(--danger-bg); color: var(--danger); border-radius: 4px; padding: 4px 8px; font-size: 0.65rem; font-weight: 700; margin-bottom: 8px;">
-                        <i class="fas fa-triangle-exclamation"></i> Ocorrência em mancal — ver Prontuário
-                    </div>` : ''}
-                    <div class="flex-between" style="margin-bottom: 8px;">
-                        <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fas fa-layer-group"></i> ${slot.nome}</span>
-                        <span style="font-weight: 700; font-family: var(--font-mono); font-size: 1.1rem; color: var(--${corClass});">${pctDisplay}%</span>
-                    </div>
-                    <div class="progress-container" style="margin: 4px 0 10px 0;">
-                        <div class="progress-bar bg-${corClass}" style="width: ${Math.min(pct, 100)}%; height: 6px; border-radius: 10px;"></div>
-                    </div>
-                    <div class="flex-between" style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 12px;">
-                        <span>${rotuloDesgaste(pecaEncontrada.tipo)}: <strong class="font-code" style="color: var(--text-heading);">${Number(pecaEncontrada.ton || 0).toLocaleString('pt-BR')}</strong></span>
-                        <span>Lim: <strong class="font-code" style="color: var(--text-heading);">${Number(pecaEncontrada.meta || 0).toLocaleString('pt-BR')}</strong></span>
-                        ${pecaEncontrada.tipo === "Oscilador" || pecaEncontrada.tipo === "Mesa Osciladora" ? '' : `<span>Dias: <strong class="font-code" style="color: var(--text-heading);">${dias}</strong></span>`}
-                    </div>
-                    <div class="flex-between gap-10" style="gap: 8px;">
-                        <button class="btn-xs-primary" style="flex: 1; padding: 6px; font-size: 0.65rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm);" onclick="window.abrirHistoricoIndividual('${pecaEncontrada.id}')">
-                            <i class="fas fa-book"></i> Prontuário
-                        </button>
-                        <button class="btn-outline-danger" style="flex: 1; padding: 6px; font-size: 0.65rem; border-radius: var(--radius-sm);" onclick="window.iniciarSaque('${pecaEncontrada.id}')">
-                            <i class="fas fa-exchange-alt"></i> Sacar
-                        </button>
-                    </div>
-                </div>
-            `;
+    const acoes = p => `<span class="sq-acoes"><button type="button" onclick="event.stopPropagation(); window.abrirHistoricoIndividual('${p.id}')">Prontuário</button><button type="button" class="sq-sacar" onclick="event.stopPropagation(); window.iniciarSaque('${p.id}')">Sacar</button></span>`;
+    const vazia = slot => `<div class="sq-vazia"><span>${slot.nome}</span><span class="cc-rotulo">Vazia</span><button type="button" onclick="window.abrirAba(null, 'aba-reservas')">Alocar →</button></div>`;
+
+    const bloco = (slot, p) => {
+        if (!p) return vazia(slot);
+        const pct = pctDe(p);
+        const ehOsc = p.tipo === 'Oscilador' || p.tipo === 'Mesa Osciladora';
+        return `<div class="sq-peca${temMancal(p) ? ' sq-mancal' : ''}" onclick="window.abrirHistoricoIndividual('${p.id}')">
+            <div class="sq-peca-topo"><span class="cc-rotulo">${slot.nome}</span><span class="sq-pct" style="color:${pct >= 100 ? 'var(--ds-perigo)' : 'var(--ds-texto)'}">${pct.toFixed(1).replace('.', ',')}%</span></div>
+            <div class="sq-id" title="Código interno: ${p.id}">${p.tag_patrimonio || p.id}</div>
+            <div class="pg-trilho"><i style="width:${Math.min(pct, 100)}%;background:${corDe(pct)}"></i></div>
+            <div class="sq-meta">${rotuloDesgaste(p.tipo)} ${fmtT(p.ton || 0)} / ${fmtT(p.meta || 0)}${ehOsc ? '' : ` · ${calcularDias(p)} d`}${txtMeta(p) ? ' · ' + txtMeta(p) : ''}</div>
+            ${temMancal(p) ? '<div class="sq-alerta">Ocorrência em mancal — ver prontuário</div>' : ''}
+            ${acoes(p)}
+        </div>`;
+    };
+
+    const celCadeira = (slot, p, lado) => {
+        if (!p) return `<div class="sq-cel sq-cel-vazia"><span class="cc-rotulo">${lado}</span><span>Vazia</span><button type="button" onclick="window.abrirAba(null, 'aba-reservas')">Alocar</button></div>`;
+        const pct = pctDe(p);
+        return `<div class="sq-cel${temMancal(p) ? ' sq-mancal' : ''}" onclick="window.abrirHistoricoIndividual('${p.id}')">
+            <div class="sq-peca-topo"><span class="sq-id" title="Código interno: ${p.id}">${p.tag_patrimonio || p.id}</span><span class="sq-pct" style="color:${pct >= 100 ? 'var(--ds-perigo)' : 'var(--ds-texto)'}">${pct.toFixed(1).replace('.', ',')}%</span></div>
+            <div class="pg-trilho"><i style="width:${Math.min(pct, 100)}%;background:${corDe(pct)}"></i></div>
+            <div class="sq-meta">${fmtT(p.ton || 0)} · ${calcularDias(p)} d${txtMeta(p) ? ' · ' + txtMeta(p) : ''}${temMancal(p) ? ' · <span style="color:var(--ds-perigo)">mancal</span>' : ''}</div>
+            ${acoes(p)}
+        </div>`;
+    };
+
+    // zonas na ordem da máquina
+    const zonaDe = t => (/Molde|Oscila/i.test(t) ? 'Molde e oscilação' : /Cadeira/i.test(t) ? 'Cadeiras' : /Segmento/i.test(t) ? 'Segmentos' : /Bender|Bow/i.test(t) ? 'Dobramento e curva' : /Straight/i.test(t) ? 'Endireitamento' : /Horizontal/i.test(t) ? 'Horizontais' : 'Outros');
+    const zonas = [];
+    ocupacao.forEach(o => { const z = zonaDe(o.slot.tipo); let g = zonas.find(x => x.nome === z); if (!g) zonas.push(g = { nome: z, itens: [] }); g.itens.push(o); });
+
+    let htmlSlots = `
+        <div class="sq-resumo">
+            <div><span class="cc-rotulo">Posições</span><strong>${ocupadas.length}<small>/${slots.length}</small></strong><span>${slots.length - ocupadas.length} vazia${slots.length - ocupadas.length === 1 ? '' : 's'}</span></div>
+            <div><span class="cc-rotulo"><i class="cc-marca" style="background:var(--pg-c2)"></i>≥ 80% da meta</span><strong>${crit}</strong><span>${pcts.length ? Math.round(crit / pcts.length * 100) : 0}% das instaladas</span></div>
+            <div><span class="cc-rotulo"><i class="cc-marca" style="background:var(--pg-c3)"></i>Além da meta</span><strong style="color:${alem ? 'var(--ds-perigo)' : 'var(--ds-texto)'}">${alem}</strong><span>trocar com prioridade</span></div>
+            <div><span class="cc-rotulo">Desgaste médio</span><strong>${media.toFixed(0)}%</strong><span>${prox90} ${prox90 === 1 ? 'bate' : 'batem'} a meta em 90 d</span></div>
+            <div><span class="cc-rotulo">Ritmo do veio</span><strong>${ritmo ? Math.round(ritmo).toLocaleString('pt-BR') : '--'}</strong><span>t/dia (mediana das peças)</span></div>
+        </div>`;
+
+    zonas.forEach(z => {
+        const ocup = z.itens.filter(o => o.peca).length;
+        htmlSlots += `<div class="sq-zona"><div class="sq-zona-topo"><span class="cc-rotulo">${z.nome}</span><span class="cc-rotulo">${ocup}/${z.itens.length} ocupadas</span></div>`;
+        if (z.nome === 'Cadeiras') {
+            const pares = new Map();
+            z.itens.forEach(o => { const m = o.slot.id.match(/CAD-(SUP|INF)-(\d+)/); if (!m) return; const k = +m[2]; if (!pares.has(k)) pares.set(k, {}); pares.get(k)[m[1]] = o; });
+            htmlSlots += `<div class="sq-pares"><div class="sq-par sq-par-cab"><span class="cc-rotulo">Pos.</span><span class="cc-rotulo">Superior</span><span class="cc-rotulo">Inferior</span></div>`;
+            [...pares.keys()].sort((x, y) => x - y).forEach(k => {
+                const par = pares.get(k);
+                htmlSlots += `<div class="sq-par"><span class="sq-pos">${k}</span>${par.SUP ? celCadeira(par.SUP.slot, par.SUP.peca, 'Superior') : '<div></div>'}${par.INF ? celCadeira(par.INF.slot, par.INF.peca, 'Inferior') : '<div></div>'}</div>`;
+            });
+            htmlSlots += `</div>`;
         } else {
-            htmlSlots += `
-                <div class="ind-card" style="border: 2px dashed var(--danger); background: var(--danger-bg); min-width: 260px; max-width: 300px; border-radius: var(--radius-md); padding: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; min-height: 140px;">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 28px; color: var(--danger); margin-bottom: 8px; opacity: 0.6;"></i>
-                    <h4 style="color: var(--danger); font-size: 0.85rem; margin: 0;">${slot.nome}</h4>
-                    <p style="color: var(--danger); font-size: 0.65rem; margin: 4px 0 12px 0; opacity: 0.7;">GAVETA VAZIA</p>
-                    <button class="btn-premium btn-success" style="padding: 6px 16px; font-size: 0.7rem;" onclick="window.abrirAba(null, 'aba-reservas')">
-                        <i class="fas fa-plus"></i> Alocar
-                    </button>
-                </div>
-            `;
+            htmlSlots += `<div class="sq-slots">${z.itens.map(o => bloco(o.slot, o.peca)).join('')}</div>`;
         }
+        htmlSlots += `</div>`;
     });
 
     container.innerHTML = htmlSlots;

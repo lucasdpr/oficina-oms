@@ -528,6 +528,86 @@ body, body.light-mode {
 .pg-trilho b { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--ds-texto-2); }
 
 /* ------------------------------------------------------------------
+   SEQUENCIAMENTO DOS VEIOS (sq-) — aba-fluxo
+   ------------------------------------------------------------------ */
+#seletor-veios-container {
+    background: var(--ds-bloco);
+    border: 1px solid var(--ds-linha);
+    border-radius: 0;
+    box-shadow: none;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+}
+#seletor-veios-container h3 { font: 600 .66rem var(--ds-fonte); letter-spacing: .08em; text-transform: uppercase; color: var(--ds-texto-3); margin: 0 0 10px; }
+#seletor-veios-container h3 i { display: none; }
+#seletor-veios-container .veios-grid-buttons { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0; }
+#seletor-veios-container .btn-veio-tab {
+    height: 38px;
+    min-height: 0;
+    border: 1px solid var(--ds-linha-forte);
+    border-radius: 0;
+    margin: 0 0 0 -1px;
+    background: transparent;
+    color: var(--ds-texto-2);
+    font: 600 .72rem var(--ds-fonte) !important;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    box-shadow: none;
+    transform: none;
+}
+#seletor-veios-container .btn-veio-tab:hover { color: var(--ds-texto); background: var(--ds-bloco-2); }
+#seletor-veios-container .btn-veio-tab.active { background: var(--ds-ambar); border-color: var(--ds-ambar); color: var(--ds-sobre-ambar); position: relative; z-index: 1; }
+
+.sq-titulo { font: 600 clamp(1.4rem, 2.4vw, 2rem)/1.15 var(--ds-fonte-titulo); letter-spacing: -.02em; color: var(--ds-texto); margin: 6px 0 18px; }
+.sq-titulo-veio { color: var(--ds-ambar); }
+.sq-resumo { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1px; background: var(--ds-linha); border: 1px solid var(--ds-linha); margin-bottom: 22px; }
+.sq-resumo > div { background: var(--ds-fundo); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.sq-resumo strong { font: 600 2rem/1 var(--ds-fonte-titulo); letter-spacing: -.025em; color: var(--ds-texto); }
+.sq-resumo strong small { font-size: .9rem; color: var(--ds-texto-3); font-weight: 500; }
+.sq-resumo > div > span:last-child { font-size: .74rem; color: var(--ds-texto-3); }
+
+.sq-zona { margin-bottom: 22px; }
+.sq-zona-topo { display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 1px solid var(--ds-linha-forte); margin-bottom: 0; }
+.sq-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); padding: 0 1px 1px 0; }
+.sq-slots > * { border: 1px solid var(--ds-linha); margin: -1px -1px 0 0; }
+.sq-slots > :nth-child(-n+8) { border-top: 0; margin-top: 0; }
+
+.sq-peca, .sq-vazia { background: var(--ds-bloco); padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.sq-peca { cursor: pointer; transition: background .15s; }
+.sq-peca:hover, .sq-cel:hover { background: var(--ds-bloco-2); }
+.sq-peca-topo { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.sq-pct { font: 600 1.15rem var(--ds-fonte-titulo); letter-spacing: -.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sq-id { font: 500 .82rem var(--ds-mono); color: var(--ds-texto); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.sq-meta { font-size: .72rem; color: var(--ds-texto-3); line-height: 1.4; }
+.sq-alerta { font: 600 .64rem var(--ds-fonte); letter-spacing: .05em; text-transform: uppercase; color: var(--ds-perigo); }
+.sq-mancal { box-shadow: inset 3px 0 0 var(--ds-perigo); }
+.sq-acoes { display: flex; gap: 14px; margin-top: 2px; }
+.sq-acoes button, .sq-vazia button, .sq-cel-vazia button {
+    background: none;
+    border: 0;
+    padding: 0;
+    min-height: 0;
+    font: 600 .64rem var(--ds-fonte) !important;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--ds-texto-2);
+    cursor: pointer;
+}
+.sq-acoes button:hover, .sq-vazia button:hover, .sq-cel-vazia button:hover { color: var(--ds-ambar); }
+.sq-acoes .sq-sacar:hover { color: var(--ds-perigo); }
+.sq-vazia { flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 12px; row-gap: 4px; padding: 12px 14px; color: var(--ds-texto-3); font-size: .8rem; background: repeating-linear-gradient(135deg, var(--ds-bloco), var(--ds-bloco) 6px, var(--ds-fundo) 6px, var(--ds-fundo) 12px); }
+.sq-vazia > span:first-child { color: var(--ds-texto-2); font-weight: 500; }
+.sq-vazia button { margin-left: auto; }
+
+.sq-pares { border: 1px solid var(--ds-linha); border-top: 0; }
+.sq-par { display: grid; grid-template-columns: 54px minmax(0, 1fr) minmax(0, 1fr); gap: 1px; background: var(--ds-linha); }
+.sq-par + .sq-par { border-top: 1px solid var(--ds-linha); }
+.sq-par-cab > span { background: var(--ds-fundo); padding: 8px 12px; }
+.sq-pos { background: var(--ds-fundo); display: flex; align-items: center; justify-content: center; font: 600 .95rem var(--ds-fonte-titulo); color: var(--ds-texto-2); }
+.sq-cel { background: var(--ds-bloco); padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; min-width: 0; transition: background .15s; }
+.sq-cel-vazia { cursor: default; flex-direction: row; align-items: center; gap: 12px; color: var(--ds-texto-3); font-size: .78rem; background: repeating-linear-gradient(135deg, var(--ds-bloco), var(--ds-bloco) 6px, var(--ds-fundo) 6px, var(--ds-fundo) 12px); }
+
+/* ------------------------------------------------------------------
    RESPONSIVO
    ------------------------------------------------------------------ */
 @media (max-width: 1280px) {
@@ -566,6 +646,19 @@ body, body.light-mode {
     .cc-tabela { font-size: .78rem; }
     .cc-tabela .cc-esconde-cel { display: none; }
     .cc-faixa > span:nth-child(2) { display: none; }
+    .sq-resumo { grid-template-columns: 1fr 1fr; }
+    .sq-slots { grid-template-columns: 1fr; }
+    .sq-vazia { padding: 10px 12px; }
+    .sq-resumo > div:first-child { grid-column: 1 / -1; }
+    .sq-par { grid-template-columns: 34px minmax(0, 1fr) minmax(0, 1fr); }
+    .sq-cel { padding: 9px 8px; }
+    .sq-id { font-size: .7rem; white-space: normal; word-break: break-all; }
+    .sq-cel .sq-peca-topo { flex-direction: column; align-items: flex-start; gap: 2px; }
+    .sq-pct { font-size: .95rem; }
+    .sq-meta { font-size: .66rem; }
+    .sq-acoes { gap: 10px; }
+    #seletor-veios-container .veios-grid-buttons { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    #seletor-veios-container .btn-veio-tab { margin: -1px 0 0 -1px; font-size: .64rem !important; }
     /* style.css força button{font-size:16px !important} no celular (pra
        evitar zoom do iOS em campo) — aqui não é campo, então volta ao
        tamanho do componente. */

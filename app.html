@@ -74,7 +74,7 @@
     <link rel="stylesheet" href="style.css?v=14" />
     <!-- Novo padrão visual (tokens + componentes ds-*). Vem DEPOIS do
          style.css pra vencer em empate de especificidade. -->
-    <link rel="stylesheet" href="design-system.css?v=4" />
+    <link rel="stylesheet" href="design-system.css?v=5" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="JS/assets/icon-192.png?v=4">
@@ -831,8 +831,8 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                     <button class="btn-veio-tab" onclick="window.mudarVeioVisualizado('D')">Veio D (MCC 2)</button>
                     <button class="btn-veio-tab" onclick="window.mudarVeioVisualizado('E')">Veio E (MCC 3)</button>
                     <button class="btn-veio-tab" onclick="window.mudarVeioVisualizado('F')">Veio F (MCC 3)</button>
-                    <button class="btn-veio-tab" onclick="window.mudarVeioVisualizado('H')">Veio H (MCC 4)</button>
                     <button class="btn-veio-tab" onclick="window.mudarVeioVisualizado('G')">Veio G (MCC 4)</button>
+                    <button class="btn-veio-tab" onclick="window.mudarVeioVisualizado('H')">Veio H (MCC 4)</button>
                 </div>
             </section>
 
@@ -1079,7 +1079,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
             </section>
 
             <section id="aba-fluxo" class="tab-content">
-                <div class="glass-panel" style="padding:24px;"><div class="panel-card-header"><h1 id="titulo-veio-focado">Sequenciamento Síncrono</h1></div><div id="container-fluxo-horizontal-scroll" class="graficos-container"></div></div>
+                <div class="cc-bloco sq"><div class="cc-rotulo">Sequenciamento estrutural</div><h1 id="titulo-veio-focado" class="sq-titulo">Sequenciamento</h1><div id="container-fluxo-horizontal-scroll"></div></div>
             </section>
 
             <section id="aba-producao" class="tab-content">
