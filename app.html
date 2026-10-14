@@ -74,7 +74,7 @@
     <link rel="stylesheet" href="style.css?v=14" />
     <!-- Novo padrão visual (tokens + componentes ds-*). Vem DEPOIS do
          style.css pra vencer em empate de especificidade. -->
-    <link rel="stylesheet" href="design-system.css?v=9" />
+    <link rel="stylesheet" href="design-system.css?v=10" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="JS/assets/icon-192.png?v=4">
@@ -877,15 +877,15 @@ a, button, [onclick], label[for], select { cursor: pointer; }
          das APIs que já existiam — nenhum dado inventado.
          ============================================================== -->
     <div class="cc-faixa">
-        <span>[ OMS · CENTRO DE CONTROLE ]</span>
+        <span>Painel geral</span>
         <span id="pg-hero-data">—</span>
-        <span class="cc-faixa-dir"><i class="cc-led"></i>SISTEMA ONLINE · <span id="painel-hero-hora-atualizacao">--:--</span></span>
+        <span class="cc-faixa-dir"><i class="cc-led"></i>Sistema online · <span id="painel-hero-hora-atualizacao">--:--</span></span>
     </div>
 
     <!-- 01 BRIEFING -->
     <div class="cc-briefing">
         <div class="cc-briefing-texto">
-            <div class="cc-rotulo">01 / Briefing do dia · <span id="pg-hero-saudacao">Olá</span><span id="pg-hero-nome"></span></div>
+            <div class="cc-rotulo">Resumo do dia · <span id="pg-hero-saudacao">Olá</span><span id="pg-hero-nome"></span></div>
             <h1 class="cc-manchete" id="pg-briefing-manchete">Lendo o estado da planta…</h1>
             <ol class="cc-decisoes" id="pg-briefing-decisoes"></ol>
             <div class="cc-acoes">
@@ -897,9 +897,9 @@ a, button, [onclick], label[for], select { cursor: pointer; }
         </div>
         <div class="cc-maquinas">
             <div class="cc-rotulo">Máquinas</div>
-            <div class="cc-maquina" data-maquina="MCC 2"><b>MCC 2</b><span>VEIOS C · D</span><span class="pg-maquina-status" id="status-maquina-mcc2">Operação Normal</span></div>
-            <div class="cc-maquina" data-maquina="MCC 3"><b>MCC 3</b><span>VEIOS E · F</span><span class="pg-maquina-status" id="status-maquina-mcc3">Operação Normal</span></div>
-            <div class="cc-maquina" data-maquina="MCC 4"><b>MCC 4</b><span>VEIOS G · H</span><span class="pg-maquina-status" id="status-maquina-mcc4">Operação Normal</span></div>
+            <div class="cc-maquina" data-maquina="MCC 2"><b>MCC 2</b><span>Veios C e D</span><span class="pg-maquina-status" id="status-maquina-mcc2">Operação Normal</span></div>
+            <div class="cc-maquina" data-maquina="MCC 3"><b>MCC 3</b><span>Veios E e F</span><span class="pg-maquina-status" id="status-maquina-mcc3">Operação Normal</span></div>
+            <div class="cc-maquina" data-maquina="MCC 4"><b>MCC 4</b><span>Veios G e H</span><span class="pg-maquina-status" id="status-maquina-mcc4">Operação Normal</span></div>
             <dl class="cc-numeros">
                 <div><dt class="cc-rotulo">Ritmo da planta</dt><dd><span id="pg-ritmo-planta">--</span> <small>t/dia</small></dd></div>
                 <div><dt class="cc-rotulo">Excesso sobre metas</dt><dd id="pg-excesso">--</dd></div>
@@ -915,28 +915,28 @@ a, button, [onclick], label[for], select { cursor: pointer; }
     <!-- KPIs -->
     <div class="cc-kpis">
         <button type="button" class="cc-kpi" onclick="window.abrirAba(event,'aba-fluxo')">
-            <span class="cc-rotulo">Instaladas</span>
+            <span class="cc-ico" style="--ic:var(--ds-texto-2)"><i class="fas fa-industry"></i></span><span class="cc-rotulo">Instaladas</span>
             <strong id="pg-kpi-instaladas">0</strong>
             <span class="cc-kpi-sub" id="pg-kpi-sub-total">—</span>
             <span id="kpi-total" hidden>0</span>
         </button>
         <button type="button" class="cc-kpi" onclick="window.abrirCriticos()">
-            <span class="cc-rotulo"><i class="cc-marca" style="background:var(--pg-c2)"></i>≥ 80% da meta</span>
+            <span class="cc-ico" style="--ic:var(--pg-c2)"><i class="fas fa-gauge-high"></i></span><span class="cc-rotulo">≥ 80% da meta</span>
             <strong id="kpi-criticos">0</strong>
             <span class="cc-kpi-sub" id="pg-kpi-sub-criticos">—</span>
         </button>
         <button type="button" class="cc-kpi" onclick="window.abrirCriticos()">
-            <span class="cc-rotulo"><i class="cc-marca" style="background:var(--pg-c3)"></i>Além da meta</span>
+            <span class="cc-ico" style="--ic:var(--ds-perigo)"><i class="fas fa-triangle-exclamation"></i></span><span class="cc-rotulo">Além da meta</span>
             <strong id="pg-kpi-alem">0</strong>
             <span class="cc-kpi-sub" id="pg-kpi-sub-alem">—</span>
         </button>
         <button type="button" class="cc-kpi" onclick="window.abrirAba(null,'aba-reparos')">
-            <span class="cc-rotulo">Em reparo</span>
+            <span class="cc-ico" style="--ic:var(--ds-texto-2)"><i class="fas fa-screwdriver-wrench"></i></span><span class="cc-rotulo">Em reparo</span>
             <strong id="kpi-reparo">0</strong>
             <span class="cc-kpi-sub" id="pg-kpi-sub-reparo">—</span>
         </button>
         <button type="button" class="cc-kpi" onclick="window.abrirAba(null,'aba-reservas')">
-            <span class="cc-rotulo">Reserva pronta</span>
+            <span class="cc-ico" style="--ic:var(--ds-ok)"><i class="fas fa-boxes-stacked"></i></span><span class="cc-rotulo">Reserva pronta</span>
             <strong id="kpi-reserva">0</strong>
             <span class="cc-kpi-sub" id="pg-kpi-sub-reserva">—</span>
         </button>
@@ -946,7 +946,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
     <div class="cc-bloco">
         <div class="cc-bloco-topo">
             <div>
-                <div class="cc-rotulo">02 / Linha de lingotamento</div>
+                <div class="cc-rotulo">Linha de lingotamento</div>
                 <h2 class="cc-titulo">Onde está o desgaste, peça por peça</h2>
             </div>
             <div class="cc-legenda">
@@ -964,13 +964,13 @@ a, button, [onclick], label[for], select { cursor: pointer; }
     <!-- 03 PREVISÃO + 04 RESERVA × DEMANDA -->
     <div class="cc-grade cc-grade-2">
         <div class="cc-bloco">
-            <div class="cc-rotulo">03 / Previsão de trocas</div>
+            <div class="cc-rotulo">Previsão de trocas</div>
             <h2 class="cc-titulo">Quando as peças batem a meta</h2>
             <p class="cc-sub">Pelo ritmo real de cada veio (toneladas ÷ dias em máquina da própria peça).</p>
             <div id="pg-previsao" data-html-estavel><div class="cc-carregando">Carregando…</div></div>
         </div>
         <div class="cc-bloco">
-            <div class="cc-rotulo">04 / Reserva × demanda</div>
+            <div class="cc-rotulo">Reserva × demanda</div>
             <h2 class="cc-titulo">Onde vai faltar peça</h2>
             <p class="cc-sub">Por tipo: além da meta + previstas em 90 dias, contra o que está pronto na reserva.</p>
             <div id="pg-reserva-tabela" data-html-estavel><div class="cc-carregando">Carregando…</div></div>
@@ -980,19 +980,19 @@ a, button, [onclick], label[for], select { cursor: pointer; }
     <!-- 05 TONELAGEM · 06 OFICINA · 07 PRODUÇÃO -->
     <div class="cc-grade cc-grade-3">
         <div class="cc-bloco">
-            <div class="cc-rotulo">05 / Tonelagem</div>
+            <div class="cc-rotulo">Tonelagem</div>
             <h2 class="cc-titulo">Últimos 7 dias</h2>
             <div id="painel-linha-tonelagem" data-html-estavel><div class="cc-carregando">Carregando…</div></div>
         </div>
         <div class="cc-bloco">
-            <div class="cc-rotulo">06 / Oficina agora</div>
+            <div class="cc-rotulo">Oficina agora</div>
             <h2 class="cc-titulo">Atividades</h2>
             <div id="painel-donut-status" data-html-estavel><div class="cc-carregando">Carregando…</div></div>
             <div class="cc-rotulo" style="margin-top:20px">Atrasadas</div>
             <div id="painel-atrasadas-globais" data-html-estavel><div class="cc-carregando">Carregando…</div></div>
         </div>
         <div class="cc-bloco">
-            <div class="cc-rotulo">07 / Produção lançada</div>
+            <div class="cc-rotulo">Produção lançada</div>
             <h2 class="cc-titulo">Por MCC</h2>
             <div id="painel-producao-lancada" data-html-estavel><div class="cc-carregando">Carregando…</div></div>
         </div>
@@ -1002,7 +1002,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
     <div class="cc-bloco">
         <div class="cc-bloco-topo">
             <div>
-                <div class="cc-rotulo">08 / Fila de inspeção</div>
+                <div class="cc-rotulo">Fila de inspeção</div>
                 <h2 class="cc-titulo">As 5 peças mais além da meta</h2>
             </div>
             <button type="button" class="cc-btn" onclick="window.abrirCriticos()">Ver todas →</button>
@@ -1018,7 +1018,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                      ações grandes e depois as listas por prioridade. Ids
                      das listas mantidos (JS/Oficina/painelTecnico.js). -->
                 <div class="cc-faixa">
-                    <span>[ OMS · PAINEL DO TÉCNICO ]</span>
+                    <span>Painel do técnico</span>
                     <span id="tc-faixa-area">—</span>
                     <span class="cc-faixa-dir"><i class="cc-led"></i><span id="tc-faixa-data">—</span></span>
                 </div>
@@ -1029,31 +1029,31 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                     <div id="tecnico-aviso-sem-area" class="tc-aviso hidden">Sua área ainda não foi cadastrada. Fale com um ADM pra liberar seu acesso completo.</div>
                 </div>
                 <div class="tc-acoes">
-                    <button type="button" class="tc-acao tc-acao-principal" onclick="window.abrirAbaReparo('iniciar')"><span class="cc-rotulo">01</span><strong>Iniciar reparo</strong><span>Abrir folhão de uma peça</span></button>
-                    <button type="button" class="tc-acao" onclick="window.abrirAbaReparo('andamento')"><span class="cc-rotulo">02</span><strong>Reparo em andamento</strong><span>Continuar de onde parou</span></button>
-                    <button type="button" class="tc-acao" onclick="window.irParaAreaTecnico()"><span class="cc-rotulo">03</span><strong>Minha área</strong><span>Quadro de atividades</span></button>
-                    <button type="button" class="tc-acao" onclick="window.irCriarAtividadeTecnico()"><span class="cc-rotulo">04</span><strong>Criar atividade</strong><span>Programar ou registrar</span></button>
+                    <button type="button" class="tc-acao tc-acao-principal" onclick="window.abrirAbaReparo('iniciar')"><span class="cc-ico"><i class="fas fa-wrench"></i></span><strong>Iniciar reparo</strong><span>Abrir folhão de uma peça</span></button>
+                    <button type="button" class="tc-acao" onclick="window.abrirAbaReparo('andamento')"><span class="cc-ico"><i class="fas fa-hourglass-half"></i></span><strong>Reparo em andamento</strong><span>Continuar de onde parou</span></button>
+                    <button type="button" class="tc-acao" onclick="window.irParaAreaTecnico()"><span class="cc-ico"><i class="fas fa-people-carry-box"></i></span><strong>Minha área</strong><span>Quadro de atividades</span></button>
+                    <button type="button" class="tc-acao" onclick="window.irCriarAtividadeTecnico()"><span class="cc-ico"><i class="fas fa-plus"></i></span><strong>Criar atividade</strong><span>Programar ou registrar</span></button>
                 </div>
                 <div class="cc-grade cc-grade-2 tc-grade">
                     <div class="cc-bloco">
-                        <div class="cc-rotulo">01 / Minhas atividades</div>
+                        <div class="cc-rotulo">Minhas atividades</div>
                         <h2 class="cc-titulo">Pendentes e em andamento</h2>
                         <div id="tecnico-lista-atividades"></div>
                     </div>
                     <div class="cc-bloco">
-                        <div class="cc-rotulo">02 / Prioridade da área</div>
+                        <div class="cc-rotulo">Prioridade da área</div>
                         <h2 class="cc-titulo">Peças ≥ 80% da meta</h2>
                         <div id="tecnico-lista-criticos"></div>
                     </div>
                 </div>
                 <div class="cc-grade cc-grade-2 tc-grade">
                     <div class="cc-bloco">
-                        <div class="cc-rotulo">03 / Equipamentos da área</div>
+                        <div class="cc-rotulo">Equipamentos da área</div>
                         <h2 class="cc-titulo">Instalados no veio</h2>
                         <div id="tecnico-lista-equipamentos-area" class="tc-rolagem"></div>
                     </div>
                     <div class="cc-bloco">
-                        <div class="cc-rotulo">04 / Reserva</div>
+                        <div class="cc-rotulo">Reserva</div>
                         <h2 class="cc-titulo">Pronta pra instalar</h2>
                         <div id="tecnico-lista-reservas"></div>
                     </div>
@@ -1292,70 +1292,33 @@ a, button, [onclick], label[for], select { cursor: pointer; }
             </section>
 
             <section id="aba-oficina" class="tab-content">
-                <!-- 🔧 CORREÇÃO (referência mandada pelo usuário): eram 4 KPIs de
-                     ATIVIDADE (Pendentes/Andamento/Atrasadas/Concluídas) — a
-                     referência resume por ÁREA (quantas áreas estão em cada
-                     severidade), que é a pergunta que essa tela de verdade
-                     responde ("quais áreas precisam de atenção"), não quantas
-                     atividades soltas existem no total. Pendentes/Atrasadas
-                     continuam visíveis em cada card individual, só não
-                     repetidas aqui em duplicidade. -->
-                <div class="kpi-container" id="oficina-kpi-container" style="margin-bottom:20px;">
-                    <div class="kpi-card danger">
-                        <div class="kpi-icon glow-danger"><i class="fas fa-triangle-exclamation"></i></div>
-                        <div class="kpi-data">
-                            <h4 id="oficina-kpi-criticas">0</h4>
-                            <p>Críticas</p>
-                        </div>
-                    </div>
-                    <div class="kpi-card warning">
-                        <div class="kpi-icon glow-warning"><i class="fas fa-circle-exclamation"></i></div>
-                        <div class="kpi-data">
-                            <h4 id="oficina-kpi-atencao">0</h4>
-                            <p>Atenção</p>
-                        </div>
-                    </div>
-                    <div class="kpi-card success">
-                        <div class="kpi-icon glow-success"><i class="fas fa-circle-check"></i></div>
-                        <div class="kpi-data">
-                            <h4 id="oficina-kpi-normais">0</h4>
-                            <p>Normais</p>
-                        </div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-icon glow-brand"><i class="fas fa-person-running"></i></div>
-                        <div class="kpi-data">
-                            <h4 id="oficina-kpi-andamento">0</h4>
-                            <p>Atividades em Andamento</p>
-                        </div>
+                <!-- Central de Áreas no padrão "centro de controle": resumo em
+                     uma frase, contagem por gravidade e um QUADRO de áreas
+                     (uma linha por área, ordenada por prioridade) no lugar da
+                     grade de cartões. Ids mantidos (centralAreas.js). -->
+                <div class="cc-faixa">
+                    <span>Central de áreas</span>
+                    <span>Oficina e manutenção</span>
+                    <span class="cc-faixa-dir"><i class="cc-led"></i>Atualiza sozinho</span>
+                </div>
+                <div class="cc-bloco ca-topo">
+                    <div class="cc-rotulo">Situação das áreas</div>
+                    <h1 class="tc-saudacao" id="ca-manchete">Carregando…</h1>
+                    <div class="cc-kpis ca-kpis" id="oficina-kpi-container">
+                        <button type="button" class="cc-kpi" onclick="window.filtrarCentralAreas('Crítico', document.querySelector('#central-areas-filtros [data-f=Crítico]'))"><span class="cc-ico" style="--ic:var(--ds-perigo)"><i class="fas fa-triangle-exclamation"></i></span><span class="cc-rotulo">Críticas</span><strong id="oficina-kpi-criticas">0</strong><span class="cc-kpi-sub">com atividade atrasada</span></button>
+                        <button type="button" class="cc-kpi" onclick="window.filtrarCentralAreas('Atenção', document.querySelector('#central-areas-filtros [data-f=Atenção]'))"><span class="cc-ico" style="--ic:var(--ds-ambar)"><i class="fas fa-circle-exclamation"></i></span><span class="cc-rotulo">Atenção</span><strong id="oficina-kpi-atencao">0</strong><span class="cc-kpi-sub">com trabalho em aberto</span></button>
+                        <button type="button" class="cc-kpi" onclick="window.filtrarCentralAreas('Normal', document.querySelector('#central-areas-filtros [data-f=Normal]'))"><span class="cc-ico" style="--ic:var(--ds-ok)"><i class="fas fa-circle-check"></i></span><span class="cc-rotulo">Normais</span><strong id="oficina-kpi-normais">0</strong><span class="cc-kpi-sub">sem pendência</span></button>
+                        <div class="cc-kpi" style="cursor:default"><span class="cc-ico" style="--ic:var(--ds-ambar)"><i class="fas fa-person-digging"></i></span><span class="cc-rotulo">Em andamento</span><strong id="oficina-kpi-andamento">0</strong><span class="cc-kpi-sub">atividades sendo feitas agora</span></div>
                     </div>
                 </div>
-
-                <!-- 🔧 CORREÇÃO ("central de áreas subir pro topo" + "inverter
-                     atividades da oficina pra cima e catálogo pra baixo"): este
-                     bloco (id="oficina-container") é populado via JS por
-                     carregarOficina() com a grade de cards de área — a Central
-                     de Áreas de verdade, com busca, filtros de status e um card
-                     por área (Hidráulica, Usinagem, etc). O título antigo
-                     "Atividades da Oficina" estava ERRADO: não lista atividades
-                     nenhuma, é a própria Central de Áreas. Corrigido o título
-                     e movido pra cima do Catálogo de Materiais. -->
-                <!-- 🆕 Título + subtítulo (referência mandada pelo usuário): faltava
-                     completamente aqui, diferente de outras telas (Central de
-                     Notificações, Painel do Supervisor) que já têm esse padrão —
-                     um dos motivos concretos do "muito simples". -->
-                <div class="glass-panel" style="padding:24px; margin-bottom:24px;">
-                    <h2 style="margin-bottom:4px;"><i class="fas fa-industry"></i> Central de Áreas</h2>
-                    <p class="text-muted" style="font-size:0.85rem; margin-bottom:16px;">Visão geral do status das áreas de manutenção e oficina.</p>
-                    <div id="oficina-container" style="margin-top:20px;">
-                    <div class="skeleton-row"><div class="skeleton skeleton-circle"></div><div style="flex:1;"><div class="skeleton skeleton-line" style="width:60%;"></div><div class="skeleton skeleton-line"></div></div></div>
-                    <div class="skeleton-row"><div class="skeleton skeleton-circle"></div><div style="flex:1;"><div class="skeleton skeleton-line" style="width:45%;"></div><div class="skeleton skeleton-line"></div></div></div>
-                    <div class="skeleton-row"><div class="skeleton skeleton-circle"></div><div style="flex:1;"><div class="skeleton skeleton-line" style="width:70%;"></div><div class="skeleton skeleton-line"></div></div></div>
-                </div></div>
-
-                <div class="glass-panel" style="padding:24px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
-                        <h2 style="margin:0;"><i class="fas fa-boxes-stacked"></i> Catálogo de Materiais por Área</h2>
+                <div class="cc-bloco">
+                    <div class="cc-rotulo">Quadro de áreas</div>
+                    <h2 class="cc-titulo">Da mais urgente para a mais tranquila</h2>
+                    <div id="oficina-container"><div class="cc-carregando">Carregando…</div></div>
+                </div>
+                <div class="cc-bloco">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+                        <div><div class="cc-rotulo">Materiais</div><h2 class="cc-titulo" style="margin-bottom:0">Catálogo por área</h2></div>
                         <div class="login-input-wrapper" style="position:relative; width:280px; max-width:100%;">
                             <input type="text" id="busca-material-oficina" placeholder="Buscar código, descrição ou área..." onkeyup="window.renderCatalogoMateriaisOficina()" style="height:40px; border-radius:6px; padding-left:40px;">
                             <i class="fas fa-search login-input-icon" style="top:11px; font-size:14px;"></i>
@@ -1477,13 +1440,13 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                      a partir das mesmas pendências de "Precisa de você
                      agora") e os atalhos de gestão ficam ao lado. -->
                 <div class="cc-faixa">
-                    <span>[ OMS · SUPERVISÃO ]</span>
+                    <span>Supervisão</span>
                     <span id="sup-faixa-data">—</span>
                     <span class="cc-faixa-dir"><i class="cc-led"></i>Atualizado <span id="painel-supervisor-ultima-atualizacao">--:--</span></span>
                 </div>
                 <div class="cc-briefing sup-briefing">
                     <div class="cc-briefing-texto">
-                        <div class="cc-rotulo">Briefing da supervisão · <span id="painel-supervisor-saudacao">Olá</span></div>
+                        <div class="cc-rotulo">Resumo da supervisão · <span id="painel-supervisor-saudacao">Olá</span></div>
                         <h1 class="cc-manchete" id="sup-manchete">Verificando o que precisa de você…</h1>
                         <p class="sup-manchete-sub" id="sup-manchete-sub"></p>
                         <div class="cc-acoes">
