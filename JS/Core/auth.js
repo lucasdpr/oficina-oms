@@ -95,7 +95,7 @@ export async function processarAutenticacaoHome() {
         console.error("Erro no login:", e);
         alert("Não foi possível conectar ao servidor mesmo após tentar novamente. Verifique sua internet e tente mais uma vez em alguns segundos.");
     } finally {
-        if (btnEntrar) { btnEntrar.disabled = false; btnEntrar.innerText = "Autenticar Terminal"; }
+        if (btnEntrar) { btnEntrar.disabled = false; btnEntrar.innerText = "Entrar"; }
     }
 }
 window.processarAutenticacaoHome = processarAutenticacaoHome;
