@@ -1372,19 +1372,22 @@ async function carregarEquipeAreaOficina(chave) {
         }
 
         const liderDaArea = encontrarLiderEquipe(OFICINA_EQUIPE_ATUAL);
-        container.innerHTML = OFICINA_EQUIPE_ATUAL.map(p => {
+        const esc = v => window.escapeHtmlNotif ? window.escapeHtmlNotif(String(v ?? '')) : String(v ?? '');
+        container.innerHTML = `<div class="ae-grade">${OFICINA_EQUIPE_ATUAL.map(p => {
             const iniciais = p.nome.trim().split(/\s+/).slice(0, 2).map(n => n[0]).join('').toUpperCase();
             const ehLider = !!liderDaArea && liderDaArea.matricula === p.matricula;
             return `
-            <div class="equipe-card" style="${ehLider ? 'border-color:var(--area-color, var(--text-accent));' : ''}">
-                <div class="equipe-avatar">${iniciais}</div>
-                <div style="min-width:0;">
-                    <div style="font-weight:700; color:var(--text-heading); font-size:13px;">${p.nome} ${ehLider ? '<i class="fas fa-star" style="color:var(--warning); font-size:10px;" title="Líder da equipe"></i>' : ''}</div>
-                    ${p.cargo ? `<div class="text-muted" style="font-size:11px;">${p.cargo}</div>` : ''}
+            <div class="ae-pessoa${ehLider ? ' ae-lider' : ''}">
+                <div class="ae-avatar">${esc(iniciais)}</div>
+                <div class="ae-pessoa-corpo">
+                    <strong>${esc(p.nome)}</strong>
+                    ${p.cargo ? `<span>${esc(p.cargo)}</span>` : ''}
                 </div>
-            </div>
-        `;
-        }).join('');
+                ${ehLider ? '<span class="ae-selo"><i class="fas fa-star"></i> Líder</span>' : ''}
+            </div>`;
+        }).join('')}</div>`;
+        const tabEq = document.querySelector('#area-oficina-tabs .folhao-tab:nth-child(3)');
+        if (tabEq) tabEq.innerHTML = `<i class="fas fa-users"></i> Equipe <span class="ae-cont">${OFICINA_EQUIPE_ATUAL.length}</span>`;
     } catch (e) {
         console.error('⚠️ Não consegui carregar a equipe da área:', e);
         container.innerHTML = `<div class="text-muted" style="font-size:12px;">Não foi possível carregar. Verifique sua internet.</div>`;
@@ -1453,7 +1456,7 @@ window.filtrarMateriaisAreaOficina = function() {
     }
 
     const tabBtn = document.querySelector('#area-oficina-tabs .folhao-tab:nth-child(2)');
-    if (tabBtn) tabBtn.innerHTML = `<i class="fas fa-boxes-stacked"></i> Materiais${MATERIAIS_AREA_OFICINA_CACHE.length ? ` (${MATERIAIS_AREA_OFICINA_CACHE.length})` : ''}`;
+    if (tabBtn) tabBtn.innerHTML = `<i class="fas fa-boxes-stacked"></i> Materiais${MATERIAIS_AREA_OFICINA_CACHE.length ? ` <span class="ae-cont">${MATERIAIS_AREA_OFICINA_CACHE.length}</span>` : ''}`;
 
     if (materiais.length === 0) {
         container.innerHTML = `
@@ -1465,18 +1468,17 @@ window.filtrarMateriaisAreaOficina = function() {
         return;
     }
 
+    const esc = v => window.escapeHtmlNotif ? window.escapeHtmlNotif(String(v ?? '')) : String(v ?? '');
     container.innerHTML = `
-        <div style="max-height:320px; overflow-y:auto;">
+        <div class="ae-materiais">
             ${materiais.map(m => `
-                <div class="material-chip">
-                    <div style="min-width:0; display:flex; align-items:center; gap:10px;">
-                        <i class="fas fa-cube" style="color:var(--area-color, var(--text-accent)); font-size:13px; flex-shrink:0;"></i>
-                        <div style="min-width:0;">
-                            <span class="font-code" style="font-weight:700; color:var(--text-heading); font-size:12px;">${m.codigo}</span>
-                            <span style="font-size:12px; color:var(--text-body); margin-left:6px;">${m.descricao}</span>
-                        </div>
+                <div class="ae-material">
+                    <span class="ae-material-ico"><i class="fas fa-cube"></i></span>
+                    <div class="ae-material-corpo">
+                        <strong class="ae-codigo">${esc(m.codigo)}</strong>
+                        <span class="ae-desc">${esc(m.descricao)}</span>
                     </div>
-                    <button class="btn-outline-danger" style="padding:3px 8px; font-size:11px; flex-shrink:0;" onclick="window.excluirMaterialAreaOficina(${m.id})">
+                    <button class="ae-excluir" title="Excluir" aria-label="Excluir material" onclick="window.excluirMaterialAreaOficina(${m.id})">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -1563,20 +1565,23 @@ function renderProcedimentosArea(chave) {
     }
 
     tabBtn.classList.remove('hidden');
-    lista.innerHTML = procedimentos.map(p => `
-        <div class="procedimento-card">
-            <div style="min-width:0; display:flex; align-items:center; gap:10px;">
-                <i class="fas fa-file-shield" style="color:var(--area-color, var(--text-accent)); font-size:14px; flex-shrink:0;"></i>
-                <div style="min-width:0;">
-                    <div style="font-weight:700; color:var(--text-heading); font-size:13px;">${p.nome}</div>
-                    <div class="text-muted" style="font-size:11px;">Nº ${p.id} · Rev. ${p.revisao || '-'} · ${p.frequencia || ''}</div>
+    tabBtn.innerHTML = `<i class="fas fa-list-check"></i> Procedimentos <span class="ae-cont">${procedimentos.length}</span>`;
+    lista.innerHTML = `<div class="ae-procs">${procedimentos.map(p => `
+        <div class="ae-proc">
+            <span class="ae-material-ico"><i class="fas fa-file-shield"></i></span>
+            <div class="ae-material-corpo">
+                <strong class="ae-proc-nome">${p.nome}</strong>
+                <div class="ae-chips">
+                    <span>Nº ${p.id}</span>
+                    <span>Rev. ${p.revisao || '-'}</span>
+                    ${p.frequencia ? `<span class="ae-chip-freq"><i class="fas fa-rotate"></i> ${p.frequencia}</span>` : ''}
                 </div>
             </div>
-            <button class="btn-outline-neutral" style="flex-shrink:0; padding:6px 12px; font-size:11.5px;" onclick="window.abrirProcedimento('${chave}','${p.id}')">
+            <button class="cc-btn cc-btn-cheio ae-abrir" onclick="window.abrirProcedimento('${chave}','${p.id}')">
                 <i class="fas fa-clipboard-check"></i> Abrir
             </button>
         </div>
-    `).join('');
+    `).join('')}</div>`;
 }
 window.renderProcedimentosArea = renderProcedimentosArea;
 

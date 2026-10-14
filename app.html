@@ -74,7 +74,7 @@
     <link rel="stylesheet" href="style.css?v=14" />
     <!-- Novo padrão visual (tokens + componentes ds-*). Vem DEPOIS do
          style.css pra vencer em empate de especificidade. -->
-    <link rel="stylesheet" href="design-system.css?v=20" />
+    <link rel="stylesheet" href="design-system.css?v=21" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="JS/assets/icon-192.png?v=4">
@@ -1878,18 +1878,14 @@ a, button, [onclick], label[for], select { cursor: pointer; }
             </div>
 
             <div id="area-oficina-secao-materiais" class="folhao-content hidden">
-                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
-                    <input type="text" id="area-oficina-busca-material" class="premium-input" placeholder="Buscar código ou descrição..." style="flex:1; min-width:160px;" onkeyup="window.filtrarMateriaisAreaOficina()">
-                </div>
-                <div id="area-oficina-materiais-lista" style="margin-bottom:16px;"></div>
-                <div class="glass-panel" style="padding:14px; background:var(--bg-th);">
-                    <p style="font-size:11.5px; color:var(--text-muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.3px; font-weight:600;"><i class="fas fa-plus"></i> Adicionar <span id="area-oficina-materiais-titulo-label">material</span> à lista</p>
-                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                        <input type="text" id="area-oficina-material-codigo" class="premium-input" placeholder="Código" style="flex:1; min-width:90px;">
-                        <input type="text" id="area-oficina-material-descricao" class="premium-input" placeholder="Descrição do material" style="flex:3; min-width:160px;">
-                        <button class="btn-premium" style="padding:8px 16px;" onclick="window.adicionarMaterialAreaOficina()">
-                            <i class="fas fa-plus"></i> Adicionar
-                        </button>
+                <div class="es-busca ae-busca"><i class="fas fa-search"></i><input type="text" id="area-oficina-busca-material" class="premium-input" placeholder="Buscar código ou descrição" onkeyup="window.filtrarMateriaisAreaOficina()"></div>
+                <div id="area-oficina-materiais-lista"></div>
+                <div class="ae-novo">
+                    <div class="ae-novo-tit"><i class="fas fa-plus"></i> Adicionar <span id="area-oficina-materiais-titulo-label">material</span> à lista</div>
+                    <div class="ae-novo-campos">
+                        <input type="text" id="area-oficina-material-codigo" class="premium-input" placeholder="Código">
+                        <input type="text" id="area-oficina-material-descricao" class="premium-input" placeholder="Descrição do material">
+                        <button class="cc-btn cc-btn-cheio" onclick="window.adicionarMaterialAreaOficina()"><i class="fas fa-plus"></i> Adicionar</button>
                     </div>
                 </div>
             </div>
@@ -1903,12 +1899,9 @@ a, button, [onclick], label[for], select { cursor: pointer; }
             </div>
 
             <div id="area-oficina-secao-notas" class="folhao-content hidden">
-                <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
-                    <i class="fas fa-note-sticky" style="color:var(--area-color, var(--text-accent)); font-size:14px;"></i>
-                    <p class="text-muted" style="font-size:12px; margin:0;">Observações livres do dia a dia (materiais usados, procedimento, o que ficou pendente...).</p>
-                </div>
-                <textarea id="area-oficina-notas" class="premium-textarea" rows="6" placeholder="Ex: materiais usados, procedimento..." onchange="window.salvarNotaAreaOficina()"></textarea>
-                <div id="area-oficina-notas-status" class="text-muted" style="font-size:11px; margin-top:4px;"></div>
+                <p class="cc-sub" style="margin:0 0 12px">Observações livres do dia a dia: materiais usados, procedimento, o que ficou pendente. Salva sozinho ao sair do campo.</p>
+                <textarea id="area-oficina-notas" class="premium-textarea ae-notas" rows="8" placeholder="Ex: materiais usados, procedimento..." onchange="window.salvarNotaAreaOficina()"></textarea>
+                <div id="area-oficina-notas-status" class="ae-notas-status"></div>
             </div>
 
             </div>
@@ -3171,7 +3164,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
         import './JS/Paineis/painelAdmExecutivo.js?v=2';
         import './JS/Paineis/painelSupervisorUI.js?v=2';
         import './JS/Paineis/centralAreas.js?v=2';
-        import './JS/Oficina/atividades.js?v=4';
+        import './JS/Oficina/atividades.js?v=5';
         import './JS/Paineis/painelAreaAdministrativa.js?v=2';
         import './JS/Oficina/apontamento.js?v=2';
         import './JS/Paineis/notificacoes.js?v=4';

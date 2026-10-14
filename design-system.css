@@ -1438,6 +1438,42 @@ body .nt-visto:hover { border-color: var(--ds-ok) !important; color: var(--ds-ok
 .nt-vazio { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 28px 12px; font-size: .95rem; color: var(--ds-texto-3); }
 .nt-vazio i { color: var(--ds-ok); font-size: 1.2rem; }
 
+/* ---------- sub-abas da área (materiais, equipe, procedimentos, notas) ---------- */
+#area-oficina-tabs .folhao-tab { min-height: 48px; font-size: .92rem; }
+.ae-cont { display: inline-block; min-width: 22px; padding: 1px 7px; margin-left: 4px; border-radius: 999px; font-size: .76rem; font-weight: 700; text-align: center; background: var(--ds-bloco-2); color: var(--ds-texto-2); }
+#area-oficina-tabs .folhao-tab.active .ae-cont { background: color-mix(in srgb, var(--ds-ambar) 22%, transparent); color: var(--ds-ambar); }
+.ae-busca { max-width: none; margin-bottom: 14px; }
+.ae-materiais, .ae-procs { display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow-y: auto; padding-right: 2px; }
+.ae-procs { max-height: none; }
+.ae-material, .ae-proc { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: var(--ds-r); background: var(--ds-fundo); border: 1px solid var(--ds-linha); transition: border-color .2s, transform .2s var(--ds-ease); }
+.ae-material:hover, .ae-proc:hover, .ae-pessoa:hover { border-color: var(--ds-linha-forte); transform: translateY(-1px); }
+.ae-material-ico { flex: none; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; color: var(--ds-ambar); background: color-mix(in srgb, var(--ds-ambar) 13%, transparent); }
+.ae-material-corpo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.ae-codigo { font: 600 .92rem var(--ds-mono, monospace); color: var(--ds-texto); }
+.ae-desc { font-size: .95rem; color: var(--ds-texto-2); line-height: 1.35; word-break: break-word; }
+body .ae-excluir { flex: none; width: 44px; height: 44px; min-width: 44px !important; min-height: 44px !important; padding: 0 !important; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--ds-r-md) !important; border: 1px solid var(--ds-linha-forte) !important; background: var(--ds-bloco-2) !important; color: var(--ds-texto-3) !important; cursor: pointer; }
+body .ae-excluir:hover { border-color: var(--ds-perigo) !important; color: var(--ds-perigo) !important; }
+.ae-novo { margin-top: 16px; padding: 16px; border-radius: var(--ds-r); border: 1px dashed var(--ds-linha-forte); background: var(--ds-fundo); }
+.ae-novo-tit { font-size: .92rem; font-weight: 600; color: var(--ds-texto-2); margin-bottom: 10px; }
+.ae-novo-campos { display: grid; grid-template-columns: 160px minmax(0, 1fr) auto; gap: 8px; }
+.ae-novo-campos .premium-input, .ae-novo-campos .cc-btn { height: 48px; }
+.ae-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.ae-pessoa { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: var(--ds-r); background: var(--ds-fundo); border: 1px solid var(--ds-linha); transition: border-color .2s, transform .2s var(--ds-ease); }
+.ae-pessoa.ae-lider { border-color: color-mix(in srgb, var(--ds-ambar) 50%, var(--ds-linha)); background: color-mix(in srgb, var(--ds-ambar) 6%, var(--ds-fundo)); }
+.ae-avatar { flex: none; width: 46px; height: 46px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; font: 600 1rem var(--ds-fonte-titulo); background: var(--ds-bloco-2); color: var(--ds-texto-2); border: 1px solid var(--ds-linha); }
+.ae-lider .ae-avatar { background: linear-gradient(145deg, var(--ds-ambar), color-mix(in srgb, var(--ds-ambar) 70%, #7a4a00)); color: var(--ds-sobre-ambar); border: 0; }
+.ae-pessoa-corpo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ae-pessoa-corpo strong { font-size: .98rem; font-weight: 600; color: var(--ds-texto); }
+.ae-pessoa-corpo span { font-size: .84rem; color: var(--ds-texto-3); }
+.ae-selo { flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; font-weight: 700; color: var(--ds-ambar); padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--ds-ambar) 14%, transparent); }
+.ae-proc-nome { font-size: 1rem; font-weight: 600; color: var(--ds-texto); line-height: 1.3; }
+.ae-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ae-chips span { font-size: .78rem; font-weight: 600; color: var(--ds-texto-2); padding: 2px 10px; border-radius: 999px; background: var(--ds-bloco-2); border: 1px solid var(--ds-linha); }
+.ae-chips .ae-chip-freq { color: var(--ds-ambar); border-color: color-mix(in srgb, var(--ds-ambar) 35%, var(--ds-linha)); background: color-mix(in srgb, var(--ds-ambar) 10%, transparent); }
+.ae-abrir { flex: none; height: 44px; }
+body .ae-notas { min-height: 220px; font-size: 1rem; line-height: 1.5; border-radius: var(--ds-r); }
+.ae-notas-status { min-height: 22px; margin-top: 8px; font-size: .84rem; color: var(--ds-texto-3); }
+
 /* ------------------------------------------------------------------
    RESPONSIVO
    ------------------------------------------------------------------ */
@@ -1506,6 +1542,17 @@ body .nt-visto:hover { border-color: var(--ds-ok) !important; color: var(--ds-ok
     .es-chips { width: 100%; }
     .es-chips .cc-btn { flex: 1; justify-content: center; }
     .es-cab .cc-btn { width: 100%; justify-content: center; }
+    .ae-novo-campos { grid-template-columns: 1fr; }
+    .ae-grade { grid-template-columns: 1fr; }
+    .ae-proc { flex-wrap: wrap; }
+    .ae-abrir { width: 100%; justify-content: center; }
+    .ae-materiais { max-height: 380px; }
+    #area-oficina-tabs { overflow-x: auto; scrollbar-width: none; flex-wrap: nowrap; }
+    #area-oficina-tabs::-webkit-scrollbar { display: none; }
+    #area-oficina-tabs .folhao-tab { flex: 1 0 auto; padding: 0 6px; font-size: .78rem; white-space: nowrap; justify-content: center; }
+    #area-oficina-tabs .ae-cont { display: none; }
+    #area-oficina-tabs .folhao-tab i:not(.ae-cont) { display: none; }
+    .ae-cont { margin-left: 3px; }
     .nt-kpis { grid-template-columns: 1fr 1fr 1fr; }
     .nt-kpis > :first-child { grid-column: auto; }
     .nt-kpis .cc-ico, .nt-kpis .cc-kpi-sub { display: none; }
