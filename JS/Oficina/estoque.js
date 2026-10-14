@@ -12,6 +12,16 @@ import { verificarAcesso } from '../Core/permissoes.js';
 import { fetchComRetry, calcularDias, rotuloDesgaste, getOrdemPadrao } from '../Core/utils.js';
 import { AREAS_OFICINA } from '../Core/dados.js';
 
+
+// Local padrão "MCC 2 - Veio C" a partir do veio (C/D = 2, E/F = 3, G/H = 4).
+// Ver comentário em Core/utils.js (localDoVeio) — duplicado aqui de
+// propósito pra não depender do cache de outro arquivo.
+function localPadraoDoVeio(veio, mccPadrao) {
+    const v = String(veio || '').trim().toUpperCase();
+    const mcc = { C: '2', D: '2', E: '3', F: '3', G: '4', H: '4' }[v] || mccPadrao || '';
+    return `MCC ${mcc} - Veio ${v}`;
+}
+
 // ==========================================
 // CADASTRO DE NOVAS PEÇAS E ROLOS
 // ==========================================
@@ -747,7 +757,7 @@ window.processarCadastroPeca = async function() {
         mcc_compat: mcc_compat,
         meta: meta,
         ton: tonAtual,
-        local: `MCC ${mcc_compat} - Veio ${veioInstalacao}`,
+        local: localPadraoDoVeio(veioInstalacao, mcc_compat),
         veio: veioInstalacao,
         posicaoFixa: posicaoFixa,
         pos: posicaoFixa || "GERAL",

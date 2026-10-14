@@ -2050,15 +2050,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ser concluída e dispara notificação (sem travar o carregamento
     // do resto do app — roda em segundo plano). Cada atividade
     // atrasada só notifica 1 vez (controlado no backend).
-    (async () => {
-        try {
-            const apiBase = await resolverApiBase();
-            await fetch(`${apiBase}/api/oficina/verificar_atrasos`, { method: 'POST' });
-        } catch (e) {
-            console.warn('⚠️ Não consegui verificar atividades atrasadas:', e);
-        }
-    })();
+    // 🔧 CORREÇÃO (achado no teste completo): rodava na tela de login,
+    // ANTES de existir token — o servidor recusava (401) e a checagem de
+    // atraso nunca acontecia pra quem acabava de entrar. Agora só roda
+    // com sessão, e roda de novo logo depois do login (ver auth.js).
+    window.verificarAtrasosOficina();
 });
+
+window.verificarAtrasosOficina = async function() {
+    let op = null;
+    try { op = JSON.parse(localStorage.getItem('oms_operador_v32_local') || 'null'); } catch (e) { op = null; }
+    if (!op || !op.token || op.visitante) return;
+    try {
+        const apiBase = await resolverApiBase();
+        await fetch(`${apiBase}/api/oficina/verificar_atrasos`, { method: 'POST' });
+    } catch (e) {
+        console.warn('⚠️ Não consegui verificar atividades atrasadas:', e);
+    }
+};
 // ==============================================================
 // CONTROLE DO FORMULÁRIO DE CADASTRO DE PEÇAS
 // ==============================================================
