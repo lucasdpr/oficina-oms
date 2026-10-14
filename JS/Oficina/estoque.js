@@ -832,21 +832,34 @@ function renderizarTopCriticos() {
         return;
     }
     
-    container.innerHTML = ordenados.map(a => {
-        let mccAba = 'aba-mcc2';
-        if (a.mcc_compat === '3') mccAba = 'aba-mcc3';
-        else if (a.mcc_compat === '4') mccAba = 'aba-mcc4';
-        let veio = 'C';
+    // 🎨 Padrão novo (design-system.css): barra de desgaste por peça, com
+    // marca dos 100% da meta. 🔧 A aba da MCC agora vem da letra do veio
+    // (C/D = MCC 2, E/F = MCC 3, G/H = MCC 4) — antes "2/3" sempre caía na
+    // aba da MCC 2, mesmo pra peça do Veio E/F.
+    const abaPorVeio = { C: 'aba-mcc2', D: 'aba-mcc2', E: 'aba-mcc3', F: 'aba-mcc3', G: 'aba-mcc4', H: 'aba-mcc4' };
+    const escala = Math.max(100, ...ordenados.map(a => a.pct));
+    const fmtMilT = n => Math.round(Math.abs(n) / 1000).toLocaleString('pt-BR') + ' mil t';
+    container.innerHTML = ordenados.map((a, pos) => {
+        const dif = (a.ton || 0) - (a.meta || 0);
+        const difTxt = a.meta > 0 ? (dif >= 0 ? `+${fmtMilT(dif)} além da meta` : `faltam ${fmtMilT(dif)}`) : 'sem meta';
         const match = a.local?.match(/Veio\s*([A-Z])/i);
-        if (match) veio = match[1].toUpperCase();
+        const veio = match ? match[1].toUpperCase() : 'C';
+        const mccAba = abaPorVeio[veio] || (a.mcc_compat === '4' ? 'aba-mcc4' : 'aba-mcc2');
         const onclick = `window.abrirAba(null, '${mccAba}'); setTimeout(() => { window.mudarVeioVisualizado('${veio}'); }, 200);`;
-        
+        const cor = `var(--pg-${a.pct >= 100 ? 'c3' : a.pct >= 80 ? 'c2' : a.pct >= 50 ? 'c1' : 'c0'})`;
+        const mcc = { C: '2', D: '2', E: '3', F: '3', G: '4', H: '4' }[veio] || a.mcc_compat || '';
         return `
-            <div class="top-critico-item" style="cursor: pointer;" onclick="${onclick}">
-                <span class="tag" title="Código interno: ${a.id}">${window.rotuloEquipamento(a)}</span>
-                <span class="tipo">${a.tipo}</span>
-                <span class="porcentagem">${a.pct.toFixed(1)}%</span>
-                <span style="font-size: 10px; color: var(--text-muted);">🔗 ${a.mcc_compat ? 'MCC '+a.mcc_compat : ''} · Veio ${veio}</span>
+            <div class="ds-barra-linha pg-fila-item" onclick="${onclick}" title="Código interno: ${a.id}">
+                <span class="pg-fila-rank">${pos + 1}</span>
+                <div style="min-width:0">
+                    <div class="ds-barra-nome">${window.rotuloEquipamento(a)}</div>
+                    <div class="ds-barra-meta">${a.tipo} · MCC ${mcc} · Veio ${veio}</div>
+                </div>
+                <div class="pg-fila-dados">
+                    <div class="ds-barra-pct" style="color:${cor}">${a.pct.toFixed(1).replace('.', ',')}%</div>
+                    <div class="ds-barra-meta">${difTxt} · ${a.dias || 0} dias</div>
+                </div>
+                <div class="ds-barra-trilho"><i style="width:${(Math.min(a.pct, escala) / escala) * 100}%;background:${cor}"></i><b style="left:${(80 / escala) * 100}%;opacity:.25"></b>${escala > 100 ? `<b style="left:${(100 / escala) * 100}%"></b>` : ''}</div>
             </div>
         `;
     }).join('');

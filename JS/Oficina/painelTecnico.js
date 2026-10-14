@@ -807,6 +807,9 @@ function atualizarPainelCompleto() {
     executarSeguro(() => atualizarNovosKPIs(), 'atualizarNovosKPIs');
     if (typeof window.atualizarKPIsAvancados === 'function') executarSeguro(() => window.atualizarKPIsAvancados(), 'atualizarKPIsAvancados');
     if (typeof window.renderizarTopCriticos === 'function') executarSeguro(() => window.renderizarTopCriticos(), 'renderizarTopCriticos');
+    // 🆕 Topo, mapa dos veios e donut de risco: só leem BANCO_ATIVOS, então
+    // redesenham junto com os KPIs sempre que os dados chegam.
+    if (typeof window.renderPainelSincrono === 'function') executarSeguro(() => window.renderPainelSincrono(), 'renderPainelSincrono');
     // status das máquinas vem do servidor: consultar no máximo a cada 30s
     // por aqui (quem precisa atualizar na hora, ex: ao mudar uma OS,
     // chama window.atualizarStatusMaquinas() direto e não passa por isso)
