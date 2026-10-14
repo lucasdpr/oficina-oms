@@ -32,6 +32,66 @@ function blocoRaiz(aba, seletor) {
     return el && el.parentElement === aba ? el : null;
 }
 
+
+// 🆕 CENTRAL DE COMANDOS do supervisor — "daqui eu vou pra qualquer lugar
+// e faço qualquer coisa". Busca por texto (Enter executa a 1ª) + todas as
+// ações do sistema agrupadas. Só chama funções que já existem no app.
+const COMANDOS_SUP = [
+    { g: 'Decidir agora', t: 'Atividade em massa', d: 'Programar a mesma atividade pra várias áreas', k: 'massa programar varias areas', f: "window.abrirModalAtividadeMassa()" },
+    { g: 'Decidir agora', t: 'Novo comunicado', d: 'Aviso pra toda a equipe', k: 'aviso comunicado mensagem todos', f: "window.abrirModalCriarAviso()" },
+    { g: 'Decidir agora', t: 'Lançar OS', d: 'Registrar ordem de serviço com foto', k: 'os ordem servico registrar', f: "window.abrirAba(null,'aba-ordens-servico')" },
+    { g: 'Decidir agora', t: 'Relatório de críticos', d: 'Todas as peças ≥ 80% da meta', k: 'criticos relatorio desgaste meta', f: "window.abrirCriticos()" },
+    { g: 'Oficina', t: 'Central de áreas', d: 'Quadro de todas as áreas', k: 'areas oficina quadro atividades', f: "window.abrirAba(null,'aba-oficina')" },
+    { g: 'Oficina', t: 'Reparos em andamento', d: 'O que está na bancada', k: 'reparo andamento bancada', f: "window.abrirAbaReparo('andamento')" },
+    { g: 'Oficina', t: 'Iniciar reparo', d: 'Abrir folhão de uma peça', k: 'reparo iniciar folhao', f: "window.abrirAbaReparo('iniciar')" },
+    { g: 'Oficina', t: 'Fila da ponte rolante', d: 'Ordem dos transportes', k: 'ponte rolante fila transporte', f: "window.abrirAba(null,'aba-fila-ponte'); window.renderFilaPonteRolante && window.renderFilaPonteRolante()" },
+    { g: 'Oficina', t: 'Qualidade', d: 'Inspeções de entrada e saída', k: 'qualidade inspecao achado', f: "window.abrirAba(null,'aba-qualidade')" },
+    { g: 'Máquinas', t: 'Painel geral', d: 'Centro de controle da planta', k: 'painel geral planta controle', f: "window.abrirAba(null,'aba-painel')" },
+    { g: 'Máquinas', t: 'Veio C · MCC 2', d: 'Sequenciamento', k: 'veio c mcc2 sequenciamento', f: "window.mudarVeioVisualizado('C')" },
+    { g: 'Máquinas', t: 'Veio D · MCC 2', d: 'Sequenciamento', k: 'veio d mcc2 sequenciamento', f: "window.mudarVeioVisualizado('D')" },
+    { g: 'Máquinas', t: 'Veio E · MCC 3', d: 'Sequenciamento', k: 'veio e mcc3 sequenciamento', f: "window.mudarVeioVisualizado('E')" },
+    { g: 'Máquinas', t: 'Veio F · MCC 3', d: 'Sequenciamento', k: 'veio f mcc3 sequenciamento', f: "window.mudarVeioVisualizado('F')" },
+    { g: 'Máquinas', t: 'Veio G · MCC 4', d: 'Sequenciamento', k: 'veio g mcc4 sequenciamento', f: "window.mudarVeioVisualizado('G')" },
+    { g: 'Máquinas', t: 'Veio H · MCC 4', d: 'Sequenciamento', k: 'veio h mcc4 sequenciamento', f: "window.mudarVeioVisualizado('H')" },
+    { g: 'Máquinas', t: 'Lançar produção', d: 'Apontamento diário de toneladas', k: 'producao apontamento tonelagem lancar', f: "window.abrirAba(null,'aba-producao')" },
+    { g: 'Máquinas', t: 'Sinótico 3D', d: 'Abre em nova aba', k: 'sinotico 3d', f: "window.open('Sinotico3d.html','_blank')" },
+    { g: 'Máquinas', t: 'Molde MCC 4 em 3D', d: 'Abre em nova aba', k: 'molde mcc4 3d', f: "window.open('Molde3d.html','_blank')" },
+    { g: 'Máquinas', t: 'Molde MCC 2/3 em 3D', d: 'Abre em nova aba', k: 'molde mcc23 mcc2 mcc3 3d', f: "window.open('MoldeMCC23d.html','_blank')" },
+    { g: 'Estoque', t: 'Reserva', d: 'Peças prontas pra instalar', k: 'reserva estoque swap', f: "window.abrirAba(null,'aba-reservas')" },
+    { g: 'Estoque', t: 'Rolos', d: 'Estoque de rolos', k: 'rolos estoque', f: "window.abrirAba(null,'aba-rolos')" },
+    { g: 'Estoque', t: 'Hidráulica', d: 'Itens hidráulicos', k: 'hidraulica', f: "window.abrirAba(null,'aba-hidraulica')" },
+    { g: 'Estoque', t: 'Almoxarifado', d: 'Materiais da oficina', k: 'almoxarifado materiais', f: "window.abrirAba(null,'aba-almoxarifado')" },
+    { g: 'Equipe e comunicação', t: 'Chats das áreas', d: 'Conversas com as áreas', k: 'chat conversa mensagens', f: "window.abrirAba(null,'aba-chats')" },
+    { g: 'Equipe e comunicação', t: 'Notificações', d: 'Tudo o que aconteceu', k: 'notificacoes avisos', f: "window.abrirAba(null,'aba-notificacoes')" },
+    { g: 'Equipe e comunicação', t: 'Painel do técnico', d: 'Ver como o técnico vê', k: 'tecnico painel', f: "window.abrirAba(null,'aba-tecnico')" },
+];
+const semAcento = t => String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+function htmlComandos(filtro = '') {
+    const q = semAcento(filtro.trim());
+    const lista = COMANDOS_SUP.map((c, i) => ({ ...c, i })).filter(c => !q || semAcento(`${c.t} ${c.d} ${c.k} ${c.g}`).includes(q));
+    if (!lista.length) return `<div class="tc-vazio">Nada encontrado para “${esc(filtro)}”.</div>`;
+    const grupos = [...new Set(lista.map(c => c.g))];
+    return grupos.map(g => `<div class="sup-cmd-grupo"><div class="cc-rotulo">${g}</div><div class="sup-cmd-grade">${lista.filter(c => c.g === g).map(c =>
+        `<button type="button" class="sup-cmd" data-cmd="${c.i}"><strong>${c.t}</strong><span>${c.d}</span></button>`).join('')}</div></div>`).join('');
+}
+
+function montarCentralComandos(aba, depoisDe) {
+    if (document.getElementById('sup-comandos')) return;
+    const bloco = document.createElement('div');
+    bloco.className = 'cc-bloco sup-comandos';
+    bloco.id = 'sup-comandos';
+    bloco.innerHTML = `<div class="cc-rotulo">Central de comandos</div><h2 class="cc-titulo">O que você quer fazer?</h2>
+        <input type="search" class="premium-input sup-cmd-busca" id="sup-cmd-busca" placeholder="Digite: reparo, veio E, comunicado, produção…" autocomplete="off">
+        <div id="sup-cmd-lista">${htmlComandos()}</div>`;
+    depoisDe.after(bloco);
+    const busca = bloco.querySelector('#sup-cmd-busca'), lista = bloco.querySelector('#sup-cmd-lista');
+    const executar = i => { const c = COMANDOS_SUP[i]; if (c) { try { new Function(c.f)(); } catch (e) { console.error('⚠️ Comando do supervisor falhou:', c.t, e); } } };
+    busca.addEventListener('input', () => { lista.innerHTML = htmlComandos(busca.value); });
+    busca.addEventListener('keydown', ev => { if (ev.key === 'Enter') { const b = lista.querySelector('[data-cmd]'); if (b) executar(+b.dataset.cmd); } if (ev.key === 'Escape') { busca.value = ''; lista.innerHTML = htmlComandos(); } });
+    lista.addEventListener('click', ev => { const b = ev.target.closest('[data-cmd]'); if (b) executar(+b.dataset.cmd); });
+}
+
 function organizarSubabas() {
     const aba = document.getElementById('aba-painel-supervisor');
     if (!aba || aba.dataset.subabas === '1') return;
@@ -41,11 +101,13 @@ function organizarSubabas() {
 
     // "Precisa de ajuda?" só abria um alert — sai do painel.
     aba.querySelectorAll('.painel-ajuda-card').forEach(el => el.remove());
+    // "Acesso Rápido" virou a Central de Comandos (todas as ações, com busca)
+    aba.querySelectorAll('.painel-geral-linha4').forEach(el => el.remove());
 
     const atencao = document.createElement('div');
-    atencao.className = 'adm-bloco sup-atencao';
-    atencao.innerHTML = `<div class="adm-bloco-titulo"><i class="fas fa-bell"></i> Precisa de você agora <small>o que está esperando uma decisão ou ação</small></div>
-        <div id="sup-atencao" class="adm-atencao-grid"><div class="text-muted" style="padding:16px;">Verificando...</div></div>`;
+    atencao.className = 'cc-bloco sup-atencao';
+    atencao.innerHTML = `<div class="cc-rotulo">Fila de decisões</div><h2 class="cc-titulo">Precisa de você agora</h2><p class="cc-sub">Ordenado por gravidade. Cada linha tem a ação ao lado.</p>
+        <div id="sup-atencao"><div class="cc-carregando">Verificando…</div></div>`;
 
     const barra = document.createElement('div');
     barra.className = 'sup-subabas';
@@ -59,7 +121,7 @@ function organizarSubabas() {
         btn.className = 'sup-subaba';
         btn.dataset.chave = cfg.chave;
         btn.setAttribute('role', 'tab');
-        btn.innerHTML = `<i class="fas ${cfg.icone}"></i> ${cfg.rotulo}`;
+        btn.textContent = cfg.rotulo;
         btn.addEventListener('click', () => mostrarSubaba(cfg.chave));
         barra.appendChild(btn);
 
@@ -71,6 +133,7 @@ function organizarSubabas() {
     });
 
     ancora.after(atencao, barra, paineis);
+    montarCentralComandos(aba, atencao);
     let inicial = 'geral';
     try { inicial = localStorage.getItem(CHAVE_SUBABA) || 'geral'; } catch (e) { /* sem storage */ }
     mostrarSubaba(SUBABAS.some(s => s.chave === inicial) ? inicial : 'geral');
@@ -97,13 +160,50 @@ async function json(apiBase, caminho, comAuth = false) {
     try { const r = await fetch(`${apiBase}${caminho}`, { cache: 'no-store', headers: comAuth ? headersAdmin() : {} }); return r.ok ? await r.json() : null; }
     catch (e) { return null; }
 }
+// 🎨 Padrão "centro de controle": cada pendência vira um item da FILA DE
+// DECISÕES (ordenada por gravidade), em vez de um cartão colorido solto.
+// nivel: 'critico' | '' (atenção) | 'info' | 'ok'
 function cartao({ nivel = '', num, titulo, desc, lista = [], acoes = '' }) {
-    return `<div class="adm-alerta ${nivel}">
-        <div class="adm-alerta-topo"><span class="adm-alerta-num">${num}</span><span class="adm-alerta-titulo">${titulo}</span></div>
-        <div class="adm-alerta-desc">${desc}</div>
-        ${lista.length ? `<div class="adm-alerta-lista">${lista.join('')}</div>` : ''}
-        ${acoes ? `<div class="adm-alerta-acoes">${acoes}</div>` : ''}
-    </div>`;
+    return { nivel: nivel || 'atencao', num, titulo, desc, lista, acoes };
+}
+const ORDEM_NIVEL = { critico: 0, atencao: 1, ok: 2, info: 3 };
+const ROTULO_NIVEL = { critico: 'Crítico', atencao: 'Atenção', ok: 'Pronto', info: 'Informativo' };
+
+function htmlFilaDecisoes(itens) {
+    return `<div class="sup-fila">${itens.map((c, i) => {
+        const extra = c.lista.length > 4;
+        return `<div class="sup-item" data-nivel="${c.nivel}">
+            <div class="sup-item-num">${c.num}</div>
+            <div class="sup-item-corpo">
+                <div class="sup-item-topo"><span class="sup-item-nivel">${ROTULO_NIVEL[c.nivel] || ''}</span><strong>${c.titulo}</strong></div>
+                <p>${c.desc}</p>
+                ${c.lista.length ? `<div class="sup-item-lista${extra ? ' recolhida' : ''}" id="sup-lista-${i}">${c.lista.join('')}</div>
+                ${extra ? `<button type="button" class="sup-ver-mais" onclick="var l=document.getElementById('sup-lista-${i}'); l.classList.toggle('recolhida'); this.textContent = l.classList.contains('recolhida') ? 'Ver todos os ${c.lista.length}' : 'Ver menos';">Ver todos os ${c.lista.length}</button>` : ''}` : ''}
+            </div>
+            ${c.acoes ? `<div class="sup-item-acoes">${c.acoes}</div>` : ''}
+        </div>`;
+    }).join('')}</div>`;
+}
+
+function atualizarBriefingSupervisor(itens) {
+    const conta = n => itens.filter(c => c.nivel === n).reduce((s, c) => s + (Number(c.num) || 0), 0);
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    set('sup-grav-critico', conta('critico')); set('sup-grav-atencao', conta('atencao')); set('sup-grav-info', conta('info')); set('sup-grav-ok', conta('ok'));
+    set('sup-faixa-data', new Date().toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, ''));
+    const man = document.getElementById('sup-manchete'), sub = document.getElementById('sup-manchete-sub');
+    if (!man) return;
+    const crit = itens.filter(c => c.nivel === 'critico');
+    const resto = itens.filter(c => c.nivel !== 'critico' && c.nivel !== 'ok');
+    const prontos = itens.filter(c => c.nivel === 'ok');
+    const frase = c => `${String(c.titulo).charAt(0).toLowerCase() + String(c.titulo).slice(1)} (${c.num})`;
+    if (crit.length) {
+        man.innerHTML = `<span class="cc-perigo">${crit.length === 1 ? 'Uma pendência crítica' : crit.length + ' pendências críticas'}</span> esperando decisão: ${crit.map(frase).join(', ')}.`;
+    } else if (resto.length) {
+        man.innerHTML = `Nada crítico agora. <em>${resto.length}</em> ${resto.length === 1 ? 'ponto pede' : 'pontos pedem'} atenção.`;
+    } else {
+        man.innerHTML = `Oficina em dia. <em>Nada</em> esperando por você.`;
+    }
+    if (sub) sub.innerHTML = [resto.length && crit.length ? `Também: ${resto.map(frase).join(', ')}.` : '', prontos.length ? `Pronto pra concluir: ${prontos.map(c => c.num).reduce((x, y) => x + Number(y || 0), 0)} reparo(s).` : ''].filter(Boolean).join(' ');
 }
 
 async function renderizarAtencaoSupervisor() {
@@ -191,7 +291,9 @@ async function renderizarAtencaoSupervisor() {
         lista: msgs.map(m => `<div><span>${esc(m.nome_area || m.area)}</span><span>${Number(m.nao_lidas)}</span></div>`),
         acoes: `<button class="btn-outline-neutral" onclick="window.abrirAba(event,'aba-chats')">Abrir conversas</button>` }));
 
-    el.innerHTML = c.length ? c.join('') : cartao({ nivel: 'ok', num: '✓', titulo: 'Nada esperando por você', desc: 'Sem atraso, sem reparo travado e sem pendência de logística ou qualidade agora.' });
+    c.sort((x, y) => (ORDEM_NIVEL[x.nivel] ?? 9) - (ORDEM_NIVEL[y.nivel] ?? 9));
+    atualizarBriefingSupervisor(c);
+    el.innerHTML = c.length ? htmlFilaDecisoes(c) : `<div class="tc-vazio">Sem atraso, sem reparo travado e sem pendência de logística ou qualidade agora.</div>`;
 }
 
 // Liga no carregamento do painel (renderPainelSupervisor fica em script.js)

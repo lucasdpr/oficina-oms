@@ -805,26 +805,28 @@ window.atualizarPainelCompleto = atualizarPainelCompleto;
 // do Supervisor, pra não duplicar a mesma conta de duas formas
 // diferentes (o mesmo erro que já causou bug de severidade divergente
 // entre Central de Áreas e Central de Notificações antes).
+// 🎨 Padrão novo: distribuição em barra 100% (substitui os donuts) —
+// mesmas classes ds-dist do Painel Geral (design-system.css).
+function htmlDistSup(total, rotuloTotal, itens) {
+    const vis = itens.filter(i => i.qtd > 0);
+    return `<div class="ds-dist">
+        <div class="ds-dist-total"><strong>${total.toLocaleString('pt-BR')}</strong><span>${rotuloTotal}</span></div>
+        <div class="ds-dist-barra">${vis.map(i => `<i style="flex:${i.qtd};background:${i.cor}"></i>`).join('')}</div>
+        ${itens.map(i => `<div class="ds-dist-linha" style="--c:${i.cor}"><span class="ds-dist-nome">${i.nome}${i.dica ? ` <small>${i.dica}</small>` : ''}</span><b>${i.qtd}</b><em>${total ? Math.round(i.qtd / total * 100) : 0}%</em></div>`).join('')}
+    </div>`;
+}
+
 function construirHtmlDonutRisco(ativos) {
     const instalados = ativos.filter(a => a.local && a.local.includes('Veio') && !a.local.includes('Oficina'));
-    const comPct = instalados.map(a => ({ ...a, pct: a.meta > 0 ? (a.ton / a.meta) * 100 : 0 }));
-    const critico = comPct.filter(a => a.pct >= 80).length;
-    const atencao = comPct.filter(a => a.pct >= 50 && a.pct < 80).length;
+    const comPct = instalados.map(a => (a.meta > 0 ? (a.ton / a.meta) * 100 : 0));
+    const critico = comPct.filter(p => p >= 80).length;
+    const atencao = comPct.filter(p => p >= 50 && p < 80).length;
     const normal = comPct.length - critico - atencao;
-    const total = comPct.length || 1;
-    const pctCritico = (critico / total) * 100;
-    const pctAtencao = (atencao / total) * 100;
-    return `
-        <div class="painel-donut-corpo">
-            <div class="painel-donut-anel" style="background:conic-gradient(var(--danger) 0% ${pctCritico}%, var(--warning) ${pctCritico}% ${pctCritico + pctAtencao}%, var(--success) ${pctCritico + pctAtencao}% 100%);">
-                <div class="painel-donut-centro"><strong>${comPct.length}</strong><span>Ativos</span></div>
-            </div>
-            <div class="painel-donut-legenda">
-                <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--danger);"></span>Crítico</span><strong>${critico} (${pctCritico.toFixed(0)}%)</strong></div>
-                <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--warning);"></span>Atenção</span><strong>${atencao} (${pctAtencao.toFixed(0)}%)</strong></div>
-                <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--success);"></span>Normal</span><strong>${normal} (${(100 - pctCritico - pctAtencao).toFixed(0)}%)</strong></div>
-            </div>
-        </div>`;
+    return htmlDistSup(comPct.length, 'peças instaladas', [
+        { nome: 'Crítico', dica: '≥ 80% da meta', qtd: critico, cor: 'var(--pg-c3)' },
+        { nome: 'Atenção', dica: '50–80%', qtd: atencao, cor: 'var(--pg-c1)' },
+        { nome: 'Normal', dica: '< 50%', qtd: normal, cor: 'var(--pg-c0)' },
+    ]);
 }
 window.construirHtmlDonutRisco = construirHtmlDonutRisco;
 
@@ -832,20 +834,11 @@ function construirHtmlDonutStatus(atividades) {
     const pendente = atividades.filter(x => x.status === 'Pendente').length;
     const andamento = atividades.filter(x => x.status === 'Em Andamento').length;
     const concluido = atividades.filter(x => x.status === 'Concluído').length;
-    const total = (pendente + andamento + concluido) || 1;
-    const pctPendente = (pendente / total) * 100;
-    const pctAndamento = (andamento / total) * 100;
-    return `
-        <div class="painel-donut-corpo">
-            <div class="painel-donut-anel" style="background:conic-gradient(var(--warning) 0% ${pctPendente}%, var(--info) ${pctPendente}% ${pctPendente + pctAndamento}%, var(--success) ${pctPendente + pctAndamento}% 100%);">
-                <div class="painel-donut-centro"><strong>${pendente + andamento + concluido}</strong><span>Atividades</span></div>
-            </div>
-            <div class="painel-donut-legenda">
-                <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--warning);"></span>Pendente</span><strong>${pendente} (${pctPendente.toFixed(0)}%)</strong></div>
-                <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--info);"></span>Em Andamento</span><strong>${andamento} (${pctAndamento.toFixed(0)}%)</strong></div>
-                <div class="painel-donut-legenda-item"><span><span class="painel-donut-legenda-dot" style="background:var(--success);"></span>Concluído</span><strong>${concluido} (${(100 - pctPendente - pctAndamento).toFixed(0)}%)</strong></div>
-            </div>
-        </div>`;
+    return htmlDistSup(pendente + andamento + concluido, 'atividades', [
+        { nome: 'Pendente', qtd: pendente, cor: 'var(--ds-texto-3)' },
+        { nome: 'Em andamento', qtd: andamento, cor: 'var(--ds-ambar)' },
+        { nome: 'Concluído', qtd: concluido, cor: 'var(--ds-ok)' },
+    ]);
 }
 window.construirHtmlDonutStatus = construirHtmlDonutStatus;
 
@@ -864,23 +857,17 @@ function construirHtmlRankingVeios(ativos) {
         .map(([veio, v]) => ({ veio, media: v.soma / v.qtd, qtd: v.qtd }))
         .sort((a, b) => b.media - a.media)
         .slice(0, 6);
+    // 🎨 Padrão novo: linha por veio com MCC, trilho e média.
+    const mccDe = { C: '2', D: '2', E: '3', F: '3', G: '4', H: '4' };
     return ranking.length
-        ? ranking.map(r => {
-            const cor = r.media >= 80 ? 'var(--danger)' : (r.media >= 50 ? 'var(--warning)' : 'var(--success)');
-            return `
-            <div style="margin-bottom:12px;">
-                <div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:4px;">
-                    <span style="color:var(--text-body);">Veio ${r.veio}</span>
-                    <span style="color:${cor}; font-weight:700;">${r.media.toFixed(1)}% méd.</span>
-                </div>
-                <div style="height:6px; background:var(--bg-input); border-radius:4px; overflow:hidden;">
-                    <div style="height:100%; width:${Math.min(100, r.media).toFixed(1)}%; background:${cor}; border-radius:4px;"></div>
-                </div>
-            </div>`;
-        }).join('')
-        : `<div class="text-muted" style="text-align:center; padding:20px 0;">Nenhum equipamento instalado no veio.</div>`;
+        ? `<table class="cc-tabela"><thead><tr><th>Veio</th><th>Desgaste médio</th><th></th><th>Peças</th></tr></thead><tbody>${ranking.map(r => {
+            const cor = `var(--pg-${r.media >= 100 ? 'c3' : r.media >= 80 ? 'c2' : r.media >= 50 ? 'c1' : 'c0'})`;
+            return `<tr><td>Veio ${r.veio}${mccDe[r.veio] ? ` <span class="sq-meta">· MCC ${mccDe[r.veio]}</span>` : ''}</td><td style="width:45%"><div class="pg-trilho"><i style="width:${Math.min(100, r.media).toFixed(1)}%;background:${cor}"></i></div></td><td class="cc-num-forte">${r.media.toFixed(0)}%</td><td>${r.qtd}</td></tr>`;
+        }).join('')}</tbody></table>`
+        : `<div class="tc-vazio">Nenhum equipamento instalado no veio.</div>`;
 }
 window.construirHtmlRankingVeios = construirHtmlRankingVeios;
+window.construirHtmlTonelagemSvg = construirHtmlTonelagemSvg;
 
 // 🆕 Busca + agrega os apontamentos reais (geral + moldes) dos últimos
 // 7 dias — extraído do Painel Geral pra ser reaproveitado também no
@@ -917,19 +904,23 @@ async function buscarDadosApontamentos7dias() {
 window.buscarDadosApontamentos7dias = buscarDadosApontamentos7dias;
 
 function construirHtmlTonelagemSvg(dados) {
+    // 🎨 Padrão novo: colunas (hoje em âmbar) + linha da média — mesmas
+    // classes pg-colunas do Painel Geral.
     const { dias, totalPorDia } = dados;
-    const valores = dias.map(d => totalPorDia[d]);
+    const valores = dias.map(d => totalPorDia[d] || 0);
     const max = Math.max(1, ...valores);
-    const largura = 600, altura = 160, passo = largura / (dias.length - 1);
-    const pontos = valores.map((v, i) => `${(i * passo).toFixed(1)},${(altura - (v / max) * (altura - 20) - 4).toFixed(1)}`).join(' ');
+    const soma = valores.reduce((x, y) => x + y, 0);
+    const media = soma / (valores.length || 1);
+    const hoje = valores[valores.length - 1] || 0;
     const labels = dias.map(d => new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', ''));
     return `
-        <svg viewBox="0 0 ${largura} ${altura}" style="width:100%; height:140px; overflow:visible;">
-            <polyline points="${pontos}" fill="none" stroke="var(--info)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></polyline>
-            ${valores.map((v, i) => `<circle cx="${(i * passo).toFixed(1)}" cy="${(altura - (v / max) * (altura - 20) - 4).toFixed(1)}" r="3.5" fill="var(--info)"></circle>`).join('')}
-        </svg>
-        <div style="display:flex; justify-content:space-between; margin-top:6px;">
-            ${labels.map(l => `<span style="font-size:0.65rem; color:var(--text-muted); text-transform:capitalize;">${l}</span>`).join('')}
+        <div class="pg-ton-topo">
+            <div><strong class="pg-ton-num">${hoje.toLocaleString('pt-BR')}</strong><span class="pg-ton-un">hoje</span></div>
+            <div class="pg-ton-lado"><span>média ${Math.round(media).toLocaleString('pt-BR')} · total ${soma.toLocaleString('pt-BR')}</span></div>
+        </div>
+        <div class="pg-colunas">
+            <span class="pg-colunas-media" style="bottom:calc(${(media / max) * 100}% * .82 + 22px)"><em>média</em></span>
+            ${valores.map((v, i) => `<div class="pg-coluna${i === valores.length - 1 ? ' hoje' : ''}"><span class="pg-coluna-val">${v.toLocaleString('pt-BR')}</span><span class="pg-coluna-barra" style="height:${Math.max(2, (v / max) * 82)}%"></span><span class="pg-coluna-dia">${i === valores.length - 1 ? 'Hoje' : labels[i]}</span></div>`).join('')}
         </div>`;
 }
 
@@ -937,15 +928,13 @@ function construirHtmlProducaoLancada(dados) {
     const { totalPorDia, totalPorMcc, totalHoje } = dados;
     const totalSemana = Object.values(totalPorDia).reduce((s, v) => s + v, 0);
     return `
-        <div style="display:flex; justify-content:space-between; margin-bottom:14px;">
-            <div><div style="font-size:1.4rem; font-weight:800; color:var(--text-heading); font-family:var(--font-mono);">${totalHoje}</div><div style="font-size:0.7rem; color:var(--text-muted);">Hoje</div></div>
-            <div style="text-align:right;"><div style="font-size:1.4rem; font-weight:800; color:var(--text-heading); font-family:var(--font-mono);">${totalSemana}</div><div style="font-size:0.7rem; color:var(--text-muted);">Últimos 7 dias</div></div>
+        <div style="display:flex; justify-content:space-between; align-items:baseline; margin:6px 0 12px;">
+            <div><strong style="font:700 2rem/1 var(--ds-fonte-titulo); letter-spacing:-.03em; color:var(--ds-texto);">${totalHoje.toLocaleString('pt-BR')}</strong> <span class="cc-rotulo">hoje</span></div>
+            <div><strong style="font:600 1.2rem var(--ds-fonte-titulo); color:var(--ds-texto);">${totalSemana.toLocaleString('pt-BR')}</strong> <span class="cc-rotulo">7 dias</span></div>
         </div>
-        ${['mcc2', 'mcc3', 'mcc4'].map(m => `
-            <div style="display:flex; justify-content:space-between; font-size:0.78rem; padding:4px 0; border-top:1px solid var(--border-color);">
-                <span style="color:var(--text-body); text-transform:uppercase;">${m}</span>
-                <strong style="color:var(--text-heading); font-family:var(--font-mono);">${totalPorMcc[m]}</strong>
-            </div>`).join('')}`;
+        <table class="cc-tabela cc-compacta"><tbody>
+            ${['mcc2', 'mcc3', 'mcc4'].map(m => `<tr><td>MCC ${m.slice(3)}</td><td class="cc-num-forte">${(totalPorMcc[m] || 0).toLocaleString('pt-BR')}</td></tr>`).join('')}
+        </tbody></table>`;
 }
 window.construirHtmlProducaoLancada = construirHtmlProducaoLancada;
 

@@ -74,7 +74,7 @@
     <link rel="stylesheet" href="style.css?v=14" />
     <!-- Novo padrão visual (tokens + componentes ds-*). Vem DEPOIS do
          style.css pra vencer em empate de especificidade. -->
-    <link rel="stylesheet" href="design-system.css?v=7" />
+    <link rel="stylesheet" href="design-system.css?v=9" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="JS/assets/icon-192.png?v=4">
@@ -1471,31 +1471,36 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                      usado no Painel Geral — reaproveita .painel-hero* sem
                      criar classe nova) + selo "AO VIVO" e botão Atualizar
                      mantidos, só que agora dentro do hero. -->
-                <div class="painel-hero">
-                    <div class="painel-hero-fundo"></div>
-                    <div class="painel-hero-conteudo">
-                        <div class="sup-header-selo" style="margin-bottom:10px;"><span class="sup-pulso"></span> PAINEL DO SUPERVISOR</div>
-                        <div class="painel-hero-titulo">
-                            <div class="painel-hero-icone"><i class="fas fa-binoculars"></i></div>
-                            <div>
-                                <h1 id="painel-supervisor-saudacao">Olá!</h1>
-                                <p>Aqui você acompanha o desempenho das áreas, ativos e indicadores da manutenção em tempo real.</p>
-                            </div>
-                        </div>
-                        <div class="painel-hero-badges">
-                            <button class="painel-hero-badge" style="cursor:pointer; font-family:inherit;" onclick="window.renderPainelSupervisor()"><i class="fas fa-rotate"></i> Atualizar<span>dados</span></button>
-                            <div class="painel-hero-badge"><i class="fas fa-server"></i> MCC 2/3/4 <span>Áreas de atuação</span></div>
+                <!-- Topo da supervisão no padrão "centro de controle": em vez do
+                     banner com foto, um briefing — a manchete diz o que está
+                     esperando decisão agora (gerada em painelSupervisorUI.js
+                     a partir das mesmas pendências de "Precisa de você
+                     agora") e os atalhos de gestão ficam ao lado. -->
+                <div class="cc-faixa">
+                    <span>[ OMS · SUPERVISÃO ]</span>
+                    <span id="sup-faixa-data">—</span>
+                    <span class="cc-faixa-dir"><i class="cc-led"></i>Atualizado <span id="painel-supervisor-ultima-atualizacao">--:--</span></span>
+                </div>
+                <div class="cc-briefing sup-briefing">
+                    <div class="cc-briefing-texto">
+                        <div class="cc-rotulo">Briefing da supervisão · <span id="painel-supervisor-saudacao">Olá</span></div>
+                        <h1 class="cc-manchete" id="sup-manchete">Verificando o que precisa de você…</h1>
+                        <p class="sup-manchete-sub" id="sup-manchete-sub"></p>
+                        <div class="cc-acoes">
+                            <button type="button" class="cc-btn cc-btn-cheio" onclick="window.renderPainelSupervisor()">Atualizar dados</button>
+                            <button type="button" class="cc-btn" onclick="window.abrirModalAtividadeMassa()">Atividade em massa</button>
+                            <button type="button" class="cc-btn" onclick="window.abrirModalCriarAviso()">Novo comunicado</button>
+                            <button type="button" class="cc-btn" onclick="window.abrirAba(event,'aba-oficina')">Central de áreas</button>
                         </div>
                     </div>
-                    <div class="painel-hero-status-card">
-                        <div class="plant-status-badge"><i class="fas fa-circle"></i> Sistema Online</div>
-                        <div class="text-muted" style="font-size:11px; margin-top:4px;">Última atualização: <span id="painel-supervisor-ultima-atualizacao"></span></div>
+                    <div class="cc-maquinas sup-gravidade">
+                        <div class="cc-rotulo">Pendências por gravidade</div>
+                        <div class="sup-grav" data-nivel="critico"><span>Críticas</span><b id="sup-grav-critico">–</b></div>
+                        <div class="sup-grav" data-nivel="atencao"><span>Atenção</span><b id="sup-grav-atencao">–</b></div>
+                        <div class="sup-grav" data-nivel="info"><span>Informativas</span><b id="sup-grav-info">–</b></div>
+                        <div class="sup-grav" data-nivel="ok"><span>Prontas pra concluir</span><b id="sup-grav-ok">–</b></div>
                     </div>
                 </div>
-
-                <!-- 🆕 Faixa de KPIs rápidos (referência mandada pelo usuário):
-                     áreas críticas/em atenção (Central de Áreas) + não vistas
-                     (Central de Notificações) — clicáveis, levam pra tela cheia. -->
                 <div class="sup-kpi-badges-linha" id="painel-supervisor-kpi-badges"></div>
 
                 <!-- HERO — os números mais críticos, grandes, com cor por severidade -->
