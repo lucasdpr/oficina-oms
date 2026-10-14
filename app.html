@@ -74,7 +74,7 @@
     <link rel="stylesheet" href="style.css?v=14" />
     <!-- Novo padrão visual (tokens + componentes ds-*). Vem DEPOIS do
          style.css pra vencer em empate de especificidade. -->
-    <link rel="stylesheet" href="design-system.css?v=19" />
+    <link rel="stylesheet" href="design-system.css?v=20" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="JS/assets/icon-192.png?v=4">
@@ -1337,79 +1337,37 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                  Atualiza sozinha enquanto a aba estiver aberta (polling —
                  ver INTERVALO_POLLING_NOTIFICACOES em script.js). -->
             <section id="aba-notificacoes" class="tab-content">
-                <div class="glass-panel" style="padding:24px; margin-bottom:24px;">
-                    <div class="flex-between" style="flex-wrap:wrap; gap:10px;">
-                        <div>
-                            <h2 style="margin:0;"><i class="fas fa-bell"></i> Central de Notificações</h2>
-                            <p class="text-muted" style="font-size:13px; margin:6px 0 0;">
-                                Tudo que precisa de atenção agora: áreas críticas, e a atividade recente (ocorrências, OS e achados de
-                                Qualidade) — de todas as áreas. O que você ainda não abriu fica marcado; abrir marca como visto só
-                                pra você.
-                            </p>
-                        </div>
-                        <div style="text-align:right;">
-                            <button class="btn-premium" onclick="window.carregarCentralNotificacoes()">
-                                <i class="fas fa-rotate"></i> Atualizar
-                            </button>
-                            <div id="notificacoes-ultima-atualizacao" class="text-muted" style="font-size:11px; margin-top:6px;"></div>
+                <!-- Notificações no padrão novo: três números clicáveis no topo
+                     (críticas, atenção, não vistas), filtros em chips e o feed
+                     em cards com ícone, severidade e ação de marcar como vista.
+                     Ids/funções mantidos (notificacoes.js). -->
+                <div class="cc-bloco">
+                    <div class="es-cab">
+                        <div class="cc-titulo-ico"><span class="cc-ico"><i class="fas fa-bell"></i></span><div><div class="cc-rotulo">Todas as áreas</div><h2 class="cc-titulo">Notificações</h2></div></div>
+                        <div class="nt-atualizar">
+                            <span id="notificacoes-ultima-atualizacao" class="cc-sub"></span>
+                            <button class="cc-btn" onclick="window.carregarCentralNotificacoes()"><i class="fas fa-rotate"></i> Atualizar</button>
                         </div>
                     </div>
-                    <!-- 🔧 CORREÇÃO (referência mandada pelo usuário): eram pills de
-                         ÁREA (quantas áreas em Crítico/Restrição/Atenção) — a
-                         referência resume por NOTIFICAÇÃO (quantas críticas,
-                         quantas em atenção, quantas não vistas), que é o que os
-                         cards coloridos do topo mostram. -->
-                    <div id="notificacoes-resumo-topo" class="notif-resumo-topo"></div>
+                    <div id="notificacoes-resumo-topo" class="cc-kpis nt-kpis"></div>
                 </div>
 
-                <!-- 🆕 Lista única com TODAS as notificações (não mais grade de
-                     área -> clica -> detalhe): reference mandada pelo usuário
-                     mostra o feed direto na tela principal, com abas de filtro
-                     por contagem, busca, e uma coluna lateral de contexto
-                     (ordenar, resumo, atalhos, dica). Os campos "Equipamento"/
-                     "ID" numéricos da referência não existem nos dados reais
-                     do sistema — usa Área (que já existe) e a referência do
-                     item (código, ex: "OS-123") no lugar, sem inventar campo
-                     que não existe. -->
-                <div class="notif-layout-grid">
-                    <div class="notif-coluna-principal">
-                        <div class="glass-panel" style="padding:18px;">
-                            <div id="notificacoes-abas-filtro" class="notif-abas-filtro"></div>
-                            <div class="notif-busca-linha">
-                                <div class="login-input-wrapper" style="position:relative; flex:1; min-width:200px;">
-                                    <input type="text" id="notificacoes-busca-flat" placeholder="Buscar por área, referência, descrição..." oninput="window.buscarFeedNotificacoesFlat(this.value)" style="height:38px; border-radius:6px; padding-left:38px; width:100%;">
-                                    <i class="fas fa-search login-input-icon" style="top:10px; font-size:13px;"></i>
-                                </div>
-                                <button class="btn-outline-neutral" onclick="window.limparTudoNotificacoesFlat(event)" title="Marca tudo como visto e reseta filtro/busca"><i class="fas fa-check-double"></i> Limpar</button>
-                            </div>
-                            <div id="notificacoes-feed-flat" style="margin-top:14px;">
-                                <div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>
-                            </div>
-                        </div>
+                <div class="cc-bloco">
+                    <div id="notificacoes-abas-filtro" class="nt-chips"></div>
+                    <div class="nt-barra">
+                        <div class="es-busca"><i class="fas fa-search"></i><input type="text" id="notificacoes-busca-flat" class="premium-input" placeholder="Buscar notificação" oninput="window.buscarFeedNotificacoesFlat(this.value)"></div>
+                        <select id="notificacoes-ordenar" class="premium-select nt-ordenar" onchange="window.ordenarFeedNotificacoesFlat(this.value)">
+                            <option value="recentes">Mais recentes</option>
+                            <option value="nao-lidas">Não vistas primeiro</option>
+                            <option value="severidade">Mais graves primeiro</option>
+                        </select>
+                        <button class="cc-btn" onclick="window.limparTudoNotificacoesFlat(event)" title="Marca tudo como visto e limpa filtro e busca"><i class="fas fa-check-double"></i> Marcar tudo como visto</button>
                     </div>
-                    <aside class="notif-coluna-lateral">
-                        <div class="glass-panel" style="padding:16px;">
-                            <select id="notificacoes-ordenar" class="premium-select" style="width:100%;" onchange="window.ordenarFeedNotificacoesFlat(this.value)">
-                                <option value="recentes">Ordenar por: Mais recentes</option>
-                                <option value="nao-lidas">Ordenar por: Não vistas primeiro</option>
-                                <option value="severidade">Ordenar por: Severidade</option>
-                            </select>
-                        </div>
-                        <div class="glass-panel" style="padding:16px;">
-                            <div class="flex-between" style="margin-bottom:10px;">
-                                <h3 style="font-size:0.9rem; margin:0;"><i class="fas fa-chart-pie"></i> Resumo</h3>
-                            </div>
-                            <div id="notificacoes-resumo-donut"></div>
-                        </div>
-                        <div class="glass-panel" style="padding:16px;">
-                            <h3 style="font-size:0.9rem; margin-bottom:10px;"><i class="fas fa-bolt" style="color:var(--brand);"></i> Filtros Rápidos</h3>
-                            <div id="notificacoes-filtros-rapidos"></div>
-                        </div>
-                        <div class="glass-panel notif-dica-box" style="padding:16px;">
-                            <h3 style="font-size:0.9rem; margin-bottom:6px;"><i class="fas fa-circle-info"></i> Dica</h3>
-                            <p class="text-muted" style="font-size:12px; margin:0;">Marque uma notificação como vista pra tirar ela da contagem de "não vistas". Dá pra filtrar por área, severidade ou buscar por texto.</p>
-                        </div>
-                    </aside>
+                    <div id="notificacoes-feed-flat" class="nt-feed">
+                        <div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>
+                    </div>
+                    <div id="notificacoes-resumo-donut" class="hidden"></div>
+                    <div id="notificacoes-filtros-rapidos" class="hidden"></div>
                 </div>
             </section>
 
@@ -3209,14 +3167,14 @@ a, button, [onclick], label[for], select { cursor: pointer; }
         import './JS/Oficina/qualidade.js?v=1';
         import './JS/Oficina/ordemServico.js?v=2';
         import './JS/Paineis/colaboradores.js?v=2';
-        import './JS/Paineis/chats.js?v=1';
+        import './JS/Paineis/chats.js?v=2';
         import './JS/Paineis/painelAdmExecutivo.js?v=2';
         import './JS/Paineis/painelSupervisorUI.js?v=2';
         import './JS/Paineis/centralAreas.js?v=2';
         import './JS/Oficina/atividades.js?v=4';
         import './JS/Paineis/painelAreaAdministrativa.js?v=2';
         import './JS/Oficina/apontamento.js?v=2';
-        import './JS/Paineis/notificacoes.js?v=3';
+        import './JS/Paineis/notificacoes.js?v=4';
         import './JS/Oficina/painelTecnico.js?v=5';
         import './JS/Oficina/folhoesPonte.js?v=1';
         import './JS/Oficina/estoque.js?v=5';

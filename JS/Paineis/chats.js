@@ -128,14 +128,14 @@ window.chatsCarregarListaConversas = async function() {
             const dataFmt = l.ultima_em ? new Date(l.ultima_em.replace(' ', 'T')).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
             const ativa = CHAT_AREA_ADM_CTX.area === l.area;
             return `
-                <div class="chat-conversa-item${ativa ? ' ativa' : ''}" onclick="window.chatsSelecionarConversa('${l.area}', true)">
+                <div class="chat-conversa-item${ativa ? ' ativa' : ''}${l.nao_lidas > 0 ? ' nao-lida' : ''}${l.ultima_mensagem ? '' : ' vazia'}" onclick="window.chatsSelecionarConversa('${l.area}', true)">
                     <div class="chat-conversa-avatar">${(l.nome_area || l.area || '?').slice(0, 1).toUpperCase()}</div>
                     <div class="chat-conversa-corpo">
                         <div class="chat-conversa-topo">
                             <strong>${l.nome_area || l.area}</strong>
                             <span class="chat-conversa-hora">${dataFmt}</span>
                         </div>
-                        ${l.ultima_mensagem ? `<div class="chat-conversa-preview">${l.ultima_mensagem.slice(0, 40)}</div>` : '<div class="chat-conversa-preview text-muted">Nenhuma mensagem ainda</div>'}
+                        ${l.ultima_mensagem ? `<div class="chat-conversa-preview">${window.escapeHtmlNotif(l.ultima_mensagem.slice(0, 90))}</div>` : '<div class="chat-conversa-preview text-muted">Nenhuma mensagem ainda</div>'}
                     </div>
                     ${l.nao_lidas > 0 ? `<span class="chat-conversa-badge">${l.nao_lidas > 9 ? '9+' : l.nao_lidas}</span>` : ''}
                 </div>
@@ -337,7 +337,18 @@ window.chatsCarregarMensagens = async function() {
                 <div id="chat-thread-digitando" class="hidden" style="font-size:11px; color:var(--text-accent); font-style:italic; padding:2px 4px 6px;"></div>`;
             })()
             : '';
+        const rotuloDia = (iso) => {
+            if (!iso) return '';
+            const d = new Date(iso.replace(' ', 'T')); const h = new Date();
+            const dia = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+            const dif = Math.round((dia(h) - dia(d)) / 864e5);
+            return dif === 0 ? 'Hoje' : dif === 1 ? 'Ontem' : d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' });
+        };
+        let diaAnterior = null;
         cont.innerHTML = cabecalhoAreaDestino + (lista.length ? lista.map(m => {
+            const dia = (m.criado_em || '').slice(0, 10);
+            const separador = dia && dia !== diaAnterior ? `<div class="chat-dia"><span>${rotuloDia(m.criado_em)}</span></div>` : '';
+            diaAnterior = dia;
             // "Minha" mensagem: no canal "supervisao", é quem partiu do
             // MESMO lado de quem está vendo (área vendo área, ADM vendo
             // ADM). No canal "tecnicos" não existe "lado" (de_adm é
@@ -346,16 +357,17 @@ window.chatsCarregarMensagens = async function() {
                 ? (OPERADOR_LOGADO && m.remetente_matricula && m.remetente_matricula === OPERADOR_LOGADO.matricula)
                 : m.de_adm === CHAT_AREA_ADM_CTX.deAdm;
             const hora = m.criado_em ? new Date(m.criado_em.replace(' ', 'T')).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
-            return `
+            const horaCurta = m.criado_em ? new Date(m.criado_em.replace(' ', 'T')).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+            return `${separador}
                 <div class="chat-bolha ${minha ? 'chat-bolha-minha' : 'chat-bolha-outro'}">
                     <div class="chat-bolha-remetente">${m.de_adm ? 'ADM' : window.escapeHtmlNotif(m.remetente || 'Técnico')}</div>
                     ${m.atividade_referencia ? `<div class="chat-bolha-atividade-tag"><i class="fas fa-link"></i> Respondendo: ${window.escapeHtmlNotif(m.atividade_referencia)}</div>` : ''}
                     ${m.foto_base64 ? `<img class="chat-bolha-foto" src="${m.foto_base64}" alt="Foto enviada" onclick="window.abrirFotoAmpliada('${m.foto_base64}', '${window.escapeAtributoNotif(hora)}')">` : ''}
                     ${m.mensagem ? `<div class="chat-bolha-texto">${window.escapeHtmlNotif(m.mensagem)}</div>` : ''}
-                    <div class="chat-bolha-hora">${hora}</div>
+                    <div class="chat-bolha-hora">${horaCurta}</div>
                 </div>
             `;
-        }).join('') : `<div class="chat-vazio">${canal === 'tecnicos' ? 'Nenhuma mensagem com essa área ainda.' : 'Nenhuma mensagem ainda — mande a primeira 👋'}</div>`);
+        }).join('') : `<div class="chat-vazio">${canal === 'tecnicos' ? 'Nenhuma mensagem com essa área ainda.' : 'Nenhuma mensagem ainda. Mande a primeira.'}</div>`);
         if (permaneceEmbaixo) cont.scrollTop = cont.scrollHeight;
 
         // 🆕 Enquanto essa conversa Entre Técnicos estiver aberta, liga o

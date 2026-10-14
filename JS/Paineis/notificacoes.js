@@ -474,7 +474,7 @@ function renderizarNotificacoesFlat(feedBruto) {
     if (!container) return;
 
     if (feedBruto === null) {
-        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0; color:var(--warning);">⚠️ Não foi possível verificar as notificações agora. Toque em "Atualizar" pra tentar de novo.</div>`;
+        container.innerHTML = `<div class="nt-vazio"><i class="fas fa-cloud-exclamation"></i> Não foi possível verificar as notificações agora. Toque em "Atualizar" para tentar de novo.</div>`;
         return;
     }
 
@@ -495,17 +495,17 @@ function renderizarNotificacoesFlat(feedBruto) {
 
     const resumoTopo = document.getElementById('notificacoes-resumo-topo');
     if (resumoTopo) {
-        resumoTopo.innerHTML = `
-            <div class="notif-pill-resumo" style="--pill-cor:var(--danger);"><i class="fas fa-triangle-exclamation"></i><div><strong>${criticasGeral}</strong><span>Crítica${criticasGeral === 1 ? '' : 's'}</span></div></div>
-            <div class="notif-pill-resumo" style="--pill-cor:var(--warning);"><i class="fas fa-circle-exclamation"></i><div><strong>${atencaoGeral}</strong><span>Atenção</span></div></div>
-            <div class="notif-pill-resumo" style="--pill-cor:var(--text-accent);"><i class="fas fa-bell"></i><div><strong>${naoVistasGeral}</strong><span>Não vistas</span></div></div>
-        `;
+        const kpi = (filtro, cor, icone, valor, rotulo, sub) => `<button type="button" class="cc-kpi nt-kpi${NOTIF_FLAT_FILTRO === filtro ? ' nt-kpi-on' : ''}" style="--nt:${cor}" onclick="window.filtrarFeedNotificacoesFlat('${filtro}')"><span class="cc-ico" style="--ic:${cor}"><i class="fas ${icone}"></i></span><span class="cc-rotulo">${rotulo}</span><strong>${valor}</strong><span class="cc-kpi-sub">${sub}</span></button>`;
+        resumoTopo.innerHTML =
+            kpi('criticas', 'var(--ds-perigo)', 'fa-triangle-exclamation', criticasGeral, 'Críticas', 'áreas em estado crítico') +
+            kpi('atencao', 'var(--ds-ambar)', 'fa-circle-exclamation', atencaoGeral, 'Atenção', 'áreas com restrição') +
+            kpi('nao-vistas', 'var(--ds-texto-2)', 'fa-bell', naoVistasGeral, 'Não vistas', 'ainda não abertas por você');
     }
 
     const abas = document.getElementById('notificacoes-abas-filtro');
     if (abas) {
-        const btn = (valor, label, qtd) => `<button class="btn-filter-mcc ${NOTIF_FLAT_FILTRO === valor ? 'active' : ''}" onclick="window.filtrarFeedNotificacoesFlat('${valor}')">${label} (${qtd})</button>`;
-        abas.innerHTML = btn('todas', 'Todas', totalGeral) + btn('criticas', '🔴 Críticas', criticasGeral) + btn('atencao', '🟡 Atenção', atencaoGeral) + btn('nao-vistas', '🔵 Não vistas', naoVistasGeral);
+        const btn = (valor, label, qtd, cor) => `<button type="button" class="cc-btn nt-chip${NOTIF_FLAT_FILTRO === valor ? ' on' : ''}" onclick="window.filtrarFeedNotificacoesFlat('${valor}')">${cor ? `<i class="nt-bola" style="background:${cor}"></i>` : ''}${label} <span>${qtd}</span></button>`;
+        abas.innerHTML = btn('todas', 'Todas', totalGeral) + btn('criticas', 'Críticas', criticasGeral, 'var(--ds-perigo)') + btn('atencao', 'Atenção', atencaoGeral, 'var(--ds-ambar)') + btn('nao-vistas', 'Não vistas', naoVistasGeral, 'var(--ds-texto-2)');
     }
 
     // Donut de resumo (mesmo padrão conic-gradient já usado em outros
@@ -564,32 +564,33 @@ function renderizarNotificacoesFlat(feedBruto) {
     // 'recentes' é a ordem que o feed já vem do backend (mais novo primeiro).
 
     if (itens.length === 0) {
-        container.innerHTML = `<div class="text-muted" style="text-align:center; padding:30px 0;"><i class="fas fa-magnifying-glass"></i> Nenhuma notificação encontrada com esse filtro/busca.</div>`;
+        container.innerHTML = `<div class="nt-vazio"><i class="fas fa-circle-check"></i> Nenhuma notificação com esse filtro ou busca.</div>`;
         return;
     }
 
     container.innerHTML = itens.map(({ item, sev }) => {
         const referencia = item.referencia;
+        const icone = ICONE_FA_TIPO_NOTIFICACAO[item.tipo] || 'fa-clipboard-list';
         return `
-        <div class="notificacoes-item" style="--item-cor:${sev.cor}; ${!item.lida ? 'background:color-mix(in srgb, var(--text-accent) 5%, var(--bg-card));' : ''}"
+        <div class="nt-item${!item.lida ? ' nt-nova' : ''}" style="--item-cor:${sev.cor}" role="button" tabindex="0"
              onclick="window.abrirItemNotificacao('${escapeAtributoNotif(item.tipo)}', '${escapeAtributoNotif(item.evento_id)}', '${escapeAtributoNotif(referencia)}', '${escapeAtributoNotif(item.area)}', ${item.atividade_id != null ? Number(item.atividade_id) : 'null'}, '${escapeAtributoNotif(item.tipo_evento || 'status')}')">
-            <span class="notificacoes-item-dot ${!item.lida ? 'nao-lida' : ''}" title="${!item.lida ? 'Não vista' : 'Vista'}"></span>
-            <div class="notificacoes-item-icone" style="color:${sev.cor}; background:color-mix(in srgb, ${sev.cor} 15%, transparent);">${ICONE_POR_TIPO_NOTIFICACAO[item.tipo] || '📋'}</div>
-            <div class="notificacoes-item-corpo">
-                <div class="notificacoes-item-topo">
-                    <span class="font-code" style="font-weight:700; color:var(--text-heading);">${escapeHtmlNotif(referencia) || '-'}</span>
-                    <span class="notif-linha-status" style="color:${sev.cor}; background:color-mix(in srgb, ${sev.cor} 15%, transparent);">${sev.emoji} ${sev.label}</span>
+            <span class="nt-icone"><i class="fas ${icone}"></i></span>
+            <div class="nt-corpo">
+                <div class="nt-topo">
+                    <span class="nt-ref">${escapeHtmlNotif(referencia) || '-'}</span>
+                    ${sev.label !== 'Novo' ? `<span class="nt-sev">${sev.label}</span>` : ''}
+                    ${!item.lida ? '<span class="nt-novo">Nova</span>' : ''}
                 </div>
-                <div class="notificacoes-item-linha">${escapeHtmlNotif(limparMarcadorTecnicoDescricao(item.descricao))}</div>
-                <div class="notif-item-meta">
-                    ${item.area ? `<span>Área: ${escapeHtmlNotif(window.nomeAreaOficina(item.area))}</span>` : ''}
-                    <span>${escapeHtmlNotif(item.data_hora)}</span>
+                <div class="nt-desc">${escapeHtmlNotif(limparMarcadorTecnicoDescricao(item.descricao))}</div>
+                <div class="nt-meta">
+                    ${item.area ? `<span><i class="fas fa-location-dot"></i> ${escapeHtmlNotif(window.nomeAreaOficina(item.area))}</span>` : ''}
+                    <span><i class="fas fa-clock"></i> ${escapeHtmlNotif(item.data_hora)}</span>
                 </div>
             </div>
             ${!item.lida ? `
-            <button type="button" class="notificacoes-item-marcar-lida" title="Marcar como vista"
+            <button type="button" class="nt-visto" title="Marcar como vista" aria-label="Marcar como vista"
                     onclick="window.marcarNotificacaoLidaRapido(event, '${escapeAtributoNotif(item.tipo)}', '${escapeAtributoNotif(item.evento_id)}')">
-                <i class="fas fa-check"></i>
+                <i class="fas fa-check"></i> <span>Visto</span>
             </button>
             ` : ''}
         </div>
@@ -865,6 +866,7 @@ window.irParaTelaDaAreaNotificacao = function() {
 // Ícone por tipo de item do feed unificado — tipo='evento' cobre tanto
 // Ocorrência (categoria Intervenção/Melhoria/...) quanto Auditoria geral
 // (ex: rolo travado no Sinótico 3D), que antes nunca aparecia aqui.
+const ICONE_FA_TIPO_NOTIFICACAO = { os: 'fa-file-invoice', achado: 'fa-magnifying-glass', evento: 'fa-clipboard-list', estoque: 'fa-boxes-stacked', sinotico: 'fa-cube', atividade: 'fa-screwdriver-wrench', mensagem_area: 'fa-comments', padrao_qualidade: 'fa-triangle-exclamation' };
 const ICONE_POR_TIPO_NOTIFICACAO = { os: '📄', achado: '🔍', evento: '📋', estoque: '📦', sinotico: '🧊', atividade: '🧰', mensagem_area: '💬', padrao_qualidade: '🚨' };
 
 // 🔧 CORREÇÃO ("mostra os antigos, não quero isso"): não lido aparece

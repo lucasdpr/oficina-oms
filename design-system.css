@@ -1359,6 +1359,85 @@ body #aba-painel-adm .adm-export-grid button { min-height: 44px !important; font
 .adm-atalhos { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important; gap: 8px !important; }
 body .adm-atalhos .tecnico-atalho-btn { min-height: 76px !important; font-size: .88rem !important; }
 
+/* ---------- chats ---------- */
+body .chat-shell { border-radius: var(--ds-r); border-color: var(--ds-linha); background: var(--ds-bloco); box-shadow: 0 14px 34px -22px rgba(0,0,0,.7); }
+body .chat-lista-painel { background: var(--ds-bloco); border-right-color: var(--ds-linha); }
+body .chat-lista-header { padding: 18px; font: 600 1.1rem var(--ds-fonte-titulo); letter-spacing: -.01em; border-bottom-color: var(--ds-linha); }
+body .chat-conversa-item { min-height: 68px; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--ds-linha); border-left: 3px solid transparent; transition: background .15s, border-color .15s; }
+body .chat-conversa-item:hover { background: var(--ds-bloco-2); }
+body .chat-conversa-item.ativa { background: color-mix(in srgb, var(--ds-ambar) 10%, var(--ds-bloco)); border-left-color: var(--ds-ambar); }
+body .chat-conversa-avatar { width: 44px; height: 44px; font: 600 1.05rem var(--ds-fonte-titulo); background: linear-gradient(145deg, var(--ds-ambar), color-mix(in srgb, var(--ds-ambar) 70%, #7a4a00)); color: var(--ds-sobre-ambar); box-shadow: 0 4px 12px -4px color-mix(in srgb, var(--ds-ambar) 60%, transparent); }
+body .chat-conversa-item.vazia .chat-conversa-avatar { background: var(--ds-bloco-2); color: var(--ds-texto-3); box-shadow: none; border: 1px solid var(--ds-linha); }
+body .chat-conversa-item.vazia .chat-conversa-topo strong { color: var(--ds-texto-2); font-weight: 500; }
+body .chat-conversa-topo { font-size: .95rem; align-items: baseline; }
+body .chat-conversa-topo strong { font-weight: 600; }
+body .chat-conversa-item.nao-lida .chat-conversa-topo strong, body .chat-conversa-item.nao-lida .chat-conversa-preview { color: var(--ds-texto); }
+body .chat-conversa-item.nao-lida .chat-conversa-preview { font-weight: 600; }
+body .chat-conversa-hora { font-size: .78rem; }
+body .chat-conversa-preview { font-size: .86rem; margin-top: 3px; }
+body .chat-conversa-badge { min-width: 24px; width: auto; height: 24px; padding: 0 7px; border-radius: 999px; font-size: .78rem; background: var(--ds-perigo); }
+body .chat-thread-painel { background: var(--ds-fundo); }
+body .chat-thread-header { padding: 14px 18px; background: var(--ds-bloco); border-bottom-color: var(--ds-linha); min-height: 64px; }
+body .chat-thread-avatar { width: 40px; height: 40px; background: color-mix(in srgb, var(--ds-ambar) 14%, var(--ds-bloco-2)); color: var(--ds-ambar); }
+body .chat-thread-titulo { font: 600 1.15rem var(--ds-fonte-titulo); letter-spacing: -.01em; }
+body .chat-thread-voltar { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--ds-r-md); color: var(--ds-texto); }
+body .chat-thread-canais { padding: 8px 16px; gap: 6px; background: var(--ds-bloco); border-bottom-color: var(--ds-linha); }
+body .chat-thread-canal-btn { min-height: 44px; padding: 0 16px; border: 1px solid var(--ds-linha); border-radius: 999px; margin: 0; font-size: .9rem; color: var(--ds-texto-2); background: var(--ds-fundo); }
+body .chat-thread-canal-btn.active { color: var(--ds-sobre-ambar); background: var(--ds-ambar); border-color: var(--ds-ambar); }
+body .chat-thread-mensagens { padding: 18px; gap: 6px; }
+body .chat-dia { align-self: center; margin: 12px 0 6px; }
+body .chat-dia span { display: inline-block; padding: 4px 14px; border-radius: 999px; font-size: .8rem; font-weight: 600; text-transform: capitalize; color: var(--ds-texto-3); background: var(--ds-bloco); border: 1px solid var(--ds-linha); }
+body .chat-bolha { max-width: min(72%, 560px); padding: 10px 14px; border-radius: 16px; font-size: .96rem; line-height: 1.45; box-shadow: 0 6px 14px -10px rgba(0,0,0,.6); }
+body .chat-bolha-outro { background: var(--ds-bloco-2); color: var(--ds-texto); border: 1px solid var(--ds-linha); border-bottom-left-radius: 5px; }
+body .chat-bolha-minha { background: linear-gradient(145deg, var(--ds-ambar), color-mix(in srgb, var(--ds-ambar) 82%, #8a5200)); color: var(--ds-sobre-ambar); border-bottom-right-radius: 5px; }
+body .chat-bolha-remetente { font-size: .8rem; opacity: .8; margin-bottom: 3px; }
+body .chat-bolha-hora { font-size: .74rem; opacity: .7; margin-top: 4px; }
+body .chat-bolha-atividade-tag { font-size: .8rem; background: rgba(0,0,0,.2); }
+body .chat-thread-area-destino-cabecalho { min-height: 48px; font-size: .9rem; border-radius: var(--ds-r-md); background: var(--ds-bloco); border-color: var(--ds-linha); }
+body .chat-thread-area-destino-cabecalho button { min-height: 44px; padding: 0 8px; font-size: .88rem; color: var(--ds-ambar); }
+body .chat-atividade-preview { border-radius: var(--ds-r-md); font-size: .88rem; color: var(--ds-ambar); background: color-mix(in srgb, var(--ds-ambar) 10%, var(--ds-bloco)); border-color: color-mix(in srgb, var(--ds-ambar) 35%, var(--ds-linha)); }
+body .chat-thread-input-row { gap: 8px; padding: 12px 16px; background: var(--ds-bloco); border-top-color: var(--ds-linha); }
+body .chat-thread-anexo { width: 44px; height: 44px; background: var(--ds-bloco-2); border-color: var(--ds-linha); color: var(--ds-texto-2); }
+body .chat-thread-input { min-width: 0; width: auto; min-height: 44px; font-size: 1rem; border-radius: 999px; background: var(--ds-fundo); border-color: var(--ds-linha); }
+body .chat-thread-input:focus { border-color: var(--ds-ambar); }
+body .chat-thread-enviar { width: 48px; height: 48px; background: var(--ds-ambar); color: var(--ds-sobre-ambar); box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--ds-ambar) 70%, transparent); }
+body .chat-vazio { font-size: .95rem; color: var(--ds-texto-3); }
+
+/* ---------- notificações ---------- */
+.nt-atualizar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.nt-kpis { margin-top: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+body .nt-kpi { text-align: left; font: inherit; cursor: pointer !important; border: 1px solid var(--ds-linha) !important; min-height: 0 !important; }
+body .nt-kpi:hover { border-color: var(--nt) !important; }
+body .nt-kpi.nt-kpi-on { border-color: var(--nt) !important; box-shadow: inset 0 0 0 1px var(--nt); }
+.nt-kpi strong { color: var(--nt); }
+.nt-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+body .nt-chip { height: 44px; gap: 8px; }
+.nt-chip span { font-size: .8rem; opacity: .75; }
+.nt-bola { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.nt-barra { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+.nt-barra .es-busca { flex: 1 1 260px; max-width: none; }
+body .nt-ordenar { width: auto; min-width: 190px; height: 44px; }
+.nt-barra .cc-btn { height: 44px; }
+.nt-feed { display: flex; flex-direction: column; gap: 8px; }
+.nt-item { position: relative; display: flex; align-items: center; gap: 14px; padding: 14px 16px 14px 20px; border-radius: var(--ds-r); background: var(--ds-fundo); border: 1px solid var(--ds-linha); overflow: hidden; cursor: pointer; transition: border-color .2s, transform .2s var(--ds-ease), box-shadow .2s; }
+.nt-item::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--item-cor); }
+.nt-item:hover { border-color: var(--ds-linha-forte); transform: translateY(-2px); box-shadow: 0 10px 24px -14px rgba(0,0,0,.6); }
+.nt-item.nt-nova { background: color-mix(in srgb, var(--item-cor) 6%, var(--ds-fundo)); }
+.nt-icone { flex: none; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 1.05rem; color: var(--item-cor); background: color-mix(in srgb, var(--item-cor) 15%, transparent); }
+.nt-corpo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.nt-topo { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.nt-ref { font: 600 .92rem var(--ds-mono, monospace); color: var(--ds-texto); }
+.nt-sev { font-size: .78rem; font-weight: 700; color: var(--item-cor); padding: 2px 10px; border-radius: 999px; background: color-mix(in srgb, var(--item-cor) 14%, transparent); }
+.nt-novo { font-size: .74rem; font-weight: 700; color: var(--ds-sobre-ambar); background: var(--ds-ambar); padding: 2px 8px; border-radius: 999px; }
+.nt-desc { font-size: .96rem; color: var(--ds-texto); line-height: 1.4; word-break: break-word; }
+.nt-nova .nt-desc { font-weight: 600; }
+.nt-meta { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .84rem; color: var(--ds-texto-3); }
+.nt-meta i { font-size: .76rem; margin-right: 5px; }
+body .nt-visto { flex: none; min-height: 44px !important; min-width: 44px; padding: 0 14px !important; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: var(--ds-r-md) !important; border: 1px solid var(--ds-linha-forte) !important; background: var(--ds-bloco-2) !important; color: var(--ds-texto-2) !important; font-size: .86rem !important; font-weight: 600; cursor: pointer; }
+body .nt-visto:hover { border-color: var(--ds-ok) !important; color: var(--ds-ok) !important; }
+.nt-vazio { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 28px 12px; font-size: .95rem; color: var(--ds-texto-3); }
+.nt-vazio i { color: var(--ds-ok); font-size: 1.2rem; }
+
 /* ------------------------------------------------------------------
    RESPONSIVO
    ------------------------------------------------------------------ */
@@ -1427,6 +1506,24 @@ body .adm-atalhos .tecnico-atalho-btn { min-height: 76px !important; font-size: 
     .es-chips { width: 100%; }
     .es-chips .cc-btn { flex: 1; justify-content: center; }
     .es-cab .cc-btn { width: 100%; justify-content: center; }
+    .nt-kpis { grid-template-columns: 1fr 1fr 1fr; }
+    .nt-kpis > :first-child { grid-column: auto; }
+    .nt-kpis .cc-ico, .nt-kpis .cc-kpi-sub { display: none; }
+    .nt-kpis .cc-kpi { padding: 12px; }
+    .nt-kpis .cc-kpi strong { font-size: 1.7rem; }
+    .nt-atualizar { width: 100%; justify-content: space-between; }
+    .nt-barra > * { flex: 1 1 100%; }
+    body .nt-ordenar { width: 100%; }
+    .nt-item { align-items: flex-start; padding: 12px 12px 12px 16px; gap: 10px; }
+    .nt-icone { width: 40px; height: 40px; }
+    .nt-visto span { display: none; }
+    body .nt-visto { padding: 0 !important; width: 44px; }
+    body .chat-thread-input-row { gap: 6px; padding: 10px 10px; }
+    body .chat-thread-anexo { width: 40px; height: 40px; flex: none; }
+    body .chat-thread-enviar { flex: none; }
+    body .chat-thread-canais { padding: 8px 10px; }
+    body .chat-thread-canal-btn { flex: 1; justify-content: center; padding: 0 8px; font-size: .84rem; white-space: nowrap; }
+    body .chat-bolha { max-width: 86%; }
     .adm-linha-2 { grid-template-columns: minmax(0, 1fr) !important; }
     .adm-topo-nums { gap: 6px; }
     body .adm-topo-num { padding: 12px !important; }
