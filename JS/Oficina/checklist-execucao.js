@@ -58,6 +58,22 @@ import { headersAdmin } from '../Core/utils.js';
 window.CHECKLIST_EXECUCAO_STATUS_CACHE = window.CHECKLIST_EXECUCAO_STATUS_CACHE || {};
 
 let CHECKLIST_EXECUCAO_CARREGANDO_IDS = new Set();
+const CHECKLIST_EXECUCAO_REFRESH_PENDENTE = new Set();
+// Números calculados a partir das etapas do próprio reparo aberto no
+// modal (mesma lista que a tela mostra: já vem filtrada pelo tipo de
+// execução, Geral ou Parcial). Têm prioridade sobre a % que o servidor
+// devolve no resumo em lote, pra % do botão ser igual à do checklist.
+const CHECKLIST_EXECUCAO_LOCAL = {};
+
+// Se o checklist desse equipamento está (ou esteve) aberto, usa a conta
+// feita sobre as etapas da própria execução — vale pra Geral e Parcial.
+function aplicarNumerosLocaisChecklist(id, status) {
+    const local = CHECKLIST_EXECUCAO_LOCAL[id];
+    if (!local) return status;
+    // Só vale pro MESMO reparo: reparo já concluído ou outro reparo da mesma peça usa o que o servidor diz.
+    if (!status || !status.execucao_id || !local.execucao_id || status.execucao_id !== local.execucao_id) return status;
+    return { ...status, total: local.total, marcadas: local.marcadas, percentual: local.percentual, completo: local.completo };
+}
 
 window.carregarStatusChecklistExecucaoReparo = async function(idsEquipamentos, forcar = false) {
     const apiBase = await resolverApiBase();
@@ -71,11 +87,22 @@ window.carregarStatusChecklistExecucaoReparo = async function(idsEquipamentos, f
     // não abrindo: o navegador ficava ocupado nesse loop). Agora só
     // busca de novo se ainda não tiver status em cache (ou se "forcar"
     // for passado explicitamente, ex: depois de marcar uma etapa).
+    // 🔧 CORREÇÃO ("concluí o passo a passo e a % não atualizou"): se já
+    // existia uma busca em andamento pra essa peça, o pedido FORÇADO era
+    // simplesmente descartado — marcando etapas em sequência, a busca
+    // antiga (de antes da última marcação) terminava por último e deixava
+    // a % velha na tela. Agora o pedido fica anotado e a busca roda de
+    // novo assim que a atual terminar.
+    if (forcar) idsEquipamentos.filter(id => CHECKLIST_EXECUCAO_CARREGANDO_IDS.has(id)).forEach(id => CHECKLIST_EXECUCAO_REFRESH_PENDENTE.add(id));
     const pendentes = idsEquipamentos.filter(id =>
         !CHECKLIST_EXECUCAO_CARREGANDO_IDS.has(id) && (forcar || !window.CHECKLIST_EXECUCAO_STATUS_CACHE[id])
     );
     if (pendentes.length === 0) return;
     pendentes.forEach(id => CHECKLIST_EXECUCAO_CARREGANDO_IDS.add(id));
+    const reexecutarSePedido = () => {
+        const de_novo = pendentes.filter(id => CHECKLIST_EXECUCAO_REFRESH_PENDENTE.delete(id));
+        if (de_novo.length) window.carregarStatusChecklistExecucaoReparo(de_novo, true);
+    };
 
     // 🆕 Caminho rápido: /progresso traz TODAS as peças em reparo numa
     // chamada só (antes eram 2 por peça, e a de laudos baixava o HTML
@@ -88,11 +115,12 @@ window.carregarStatusChecklistExecucaoReparo = async function(idsEquipamentos, f
             const porEquip = new Map((Array.isArray(lista) ? lista : []).map(r => [r.equipamento_id, r]));
             pendentes.forEach(id => {
                 const r = porEquip.get(id);
-                window.CHECKLIST_EXECUCAO_STATUS_CACHE[id] = r
+                window.CHECKLIST_EXECUCAO_STATUS_CACHE[id] = aplicarNumerosLocaisChecklist(id, r
                     ? { ...r, folhaoSalvo: !!r.folhao_salvo }
-                    : { execucao_id: null, total: 0, marcadas: 0, percentual: 0, completo: false, folhaoSalvo: false };
+                    : { execucao_id: null, total: 0, marcadas: 0, percentual: 0, completo: false, folhaoSalvo: false });
                 CHECKLIST_EXECUCAO_CARREGANDO_IDS.delete(id);
             });
+            reexecutarSePedido();
             if (document.getElementById('reparos-table-body') && typeof window.renderReparos === 'function') window.renderReparos();
             if (document.getElementById('reparos-lista-andamento') && typeof window.carregarReparosAndamento === 'function') window.carregarReparosAndamento();
             return;
@@ -121,10 +149,10 @@ window.carregarStatusChecklistExecucaoReparo = async function(idsEquipamentos, f
                 ]);
                 const status = respStatus.ok ? await respStatus.json() : { total: 0, marcadas: 0, percentual: 0, completo: false };
                 const laudos = respLaudos.ok ? await respLaudos.json() : [];
-                window.CHECKLIST_EXECUCAO_STATUS_CACHE[id] = {
+                window.CHECKLIST_EXECUCAO_STATUS_CACHE[id] = aplicarNumerosLocaisChecklist(id, {
                     ...status,
                     folhaoSalvo: Array.isArray(laudos) && laudos.length > 0
-                };
+                });
             } catch (e) {
                 console.error(`⚠️ Não consegui buscar status do Checklist de Execução (${id}):`, e);
                 // Mesmo com erro, marca algo em cache pra não ficar tentando de
@@ -136,6 +164,7 @@ window.carregarStatusChecklistExecucaoReparo = async function(idsEquipamentos, f
         }));
     }
 
+    reexecutarSePedido();
     // Redesenha a tabela de Reparo ("Iniciar Reparo") E a lista de
     // "Reparo em Andamento" (se estiverem na tela) pra refletir o status
     // recém-carregado — cada função já lida com não estar montada.
@@ -482,6 +511,13 @@ window.recarregarChecklistExecucao = async function() {
         // de rede. Agora, se falhar, mantém o que já estava na tela.
         if (resp.ok) {
             CHECKLIST_EXECUCAO_ETAPAS_ATUAIS = await resp.json();
+            const idEq = CHECKLIST_EXECUCAO_EQUIPAMENTO_ATUAL;
+            const total = CHECKLIST_EXECUCAO_ETAPAS_ATUAIS.length;
+            const marcadas = CHECKLIST_EXECUCAO_ETAPAS_ATUAIS.filter(e => e.marcado).length;
+            if (idEq && total > 0) {
+                CHECKLIST_EXECUCAO_LOCAL[idEq] = { execucao_id: CHECKLIST_EXECUCAO_EXECUCAO_ATUAL, total, marcadas, percentual: Math.round(marcadas / total * 100), completo: marcadas === total };
+                window.CHECKLIST_EXECUCAO_STATUS_CACHE[idEq] = aplicarNumerosLocaisChecklist(idEq, { folhaoSalvo: false, ...(window.CHECKLIST_EXECUCAO_STATUS_CACHE[idEq] || {}), execucao_id: CHECKLIST_EXECUCAO_EXECUCAO_ATUAL });
+            }
         } else {
             console.warn('⚠️ Não consegui atualizar as etapas do servidor — mantendo o que já estava na tela.');
         }

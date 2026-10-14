@@ -563,7 +563,7 @@ export function renderReparos() {
 window.renderReparos = renderReparos;
 
 // Checklist de Execução: módulo separado (extraído pra oficina/checklist-execucao.js).
-import './checklist-execucao.js';
+import './checklist-execucao.js?v=2';
 
 
 // ==========================================
