@@ -74,7 +74,7 @@
     <link rel="stylesheet" href="style.css?v=14" />
     <!-- Novo padrão visual (tokens + componentes ds-*). Vem DEPOIS do
          style.css pra vencer em empate de especificidade. -->
-    <link rel="stylesheet" href="design-system.css?v=22" />
+    <link rel="stylesheet" href="design-system.css?v=23" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="JS/assets/icon-192.png?v=4">
@@ -1130,12 +1130,16 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                 </div>
             </section>
             <section id="aba-reservas" class="tab-content">
-                <div class="glass-panel" style="border-top:4px solid var(--border-color);padding:24px;margin-bottom:24px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;margin-bottom:16px;">
+                <!-- Reserva no padrão novo: números de cada reserva, abas em
+                     chips e as peças em cards por MCC e tipo. Ids e funções
+                     mantidos (ui.js / apontamento.js). -->
+                <div class="cc-bloco">
+                    <div class="es-cab">
                         <div class="cc-titulo-ico"><span class="cc-ico" style="--ic:var(--ds-ok)"><i class="fas fa-boxes-stacked"></i></span><div><div class="cc-rotulo">Estoque</div><h2 class="cc-titulo">Reserva pronta pra instalar</h2></div></div>
-                        <button class="btn-premium" onclick="window.toggleFormAdicionar()"><i class="fas fa-plus"></i> Cadastrar Peça Nova</button>
-                        <!-- FORMULÁRIO DE CADASTRO DE NOVA PEÇA -->
-<div id="form-novo-equipamento" class="cadastrar-box hidden" style="margin-top: 20px; background: rgba(0,0,0,0.2); border: 1px dashed var(--brand); padding: 20px; border-radius: var(--radius);">
+                        <button class="cc-btn cc-btn-cheio" onclick="window.toggleFormAdicionar()"><i class="fas fa-plus"></i> Cadastrar peça nova</button>
+                    </div>
+                    <p class="cc-sub" style="margin:10px 0 0">Peças prontas esperando vaga. Na oficina ainda dependem de transporte; na máquina já podem entrar num veio.</p>
+                    <div id="form-novo-equipamento" class="cadastrar-box hidden" style="margin-top:16px">
     <h3 style="color: var(--brand); margin-bottom: 15px;"><i class="fas fa-plus-circle"></i> Cadastrar Nova Peça</h3>
     <div class="form-grid-4">
         <div class="input-group">
@@ -1210,25 +1214,13 @@ a, button, [onclick], label[for], select { cursor: pointer; }
         </div>
     </div>
 </div>
+                </div>
+                <div class="cc-bloco">
+                    <div class="rs-abas">
+                        <button id="subaba-reserva-maquina" class="btn-subaba-reserva cc-btn on active ativo" onclick="window.mudarSubAbaReserva('maquina')"><i class="fas fa-industry"></i> Reserva na máquina <span id="subaba-reserva-maquina-count"></span></button>
+                        <button id="subaba-reserva-oficina" class="btn-subaba-reserva cc-btn" onclick="window.mudarSubAbaReserva('oficina')"><i class="fas fa-warehouse"></i> Reserva na oficina <span id="subaba-reserva-oficina-count"></span></button>
                     </div>
-                    <!-- 🆕 Sub-abas Máquina/Oficina (antes eram duas seções empilhadas
-                         na mesma tabela — confuso de ler). Cada botão troca qual grupo
-                         de peças aparece na tabela abaixo; ver window.mudarSubAbaReserva
-                         em ui.js. -->
-                    <div class="folhao-tabs" style="margin-top:16px;">
-                        <button id="subaba-reserva-maquina" class="btn-subaba-reserva folhao-tab active ativo" onclick="window.mudarSubAbaReserva('maquina')">
-                            <i class="fas fa-industry"></i> Reserva na Máquina <span id="subaba-reserva-maquina-count"></span>
-                        </button>
-                        <button id="subaba-reserva-oficina" class="btn-subaba-reserva folhao-tab" onclick="window.mudarSubAbaReserva('oficina')">
-                            <i class="fas fa-warehouse"></i> Reserva na Oficina <span id="subaba-reserva-oficina-count"></span>
-                        </button>
-                    </div>
-                    <div class="table-responsive" style="margin-top:0;">
-                        <table class="premium-table">
-                            <thead><tr><th>TAG</th><th>Família e Tipo</th><th>Status</th><th>Veio</th><th>Posição</th><th>Ações</th></tr></thead>
-                            <tbody id="estoque-table-body"></tbody>
-                        </table>
-                    </div>
+                    <div id="estoque-table-body" class="rs-grupos"></div>
                 </div>
             </section>
 
@@ -3172,7 +3164,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
         import './JS/Oficina/folhoesPonte.js?v=1';
         import './JS/Oficina/estoque.js?v=5';
         import './JS/Oficina/veiosAtivos.js?v=7';
-        import './JS/ui.js?v=14';
+        import './JS/ui.js?v=15';
         import './JS/painelGeralExtra.js?v=1';
         import './JS/Folhoes/folhaoMolde4.js?v=8';
         import './JS/Folhoes/folhao_bender.js?v=5';

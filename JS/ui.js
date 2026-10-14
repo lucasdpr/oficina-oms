@@ -33,9 +33,9 @@ function renderReservas() {
     if (reservas.length === 0) {
         const contMaquinaVazio = document.getElementById("subaba-reserva-maquina-count");
         const contOficinaVazio = document.getElementById("subaba-reserva-oficina-count");
-        if (contMaquinaVazio) contMaquinaVazio.textContent = "(0)";
-        if (contOficinaVazio) contOficinaVazio.textContent = "(0)";
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Nenhuma peça em estoque.</td></tr>`;
+        if (contMaquinaVazio) contMaquinaVazio.textContent = "0";
+        if (contOficinaVazio) contOficinaVazio.textContent = "0";
+        tbody.innerHTML = `<div class="rs-vazio"><i class="fas fa-box-open"></i><strong>Nenhuma peça em estoque</strong><span>Cadastre uma peça nova para começar a reserva.</span></div>`;
         return;
     }
 
@@ -142,6 +142,7 @@ function renderReservas() {
 
     let htmlFinal = "";
     const coresMCC = { "2": "#f0a334", "3": "#d9b67a", "4": "#c4693a" };
+    const esc = v => window.escapeHtmlNotif ? window.escapeHtmlNotif(String(v ?? '')) : String(v ?? '');
 
     Object.keys(grupos).sort().forEach(mcc => {
         const itens = grupos[mcc];
@@ -151,14 +152,6 @@ function renderReservas() {
             if (!tipos[tipo]) tipos[tipo] = [];
             tipos[tipo].push(a);
         });
-
-        htmlFinal += `
-            <tr style="background: ${coresMCC[mcc] || '#f59e0b'}20; border-top: 3px solid ${coresMCC[mcc] || '#f59e0b'};">
-                <td colspan="6" style="padding: 10px 16px; font-weight: 700; color: var(--text-heading); font-size: 15px;">
-                    <i class="fas fa-server"></i> MCC ${mcc}
-                </td>
-            </tr>
-        `;
 
         // Define os veios disponíveis para este MCC
         let veiosDisponiveis = [];
@@ -172,22 +165,24 @@ function renderReservas() {
             veiosDisponiveis = ['C', 'D', 'E', 'F'];
         }
 
+        htmlFinal += `<div class="rs-mcc" style="--mc:${coresMCC[mcc] || '#f0a334'}"><div class="rs-mcc-topo"><h3>MCC ${esc(mcc)}</h3><span>${itens.length} ${itens.length === 1 ? 'peça' : 'peças'}</span></div>`;
+
+        htmlFinal += `<div class="rs-cards">`;
         Object.keys(tipos).sort().forEach(tipo => {
             const lista = tipos[tipo];
-            htmlFinal += `
-                <tr style="background: var(--bg-th);">
-                    <td colspan="6" style="padding: 6px 16px; font-weight: 600; color: var(--text-muted); font-size: 13px; padding-left: 30px;">
-                        <i class="fas fa-tag"></i> ${tipo}
-                    </td>
-                </tr>
-            `;
 
             lista.forEach(a => {
                 const pct = a.meta > 0 ? ((a.ton / a.meta) * 100) : 0;
-                const pctFixed = pct.toFixed(1);
-                let statusClass = 'reserva';
-                if (pct >= 80) statusClass = 'reparo';
-                else if (pct >= 50) statusClass = 'warning';
+                const pctFixed = pct.toFixed(1).replace('.', ',');
+                let estado = 'ok';
+                if (pct >= 80) estado = 'alto';
+                else if (pct >= 50) estado = 'medio';
+                const topo = `
+                    <div class="rs-card-topo">
+                        <div class="rs-id"><strong class="rs-tag" title="Código interno: ${esc(a.id)}">${esc(window.rotuloEquipamento(a))}</strong><span class="rs-tipo-chip">${esc(tipo)}</span></div>
+                        <span class="rs-uso rs-uso-${estado}">${pctFixed}% usado</span>
+                    </div>
+                    <div class="rs-barra"><i class="rs-barra-${estado}" style="width:${Math.min(pct, 100)}%"></i></div>`;
 
                 // 🆕 Peça ainda na Oficina: não faz sentido escolher veio/posição
                 // aqui, porque ela nem chegou fisicamente perto de nenhuma
@@ -197,20 +192,14 @@ function renderReservas() {
                 // está fisicamente lá (ver window.enviarReservaParaMaquina).
                 if (!permiteSwap) {
                     htmlFinal += `
-                        <tr>
-                            <td class="font-code" title="Código interno: ${a.id}">${window.rotuloEquipamento(a)}</td>
-                            <td><span class="ind-card-tag bg-tag">${a.tipo}</span></td>
-                            <td><span class="status-pill ${statusClass}">${pctFixed}%</span></td>
-                            <td colspan="2" class="text-center text-muted" style="font-size:12px;">Aguardando transporte</td>
-                            <td>
-                                <button class="btn-premium btn-success" style="padding:4px 12px; font-size:12px;" onclick="window.enviarReservaParaMaquina('${a.id}')">
-                                    <i class="fas fa-truck"></i> Mandar pra Máquina
-                                </button>
-                                <button class="btn-outline-danger" style="padding:4px 12px; font-size:12px; margin-left:5px;" onclick="window.excluirEquipamento('${a.id}')">
-                                    <i class="fas fa-trash"></i> Excluir
-                                </button>
-                            </td>
-                        </tr>
+                        <div class="rs-card">
+                            ${topo}
+                            <div class="rs-aguarda"><i class="fas fa-truck"></i> Aguardando transporte</div>
+                            <div class="rs-acoes">
+                                <button class="cc-btn cc-btn-cheio" onclick="window.enviarReservaParaMaquina('${a.id}')"><i class="fas fa-truck"></i> Mandar pra máquina</button>
+                                <button class="cc-btn rs-excluir" title="Excluir" aria-label="Excluir peça" onclick="window.excluirEquipamento('${a.id}')"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
                     `;
                     return;
                 }
@@ -222,10 +211,11 @@ function renderReservas() {
 
                 // Select de veio
                 const veioSelect = `
-                    <select id="alocar-veio-${a.id}" class="premium-select" style="width:80px;">
-                        <option value="">Veio</option>
+                    <label class="rs-campo"><span>Veio</span>
+                    <select id="alocar-veio-${a.id}" class="premium-select">
+                        <option value="">Escolher</option>
                         ${veiosDisponiveis.map(v => `<option value="${v}">${v}</option>`).join('')}
-                    </select>
+                    </select></label>
                 `;
 
                 let posSelect = '';
@@ -234,36 +224,31 @@ function renderReservas() {
                     const slotFixo = getSlotFixo(a.tipo, a.id, a.mcc_compat);
                     // Se o slotFixo estiver vazio, usa o tipo como fallback (mas não deve acontecer para R1/R2)
                     const valorExibido = slotFixo || a.tipo;
-                    posSelect = `<input type="text" id="alocar-pos-${a.id}" value="${valorExibido}" readonly style="width:80px; background:var(--bg-input); color:var(--text-muted); border:1px solid var(--border); border-radius:4px; padding:4px; text-align:center;">`;
+                    posSelect = `<label class="rs-campo"><span>Posição</span><input type="text" id="alocar-pos-${a.id}" value="${esc(valorExibido)}" readonly class="rs-pos-fixa"></label>`;
                 } else {
                     const opcoes = getOpcoesPosicao(a.tipo, a.mcc_compat);
                     posSelect = `
-                        <select id="alocar-pos-${a.id}" class="premium-select" style="width:80px;">
-                            <option value="">Pos</option>
+                        <label class="rs-campo"><span>Posição</span>
+                        <select id="alocar-pos-${a.id}" class="premium-select">
+                            <option value="">Escolher</option>
                             ${opcoes}
-                        </select>
+                        </select></label>
                     `;
                 }
 
                 htmlFinal += `
-                    <tr>
-                        <td class="font-code" title="Código interno: ${a.id}">${window.rotuloEquipamento(a)}</td>
-                        <td><span class="ind-card-tag bg-tag">${a.tipo}</span></td>
-                        <td><span class="status-pill ${statusClass}">${pctFixed}%</span></td>
-                        <td>${veioSelect}</td>
-                        <td>${posSelect}</td>
-                        <td>
-                            <button class="btn-premium btn-success" style="padding:4px 12px; font-size:12px;" onclick="window.iniciarSwapAlocacao('${a.id}')">
-                                <i class="fas fa-exchange-alt"></i> Swap
-                            </button>
-                            <button class="btn-outline-danger" style="padding:4px 12px; font-size:12px; margin-left:5px;" onclick="window.excluirEquipamento('${a.id}')">
-                                <i class="fas fa-trash"></i> Excluir
-                            </button>
-                        </td>
-                    </tr>
+                    <div class="rs-card">
+                        ${topo}
+                        <div class="rs-campos">${veioSelect}${posSelect}</div>
+                        <div class="rs-acoes">
+                            <button class="cc-btn cc-btn-cheio" onclick="window.iniciarSwapAlocacao('${a.id}')"><i class="fas fa-right-left"></i> Fazer swap</button>
+                            <button class="cc-btn rs-excluir" title="Excluir" aria-label="Excluir peça" onclick="window.excluirEquipamento('${a.id}')"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
                 `;
             });
         });
+        htmlFinal += `</div></div>`;
     });
 
     return htmlFinal;
@@ -279,19 +264,19 @@ function renderReservas() {
 
     const contMaquina = document.getElementById("subaba-reserva-maquina-count");
     const contOficina = document.getElementById("subaba-reserva-oficina-count");
-    if (contMaquina) contMaquina.textContent = `(${reservasMaquina.length})`;
-    if (contOficina) contOficina.textContent = `(${reservasOficina.length})`;
+    if (contMaquina) contMaquina.textContent = reservasMaquina.length;
+    if (contOficina) contOficina.textContent = reservasOficina.length;
 
     const subAba = window.SUBABA_RESERVA || 'maquina';
     let htmlFinal = "";
     if (subAba === 'maquina') {
         htmlFinal = reservasMaquina.length
             ? montarSecaoPorLocal(reservasMaquina, true)
-            : `<tr><td colspan="6" class="text-center text-muted" style="padding:20px 16px;">Nenhuma peça pronta na máquina.</td></tr>`;
+            : `<div class="rs-vazio"><i class="fas fa-industry"></i><strong>Nenhuma peça pronta na máquina</strong><span>Peças da oficina aparecem aqui depois que a Logística entrega.</span></div>`;
     } else {
         htmlFinal = reservasOficina.length
             ? montarSecaoPorLocal(reservasOficina, false)
-            : `<tr><td colspan="6" class="text-center text-muted" style="padding:20px 16px;">Nenhuma peça na oficina.</td></tr>`;
+            : `<div class="rs-vazio"><i class="fas fa-warehouse"></i><strong>Nenhuma peça na oficina</strong><span>Tudo que estava na reserva já foi para a máquina.</span></div>`;
     }
 
     tbody.innerHTML = htmlFinal;
@@ -306,8 +291,8 @@ window.mudarSubAbaReserva = function(aba) {
     const btnMaquina = document.getElementById("subaba-reserva-maquina");
     const btnOficina = document.getElementById("subaba-reserva-oficina");
     // 🎨 abas no padrão (folhao-tab): só troca a classe ativa
-    if (btnMaquina) { btnMaquina.classList.toggle('active', aba === 'maquina'); btnMaquina.style.borderBottomColor = ''; btnMaquina.style.color = ''; }
-    if (btnOficina) { btnOficina.classList.toggle('active', aba === 'oficina'); btnOficina.style.borderBottomColor = ''; btnOficina.style.color = ''; }
+    if (btnMaquina) { btnMaquina.classList.toggle('on', aba === 'maquina'); btnMaquina.classList.toggle('active', aba === 'maquina'); btnMaquina.style.borderBottomColor = ''; btnMaquina.style.color = ''; }
+    if (btnOficina) { btnOficina.classList.toggle('on', aba === 'oficina'); btnOficina.classList.toggle('active', aba === 'oficina'); btnOficina.style.borderBottomColor = ''; btnOficina.style.color = ''; }
     renderReservas();
 };
 
