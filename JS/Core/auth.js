@@ -343,3 +343,4 @@ export async function entrarComoVisitante(nomeDigitado) {
     if (abaAtiva && typeof window.iniciarAutoRefreshAba === 'function') window.iniciarAutoRefreshAba(abaAtiva.id);
 }
 window.entrarComoVisitante = entrarComoVisitante;
+window.omsTransicaoEntrada = transicaoEntrada; // usado também ao abrir o app já logado (app.html)

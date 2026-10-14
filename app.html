@@ -3548,6 +3548,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
             try {
                 const operador = JSON.parse(operadorSalvo);
                 if (window.setOperadorLogado) window.setOperadorLogado(operador);
+                if (window.omsTransicaoEntrada) window.omsTransicaoEntrada(operador.nome);
                 document.getElementById("tela-login-home").style.display = "none";
                 document.getElementById("container-sistema-oms").style.display = "flex";
                 if (window.atualizarInterfaceUsuario) window.atualizarInterfaceUsuario();
