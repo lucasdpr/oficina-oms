@@ -970,19 +970,8 @@ window.renderPainelSupervisor = async function() {
                     const soma = (Number(l.qtd_mcc2) || 0) + (Number(l.qtd_mcc3) || 0) + (Number(l.qtd_mcc4) || 0);
                     if (dataChave in totalPorDia) totalPorDia[dataChave] += soma;
                 });
-                const valores = dias.map(d => totalPorDia[d]);
-                const max = Math.max(1, ...valores);
-                const largura = 600, altura = 160, passo = largura / (dias.length - 1);
-                const pontos = valores.map((v, i) => `${(i * passo).toFixed(1)},${(altura - (v / max) * (altura - 20) - 4).toFixed(1)}`).join(' ');
-                const labels = dias.map(d => new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', ''));
-                elSupTonelagem.innerHTML = `
-                    <svg viewBox="0 0 ${largura} ${altura}" style="width:100%; height:140px; overflow:visible;">
-                        <polyline points="${pontos}" fill="none" stroke="var(--info)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></polyline>
-                        ${valores.map((v, i) => `<circle cx="${(i * passo).toFixed(1)}" cy="${(altura - (v / max) * (altura - 20) - 4).toFixed(1)}" r="3.5" fill="var(--info)"></circle>`).join('')}
-                    </svg>
-                    <div style="display:flex; justify-content:space-between; margin-top:6px;">
-                        ${labels.map(l => `<span style="font-size:0.65rem; color:var(--text-muted); text-transform:capitalize;">${l}</span>`).join('')}
-                    </div>`;
+                // 🎨 Padrão novo: mesmas colunas do Painel Geral (construirHtmlTonelagemSvg).
+                elSupTonelagem.innerHTML = window.construirHtmlTonelagemSvg({ dias, totalPorDia });
             } catch (e) {
                 elSupTonelagem.innerHTML = `<div class="text-muted" style="text-align:center; margin:auto;">Não foi possível carregar.</div>`;
             }
