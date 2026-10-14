@@ -74,9 +74,9 @@
     <link rel="stylesheet" href="style.css?v=14" />
     <!-- Novo padrão visual (tokens + componentes ds-*). Vem DEPOIS do
          style.css pra vencer em empate de especificidade. -->
-    <link rel="stylesheet" href="design-system.css?v=1" />
+    <link rel="stylesheet" href="design-system.css?v=2" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="JS/assets/icon-192.png?v=4">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -869,151 +869,145 @@ a, button, [onclick], label[for], select { cursor: pointer; }
         </div>
     </div>
 
-    <!-- 1. COMANDO — redesign do Painel Geral (mesma linguagem do
-         index.html: grafite, âmbar, pílulas). Sai o banner de marketing
-         ("15+ módulos / PWA"), entra o que importa pra quem abre o
-         painel: data, um resumo em uma frase do estado da planta, a saúde
-         da frota (anel), o status de cada MCC e os atalhos. Preenchido
-         por window.renderPainelComando (JS/painelGeralExtra.js). -->
-    <div class="pg-hero">
-        <div class="pg-hero-texto">
-            <div class="pg-hero-data" id="pg-hero-data">&nbsp;</div>
-            <h1 class="pg-hero-titulo"><span id="pg-hero-saudacao">Olá</span><span id="pg-hero-nome"></span></h1>
-            <p class="pg-hero-resumo" id="pg-hero-resumo">Lendo o estado dos veios…</p>
-            <div class="pg-hero-acoes">
-                <button type="button" class="ds-pill ds-pill-cheia" onclick="window.abrirAba(event,'aba-ordens-servico')"><i class="fas fa-file-invoice"></i> Lançar OS</button>
-                <button type="button" class="ds-pill" onclick="window.abrirAba(event,'aba-fluxo')"><i class="fas fa-magnifying-glass"></i> Consultar ativos</button>
-                <button type="button" class="ds-pill" onclick="window.abrirCriticos()"><i class="fas fa-chart-column"></i> Relatórios</button>
-                <button type="button" class="ds-pill" onclick="window.abrirAba(event,'aba-reservas')"><i class="fas fa-boxes-stacked"></i> Estoque</button>
+    <!-- ==============================================================
+         PAINEL GERAL — "Centro de controle" (padrão novo, ver
+         design-system.css). Linguagem de painel técnico: grade de linhas
+         finas, cantos retos, números grandes e rótulos em mono. Tudo é
+         preenchido por JS/painelGeralExtra.js a partir de BANCO_ATIVOS e
+         das APIs que já existiam — nenhum dado inventado.
+         ============================================================== -->
+    <div class="cc-faixa">
+        <span>[ OMS · CENTRO DE CONTROLE ]</span>
+        <span id="pg-hero-data">—</span>
+        <span class="cc-faixa-dir"><i class="cc-led"></i>SISTEMA ONLINE · <span id="painel-hero-hora-atualizacao">--:--</span></span>
+    </div>
+
+    <!-- 01 BRIEFING -->
+    <div class="cc-briefing">
+        <div class="cc-briefing-texto">
+            <div class="cc-rotulo">01 / Briefing do dia · <span id="pg-hero-saudacao">Olá</span><span id="pg-hero-nome"></span></div>
+            <h1 class="cc-manchete" id="pg-briefing-manchete">Lendo o estado da planta…</h1>
+            <ol class="cc-decisoes" id="pg-briefing-decisoes"></ol>
+            <div class="cc-acoes">
+                <button type="button" class="cc-btn cc-btn-cheio" onclick="window.abrirAba(event,'aba-ordens-servico')">Lançar OS</button>
+                <button type="button" class="cc-btn" onclick="window.abrirAba(event,'aba-fluxo')">Consultar ativos</button>
+                <button type="button" class="cc-btn" onclick="window.abrirCriticos()">Relatório de críticos</button>
+                <button type="button" class="cc-btn" onclick="window.abrirAba(event,'aba-reservas')">Estoque / reservas</button>
             </div>
         </div>
-        <div class="pg-hero-saude" title="Ativos instalados abaixo de 80% da meta de tonelagem">
-            <svg viewBox="0 0 120 120" class="ds-anel" aria-hidden="true">
-                <circle cx="60" cy="60" r="52" class="ds-anel-fundo"/>
-                <circle cx="60" cy="60" r="52" class="ds-anel-valor" id="pg-anel-valor" pathLength="100" stroke-dasharray="0 100"/>
-            </svg>
-            <div class="ds-anel-centro">
-                <strong id="pg-saude-pct">--</strong>
-                <span>frota saudável</span>
+        <div class="cc-maquinas">
+            <div class="cc-rotulo">Máquinas</div>
+            <div class="cc-maquina" data-maquina="MCC 2"><b>MCC 2</b><span>VEIOS C · D</span><span class="pg-maquina-status" id="status-maquina-mcc2">Operação Normal</span></div>
+            <div class="cc-maquina" data-maquina="MCC 3"><b>MCC 3</b><span>VEIOS E · F</span><span class="pg-maquina-status" id="status-maquina-mcc3">Operação Normal</span></div>
+            <div class="cc-maquina" data-maquina="MCC 4"><b>MCC 4</b><span>VEIOS G · H</span><span class="pg-maquina-status" id="status-maquina-mcc4">Operação Normal</span></div>
+            <dl class="cc-numeros">
+                <div><dt class="cc-rotulo">Ritmo da planta</dt><dd><span id="pg-ritmo-planta">--</span> <small>t/dia</small></dd></div>
+                <div><dt class="cc-rotulo">Excesso sobre metas</dt><dd id="pg-excesso">--</dd></div>
+            </dl>
+            <div class="cc-saude">
+                <div class="cc-rotulo">Frota saudável <span class="cc-dica">(&lt; 80% da meta)</span></div>
+                <div class="cc-saude-num"><span id="pg-saude-pct">--</span></div>
+                <div class="cc-medidor"><i id="pg-anel-valor"></i></div>
             </div>
-        </div>
-        <div class="pg-hero-maquinas">
-            <div class="pg-hero-maquinas-topo">
-                <span class="pg-online"><i></i> Sistema online</span>
-                <span class="text-muted">às <span id="painel-hero-hora-atualizacao">--:--</span></span>
-            </div>
-            <div class="pg-maquina" data-maquina="MCC 2"><span class="pg-maquina-nome">MCC 2</span><span class="pg-maquina-veios">Veios C · D</span><span class="pg-maquina-status" id="status-maquina-mcc2">Operação Normal</span></div>
-            <div class="pg-maquina" data-maquina="MCC 3"><span class="pg-maquina-nome">MCC 3</span><span class="pg-maquina-veios">Veios E · F</span><span class="pg-maquina-status" id="status-maquina-mcc3">Operação Normal</span></div>
-            <div class="pg-maquina" data-maquina="MCC 4"><span class="pg-maquina-nome">MCC 4</span><span class="pg-maquina-veios">Veios G · H</span><span class="pg-maquina-status" id="status-maquina-mcc4">Operação Normal</span></div>
         </div>
     </div>
 
-    <!-- 2. KPIs — mesmos ids de sempre (calcularKpisGlobais /
-         atualizarKPIsAvancados), mas a linha de baixo agora é dado real
-         (antes era texto fixo tipo "Volume Estável", que não mudava
-         nunca). -->
-    <div class="ds-kpis">
-        <button type="button" class="ds-kpi ds-kpi-perigo" onclick="window.abrirCriticos()">
-            <span class="ds-kpi-rotulo"><i class="fas fa-radiation"></i> Críticos</span>
-            <strong class="ds-kpi-valor" id="kpi-criticos">0</strong>
-            <span class="ds-kpi-sub" id="pg-kpi-sub-criticos">acima de 80% da meta</span>
-            <span class="ds-kpi-barra"><i id="pg-kpi-barra-criticos"></i></span>
+    <!-- KPIs -->
+    <div class="cc-kpis">
+        <button type="button" class="cc-kpi" onclick="window.abrirAba(event,'aba-fluxo')">
+            <span class="cc-rotulo">Instaladas</span>
+            <strong id="pg-kpi-instaladas">0</strong>
+            <span class="cc-kpi-sub" id="pg-kpi-sub-total">—</span>
+            <span id="kpi-total" hidden>0</span>
         </button>
-        <button type="button" class="ds-kpi ds-kpi-alerta" onclick="window.abrirAba(null,'aba-reparos')">
-            <span class="ds-kpi-rotulo"><i class="fas fa-wrench"></i> Em reparo</span>
-            <strong class="ds-kpi-valor" id="kpi-reparo">0</strong>
-            <span class="ds-kpi-sub" id="pg-kpi-sub-reparo">na oficina agora</span>
-            <span class="ds-kpi-barra"><i id="pg-kpi-barra-reparo"></i></span>
+        <button type="button" class="cc-kpi" onclick="window.abrirCriticos()">
+            <span class="cc-rotulo"><i class="cc-marca" style="background:var(--pg-c2)"></i>≥ 80% da meta</span>
+            <strong id="kpi-criticos">0</strong>
+            <span class="cc-kpi-sub" id="pg-kpi-sub-criticos">—</span>
         </button>
-        <button type="button" class="ds-kpi ds-kpi-ok" onclick="window.abrirAba(null,'aba-reservas')">
-            <span class="ds-kpi-rotulo"><i class="fas fa-boxes-stacked"></i> Reserva pronta</span>
-            <strong class="ds-kpi-valor" id="kpi-reserva">0</strong>
-            <span class="ds-kpi-sub" id="pg-kpi-sub-reserva">prontas pra troca</span>
-            <span class="ds-kpi-barra"><i id="pg-kpi-barra-reserva"></i></span>
+        <button type="button" class="cc-kpi" onclick="window.abrirCriticos()">
+            <span class="cc-rotulo"><i class="cc-marca" style="background:var(--pg-c3)"></i>Além da meta</span>
+            <strong id="pg-kpi-alem">0</strong>
+            <span class="cc-kpi-sub" id="pg-kpi-sub-alem">—</span>
         </button>
-        <button type="button" class="ds-kpi ds-kpi-marca" onclick="window.abrirAba(event,'aba-fluxo')">
-            <span class="ds-kpi-rotulo"><i class="fas fa-microchip"></i> Monitorados</span>
-            <strong class="ds-kpi-valor" id="kpi-total">0</strong>
-            <span class="ds-kpi-sub" id="pg-kpi-sub-total">ativos no sistema</span>
-            <span class="ds-kpi-barra"><i id="pg-kpi-barra-total"></i></span>
+        <button type="button" class="cc-kpi" onclick="window.abrirAba(null,'aba-reparos')">
+            <span class="cc-rotulo">Em reparo</span>
+            <strong id="kpi-reparo">0</strong>
+            <span class="cc-kpi-sub" id="pg-kpi-sub-reparo">—</span>
+        </button>
+        <button type="button" class="cc-kpi" onclick="window.abrirAba(null,'aba-reservas')">
+            <span class="cc-rotulo">Reserva pronta</span>
+            <strong id="kpi-reserva">0</strong>
+            <span class="cc-kpi-sub" id="pg-kpi-sub-reserva">—</span>
         </button>
     </div>
 
-    <!-- 3. MAPA DOS VEIOS — peça central do painel: cada quadradinho é
-         uma peça instalada, na ordem da máquina, colorida pelo desgaste
-         (% da meta de tonelagem). Toque/clique mostra a peça e abre o
-         prontuário. Substitui o antigo "Risco por Veio" (lista de texto).
-         Preenchido por renderMapaVeios (JS/painelGeralExtra.js). -->
-    <div class="ds-card pg-mapa">
-        <div class="ds-cabecalho">
+    <!-- 02 LINHA DE LINGOTAMENTO -->
+    <div class="cc-bloco">
+        <div class="cc-bloco-topo">
             <div>
-                <h3 class="ds-titulo">Mapa dos veios</h3>
-                <p class="ds-sub">Cada barra é uma peça instalada, do molde à saída do veio. Altura = desgaste em relação à meta. Passe o mouse ou toque para ver a peça.</p>
+                <div class="cc-rotulo">02 / Linha de lingotamento</div>
+                <h2 class="cc-titulo">Onde está o desgaste, peça por peça</h2>
             </div>
-            <div class="ds-legenda" aria-hidden="true">
-                <span><i style="background:var(--pg-c0)"></i>&lt;50%</span>
+            <div class="cc-legenda">
+                <span><i style="background:var(--pg-c0)"></i>&lt; 50%</span>
                 <span><i style="background:var(--pg-c1)"></i>50–80%</span>
                 <span><i style="background:var(--pg-c2)"></i>80–100%</span>
-                <span><i style="background:var(--pg-c3)"></i>&gt;100%</span>
+                <span><i style="background:var(--pg-c3)"></i>além da meta</span>
             </div>
         </div>
-        <div id="painel-mapa-veios" class="pg-mapa-grade" data-html-estavel>
-            <div class="text-muted" style="text-align:center; padding:30px 0;">Carregando...</div>
-        </div>
-    </div>
-
-    <!-- 4. Produção e risco — colunas de tonelagem + distribuição de
-         risco (barras 100%, substituem os donuts). Mesmos ids/JS. -->
-    <div class="pg-linha-graficos">
-        <div class="ds-card">
-            <div class="ds-cabecalho">
-                <div>
-                    <h3 class="ds-titulo">Tonelagem por dia</h3>
-                    <p class="ds-sub">Apontada nas 3 MCCs, últimos 7 dias.</p>
-                </div>
-            </div>
-            <div id="painel-linha-tonelagem" data-html-estavel>
-                <div class="text-muted" style="text-align:center; padding:30px 0;">Carregando...</div>
-            </div>
-        </div>
-        <div class="ds-card">
-            <h3 class="ds-titulo">Risco dos ativos</h3>
-            <p class="ds-sub">Desgaste das peças em uso, por faixa.</p>
-            <div id="painel-donut-risco" data-html-estavel><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
-        </div>
-        <div class="ds-card">
-            <h3 class="ds-titulo">Oficina agora</h3>
-            <p class="ds-sub">Status das atividades e o que está com prazo vencido.</p>
-            <div id="painel-donut-status" data-html-estavel><div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div></div>
-            <div class="pg-divisor"></div>
-            <div class="pg-mini-titulo">Atrasadas</div>
-            <div id="painel-atrasadas-globais" data-html-estavel>
-                <div class="text-muted" style="text-align:center; padding:12px 0;">Carregando...</div>
-            </div>
+        <div id="painel-mapa-veios" data-html-estavel>
+            <div class="cc-carregando">Carregando…</div>
         </div>
     </div>
 
-    <!-- 5. Fila de inspeção (ranking com barra de desgaste) + Produção. -->
-    <div class="pg-linha-final">
-        <div class="ds-card pg-fila">
-            <div class="ds-cabecalho">
-                <div>
-                    <h3 class="ds-titulo">Fila de inspeção</h3>
-                    <p class="ds-sub">As 5 peças instaladas mais perto (ou além) da meta de tonelagem.</p>
-                </div>
-                <button type="button" class="ds-pill ds-pill-mini" onclick="window.abrirCriticos()">Ver todas <i class="fas fa-arrow-right"></i></button>
-            </div>
-            <div id="top-criticos-container" data-html-estavel>
-                <div class="text-muted" style="text-align:center; padding:30px 0;">Carregando...</div>
-            </div>
+    <!-- 03 PREVISÃO + 04 RESERVA × DEMANDA -->
+    <div class="cc-grade cc-grade-2">
+        <div class="cc-bloco">
+            <div class="cc-rotulo">03 / Previsão de trocas</div>
+            <h2 class="cc-titulo">Quando as peças batem a meta</h2>
+            <p class="cc-sub">Pelo ritmo real de cada veio (toneladas ÷ dias em máquina da própria peça).</p>
+            <div id="pg-previsao" data-html-estavel><div class="cc-carregando">Carregando…</div></div>
         </div>
-        <div class="ds-card">
-            <h3 class="ds-titulo">Produção lançada</h3>
-            <p class="ds-sub">Hoje e últimos 7 dias, por MCC.</p>
-            <div id="painel-producao-lancada" data-html-estavel>
-                <div class="text-muted" style="text-align:center; padding:20px 0;">Carregando...</div>
-            </div>
+        <div class="cc-bloco">
+            <div class="cc-rotulo">04 / Reserva × demanda</div>
+            <h2 class="cc-titulo">Onde vai faltar peça</h2>
+            <p class="cc-sub">Por tipo: além da meta + previstas em 90 dias, contra o que está pronto na reserva.</p>
+            <div id="pg-reserva-tabela" data-html-estavel><div class="cc-carregando">Carregando…</div></div>
         </div>
+    </div>
+
+    <!-- 05 TONELAGEM · 06 OFICINA · 07 PRODUÇÃO -->
+    <div class="cc-grade cc-grade-3">
+        <div class="cc-bloco">
+            <div class="cc-rotulo">05 / Tonelagem</div>
+            <h2 class="cc-titulo">Últimos 7 dias</h2>
+            <div id="painel-linha-tonelagem" data-html-estavel><div class="cc-carregando">Carregando…</div></div>
+        </div>
+        <div class="cc-bloco">
+            <div class="cc-rotulo">06 / Oficina agora</div>
+            <h2 class="cc-titulo">Atividades</h2>
+            <div id="painel-donut-status" data-html-estavel><div class="cc-carregando">Carregando…</div></div>
+            <div class="cc-rotulo" style="margin-top:20px">Atrasadas</div>
+            <div id="painel-atrasadas-globais" data-html-estavel><div class="cc-carregando">Carregando…</div></div>
+        </div>
+        <div class="cc-bloco">
+            <div class="cc-rotulo">07 / Produção lançada</div>
+            <h2 class="cc-titulo">Por MCC</h2>
+            <div id="painel-producao-lancada" data-html-estavel><div class="cc-carregando">Carregando…</div></div>
+        </div>
+    </div>
+
+    <!-- 08 FILA DE INSPEÇÃO -->
+    <div class="cc-bloco">
+        <div class="cc-bloco-topo">
+            <div>
+                <div class="cc-rotulo">08 / Fila de inspeção</div>
+                <h2 class="cc-titulo">As 5 peças mais além da meta</h2>
+            </div>
+            <button type="button" class="cc-btn" onclick="window.abrirCriticos()">Ver todas →</button>
+        </div>
+        <div id="top-criticos-container" data-html-estavel><div class="cc-carregando">Carregando…</div></div>
     </div>
 </section>
 

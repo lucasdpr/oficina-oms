@@ -91,7 +91,7 @@ async function renderAtrasadasGlobais() {
 
         if (atrasadas.length === 0) {
             container.innerHTML = `
-                <div class="pg-tudo-em-dia"><i class="fas fa-check"></i><div><strong>Nada atrasado</strong><span>Nenhuma atividade com prazo vencido em nenhuma área.</span></div></div>
+                <div class="pg-tudo-em-dia"><strong>Em dia</strong><span>Nenhuma atividade com prazo vencido.</span></div>
             `;
             return;
         }
@@ -105,18 +105,13 @@ async function renderAtrasadasGlobais() {
         const rankingAreas = Object.entries(porArea).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
         container.innerHTML = `
-            <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:10px;">
-                <span style="font:600 2.2rem/1 var(--ds-fonte-titulo); letter-spacing:-.03em; color:var(--ds-perigo);">${atrasadas.length}</span>
-                <span style="color:var(--text-muted); font-size:13px;">atividade${atrasadas.length > 1 ? 's' : ''} atrasada${atrasadas.length > 1 ? 's' : ''} no total</span>
+            <div style="display:flex; align-items:baseline; gap:10px; margin:6px 0 8px;">
+                <strong style="font:700 2rem/1 var(--ds-fonte-titulo); letter-spacing:-.04em; color:var(--ds-perigo);">${atrasadas.length}</strong>
+                <span class="cc-rotulo">com prazo vencido</span>
             </div>
-            <div style="display:flex; flex-direction:column; gap:6px;">
-                ${rankingAreas.map(([area, qtd]) => `
-                    <div style="display:flex; justify-content:space-between; font-size:12px; padding:6px 10px; background:var(--bg-th); border-radius:6px; border-left:3px solid var(--danger);">
-                        <span>${area}</span>
-                        <span style="font-weight:700; color:var(--danger);">${qtd}</span>
-                    </div>
-                `).join('')}
-            </div>
+            <table class="cc-tabela"><tbody>
+                ${rankingAreas.map(([area, qtd]) => `<tr><td>${area}</td><td class="cc-num-perigo">${qtd}</td></tr>`).join('')}
+            </tbody></table>
         `;
     } catch (e) {
         console.error('⚠️ Não consegui carregar atividades atrasadas:', e);
@@ -189,33 +184,22 @@ async function renderProducaoLancada() {
             const cor = positivo ? 'var(--success)' : 'var(--danger)';
             const bg = positivo ? 'var(--success-bg)' : 'var(--danger-bg)';
             const seta = positivo ? '▲' : '▼';
-            return `<span style="font-size:10.5px; font-weight:700; color:${cor}; background:${bg}; padding:2px 7px; border-radius:999px; margin-left:6px;">${seta} ${Math.abs(variacao).toFixed(0)}% vs média/dia</span>`;
+            return `<span class="pg-chip ${positivo ? 'pg-chip-ok' : 'pg-chip-perigo'}">${seta} ${Math.abs(variacao).toFixed(0)}% VS MÉDIA/DIA</span>`;
         };
 
-        // 🎨 Padrão novo: número grande de hoje + chip de variação, e
-        // barras por MCC dos últimos 7 dias (antes: texto mono em linha).
-        const bloco = (titulo, unidade, t) => {
-            const totalHoje = t.hoje.mcc2 + t.hoje.mcc3 + t.hoje.mcc4;
-            const maior = Math.max(1, t.semana.mcc2, t.semana.mcc3, t.semana.mcc4);
-            const barra = (nome, chave) => `
-                <div style="display:grid; grid-template-columns:52px 1fr auto; align-items:center; gap:10px; font-size:.78rem; margin-top:8px;">
-                    <span style="color:var(--ds-texto-2); font-weight:500;">${nome}</span>
-                    <span style="height:8px; border-radius:8px; background:var(--ds-elevado-2); overflow:hidden;"><i style="display:block; height:100%; width:${(t.semana[chave] / maior) * 100}%; border-radius:8px; background:linear-gradient(90deg, var(--ds-ambar), var(--ds-ambar-hot));"></i></span>
-                    <span style="font-variant-numeric:tabular-nums; color:var(--ds-texto);"><b>${t.semana[chave].toLocaleString('pt-BR')}</b> <span style="color:var(--ds-texto-3);">· hoje ${t.hoje[chave].toLocaleString('pt-BR')}</span></span>
-                </div>`;
-            return `
-                <div style="padding:14px 16px; border-radius:var(--ds-raio-md); background:var(--ds-elevado); margin-bottom:10px;">
-                    <div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap;">
-                        <span style="font-size:.72rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--ds-texto-3);">${titulo}</span>
-                        ${tagVariacao(t.hoje, t.semana)}
-                    </div>
-                    <div style="font:600 1.8rem/1.1 var(--ds-fonte-titulo); letter-spacing:-.02em; color:var(--ds-texto); margin:6px 0 2px;">${totalHoje.toLocaleString('pt-BR')} <span style="font:500 .8rem var(--ds-fonte); color:var(--ds-texto-3);">${unidade} hoje</span></div>
-                    <div style="font-size:.72rem; color:var(--ds-texto-3);">Últimos 7 dias por MCC</div>
-                    ${barra('MCC 2', 'mcc2')}${barra('MCC 3', 'mcc3')}${barra('MCC 4', 'mcc4')}
-                </div>`;
-        };
-
-        container.innerHTML = bloco('Tonelagem', 'ton', totaisTon) + bloco('Panelas de molde', 'panelas', totaisPanelas);
+        // 🎨 Padrão "centro de controle": tabela técnica por MCC.
+        const totalDe = d => d.mcc2 + d.mcc3 + d.mcc4;
+        const linhaMcc = (nome, k) => `<tr><td>${nome}</td><td class="cc-num-forte">${totaisTon.hoje[k].toLocaleString('pt-BR')}</td><td>${totaisTon.semana[k].toLocaleString('pt-BR')}</td><td class="cc-num-forte">${totaisPanelas.hoje[k].toLocaleString('pt-BR')}</td><td>${totaisPanelas.semana[k].toLocaleString('pt-BR')}</td></tr>`;
+        container.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin:6px 0 14px; flex-wrap:wrap;">
+                <div><strong style="font:700 2rem/1 var(--ds-fonte-titulo); letter-spacing:-.04em; color:var(--ds-texto);">${totalDe(totaisTon.hoje).toLocaleString('pt-BR')}</strong> <span class="cc-rotulo">ton hoje</span></div>
+                <div>${tagVariacao(totaisTon.hoje, totaisTon.semana)}</div>
+            </div>
+            <table class="cc-tabela cc-compacta">
+                <thead><tr><th></th><th>Ton hoje</th><th>Ton 7d</th><th>Panelas hoje</th><th>Panelas 7d</th></tr></thead>
+                <tbody>${linhaMcc('MCC 2', 'mcc2')}${linhaMcc('MCC 3', 'mcc3')}${linhaMcc('MCC 4', 'mcc4')}
+                <tr><td class="cc-rotulo" style="padding-top:12px">Total</td><td class="cc-num-forte">${totalDe(totaisTon.hoje).toLocaleString('pt-BR')}</td><td class="cc-num-forte">${totalDe(totaisTon.semana).toLocaleString('pt-BR')}</td><td class="cc-num-forte">${totalDe(totaisPanelas.hoje).toLocaleString('pt-BR')}</td><td class="cc-num-forte">${totalDe(totaisPanelas.semana).toLocaleString('pt-BR')}</td></tr></tbody>
+            </table>`;
     } catch (e) {
         console.error('⚠️ Não consegui carregar a produção lançada:', e);
         container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px 0;">Não foi possível carregar.</div>`;
@@ -406,149 +390,102 @@ async function renderLinhaTonelagem() {
 }
 
 // ==============================================================
-// 6) MAPA DOS VEIOS + TOPO "COMANDO" (redesign do Painel Geral)
+// 6) CENTRO DE CONTROLE — análise, briefing, linha de lingotamento,
+//    previsão de trocas e reserva × demanda
 // ==============================================================
-// Tudo aqui é síncrono e só lê BANCO_ATIVOS — por isso roda também em
-// window.renderPainelSincrono(), chamado de atualizarPainelCompleto()
-// toda vez que os dados chegam do servidor. Antes, o donut de risco e o
-// ranking só eram desenhados uma vez na abertura (com o cache local
-// ainda velho) e ficavam desatualizados: o card de cima dizia 113
-// críticos e o donut, 4.
+// Tudo síncrono, só lê BANCO_ATIVOS — roda em window.renderPainelSincrono(),
+// chamado de atualizarPainelCompleto() sempre que os dados chegam (antes
+// o donut/ranking ficavam com o cache velho: card 113 × donut 4).
+//
+// Previsão: todas as peças de um veio recebem a mesma tonelagem por dia
+// (o aço passa por todas), então o ritmo do veio é a MEDIANA de
+// tonelagem ÷ dias em máquina das próprias peças dele (≥ 30 dias, pra não
+// pegar peça recém-instalada). Dias até a meta = (meta − ton) ÷ ritmo.
+// No banco real isso dá 1.200–2.000 t/dia por veio.
 
 const MCC_POR_VEIO = { C: '2', D: '2', E: '3', F: '3', G: '4', H: '4' };
 const VEIOS_POR_MCC = { '2': ['C', 'D'], '3': ['E', 'F'], '4': ['G', 'H'] };
 let mapaFiltro = 'todos';
 let mapaSelecionado = null;
+let mapaVista = (() => { try { return localStorage.getItem('oms_pg_vista') || 'arco'; } catch (e) { return 'arco'; } })();
+let ANALISE = null;
 
 const pctDe = a => (a.meta > 0 ? (a.ton / a.meta) * 100 : 0);
 const classeDesgaste = pct => (pct >= 100 ? 'c3' : pct >= 80 ? 'c2' : pct >= 50 ? 'c1' : '');
 const corDesgaste = pct => `var(--pg-${pct >= 100 ? 'c3' : pct >= 80 ? 'c2' : pct >= 50 ? 'c1' : 'c0'})`;
 const escapar = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const fmtTon = n => (n >= 1e6 ? (n / 1e6).toFixed(2).replace('.', ',') + ' mi' : Math.round(n / 1000).toLocaleString('pt-BR') + ' mil');
+const fmtT = n => {
+    const v = Math.abs(n);
+    if (v >= 1e6) return (n / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' mi t';
+    if (v >= 1e3) return Math.round(n / 1e3).toLocaleString('pt-BR') + ' mil t';
+    return Math.round(n).toLocaleString('pt-BR') + ' t';
+};
 const rotulo = a => (typeof window.rotuloEquipamento === 'function' ? window.rotuloEquipamento(a) : a.id);
+const mediana = arr => { if (!arr.length) return 0; const v = arr.slice().sort((x, y) => x - y); const m = v.length >> 1; return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2; };
+const dataEm = dias => new Date(Date.now() + dias * 864e5).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
 
 function ativosInstalados() {
     return BANCO_ATIVOS.filter(a => a.veio && MCC_POR_VEIO[a.veio] && a.local && !String(a.local).includes('Oficina'));
 }
+const ehReserva = a => a.local === 'Oficina / Reserva' || a.local === 'Máquina / Reserva';
+const ehReparo = a => a.local === 'Oficina / Reparo';
 
-function ordenarNaMaquina(lista) {
-    return lista.slice().sort((a, b) =>
-        (a.ordem ?? 999) - (b.ordem ?? 999) ||
-        String(a.posicaoFixa ?? a.pos ?? '').localeCompare(String(b.posicaoFixa ?? b.pos ?? ''), 'pt-BR', { numeric: true }) ||
-        String(a.id).localeCompare(String(b.id), 'pt-BR', { numeric: true }));
-}
-
-function passaFiltro(a) {
-    if (mapaFiltro === 'todos') return true;
-    if (mapaFiltro === 'criticos') return pctDe(a) >= 80;
-    return a.tipo === mapaFiltro;
-}
-
-function htmlDetalhe(a) {
-    if (!a) return `<span><i class="fas fa-hand-pointer" style="color:var(--ds-ambar)"></i>&nbsp; Passe o mouse ou toque numa barra para ver a peça.</span>`;
-    const pct = pctDe(a);
-    return `
-        <div><strong>${escapar(rotulo(a))}</strong><div style="font-size:.76rem;color:var(--ds-texto-3)">${escapar(a.tipo)} · ${escapar(a.local)}${a.pos ? ' · ' + escapar(a.pos) : ''}</div></div>
-        <div><span class="pg-det-pct" style="color:${corDesgaste(pct)}">${pct.toFixed(1).replace('.', ',')}%</span><div style="font-size:.74rem;color:var(--ds-texto-3)">${fmtTon(a.ton)} de ${fmtTon(a.meta)} t</div></div>
-        <div><span class="pg-det-pct" style="color:var(--ds-texto)">${a.dias || 0}</span><div style="font-size:.74rem;color:var(--ds-texto-3)">dias na máquina</div></div>
-        <button type="button" class="ds-pill ds-pill-mini ds-pill-cheia" onclick="window.abrirHistoricoIndividual && window.abrirHistoricoIndividual('${escapar(a.id)}')">Abrir prontuário <i class="fas fa-arrow-right"></i></button>`;
-}
-
-function renderMapaVeios() {
-    const container = document.getElementById('painel-mapa-veios');
-    if (!container) return;
+function analisar() {
     const instalados = ativosInstalados();
-    if (instalados.length === 0) {
-        container.innerHTML = `<div class="text-muted" style="grid-column:1/-1;text-align:center;padding:30px 0;">Nenhuma peça instalada nos veios no momento.</div>`;
-        return;
-    }
     const porVeio = {};
     instalados.forEach(a => (porVeio[a.veio] ||= []).push(a));
 
-    // filtros: todos, críticos e os tipos mais comuns
-    const contagemTipo = {};
-    instalados.forEach(a => { contagemTipo[a.tipo] = (contagemTipo[a.tipo] || 0) + 1; });
-    const tipos = Object.entries(contagemTipo).sort((a, b) => b[1] - a[1]).slice(0, 7).map(([t]) => t);
-    if (mapaFiltro !== 'todos' && mapaFiltro !== 'criticos' && !tipos.includes(mapaFiltro)) mapaFiltro = 'todos';
-    const filtroBtn = (v, txt) => `<button type="button" class="pg-filtro${mapaFiltro === v ? ' on' : ''}" data-filtro="${escapar(v)}">${escapar(txt)}</button>`;
+    const amostra = a => a.dias >= 30 && a.ton > 0;
+    const global = mediana(instalados.filter(amostra).map(a => a.ton / a.dias)) || 0;
+    const ritmo = {};
+    Object.keys(MCC_POR_VEIO).forEach(v => {
+        const lista = (porVeio[v] || []).filter(amostra).map(a => a.ton / a.dias);
+        ritmo[v] = lista.length >= 3 ? mediana(lista) : global;
+    });
 
-    let atraso = 0;
-    const blocoVeio = veio => {
-        const lista = ordenarNaMaquina(porVeio[veio] || []);
-        if (!lista.length) return `<div><div class="pg-veio-topo"><span>Veio <b>${veio}</b></span></div><div class="pg-veio-vazio">Sem peças registradas.</div></div>`;
-        const media = lista.reduce((s, a) => s + pctDe(a), 0) / lista.length;
-        const crit = lista.filter(a => pctDe(a) >= 80).length;
-        // 🎨 Perfil de desgaste: uma barra fina por peça, do molde à
-        // saída do veio; altura = % da meta (teto visual 125%), linhas de
-        // referência em 80% e 100%. (Antes: quadradinhos coloridos — o
-        // usuário achou infantil.)
-        const TETO = 125;
-        let tipoAnterior = null;
-        const barras = lista.map(a => {
-            const sep = tipoAnterior !== null && a.tipo !== tipoAnterior ? ' sep' : '';
-            tipoAnterior = a.tipo;
-            const pct = pctDe(a);
-            const destaque = mapaFiltro !== 'todos' && passaFiltro(a) ? ' destaque' : '';
-            const ativa = mapaSelecionado === a.id ? ' ativa' : '';
-            const d = Math.min(atraso++ * 3, 500);
-            return `<button type="button" class="pg-b ${classeDesgaste(pct)}${sep}${destaque}${ativa}" data-id="${escapar(a.id)}" aria-label="${escapar(rotulo(a))}, ${pct.toFixed(0)} por cento"><i style="height:${Math.max(4, Math.min(pct, TETO) / TETO * 100)}%;animation-delay:${d}ms"></i></button>`;
-        }).join('');
-        return `<div class="pg-veio">
-            <div class="pg-veio-topo"><span>Veio <b>${veio}</b> · ${lista.length} peças</span><span>${crit ? `<span class="pg-veio-crit">${crit} crítica${crit > 1 ? 's' : ''}</span> · ` : ''}méd. <b style="color:${corDesgaste(media)}">${media.toFixed(0)}%</b></span></div>
-            <div class="pg-perfil">
-                <span class="pg-ref" style="bottom:${80 / TETO * 100}%"><em>80%</em></span>
-                <span class="pg-ref pg-ref-meta" style="bottom:${100 / TETO * 100}%"><em>meta</em></span>
-                ${barras}
-            </div>
-            <div class="pg-perfil-eixo"><span>molde</span><span>saída</span></div>
-        </div>`;
-    };
+    const diasParaMeta = a => (a.meta > 0 && ritmo[a.veio] > 0 ? (a.meta - a.ton) / ritmo[a.veio] : null);
+    instalados.forEach(a => { a.__diasMeta = diasParaMeta(a); });
 
-    const blocosMcc = Object.entries(VEIOS_POR_MCC).map(([mcc, veios]) => {
-        const lista = veios.flatMap(v => porVeio[v] || []);
-        const media = lista.length ? lista.reduce((s, a) => s + pctDe(a), 0) / lista.length : 0;
-        return `<div class="pg-mcc">
-            <div class="pg-mcc-topo"><span class="pg-mcc-nome">MCC ${mcc}</span><span class="pg-mcc-media">desgaste médio <b style="color:${corDesgaste(media)}">${media.toFixed(0)}%</b></span></div>
-            ${veios.map(blocoVeio).join('')}
-        </div>`;
-    }).join('');
+    const faixas = [
+        { nome: 'Já além', sub: 'da meta', teste: d => d <= 0, cls: 'perigo' },
+        { nome: '≤ 30 dias', sub: 'próximo mês', teste: d => d > 0 && d <= 30, cls: 'alerta' },
+        { nome: '31–90', sub: 'dias', teste: d => d > 30 && d <= 90, cls: 'alerta' },
+        { nome: '91–180', sub: 'dias', teste: d => d > 90 && d <= 180, cls: '' },
+        { nome: '> 180', sub: 'dias', teste: d => d > 180, cls: '' },
+    ].map(f => ({ ...f, qtd: instalados.filter(a => a.__diasMeta !== null && f.teste(a.__diasMeta)).length }));
 
-    const sel = mapaSelecionado && instalados.find(a => a.id === mapaSelecionado);
-    container.classList.toggle('filtrando', mapaFiltro !== 'todos');
-    container.innerHTML = `
-        <div class="pg-mapa-filtros" style="grid-column:1/-1">${filtroBtn('todos', 'Todas')}${filtroBtn('criticos', 'Só críticas ≥ 80%')}${tipos.map(t => filtroBtn(t, t)).join('')}</div>
-        ${blocosMcc}
-        <div class="pg-mapa-detalhe" id="pg-mapa-detalhe">${htmlDetalhe(sel)}</div>`;
+    // reserva × demanda por tipo
+    const tipos = {};
+    const t = nome => (tipos[nome] ||= { tipo: nome, instaladas: 0, alem: 0, prox90: 0, reserva: 0, reparo: 0 });
+    instalados.forEach(a => {
+        const r = t(a.tipo); r.instaladas++;
+        if (a.__diasMeta !== null && a.__diasMeta <= 0) r.alem++;
+        else if (a.__diasMeta !== null && a.__diasMeta <= 90) r.prox90++;
+    });
+    BANCO_ATIVOS.forEach(a => {
+        if (!a.tipo) return;
+        if (ehReserva(a)) t(a.tipo).reserva++;
+        if (ehReparo(a)) t(a.tipo).reparo++;
+    });
+    const porTipo = Object.values(tipos)
+        .map(r => ({ ...r, demanda: r.alem + r.prox90, deficit: r.alem + r.prox90 - r.reserva }))
+        .sort((x, y) => y.deficit - x.deficit || y.alem - x.alem || y.instaladas - x.instaladas);
 
-    if (!container.__pgLigado) {
-        container.__pgLigado = true;
-        container.addEventListener('click', ev => {
-            const f = ev.target.closest('.pg-filtro');
-            if (f) { mapaFiltro = f.dataset.filtro; renderMapaVeios(); return; }
-            const c = ev.target.closest('.pg-b');
-            if (!c) return;
-            mapaSelecionado = c.dataset.id;
-            container.querySelectorAll('.pg-b.ativa').forEach(x => x.classList.remove('ativa'));
-            c.classList.add('ativa');
-            const det = document.getElementById('pg-mapa-detalhe');
-            if (det) det.innerHTML = htmlDetalhe(ativosInstalados().find(a => a.id === mapaSelecionado));
-        });
-        // mouse (ou dedo arrastando) "varre" o perfil e mostra a peça na hora
-        container.addEventListener('pointermove', ev => {
-            if (ev.pointerType !== 'mouse' && !ev.buttons) return;
-            const alvo = document.elementFromPoint(ev.clientX, ev.clientY);
-            const c = alvo && alvo.closest && alvo.closest('.pg-b');
-            if (!c || c.dataset.id === mapaSelecionado) return;
-            c.click();
-        });
-    }
+    const veios = Object.keys(MCC_POR_VEIO).map(v => {
+        const l = porVeio[v] || [];
+        return { veio: v, mcc: MCC_POR_VEIO[v], qtd: l.length, crit: l.filter(a => pctDe(a) >= 80).length, alem: l.filter(a => pctDe(a) >= 100).length, media: l.length ? l.reduce((s, a) => s + pctDe(a), 0) / l.length : 0, ritmo: ritmo[v] };
+    });
+
+    ANALISE = { instalados, porVeio, ritmo, faixas, porTipo, veios };
+    return ANALISE;
 }
 
-function renderPainelComando() {
-    const agora = new Date();
+// ---------- 01 briefing + KPIs ----------
+function renderBriefing(an) {
     const elData = document.getElementById('pg-hero-data');
     if (!elData) return;
-    elData.textContent = agora.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+    const agora = new Date();
+    elData.textContent = agora.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '');
     const h = agora.getHours();
     document.getElementById('pg-hero-saudacao').textContent = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
     let nome = '';
@@ -556,53 +493,291 @@ function renderPainelComando() {
     nome = String(nome).replace(/\s*\[.*\]\s*$/, '').trim().split(/\s+/)[0] || '';
     document.getElementById('pg-hero-nome').textContent = nome ? ', ' + nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase() : '';
 
-    // mesmas regras de calcularKpisGlobais (script.js), pra os números baterem
-    let criticos = 0, acimaMeta = 0, reparo = 0, reserva = 0, foraOficina = 0;
-    BANCO_ATIVOS.forEach(a => {
-        const pct = pctDe(a);
-        const local = String(a.local || '');
-        if (!local.includes('Oficina')) { foraOficina++; if (pct >= 80) criticos++; if (pct >= 100) acimaMeta++; }
-        if (local === 'Oficina / Reparo') reparo++;
-        if (local === 'Oficina / Reserva' || local === 'Máquina / Reserva') reserva++;
-    });
+    const { instalados, porTipo, veios, faixas } = an;
     const total = BANCO_ATIVOS.length;
-    const instalados = ativosInstalados();
+    const reparo = BANCO_ATIVOS.filter(ehReparo).length;
+    const reserva = BANCO_ATIVOS.filter(ehReserva).length;
+    const crit = instalados.filter(a => pctDe(a) >= 80).length;
+    const alem = instalados.filter(a => pctDe(a) >= 100);
+    const excesso = alem.reduce((s, a) => s + (a.ton - a.meta), 0);
+    const em30 = faixas[1].qtd, em90 = faixas[1].qtd + faixas[2].qtd;
+    const demanda90 = alem.length + em90;
+
+    const manchete = document.getElementById('pg-briefing-manchete');
+    const decisoes = document.getElementById('pg-briefing-decisoes');
+    const gargalo = porTipo.find(r => r.deficit > 0 && r.alem > 0) || porTipo.find(r => r.deficit > 0);
+    if (!instalados.length) {
+        manchete.textContent = 'Aguardando os dados dos veios…';
+        decisoes.innerHTML = '';
+    } else {
+        manchete.innerHTML = gargalo
+            ? `<em>${escapar(gargalo.tipo)}</em> é o gargalo: ${gargalo.alem ? `${gargalo.alem} além da meta` : `${gargalo.prox90} vencendo em 90 dias`} e <span class="cc-perigo">${gargalo.reserva === 0 ? 'nenhuma' : gargalo.reserva}</span> na reserva.`
+            : alem.length
+                ? `${alem.length} peças operam além da meta, mas a reserva cobre a demanda.`
+                : `Planta dentro da meta. <em>${crit}</em> peças acima de 80%.`;
+
+        const itens = [];
+        porTipo.filter(r => r.deficit > 0).slice(0, 2).forEach(r => {
+            itens.push(`Repor <b>${escapar(r.tipo)}</b>: ${r.alem} além da meta + ${r.prox90} previstas em 90 dias contra <span class="cc-perigo">${r.reserva} na reserva</span>${r.reparo ? ` (${r.reparo} em reparo)` : ''} — déficit de <b>${r.deficit}</b>.`);
+        });
+        const pior = veios.filter(v => v.qtd).sort((x, y) => y.crit - x.crit || y.media - x.media)[0];
+        if (pior && pior.crit) itens.push(`<b>Veio ${pior.veio} (MCC ${pior.mcc})</b> concentra ${pior.crit} peças ≥ 80% da meta${pior.alem ? `, ${pior.alem} já além` : ''} — desgaste médio de ${pior.media.toFixed(0)}%.`);
+        itens.push(`<b>${em30}</b> peça${em30 === 1 ? '' : 's'} deve${em30 === 1 ? '' : 'm'} bater a meta nos próximos 30 dias e <b>${em90}</b> em 90, pelo ritmo atual dos veios.`);
+        if (alem.length) itens.push(`${alem.length} peças rodando além da meta somam <b>${fmtT(excesso)}</b> acima do previsto — risco de falha sem reserva para troca.`);
+        decisoes.innerHTML = itens.slice(0, 4).map(t => `<li><span>${t}</span></li>`).join('');
+    }
+
+    // KPIs
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.innerHTML = v; };
+    set('pg-kpi-instaladas', instalados.length.toLocaleString('pt-BR'));
+    set('pg-kpi-sub-total', `de <b>${total}</b> no sistema · ${total - instalados.length} fora dos veios`);
+    set('pg-kpi-sub-criticos', `<b>${instalados.length ? Math.round(crit / instalados.length * 100) : 0}%</b> das instaladas`);
+    set('pg-kpi-alem', alem.length.toLocaleString('pt-BR'));
+    set('pg-kpi-sub-alem', alem.length ? `<b>+${fmtT(excesso)}</b> acima das metas` : 'nenhuma peça além');
+    set('pg-kpi-sub-reparo', `<b>${total ? Math.round(reparo / total * 100) : 0}%</b> da frota na oficina`);
+    set('pg-kpi-sub-reserva', `para <b>${demanda90}</b> trocas previstas em 90 dias`);
+
+    const ritmoPlanta = Object.values(an.ritmo).reduce((x, y) => x + (y || 0), 0);
+    set('pg-ritmo-planta', ritmoPlanta ? Math.round(ritmoPlanta).toLocaleString('pt-BR') : '--');
+    set('pg-excesso', alem.length ? '+' + fmtT(excesso) : '0 t');
     const saudaveis = instalados.filter(a => pctDe(a) < 80).length;
-    const saude = instalados.length ? Math.round((saudaveis / instalados.length) * 100) : 0;
+    const saude = instalados.length ? Math.round(saudaveis / instalados.length * 100) : 0;
+    set('pg-saude-pct', instalados.length ? saude + '%' : '--');
+    const med = document.getElementById('pg-anel-valor');
+    if (med) { med.style.width = saude + '%'; med.style.background = saude >= 70 ? 'var(--ds-texto)' : saude >= 45 ? 'var(--ds-ambar)' : 'var(--ds-perigo)'; }
+}
 
-    const anel = document.getElementById('pg-anel-valor');
-    if (anel) {
-        anel.setAttribute('stroke-dasharray', `${saude} 100`);
-        anel.style.stroke = saude >= 70 ? 'var(--ds-ok)' : saude >= 45 ? 'var(--ds-ambar)' : 'var(--ds-perigo)';
+// ---------- 02 linha de lingotamento ----------
+// Ordem física: posição fixa vem do id (CAD-SUP-73 / CAD-INF-73 = par da
+// posição 73). Superior e inferior do mesmo par ficam lado a lado.
+function slotsDoVeio(lista) {
+    const slots = new Map();
+    lista.forEach(a => {
+        const m = String(a.posicaoFixa || a.id).match(/^CAD-(SUP|INF)-(\d+)/i) || String(a.id).match(/^CAD-(SUP|INF)-(\d+)/i);
+        const chave = m ? 'CAD-' + m[2] : (a.posicaoFixa || a.id);
+        const ordem = m ? 100 + parseInt(m[2], 10) / 1000 : (a.ordem ?? 999);
+        if (!slots.has(chave)) slots.set(chave, { chave, ordem, cad: !!m, sup: null, inf: null, pecas: [] });
+        const s = slots.get(chave);
+        if (m) { if (m[1].toUpperCase() === 'SUP') s.sup = a; else s.inf = a; } else s.pecas.push(a);
+        s.ordem = Math.min(s.ordem, ordem);
+    });
+    return [...slots.values()].sort((x, y) => x.ordem - y.ordem || String(x.chave).localeCompare(String(y.chave), 'pt-BR', { numeric: true }));
+}
+
+function passaFiltro(a) {
+    if (mapaFiltro === 'todos') return true;
+    if (mapaFiltro === 'criticos') return pctDe(a) >= 80;
+    if (mapaFiltro === 'alem') return pctDe(a) >= 100;
+    return a.tipo === mapaFiltro;
+}
+
+function svgArco(mcc, an) {
+    const W = 400, Y0 = 18, Y1 = 46;
+    const geo = (x, R) => ({ x, R, d: `M ${x} ${Y0} L ${x} ${Y1} A ${R} ${R} 0 0 0 ${x + R} ${Y1 + R} L ${W - 6} ${Y1 + R}`, L: (Y1 - Y0) + Math.PI * R / 2 + (W - 6 - (x + R)) });
+    const veios = VEIOS_POR_MCC[mcc];
+    const bases = [geo(22, 158), geo(58, 122)];
+    let html = '';
+    const marcas = [];
+    veios.forEach((v, k) => {
+        const base = bases[k];
+        const trilhoSup = geo(base.x - 5, base.R + 5), trilhoInf = geo(base.x + 5, base.R - 5);
+        html += `<path class="trilho" d="${base.d}"/>`;
+        const slots = slotsDoVeio(an.porVeio[v] || []);
+        const n = slots.length || 1, gap = 1.2;
+        const peca = (a, g, f0, f1, larg) => {
+            const pct = pctDe(a);
+            const ini = f0 * g.L, comp = Math.max(0.6, (f1 - f0) * g.L - gap);
+            const cls = `peca${mapaFiltro !== 'todos' && passaFiltro(a) ? ' destaque' : ''}${mapaSelecionado === a.id ? ' ativa' : ''}`;
+            return `<path class="${cls}" data-id="${escapar(a.id)}" d="${g.d}" stroke="${corDesgaste(pct)}" stroke-dasharray="${comp.toFixed(2)} ${(g.L + 20).toFixed(1)}" stroke-dashoffset="${(-ini).toFixed(2)}"${larg ? ` style="stroke-width:${larg}px"` : ''}><title>${escapar(rotulo(a))} · ${escapar(a.tipo)} · ${pct.toFixed(0)}%</title></path>`;
+        };
+        slots.forEach((s, i) => {
+            const f0 = i / n, f1 = (i + 1) / n;
+            if (s.cad) {
+                if (s.sup) html += peca(s.sup, trilhoSup, f0, f1, 8);
+                if (s.inf) html += peca(s.inf, trilhoInf, f0, f1, 8);
+            } else {
+                const m = s.pecas.length;
+                s.pecas.forEach((a, j) => { html += peca(a, base, f0 + (f1 - f0) * j / m, f0 + (f1 - f0) * (j + 1) / m, 0); });
+            }
+        });
+        html += `<text class="rot-veio" x="${base.x - 4}" y="10" text-anchor="middle">${v}</text>`;
+        if (k === 0) {
+            const cx = base.x + base.R, cy = Y1, ang = Math.PI * 0.75;
+            marcas.push(`<text class="rot-zona" x="${base.x - 14}" y="${Y1 - 6}" text-anchor="end">molde</text>`);
+            marcas.push(`<text class="rot-zona" x="${(cx + Math.cos(ang) * (base.R + 14)).toFixed(1)}" y="${(cy + Math.sin(ang) * (base.R + 14)).toFixed(1)}" text-anchor="end">zona curva</text>`);
+            marcas.push(`<text class="rot-zona" x="${W - 6}" y="${Y1 + base.R + 22}" text-anchor="end">saída →</text>`);
+        }
+    });
+    return `<svg viewBox="-34 0 ${W + 34} ${Y1 + 158 + 26}" role="img" aria-label="Linha de lingotamento da MCC ${mcc}">${html}${marcas.join('')}</svg>`;
+}
+
+function htmlDetalhe(a) {
+    if (!a) return `<div>Passe o mouse ou toque numa peça da linha para ver a leitura completa.</div>`;
+    const pct = pctDe(a);
+    const d = a.__diasMeta;
+    const prev = d === null || d === undefined ? '—'
+        : d <= 0 ? `<span style="color:var(--ds-perigo)">além há ~${Math.round(-d)} d</span>`
+        : `~${Math.round(d)} d · ${dataEm(d)}`;
+    return `
+        <div><span class="pg-det-nome">${escapar(rotulo(a))}</span><span class="pg-det-meta">${escapar(a.tipo)} · ${escapar(a.local)}</span></div>
+        <div><span class="cc-rotulo">% da meta</span><span class="pg-det-num" style="color:${pct >= 100 ? 'var(--ds-perigo)' : 'var(--ds-texto)'}">${pct.toFixed(1).replace('.', ',')}%</span></div>
+        <div><span class="cc-rotulo">Acumulado</span><span class="pg-det-num">${fmtT(a.ton)}</span><span class="pg-det-meta">meta ${fmtT(a.meta)}</span></div>
+        <div><span class="cc-rotulo">Bate a meta</span><span class="pg-det-num" style="font-size:1rem">${prev}</span><span class="pg-det-meta">${a.dias || 0} dias em máquina</span></div>
+        <div><button type="button" class="cc-btn cc-btn-cheio" onclick="window.abrirHistoricoIndividual && window.abrirHistoricoIndividual('${escapar(a.id)}')">Prontuário →</button></div>`;
+}
+
+function renderPerfil(an) {
+    const TETO = 125;
+    return `<div class="pg-mapa-grade${mapaFiltro !== 'todos' ? ' filtrando' : ''}">${Object.entries(VEIOS_POR_MCC).map(([mcc, veios]) => `
+        <div class="pg-mcc">
+            <div class="pg-mcc-topo"><span class="pg-mcc-nome">MCC ${mcc}</span></div>
+            ${veios.map(v => {
+                const lista = slotsDoVeio(an.porVeio[v] || []).flatMap(s => s.cad ? [s.sup, s.inf].filter(Boolean) : s.pecas);
+                const info = an.veios.find(x => x.veio === v);
+                let tipoAnt = null;
+                const barras = lista.map(a => {
+                    const sep = tipoAnt !== null && a.tipo !== tipoAnt ? ' sep' : ''; tipoAnt = a.tipo;
+                    const pct = pctDe(a);
+                    return `<button type="button" class="pg-b ${classeDesgaste(pct)}${sep}${mapaFiltro !== 'todos' && passaFiltro(a) ? ' destaque' : ''}${mapaSelecionado === a.id ? ' ativa' : ''}" data-id="${escapar(a.id)}" aria-label="${escapar(rotulo(a))}, ${pct.toFixed(0)}%"><i style="height:${Math.max(4, Math.min(pct, TETO) / TETO * 100)}%"></i></button>`;
+                }).join('');
+                return `<div>
+                    <div class="pg-veio-topo"><span>Veio <b>${v}</b> · ${lista.length}</span><span>${info.crit ? `<span class="pg-veio-crit">${info.crit} ≥80%</span> · ` : ''}méd. <b>${info.media.toFixed(0)}%</b></span></div>
+                    <div class="pg-perfil"><span class="pg-ref" style="bottom:${80 / TETO * 100}%"><em>80%</em></span><span class="pg-ref pg-ref-meta" style="bottom:${100 / TETO * 100}%"><em>meta</em></span>${barras || ''}</div>
+                    <div class="pg-perfil-eixo"><span>molde</span><span>saída</span></div>
+                </div>`;
+            }).join('')}
+        </div>`).join('')}</div>`;
+}
+
+function renderMapaVeios(an) {
+    const container = document.getElementById('painel-mapa-veios');
+    if (!container) return;
+    if (!an.instalados.length) { container.innerHTML = `<div class="cc-carregando">Nenhuma peça instalada nos veios.</div>`; return; }
+
+    const contagemTipo = {};
+    an.instalados.forEach(a => { contagemTipo[a.tipo] = (contagemTipo[a.tipo] || 0) + 1; });
+    const tipos = Object.entries(contagemTipo).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([t]) => t);
+    if (!['todos', 'criticos', 'alem', ...tipos].includes(mapaFiltro)) mapaFiltro = 'todos';
+    const fb = (v, txt) => `<button type="button" class="pg-filtro${mapaFiltro === v ? ' on' : ''}" data-filtro="${escapar(v)}">${escapar(txt)}</button>`;
+
+    const corpo = mapaVista === 'perfil' ? renderPerfil(an) : `<div class="pg-arcos">${Object.keys(VEIOS_POR_MCC).map(mcc => {
+        const vs = an.veios.filter(v => v.mcc === mcc);
+        const n = vs.reduce((s, v) => s + v.qtd, 0);
+        const crit = vs.reduce((s, v) => s + v.crit, 0);
+        const media = n ? vs.reduce((s, v) => s + v.media * v.qtd, 0) / n : 0;
+        const ritmo = vs.reduce((s, v) => s + (v.ritmo || 0), 0);
+        return `<div class="pg-arco${mapaFiltro !== 'todos' ? ' filtrando' : ''}">
+            <div class="pg-arco-topo"><b>MCC ${mcc}</b><span class="cc-rotulo">${n} peças</span></div>
+            ${svgArco(mcc, an)}
+            <div class="pg-arco-rodape">
+                <div>≥ 80% da meta<br><b style="color:${crit ? 'var(--ds-perigo)' : 'var(--ds-texto)'}">${crit}</b> · méd. <b>${media.toFixed(0)}%</b></div>
+                <div>Ritmo da máquina<br><b>${Math.round(ritmo).toLocaleString('pt-BR')}</b> t/dia</div>
+            </div>
+        </div>`;
+    }).join('')}</div>`;
+
+    const sel = mapaSelecionado && an.instalados.find(a => a.id === mapaSelecionado);
+    container.innerHTML = `
+        <div class="pg-vista">
+            <div class="pg-mapa-filtros">${fb('todos', 'Todas')}${fb('criticos', '≥ 80%')}${fb('alem', 'Além da meta')}${tipos.map(t => fb(t, t)).join('')}</div>
+            <div class="pg-vista-botoes"><button type="button" class="cc-btn${mapaVista === 'arco' ? ' on' : ''}" data-vista="arco">Arco</button><button type="button" class="cc-btn${mapaVista === 'perfil' ? ' on' : ''}" data-vista="perfil">Perfil</button></div>
+        </div>
+        ${corpo}
+        <div class="pg-mapa-detalhe${sel ? '' : ' vazio'}" id="pg-mapa-detalhe">${htmlDetalhe(sel)}</div>`;
+
+    if (!container.__pgLigado) {
+        container.__pgLigado = true;
+        const selecionar = id => {
+            if (!id || id === mapaSelecionado) return;
+            mapaSelecionado = id;
+            container.querySelectorAll('.ativa').forEach(x => x.classList.remove('ativa'));
+            container.querySelectorAll(`[data-id="${CSS.escape(id)}"]`).forEach(x => x.classList.add('ativa'));
+            const det = document.getElementById('pg-mapa-detalhe');
+            const a = ANALISE && ANALISE.instalados.find(x => x.id === id);
+            if (det) { det.classList.toggle('vazio', !a); det.innerHTML = htmlDetalhe(a); }
+        };
+        container.addEventListener('click', ev => {
+            const f = ev.target.closest('[data-filtro]');
+            if (f) { mapaFiltro = f.dataset.filtro; renderMapaVeios(ANALISE); return; }
+            const vb = ev.target.closest('[data-vista]');
+            if (vb) { mapaVista = vb.dataset.vista; try { localStorage.setItem('oms_pg_vista', mapaVista); } catch (e) { /* ok */ } renderMapaVeios(ANALISE); return; }
+            const c = ev.target.closest('[data-id]');
+            if (c) selecionar(c.dataset.id);
+        });
+        container.addEventListener('pointermove', ev => {
+            if (ev.pointerType !== 'mouse' && !ev.buttons) return;
+            const alvo = document.elementFromPoint(ev.clientX, ev.clientY);
+            const c = alvo && alvo.closest && alvo.closest('[data-id]');
+            if (c && container.contains(c)) selecionar(c.dataset.id);
+        });
     }
-    const pctEl = document.getElementById('pg-saude-pct');
-    if (pctEl) pctEl.textContent = instalados.length ? saude + '%' : '--';
+}
 
-    const resumo = document.getElementById('pg-hero-resumo');
-    if (resumo) {
-        resumo.innerHTML = total === 0
-            ? 'Aguardando os dados dos veios…'
-            : `<b class="pg-num-perigo">${criticos}</b> peça${criticos === 1 ? '' : 's'} acima de 80% da meta` +
-              (acimaMeta ? ` — <b>${acimaMeta}</b> já passaram dela` : '') +
-              `. <b>${reparo}</b> na oficina e <b>${reserva}</b> reserva${reserva === 1 ? '' : 's'} pronta${reserva === 1 ? '' : 's'} pra troca.`;
-    }
+// ---------- 03 previsão ----------
+function renderPrevisao(an) {
+    const el = document.getElementById('pg-previsao');
+    if (!el) return;
+    if (!an.instalados.length) { el.innerHTML = `<div class="cc-carregando">Sem peças instaladas.</div>`; return; }
+    const maior = Math.max(1, ...an.faixas.map(f => f.qtd));
+    const proximas = an.instalados.filter(a => a.__diasMeta !== null && a.__diasMeta > 0).sort((x, y) => x.__diasMeta - y.__diasMeta).slice(0, 6);
+    el.innerHTML = `
+        <div class="pg-prev-colunas">
+            ${an.faixas.map((f, i) => `
+                <div class="pg-prev-col ${f.cls}">
+                    <span class="cc-rotulo">${f.nome}<br>${f.sub}</span>
+                    <div class="pg-prev-barra"><i style="height:${Math.max(2, f.qtd / maior * 100)}%;animation-delay:${i * 80}ms"></i></div>
+                    <strong>${f.qtd}</strong>
+                </div>`).join('')}
+        </div>
+        <div class="pg-prev-lista">
+            <div class="cc-rotulo" style="margin-bottom:8px">Próximas a bater a meta</div>
+            <table class="cc-tabela">
+                <thead><tr><th>Peça</th><th class="cc-esconde-cel">Veio</th><th>% meta</th><th>Bate em</th></tr></thead>
+                <tbody>${proximas.map(a => `
+                    <tr class="cc-clicavel" onclick="window.abrirHistoricoIndividual && window.abrirHistoricoIndividual('${escapar(a.id)}')">
+                        <td>${escapar(rotulo(a))}<div style="font-size:.72rem;color:var(--ds-texto-3);font-weight:400">${escapar(a.tipo)}</div></td>
+                        <td class="cc-esconde-cel">${a.veio} · MCC ${MCC_POR_VEIO[a.veio]}</td>
+                        <td class="cc-num-forte">${pctDe(a).toFixed(1).replace('.', ',')}%</td>
+                        <td>${Math.round(a.__diasMeta)} d · ${dataEm(a.__diasMeta)}</td>
+                    </tr>`).join('') || '<tr><td colspan="4">Nenhuma peça abaixo da meta.</td></tr>'}</tbody>
+            </table>
+        </div>`;
+}
 
-    const sub = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
-    const barra = (id, frac) => { const e = document.getElementById(id); if (e) e.style.width = Math.max(0, Math.min(100, frac * 100)) + '%'; };
-    const pctTxt = (n, d) => (d ? Math.round((n / d) * 100) : 0) + '%';
-    sub('pg-kpi-sub-criticos', `${pctTxt(criticos, foraOficina)} das ${foraOficina} instaladas`);
-    barra('pg-kpi-barra-criticos', foraOficina ? criticos / foraOficina : 0);
-    sub('pg-kpi-sub-reparo', `${pctTxt(reparo, total)} da frota na oficina`);
-    barra('pg-kpi-barra-reparo', total ? reparo / total : 0);
-    sub('pg-kpi-sub-reserva', reparo ? `cobrem ${pctTxt(Math.min(reserva, reparo), reparo)} das peças em reparo` : 'prontas pra troca');
-    barra('pg-kpi-barra-reserva', reparo ? Math.min(1, reserva / reparo) : 1);
-    sub('pg-kpi-sub-total', `${instalados.length} nos veios · ${total - foraOficina} na oficina`);
-    barra('pg-kpi-barra-total', total ? instalados.length / total : 0);
+// ---------- 04 reserva × demanda ----------
+function renderReserva(an) {
+    const el = document.getElementById('pg-reserva-tabela');
+    if (!el) return;
+    const linhas = an.porTipo.filter(r => r.instaladas > 0 || r.reserva > 0).slice(0, 9);
+    if (!linhas.length) { el.innerHTML = `<div class="cc-carregando">Sem dados.</div>`; return; }
+    const totalDef = an.porTipo.reduce((s, r) => s + Math.max(0, r.deficit), 0);
+    el.innerHTML = `
+        <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:16px">
+            <strong style="font:700 2.6rem/1 var(--ds-fonte-titulo);letter-spacing:-.04em;color:${totalDef ? 'var(--ds-perigo)' : 'var(--ds-texto)'}">${totalDef}</strong>
+            <span class="cc-rotulo">peças de déficit nos próximos 90 dias</span>
+        </div>
+        <table class="cc-tabela">
+            <thead><tr><th>Tipo</th><th class="cc-esconde-cel">Instal.</th><th>Além</th><th>≤ 90 d</th><th>Reserva</th><th class="cc-esconde-cel">Reparo</th><th>Déficit</th></tr></thead>
+            <tbody>${linhas.map(r => `
+                <tr>
+                    <td>${escapar(r.tipo)}</td>
+                    <td class="cc-esconde-cel">${r.instaladas}</td>
+                    <td class="${r.alem ? 'cc-num-perigo' : 'cc-num-ok'}">${r.alem}</td>
+                    <td class="${r.prox90 ? 'cc-num-forte' : 'cc-num-ok'}">${r.prox90}</td>
+                    <td class="cc-num-forte">${r.reserva}</td>
+                    <td class="cc-esconde-cel">${r.reparo}</td>
+                    <td class="${r.deficit > 0 ? 'cc-num-perigo' : 'cc-num-ok'}">${r.deficit > 0 ? '−' + r.deficit : 'ok'}</td>
+                </tr>`).join('')}</tbody>
+        </table>`;
 }
 
 window.renderPainelSincrono = function() {
-    try { renderPainelComando(); } catch (e) { console.error('⚠️ Painel (comando):', e); }
-    try { renderMapaVeios(); } catch (e) { console.error('⚠️ Painel (mapa dos veios):', e); }
+    let an;
+    try { an = analisar(); } catch (e) { console.error('⚠️ Painel (análise):', e); return; }
+    try { renderBriefing(an); } catch (e) { console.error('⚠️ Painel (briefing):', e); }
+    try { renderMapaVeios(an); } catch (e) { console.error('⚠️ Painel (linha de lingotamento):', e); }
+    try { renderPrevisao(an); } catch (e) { console.error('⚠️ Painel (previsão):', e); }
+    try { renderReserva(an); } catch (e) { console.error('⚠️ Painel (reserva):', e); }
     try { renderDonutRiscoAtivos(); } catch (e) { console.error('⚠️ Painel (donut risco):', e); }
 };
 
