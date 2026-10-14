@@ -839,30 +839,27 @@ function renderizarTopCriticos() {
     const abaPorVeio = { C: 'aba-mcc2', D: 'aba-mcc2', E: 'aba-mcc3', F: 'aba-mcc3', G: 'aba-mcc4', H: 'aba-mcc4' };
     const escala = Math.max(100, ...ordenados.map(a => a.pct));
     const fmtMilT = n => Math.round(Math.abs(n) / 1000).toLocaleString('pt-BR') + ' mil t';
-    container.innerHTML = ordenados.map((a, pos) => {
-        const dif = (a.ton || 0) - (a.meta || 0);
-        const difTxt = a.meta > 0 ? (dif >= 0 ? `+${fmtMilT(dif)} além da meta` : `faltam ${fmtMilT(dif)}`) : 'sem meta';
-        const match = a.local?.match(/Veio\s*([A-Z])/i);
-        const veio = match ? match[1].toUpperCase() : 'C';
-        const mccAba = abaPorVeio[veio] || (a.mcc_compat === '4' ? 'aba-mcc4' : 'aba-mcc2');
-        const onclick = `window.abrirAba(null, '${mccAba}'); setTimeout(() => { window.mudarVeioVisualizado('${veio}'); }, 200);`;
-        const cor = `var(--pg-${a.pct >= 100 ? 'c3' : a.pct >= 80 ? 'c2' : a.pct >= 50 ? 'c1' : 'c0'})`;
-        const mcc = { C: '2', D: '2', E: '3', F: '3', G: '4', H: '4' }[veio] || a.mcc_compat || '';
-        return `
-            <div class="ds-barra-linha pg-fila-item" onclick="${onclick}" title="Código interno: ${a.id}">
-                <span class="pg-fila-rank">${pos + 1}</span>
-                <div style="min-width:0">
-                    <div class="ds-barra-nome">${window.rotuloEquipamento(a)}</div>
-                    <div class="ds-barra-meta">${a.tipo} · MCC ${mcc} · Veio ${veio}</div>
-                </div>
-                <div class="pg-fila-dados">
-                    <div class="ds-barra-pct" style="color:${cor}">${a.pct.toFixed(1).replace('.', ',')}%</div>
-                    <div class="ds-barra-meta">${difTxt} · ${a.dias || 0} dias</div>
-                </div>
-                <div class="ds-barra-trilho"><i style="width:${(Math.min(a.pct, escala) / escala) * 100}%;background:${cor}"></i><b style="left:${(80 / escala) * 100}%;opacity:.25"></b>${escala > 100 ? `<b style="left:${(100 / escala) * 100}%"></b>` : ''}</div>
-            </div>
-        `;
-    }).join('');
+    const corDe = p => `var(--pg-${p >= 100 ? 'c3' : p >= 80 ? 'c2' : p >= 50 ? 'c1' : 'c0'})`;
+    // 🎨 Padrão "centro de controle": tabela técnica com trilho de desgaste
+    // (marca em 100% da meta). Aba da MCC pela letra do veio.
+    container.innerHTML = `<table class="cc-tabela">
+        <thead><tr><th>#</th><th>Peça</th><th class="cc-esconde-cel">Local</th><th class="cc-esconde-cel">Desgaste</th><th>% meta</th><th class="cc-esconde-cel">Além da meta</th><th class="cc-esconde-cel">Dias</th></tr></thead>
+        <tbody>${ordenados.map((a, pos) => {
+            const match = a.local?.match(/Veio\s*([A-Z])/i);
+            const veio = match ? match[1].toUpperCase() : 'C';
+            const mccAba = abaPorVeio[veio] || (a.mcc_compat === '4' ? 'aba-mcc4' : 'aba-mcc2');
+            const mcc = { C: '2', D: '2', E: '3', F: '3', G: '4', H: '4' }[veio] || a.mcc_compat || '';
+            const dif = (a.ton || 0) - (a.meta || 0);
+            return `<tr class="cc-clicavel" onclick="window.abrirAba(null, '${mccAba}'); setTimeout(() => { window.mudarVeioVisualizado('${veio}'); }, 200);" title="Código interno: ${a.id}">
+                <td style="font-family:var(--ds-mono);color:var(--ds-texto-3);width:28px">${String(pos + 1).padStart(2, '0')}</td>
+                <td style="text-align:left">${window.rotuloEquipamento(a)}<div style="font-size:.72rem;color:var(--ds-texto-3);font-weight:400">${a.tipo}</div></td>
+                <td class="cc-esconde-cel">MCC ${mcc} · Veio ${veio}</td>
+                <td class="cc-esconde-cel" style="width:28%"><div class="pg-trilho"><i style="width:${(Math.min(a.pct, escala) / escala) * 100}%;background:${corDe(a.pct)}"></i><b style="left:${(100 / escala) * 100}%"></b></div></td>
+                <td class="${a.pct >= 100 ? 'cc-num-perigo' : 'cc-num-forte'}">${a.pct.toFixed(1).replace('.', ',')}%</td>
+                <td class="cc-esconde-cel">${a.meta > 0 ? (dif >= 0 ? '+' + fmtMilT(dif) : '−' + fmtMilT(dif)) : '—'}</td>
+                <td class="cc-esconde-cel">${a.dias || 0}</td>
+            </tr>`;
+        }).join('')}</tbody></table>`;
 }
 window.renderizarTopCriticos = renderizarTopCriticos;
 
