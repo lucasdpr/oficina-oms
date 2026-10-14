@@ -933,7 +933,7 @@ window.renderPainelSupervisor = async function() {
         badgesEl.innerHTML = `
             <div class="sup-kpi-badge" style="--sup-cor:#ef4444;" onclick="window.abrirAba(null,'aba-oficina')"><i class="fas fa-triangle-exclamation"></i> ${areasCriticas} Áreas Críticas</div>
             <div class="sup-kpi-badge" style="--sup-cor:#eab308;" onclick="window.abrirAba(null,'aba-oficina')"><i class="fas fa-circle-exclamation"></i> ${areasAtencao} Em Atenção</div>
-            <div class="sup-kpi-badge" style="--sup-cor:#3b82f6;" onclick="window.abrirAba(null,'aba-notificacoes')"><i class="fas fa-bell"></i> ${naoVistas} Não Vistas</div>
+            <div class="sup-kpi-badge" style="--sup-cor:#d9b67a;" onclick="window.abrirAba(null,'aba-notificacoes')"><i class="fas fa-bell"></i> ${naoVistas} Não Vistas</div>
         `;
     }
 
@@ -1110,7 +1110,7 @@ window.renderPainelSupervisor = async function() {
                 ${painelSupBarraHtml('Equip. críticos (desgaste ≥80%)', criticos.length, Math.max(criticos.length, 1), '#f97316',
                     `window.abrirDetalheSupervisorPorIndice(${registrarDetalheSupervisor('Equipamentos Críticos (desgaste ≥80%)', criticos, 'ativo')})`)}
             </div>
-            <div class="sup-card" style="--sup-cor:#06b6d4; grid-column: 1 / -1;">
+            <div class="sup-card" style="--sup-cor:#f0c06a; grid-column: 1 / -1;">
                 <div class="sup-card-titulo"><span><i class="fas fa-list-check"></i> Progresso dos Checklists de Execução em Andamento</span></div>
                 <div id="painel-sup-checklist-progresso"><div class="sup-vazio">Carregando…</div></div>
             </div>
@@ -1122,7 +1122,7 @@ window.renderPainelSupervisor = async function() {
     // ---------------------------------------------------------
     if (produtividadeEl) {
         produtividadeEl.innerHTML = `
-            <div class="sup-card" style="--sup-cor:#3b82f6;">
+            <div class="sup-card" style="--sup-cor:#d9b67a;">
                 <div class="sup-card-titulo"><span><i class="fas fa-industry"></i> Em Aberto por Área</span></div>
                 ${produtividadePorArea.length
                     ? produtividadePorArea.map(a => painelSupBarraHtml(a.nome, a.emAberto, maxProdutividadeArea, a.cor)).join('')
@@ -1134,7 +1134,7 @@ window.renderPainelSupervisor = async function() {
                     ? rankingTecnicos.map(([nome, v]) => painelSupBarraHtml(nome, v, maxTecnico, '#22c55e')).join('')
                     : `<div class="sup-vazio">Ainda sem dado suficiente — atividades concluídas nos últimos 7 dias não têm responsável/executor registrado.</div>`}
             </div>
-            <div class="sup-card" style="--sup-cor:#38bdf8;">
+            <div class="sup-card" style="--sup-cor:#e3b866;">
                 <div class="sup-card-titulo"><span><i class="fas fa-gauge-high"></i> Resumo Geral (7 dias)</span></div>
                 ${painelSupBarraHtml('Concluídas', concluidas7dias.length, Math.max(concluidas7dias.length, atividadesPendentes.length, 1), '#22c55e')}
                 ${painelSupBarraHtml('Pendentes agora', atividadesPendentes.length, Math.max(concluidas7dias.length, atividadesPendentes.length, 1), '#eab308')}
@@ -1559,7 +1559,7 @@ window.renderPainelSupervisor = async function() {
                         `).join('')
                         : `<div class="sup-vazio">Nenhum aviso ativo pendente de leitura 👍</div>`}
                 </div>
-                <div class="sup-card" style="--sup-cor:#38bdf8;">
+                <div class="sup-card" style="--sup-cor:#e3b866;">
                     <div class="sup-card-titulo"><span><i class="fas fa-triangle-exclamation"></i> Ocorrências Mais Recentes</span></div>
                     ${Array.isArray(ocorrencias) && ocorrencias.length
                         ? ocorrencias.slice(0, 6).map(o => `
@@ -1633,7 +1633,7 @@ window.renderPainelSupervisor = async function() {
                     ? painelSupSparklineHtml(concluidasPorDia, '#f59e0b')
                     : `<div class="sup-vazio">Ainda sem dado suficiente de conclusões nos últimos 14 dias.</div>`}
             </div>
-            <div class="sup-card" style="--sup-cor:#3b82f6;">
+            <div class="sup-card" style="--sup-cor:#d9b67a;">
                 <div class="sup-card-titulo"><span><i class="fas fa-file-invoice"></i> Ordens de Serviço por Status</span></div>
                 <div id="painel-sup-os-trend"><div class="sup-vazio">Carregando…</div></div>
             </div>
@@ -1741,7 +1741,7 @@ window.renderPainelSupervisor = async function() {
         const corBacklog = pioraOuMelhora === 'piorando' ? '#ef4444' : (pioraOuMelhora === 'melhorando' ? '#22c55e' : '#eab308');
 
         previsoesEl.innerHTML = `
-            <div class="sup-card" style="--sup-cor:#0ea5e9;">
+            <div class="sup-card" style="--sup-cor:#c97a12;">
                 <div class="sup-card-titulo"><span><i class="fas fa-gauge-high"></i> Próximas a Bater a Meta de Desgaste</span></div>
                 ${instaladosComRitmo.length
                     ? instaladosComRitmo.map(a => `
@@ -2007,12 +2007,12 @@ window.popularSelectAreaOficina = popularSelectAreaOficina;
 // pediu. "hidraulica-estoque" (não "hidraulica") pra não colidir com a
 // área de reparo Hidráulica de AREAS_OFICINA — são coisas diferentes.
 const AREAS_NOTIFICACAO_EXTRAS = [
-    { chave: 'rolos', nome: 'Estoque de Rolos', icone: 'fa-scroll', cor: '#22d3ee' },
-    { chave: 'hidraulica-estoque', nome: 'Hidráulica (Estoque)', icone: 'fa-oil-can', cor: '#0ea5e9' },
+    { chave: 'rolos', nome: 'Estoque de Rolos', icone: 'fa-scroll', cor: '#f0c06a' },
+    { chave: 'hidraulica-estoque', nome: 'Hidráulica (Estoque)', icone: 'fa-oil-can', cor: '#c97a12' },
     // 🆕 Sinótico 3D (ocorrência em mancal) e Qualidade (achado
     // pendente) — geram notificação mas não são área de reparo da
     // Central de Áreas, então entram aqui pra não caírem em "Outros".
-    { chave: 'sinotico-3d', nome: 'Sinótico 3D', icone: 'fa-cube', cor: '#22d3ee' },
+    { chave: 'sinotico-3d', nome: 'Sinótico 3D', icone: 'fa-cube', cor: '#f0c06a' },
     { chave: 'qualidade', nome: 'Qualidade', icone: 'fa-magnifying-glass', cor: '#a78bfa' },
 ];
 window.AREAS_NOTIFICACAO_EXTRAS = AREAS_NOTIFICACAO_EXTRAS;

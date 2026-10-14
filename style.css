@@ -6,22 +6,22 @@
 ========================================== */
 :root {
   /* Cores Base - Grafite/Navy profundo, igual ao Sinótico 3D */
-  --bg-main: #0a0e14;
-  --bg-card: rgba(16, 21, 31, 0.82);
-  --bg-sidebar: rgba(9, 12, 18, 0.97);
-  --bg-input: rgba(22, 29, 43, 0.9);
-  --bg-hover: rgba(56, 189, 248, 0.08);
+  --bg-main: #0e0c0a;
+  --bg-card: rgba(21, 18, 15, 0.82);
+  --bg-sidebar: rgba(11, 10, 8, 0.97);
+  --bg-input: rgba(27, 24, 20, 0.9);
+  --bg-hover: rgba(240, 163, 52, 0.08);
   
   --bg-th: rgba(0, 0, 0, 0.35);
-  --bg-td: rgba(22, 29, 43, 0.45);
-  --welcome-bg: linear-gradient(145deg, rgba(22, 29, 43, 0.95) 0%, rgba(9, 12, 18, 0.95) 100%);
-  --body-radial: radial-gradient(ellipse at 50% 0%, #131a28 0%, #0a0e14 65%);
+  --bg-td: rgba(27, 24, 20, 0.45);
+  --welcome-bg: linear-gradient(145deg, rgba(27, 24, 20, 0.95) 0%, rgba(11, 10, 8, 0.95) 100%);
+  --body-radial: radial-gradient(ellipse at 50% 0%, #15120f 0%, #0e0c0a 65%);
   
   /* Cores de Texto */
   --text-main: #c8d2e0;
   --text-muted: #7c8aa5;
   --text-heading: #e8ecf4;
-  --text-accent: #38bdf8; /* 🔧 REDESIGN: deixa de ser a cor de destaque/identidade principal — agora é só "info neutro" secundário. Destaque de marca passa a ser --brand. */
+  --text-accent: #e3b866; /* 🔧 REDESIGN: deixa de ser a cor de destaque/identidade principal — agora é só "info neutro" secundário. Destaque de marca passa a ser --brand. */
   --text-on-primary: #04121c;
 
   /* 🆕 REDESIGN — Cor de marca (CSN): dourado/âmbar, substitui o azul como
@@ -41,16 +41,16 @@
   --limit-bg: rgba(249, 115, 22, 0.15);
   --danger: #ef4444;
   --danger-bg: rgba(239, 68, 68, 0.15);
-  --info: #38bdf8;
-  --info-bg: rgba(56, 189, 248, 0.12);
+  --info: #e3b866;
+  --info-bg: rgba(240, 163, 52, 0.12);
   --purple: #a855f7;
   --purple-bg: rgba(168, 85, 247, 0.12);
 
   /* Bordas e Sombras */
   --border-color: rgba(255, 255, 255, 0.07);
-  --border-glow: rgba(56, 189, 248, 0.3);
+  --border-glow: rgba(240, 163, 52, 0.3);
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.35);
-  --shadow-hover: 0 10px 32px rgba(0, 0, 0, 0.45), 0 0 24px rgba(56, 189, 248, 0.08);
+  --shadow-hover: 0 10px 32px rgba(0, 0, 0, 0.45), 0 0 24px rgba(240, 163, 52, 0.08);
   
   /* Tipografia */
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -107,7 +107,7 @@ body.light-mode {
   --bg-card: rgba(255, 255, 255, 0.85);
   --bg-sidebar: rgba(248, 250, 252, 0.98);
   --bg-input: #ffffff;
-  --bg-hover: rgba(2, 132, 199, 0.06);
+  --bg-hover: rgba(201, 122, 18, 0.06);
   
   --bg-th: rgba(0, 0, 0, 0.04);
   --bg-td: rgba(255, 255, 255, 0.6);
@@ -116,8 +116,8 @@ body.light-mode {
   
   --text-main: #2d3748;
   --text-muted: #64748b;
-  --text-heading: #0f172a;
-  --text-accent: #0284c7; /* 🔧 REDESIGN: idem dark mode — vira "info neutro" secundário, não é mais a cor de destaque principal. */
+  --text-heading: #16130f;
+  --text-accent: #c97a12; /* 🔧 REDESIGN: idem dark mode — vira "info neutro" secundário, não é mais a cor de destaque principal. */
   --text-on-primary: #ffffff;
 
   /* 🆕 REDESIGN — mesmo dourado de marca do dark mode. Usado só em
@@ -141,15 +141,15 @@ body.light-mode {
   --limit-bg: rgba(234, 88, 12, 0.10);
   --danger: #dc2626;
   --danger-bg: rgba(220, 38, 38, 0.10);
-  --info: #0284c7;
-  --info-bg: rgba(2, 132, 199, 0.08);
+  --info: #c97a12;
+  --info-bg: rgba(201, 122, 18, 0.08);
   --purple: #7c3aed;
   --purple-bg: rgba(124, 58, 237, 0.08);
 
   --border-color: rgba(0, 0, 0, 0.08);
-  --border-glow: rgba(2, 132, 199, 0.25);
+  --border-glow: rgba(201, 122, 18, 0.25);
   --shadow-card: 0 2px 16px rgba(0, 0, 0, 0.06);
-  --shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.10), 0 0 20px rgba(2, 132, 199, 0.04);
+  --shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.10), 0 0 20px rgba(201, 122, 18, 0.04);
 }
 
 /* ==========================================
@@ -603,7 +603,7 @@ h1, h2, h3, h4, h5, h6 {
 @media (hover: hover) and (pointer: fine) {
   .btn-auth:hover {
     background: var(--text-accent);
-    box-shadow: var(--btn-glow-shape) rgba(56, 189, 248, 0.35);
+    box-shadow: var(--btn-glow-shape) rgba(240, 163, 52, 0.35);
     transform: translateY(-1px);
   }
 }
@@ -685,7 +685,7 @@ h1, h2, h3, h4, h5, h6 {
   right: 0;
   width: 1px;
   height: 100%;
-  background: linear-gradient(180deg, transparent, rgba(56, 189, 248, 0.25), transparent);
+  background: linear-gradient(180deg, transparent, rgba(240, 163, 52, 0.25), transparent);
 }
 
 .sidebar-header {
@@ -704,16 +704,16 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .sidebar-header h2 i {
-  background: linear-gradient(135deg, #38bdf8, #22d3ee);
+  background: linear-gradient(135deg, #e3b866, #f0c06a);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.45));
+  filter: drop-shadow(0 0 10px rgba(240, 163, 52, 0.45));
   font-size: 1.3rem;
 }
 
 .operator-box {
-  background: linear-gradient(160deg, var(--bg-th), rgba(56, 189, 248, 0.06));
+  background: linear-gradient(160deg, var(--bg-th), rgba(240, 163, 52, 0.06));
   border: 1px solid var(--border-color);
   padding: 16px;
   padding-right: 46px;
@@ -726,7 +726,7 @@ h1, h2, h3, h4, h5, h6 {
 
 @media (hover: hover) and (pointer: fine) {
   .operator-box:hover {
-    border-color: rgba(56, 189, 248, 0.35);
+    border-color: rgba(240, 163, 52, 0.35);
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
   }
 }
@@ -783,9 +783,9 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.25);
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
+  background: rgba(240, 163, 52, 0.12);
+  border: 1px solid rgba(240, 163, 52, 0.25);
+  box-shadow: 0 0 12px rgba(240, 163, 52, 0.15);
 }
 
 .operator-info small {
@@ -815,9 +815,9 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: 0.5px;
   padding: 3px 8px;
   border-radius: 20px;
-  background: rgba(59, 130, 246, 0.15);
+  background: rgba(217, 182, 122, 0.15);
   color: var(--text-accent);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(217, 182, 122, 0.3);
 }
 
 .operator-role-badge.role-visitante {
@@ -834,7 +834,7 @@ h1, h2, h3, h4, h5, h6 {
   overflow-y: auto;
   padding-right: 4px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(56, 189, 248, 0.3) transparent;
+  scrollbar-color: rgba(240, 163, 52, 0.3) transparent;
 }
 
 /* --------------------------------------------------------------
@@ -861,11 +861,11 @@ h1, h2, h3, h4, h5, h6 {
   background: transparent;
 }
 .sidebar-nav::-webkit-scrollbar-thumb {
-  background: rgba(56, 189, 248, 0.25);
+  background: rgba(240, 163, 52, 0.25);
   border-radius: 10px;
 }
 .sidebar-nav::-webkit-scrollbar-thumb:hover {
-  background: rgba(56, 189, 248, 0.45);
+  background: rgba(240, 163, 52, 0.45);
 }
 
 .nav-divider {
@@ -2101,7 +2101,7 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 0.6rem;
   text-transform: uppercase;
   font-weight: 700;
-  border: 1px solid rgba(56, 189, 248, 0.2);
+  border: 1px solid rgba(240, 163, 52, 0.2);
   white-space: nowrap;
   font-family: var(--font-family);
   letter-spacing: 0.3px;
@@ -2115,7 +2115,7 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 0.6rem;
   text-transform: uppercase;
   font-weight: 700;
-  border: 1px solid rgba(56, 189, 248, 0.2);
+  border: 1px solid rgba(240, 163, 52, 0.2);
   white-space: nowrap;
   font-family: var(--font-family);
   letter-spacing: 0.3px;
@@ -2153,7 +2153,7 @@ h1, h2, h3, h4, h5, h6 {
 .status-pill.reserva {
   background: var(--info-bg);
   color: var(--text-accent);
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  border: 1px solid rgba(240, 163, 52, 0.25);
 }
 
 .status-badge {
@@ -2624,13 +2624,13 @@ h1, h2, h3, h4, h5, h6 {
 .login-logo-factory {
   width: 56px;
   height: 56px;
-  background: linear-gradient(135deg, var(--text-accent), #1d4ed8);
+  background: linear-gradient(135deg, var(--text-accent), #b06f14);
   border-radius: var(--radius-lg);
   margin: 0 auto 16px auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 30px rgba(56, 189, 248, 0.25);
+  box-shadow: 0 0 30px rgba(240, 163, 52, 0.25);
 }
 
 .login-logo-factory svg {
@@ -3685,7 +3685,7 @@ h1, h2, h3, h4, h5, h6 {
     position: fixed; inset: 0; z-index: 10000;
     display: flex; justify-content: center; align-items: center;
     overflow: hidden;
-    background-color: #0a0e17; /* Fallback */
+    background-color: #0e0c0a; /* Fallback */
 }
 
 /* Imagem de Fundo (Aço Quente) — Ken Burns bem lento, dá vida sem
@@ -3764,7 +3764,7 @@ h1, h2, h3, h4, h5, h6 {
 .login-card-central {
     position: relative; z-index: 3;
     width: 100%; max-width: 420px;
-    background: rgba(15, 23, 42, 0.65);
+    background: rgba(22, 19, 15, 0.65);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -4013,13 +4013,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 @media (hover: hover) and (pointer: fine) {
     .btn-visitante-top:hover {
-        background: #f59e0b; color: #0a0e17;
+        background: #f59e0b; color: #0e0c0a;
         box-shadow: var(--btn-glow-shape) rgba(245, 158, 11, 0.35);
         transform: translateY(-1px);
     }
 }
 .btn-visitante-top:active {
-    background: #f59e0b; color: #0a0e17;
+    background: #f59e0b; color: #0e0c0a;
 }
 
 /* Cartão de ajuda "1º acesso" — antes vivia dentro do card de login
@@ -4030,7 +4030,7 @@ h1, h2, h3, h4, h5, h6 {
     position: absolute; top: 110px; right: 24px; z-index: 4;
     width: 230px;
     display: flex; align-items: flex-start; gap: 8px;
-    background: rgba(15, 23, 42, 0.55);
+    background: rgba(22, 19, 15, 0.55);
     border: 1px solid rgba(245, 158, 11, 0.22);
     border-radius: 10px;
     padding: 10px 12px;
@@ -4136,7 +4136,7 @@ h1, h2, h3, h4, h5, h6 {
     transform: scale(0.98);
 }
 .tecnico-card-critico { border-left: 3px solid var(--danger); }
-.tecnico-card-normal { border-left: 3px solid var(--text-accent, #3b82f6); }
+.tecnico-card-normal { border-left: 3px solid var(--text-accent, #d9b67a); }
 .tecnico-card-reserva { border-left: 3px solid var(--success); flex-direction: row; align-items: center; }
 .tecnico-card-topo {
     display: flex;
@@ -4295,10 +4295,10 @@ h1, h2, h3, h4, h5, h6 {
     gap: 10px;
     margin-top: 14px;
     padding: 12px 16px;
-    background: rgba(56, 189, 248, 0.1);
-    border: 1px solid rgba(56, 189, 248, 0.3);
+    background: rgba(240, 163, 52, 0.1);
+    border: 1px solid rgba(240, 163, 52, 0.3);
     border-radius: var(--radius-md, 10px);
-    color: #38bdf8;
+    color: #e3b866;
     font-size: 13px;
     font-weight: 600;
     text-align: center;
@@ -5228,15 +5228,15 @@ h2, h3,
    -------------------------------------------------------------- */
 body {
   background-image:
-    linear-gradient(rgba(56, 189, 248, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(56, 189, 248, 0.025) 1px, transparent 1px);
+    linear-gradient(rgba(240, 163, 52, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(240, 163, 52, 0.025) 1px, transparent 1px);
   background-size: 42px 42px;
 }
 
 body.light-mode {
   background-image:
-    linear-gradient(rgba(2, 132, 199, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(2, 132, 199, 0.03) 1px, transparent 1px);
+    linear-gradient(rgba(201, 122, 18, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(201, 122, 18, 0.03) 1px, transparent 1px);
   background-size: 42px 42px;
 }
 
@@ -5279,7 +5279,7 @@ body.light-mode {
   right: -10%;
   width: 320px;
   height: 320px;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.10) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(240, 163, 52, 0.10) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -5479,7 +5479,7 @@ body.light-mode {
    — pisca a borda pra ajudar a achar o card certo no meio da lista. */
 @keyframes atividade-card-piscar {
     0%, 100% { box-shadow: 0 0 0 0 transparent; }
-    50% { box-shadow: 0 0 0 3px var(--text-accent, #3b82f6); }
+    50% { box-shadow: 0 0 0 3px var(--text-accent, #d9b67a); }
 }
 .atividade-card-destacada {
     animation: atividade-card-piscar 0.65s ease-in-out 3;
@@ -6399,7 +6399,7 @@ textarea,
     min-width: 0;
     background:
         radial-gradient(circle at 20% 10%, rgba(255, 193, 7, 0.04) 0%, transparent 40%),
-        var(--bg-main, #0a0e14);
+        var(--bg-main, #0e0c0a);
 }
 
 .chat-thread-header {
@@ -6422,7 +6422,7 @@ textarea,
     width: 34px;
     height: 34px;
     border-radius: 50%;
-    background: rgba(56, 189, 248, 0.15);
+    background: rgba(240, 163, 52, 0.15);
     color: var(--text-accent);
     display: flex;
     align-items: center;
@@ -6581,7 +6581,7 @@ textarea,
 .chat-thread-area-destino-cabecalho button {
     border: none;
     background: none;
-    color: var(--text-accent, #38bdf8);
+    color: var(--text-accent, #e3b866);
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
@@ -6713,7 +6713,7 @@ textarea,
     .login-card-central {
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
-        background: rgba(15, 23, 42, 0.9);
+        background: rgba(22, 19, 15, 0.9);
     }
 }
 
@@ -6941,7 +6941,7 @@ body:has(.modal-tela-cheia:not(.hidden)) { overflow: hidden; }
 .adm-atencao-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
 .adm-alerta { background: var(--bg-card); border: 1px solid var(--border-color); border-left: 4px solid var(--warning, #f59e0b); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
 .adm-alerta.critico { border-left-color: var(--danger); }
-.adm-alerta.info { border-left-color: var(--info, #38bdf8); }
+.adm-alerta.info { border-left-color: var(--info, #e3b866); }
 .adm-alerta.ok { border-left-color: var(--success); }
 .adm-alerta-topo { display: flex; align-items: center; gap: 10px; }
 .adm-alerta-num { font-size: 1.6rem; font-weight: 800; color: var(--text-heading); line-height: 1; }
@@ -6987,6 +6987,6 @@ body:has(.modal-tela-cheia:not(.hidden)) { overflow: hidden; }
 .sup-subabas { display: flex; gap: 6px; overflow-x: auto; margin: 16px 0 12px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color); scrollbar-width: thin; }
 .sup-subaba { flex: 0 0 auto; background: transparent; border: 1px solid transparent; border-radius: 8px 8px 0 0; color: var(--text-secondary, #9ca3af); padding: 8px 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .sup-subaba:hover { color: var(--text-primary, #fff); background: var(--bg-card); }
-.sup-subaba.active { color: var(--text-primary, #fff); background: var(--bg-card); border-color: var(--border-color); border-bottom: 2px solid var(--primary, #3b82f6); }
+.sup-subaba.active { color: var(--text-primary, #fff); background: var(--bg-card); border-color: var(--border-color); border-bottom: 2px solid var(--primary, #d9b67a); }
 .sup-subaba-painel { display: flex; flex-direction: column; gap: 16px; }
 .sup-subaba-painel.hidden { display: none; }

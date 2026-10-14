@@ -556,7 +556,7 @@ export function mostrarToastDesfazer(mensagem, aoConfirmar, aoDesfazer) {
     `;
     toast.innerHTML = `
         <span>${mensagem}</span>
-        <button type="button" style="background:none; border:1px solid #38bdf8; color:#38bdf8; border-radius:6px; padding:4px 10px; font-weight:700; font-size:12px; cursor:pointer;">Desfazer</button>
+        <button type="button" style="background:none; border:1px solid #e3b866; color:#e3b866; border-radius:6px; padding:4px 10px; font-weight:700; font-size:12px; cursor:pointer;">Desfazer</button>
     `;
     document.body.appendChild(toast);
 

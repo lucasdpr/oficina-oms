@@ -251,9 +251,9 @@ export const BIBLIOTECA_CHECKLISTS = {
 // reaproveitam nome/ícone/cor já usados na Oficina.
 // ==========================================
 export const CHECKLIST_EXECUCAO_SECOES = [
-    { chave: 'mecanica',    nome: 'Mecânica',    icone: 'fa-gears',      cor: '#3b82f6' },
+    { chave: 'mecanica',    nome: 'Mecânica',    icone: 'fa-gears',      cor: '#7d93a8' },
     { chave: 'eletrica',    nome: 'Elétrica',    icone: 'fa-bolt',       cor: '#eab308' },
-    { chave: 'hidraulica',  nome: 'Hidráulica',  icone: 'fa-oil-can',    cor: '#38bdf8' },
+    { chave: 'hidraulica',  nome: 'Hidráulica',  icone: 'fa-oil-can',    cor: '#6fa7a0' },
     { chave: 'caldeiraria', nome: 'Caldeiraria', icone: 'fa-fire',       cor: '#f97316' },
     { chave: 'usinagem',    nome: 'Usinagem',    icone: 'fa-gear',       cor: '#a855f7' },
     { chave: 'tubulacao',   nome: 'Tubulação',   icone: 'fa-water',      cor: '#06b6d4' },
@@ -273,25 +273,25 @@ export const CHECKLIST_EXECUCAO_SECOES = [
 // CHECKLIST_EXECUCAO_SECOES direto, pra sempre pegar a lista certa.
 export const CHECKLIST_EXECUCAO_SECOES_POR_TIPO = {
     'molde-mcc4': [
-        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#38bdf8' },
-        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
+        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#6fa7a0' },
+        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#7d93a8' },
         { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
     ],
     'molde-mcc2-3': [
-        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#38bdf8' },
-        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
+        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#6fa7a0' },
+        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#7d93a8' },
         { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
     ],
     'horizontal-mcc4': [
-        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#38bdf8' },
-        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
+        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#6fa7a0' },
+        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#7d93a8' },
         { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
     ],
     // 🆕 Bow segue o mesmo padrão do Horizontal (folhaoBow.js é a mesma
     // estrutura de seções, só com ids sem o prefixo "h").
     'bow-mcc4': [
-        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#38bdf8' },
-        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
+        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#6fa7a0' },
+        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#7d93a8' },
         { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
     ],
     // 🆕 Straightener (R1/R2) faltava aqui — sem essa entrada, o
@@ -305,13 +305,13 @@ export const CHECKLIST_EXECUCAO_SECOES_POR_TIPO = {
     // ids de campo diferentes, então um checklist compartilhado nunca
     // bateria certo com os dois formulários ao mesmo tempo.
     'straightener-r1-mcc4': [
-        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#38bdf8' },
-        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
+        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#6fa7a0' },
+        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#7d93a8' },
         { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
     ],
     'straightener-r2-mcc4': [
-        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#38bdf8' },
-        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
+        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#6fa7a0' },
+        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#7d93a8' },
         { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
     ],
     // 🆕 Bender (bender-mcc4) — mesmo bug do Straightener: resolverTipoEquipamento
@@ -320,8 +320,8 @@ export const CHECKLIST_EXECUCAO_SECOES_POR_TIPO = {
     // (sem ela, cai nas seções genéricas Mecânica/Elétrica/... e as etapas
     // com area="chegada" ficam invisíveis) quanto as etapas em si no banco.
     'bender-mcc4': [
-        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#38bdf8' },
-        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
+        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#6fa7a0' },
+        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#7d93a8' },
         { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
     ],
     // 🆕 Segmento Zero (MCC 2/3) — mesma classe de bug do Bender/Straightener,
@@ -329,8 +329,8 @@ export const CHECKLIST_EXECUCAO_SECOES_POR_TIPO = {
     // com mcc_compat NULL no banco (corrigido pra '2/3'), então o slug
     // nem se formava direito antes disso.
     'segmento-zero-mcc2-3': [
-        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#38bdf8' },
-        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
+        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#6fa7a0' },
+        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#7d93a8' },
         { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
     ],
     // 🆕 Cadeira (Superior + Inferior, unificadas — ver resolverTipoEquipamento
@@ -339,8 +339,8 @@ export const CHECKLIST_EXECUCAO_SECOES_POR_TIPO = {
     // e Mancais/Cilindros/Sobressalentes (feito durante a manutenção) —
     // por isso a seção "Saída" fica sem etapas, o que é o esperado aqui.
     'cadeira-mcc2-3': [
-        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#38bdf8' },
-        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
+        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#6fa7a0' },
+        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#7d93a8' },
         { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
     ],
     // 🆕 Segmento Grupo 1/2/3 (unificados — ver resolverTipoEquipamento
@@ -348,8 +348,8 @@ export const CHECKLIST_EXECUCAO_SECOES_POR_TIPO = {
     // "Manutenção" separada (só Chegada e Saída), igual o Segmento
     // Zero — por isso essa seção fica sem etapas, o que é esperado.
     'segmento-grupo-mcc2-3': [
-        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#38bdf8' },
-        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#3b82f6' },
+        { chave: 'chegada',     nome: 'Chegada',     icone: 'fa-truck-ramp-box', cor: '#6fa7a0' },
+        { chave: 'manutencao',  nome: 'Manutenção',  icone: 'fa-screwdriver-wrench', cor: '#7d93a8' },
         { chave: 'saida',       nome: 'Saída',        icone: 'fa-right-from-bracket', cor: '#22c55e' },
     ],
 };
@@ -388,7 +388,7 @@ export const ABAS_PADRAO_OFICINA = [
 
 export const AREAS_OFICINA = [
     // ---- AREAS DE SERVICO GERAL (atendem qualquer equipamento) ----
-    { chave: 'hidraulica',    nome: 'Hidráulica',    icone: 'fa-oil-can',        cor: '#38bdf8', filtro: null, tipo: 'oficina' },
+    { chave: 'hidraulica',    nome: 'Hidráulica',    icone: 'fa-oil-can',        cor: '#6fa7a0', filtro: null, tipo: 'oficina' },
     { chave: 'usinagem',      nome: 'Usinagem',       icone: 'fa-gear',           cor: '#a855f7', filtro: null, tipo: 'oficina' },
     { chave: 'caldeiraria',   nome: 'Caldeiraria',    icone: 'fa-fire',           cor: '#f97316', filtro: null, tipo: 'oficina' },
     { chave: 'jato',          nome: 'Jato',           icone: 'fa-spray-can',      cor: '#7c8aa5', filtro: null, tipo: 'oficina' },
@@ -428,7 +428,7 @@ export const AREAS_OFICINA = [
     { chave: 'molde-mcc4', nome: 'Molde MCC #4', icone: 'fa-cube', cor: '#ec4899', tipo: 'oficina',
         filtro: (e) => e.tipo === 'Molde' && e.mcc_compat === '4' },
 
-    { chave: 'molde-mcc23', nome: 'Molde MCC #2,3', icone: 'fa-cubes', cor: '#3b82f6', tipo: 'oficina',
+    { chave: 'molde-mcc23', nome: 'Molde MCC #2,3', icone: 'fa-cubes', cor: '#7d93a8', tipo: 'oficina',
         filtro: (e) => e.tipo === 'Molde' && e.mcc_compat === '2/3' },
 
     // ---- PAINÉIS ADMINISTRATIVOS ----
@@ -437,9 +437,9 @@ export const AREAS_OFICINA = [
     // atividades/materiais no mesmo modelo de dados da Oficina, então
     // entram na Central só como card de acesso rápido (sem status
     // calculado a partir de atividades, que não existem pra eles hoje).
-    { chave: 'adm',           nome: 'ADM',           icone: 'fa-file-lines',    cor: '#38bdf8', tipo: 'administrativo', abaDestino: 'aba-painel-adm' },
+    { chave: 'adm',           nome: 'ADM',           icone: 'fa-file-lines',    cor: '#6fa7a0', tipo: 'administrativo', abaDestino: 'aba-painel-adm' },
     { chave: 'almoxarifado',  nome: 'Almoxarifado',  icone: 'fa-boxes-stacked', cor: '#22c55e', tipo: 'administrativo', abaDestino: 'aba-painel-almoxarifado' },
-    { chave: 'ponte-rolante', nome: 'Ponte Rolante', icone: 'fa-crane',        cor: '#3b82f6', tipo: 'administrativo', abaDestino: 'aba-painel-ponte-rolante' },
+    { chave: 'ponte-rolante', nome: 'Ponte Rolante', icone: 'fa-crane',        cor: '#7d93a8', tipo: 'administrativo', abaDestino: 'aba-painel-ponte-rolante' },
     { chave: 'logistica',     nome: 'Logística',     icone: 'fa-truck',       cor: '#a855f7', tipo: 'administrativo', abaDestino: 'aba-painel-logistica' },
 ];
 

@@ -64,8 +64,8 @@ export function coletarDadosModal(modalId) {
 function marcarEditadoManual(el) {
     if (!el) return;
     el.dataset.editadoManual = '1';
-    el.style.background = 'rgba(56, 189, 248, 0.14)';
-    el.style.borderColor = 'var(--primary, #38bdf8)';
+    el.style.background = 'rgba(240, 163, 52, 0.14)';
+    el.style.borderColor = 'var(--primary, #e3b866)';
     el.title = '✍️ Editado manualmente no Folhão — não será mais sobrescrito pelo Checklist de Execução';
 }
 

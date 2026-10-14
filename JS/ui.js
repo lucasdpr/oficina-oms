@@ -141,7 +141,7 @@ function renderReservas() {
     });
 
     let htmlFinal = "";
-    const coresMCC = { "2": "#3b82f6", "3": "#8b5cf6", "4": "#ec4899" };
+    const coresMCC = { "2": "#f0a334", "3": "#d9b67a", "4": "#c4693a" };
 
     Object.keys(grupos).sort().forEach(mcc => {
         const itens = grupos[mcc];
