@@ -82,8 +82,7 @@
     --gutter: 24px;
 }
 
-html { background: var(--bg); scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+html { background: var(--bg); -webkit-text-size-adjust: 100%; }
 body {
     background: var(--bg);
     color: var(--text-2);
@@ -826,6 +825,21 @@ section { position: relative; scroll-margin-top: 52px; }
     const marcarNav = () => nav.classList.toggle('scrolled', window.scrollY > 8);
     window.addEventListener('scroll', marcarNav, { passive: true });
     marcarNav();
+
+    // Rolagem suave dos links internos feita aqui, e não com
+    // scroll-behavior no CSS: o ScrollTrigger reposiciona a página ao
+    // recalcular as seções fixas, e a rolagem suave do CSS atrapalha isso.
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+        a.addEventListener('click', e => {
+            const alvo = document.querySelector(a.getAttribute('href'));
+            if (!alvo) return;
+            e.preventDefault();
+            const topo = alvo.getBoundingClientRect().top + window.scrollY - (alvo.id === 'conteudo' ? 0 : 52);
+            window.scrollTo({ top: Math.max(0, topo), behavior: reduz ? 'auto' : 'smooth' });
+            if (alvo.id === 'conteudo') { alvo.setAttribute('tabindex', '-1'); alvo.focus({ preventScroll: true }); }
+            history.replaceState(null, '', a.getAttribute('href'));
+        });
+    });
 
     // ================================================================
     // LINHA DE LINGOTAMENTO (hero): rolos dos dois lados do veio e os
