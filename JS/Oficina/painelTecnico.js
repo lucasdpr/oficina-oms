@@ -12,6 +12,7 @@ import { OPERADOR_LOGADO, HISTORICO_ACOES, BANCO_ROLOS, RASCUNHOS_IDS_ATIVOS, se
 import { verificarAcesso } from '../Core/permissoes.js';
 import { filtrarPorAreaTecnico } from '../Core/utils.js';
 import { executarSeguro, fetchComRetry, atividadeAindaNaoComecou, atividadeEstaAtrasada, headersAdmin } from '../Core/utils.js';
+import { AREAS_OFICINA } from '../Core/dados.js';
 
 // ==========================================
 // PAINEL DO TÉCNICO — visão simplificada e direta ao ponto
@@ -26,125 +27,91 @@ function renderPainelTecnico() {
     const listaReservas = document.getElementById("tecnico-lista-reservas");
     if (!listaCriticos || !listaReservas) return;
 
-    const linhaVazia = (msg) => `<div class="text-muted" style="text-align:center; padding: 18px 0;">${msg}</div>`;
+    // 🎨 Padrão "centro de controle" (design-system.css, tc-*/cc-*).
+    const linhaVazia = (msg) => `<div class="tc-vazio">${msg}</div>`;
+    const pctDe = a => (a.meta > 0 ? (a.ton / a.meta) * 100 : 0);
+    const corDe = p => `var(--pg-${p >= 100 ? 'c3' : p >= 80 ? 'c2' : p >= 50 ? 'c1' : 'c0'})`;
+    const metaTxt = a => (typeof a.__diasMeta === 'number' ? (a.__diasMeta <= 0 ? '<span style="color:var(--ds-perigo)">além da meta</span>' : `meta em ~${Math.round(a.__diasMeta)} d`) : '');
+    const rot = a => (typeof window.rotuloEquipamento === 'function' ? window.rotuloEquipamento(a) : a.id);
 
-    // 🆕 Aviso de "sem área" no topo do painel (ADM não é afetado).
-    const avisoArea = document.getElementById("tecnico-aviso-sem-area");
+    if (typeof window.analisarFrota === 'function') window.analisarFrota();
     const { isAdm, semArea } = filtrarPorAreaTecnico([]);
+    const avisoArea = document.getElementById("tecnico-aviso-sem-area");
     if (avisoArea) avisoArea.classList.toggle("hidden", isAdm || !semArea);
 
-    // 🆕 Atividades (Pendente/Em Andamento, incluindo as programadas
-    // pra data futura) da área do técnico.
+    // topo: saudação, área, data
+    const agora = new Date();
+    const nomeBruto = String((OPERADOR_LOGADO && OPERADOR_LOGADO.nome) || '').replace(/\s*\[.*\]\s*$/, '').trim().split(/\s+/)[0] || '';
+    const nome = nomeBruto ? nomeBruto.charAt(0).toUpperCase() + nomeBruto.slice(1).toLowerCase() : '';
+    const h = agora.getHours();
+    const elSaud = document.getElementById('tc-saudacao');
+    if (elSaud) elSaud.textContent = `${h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'}${nome ? ', ' + nome : ''}`;
+    const areaChave = OPERADOR_LOGADO && OPERADOR_LOGADO.area;
+    const areaInfo = (typeof AREAS_OFICINA !== 'undefined' ? AREAS_OFICINA : (window.AREAS_OFICINA || [])).find(x => x.chave === areaChave);
+    const areaNome = areaInfo ? areaInfo.nome : (areaChave || (isAdm ? 'Todas as áreas (ADM)' : 'Sem área'));
+    const elArea = document.getElementById('tc-faixa-area'); if (elArea) elArea.textContent = areaNome;
+    const elData = document.getElementById('tc-faixa-data'); if (elData) elData.textContent = agora.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' }).replace(/\./g, '');
+
     if (typeof window.carregarAtividadesPainelTecnico === 'function') window.carregarAtividadesPainelTecnico();
 
-    // 🆕 Todos os equipamentos "no veio" (instalados) da área do
-    // técnico — não só os críticos. ADM continua vendo tudo.
     const equipamentosVeioArea = filtrarPorAreaTecnico(
         BANCO_ATIVOS.filter(a => a.local && a.local.includes("Veio") && !a.local.includes("Oficina"))
     ).lista;
+    const todos = equipamentosVeioArea.map(a => ({ ...a, pct: pctDe(a) })).sort((a, b) => b.pct - a.pct);
+    const criticosTodos = todos.filter(a => a.pct >= 80);
 
-    // 🆕 Lista completa por área, ordenada do mais desgastado pro
-    // menos — pedido pra o técnico acompanhar tudo da área dele, não
-    // só quem já bateu 80%.
+    const reservasOficina = filtrarPorAreaTecnico(BANCO_ATIVOS.filter(a => a.local === "Oficina / Reserva")).lista;
+    const reservasMaquina = filtrarPorAreaTecnico(BANCO_ATIVOS.filter(a => a.local === "Máquina / Reserva")).lista;
+
+    // resumo do turno (atividades entram quando o fetch voltar)
+    window.__tcResumo = { criticos: criticosTodos.length, alem: criticosTodos.filter(a => a.pct >= 100).length, reservas: reservasOficina.length + reservasMaquina.length, semArea: semArea && !isAdm };
+    if (typeof window.__tcAtualizarResumo === 'function') window.__tcAtualizarResumo();
+
+    const linhaPeca = a => `
+        <div class="tc-linha" onclick="window.abrirHistoricoIndividual('${a.id}')">
+            <div class="tc-linha-txt"><span class="sq-id" title="Código interno: ${a.id}">${rot(a)}</span><span class="sq-meta">${a.tipo} · ${String(a.local || '').replace(' - ', ' · ')}${metaTxt(a) ? ' · ' + metaTxt(a) : ''}</span></div>
+            <div class="tc-linha-num"><span class="sq-pct" style="color:${a.pct >= 100 ? 'var(--ds-perigo)' : 'var(--ds-texto)'}">${a.pct.toFixed(1).replace('.', ',')}%</span><div class="pg-trilho"><i style="width:${Math.min(a.pct, 100)}%;background:${corDe(a.pct)}"></i></div></div>
+        </div>`;
+
     const listaEquipArea = document.getElementById("tecnico-lista-equipamentos-area");
     if (listaEquipArea) {
-        if (semArea && !isAdm) {
-            listaEquipArea.innerHTML = linhaVazia("⚠️ Sua área ainda não foi cadastrada. Fale com um ADM.");
-        } else if (equipamentosVeioArea.length === 0) {
-            listaEquipArea.innerHTML = linhaVazia("Nenhum equipamento da sua área instalado no veio.");
-        } else {
-            const todosOrdenados = equipamentosVeioArea
-                .map(a => ({ ...a, pct: a.meta > 0 ? (a.ton / a.meta) * 100 : 0 }))
-                .sort((a, b) => b.pct - a.pct);
-            listaEquipArea.innerHTML = `<div class="tecnico-cards-grid">`
-                + todosOrdenados.map(a => `
-                <div class="tecnico-card-item ${a.pct >= 80 ? 'tecnico-card-critico' : 'tecnico-card-normal'}" onclick="window.abrirHistoricoIndividual('${a.id}')">
-                    <div class="tecnico-card-topo">
-                        <span class="font-code tecnico-card-id">${a.id}</span>
-                        <span class="ind-card-tag bg-tag">${a.tipo}</span>
-                    </div>
-                    <div class="tecnico-card-pct" style="color:${a.pct >= 80 ? 'var(--danger)' : 'var(--text-heading)'};">${a.pct.toFixed(1)}%</div>
-                </div>`).join("")
-                + `</div>`;
-        }
+        if (semArea && !isAdm) listaEquipArea.innerHTML = linhaVazia("Sua área ainda não foi cadastrada. Fale com um ADM.");
+        else if (!todos.length) listaEquipArea.innerHTML = linhaVazia("Nenhum equipamento da sua área instalado no veio.");
+        else listaEquipArea.innerHTML = todos.map(linhaPeca).join('');
     }
 
-    // 🔧 CORREÇÃO ("equipamento crítico no painel do técnico MUITO
-    // GRANDE"): antes mostrava TODOS os equipamentos ≥80%, sem limite —
-    // com muitos críticos ao mesmo tempo, a lista esticava a tela toda.
-    // Agora segue o mesmo padrão do Painel Geral (renderizarTopCriticos):
-    // mostra só os 5 mais críticos aqui, com um botão pra abrir a lista
-    // completa no modal que já existe (abrirCriticos()).
-    // 🆕 Também passa pelo mesmo filtro de área usado no resto do
-    // sistema — técnico só vê os críticos da própria área; ADM vê tudo.
-    const criticosTodos = equipamentosVeioArea
-        .map(a => ({ ...a, pct: a.meta > 0 ? (a.ton / a.meta) * 100 : 0 }))
-        .filter(a => a.pct >= 80)
-        .sort((a, b) => b.pct - a.pct);
+    if (semArea && !isAdm) listaCriticos.innerHTML = linhaVazia("Sua área ainda não foi cadastrada. Fale com um ADM.");
+    else if (!criticosTodos.length) listaCriticos.innerHTML = linhaVazia("Nenhuma peça da sua área acima de 80% da meta.");
+    else listaCriticos.innerHTML = criticosTodos.slice(0, 5).map(linhaPeca).join('')
+        + (criticosTodos.length > 5 ? `<button type="button" class="cc-btn tc-ver-todos" onclick="window.abrirCriticos()">Ver todas as ${criticosTodos.length} →</button>` : '');
 
-    const criticos = criticosTodos.slice(0, 5);
-
-    if (semArea && !isAdm) {
-        listaCriticos.innerHTML = linhaVazia("⚠️ Sua área ainda não foi cadastrada. Fale com um ADM.");
-    } else if (criticos.length === 0) {
-        listaCriticos.innerHTML = linhaVazia("Nenhum equipamento crítico no momento. ✅");
-    } else {
-        listaCriticos.innerHTML = `<div class="tecnico-cards-grid">`
-            + criticos.map(a => `
-            <div class="tecnico-card-item tecnico-card-critico" onclick="window.abrirHistoricoIndividual('${a.id}')">
-                <div class="tecnico-card-topo">
-                    <span class="font-code tecnico-card-id">${a.id}</span>
-                    <span class="ind-card-tag bg-tag">${a.tipo}</span>
-                </div>
-                <div class="tecnico-card-pct">${a.pct.toFixed(1)}%</div>
-            </div>`).join("")
-            + `</div>`
-            + (criticosTodos.length > 5
-                ? `<div class="tecnico-ver-todos" onclick="window.abrirCriticos()">
-                        Ver todos os ${criticosTodos.length} críticos <i class="fas fa-arrow-right" style="margin-left:6px;"></i>
-                   </div>`
-                : '');
-    }
-
-    // ---- RESERVAS PRONTAS PRA SWAP ----
-    // 🆕 Também filtrado pela área do técnico (ADM continua vendo tudo).
-    // 🆕 Agora cobre as DUAS reservas físicas (Oficina e Máquina) —
-    // renderizadas em dois grupos separados, pra deixar claro pro
-    // técnico se a peça já está pronta pra swap na hora (Máquina) ou se
-    // ainda depende de transporte da Logística (Oficina).
-    const reservasOficina = filtrarPorAreaTecnico(
-        BANCO_ATIVOS.filter(a => a.local === "Oficina / Reserva")
-    ).lista;
-    const reservasMaquina = filtrarPorAreaTecnico(
-        BANCO_ATIVOS.filter(a => a.local === "Máquina / Reserva")
-    ).lista;
-
-    const cardReserva = a => `
-            <div class="tecnico-card-item tecnico-card-reserva" onclick="window.abrirAba(null,'aba-reservas')">
-                <div class="tecnico-card-topo">
-                    <span class="font-code tecnico-card-id">${a.id}</span>
-                    <span class="ind-card-tag bg-tag">${a.tipo}</span>
-                </div>
-                <i class="fas fa-check-circle" style="color:#22c55e;"></i>
-            </div>`;
-
-    if (semArea && !isAdm) {
-        listaReservas.innerHTML = linhaVazia("⚠️ Sua área ainda não foi cadastrada. Fale com um ADM.");
-    } else if (reservasOficina.length === 0 && reservasMaquina.length === 0) {
-        listaReservas.innerHTML = linhaVazia("Nenhuma peça em estoque reserva.");
-    } else {
-        listaReservas.innerHTML = `
-            <h3 style="font-size:13px; color:var(--text-muted); margin:0 0 8px;"><i class="fas fa-industry"></i> Reserva na Máquina (pronta pra swap)</h3>
-            ${reservasMaquina.length
-                ? `<div class="tecnico-cards-grid">${reservasMaquina.map(cardReserva).join("")}</div>`
-                : linhaVazia("Nenhuma peça pronta na máquina.")}
-            <h3 style="font-size:13px; color:var(--text-muted); margin:16px 0 8px;"><i class="fas fa-warehouse"></i> Reserva na Oficina (aguarda transporte)</h3>
-            ${reservasOficina.length
-                ? `<div class="tecnico-cards-grid">${reservasOficina.map(cardReserva).join("")}</div>`
-                : linhaVazia("Nenhuma peça na oficina.")}
-        `;
-    }
+    const linhaReserva = a => `
+        <div class="tc-linha" onclick="window.abrirAba(null,'aba-reservas')">
+            <div class="tc-linha-txt"><span class="sq-id" title="Código interno: ${a.id}">${rot(a)}</span><span class="sq-meta">${a.tipo}</span></div>
+            <span class="cc-rotulo" style="color:var(--ds-ok)">Pronta</span>
+        </div>`;
+    if (semArea && !isAdm) listaReservas.innerHTML = linhaVazia("Sua área ainda não foi cadastrada. Fale com um ADM.");
+    else if (!reservasOficina.length && !reservasMaquina.length) listaReservas.innerHTML = linhaVazia("Nenhuma peça em reserva.");
+    else listaReservas.innerHTML = `
+        <div class="tc-subtitulo"><span class="cc-rotulo">Na máquina · pronta pra swap</span><span class="cc-rotulo">${reservasMaquina.length}</span></div>
+        ${reservasMaquina.length ? reservasMaquina.map(linhaReserva).join('') : linhaVazia("Nenhuma peça pronta na máquina.")}
+        <div class="tc-subtitulo"><span class="cc-rotulo">Na oficina · aguarda transporte</span><span class="cc-rotulo">${reservasOficina.length}</span></div>
+        ${reservasOficina.length ? reservasOficina.map(linhaReserva).join('') : linhaVazia("Nenhuma peça na oficina.")}`;
 }
+
+// frase de resumo do topo (junta dados síncronos + atividades do fetch)
+window.__tcAtualizarResumo = function() {
+    const el = document.getElementById('tc-resumo');
+    if (!el || !window.__tcResumo) return;
+    const r = window.__tcResumo;
+    if (r.semArea) { el.textContent = 'Sem área cadastrada — fale com um ADM.'; return; }
+    const at = window.__tcAtividades;
+    const partes = [];
+    if (at) partes.push(`<b>${at.abertas}</b> atividade${at.abertas === 1 ? '' : 's'} aberta${at.abertas === 1 ? '' : 's'}${at.atrasadas ? ` (<span class="cc-perigo">${at.atrasadas} atrasada${at.atrasadas === 1 ? '' : 's'}</span>)` : ''}`);
+    partes.push(`<b>${r.criticos}</b> peça${r.criticos === 1 ? '' : 's'} ≥ 80% na sua área${r.alem ? ` (<span class="cc-perigo">${r.alem} além da meta</span>)` : ''}`);
+    partes.push(`<b>${r.reservas}</b> reserva${r.reservas === 1 ? '' : 's'} pronta${r.reservas === 1 ? '' : 's'}`);
+    el.innerHTML = partes.join(' · ') + '.';
+};
 window.renderPainelTecnico = renderPainelTecnico;
 
 // Atalho "Área" do Painel do Técnico — abre a própria área do técnico
@@ -198,7 +165,7 @@ window.carregarAtividadesPainelTecnico = async function() {
     const container = document.getElementById("tecnico-lista-atividades");
     if (!container) return;
 
-    const linhaVazia = (msg) => `<div class="text-muted" style="text-align:center; padding: 18px 0;">${msg}</div>`;
+    const linhaVazia = (msg) => `<div class="tc-vazio">${msg}</div>`;
     const isAdm = !!(OPERADOR_LOGADO && OPERADOR_LOGADO.isAdm);
     const area = OPERADOR_LOGADO && OPERADOR_LOGADO.area;
 
@@ -231,31 +198,28 @@ window.carregarAtividadesPainelTecnico = async function() {
             });
 
         if (abertas.length === 0) {
-            container.innerHTML = linhaVazia("Nenhuma atividade pendente ou em andamento. ✅");
+            window.__tcAtividades = { abertas: 0, atrasadas: 0 };
+            if (typeof window.__tcAtualizarResumo === 'function') window.__tcAtualizarResumo();
+            container.innerHTML = linhaVazia("Nenhuma atividade pendente ou em andamento.");
             return;
         }
 
-        const corStatus = { 'Pendente': 'var(--warning)', 'Em Andamento': 'var(--info)' };
+        window.__tcAtividades = { abertas: abertas.length, atrasadas: abertas.filter(x => !atividadeAindaNaoComecou(x) && typeof atividadeEstaAtrasada === 'function' && atividadeEstaAtrasada(x)).length };
+        if (typeof window.__tcAtualizarResumo === 'function') window.__tcAtualizarResumo();
         container.innerHTML = abertas.map(x => {
             const prazoFormatado = x.prazo ? x.prazo.split('-').reverse().join('/') : null;
             const inicioFormatado = x.data_inicio ? x.data_inicio.split('-').reverse().join('/') : null;
             const futura = atividadeAindaNaoComecou(x);
             const atrasada = !futura && typeof atividadeEstaAtrasada === 'function' && atividadeEstaAtrasada(x);
+            const status = futura ? `Programada · começa ${inicioFormatado}` : x.status;
+            const cor = atrasada ? 'var(--ds-perigo)' : futura ? 'var(--ds-texto-3)' : x.status === 'Em Andamento' ? 'var(--ds-ambar)' : 'var(--ds-texto-2)';
             return `
-                <div class="tecnico-item-linha" onclick="window.irParaAreaTecnico()" style="${futura ? 'opacity:0.8;' : ''}">
-                    <div>
-                        ${x.equipamento_id ? `<span class="font-code" style="font-weight:700; color:var(--text-heading);">${window.rotuloPorId(x.equipamento_id)}</span> · ` : ''}
-                        <span style="font-size:13px; color:var(--text-body);">${window.limparMarcadorTecnicoDescricao(x.descricao)}</span>
-                        ${futura ? `<span style="font-size:10px; background:var(--text-accent, #d9b67a); color:#fff; padding:2px 6px; border-radius:4px; font-weight:700; margin-left:6px;">PROGRAMADA</span>` : ''}
-                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
-                            ${futura
-                                ? `<span style="color:var(--text-accent, #d9b67a); font-weight:700;">Começa ${inicioFormatado}</span>`
-                                : `<span style="color:${corStatus[x.status] || 'var(--text-muted)'}; font-weight:700;">${x.status}</span>`}
-                            ${x.responsavel ? ` · <i class="fas fa-user"></i> ${x.responsavel}` : ' · <span style="font-style:italic;">Sem responsável</span>'}
-                            ${prazoFormatado ? ` · Prazo: <span style="color:${atrasada ? 'var(--danger)' : 'var(--text-muted)'}; font-weight:${atrasada ? '700' : '400'};">${prazoFormatado}</span>` : ''}
-                        </div>
+                <div class="tc-linha${futura ? ' tc-futura' : ''}" onclick="window.irParaAreaTecnico()">
+                    <div class="tc-linha-txt">
+                        <span class="tc-ativ">${x.equipamento_id ? `<span class="sq-id">${window.rotuloPorId(x.equipamento_id)}</span> ` : ''}${window.limparMarcadorTecnicoDescricao(x.descricao)}</span>
+                        <span class="sq-meta"><span style="color:${cor};font-weight:600">${status}${atrasada ? ' · atrasada' : ''}</span>${x.responsavel ? ` · ${x.responsavel}` : ' · sem responsável'}${prazoFormatado ? ` · prazo ${prazoFormatado}` : ''}</span>
                     </div>
-                    <i class="fas fa-chevron-right" style="color:var(--text-muted);"></i>
+                    <span class="tc-seta">→</span>
                 </div>`;
         }).join('');
     } catch (e) {

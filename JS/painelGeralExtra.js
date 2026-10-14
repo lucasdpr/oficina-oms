@@ -771,6 +771,10 @@ function renderReserva(an) {
         </table>`;
 }
 
+// usado também pelo Painel do Técnico e pelo Sequenciamento (carimba
+// a.__diasMeta nas peças instaladas)
+window.analisarFrota = function() { try { return analisar(); } catch (e) { console.error('⚠️ análise da frota:', e); return null; } };
+
 window.renderPainelSincrono = function() {
     let an;
     try { an = analisar(); } catch (e) { console.error('⚠️ Painel (análise):', e); return; }
