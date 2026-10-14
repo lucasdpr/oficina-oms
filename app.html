@@ -74,7 +74,7 @@
     <link rel="stylesheet" href="style.css?v=14" />
     <!-- Novo padrão visual (tokens + componentes ds-*). Vem DEPOIS do
          style.css pra vencer em empate de especificidade. -->
-    <link rel="stylesheet" href="design-system.css?v=23" />
+    <link rel="stylesheet" href="design-system.css?v=24" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="JS/assets/icon-192.png?v=4">
@@ -3156,7 +3156,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
         import './JS/Paineis/painelAdmExecutivo.js?v=2';
         import './JS/Paineis/painelSupervisorUI.js?v=2';
         import './JS/Paineis/centralAreas.js?v=2';
-        import './JS/Oficina/atividades.js?v=5';
+        import './JS/Oficina/atividades.js?v=6';
         import './JS/Paineis/painelAreaAdministrativa.js?v=2';
         import './JS/Oficina/apontamento.js?v=2';
         import './JS/Paineis/notificacoes.js?v=4';
@@ -3481,10 +3481,10 @@ a, button, [onclick], label[for], select { cursor: pointer; }
                 <div id="hist-galeria-fotos" style="margin: 12px 0;"></div>
 
                 <!-- LINHA DO TEMPO -->
-                <h3 style="font-size:0.85rem; color:var(--text-heading); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">
-                    <i class="fas fa-stream" style="color:var(--text-muted);"></i> Linha do Tempo Completa
+                <h3 class="pt-titulo">
+                    <i class="fas fa-stream" style="color:var(--text-muted);"></i> Linha do tempo
                 </h3>
-                <div class="table-responsive" style="max-height: 320px; overflow-y: auto; border: 1px solid var(--border-color);">
+                <div class="table-responsive pt-linha-tempo">
                     <table class="premium-table">
                         <thead>
                             <tr><th style="width:150px;">Data</th><th>Evento</th><th style="width:120px;">Responsável</th></tr>
@@ -3495,7 +3495,7 @@ a, button, [onclick], label[for], select { cursor: pointer; }
 
                 <!-- REGISTRO MANUAL -->
                 <div style="margin-top:20px;">
-                    <label class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:6px;">
+                    <label class="pt-titulo pt-titulo-peq">
                         <i class="fas fa-pen"></i> Adicionar observação manual
                     </label>
                     <div style="display:flex; gap:10px;">

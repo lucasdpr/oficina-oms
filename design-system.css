@@ -1540,6 +1540,66 @@ body .rs-excluir:hover { border-color: var(--ds-perigo) !important; color: var(-
 .rs-vazio strong { font: 600 1.05rem var(--ds-fonte-titulo); color: var(--ds-texto); }
 .rs-vazio span { font-size: .9rem; color: var(--ds-texto-3); }
 
+/* ---------- janelas de detalhe: checklist de execução e prontuário ---------- */
+body #modal-checklist-execucao #checklist-execucao-titulo { font: 600 1.5rem var(--ds-fonte-titulo); letter-spacing: -.02em; }
+body #modal-checklist-execucao .modal-content > div:first-child .text-muted { font-size: .9rem !important; }
+body #modal-checklist-execucao #checklist-execucao-progresso { font: 600 1.05rem var(--ds-fonte-titulo) !important; color: var(--ds-ambar) !important; }
+body #modal-checklist-execucao .premium-bar { height: 12px !important; border-radius: 999px !important; background: var(--ds-bloco-2) !important; overflow: hidden; }
+body #modal-checklist-execucao #checklist-execucao-barra-fill { border-radius: 999px !important; background: linear-gradient(90deg, var(--ds-ok), color-mix(in srgb, var(--ds-ok) 70%, #fff)) !important; }
+body #modal-checklist-execucao .glass-panel { border-radius: var(--ds-r) !important; background: var(--ds-bloco) !important; padding: 16px !important; }
+body #modal-checklist-execucao .glass-panel > div:first-child > div:first-child { font: 600 1.1rem var(--ds-fonte-titulo) !important; }
+body #modal-checklist-execucao #checklist-execucao-secoes .glass-panel > div > div[style*="font-weight:600"] { font-size: .9rem !important; margin-bottom: 8px !important; }
+body #modal-checklist-execucao #checklist-execucao-secoes div[style*="padding:8px; border-radius:8px"] { padding: 12px 14px !important; border-radius: var(--ds-r-md) !important; margin-bottom: 8px !important; min-height: 56px; align-items: center !important; gap: 14px !important; }
+body #modal-checklist-execucao .checklist-linha-texto > div:first-child { font-size: 1rem !important; line-height: 1.4; }
+body #modal-checklist-execucao .checklist-linha-texto > div:not(:first-child) { font-size: .84rem !important; color: var(--ds-texto-3); }
+body #modal-checklist-execucao input[type="checkbox"] { width: 26px !important; height: 26px !important; accent-color: var(--ds-ok); flex: none; }
+body #modal-checklist-execucao #checklist-execucao-secoes span[style*="font-size:10px"] { font-size: .76rem !important; padding: 2px 8px !important; }
+body #modal-checklist-execucao #checklist-execucao-secoes button.btn-premium:not([title]) { min-height: 44px !important; padding: 0 16px !important; font-size: .9rem !important; border-radius: var(--ds-r-md) !important; }
+body #modal-checklist-execucao .checklist-botoes-admin { gap: 6px !important; }
+body #modal-checklist-execucao .checklist-botoes-admin .btn-premium { background: var(--ds-bloco-2) !important; color: var(--ds-texto-2) !important; border: 1px solid var(--ds-linha-forte) !important; box-shadow: none !important; }
+body #modal-checklist-execucao .checklist-botoes-admin .btn-premium:hover { color: var(--ds-ambar) !important; border-color: var(--ds-ambar) !important; }
+body #modal-checklist-execucao .checklist-botoes-admin .btn-outline-danger { color: var(--ds-texto-3) !important; border-color: var(--ds-linha-forte) !important; }
+body #modal-checklist-execucao .checklist-botoes-admin .btn-outline-danger:hover { color: var(--ds-perigo) !important; border-color: var(--ds-perigo) !important; }
+
+body #modal-historico-ativo .modal-header h2 { font: 600 1.5rem var(--ds-fonte-titulo); letter-spacing: -.02em; }
+body #modal-historico-ativo .modal-body > p { font-size: .95rem !important; }
+body #modal-historico-ativo #hist-resumo-cards { gap: 10px !important; }
+body #modal-historico-ativo #hist-resumo-cards .kpi-card { border-radius: var(--ds-r) !important; padding: 16px !important; }
+body #modal-historico-ativo #hist-resumo-cards h4 { font: 600 1.7rem/1.1 var(--ds-fonte-titulo) !important; letter-spacing: -.02em; }
+body #modal-historico-ativo #hist-resumo-cards p { font-size: .86rem !important; text-transform: none !important; letter-spacing: 0 !important; color: var(--ds-texto-3) !important; }
+.pt-titulo { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font: 600 1.15rem var(--ds-fonte-titulo); color: var(--ds-texto); letter-spacing: -.01em; text-transform: none; }
+.pt-titulo-peq { font-size: .92rem; font-weight: 600; color: var(--ds-texto-2); margin-bottom: 8px; }
+body #modal-historico-ativo .pt-linha-tempo { max-height: 380px; overflow-y: auto; border: 0 !important; padding-left: 4px; }
+body #modal-historico-ativo .pt-linha-tempo table, body #modal-historico-ativo .pt-linha-tempo tbody { display: block; width: 100%; }
+body #modal-historico-ativo .pt-linha-tempo thead { display: none; }
+body #modal-historico-ativo .pt-linha-tempo tr { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 0 0 16px 22px; border: 0 !important; background: transparent !important; }
+body #modal-historico-ativo .pt-linha-tempo tr::before { content: ""; position: absolute; left: 4px; top: 6px; bottom: -4px; width: 2px; background: var(--ds-linha); }
+body #modal-historico-ativo .pt-linha-tempo tr:last-child::before { display: none; }
+body #modal-historico-ativo .pt-linha-tempo tr::after { content: ""; position: absolute; left: 0; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--ds-ambar); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ds-ambar) 18%, transparent); }
+body #modal-historico-ativo .pt-linha-tempo td { display: block; padding: 0 !important; border: 0 !important; background: transparent !important; width: auto !important; }
+body #modal-historico-ativo .pt-linha-tempo td:nth-child(1) { grid-column: 2; grid-row: 1; font-size: .8rem !important; white-space: nowrap; text-align: right; }
+body #modal-historico-ativo .pt-linha-tempo td:nth-child(2) { grid-column: 1; grid-row: 1; font-size: .98rem !important; line-height: 1.4; color: var(--ds-texto) !important; word-break: break-word; }
+body #modal-historico-ativo .pt-linha-tempo td:nth-child(3) { grid-column: 1 / -1; grid-row: 2; font-size: .84rem !important; color: var(--ds-texto-3) !important; }
+body #modal-historico-ativo .pt-linha-tempo td[colspan] { grid-column: 1 / -1; color: var(--ds-texto-3); }
+body #modal-historico-ativo #input-nota-manual { min-height: 48px; }
+body #modal-historico-ativo .modal-footer .btn-secondary { min-height: 44px; }
+
+body #modal-procedimento #procedimento-titulo { font: 600 1.5rem var(--ds-fonte-titulo); letter-spacing: -.02em; }
+body #modal-procedimento #procedimento-meta { font-size: .88rem !important; }
+body #modal-procedimento #procedimento-info { font-size: .98rem !important; line-height: 1.55; border-radius: var(--ds-r) !important; background: var(--ds-bloco) !important; }
+body #modal-procedimento #procedimento-info p { font-size: .98rem; }
+body #modal-procedimento #procedimento-tabela-referencia { border-radius: var(--ds-r) !important; background: var(--ds-bloco) !important; }
+body #modal-procedimento #procedimento-progresso { font: 600 1.05rem var(--ds-fonte-titulo) !important; color: var(--ds-ambar) !important; }
+body #modal-procedimento #procedimento-etapas-lista [style*="text-transform:uppercase"], body #modal-procedimento #procedimento-etapas-lista [style*="text-transform: uppercase"] { text-transform: none !important; letter-spacing: 0 !important; font: 600 1.1rem var(--ds-fonte-titulo) !important; margin-top: 18px; }
+body #modal-procedimento #procedimento-etapas-lista input[type="checkbox"] { width: 26px !important; height: 26px !important; accent-color: var(--ds-ok); flex: none; }
+body #modal-procedimento #procedimento-etapas-lista label, body #modal-procedimento #procedimento-etapas-lista > div > div { font-size: 1rem; }
+body #modal-procedimento #procedimento-etapas-lista [style*="font-size:12px"], body #modal-procedimento #procedimento-etapas-lista [style*="font-size: 12px"], body #modal-procedimento #procedimento-etapas-lista [style*="font-size:11"] { font-size: .9rem !important; line-height: 1.45; }
+.pc-etapa { display: flex; gap: 14px; align-items: flex-start; padding: 14px; border-radius: var(--ds-r-md); background: var(--ds-bloco); border: 1px solid var(--ds-linha); margin-bottom: 8px; cursor: pointer; transition: background .15s, border-color .15s; }
+.pc-etapa:hover { border-color: var(--ds-linha-forte); }
+.pc-etapa.pc-feita { background: color-mix(in srgb, var(--ds-ok) 9%, var(--ds-bloco)); border-color: color-mix(in srgb, var(--ds-ok) 40%, var(--ds-linha)); }
+.pc-etapa-tit { font-size: 1.02rem; font-weight: 600; color: var(--ds-texto); line-height: 1.4; }
+body #modal-procedimento .btn-success { min-height: 52px; font-size: 1rem !important; border-radius: var(--ds-r-md) !important; }
+
 /* ------------------------------------------------------------------
    RESPONSIVO
    ------------------------------------------------------------------ */
@@ -1608,6 +1668,12 @@ body .rs-excluir:hover { border-color: var(--ds-perigo) !important; color: var(-
     .es-chips { width: 100%; }
     .es-chips .cc-btn { flex: 1; justify-content: center; }
     .es-cab .cc-btn { width: 100%; justify-content: center; }
+    body #modal-historico-ativo .pt-linha-tempo tr { grid-template-columns: 1fr; }
+    body #modal-historico-ativo .pt-linha-tempo td:nth-child(1) { grid-column: 1; grid-row: 1; text-align: left; }
+    body #modal-historico-ativo .pt-linha-tempo td:nth-child(2) { grid-column: 1; grid-row: 2; }
+    body #modal-historico-ativo .pt-linha-tempo td:nth-child(3) { grid-row: 3; }
+    body #modal-historico-ativo #hist-resumo-cards h4 { font-size: 1.3rem !important; }
+    body #modal-checklist-execucao .checklist-botoes-admin { width: 100%; }
     .rs-cards { grid-template-columns: 1fr; }
     .rs-mcc { padding-left: 10px; }
     .rs-abas .cc-btn { flex: 1 1 100%; justify-content: center; }
